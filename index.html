@@ -1,290 +1,865 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ED Statistics Dashboard</title>
-  <!-- Load Chart.js from CDN for interactive charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skubios pagalbos statistikos skydelis</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-5eX+8F2cwr6jciJ6TP2PzefDs2fzGEylh4G6dkprdFMn/hTyBC0bY4Z1cdq9VHtV" crossorigin="anonymous"></script>
   <style>
+    :root {
+      --color-bg: #f4f7fb;
+      --color-surface: #ffffff;
+      --color-surface-alt: #f0f4ff;
+      --color-border: rgba(37, 99, 235, 0.1);
+      --color-text: #0f172a;
+      --color-text-muted: #475569;
+      --color-accent: #2563eb;
+      --color-accent-soft: rgba(37, 99, 235, 0.12);
+      --color-success: #16a34a;
+      --shadow-elevated: 0 20px 40px -24px rgba(15, 23, 42, 0.45);
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 0;
+      min-height: 100vh;
+      background: var(--color-bg);
+      color: var(--color-text);
+      display: flex;
+      flex-direction: column;
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
+
+    .container {
+      width: min(1120px, 92vw);
+      margin: 0 auto;
     }
-    .kpi-container {
+
+    header.hero {
+      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 55%),
+                  linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: #fff;
+      padding: 48px 0 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.3), transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero__content {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero__title {
+      font-size: clamp(1.9rem, 1.3rem + 1.5vw, 2.6rem);
+      margin: 0 0 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero__subtitle {
+      margin: 0;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.9);
+      max-width: 520px;
+    }
+
+    .hero__actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    button.refresh {
+      border: none;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--color-accent);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 12px 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+      box-shadow: 0 12px 30px -20px rgba(15, 23, 42, 0.7);
+    }
+
+    button.refresh:hover,
+    button.refresh:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 15px 35px -20px rgba(15, 23, 42, 0.75);
+      background: rgba(255, 255, 255, 0.92);
+      outline: none;
+    }
+
+    button.refresh:active {
+      transform: translateY(0);
+    }
+
+    button.refresh span[aria-hidden="true"] {
+      font-size: 1.1rem;
+    }
+
+    button.refresh:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.6);
+      outline-offset: 3px;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .status--error {
+      color: #fecaca;
+      font-weight: 600;
+    }
+
+    main {
+      flex: 1;
+      padding: 40px 0 64px;
+    }
+
+    .section {
+      margin-bottom: 48px;
+    }
+
+    .section__header {
       display: flex;
       flex-wrap: wrap;
-      justify-content: space-around;
-      margin-bottom: 30px;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 24px;
     }
-    .kpi {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 5px;
-      flex: 1 1 200px;
-      text-align: center;
-      background-color: #f7f7f7;
-    }
-    .kpi h2 {
-      margin: 0 0 10px;
-      font-size: 1.2em;
-      color: #333;
-    }
-    .kpi p {
+
+    .section__title {
+      font-size: 1.4rem;
       margin: 0;
-      font-size: 1.5em;
-      font-weight: bold;
-      color: #0066cc;
     }
+
+    .section__subtitle {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .kpi-card {
+      list-style: none;
+      background: var(--color-surface);
+      border-radius: 18px;
+      border: 1px solid var(--color-border);
+      padding: 24px;
+      box-shadow: var(--shadow-elevated);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    .kpi-card:hover::before,
+    .kpi-card:focus-within::before {
+      opacity: 1;
+    }
+
+    .kpi-card h3 {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-card strong {
+      display: block;
+      font-size: clamp(1.8rem, 1.5rem + 1vw, 2.2rem);
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .kpi-card small {
+      display: block;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .chart-card {
+      background: var(--color-surface);
+      border-radius: 20px;
+      border: 1px solid var(--color-border);
+      padding: 24px;
+      box-shadow: var(--shadow-elevated);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chart-card figcaption {
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+    }
+
     canvas {
       width: 100% !important;
-      max-width: 100%;
       height: auto !important;
     }
+
+    .table-wrapper {
+      background: var(--color-surface);
+      border-radius: 20px;
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow-elevated);
+      overflow: hidden;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
     }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ddd;
-      text-align: center;
+
+    thead {
+      background: var(--color-surface-alt);
+      border-bottom: 1px solid var(--color-border);
     }
+
+    th,
+    td {
+      padding: 14px 18px;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
     th {
-      background-color: #f2f2f2;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(37, 99, 235, 0.03);
+    }
+
+    tbody tr:hover {
+      background: rgba(37, 99, 235, 0.06);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    footer {
+      padding: 24px 0 36px;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+    }
+
+    .footer__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .hero__content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .hero__actions {
+        align-items: flex-start;
+      }
+
+      button.refresh {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .section__header {
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>ED Statistics Dashboard</h1>
-  <div id="kpis" class="kpi-container"></div>
-  <h2>Daily Patients (last 30 days)</h2>
-  <canvas id="dailyChart"></canvas>
-  <h2>Average Patients by Day of Week</h2>
-  <canvas id="dowChart"></canvas>
-  <div id="weeklyTable"></div>
-<script>
-// Fetch CSV data from Google Sheets and parse it into an array of objects.
-async function fetchData() {
-  const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv';
-  const response = await fetch(url);
-  const text = await response.text();
-  const lines = text.trim().split(/\r?\n/);
-  const header = lines[0].split(',');
-  const data = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',');
-    const row = {};
-    header.forEach((h, idx) => {
-      row[h] = cols[idx];
-    });
-    // Parse dates into Date objects; handle missing values
-    row.arrival = row['Atvykimo data'] ? new Date(row['Atvykimo data']) : null;
-    row.discharge = row['Išrašymo data'] ? new Date(row['Išrašymo data']) : null;
-    // Determine if row is night shift based on provided column or arrival time
-    row.night = false;
-    if (row['Diena/naktis']) {
-      row.night = row['Diena/naktis'].toLowerCase().includes('naktis');
-    } else if (row.arrival) {
-      const hour = row.arrival.getHours();
-      row.night = (hour >= 20 || hour < 7);
-    }
-    // EMS (GMP) flag – treat various affirmative values as true
-    const gmpVal = row['GMP'] ? row['GMP'].toLowerCase().trim() : '';
-    row.ems = ['1','true','yes','taip','y'].includes(gmpVal);
-    // Hospitalization flag – assume any value present in the column means patient was hospitalized
-    row.hospitalized = row['Nukreiptas į padalinį'] ? row['Nukreiptas į padalinį'].trim() !== '' : false;
-    data.push(row);
-  }
-  return data;
-}
+  <header class="hero" role="banner">
+    <div class="container hero__content">
+      <div>
+        <h1 id="pageTitle" class="hero__title">Skubios pagalbos statistikos skydelis</h1>
+        <p id="pageSubtitle" class="hero__subtitle">Greita neatidėliotinos pagalbos skyriaus darbo apžvalga be prisijungimo prie papildomų sistemų.</p>
+      </div>
+      <div class="hero__actions">
+        <button id="refreshBtn" type="button" class="refresh">
+          <span aria-hidden="true">⟳</span>
+          <span id="refreshText">Perkrauti duomenis</span>
+        </button>
+        <p id="status" class="status" role="status" aria-live="polite">Kraunama...</p>
+      </div>
+    </div>
+  </header>
+  <main class="container" role="main">
+    <section class="section" aria-labelledby="kpiHeading">
+      <div class="section__header">
+        <div>
+          <h2 id="kpiHeading" class="section__title">Pagrindiniai rodikliai</h2>
+          <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
+        </div>
+      </div>
+      <div id="kpiGrid" class="kpi-grid" role="list"></div>
+    </section>
 
-// Compute daily summaries (totals and averages) from raw data
-function computeDailyStats(data) {
-  const dailyMap = {};
-  data.forEach(r => {
-    // Determine the date string (YYYY-MM-DD) based on arrival or discharge
-    let dateKey = '';
-    if (r.arrival) {
-      dateKey = r.arrival.toISOString().split('T')[0];
-    } else if (r.discharge) {
-      dateKey = r.discharge.toISOString().split('T')[0];
-    } else {
-      return;
-    }
-    if (!dailyMap[dateKey]) {
-      dailyMap[dateKey] = { count: 0, night: 0, ems: 0, discharged: 0, hospitalized: 0, totalTime: 0, durations: 0 };
-    }
-    const ds = dailyMap[dateKey];
-    ds.count++;
-    if (r.night) ds.night++;
-    if (r.ems) ds.ems++;
-    if (r.hospitalized) {
-      ds.hospitalized++;
-    } else {
-      ds.discharged++;
-    }
-    // Compute stay duration in hours if both times available
-    if (r.arrival && r.discharge) {
-      const duration = (r.discharge.getTime() - r.arrival.getTime()) / 3600000;
-      if (duration >= 0) {
-        ds.totalTime += duration;
-        ds.durations++;
-      }
-    }
-  });
-  // Convert map to sorted array
-  const daily = Object.keys(dailyMap).sort().map(date => {
-    const stats = dailyMap[date];
-    const avgTime = stats.durations ? stats.totalTime / stats.durations : 0;
-    return { date, ...stats, avgTime };
-  });
-  return daily;
-}
+    <section class="section" aria-labelledby="chartHeading">
+      <div class="section__header">
+        <div>
+          <h2 id="chartHeading" class="section__title">Pacientų srautai</h2>
+          <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <figure class="chart-card">
+          <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
+          <figcaption id="dailyChartTitle">Kasdieniai pacientai (paskutinės 30 dienų)</figcaption>
+        </figure>
+        <figure class="chart-card">
+          <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
+          <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
+        </figure>
+      </div>
+    </section>
 
-// Generate weekly summaries based on daily data
-function computeWeeklyStats(daily) {
-  const weekly = {};
-  daily.forEach(entry => {
-    const dt = new Date(entry.date);
-    // ISO week number calculation
-    const tmp = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
-    const dayNum = tmp.getUTCDay() || 7;
-    tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
-    const key = `${tmp.getUTCFullYear()}-W${weekNo}`;
-    if (!weekly[key]) {
-      weekly[key] = { count: 0, night: 0, ems: 0, discharged: 0, hospitalized: 0, totalTime: 0, durations: 0, days: 0 };
-    }
-    const wk = weekly[key];
-    wk.count += entry.count;
-    wk.night += entry.night;
-    wk.ems += entry.ems;
-    wk.discharged += entry.discharged;
-    wk.hospitalized += entry.hospitalized;
-    wk.totalTime += entry.totalTime;
-    wk.durations += entry.durations;
-    wk.days++;
-  });
-  return weekly;
-}
+    <section class="section" aria-labelledby="weeklyHeading">
+      <div class="section__header">
+        <div>
+          <h2 id="weeklyHeading" class="section__title">Savaitinė suvestinė</h2>
+          <p id="weeklySubtitle" class="section__subtitle">ISO savaitės, paskaičiuotos iš pasirinktų duomenų</p>
+        </div>
+      </div>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="weeklyHeading">
+        <table aria-describedby="weeklySubtitle">
+          <caption class="sr-only">Savaitinė pacientų ir vidutinio buvimo laiko suvestinė</caption>
+          <thead>
+            <tr>
+              <th scope="col">Savaitė</th>
+              <th scope="col">Pacientai</th>
+              <th scope="col">Vid. laikas (val.)</th>
+              <th scope="col">Naktiniai pacientai</th>
+              <th scope="col">GMP</th>
+              <th scope="col">Hospitalizuoti</th>
+              <th scope="col">Išleisti</th>
+            </tr>
+          </thead>
+          <tbody id="weeklyTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
-// Render KPIs, charts, and tables
-function renderDashboard(daily) {
-  // Overall totals and averages
-  const totals = daily.reduce((acc, d) => {
-    acc.count += d.count;
-    acc.night += d.night;
-    acc.ems += d.ems;
-    acc.discharged += d.discharged;
-    acc.hospitalized += d.hospitalized;
-    acc.totalTime += d.totalTime;
-    acc.durations += d.durations;
-    return acc;
-  }, { count:0, night:0, ems:0, discharged:0, hospitalized:0, totalTime:0, durations:0 });
-  const avgTimeOverall = totals.durations ? totals.totalTime / totals.durations : 0;
-  // Inject KPIs into the DOM
-  const kpiDiv = document.getElementById('kpis');
-  kpiDiv.innerHTML = '';
-  const createKPI = (title, value) => {
-    const div = document.createElement('div');
-    div.className = 'kpi';
-    div.innerHTML = `<h2>${title}</h2><p>${value}</p>`;
-    return div;
-  };
-  kpiDiv.appendChild(createKPI('Total Patients', totals.count));
-  kpiDiv.appendChild(createKPI('Avg ED Time (h)', avgTimeOverall.toFixed(2)));
-  kpiDiv.appendChild(createKPI('Night Patients', totals.night));
-  kpiDiv.appendChild(createKPI('EMS Arrivals', totals.ems));
-  kpiDiv.appendChild(createKPI('Hospitalized', totals.hospitalized));
-  kpiDiv.appendChild(createKPI('Discharged', totals.discharged));
-  // Daily chart (last 30 days)
-  const last30 = daily.slice(-30);
-  const dailyCtx = document.getElementById('dailyChart').getContext('2d');
-  new Chart(dailyCtx, {
-    type: 'bar',
-    data: {
-      labels: last30.map(d => d.date),
-      datasets: [
-        {
-          label: 'Patients',
-          data: last30.map(d => d.count)
+  <footer>
+    <div class="container footer__meta">
+      <span>Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).</span>
+      <span id="footerUpdated">Atnaujinta dabar</span>
+    </div>
+  </footer>
+
+  <script type="module">
+    /**
+     * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
+     */
+    const TEXT = {
+      title: 'Skubios pagalbos statistikos skydelis',
+      subtitle: 'Greita neatidėliotinos pagalbos skyriaus darbo apžvalga be prisijungimo prie papildomų sistemų.',
+      refresh: 'Perkrauti duomenis',
+      status: {
+        loading: 'Kraunama...',
+        error: 'Nepavyko įkelti duomenų. Patikrinkite ryšį ir bandykite dar kartą.',
+        success: (timestamp) => `Atnaujinta ${timestamp}`,
+      },
+      footer: (timestamp) => `Atnaujinta ${timestamp}`,
+      kpis: {
+        title: 'Pagrindiniai rodikliai',
+        subtitle: 'Pastarųjų 30 dienų dinamika',
+        items: {
+          total: { label: 'Pacientai iš viso', hint: 'Visų apsilankymų suma.' },
+          avgTime: { label: 'Vid. buvimo trukmė (val.)', hint: 'Skaičiuojama pagal turimus atvykimo / išrašymo laikus.' },
+          night: { label: 'Naktiniai apsilankymai', hint: 'Pacientai tarp 20:00 ir 07:00 val.' },
+          ems: { label: 'GMP atvežti', hint: 'Registruoti kaip atvykę su GMP.' },
+          hospitalized: { label: 'Hospitalizuoti', hint: 'Pacientai nukreipti į stacionarą.', },
+          discharged: { label: 'Išleisti namo', hint: 'Pacientai išvykę į namus ar ambulatorinę priežiūrą.' },
         },
-        {
-          label: 'Night Patients',
-          data: last30.map(d => d.night)
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: true }
       },
-      scales: {
-        x: { title: { display: false } },
-        y: { title: { display: true, text: 'Count' } }
-      }
-    }
-  });
-  // Day-of-week average chart
-  const dowCounts = Array(7).fill(0);
-  const dowTotals = Array(7).fill(0);
-  daily.forEach(d => {
-    const dow = new Date(d.date).getDay();
-    dowCounts[dow] += d.count;
-    dowTotals[dow]++;
-  });
-  const avgDow = dowCounts.map((c, i) => dowTotals[i] ? c / dowTotals[i] : 0);
-  const dowCtx = document.getElementById('dowChart').getContext('2d');
-  new Chart(dowCtx, {
-    type: 'line',
-    data: {
-      labels: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
-      datasets: [
-        {
-          label: 'Avg Patients',
-          data: avgDow,
-          fill: false
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false }
+      charts: {
+        title: 'Pacientų srautai',
+        subtitle: 'Kasdieniai skaičiai ir savaitės dienos vidurkiai',
+        dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
+        dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
       },
-      scales: {
-        x: { title: { display: false } },
-        y: { title: { display: true, text: 'Avg Count' } }
-      }
-    }
-  });
-  // Weekly summary table
-  const weekly = computeWeeklyStats(daily);
-  const tableRows = Object.keys(weekly).sort().map(key => {
-    const w = weekly[key];
-    const avgTime = w.durations ? (w.totalTime / w.durations).toFixed(2) : '0.00';
-    return `<tr><td>${key}</td><td>${w.count}</td><td>${avgTime}</td><td>${w.night}</td><td>${w.ems}</td><td>${w.hospitalized}</td><td>${w.discharged}</td></tr>`;
-  }).join('');
-  document.getElementById('weeklyTable').innerHTML = `<h2>Weekly Summary</h2><table><tr><th>Week</th><th>Patients</th><th>Avg Time (h)</th><th>Night</th><th>EMS</th><th>Hospitalized</th><th>Discharged</th></tr>${tableRows}</table>`;
-}
+      weekly: {
+        title: 'Savaitinė suvestinė',
+        subtitle: 'ISO savaitės, paskaičiuotos iš pasirinktų duomenų',
+        empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
+      },
+    };
 
-// Main load function
-fetchData().then(raw => {
-  const daily = computeDailyStats(raw);
-  renderDashboard(daily);
-}).catch(err => {
-  console.error('Failed to load or process data:', err);
-  document.body.innerHTML += '<p style="color:red;">Failed to load data.</p>';
-});
-</script>
+    // Formatai datoms ir skaičiams (LT locale).
+    const numberFormatter = new Intl.NumberFormat('lt-LT');
+    const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
+
+    const selectors = {
+      title: document.getElementById('pageTitle'),
+      subtitle: document.getElementById('pageSubtitle'),
+      refreshText: document.getElementById('refreshText'),
+      status: document.getElementById('status'),
+      footerUpdated: document.getElementById('footerUpdated'),
+      kpiHeading: document.getElementById('kpiHeading'),
+      kpiSubtitle: document.getElementById('kpiSubtitle'),
+      kpiGrid: document.getElementById('kpiGrid'),
+      chartHeading: document.getElementById('chartHeading'),
+      chartSubtitle: document.getElementById('chartSubtitle'),
+      dailyCaption: document.getElementById('dailyChartTitle'),
+      dowCaption: document.getElementById('dowChartTitle'),
+      weeklyHeading: document.getElementById('weeklyHeading'),
+      weeklySubtitle: document.getElementById('weeklySubtitle'),
+      weeklyTable: document.getElementById('weeklyTable'),
+    };
+
+    /**
+     * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
+     */
+    const dashboardState = {
+      charts: {
+        daily: null,
+        dow: null,
+      },
+    };
+
+    /**
+     * Pirminis tekstų suleidimas iš konfigūracijos (galima perrašyti iš kitų failų).
+     */
+    function applyTextContent() {
+      selectors.title.textContent = TEXT.title;
+      selectors.subtitle.textContent = TEXT.subtitle;
+      selectors.refreshText.textContent = TEXT.refresh;
+      selectors.kpiHeading.textContent = TEXT.kpis.title;
+      selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
+      selectors.chartHeading.textContent = TEXT.charts.title;
+      selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+      selectors.dailyCaption.textContent = TEXT.charts.dailyCaption;
+      selectors.dowCaption.textContent = TEXT.charts.dowCaption;
+      selectors.weeklyHeading.textContent = TEXT.weekly.title;
+      selectors.weeklySubtitle.textContent = TEXT.weekly.subtitle;
+    }
+
+    /**
+     * Pagalbinė funkcija būsenos juostai atnaujinti.
+     * @param {('loading'|'success'|'error')} type
+     */
+    function setStatus(type) {
+      if (type === 'loading') {
+        selectors.status.textContent = TEXT.status.loading;
+        selectors.status.classList.remove('status--error');
+        return;
+      }
+
+      if (type === 'error') {
+        selectors.status.textContent = TEXT.status.error;
+        selectors.status.classList.add('status--error');
+        selectors.footerUpdated.textContent = TEXT.status.error;
+        return;
+      }
+
+      const formatted = statusTimeFormatter.format(new Date());
+      selectors.status.textContent = TEXT.status.success(formatted);
+      selectors.status.classList.remove('status--error');
+      selectors.footerUpdated.textContent = TEXT.footer(formatted);
+    }
+
+    /**
+     * CSV duomenų užkrovimas iš Google Sheets. Jei reikalingas kitoks šaltinis – keiskite URL.
+     */
+    async function fetchData() {
+      const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv';
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP klaida: ${response.status}`);
+      }
+      const text = await response.text();
+      const lines = text.trim().split(/\r?\n/);
+      const header = lines[0].split(',');
+      const rows = [];
+
+      for (let i = 1; i < lines.length; i += 1) {
+        const cols = lines[i].split(',');
+        if (cols.length !== header.length) continue;
+        const entry = {};
+        header.forEach((h, idx) => {
+          entry[h] = cols[idx];
+        });
+        entry.arrival = entry['Atvykimo data'] ? new Date(entry['Atvykimo data']) : null;
+        entry.discharge = entry['Išrašymo data'] ? new Date(entry['Išrašymo data']) : null;
+        entry.night = false;
+        if (entry['Diena/naktis']) {
+          entry.night = entry['Diena/naktis'].toLowerCase().includes('naktis');
+        } else if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival)) {
+          const hour = entry.arrival.getHours();
+          entry.night = hour >= 20 || hour < 7;
+        }
+        const gmpVal = entry['GMP'] ? entry['GMP'].toLowerCase().trim() : '';
+        entry.ems = ['1', 'true', 'taip', 'yes', 'y'].includes(gmpVal);
+        entry.hospitalized = Boolean(entry['Nukreiptas į padalinį'] && entry['Nukreiptas į padalinį'].trim());
+        rows.push(entry);
+      }
+      return rows;
+    }
+
+    function computeDailyStats(data) {
+      const dailyMap = new Map();
+      data.forEach((record) => {
+        let dateKey = '';
+        if (record.arrival instanceof Date && !Number.isNaN(record.arrival)) {
+          dateKey = record.arrival.toISOString().split('T')[0];
+        } else if (record.discharge instanceof Date && !Number.isNaN(record.discharge)) {
+          dateKey = record.discharge.toISOString().split('T')[0];
+        } else {
+          return;
+        }
+
+        if (!dailyMap.has(dateKey)) {
+          dailyMap.set(dateKey, {
+            date: dateKey,
+            count: 0,
+            night: 0,
+            ems: 0,
+            discharged: 0,
+            hospitalized: 0,
+            totalTime: 0,
+            durations: 0,
+          });
+        }
+        const summary = dailyMap.get(dateKey);
+        summary.count += 1;
+        summary.night += record.night ? 1 : 0;
+        summary.ems += record.ems ? 1 : 0;
+        if (record.hospitalized) {
+          summary.hospitalized += 1;
+        } else {
+          summary.discharged += 1;
+        }
+        if (record.arrival instanceof Date && record.discharge instanceof Date) {
+          const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
+          if (Number.isFinite(duration) && duration >= 0) {
+            summary.totalTime += duration;
+            summary.durations += 1;
+          }
+        }
+      });
+
+      return Array.from(dailyMap.values()).sort((a, b) => (a.date > b.date ? 1 : -1)).map((item) => ({
+        ...item,
+        avgTime: item.durations ? item.totalTime / item.durations : 0,
+      }));
+    }
+
+    function computeWeeklyStats(daily) {
+      const weeklyMap = new Map();
+      daily.forEach((entry) => {
+        const dt = new Date(entry.date);
+        const tmp = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+        const dayNum = tmp.getUTCDay() || 7;
+        tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+        const key = `${tmp.getUTCFullYear()}-S${String(weekNo).padStart(2, '0')}`;
+        if (!weeklyMap.has(key)) {
+          weeklyMap.set(key, {
+            week: key,
+            count: 0,
+            night: 0,
+            ems: 0,
+            discharged: 0,
+            hospitalized: 0,
+            totalTime: 0,
+            durations: 0,
+          });
+        }
+        const summary = weeklyMap.get(key);
+        summary.count += entry.count;
+        summary.night += entry.night;
+        summary.ems += entry.ems;
+        summary.discharged += entry.discharged;
+        summary.hospitalized += entry.hospitalized;
+        summary.totalTime += entry.totalTime;
+        summary.durations += entry.durations;
+      });
+
+      return Array.from(weeklyMap.values()).sort((a, b) => (a.week > b.week ? 1 : -1));
+    }
+
+    function renderKpis(dailyStats) {
+      const totals = dailyStats.reduce((acc, item) => {
+        acc.count += item.count;
+        acc.night += item.night;
+        acc.ems += item.ems;
+        acc.discharged += item.discharged;
+        acc.hospitalized += item.hospitalized;
+        acc.totalTime += item.totalTime;
+        acc.durations += item.durations;
+        return acc;
+      }, { count: 0, night: 0, ems: 0, discharged: 0, hospitalized: 0, totalTime: 0, durations: 0 });
+
+      const avgTimeOverall = totals.durations ? totals.totalTime / totals.durations : 0;
+      const kpiValues = {
+        total: numberFormatter.format(totals.count),
+        avgTime: decimalFormatter.format(avgTimeOverall),
+        night: numberFormatter.format(totals.night),
+        ems: numberFormatter.format(totals.ems),
+        hospitalized: numberFormatter.format(totals.hospitalized),
+        discharged: numberFormatter.format(totals.discharged),
+      };
+
+      selectors.kpiGrid.replaceChildren();
+      Object.entries(TEXT.kpis.items).forEach(([key, item]) => {
+        const card = document.createElement('article');
+        card.className = 'kpi-card';
+        card.setAttribute('role', 'listitem');
+        card.innerHTML = `
+          <h3>${item.label}</h3>
+          <strong>${kpiValues[key] ?? '–'}</strong>
+          <small>${item.hint}</small>
+        `;
+        selectors.kpiGrid.appendChild(card);
+      });
+    }
+
+    function renderCharts(dailyStats) {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const accent = rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb';
+      const accentSoft = rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)';
+      const textColor = rootStyles.getPropertyValue('--color-text').trim() || '#0f172a';
+
+      Chart.defaults.color = textColor;
+      Chart.defaults.font.family = getComputedStyle(document.documentElement).fontFamily;
+
+      const last30 = dailyStats.slice(-30);
+      const ctxDaily = document.getElementById('dailyChart').getContext('2d');
+      if (dashboardState.charts.daily) {
+        dashboardState.charts.daily.destroy();
+      }
+      dashboardState.charts.daily = new Chart(ctxDaily, {
+        type: 'bar',
+        data: {
+          labels: last30.map((entry) => entry.date),
+          datasets: [
+            {
+              label: 'Pacientai',
+              data: last30.map((entry) => entry.count),
+              backgroundColor: accent,
+              borderRadius: 12,
+            },
+            {
+              label: 'Naktiniai pacientai',
+              data: last30.map((entry) => entry.night),
+              backgroundColor: accentSoft,
+              borderRadius: 12,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: true, position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  return `${context.dataset.label}: ${numberFormatter.format(context.parsed.y)}`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                callback(value) {
+                  const label = this.getLabelForValue(value);
+                  return label.slice(-5); // rodo tik MM-DD dalį, kad būtų kompaktiška
+                },
+              },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback(value) {
+                  return numberFormatter.format(value);
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const dowCounts = Array(7).fill(0);
+      const dowTotals = Array(7).fill(0);
+      dailyStats.forEach((entry) => {
+        const dayIndex = (new Date(entry.date).getDay() + 6) % 7; // 0 -> pirmadienis
+        dowCounts[dayIndex] += entry.count;
+        dowTotals[dayIndex] += 1;
+      });
+      const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
+      const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
+
+      const ctxDow = document.getElementById('dowChart').getContext('2d');
+      if (dashboardState.charts.dow) {
+        dashboardState.charts.dow.destroy();
+      }
+      dashboardState.charts.dow = new Chart(ctxDow, {
+        type: 'line',
+        data: {
+          labels: dowLabels,
+          datasets: [
+            {
+              label: 'Vidutinis pacientų skaičius',
+              data: dowAverages,
+              fill: true,
+              tension: 0.35,
+              borderColor: accent,
+              backgroundColor: accentSoft,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
+                },
+              },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback(value) {
+                  return decimalFormatter.format(value);
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function renderWeeklyTable(weeklyStats) {
+      selectors.weeklyTable.replaceChildren();
+      if (!weeklyStats.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 7;
+        cell.textContent = TEXT.weekly.empty;
+        row.appendChild(cell);
+        selectors.weeklyTable.appendChild(row);
+        return;
+      }
+
+      weeklyStats.forEach((entry) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.week}</td>
+          <td>${numberFormatter.format(entry.count)}</td>
+          <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
+          <td>${numberFormatter.format(entry.night)}</td>
+          <td>${numberFormatter.format(entry.ems)}</td>
+          <td>${numberFormatter.format(entry.hospitalized)}</td>
+          <td>${numberFormatter.format(entry.discharged)}</td>
+        `;
+        selectors.weeklyTable.appendChild(row);
+      });
+    }
+
+    async function loadDashboard() {
+      try {
+        setStatus('loading');
+        const rawData = await fetchData();
+        const dailyStats = computeDailyStats(rawData);
+        renderKpis(dailyStats);
+        renderCharts(dailyStats);
+        const weeklyStats = computeWeeklyStats(dailyStats);
+        renderWeeklyTable(weeklyStats);
+        setStatus('success');
+      } catch (error) {
+        console.error('Nepavyko apdoroti duomenų:', error);
+        setStatus('error');
+      }
+    }
+
+    applyTextContent();
+    loadDashboard();
+
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      loadDashboard();
+    });
+  </script>
 </body>
 </html>
