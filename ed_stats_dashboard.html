@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ED Statistics Dashboard</title>
+  <!-- Load Chart.js from CDN for interactive charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .kpi-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      margin-bottom: 30px;
+    }
+    .kpi {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 5px;
+      flex: 1 1 200px;
+      text-align: center;
+      background-color: #f7f7f7;
+    }
+    .kpi h2 {
+      margin: 0 0 10px;
+      font-size: 1.2em;
+      color: #333;
+    }
+    .kpi p {
+      margin: 0;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #0066cc;
+    }
+    canvas {
+      width: 100% !important;
+      max-width: 100%;
+      height: auto !important;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>ED Statistics Dashboard</h1>
+  <div id="kpis" class="kpi-container"></div>
+  <h2>Daily Patients (last 30 days)</h2>
+  <canvas id="dailyChart"></canvas>
+  <h2>Average Patients by Day of Week</h2>
+  <canvas id="dowChart"></canvas>
+  <div id="weeklyTable"></div>
+<script>
+// Fetch CSV data from Google Sheets and parse it into an array of objects.
+async function fetchData() {
+  const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv';
+  const response = await fetch(url);
+  const text = await response.text();
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines[0].split(',');
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    const row = {};
+    header.forEach((h, idx) => {
+      row[h] = cols[idx];
+    });
+    // Parse dates into Date objects; handle missing values
+    row.arrival = row['Atvykimo data'] ? new Date(row['Atvykimo data']) : null;
+    row.discharge = row['Išrašymo data'] ? new Date(row['Išrašymo data']) : null;
+    // Determine if row is night shift based on provided column or arrival time
+    row.night = false;
+    if (row['Diena/naktis']) {
+      row.night = row['Diena/naktis'].toLowerCase().includes('naktis');
+    } else if (row.arrival) {
+      const hour = row.arrival.getHours();
+      row.night = (hour >= 20 || hour < 7);
+    }
+    // EMS (GMP) flag – treat various affirmative values as true
+    const gmpVal = row['GMP'] ? row['GMP'].toLowerCase().trim() : '';
+    row.ems = ['1','true','yes','taip','y'].includes(gmpVal);
+    // Hospitalization flag – assume any value present in the column means patient was hospitalized
+    row.hospitalized = row['Nukreiptas į padalinį'] ? row['Nukreiptas į padalinį'].trim() !== '' : false;
+    data.push(row);
+  }
+  return data;
+}
+
+// Compute daily summaries (totals and averages) from raw data
+function computeDailyStats(data) {
+  const dailyMap = {};
+  data.forEach(r => {
+    // Determine the date string (YYYY-MM-DD) based on arrival or discharge
+    let dateKey = '';
+    if (r.arrival) {
+      dateKey = r.arrival.toISOString().split('T')[0];
+    } else if (r.discharge) {
+      dateKey = r.discharge.toISOString().split('T')[0];
+    } else {
+      return;
+    }
+    if (!dailyMap[dateKey]) {
+      dailyMap[dateKey] = { count: 0, night: 0, ems: 0, discharged: 0, hospitalized: 0, totalTime: 0, durations: 0 };
+    }
+    const ds = dailyMap[dateKey];
+    ds.count++;
+    if (r.night) ds.night++;
+    if (r.ems) ds.ems++;
+    if (r.hospitalized) {
+      ds.hospitalized++;
+    } else {
+      ds.discharged++;
+    }
+    // Compute stay duration in hours if both times available
+    if (r.arrival && r.discharge) {
+      const duration = (r.discharge.getTime() - r.arrival.getTime()) / 3600000;
+      if (duration >= 0) {
+        ds.totalTime += duration;
+        ds.durations++;
+      }
+    }
+  });
+  // Convert map to sorted array
+  const daily = Object.keys(dailyMap).sort().map(date => {
+    const stats = dailyMap[date];
+    const avgTime = stats.durations ? stats.totalTime / stats.durations : 0;
+    return { date, ...stats, avgTime };
+  });
+  return daily;
+}
+
+// Generate weekly summaries based on daily data
+function computeWeeklyStats(daily) {
+  const weekly = {};
+  daily.forEach(entry => {
+    const dt = new Date(entry.date);
+    // ISO week number calculation
+    const tmp = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+    const dayNum = tmp.getUTCDay() || 7;
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+    const key = `${tmp.getUTCFullYear()}-W${weekNo}`;
+    if (!weekly[key]) {
+      weekly[key] = { count: 0, night: 0, ems: 0, discharged: 0, hospitalized: 0, totalTime: 0, durations: 0, days: 0 };
+    }
+    const wk = weekly[key];
+    wk.count += entry.count;
+    wk.night += entry.night;
+    wk.ems += entry.ems;
+    wk.discharged += entry.discharged;
+    wk.hospitalized += entry.hospitalized;
+    wk.totalTime += entry.totalTime;
+    wk.durations += entry.durations;
+    wk.days++;
+  });
+  return weekly;
+}
+
+// Render KPIs, charts, and tables
+function renderDashboard(daily) {
+  // Overall totals and averages
+  const totals = daily.reduce((acc, d) => {
+    acc.count += d.count;
+    acc.night += d.night;
+    acc.ems += d.ems;
+    acc.discharged += d.discharged;
+    acc.hospitalized += d.hospitalized;
+    acc.totalTime += d.totalTime;
+    acc.durations += d.durations;
+    return acc;
+  }, { count:0, night:0, ems:0, discharged:0, hospitalized:0, totalTime:0, durations:0 });
+  const avgTimeOverall = totals.durations ? totals.totalTime / totals.durations : 0;
+  // Inject KPIs into the DOM
+  const kpiDiv = document.getElementById('kpis');
+  kpiDiv.innerHTML = '';
+  const createKPI = (title, value) => {
+    const div = document.createElement('div');
+    div.className = 'kpi';
+    div.innerHTML = `<h2>${title}</h2><p>${value}</p>`;
+    return div;
+  };
+  kpiDiv.appendChild(createKPI('Total Patients', totals.count));
+  kpiDiv.appendChild(createKPI('Avg ED Time (h)', avgTimeOverall.toFixed(2)));
+  kpiDiv.appendChild(createKPI('Night Patients', totals.night));
+  kpiDiv.appendChild(createKPI('EMS Arrivals', totals.ems));
+  kpiDiv.appendChild(createKPI('Hospitalized', totals.hospitalized));
+  kpiDiv.appendChild(createKPI('Discharged', totals.discharged));
+  // Daily chart (last 30 days)
+  const last30 = daily.slice(-30);
+  const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+  new Chart(dailyCtx, {
+    type: 'bar',
+    data: {
+      labels: last30.map(d => d.date),
+      datasets: [
+        {
+          label: 'Patients',
+          data: last30.map(d => d.count)
+        },
+        {
+          label: 'Night Patients',
+          data: last30.map(d => d.night)
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        x: { title: { display: false } },
+        y: { title: { display: true, text: 'Count' } }
+      }
+    }
+  });
+  // Day-of-week average chart
+  const dowCounts = Array(7).fill(0);
+  const dowTotals = Array(7).fill(0);
+  daily.forEach(d => {
+    const dow = new Date(d.date).getDay();
+    dowCounts[dow] += d.count;
+    dowTotals[dow]++;
+  });
+  const avgDow = dowCounts.map((c, i) => dowTotals[i] ? c / dowTotals[i] : 0);
+  const dowCtx = document.getElementById('dowChart').getContext('2d');
+  new Chart(dowCtx, {
+    type: 'line',
+    data: {
+      labels: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+      datasets: [
+        {
+          label: 'Avg Patients',
+          data: avgDow,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { title: { display: false } },
+        y: { title: { display: true, text: 'Avg Count' } }
+      }
+    }
+  });
+  // Weekly summary table
+  const weekly = computeWeeklyStats(daily);
+  const tableRows = Object.keys(weekly).sort().map(key => {
+    const w = weekly[key];
+    const avgTime = w.durations ? (w.totalTime / w.durations).toFixed(2) : '0.00';
+    return `<tr><td>${key}</td><td>${w.count}</td><td>${avgTime}</td><td>${w.night}</td><td>${w.ems}</td><td>${w.hospitalized}</td><td>${w.discharged}</td></tr>`;
+  }).join('');
+  document.getElementById('weeklyTable').innerHTML = `<h2>Weekly Summary</h2><table><tr><th>Week</th><th>Patients</th><th>Avg Time (h)</th><th>Night</th><th>EMS</th><th>Hospitalized</th><th>Discharged</th></tr>${tableRows}</table>`;
+}
+
+// Main load function
+fetchData().then(raw => {
+  const daily = computeDailyStats(raw);
+  renderDashboard(daily);
+}).catch(err => {
+  console.error('Failed to load or process data:', err);
+  document.body.innerHTML += '<p style="color:red;">Failed to load data.</p>';
+});
+</script>
+</body>
+</html>
