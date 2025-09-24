@@ -1,10 +1,10 @@
 # Skubios pagalbos statistikos skydelis
 
-Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus bei savaitinę suvestinę.
+Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus, paskutinės savaitės kasdienę ir savaitinę suvestines.
 
 ## Savybės
 - 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
-- 📊 KPI kortelės, stulpelinė bei linijinė diagramos, savaitinė lentelė.
+- 📊 KPI kortelės, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
 - 🛡️ Automatinis demonstracinių duomenų rezervas ir aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
@@ -29,7 +29,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ## Greitas „smoke test“ sąrašas
 1. Atidarykite `index.html` ir patikrinkite, kad hero blokas rodo pavadinimą bei mygtuką „Perkrauti duomenis“.
-2. Patvirtinkite, kad užsikrovus duomenims KPI kortelės užsipildo, grafikai nupiešiami, lentelė rodoma.
+2. Patvirtinkite, kad užsikrovus duomenims KPI kortelės užsipildo, grafikai nupiešiami, abi lentelės (paskutinės 7 dienos ir savaitinė) rodomos.
 3. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
 4. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
 5. (Pasirinktinai) Išvalykite `fallbackCsv` ir pakartokite 4 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašymu.

@@ -409,6 +409,32 @@
       </div>
     </section>
 
+    <section class="section" aria-labelledby="recentHeading">
+      <div class="section__header">
+        <div>
+          <h2 id="recentHeading" class="section__title">Paskutinės 7 dienos</h2>
+          <p id="recentSubtitle" class="section__subtitle">Kasdienė suvestinė pagal naujausius duomenis</p>
+        </div>
+      </div>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
+        <table aria-describedby="recentSubtitle">
+          <caption id="recentCaption" class="sr-only">Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė</caption>
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Pacientai</th>
+              <th scope="col">Vid. laikas (val.)</th>
+              <th scope="col">Naktiniai pacientai</th>
+              <th scope="col">GMP</th>
+              <th scope="col">Hospitalizuoti</th>
+              <th scope="col">Išleisti</th>
+            </tr>
+          </thead>
+          <tbody id="recentTable"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="section" aria-labelledby="weeklyHeading">
       <div class="section__header">
         <div>
@@ -418,7 +444,7 @@
       </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="weeklyHeading">
         <table aria-describedby="weeklySubtitle">
-          <caption class="sr-only">Savaitinė pacientų ir vidutinio buvimo laiko suvestinė</caption>
+          <caption id="weeklyCaption" class="sr-only">Savaitinė pacientų ir vidutinio buvimo laiko suvestinė</caption>
           <thead>
             <tr>
               <th scope="col">Savaitė</th>
@@ -544,9 +570,16 @@
         dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
       },
+      recent: {
+        title: 'Paskutinės 7 dienos',
+        subtitle: 'Kasdienė suvestinė pagal naujausius duomenis.',
+        caption: 'Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė.',
+        empty: 'Šiame laikotarpyje duomenų nėra.',
+      },
       weekly: {
         title: 'Savaitinė suvestinė',
-        subtitle: 'ISO savaitės, paskaičiuotos iš pasirinktų duomenų',
+        subtitle: 'ISO savaitės (paskutinės 30 dienos).',
+        caption: 'Savaitinė pacientų ir vidutinio buvimo laiko suvestinė.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
       },
     };
@@ -555,6 +588,12 @@
     const numberFormatter = new Intl.NumberFormat('lt-LT');
     const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
+    const dailyDateFormatter = new Intl.DateTimeFormat('lt-LT', {
+      weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
 
     const selectors = {
       title: document.getElementById('pageTitle'),
@@ -570,8 +609,13 @@
       chartSubtitle: document.getElementById('chartSubtitle'),
       dailyCaption: document.getElementById('dailyChartTitle'),
       dowCaption: document.getElementById('dowChartTitle'),
+      recentHeading: document.getElementById('recentHeading'),
+      recentSubtitle: document.getElementById('recentSubtitle'),
+      recentCaption: document.getElementById('recentCaption'),
+      recentTable: document.getElementById('recentTable'),
       weeklyHeading: document.getElementById('weeklyHeading'),
       weeklySubtitle: document.getElementById('weeklySubtitle'),
+      weeklyCaption: document.getElementById('weeklyCaption'),
       weeklyTable: document.getElementById('weeklyTable'),
     };
 
@@ -600,8 +644,12 @@
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
       selectors.dailyCaption.textContent = TEXT.charts.dailyCaption;
       selectors.dowCaption.textContent = TEXT.charts.dowCaption;
+      selectors.recentHeading.textContent = TEXT.recent.title;
+      selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
+      selectors.recentCaption.textContent = TEXT.recent.caption;
       selectors.weeklyHeading.textContent = TEXT.weekly.title;
       selectors.weeklySubtitle.textContent = TEXT.weekly.subtitle;
+      selectors.weeklyCaption.textContent = TEXT.weekly.caption;
       hideStatusNote();
     }
 
@@ -799,6 +847,26 @@
       return null;
     }
 
+    function dateKeyToUtc(dateKey) {
+      if (typeof dateKey !== 'string') {
+        return Number.NaN;
+      }
+      const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
+      if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
+        return Number.NaN;
+      }
+      const [year, month, day] = parts;
+      return Date.UTC(year, month - 1, day);
+    }
+
+    function dateKeyToDate(dateKey) {
+      const utc = dateKeyToUtc(dateKey);
+      if (!Number.isFinite(utc)) {
+        return null;
+      }
+      return new Date(utc);
+    }
+
     function parseBoolean(value) {
       if (value == null) {
         return false;
@@ -895,6 +963,31 @@
         dashboardState.usingFallback = false;
         throw error;
       }
+    }
+
+    /**
+     * Grąžina tik paskutines N dienų įrašus (pagal vėliausią turimą datą).
+     * @param {Array<{date: string}>} dailyStats
+     * @param {number} days
+     */
+    function filterDailyStatsByWindow(dailyStats, days) {
+      if (!Array.isArray(dailyStats)) {
+        return [];
+      }
+      if (!Number.isFinite(days) || days <= 0) {
+        return [...dailyStats];
+      }
+      const decorated = dailyStats
+        .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
+        .filter((item) => Number.isFinite(item.utc));
+      if (!decorated.length) {
+        return [];
+      }
+      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+      const startUtc = endUtc - (days - 1) * 86400000;
+      return decorated
+        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
+        .map((item) => item.entry);
     }
 
     function computeDailyStats(data) {
@@ -1146,6 +1239,41 @@
       });
     }
 
+    /**
+     * Sugeneruoja paskutinių 7 dienų lentelę (naujausi įrašai viršuje).
+     * @param {ReturnType<typeof computeDailyStats>} recentDailyStats
+     */
+    function renderRecentTable(recentDailyStats) {
+      selectors.recentTable.replaceChildren();
+      if (!recentDailyStats.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 7;
+        cell.textContent = TEXT.recent.empty;
+        row.appendChild(cell);
+        selectors.recentTable.appendChild(row);
+        return;
+      }
+
+      [...recentDailyStats]
+        .sort((a, b) => (a.date > b.date ? -1 : 1))
+        .forEach((entry) => {
+          const row = document.createElement('tr');
+          const dateValue = dateKeyToDate(entry.date);
+          const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
+          row.innerHTML = `
+            <td>${displayDate}</td>
+            <td>${numberFormatter.format(entry.count)}</td>
+            <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
+            <td>${numberFormatter.format(entry.night)}</td>
+            <td>${numberFormatter.format(entry.ems)}</td>
+            <td>${numberFormatter.format(entry.hospitalized)}</td>
+            <td>${numberFormatter.format(entry.discharged)}</td>
+          `;
+          selectors.recentTable.appendChild(row);
+        });
+    }
+
     function renderWeeklyTable(weeklyStats) {
       selectors.weeklyTable.replaceChildren();
       if (!weeklyStats.length) {
@@ -1178,9 +1306,12 @@
         setStatus('loading');
         const rawData = await fetchData();
         const dailyStats = computeDailyStats(rawData);
-        renderKpis(dailyStats);
-        await renderCharts(dailyStats);
-        const weeklyStats = computeWeeklyStats(dailyStats);
+        const last30DailyStats = filterDailyStatsByWindow(dailyStats, 30);
+        const recentDailyStats = filterDailyStatsByWindow(last30DailyStats, 7);
+        renderKpis(last30DailyStats);
+        await renderCharts(last30DailyStats);
+        renderRecentTable(recentDailyStats);
+        const weeklyStats = computeWeeklyStats(last30DailyStats);
         renderWeeklyTable(weeklyStats);
         setStatus('success');
       } catch (error) {
