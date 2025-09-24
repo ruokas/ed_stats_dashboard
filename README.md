@@ -3,7 +3,7 @@
 Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus bei savaitinę suvestinę.
 
 ## Savybės
-- 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js tiekiamas iš CDN).
+- 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
 - 📊 KPI kortelės, stulpelinė bei linijinė diagramos, savaitinė lentelė.
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.

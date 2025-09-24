@@ -415,15 +415,38 @@
   </footer>
 
   <script type="module">
-    const chartJsPromise = import('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.esm.js')
-      .then((module) => {
-        module.Chart.register(...module.registerables);
-        return module.Chart;
-      })
-      .catch((error) => {
-        console.error('Nepavyko įkelti Chart.js modulio:', error);
-        return null;
-      });
+    /**
+     * Įkelia Chart.js iš CDN naudojant klasikinį <script>, kad išvengtume CORS/MIME klaidų.
+     * Jei biblioteka jau užkrauta (pvz., iš ankstesnio seanso), panaudojamas esamas egzempliorius.
+     * @returns {Promise<typeof window.Chart|null>}
+     */
+    let chartJsPromise = null;
+
+    function loadChartJs() {
+      if (window.Chart) {
+        return Promise.resolve(window.Chart);
+      }
+
+      if (!chartJsPromise) {
+        chartJsPromise = new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+          script.async = true;
+          script.onload = () => resolve(window.Chart ?? null);
+          script.onerror = (error) => {
+            console.error('Nepavyko įkelti Chart.js bibliotekos:', error);
+            chartJsPromise = null;
+            resolve(null);
+          };
+          document.head.appendChild(script);
+        });
+      }
+
+      return chartJsPromise;
+    }
+
+    // Iškart inicijuojame įkėlimą, kad biblioteka būtų paruošta, kai prireiks piešti grafikus.
+    loadChartJs();
     /**
      * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
      */
@@ -694,7 +717,7 @@
     }
 
     async function renderCharts(dailyStats) {
-      const Chart = await chartJsPromise;
+      const Chart = await loadChartJs();
       if (!Chart) {
         throw new Error('Chart.js biblioteka nepasiekiama');
       }
