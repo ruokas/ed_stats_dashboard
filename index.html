@@ -83,6 +83,14 @@
       gap: 12px;
     }
 
+    .hero__buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      width: 100%;
+    }
+
     button.refresh {
       border: none;
       border-radius: 999px;
@@ -116,6 +124,45 @@
     }
 
     button.refresh:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.6);
+      outline-offset: 3px;
+    }
+
+    button.settings-btn {
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 10px 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease;
+      box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.8);
+      text-decoration: none;
+    }
+
+    button.settings-btn:hover,
+    button.settings-btn:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px -20px rgba(15, 23, 42, 0.85);
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.75);
+      outline: none;
+    }
+
+    button.settings-btn:active {
+      transform: translateY(0);
+    }
+
+    button.settings-btn span[aria-hidden="true"] {
+      font-size: 1rem;
+    }
+
+    button.settings-btn:focus-visible {
       outline: 3px solid rgba(255, 255, 255, 0.6);
       outline-offset: 3px;
     }
@@ -332,6 +379,194 @@
       align-items: center;
     }
 
+    dialog {
+      width: min(720px, 92vw);
+      border: none;
+      border-radius: 24px;
+      padding: 0;
+      background: var(--color-surface);
+      color: var(--color-text);
+      box-shadow: 0 35px 65px -28px rgba(15, 23, 42, 0.55);
+    }
+
+    dialog::backdrop {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+    }
+
+    .settings-form {
+      display: flex;
+      flex-direction: column;
+      max-height: min(80vh, 760px);
+    }
+
+    .settings-header {
+      padding: 24px 28px 12px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .settings-header h2 {
+      margin: 0 0 6px;
+      font-size: 1.4rem;
+    }
+
+    .settings-header p {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    .settings-scroll {
+      padding: 24px 28px;
+      overflow-y: auto;
+      display: grid;
+      gap: 28px;
+    }
+
+    .settings-section {
+      display: grid;
+      gap: 16px;
+    }
+
+    .settings-section h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .settings-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .settings-field label span,
+    .settings-field > span {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .settings-field input,
+    .settings-field textarea,
+    .settings-field select {
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: rgba(37, 99, 235, 0.04);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .settings-field input:focus-visible,
+    .settings-field textarea:focus-visible,
+    .settings-field select:focus-visible {
+      outline: none;
+      border-color: rgba(37, 99, 235, 0.65);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+
+    .settings-field textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .settings-inline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .settings-checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.92rem;
+      color: var(--color-text);
+    }
+
+    .settings-checkbox input {
+      margin-top: 3px;
+    }
+
+    .settings-hint {
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .settings-footer {
+      padding: 18px 28px 24px;
+      border-top: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings-footer-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .btn-primary {
+      background: var(--color-accent);
+      color: #fff;
+      box-shadow: 0 12px 30px -18px rgba(37, 99, 235, 0.7);
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 36px -18px rgba(37, 99, 235, 0.75);
+      outline: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border-color: rgba(37, 99, 235, 0.35);
+      color: var(--color-accent);
+    }
+
+    .btn-secondary:hover,
+    .btn-secondary:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(37, 99, 235, 0.08);
+      border-color: rgba(37, 99, 235, 0.55);
+      outline: none;
+    }
+
+    .btn-danger {
+      background: rgba(248, 113, 113, 0.12);
+      color: #b91c1c;
+      border-color: rgba(248, 113, 113, 0.4);
+    }
+
+    .btn-danger:hover,
+    .btn-danger:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(248, 113, 113, 0.18);
+      border-color: rgba(248, 113, 113, 0.55);
+      outline: none;
+    }
+
     @media (max-width: 768px) {
       .hero__content {
         flex-direction: column;
@@ -342,13 +577,52 @@
         align-items: flex-start;
       }
 
+      .hero__buttons {
+        width: 100%;
+        align-items: stretch;
+      }
+
       button.refresh {
+        width: 100%;
+        justify-content: center;
+      }
+
+      button.settings-btn {
         width: 100%;
         justify-content: center;
       }
 
       .section__header {
         align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 600px) {
+      dialog {
+        width: 96vw;
+        border-radius: 18px;
+      }
+
+      .settings-header,
+      .settings-scroll,
+      .settings-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .settings-footer {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .settings-footer-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .settings-footer-actions .btn,
+      .settings-footer .btn-danger {
+        width: 100%;
       }
     }
 
@@ -370,10 +644,16 @@
         <p id="pageSubtitle" class="hero__subtitle">Greita neatidėliotinos pagalbos skyriaus darbo apžvalga be prisijungimo prie papildomų sistemų.</p>
       </div>
       <div class="hero__actions">
-        <button id="refreshBtn" type="button" class="refresh">
-          <span aria-hidden="true">⟳</span>
-          <span id="refreshText">Perkrauti duomenis</span>
-        </button>
+        <div class="hero__buttons">
+          <button id="openSettingsBtn" type="button" class="settings-btn" aria-haspopup="dialog" title="Atidaryti nustatymus (Ctrl+,)">
+            <span aria-hidden="true">⚙️</span>
+            <span>Nustatymai</span>
+          </button>
+          <button id="refreshBtn" type="button" class="refresh">
+            <span aria-hidden="true">⟳</span>
+            <span id="refreshText">Perkrauti duomenis</span>
+          </button>
+        </div>
         <p id="status" class="status" role="status" aria-live="polite">Kraunama...</p>
         <p id="statusNote" class="status-note" role="note" aria-live="polite" hidden></p>
       </div>
@@ -409,7 +689,7 @@
       </div>
     </section>
 
-    <section class="section" aria-labelledby="recentHeading">
+    <section class="section" aria-labelledby="recentHeading" data-section="recent">
       <div class="section__header">
         <div>
           <h2 id="recentHeading" class="section__title">Paskutinės 7 dienos</h2>
@@ -435,7 +715,7 @@
       </div>
     </section>
 
-    <section class="section" aria-labelledby="weeklyHeading">
+    <section class="section" aria-labelledby="weeklyHeading" data-section="weekly">
       <div class="section__header">
         <div>
           <h2 id="weeklyHeading" class="section__title">Savaitinė suvestinė</h2>
@@ -462,9 +742,176 @@
     </section>
   </main>
 
+  <dialog id="settingsDialog" aria-labelledby="settingsTitle">
+    <form method="dialog" id="settingsForm" class="settings-form">
+      <header class="settings-header">
+        <h2 id="settingsTitle">Skydelio nustatymai</h2>
+        <p>Suasmeninkite CSV laukus, skaičiavimo logiką ir ekrane rodomus tekstus.</p>
+      </header>
+      <div class="settings-scroll">
+        <section class="settings-section" aria-labelledby="settingsDataTitle">
+          <h3 id="settingsDataTitle">Duomenų šaltinis</h3>
+          <div class="settings-field">
+            <label for="settingsCsvUrl"><span>CSV nuoroda</span></label>
+            <input id="settingsCsvUrl" name="dataSource.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
+            <p class="settings-hint">Naudokite viešą „Publish to web → CSV“ nuorodą arba palikite tuščią, jei norite naudoti tik demonstracinius duomenis.</p>
+          </div>
+          <label class="settings-checkbox" for="settingsUseFallback">
+            <input id="settingsUseFallback" name="dataSource.useFallback" type="checkbox">
+            <span>Naudoti demonstracinius duomenis, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
+          </label>
+          <div class="settings-field">
+            <label for="settingsFallbackCsv"><span>Demonstracinis CSV</span></label>
+            <textarea id="settingsFallbackCsv" name="dataSource.fallbackCsv" spellcheck="false"></textarea>
+            <p class="settings-hint">Palikite tuščią, jei nereikia rezervinio rinkinio. Galite įklijuoti savo CSV iškarpą.</p>
+          </div>
+        </section>
+
+        <section class="settings-section" aria-labelledby="settingsCsvTitle">
+          <h3 id="settingsCsvTitle">CSV stulpelių atitikimas</h3>
+          <div class="settings-field">
+            <label for="settingsArrival"><span>Atvykimo data stulpelis</span></label>
+            <input id="settingsArrival" name="csv.arrival" type="text" placeholder="Atvykimo data">
+            <p class="settings-hint">Leidžiami keli pavadinimai, atskirkite kableliais arba | ženklu (pvz., <code>Atvykimo data|Arrival</code>).</p>
+          </div>
+          <div class="settings-field">
+            <label for="settingsDischarge"><span>Išrašymo data stulpelis</span></label>
+            <input id="settingsDischarge" name="csv.discharge" type="text" placeholder="Išrašymo data">
+          </div>
+          <div class="settings-field">
+            <label for="settingsDayNight"><span>Diena / naktis stulpelis</span></label>
+            <input id="settingsDayNight" name="csv.dayNight" type="text" placeholder="Diena/naktis">
+          </div>
+          <div class="settings-field">
+            <label for="settingsGmp"><span>GMP stulpelis</span></label>
+            <input id="settingsGmp" name="csv.gmp" type="text" placeholder="GMP">
+          </div>
+          <div class="settings-field">
+            <label for="settingsDepartment"><span>Hospitalizavimo stulpelis</span></label>
+            <input id="settingsDepartment" name="csv.department" type="text" placeholder="Nukreiptas į padalinį">
+            <p class="settings-hint">Jei paliksite tuščią, bus naudojamas numatytasis pavadinimas.</p>
+          </div>
+          <div class="settings-field">
+            <label for="settingsTrueValues"><span>Reikšmės, laikomos „taip“</span></label>
+            <input id="settingsTrueValues" name="csv.trueValues" type="text" placeholder="1,true,taip,yes">
+            <p class="settings-hint">Naudojama GMP laukui (ir kitiems „taip/ne“). Reikšmės automatiškai lyginamos be didžiųjų raidžių.</p>
+          </div>
+          <div class="settings-field">
+            <label for="settingsHospitalizedValues"><span>Hospitalizavimo reikšmės</span></label>
+            <input id="settingsHospitalizedValues" name="csv.hospitalizedValues" type="text" placeholder="stacionaras,skyrius,taip">
+            <p class="settings-hint">Jei paliksite tuščią, bus laikoma, kad bet kuri neužpildyta reikšmė reiškia išleidimą, o ne hospitalizaciją.</p>
+          </div>
+          <div class="settings-field">
+            <label for="settingsNightKeywords"><span>Nakties raktažodžiai</span></label>
+            <input id="settingsNightKeywords" name="csv.nightKeywords" type="text" placeholder="nakt">
+            <p class="settings-hint">Jei reikšmė stulpelyje turi bet kurį iš šių fragmentų, apsilankymas laikomas naktiniu.</p>
+          </div>
+          <div class="settings-field">
+            <label for="settingsDayKeywords"><span>Dienos / dieninės pamainos raktažodžiai</span></label>
+            <input id="settingsDayKeywords" name="csv.dayKeywords" type="text" placeholder="dien,ryt">
+          </div>
+        </section>
+
+        <section class="settings-section" aria-labelledby="settingsCalcTitle">
+          <h3 id="settingsCalcTitle">Skaičiavimo logika</h3>
+          <div class="settings-inline">
+            <div class="settings-field">
+              <label for="settingsWindowDays"><span>Analizuojamų dienų skaičius</span></label>
+              <input id="settingsWindowDays" name="calculations.windowDays" type="number" min="7" max="365" step="1">
+            </div>
+            <div class="settings-field">
+              <label for="settingsRecentDays"><span>Paskutinių dienų lentelė</span></label>
+              <input id="settingsRecentDays" name="calculations.recentDays" type="number" min="1" max="60" step="1">
+            </div>
+            <div class="settings-field">
+              <label for="settingsNightStart"><span>Nakties pradžia (val.)</span></label>
+              <input id="settingsNightStart" name="calculations.nightStartHour" type="number" min="0" max="23" step="1">
+            </div>
+            <div class="settings-field">
+              <label for="settingsNightEnd"><span>Nakties pabaiga (val.)</span></label>
+              <input id="settingsNightEnd" name="calculations.nightEndHour" type="number" min="0" max="23" step="1">
+            </div>
+          </div>
+          <p class="settings-hint">Naktis laikoma intervalas tarp pradžios ir pabaigos. Jei pradžia &gt; pabaiga, laikoma, kad intervalas pereina per vidurnaktį.</p>
+        </section>
+
+        <section class="settings-section" aria-labelledby="settingsOutputTitle">
+          <h3 id="settingsOutputTitle">Išvesties tekstai ir skyriai</h3>
+          <div class="settings-field">
+            <label for="settingsTitleText"><span>Pagrindinis pavadinimas</span></label>
+            <input id="settingsTitleText" name="output.title" type="text">
+          </div>
+          <div class="settings-field">
+            <label for="settingsSubtitleText"><span>Hero aprašymas</span></label>
+            <textarea id="settingsSubtitleText" name="output.subtitle" rows="2"></textarea>
+          </div>
+          <div class="settings-inline">
+            <div class="settings-field">
+              <label for="settingsKpiTitle"><span>KPI skyriaus pavadinimas</span></label>
+              <input id="settingsKpiTitle" name="output.kpiTitle" type="text">
+            </div>
+            <div class="settings-field">
+              <label for="settingsKpiSubtitle"><span>KPI skyriaus paantraštė</span></label>
+              <input id="settingsKpiSubtitle" name="output.kpiSubtitle" type="text">
+            </div>
+          </div>
+          <div class="settings-inline">
+            <div class="settings-field">
+              <label for="settingsChartsTitle"><span>Grafikų pavadinimas</span></label>
+              <input id="settingsChartsTitle" name="output.chartsTitle" type="text">
+            </div>
+            <div class="settings-field">
+              <label for="settingsChartsSubtitle"><span>Grafikų paantraštė</span></label>
+              <input id="settingsChartsSubtitle" name="output.chartsSubtitle" type="text">
+            </div>
+          </div>
+          <div class="settings-inline">
+            <div class="settings-field">
+              <label for="settingsRecentTitle"><span>„Paskutinės dienos“ pavadinimas</span></label>
+              <input id="settingsRecentTitle" name="output.recentTitle" type="text">
+            </div>
+            <div class="settings-field">
+              <label for="settingsRecentSubtitle"><span>„Paskutinės dienos“ paantraštė</span></label>
+              <input id="settingsRecentSubtitle" name="output.recentSubtitle" type="text">
+            </div>
+          </div>
+          <div class="settings-inline">
+            <div class="settings-field">
+              <label for="settingsWeeklyTitle"><span>Savaitinės suvestinės pavadinimas</span></label>
+              <input id="settingsWeeklyTitle" name="output.weeklyTitle" type="text">
+            </div>
+            <div class="settings-field">
+              <label for="settingsWeeklySubtitle"><span>Savaitinės suvestinės paantraštė</span></label>
+              <input id="settingsWeeklySubtitle" name="output.weeklySubtitle" type="text">
+            </div>
+          </div>
+          <div class="settings-field">
+            <label for="settingsFooterSource"><span>Apatinės eilutės tekstas</span></label>
+            <input id="settingsFooterSource" name="output.footerSource" type="text" placeholder="Duomenys: ...">
+          </div>
+          <label class="settings-checkbox" for="settingsShowRecent">
+            <input id="settingsShowRecent" name="output.showRecent" type="checkbox">
+            <span>Rodyti „Paskutinės dienos“ lentelę.</span>
+          </label>
+          <label class="settings-checkbox" for="settingsShowWeekly">
+            <input id="settingsShowWeekly" name="output.showWeekly" type="checkbox">
+            <span>Rodyti „Savaitinė suvestinė“ lentelę.</span>
+          </label>
+        </section>
+      </div>
+      <footer class="settings-footer">
+        <button type="button" id="resetSettingsBtn" class="btn btn-danger">Atstatyti numatytuosius</button>
+        <div class="settings-footer-actions">
+          <button type="button" id="cancelSettingsBtn" class="btn btn-secondary">Atšaukti</button>
+          <button type="submit" class="btn btn-primary">Išsaugoti</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
   <footer>
     <div class="container footer__meta">
-      <span>Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).</span>
+      <span id="footerSource">Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).</span>
       <span id="footerUpdated">Atnaujinta dabar</span>
     </div>
   </footer>
@@ -503,19 +950,9 @@
     // Iškart inicijuojame įkėlimą, kad biblioteka būtų paruošta, kai prireiks piešti grafikus.
     loadChartJs();
     /**
-     * Pagrindinės duomenų konfigūracijos: nuotolinis CSV adresas ir vietinis demonstracinis rinkinys.
-     * Jei norite naudoti kitą Google Sheet, pakeiskite `url` reikšmę (privaloma „Publish to web → CSV“ nuoroda).
+     * Pagrindinė demonstracinė duomenų kopija, naudojama kaip rezervas, jei nepavyksta pasiekti nuotolinio CSV.
      */
-    const DATA_SOURCE = {
-      url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEM0XB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv',
-      requiredColumns: [
-        'Atvykimo data',
-        'Išrašymo data',
-        'Diena/naktis',
-        'GMP',
-        'Nukreiptas į padalinį',
-      ],
-      fallbackCsv: `Atvykimo data,Išrašymo data,Diena/naktis,GMP,Nukreiptas į padalinį
+    const DEFAULT_DEMO_CSV = `Atvykimo data,Išrašymo data,Diena/naktis,GMP,Nukreiptas į padalinį
 2024-02-01T07:15:00+02:00,2024-02-01T10:45:00+02:00,Diena,TAIP,Chirurgija
 2024-02-01T13:20:00+02:00,2024-02-01T16:00:00+02:00,Diena,NE,
 2024-02-01T21:10:00+02:00,2024-02-02T00:30:00+02:00,Naktis,TAIP,Traumatologija
@@ -532,8 +969,7 @@
 2024-02-07T14:10:00+02:00,2024-02-07T18:55:00+02:00,Diena,NE,
 2024-02-08T05:50:00+02:00,2024-02-08T09:15:00+02:00,Rytas,TAIP,
 2024-02-08T19:30:00+02:00,2024-02-08T23:05:00+02:00,Vakare,NE,
-2024-02-09T23:10:00+02:00,2024-02-10T02:20:00+02:00,Naktis,TAIP,Traumatologija`,
-    };
+2024-02-09T23:10:00+02:00,2024-02-10T02:20:00+02:00,Naktis,TAIP,Traumatologija`;
     /**
      * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
      */
@@ -584,6 +1020,50 @@
       },
     };
 
+    const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
+    const DEFAULT_FOOTER_SOURCE = 'Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).';
+    const DEFAULT_SETTINGS = {
+      dataSource: {
+        url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEM0XB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv',
+        useFallback: true,
+        fallbackCsv: DEFAULT_DEMO_CSV,
+      },
+      csv: {
+        arrival: 'Atvykimo data',
+        discharge: 'Išrašymo data',
+        dayNight: 'Diena/naktis',
+        gmp: 'GMP',
+        department: 'Nukreiptas į padalinį',
+        trueValues: '1,true,taip,t,yes,y',
+        hospitalizedValues: '',
+        nightKeywords: 'nakt,night',
+        dayKeywords: 'dien,ryt,vak,day',
+      },
+      calculations: {
+        windowDays: 30,
+        recentDays: 7,
+        nightStartHour: 20,
+        nightEndHour: 7,
+      },
+      output: {
+        title: TEXT.title,
+        subtitle: TEXT.subtitle,
+        kpiTitle: TEXT.kpis.title,
+        kpiSubtitle: TEXT.kpis.subtitle,
+        chartsTitle: TEXT.charts.title,
+        chartsSubtitle: TEXT.charts.subtitle,
+        recentTitle: TEXT.recent.title,
+        recentSubtitle: TEXT.recent.subtitle,
+        weeklyTitle: TEXT.weekly.title,
+        weeklySubtitle: TEXT.weekly.subtitle,
+        footerSource: DEFAULT_FOOTER_SOURCE,
+        showRecent: true,
+        showWeekly: true,
+      },
+    };
+
+    let settings = loadSettings();
+
     // Formatai datoms ir skaičiams (LT locale).
     const numberFormatter = new Intl.NumberFormat('lt-LT');
     const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -602,6 +1082,7 @@
       status: document.getElementById('status'),
       statusNote: document.getElementById('statusNote'),
       footerUpdated: document.getElementById('footerUpdated'),
+      footerSource: document.getElementById('footerSource'),
       kpiHeading: document.getElementById('kpiHeading'),
       kpiSubtitle: document.getElementById('kpiSubtitle'),
       kpiGrid: document.getElementById('kpiGrid'),
@@ -617,7 +1098,494 @@
       weeklySubtitle: document.getElementById('weeklySubtitle'),
       weeklyCaption: document.getElementById('weeklyCaption'),
       weeklyTable: document.getElementById('weeklyTable'),
+      openSettingsBtn: document.getElementById('openSettingsBtn'),
+      settingsDialog: document.getElementById('settingsDialog'),
+      settingsForm: document.getElementById('settingsForm'),
+      resetSettingsBtn: document.getElementById('resetSettingsBtn'),
+      cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
+      recentSection: document.querySelector('[data-section="recent"]'),
+      weeklySection: document.querySelector('[data-section="weekly"]'),
     };
+
+    function cloneSettings(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function deepMerge(target, source) {
+      if (!source || typeof source !== 'object') {
+        return target;
+      }
+      Object.entries(source).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          target[key] = value.slice();
+        } else if (value && typeof value === 'object') {
+          if (!target[key] || typeof target[key] !== 'object') {
+            target[key] = {};
+          }
+          deepMerge(target[key], value);
+        } else if (value !== undefined) {
+          target[key] = value;
+        }
+      });
+      return target;
+    }
+
+    function clampNumber(value, min, max, fallback) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) {
+        let result = parsed;
+        if (Number.isFinite(min) && result < min) {
+          result = min;
+        }
+        if (Number.isFinite(max) && result > max) {
+          result = max;
+        }
+        return result;
+      }
+      return fallback;
+    }
+
+    function normalizeSettings(rawSettings) {
+      const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), rawSettings ?? {});
+      merged.dataSource.url = (merged.dataSource.url ?? '').trim();
+      merged.dataSource.useFallback = Boolean(merged.dataSource.useFallback);
+      merged.dataSource.fallbackCsv = typeof merged.dataSource.fallbackCsv === 'string'
+        ? merged.dataSource.fallbackCsv
+        : DEFAULT_SETTINGS.dataSource.fallbackCsv;
+
+      ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
+        .forEach((key) => {
+          merged.csv[key] = merged.csv[key] != null
+            ? String(merged.csv[key])
+            : String(DEFAULT_SETTINGS.csv[key] ?? '');
+        });
+
+      merged.calculations.windowDays = clampNumber(
+        merged.calculations.windowDays,
+        7,
+        365,
+        DEFAULT_SETTINGS.calculations.windowDays,
+      );
+      merged.calculations.recentDays = clampNumber(
+        merged.calculations.recentDays,
+        1,
+        60,
+        DEFAULT_SETTINGS.calculations.recentDays,
+      );
+      merged.calculations.nightStartHour = clampNumber(
+        merged.calculations.nightStartHour,
+        0,
+        23,
+        DEFAULT_SETTINGS.calculations.nightStartHour,
+      );
+      merged.calculations.nightEndHour = clampNumber(
+        merged.calculations.nightEndHour,
+        0,
+        23,
+        DEFAULT_SETTINGS.calculations.nightEndHour,
+      );
+
+      merged.output.title = merged.output.title != null ? String(merged.output.title) : DEFAULT_SETTINGS.output.title;
+      merged.output.subtitle = merged.output.subtitle != null ? String(merged.output.subtitle) : DEFAULT_SETTINGS.output.subtitle;
+      merged.output.kpiTitle = merged.output.kpiTitle != null ? String(merged.output.kpiTitle) : DEFAULT_SETTINGS.output.kpiTitle;
+      merged.output.kpiSubtitle = merged.output.kpiSubtitle != null ? String(merged.output.kpiSubtitle) : DEFAULT_SETTINGS.output.kpiSubtitle;
+      merged.output.chartsTitle = merged.output.chartsTitle != null ? String(merged.output.chartsTitle) : DEFAULT_SETTINGS.output.chartsTitle;
+      merged.output.chartsSubtitle = merged.output.chartsSubtitle != null ? String(merged.output.chartsSubtitle) : DEFAULT_SETTINGS.output.chartsSubtitle;
+      merged.output.recentTitle = merged.output.recentTitle != null ? String(merged.output.recentTitle) : DEFAULT_SETTINGS.output.recentTitle;
+      merged.output.recentSubtitle = merged.output.recentSubtitle != null ? String(merged.output.recentSubtitle) : DEFAULT_SETTINGS.output.recentSubtitle;
+      merged.output.weeklyTitle = merged.output.weeklyTitle != null ? String(merged.output.weeklyTitle) : DEFAULT_SETTINGS.output.weeklyTitle;
+      merged.output.weeklySubtitle = merged.output.weeklySubtitle != null ? String(merged.output.weeklySubtitle) : DEFAULT_SETTINGS.output.weeklySubtitle;
+      merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
+      merged.output.showRecent = Boolean(merged.output.showRecent);
+      merged.output.showWeekly = Boolean(merged.output.showWeekly);
+
+      return merged;
+    }
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (!raw) {
+          return normalizeSettings({});
+        }
+        const parsed = JSON.parse(raw);
+        return normalizeSettings(parsed);
+      } catch (error) {
+        console.warn('Nepavyko įkelti nustatymų, naudojami numatytieji.', error);
+        return normalizeSettings({});
+      }
+    }
+
+    function saveSettings(currentSettings) {
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings));
+      } catch (error) {
+        console.warn('Nepavyko išsaugoti nustatymų.', error);
+      }
+    }
+
+    function applySettingsToText() {
+      TEXT.title = settings.output.title || DEFAULT_SETTINGS.output.title;
+      TEXT.subtitle = settings.output.subtitle || DEFAULT_SETTINGS.output.subtitle;
+      TEXT.kpis.title = settings.output.kpiTitle || DEFAULT_SETTINGS.output.kpiTitle;
+      TEXT.kpis.subtitle = settings.output.kpiSubtitle || DEFAULT_SETTINGS.output.kpiSubtitle;
+      TEXT.charts.title = settings.output.chartsTitle || DEFAULT_SETTINGS.output.chartsTitle;
+      TEXT.charts.subtitle = settings.output.chartsSubtitle || DEFAULT_SETTINGS.output.chartsSubtitle;
+      TEXT.recent.title = settings.output.recentTitle || DEFAULT_SETTINGS.output.recentTitle;
+      TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
+      TEXT.weekly.title = settings.output.weeklyTitle || DEFAULT_SETTINGS.output.weeklyTitle;
+      TEXT.weekly.subtitle = settings.output.weeklySubtitle || DEFAULT_SETTINGS.output.weeklySubtitle;
+    }
+
+    function applyFooterSource() {
+      if (selectors.footerSource) {
+        selectors.footerSource.textContent = settings.output.footerSource || DEFAULT_FOOTER_SOURCE;
+      }
+    }
+
+    function toggleSectionVisibility(element, isVisible) {
+      if (!element) {
+        return;
+      }
+      if (isVisible) {
+        element.removeAttribute('hidden');
+        element.removeAttribute('aria-hidden');
+      } else {
+        element.setAttribute('hidden', 'hidden');
+        element.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    function applySectionVisibility() {
+      toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
+      toggleSectionVisibility(selectors.weeklySection, settings.output.showWeekly);
+    }
+
+    function parseCandidateList(value, fallback = '') {
+      const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
+      return base
+        .replace(/\r\n/g, '\n')
+        .split(/[\n,|;]+/)
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+    }
+
+    function toHeaderCandidates(value, fallback) {
+      return parseCandidateList(value, fallback);
+    }
+
+    function toNormalizedList(value, fallback) {
+      return parseCandidateList(value, fallback).map((token) => token.toLowerCase());
+    }
+
+    function buildCsvRuntime(csvSettings) {
+      const fallback = DEFAULT_SETTINGS.csv;
+      const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
+      const departmentHeaders = departmentHasValue
+        ? toHeaderCandidates(csvSettings.department, '')
+        : [];
+
+      const runtime = {
+        arrivalHeaders: toHeaderCandidates(csvSettings.arrival, fallback.arrival),
+        dischargeHeaders: toHeaderCandidates(csvSettings.discharge, fallback.discharge),
+        dayNightHeaders: toHeaderCandidates(csvSettings.dayNight, fallback.dayNight),
+        gmpHeaders: toHeaderCandidates(csvSettings.gmp, fallback.gmp),
+        departmentHeaders,
+        trueValues: toNormalizedList(csvSettings.trueValues, fallback.trueValues),
+        hospitalizedValues: toNormalizedList(csvSettings.hospitalizedValues, fallback.hospitalizedValues),
+        nightKeywords: toNormalizedList(csvSettings.nightKeywords, fallback.nightKeywords),
+        dayKeywords: toNormalizedList(csvSettings.dayKeywords, fallback.dayKeywords),
+        labels: {
+          arrival: csvSettings.arrival || fallback.arrival,
+          discharge: csvSettings.discharge || fallback.discharge,
+          dayNight: csvSettings.dayNight || fallback.dayNight,
+          gmp: csvSettings.gmp || fallback.gmp,
+          department: departmentHasValue ? csvSettings.department : fallback.department,
+        },
+      };
+      runtime.hasHospitalizedValues = runtime.hospitalizedValues.length > 0;
+      runtime.requireDepartment = departmentHasValue;
+      return runtime;
+    }
+
+    function resolveColumnIndex(headerNormalized, candidates) {
+      if (!Array.isArray(candidates) || !candidates.length) {
+        return -1;
+      }
+      for (const candidate of candidates) {
+        const trimmed = candidate.trim();
+        const match = headerNormalized.find((column) => column.original === trimmed);
+        if (match) {
+          return match.index;
+        }
+      }
+      for (const candidate of candidates) {
+        const normalized = candidate.trim().toLowerCase();
+        const match = headerNormalized.find((column) => column.normalized === normalized);
+        if (match) {
+          return match.index;
+        }
+      }
+      for (const candidate of candidates) {
+        const normalized = candidate.trim().toLowerCase();
+        const match = headerNormalized.find((column) => column.normalized.includes(normalized));
+        if (match) {
+          return match.index;
+        }
+      }
+      return -1;
+    }
+
+    function matchesWildcard(normalized, candidate) {
+      if (!candidate) {
+        return false;
+      }
+      if (candidate === '*') {
+        return normalized.length > 0;
+      }
+      if (!candidate.includes('*')) {
+        return normalized === candidate;
+      }
+      const parts = candidate.split('*').filter((part) => part.length > 0);
+      if (!parts.length) {
+        return normalized.length > 0;
+      }
+      return parts.every((fragment) => normalized.includes(fragment));
+    }
+
+    function detectHospitalized(value, csvRuntime) {
+      const raw = value != null ? String(value).trim() : '';
+      if (!raw) {
+        return false;
+      }
+      if (!csvRuntime.hasHospitalizedValues) {
+        return true;
+      }
+      const normalized = raw.toLowerCase();
+      return csvRuntime.hospitalizedValues.some((candidate) => matchesWildcard(normalized, candidate));
+    }
+
+    function getField(form, name) {
+      if (!form) {
+        return null;
+      }
+      const node = form.elements.namedItem(name);
+      if (!node) {
+        return null;
+      }
+      if (typeof RadioNodeList !== 'undefined' && node instanceof RadioNodeList) {
+        return node[0] ?? null;
+      }
+      return node;
+    }
+
+    function populateSettingsForm() {
+      const form = selectors.settingsForm;
+      if (!form) {
+        return;
+      }
+      const assign = (name, value) => {
+        const field = getField(form, name);
+        if (!field) {
+          return;
+        }
+        if ('type' in field && field.type === 'checkbox') {
+          field.checked = Boolean(value);
+        } else if ('value' in field) {
+          field.value = value ?? '';
+        }
+      };
+
+      assign('dataSource.url', settings.dataSource.url);
+      assign('dataSource.useFallback', settings.dataSource.useFallback);
+      assign('dataSource.fallbackCsv', settings.dataSource.fallbackCsv);
+
+      assign('csv.arrival', settings.csv.arrival);
+      assign('csv.discharge', settings.csv.discharge);
+      assign('csv.dayNight', settings.csv.dayNight);
+      assign('csv.gmp', settings.csv.gmp);
+      assign('csv.department', settings.csv.department);
+      assign('csv.trueValues', settings.csv.trueValues);
+      assign('csv.hospitalizedValues', settings.csv.hospitalizedValues);
+      assign('csv.nightKeywords', settings.csv.nightKeywords);
+      assign('csv.dayKeywords', settings.csv.dayKeywords);
+
+      assign('calculations.windowDays', settings.calculations.windowDays);
+      assign('calculations.recentDays', settings.calculations.recentDays);
+      assign('calculations.nightStartHour', settings.calculations.nightStartHour);
+      assign('calculations.nightEndHour', settings.calculations.nightEndHour);
+
+      assign('output.title', settings.output.title);
+      assign('output.subtitle', settings.output.subtitle);
+      assign('output.kpiTitle', settings.output.kpiTitle);
+      assign('output.kpiSubtitle', settings.output.kpiSubtitle);
+      assign('output.chartsTitle', settings.output.chartsTitle);
+      assign('output.chartsSubtitle', settings.output.chartsSubtitle);
+      assign('output.recentTitle', settings.output.recentTitle);
+      assign('output.recentSubtitle', settings.output.recentSubtitle);
+      assign('output.weeklyTitle', settings.output.weeklyTitle);
+      assign('output.weeklySubtitle', settings.output.weeklySubtitle);
+      assign('output.footerSource', settings.output.footerSource);
+      assign('output.showRecent', settings.output.showRecent);
+      assign('output.showWeekly', settings.output.showWeekly);
+    }
+
+    function extractSettingsFromForm(form) {
+      const result = {
+        dataSource: {
+          url: '',
+          useFallback: false,
+          fallbackCsv: '',
+        },
+        csv: {
+          arrival: '',
+          discharge: '',
+          dayNight: '',
+          gmp: '',
+          department: '',
+          trueValues: '',
+          hospitalizedValues: '',
+          nightKeywords: '',
+          dayKeywords: '',
+        },
+        calculations: {
+          windowDays: '',
+          recentDays: '',
+          nightStartHour: '',
+          nightEndHour: '',
+        },
+        output: {
+          title: '',
+          subtitle: '',
+          kpiTitle: '',
+          kpiSubtitle: '',
+          chartsTitle: '',
+          chartsSubtitle: '',
+          recentTitle: '',
+          recentSubtitle: '',
+          weeklyTitle: '',
+          weeklySubtitle: '',
+          footerSource: '',
+          showRecent: false,
+          showWeekly: false,
+        },
+      };
+
+      const readText = (name) => {
+        const field = getField(form, name);
+        if (!field || !('value' in field)) {
+          return '';
+        }
+        return String(field.value ?? '');
+      };
+
+      const readCheckbox = (name) => {
+        const field = getField(form, name);
+        if (!field || !('type' in field) || field.type !== 'checkbox') {
+          return false;
+        }
+        return Boolean(field.checked);
+      };
+
+      result.dataSource.url = readText('dataSource.url').trim();
+      result.dataSource.useFallback = readCheckbox('dataSource.useFallback');
+      result.dataSource.fallbackCsv = readText('dataSource.fallbackCsv').trim();
+
+      result.csv.arrival = readText('csv.arrival').trim();
+      result.csv.discharge = readText('csv.discharge').trim();
+      result.csv.dayNight = readText('csv.dayNight').trim();
+      result.csv.gmp = readText('csv.gmp').trim();
+      result.csv.department = readText('csv.department').trim();
+      result.csv.trueValues = readText('csv.trueValues').trim();
+      result.csv.hospitalizedValues = readText('csv.hospitalizedValues').trim();
+      result.csv.nightKeywords = readText('csv.nightKeywords').trim();
+      result.csv.dayKeywords = readText('csv.dayKeywords').trim();
+
+      result.calculations.windowDays = readText('calculations.windowDays').trim();
+      result.calculations.recentDays = readText('calculations.recentDays').trim();
+      result.calculations.nightStartHour = readText('calculations.nightStartHour').trim();
+      result.calculations.nightEndHour = readText('calculations.nightEndHour').trim();
+
+      result.output.title = readText('output.title').trim();
+      result.output.subtitle = readText('output.subtitle').trim();
+      result.output.kpiTitle = readText('output.kpiTitle').trim();
+      result.output.kpiSubtitle = readText('output.kpiSubtitle').trim();
+      result.output.chartsTitle = readText('output.chartsTitle').trim();
+      result.output.chartsSubtitle = readText('output.chartsSubtitle').trim();
+      result.output.recentTitle = readText('output.recentTitle').trim();
+      result.output.recentSubtitle = readText('output.recentSubtitle').trim();
+      result.output.weeklyTitle = readText('output.weeklyTitle').trim();
+      result.output.weeklySubtitle = readText('output.weeklySubtitle').trim();
+      result.output.footerSource = readText('output.footerSource').trim();
+      result.output.showRecent = readCheckbox('output.showRecent');
+      result.output.showWeekly = readCheckbox('output.showWeekly');
+
+      return result;
+    }
+
+    function openSettingsDialog() {
+      if (!selectors.settingsDialog) {
+        return;
+      }
+      if (selectors.settingsDialog.hasAttribute('open')) {
+        return;
+      }
+      populateSettingsForm();
+      if (typeof selectors.settingsDialog.showModal === 'function') {
+        selectors.settingsDialog.showModal();
+      } else {
+        selectors.settingsDialog.setAttribute('open', 'open');
+      }
+      const focusable = selectors.settingsForm?.querySelector('input, textarea, select, button');
+      if (focusable && typeof focusable.focus === 'function') {
+        focusable.focus();
+      }
+    }
+
+    function closeSettingsDialog() {
+      if (!selectors.settingsDialog) {
+        return;
+      }
+      if (typeof selectors.settingsDialog.close === 'function') {
+        selectors.settingsDialog.close();
+      } else {
+        selectors.settingsDialog.removeAttribute('open');
+      }
+      if (selectors.openSettingsBtn && typeof selectors.openSettingsBtn.focus === 'function') {
+        selectors.openSettingsBtn.focus();
+      }
+    }
+
+    function handleSettingsSubmit(event) {
+      event.preventDefault();
+      if (!selectors.settingsForm) {
+        return;
+      }
+      const extracted = extractSettingsFromForm(selectors.settingsForm);
+      settings = normalizeSettings(extracted);
+      saveSettings(settings);
+      applySettingsToText();
+      applyTextContent();
+      applyFooterSource();
+      applySectionVisibility();
+      closeSettingsDialog();
+      loadDashboard();
+    }
+
+    function handleResetSettings() {
+      const confirmed = window.confirm('Atstatyti numatytuosius nustatymus?');
+      if (!confirmed) {
+        return;
+      }
+      settings = normalizeSettings({});
+      saveSettings(settings);
+      applySettingsToText();
+      applyTextContent();
+      applyFooterSource();
+      applySectionVisibility();
+      populateSettingsForm();
+      loadDashboard();
+    }
 
     /**
      * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
@@ -867,32 +1835,50 @@
       return new Date(utc);
     }
 
-    function parseBoolean(value) {
+    function parseBoolean(value, trueValues) {
       if (value == null) {
         return false;
       }
       const normalized = String(value).trim().toLowerCase();
-      return ['1', 'true', 'taip', 't', 'yes', 'y'].includes(normalized);
+      if (!normalized) {
+        return false;
+      }
+      const candidates = Array.isArray(trueValues) && trueValues.length
+        ? trueValues
+        : toNormalizedList(DEFAULT_SETTINGS.csv.trueValues, DEFAULT_SETTINGS.csv.trueValues);
+      return candidates.some((candidate) => matchesWildcard(normalized, candidate));
     }
 
-    function detectNight(dayNightValue, arrivalDate) {
-      if (dayNightValue) {
-        const normalized = String(dayNightValue).trim().toLowerCase();
-        if (normalized.includes('nakt')) {
+    function detectNight(dayNightValue, arrivalDate, csvRuntime, calculations) {
+      const value = dayNightValue != null ? String(dayNightValue).trim().toLowerCase() : '';
+      if (value) {
+        if (csvRuntime.nightKeywords.some((keyword) => keyword && value.includes(keyword))) {
           return true;
         }
-        if (normalized.includes('dien')) {
+        if (csvRuntime.dayKeywords.some((keyword) => keyword && value.includes(keyword))) {
           return false;
         }
       }
       if (arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime())) {
+        const start = Number.isFinite(Number(calculations.nightStartHour))
+          ? Number(calculations.nightStartHour)
+          : DEFAULT_SETTINGS.calculations.nightStartHour;
+        const end = Number.isFinite(Number(calculations.nightEndHour))
+          ? Number(calculations.nightEndHour)
+          : DEFAULT_SETTINGS.calculations.nightEndHour;
         const hour = arrivalDate.getHours();
-        return hour >= 20 || hour < 7;
+        if (start === end) {
+          return hour === start;
+        }
+        if (start < end) {
+          return hour >= start && hour < end;
+        }
+        return hour >= start || hour < end;
       }
       return false;
     }
 
-    function mapRow(header, cols, delimiter) {
+    function mapRow(header, cols, delimiter, indices, csvRuntime, calculations) {
       const normalized = [...cols];
       if (normalized.length < header.length) {
         normalized.push(...Array(header.length - normalized.length).fill(''));
@@ -904,11 +1890,16 @@
       header.forEach((column, idx) => {
         entry[column] = normalized[idx] != null ? String(normalized[idx]).trim() : '';
       });
-      entry.arrival = parseDate(entry['Atvykimo data']);
-      entry.discharge = parseDate(entry['Išrašymo data']);
-      entry.night = detectNight(entry['Diena/naktis'], entry.arrival);
-      entry.ems = parseBoolean(entry['GMP']);
-      entry.hospitalized = Boolean(entry['Nukreiptas į padalinį'] && entry['Nukreiptas į padalinį'].trim());
+      const arrivalRaw = normalized[indices.arrival] ?? '';
+      const dischargeRaw = normalized[indices.discharge] ?? '';
+      const dayNightRaw = normalized[indices.dayNight] ?? '';
+      const gmpRaw = normalized[indices.gmp] ?? '';
+      const departmentRaw = normalized[indices.department] ?? '';
+      entry.arrival = parseDate(arrivalRaw);
+      entry.discharge = parseDate(dischargeRaw);
+      entry.night = detectNight(dayNightRaw, entry.arrival, csvRuntime, calculations);
+      entry.ems = parseBoolean(gmpRaw, csvRuntime.trueValues);
+      entry.hospitalized = detectHospitalized(departmentRaw, csvRuntime);
       return entry;
     }
 
@@ -921,23 +1912,52 @@
         throw new Error('CSV failas tuščias.');
       }
       const header = rows[0].map((cell) => String(cell ?? '').trim());
-      const missing = DATA_SOURCE.requiredColumns.filter((column) => !header.includes(column));
+      const headerNormalized = header.map((column, index) => ({
+        original: column,
+        normalized: column.toLowerCase(),
+        index,
+      }));
+      const csvRuntime = buildCsvRuntime(settings.csv);
+      const columnIndices = {
+        arrival: resolveColumnIndex(headerNormalized, csvRuntime.arrivalHeaders),
+        discharge: resolveColumnIndex(headerNormalized, csvRuntime.dischargeHeaders),
+        dayNight: resolveColumnIndex(headerNormalized, csvRuntime.dayNightHeaders),
+        gmp: resolveColumnIndex(headerNormalized, csvRuntime.gmpHeaders),
+        department: resolveColumnIndex(headerNormalized, csvRuntime.departmentHeaders),
+      };
+      const missing = Object.entries(columnIndices)
+        .filter(([key, index]) => {
+          if (index >= 0) {
+            return false;
+          }
+          if (key === 'department' && !csvRuntime.requireDepartment) {
+            return false;
+          }
+          return true;
+        })
+        .map(([key]) => csvRuntime.labels[key]);
       if (missing.length) {
-        throw new Error(`CSV faile trūksta laukų: ${missing.join(', ')}`);
+        throw new Error(`CSV faile nerasti stulpeliai: ${missing.join(', ')}`);
       }
       const dataRows = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
-      return dataRows.map((cols) => mapRow(header, cols, delimiter));
+      return dataRows.map((cols) => mapRow(header, cols, delimiter, columnIndices, csvRuntime, settings.calculations));
     }
 
     /**
      * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio) su demonstraciniu rezervu.
      */
     async function fetchData() {
-      const { url, fallbackCsv } = DATA_SOURCE;
+      const { url, fallbackCsv, useFallback } = settings.dataSource;
+      const fallbackContent = useFallback ? fallbackCsv : '';
       if (!url) {
-        dashboardState.usingFallback = true;
+        if (fallbackContent) {
+          dashboardState.usingFallback = true;
+          dashboardState.lastErrorMessage = 'Nenurodytas duomenų URL.';
+          return transformCsv(fallbackContent);
+        }
+        dashboardState.usingFallback = false;
         dashboardState.lastErrorMessage = 'Nenurodytas duomenų URL.';
-        return transformCsv(fallbackCsv);
+        throw new Error('Nenurodytas duomenų URL.');
       }
       try {
         const csvText = await downloadCsv(url);
@@ -948,9 +1968,9 @@
       } catch (error) {
         console.error('Nepavyko atsisiųsti CSV duomenų:', error);
         dashboardState.lastErrorMessage = describeError(error);
-        if (fallbackCsv) {
+        if (fallbackContent) {
           try {
-            const dataset = transformCsv(fallbackCsv);
+            const dataset = transformCsv(fallbackContent);
             dashboardState.usingFallback = true;
             return dataset;
           } catch (fallbackError) {
@@ -1306,12 +2326,19 @@
         setStatus('loading');
         const rawData = await fetchData();
         const dailyStats = computeDailyStats(rawData);
-        const last30DailyStats = filterDailyStatsByWindow(dailyStats, 30);
-        const recentDailyStats = filterDailyStatsByWindow(last30DailyStats, 7);
-        renderKpis(last30DailyStats);
-        await renderCharts(last30DailyStats);
+        const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
+          ? Number(settings.calculations.windowDays)
+          : DEFAULT_SETTINGS.calculations.windowDays;
+        const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
+        const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
+          ? Number(settings.calculations.recentDays)
+          : DEFAULT_SETTINGS.calculations.recentDays;
+        const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
+        const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
+        renderKpis(lastWindowDailyStats);
+        await renderCharts(lastWindowDailyStats);
         renderRecentTable(recentDailyStats);
-        const weeklyStats = computeWeeklyStats(last30DailyStats);
+        const weeklyStats = computeWeeklyStats(lastWindowDailyStats);
         renderWeeklyTable(weeklyStats);
         setStatus('success');
       } catch (error) {
@@ -1323,11 +2350,58 @@
       }
     }
 
+    applySettingsToText();
     applyTextContent();
+    applyFooterSource();
+    applySectionVisibility();
+    populateSettingsForm();
+
     loadDashboard();
 
-    document.getElementById('refreshBtn').addEventListener('click', () => {
-      loadDashboard();
+    const refreshButton = document.getElementById('refreshBtn');
+    if (refreshButton) {
+      refreshButton.addEventListener('click', () => {
+        loadDashboard();
+      });
+    }
+
+    if (selectors.openSettingsBtn) {
+      selectors.openSettingsBtn.addEventListener('click', () => {
+        openSettingsDialog();
+      });
+    }
+
+    if (selectors.settingsForm) {
+      selectors.settingsForm.addEventListener('submit', handleSettingsSubmit);
+    }
+
+    if (selectors.resetSettingsBtn) {
+      selectors.resetSettingsBtn.addEventListener('click', handleResetSettings);
+    }
+
+    if (selectors.cancelSettingsBtn) {
+      selectors.cancelSettingsBtn.addEventListener('click', () => {
+        closeSettingsDialog();
+      });
+    }
+
+    if (selectors.settingsDialog) {
+      selectors.settingsDialog.addEventListener('cancel', (event) => {
+        event.preventDefault();
+        closeSettingsDialog();
+      });
+      selectors.settingsDialog.addEventListener('click', (event) => {
+        if (event.target === selectors.settingsDialog) {
+          closeSettingsDialog();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === ',') {
+        event.preventDefault();
+        openSettingsDialog();
+      }
     });
   </script>
 </body>
