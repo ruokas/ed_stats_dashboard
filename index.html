@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Skubios pagalbos statistikos skydelis</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-5eX+8F2cwr6jciJ6TP2PzefDs2fzGEylh4G6dkprdFMn/hTyBC0bY4Z1cdq9VHtV" crossorigin="anonymous"></script>
   <style>
     :root {
       --color-bg: #f4f7fb;
@@ -416,6 +415,15 @@
   </footer>
 
   <script type="module">
+    const chartJsPromise = import('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.esm.js')
+      .then((module) => {
+        module.Chart.register(...module.registerables);
+        return module.Chart;
+      })
+      .catch((error) => {
+        console.error('Nepavyko įkelti Chart.js modulio:', error);
+        return null;
+      });
     /**
      * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
      */
@@ -685,7 +693,11 @@
       });
     }
 
-    function renderCharts(dailyStats) {
+    async function renderCharts(dailyStats) {
+      const Chart = await chartJsPromise;
+      if (!Chart) {
+        throw new Error('Chart.js biblioteka nepasiekiama');
+      }
       const rootStyles = getComputedStyle(document.documentElement);
       const accent = rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb';
       const accentSoft = rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)';
@@ -844,7 +856,7 @@
         const rawData = await fetchData();
         const dailyStats = computeDailyStats(rawData);
         renderKpis(dailyStats);
-        renderCharts(dailyStats);
+        await renderCharts(dailyStats);
         const weeklyStats = computeWeeklyStats(dailyStats);
         renderWeeklyTable(weeklyStats);
         setStatus('success');
