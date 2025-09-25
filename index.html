@@ -310,9 +310,16 @@
       color: var(--color-text-muted);
     }
 
-    canvas {
+    /* Fiksuotas grafiko aukštis, kad Chart.js neplėstų kanvos – keiskite jei reikia daugiau vietos. */
+    .chart-card canvas {
       width: 100% !important;
-      height: auto !important;
+      height: 320px !important;
+    }
+
+    @media (max-width: 768px) {
+      .chart-card canvas {
+        height: 260px !important;
+      }
     }
 
     .table-wrapper {
