@@ -15,6 +15,8 @@
       --color-accent: #2563eb;
       --color-accent-soft: rgba(37, 99, 235, 0.12);
       --color-success: #16a34a;
+      --color-weekend: #f97316;
+      --color-weekend-soft: rgba(249, 115, 22, 0.2);
       --shadow-elevated: 0 20px 40px -24px rgba(15, 23, 42, 0.45);
       font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -567,6 +569,12 @@
     th {
       font-weight: 600;
       color: var(--color-text-muted);
+    }
+
+    .table-percent {
+      margin-left: 6px;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
     }
 
     tbody tr:nth-child(even) {
@@ -2231,6 +2239,15 @@
       return new Date(utc);
     }
 
+    function isWeekendDateKey(dateKey) {
+      const date = dateKeyToDate(dateKey);
+      if (!(date instanceof Date)) {
+        return false;
+      }
+      const day = date.getUTCDay();
+      return day === 0 || day === 6;
+    }
+
     function parseBoolean(value, trueValues) {
       if (value == null) {
         return false;
@@ -3169,12 +3186,15 @@
       const rootStyles = getComputedStyle(document.documentElement);
       const accent = rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb';
       const accentSoft = rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)';
+      const weekendAccent = rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316';
+      const weekendAccentSoft = rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)';
       const textColor = rootStyles.getPropertyValue('--color-text').trim() || '#0f172a';
 
       Chart.defaults.color = textColor;
       Chart.defaults.font.family = getComputedStyle(document.documentElement).fontFamily;
 
       const last30 = dailyStats.slice(-30);
+      const weekendFlags = last30.map((entry) => isWeekendDateKey(entry.date));
       const ctxDaily = document.getElementById('dailyChart').getContext('2d');
       if (dashboardState.charts.daily) {
         dashboardState.charts.daily.destroy();
@@ -3187,13 +3207,13 @@
             {
               label: 'Pacientai',
               data: last30.map((entry) => entry.count),
-              backgroundColor: accent,
+              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? weekendAccent : accent)),
               borderRadius: 12,
             },
             {
               label: 'Naktiniai pacientai',
               data: last30.map((entry) => entry.night),
-              backgroundColor: accentSoft,
+              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? weekendAccentSoft : accentSoft)),
               borderRadius: 12,
             },
           ],
@@ -3215,6 +3235,7 @@
           scales: {
             x: {
               ticks: {
+                color: (context) => (weekendFlags[context.index] ? weekendAccent : textColor),
                 callback(value) {
                   const label = this.getLabelForValue(value);
                   return label.slice(-5); // rodo tik MM-DD dalį, kad būtų kompaktiška
@@ -3242,11 +3263,15 @@
       });
       const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
       const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
+      const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? weekendAccent : accent));
+      const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
+      const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
 
       const ctxDow = document.getElementById('dowChart').getContext('2d');
       if (dashboardState.charts.dow) {
         dashboardState.charts.dow.destroy();
       }
+      const isWeekendIndex = (index) => index >= 5;
       dashboardState.charts.dow = new Chart(ctxDow, {
         type: 'line',
         data: {
@@ -3259,8 +3284,14 @@
               tension: 0.35,
               borderColor: accent,
               backgroundColor: accentSoft,
-              pointRadius: 4,
-              pointHoverRadius: 6,
+              pointBackgroundColor: dowPointColors,
+              pointBorderColor: dowPointColors,
+              pointRadius: dowPointRadii,
+              pointHoverRadius: dowHoverRadii,
+              segment: {
+                borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? weekendAccent : accent),
+                backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? weekendAccentSoft : accentSoft),
+              },
             },
           ],
         },
@@ -3278,6 +3309,11 @@
             },
           },
           scales: {
+            x: {
+              ticks: {
+                color: (context) => (isWeekendIndex(context.index) ? weekendAccent : textColor),
+              },
+            },
             y: {
               beginAtZero: true,
               ticks: {
@@ -3307,6 +3343,14 @@
      * Sugeneruoja paskutinių 7 dienų lentelę (naujausi įrašai viršuje).
      * @param {ReturnType<typeof computeDailyStats>} recentDailyStats
      */
+    function formatValueWithShare(value, total) {
+      const count = Number.isFinite(value) ? value : 0;
+      const base = Number.isFinite(total) && total > 0 ? total : 0;
+      const share = base > 0 ? count / base : 0;
+      const shareText = percentFormatter.format(share);
+      return `${numberFormatter.format(count)} <span class="table-percent">(${shareText})</span>`;
+    }
+
     function renderRecentTable(recentDailyStats) {
       selectors.recentTable.replaceChildren();
       if (!recentDailyStats.length) {
@@ -3325,14 +3369,15 @@
           const row = document.createElement('tr');
           const dateValue = dateKeyToDate(entry.date);
           const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
+          const total = Number.isFinite(entry.count) ? entry.count : 0;
           row.innerHTML = `
             <td>${displayDate}</td>
-            <td>${numberFormatter.format(entry.count)}</td>
+            <td>${numberFormatter.format(total)}</td>
             <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
-            <td>${numberFormatter.format(entry.night)}</td>
-            <td>${numberFormatter.format(entry.ems)}</td>
-            <td>${numberFormatter.format(entry.hospitalized)}</td>
-            <td>${numberFormatter.format(entry.discharged)}</td>
+            <td>${formatValueWithShare(entry.night, total)}</td>
+            <td>${formatValueWithShare(entry.ems, total)}</td>
+            <td>${formatValueWithShare(entry.hospitalized, total)}</td>
+            <td>${formatValueWithShare(entry.discharged, total)}</td>
           `;
           selectors.recentTable.appendChild(row);
         });
@@ -3366,15 +3411,16 @@
       monthlyStats.forEach((entry) => {
         const row = document.createElement('tr');
         const avgPerDay = entry.dayCount > 0 ? entry.count / entry.dayCount : 0;
+        const total = Number.isFinite(entry.count) ? entry.count : 0;
         row.innerHTML = `
           <td>${formatMonthLabel(entry.month)}</td>
-          <td>${numberFormatter.format(entry.count)}</td>
+          <td>${numberFormatter.format(total)}</td>
           <td>${oneDecimalFormatter.format(avgPerDay)}</td>
           <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
-          <td>${numberFormatter.format(entry.night)}</td>
-          <td>${numberFormatter.format(entry.ems)}</td>
-          <td>${numberFormatter.format(entry.hospitalized)}</td>
-          <td>${numberFormatter.format(entry.discharged)}</td>
+          <td>${formatValueWithShare(entry.night, total)}</td>
+          <td>${formatValueWithShare(entry.ems, total)}</td>
+          <td>${formatValueWithShare(entry.hospitalized, total)}</td>
+          <td>${formatValueWithShare(entry.discharged, total)}</td>
         `;
         selectors.monthlyTable.appendChild(row);
       });
