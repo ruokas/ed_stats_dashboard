@@ -198,6 +198,10 @@
       margin-bottom: 48px;
     }
 
+    .section--compact {
+      margin-bottom: 32px;
+    }
+
     .section__header {
       display: flex;
       flex-wrap: wrap;
@@ -301,8 +305,10 @@
 
     .chart-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 20px;
+      align-items: stretch;
+      grid-auto-flow: row dense;
     }
 
     .chart-card {
@@ -314,6 +320,11 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      grid-column: span 4;
+    }
+
+    .chart-card--wide {
+      grid-column: span 8;
     }
 
     .chart-card figcaption {
@@ -390,10 +401,30 @@
       color: var(--color-text-muted);
     }
 
+    @media (max-width: 1200px) {
+      .chart-card {
+        grid-column: span 6;
+      }
+
+      .chart-card--wide {
+        grid-column: span 12;
+      }
+    }
+
     @media (max-width: 768px) {
       .chart-card canvas {
         height: 260px !important;
       }
+
+      .chart-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .chart-card,
+      .chart-card--wide {
+        grid-column: 1 / -1;
+      }
+
       .heatmap-table {
         min-width: 640px;
       }
@@ -762,18 +793,18 @@
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
           <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
         </figure>
+        <figure class="chart-card chart-card--wide">
+          <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
+          <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
+        </figure>
         <figure class="chart-card">
           <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
           <figcaption id="funnelChartTitle">Pacientų srauto piltuvėlis (atvykę → sprendimas)</figcaption>
         </figure>
-        <figure class="chart-card">
-          <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
-          <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
-        </figure>
       </div>
     </section>
 
-    <section class="section" aria-labelledby="recentHeading" data-section="recent">
+    <section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
       <div class="section__header">
         <div>
           <h2 id="recentHeading" class="section__title">Paskutinės 7 dienos</h2>
@@ -799,7 +830,7 @@
       </div>
     </section>
 
-    <section class="section" aria-labelledby="monthlyHeading" data-section="monthly">
+    <section class="section section--compact" aria-labelledby="monthlyHeading" data-section="monthly">
       <div class="section__header">
         <div>
           <h2 id="monthlyHeading" class="section__title">Mėnesinė suvestinė</h2>
