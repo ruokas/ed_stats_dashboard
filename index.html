@@ -804,7 +804,7 @@
           <div class="settings-field">
             <label for="settingsTrueValues"><span>Reikšmės, laikomos „taip“</span></label>
             <input id="settingsTrueValues" name="csv.trueValues" type="text" placeholder="1,true,taip,yes">
-            <p class="settings-hint">Naudojama GMP laukui (ir kitiems „taip/ne“). Reikšmės automatiškai lyginamos be didžiųjų raidžių.</p>
+            <p class="settings-hint">Naudojama GMP laukui (ir kitiems „taip/ne“). Reikšmės automatiškai lyginamos be didžiųjų raidžių; numatytai atpažįstama „GMP“, „su GMP“, „GMP (su GMP)“, o „Ne GMP“ laikoma neigiamu atsakymu.</p>
           </div>
           <div class="settings-field">
             <label for="settingsHospitalizedValues"><span>Hospitalizavimo reikšmės</span></label>
@@ -1071,7 +1071,7 @@
         dayNight: 'Diena/naktis',
         gmp: 'GMP',
         department: 'Nukreiptas į padalinį',
-        trueValues: '1,true,taip,t,yes,y',
+        trueValues: '1,true,taip,t,yes,y,GMP,su GMP,GMP (su GMP)',
         hospitalizedValues: '',
         nightKeywords: 'nakt,night',
         dayKeywords: 'dien,ryt,vak,day',
@@ -2092,7 +2092,7 @@
         }
         if (record.arrival instanceof Date && record.discharge instanceof Date) {
           const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
-          if (Number.isFinite(duration) && duration >= 0) {
+          if (Number.isFinite(duration) && duration >= 0 && duration <= 24) { // ignoruojame >24 val. buvimo laikus
             summary.totalTime += duration;
             summary.durations += 1;
           }
