@@ -34,6 +34,21 @@
       flex-direction: column;
     }
 
+    body[data-theme="dark"] {
+      --color-bg: #050816;
+      --color-surface: #0f172a;
+      --color-surface-alt: #16213c;
+      --color-border: rgba(148, 163, 184, 0.2);
+      --color-text: #e2e8f0;
+      --color-text-muted: #94a3b8;
+      --color-accent: #60a5fa;
+      --color-accent-soft: rgba(96, 165, 250, 0.2);
+      --color-success: #22c55e;
+      --color-weekend: #fb923c;
+      --color-weekend-soft: rgba(251, 146, 60, 0.3);
+      --shadow-elevated: 0 16px 30px -18px rgba(15, 23, 42, 0.75);
+    }
+
     .container {
       width: min(1220px, 92vw);
       margin: 0 auto;
@@ -152,6 +167,27 @@
       transform: translateY(0);
     }
 
+    .theme-toggle {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #fff;
+    }
+
+    body[data-theme="dark"] .theme-toggle {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(148, 163, 184, 0.5);
+    }
+
+    .theme-toggle[aria-pressed="true"] {
+      background: rgba(255, 255, 255, 0.35);
+      color: #0f172a;
+    }
+
+    body[data-theme="dark"] .theme-toggle[aria-pressed="true"] {
+      background: rgba(96, 165, 250, 0.3);
+      color: #e2e8f0;
+    }
+
     .status {
       margin-top: 8px;
       font-size: 0.85rem;
@@ -211,6 +247,12 @@
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 24px;
+    }
+
+    .section__actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .section__title {
@@ -421,6 +463,81 @@
       grid-column: span 4;
     }
 
+    .chart-card__toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .chart-card__sparkline {
+      flex: 1 1 220px;
+      min-width: 200px;
+      background: var(--color-surface-alt);
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      padding: 8px 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card__sparkline canvas {
+      width: 100% !important;
+      height: 40px !important;
+    }
+
+    .chart-card__summary {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .chart-period {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      background: var(--color-surface-alt);
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+    }
+
+    .chip-button {
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    }
+
+    .chip-button:hover,
+    .chip-button:focus-visible {
+      background: rgba(37, 99, 235, 0.12);
+      color: var(--color-accent);
+      outline: none;
+    }
+
+    .chip-button[aria-pressed="true"] {
+      background: var(--color-accent);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    body[data-theme="dark"] .chip-button:hover,
+    body[data-theme="dark"] .chip-button:focus-visible {
+      background: rgba(96, 165, 250, 0.18);
+    }
+
+    body[data-theme="dark"] .chip-button[aria-pressed="true"] {
+      background: rgba(96, 165, 250, 0.9);
+      color: #0f172a;
+    }
+
     .chart-card--wide {
       grid-column: span 8;
     }
@@ -432,6 +549,13 @@
     .chart-card figcaption {
       font-size: 0.95rem;
       color: var(--color-text-muted);
+    }
+
+    .chart-caption__context {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
     }
 
     /* Fiksuotas grafiko aukštis, kad Chart.js neplėstų kanvos – keiskite jei reikia daugiau vietos. */
@@ -527,6 +651,15 @@
         grid-column: 1 / -1;
       }
 
+      .chart-card__toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .chart-period {
+        align-self: flex-start;
+      }
+
       .kpi-controls__form {
         flex-direction: column;
         align-items: stretch;
@@ -539,6 +672,10 @@
       .heatmap-table {
         min-width: 640px;
       }
+
+      .table-wrapper {
+        max-height: 360px;
+      }
     }
 
     .table-wrapper {
@@ -546,17 +683,13 @@
       border-radius: 20px;
       border: 1px solid var(--color-border);
       box-shadow: var(--shadow-elevated);
-      overflow: hidden;
+      overflow: auto;
+      max-height: 480px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-    }
-
-    thead {
-      background: var(--color-surface-alt);
-      border-bottom: 1px solid var(--color-border);
     }
 
     th,
@@ -569,6 +702,11 @@
     th {
       font-weight: 600;
       color: var(--color-text-muted);
+      position: sticky;
+      top: 0;
+      background: var(--color-surface-alt);
+      border-bottom: 1px solid var(--color-border);
+      z-index: 2;
     }
 
     .table-percent {
@@ -613,6 +751,61 @@
 
     tbody tr:hover {
       background: rgba(37, 99, 235, 0.06);
+    }
+
+    body[data-theme="dark"] tbody tr:nth-child(even) {
+      background: rgba(96, 165, 250, 0.08);
+    }
+
+    body[data-theme="dark"] tbody tr:hover {
+      background: rgba(96, 165, 250, 0.16);
+    }
+
+    .table-row--selectable {
+      cursor: pointer;
+      outline: none;
+    }
+
+    .table-row--selectable:focus-visible {
+      box-shadow: inset 0 0 0 2px var(--color-accent);
+    }
+
+    .table-row--selected {
+      box-shadow: inset 0 0 0 2px var(--color-accent);
+      background: rgba(37, 99, 235, 0.14) !important;
+    }
+
+    body[data-theme="dark"] .table-row--selected {
+      background: rgba(96, 165, 250, 0.2) !important;
+    }
+
+    .compare-card {
+      margin-bottom: 16px;
+      padding: 18px 20px;
+      background: var(--color-surface);
+      border-radius: 16px;
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow-elevated);
+    }
+
+    .compare-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .compare-card__header h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .compare-card__body {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--color-text);
+      line-height: 1.5;
     }
 
     .sr-only {
@@ -834,6 +1027,20 @@
       outline: none;
     }
 
+    .btn-tertiary {
+      background: transparent;
+      border: 1px dashed var(--color-border);
+      color: var(--color-text-muted);
+    }
+
+    .btn-tertiary:hover,
+    .btn-tertiary:focus-visible {
+      background: rgba(37, 99, 235, 0.08);
+      color: var(--color-accent);
+      border-style: solid;
+      outline: none;
+    }
+
     @media (max-width: 768px) {
       .hero__content {
         flex-direction: column;
@@ -902,6 +1109,11 @@
       </div>
       <div class="hero__actions">
         <div class="hero__buttons">
+          <button id="themeToggleBtn" type="button" class="icon-button theme-toggle" aria-pressed="false" aria-label="Perjungti šviesią/tamsią temą" title="Perjungti šviesią/tamsią temą (Ctrl+Shift+L)">
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75a5.25 5.25 0 1 0 5.25 5.25 5.25 5.25 0 0 0-5.25-5.25Zm0 13.5v3.75m6.364-3.114-2.652-2.652m-9.426 2.652 2.652-2.652M4.5 9h3.75m7.5 0H19.5"/>
+            </svg>
+          </button>
           <button id="openSettingsBtn" type="button" class="icon-button settings-btn" aria-haspopup="dialog" aria-label="Atidaryti nustatymus" title="Atidaryti nustatymus (Ctrl+,)">
             <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/>
@@ -974,8 +1186,22 @@
       </div>
       <div class="chart-grid">
         <figure class="chart-card">
+          <div class="chart-card__toolbar">
+            <div class="chart-card__sparkline" aria-hidden="true">
+              <canvas id="dailySparkline" height="56"></canvas>
+            </div>
+            <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
+              <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
+              <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
+              <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
+            </div>
+          </div>
+          <p id="dailySparklineSummary" class="chart-card__summary" aria-live="polite">Ruošiama santrauka...</p>
           <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
-          <figcaption id="dailyChartTitle">Kasdieniai pacientai (paskutinės 30 dienų)</figcaption>
+          <figcaption id="dailyChartTitle">
+            <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
+            <span id="dailyChartContext" class="chart-caption__context"></span>
+          </figcaption>
         </figure>
         <figure class="chart-card">
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
@@ -998,7 +1224,17 @@
           <h2 id="recentHeading" class="section__title">Paskutinės 7 dienos</h2>
           <p id="recentSubtitle" class="section__subtitle">Kasdienė suvestinė pagal naujausius duomenis</p>
         </div>
+        <div class="section__actions">
+          <button id="compareToggle" type="button" class="btn btn-secondary btn-small">Palyginti</button>
+        </div>
       </div>
+      <article id="compareCard" class="compare-card" hidden aria-live="polite">
+        <div class="compare-card__header">
+          <h3>Greitas palyginimas</h3>
+          <button id="compareClear" type="button" class="btn btn-tertiary btn-small">Išvalyti</button>
+        </div>
+        <p id="compareSummary" class="compare-card__body">Pasirinkite dvi eilutes lentelėje.</p>
+      </article>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
         <table aria-describedby="recentSubtitle">
           <caption id="recentCaption" class="sr-only">Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė</caption>
@@ -1282,6 +1518,12 @@
       subtitle: 'Greita statistikos apžvalga.',
       refresh: 'Perkrauti duomenis',
       settings: 'Nustatymai',
+      theme: {
+        toggle: 'Perjungti šviesią/tamsią temą',
+        light: 'Šviesi tema',
+        dark: 'Tamsi tema',
+        contrastWarning: 'Dėmesio: pasirinkta tema gali turėti nepakankamą KPI kortelių kontrastą. Apsvarstykite kitą temą.',
+      },
       status: {
         loading: 'Kraunama...',
         error: 'Nepavyko įkelti duomenų. Patikrinkite ryšį ir bandykite dar kartą.',
@@ -1344,6 +1586,9 @@
         title: 'Pacientų srautai',
         subtitle: 'Kasdieniai skaičiai, srautas pagal sprendimą ir atvykimų žemėlapis',
         dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
+        dailyContext: (date) => (date ? `Atnaujinta pagal duomenis iki ${date}.` : ''),
+        periodSummary: (days, avgText, diffText) => `${days} d. vidurkis: ${avgText} (${diffText}).`,
+        periodNoData: 'Šiam laikotarpiui duomenų nepakanka.',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
         funnelSteps: [
@@ -1368,9 +1613,23 @@
         caption: 'Mėnesių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
       },
+      compare: {
+        toggle: 'Palyginti',
+        active: 'Uždaryti palyginimą',
+        prompt: 'Pasirinkite dvi eilutes lentelėje.',
+        insufficient: 'Pasirinkite dar vieną datą palyginimui.',
+        summaryTitle: (newer, older) => `${newer} vs ${older}`,
+        metrics: {
+          total: 'Pacientai',
+          avgStay: 'Vid. buvimo trukmė (val.)',
+          emsShare: 'GMP dalis',
+          hospShare: 'Hospitalizacijų dalis',
+        },
+      },
     };
 
     const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
+    const THEME_STORAGE_KEY = 'edDashboardTheme';
     const DEFAULT_FOOTER_SOURCE = 'Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).';
     const DEFAULT_SETTINGS = {
       dataSource: {
@@ -1473,11 +1732,15 @@
       kpiGrid: document.getElementById('kpiGrid'),
       chartHeading: document.getElementById('chartHeading'),
       chartSubtitle: document.getElementById('chartSubtitle'),
-      dailyCaption: document.getElementById('dailyChartTitle'),
+      dailyCaption: document.getElementById('dailyChartLabel'),
+      dailyCaptionContext: document.getElementById('dailyChartContext'),
       dowCaption: document.getElementById('dowChartTitle'),
       funnelCaption: document.getElementById('funnelChartTitle'),
       heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
       heatmapContainer: document.getElementById('arrivalHeatmap'),
+      dailySparkline: document.getElementById('dailySparkline'),
+      dailySparklineSummary: document.getElementById('dailySparklineSummary'),
+      chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
       recentHeading: document.getElementById('recentHeading'),
       recentSubtitle: document.getElementById('recentSubtitle'),
       recentCaption: document.getElementById('recentCaption'),
@@ -1487,6 +1750,7 @@
       monthlyCaption: document.getElementById('monthlyCaption'),
       monthlyTable: document.getElementById('monthlyTable'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
+      themeToggleBtn: document.getElementById('themeToggleBtn'),
       settingsDialog: document.getElementById('settingsDialog'),
       settingsForm: document.getElementById('settingsForm'),
       resetSettingsBtn: document.getElementById('resetSettingsBtn'),
@@ -1500,6 +1764,10 @@
       kpiDisposition: document.getElementById('kpiDisposition'),
       kpiFiltersReset: document.getElementById('kpiFiltersReset'),
       kpiActiveInfo: document.getElementById('kpiActiveFilters'),
+      compareToggle: document.getElementById('compareToggle'),
+      compareCard: document.getElementById('compareCard'),
+      compareSummary: document.getElementById('compareSummary'),
+      compareClear: document.getElementById('compareClear'),
     };
 
     function cloneSettings(value) {
@@ -2013,10 +2281,23 @@
         dow: null,
         funnel: null,
       },
+      chartLib: null,
       usingFallback: false,
       lastErrorMessage: '',
       rawRecords: [],
       dailyStats: [],
+      chartPeriod: 30,
+      chartData: {
+        dailyWindow: [],
+        funnel: null,
+        heatmap: null,
+      },
+      theme: 'light',
+      compare: {
+        active: false,
+        selections: [],
+      },
+      contrastWarning: false,
       kpi: {
         filters: getDefaultKpiFilters(),
         records: [],
@@ -2038,11 +2319,18 @@
         selectors.openSettingsBtn.setAttribute('aria-label', TEXT.settings);
         selectors.openSettingsBtn.title = `${TEXT.settings} (Ctrl+,)`;
       }
+      if (selectors.themeToggleBtn) {
+        selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
+        selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
+      }
       selectors.kpiHeading.textContent = TEXT.kpis.title;
       selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
       selectors.dailyCaption.textContent = TEXT.charts.dailyCaption;
+      if (selectors.dailyCaptionContext) {
+        selectors.dailyCaptionContext.textContent = '';
+      }
       selectors.dowCaption.textContent = TEXT.charts.dowCaption;
       selectors.funnelCaption.textContent = TEXT.charts.funnelCaption;
       selectors.heatmapCaption.textContent = TEXT.charts.heatmapCaption;
@@ -2052,6 +2340,12 @@
       selectors.monthlyHeading.textContent = TEXT.monthly.title;
       selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
       selectors.monthlyCaption.textContent = TEXT.monthly.caption;
+      if (selectors.compareToggle) {
+        selectors.compareToggle.textContent = TEXT.compare.toggle;
+      }
+      if (selectors.compareSummary) {
+        selectors.compareSummary.textContent = TEXT.compare.prompt;
+      }
       hideStatusNote();
     }
 
@@ -2076,6 +2370,143 @@
       selectors.statusNote.textContent = message;
       selectors.statusNote.dataset.tone = tone;
       selectors.statusNote.removeAttribute('hidden');
+    }
+
+    function updateThemeToggleState(theme) {
+      if (!selectors.themeToggleBtn) {
+        return;
+      }
+      const isDark = theme === 'dark';
+      selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
+      selectors.themeToggleBtn.dataset.theme = theme;
+      selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
+    }
+
+    function parseColorValue(value) {
+      if (!value) {
+        return null;
+      }
+      const trimmed = value.trim();
+      if (trimmed.startsWith('#')) {
+        const hex = trimmed.slice(1);
+        if (hex.length === 3) {
+          const r = parseInt(hex[0] + hex[0], 16);
+          const g = parseInt(hex[1] + hex[1], 16);
+          const b = parseInt(hex[2] + hex[2], 16);
+          return { r, g, b };
+        }
+        if (hex.length === 6) {
+          const r = parseInt(hex.slice(0, 2), 16);
+          const g = parseInt(hex.slice(2, 4), 16);
+          const b = parseInt(hex.slice(4, 6), 16);
+          if ([r, g, b].every((component) => Number.isFinite(component))) {
+            return { r, g, b };
+          }
+        }
+        return null;
+      }
+      const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+      if (rgbMatch) {
+        const parts = rgbMatch[1].split(',').map((part) => Number.parseFloat(part.trim()));
+        if (parts.length >= 3 && parts.slice(0, 3).every((component) => Number.isFinite(component))) {
+          return { r: parts[0], g: parts[1], b: parts[2] };
+        }
+      }
+      return null;
+    }
+
+    function computeLuminance(rgb) {
+      if (!rgb) {
+        return null;
+      }
+      const normalize = (channel) => {
+        const c = channel / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      };
+      const r = normalize(rgb.r);
+      const g = normalize(rgb.g);
+      const b = normalize(rgb.b);
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    function checkKpiContrast() {
+      const rootStyles = getComputedStyle(document.body);
+      const surface = parseColorValue(rootStyles.getPropertyValue('--color-surface'));
+      const text = parseColorValue(rootStyles.getPropertyValue('--color-text'));
+      const surfaceLum = computeLuminance(surface);
+      const textLum = computeLuminance(text);
+      if (surfaceLum == null || textLum == null) {
+        dashboardState.contrastWarning = false;
+        return;
+      }
+      const lighter = Math.max(surfaceLum, textLum);
+      const darker = Math.min(surfaceLum, textLum);
+      const ratio = (lighter + 0.05) / (darker + 0.05);
+      if (ratio < 4.5) {
+        dashboardState.contrastWarning = true;
+        const existingMessage = selectors.statusNote && !selectors.statusNote.hasAttribute('hidden')
+          ? selectors.statusNote.textContent
+          : '';
+        if (existingMessage && existingMessage !== TEXT.theme.contrastWarning) {
+          const combined = existingMessage.includes(TEXT.theme.contrastWarning)
+            ? existingMessage
+            : `${existingMessage} ${TEXT.theme.contrastWarning}`;
+          showStatusNote(combined, 'warning');
+        } else {
+          showStatusNote(TEXT.theme.contrastWarning, 'warning');
+        }
+      } else if (dashboardState.contrastWarning) {
+        dashboardState.contrastWarning = false;
+        if (selectors.statusNote && selectors.statusNote.textContent) {
+          const cleaned = selectors.statusNote.textContent.replace(TEXT.theme.contrastWarning, '').trim();
+          if (cleaned) {
+            selectors.statusNote.textContent = cleaned;
+          } else {
+            hideStatusNote();
+          }
+        }
+      }
+    }
+
+    function applyTheme(theme, { persist = false } = {}) {
+      const normalized = theme === 'dark' ? 'dark' : 'light';
+      if (normalized === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+      } else {
+        document.body.removeAttribute('data-theme');
+      }
+      dashboardState.theme = normalized;
+      updateThemeToggleState(normalized);
+      if (persist) {
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, normalized);
+        } catch (error) {
+          console.warn('Nepavyko išsaugoti temos nustatymo:', error);
+        }
+      }
+      checkKpiContrast();
+    }
+
+    function initializeTheme() {
+      let storedTheme = null;
+      try {
+        storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      } catch (error) {
+        storedTheme = null;
+      }
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initialTheme = storedTheme === 'dark' || storedTheme === 'light'
+        ? storedTheme
+        : prefersDark
+          ? 'dark'
+          : 'light';
+      applyTheme(initialTheme, { persist: false });
+    }
+
+    function toggleTheme() {
+      const nextTheme = dashboardState.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme, { persist: true });
+      rerenderChartsForTheme();
     }
 
     function setStatus(type, details = '') {
@@ -3208,42 +3639,177 @@
       });
     }
 
-    async function renderCharts(dailyStats, funnelTotals, heatmapData) {
-      const Chart = await loadChartJs();
-      if (!Chart) {
-        throw new Error('Chart.js biblioteka nepasiekiama');
-      }
+    function getThemePalette() {
       const rootStyles = getComputedStyle(document.documentElement);
-      const accent = rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb';
-      const accentSoft = rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)';
-      const weekendAccent = rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316';
-      const weekendAccentSoft = rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)';
-      const textColor = rootStyles.getPropertyValue('--color-text').trim() || '#0f172a';
+      return {
+        accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
+        accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
+        weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
+        weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
+        textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
+        textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
+      };
+    }
 
-      Chart.defaults.color = textColor;
+    function syncChartPeriodButtons(period) {
+      if (!selectors.chartPeriodButtons || !selectors.chartPeriodButtons.length) {
+        return;
+      }
+      selectors.chartPeriodButtons.forEach((button) => {
+        const buttonPeriod = Number.parseInt(button.dataset.chartPeriod, 10);
+        const isActive = Number.isFinite(buttonPeriod) && buttonPeriod === period;
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function buildSparklineSummary(data) {
+      if (!selectors.dailySparklineSummary) {
+        return;
+      }
+      if (!Array.isArray(data) || !data.length) {
+        selectors.dailySparklineSummary.textContent = TEXT.charts.periodNoData;
+        return;
+      }
+      const counts = data.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
+      const total = counts.reduce((sum, value) => sum + value, 0);
+      const average = data.length > 0 ? total / data.length : 0;
+      const first = counts[0] ?? 0;
+      const last = counts[counts.length - 1] ?? 0;
+      const diff = last - first;
+      const avgText = `${numberFormatter.format(Math.round(average))} pacientai`;
+      const diffText = diff === 0
+        ? 'pokyčių nėra nuo periodo pradžios'
+        : `${diff > 0 ? '↑' : '↓'} ${numberFormatter.format(Math.abs(diff))} pacientai vs periodo pradžia`;
+      selectors.dailySparklineSummary.textContent = TEXT.charts.periodSummary(data.length, avgText, diffText);
+    }
+
+    function updateDailySparkline(data, palette) {
+      if (!selectors.dailySparkline) {
+        return;
+      }
+      const canvas = selectors.dailySparkline;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+      const values = Array.isArray(data) ? data.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0)) : [];
+      const width = canvas.clientWidth || (canvas.parentElement ? canvas.parentElement.clientWidth : 240) || 240;
+      const height = canvas.clientHeight || 40;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = palette.textMuted;
+      ctx.beginPath();
+      ctx.moveTo(6, height - 6);
+      ctx.lineTo(width - 6, height - 6);
+      ctx.stroke();
+
+      if (!values.length || values.every((value) => !Number.isFinite(value))) {
+        return;
+      }
+
+      const minValue = Math.min(...values);
+      const maxValue = Math.max(...values);
+      const range = Math.max(maxValue - minValue, 1);
+      const paddingX = 6;
+      const paddingY = 6;
+      const points = values.map((value, index) => {
+        const ratio = values.length > 1 ? index / (values.length - 1) : 0.5;
+        const normalized = range === 0 ? 0.5 : (value - minValue) / range;
+        const x = paddingX + ratio * (width - paddingX * 2);
+        const y = height - paddingY - normalized * (height - paddingY * 2);
+        return { x, y };
+      });
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, height - paddingY);
+      points.forEach((point) => {
+        ctx.lineTo(point.x, point.y);
+      });
+      ctx.lineTo(points[points.length - 1].x, height - paddingY);
+      ctx.closePath();
+      ctx.fillStyle = palette.accentSoft;
+      ctx.fill();
+
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (index === 0) {
+          ctx.moveTo(point.x, point.y);
+        } else {
+          ctx.lineTo(point.x, point.y);
+        }
+      });
+      ctx.strokeStyle = palette.accent;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const lastPoint = points[points.length - 1];
+      ctx.beginPath();
+      ctx.arc(lastPoint.x, lastPoint.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = palette.accent;
+      ctx.fill();
+    }
+
+    function renderDailyChart(dailyStats, period, ChartLib, palette) {
+      const Chart = ChartLib;
+      const themePalette = palette || getThemePalette();
+      const normalizedPeriod = Number.isFinite(Number(period)) && Number(period) > 0 ? Number(period) : 30;
+      dashboardState.chartPeriod = normalizedPeriod;
+      syncChartPeriodButtons(normalizedPeriod);
+      const scopedData = Array.isArray(dailyStats) ? dailyStats.slice(-normalizedPeriod) : [];
+      buildSparklineSummary(scopedData);
+      updateDailySparkline(scopedData, themePalette);
+      if (selectors.dailyCaptionContext) {
+        const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
+        const dateValue = lastEntry?.date ? dateKeyToDate(lastEntry.date) : null;
+        const formatted = dateValue ? shortDateFormatter.format(dateValue) : lastEntry?.date || '';
+        selectors.dailyCaptionContext.textContent = TEXT.charts.dailyContext(formatted);
+      }
+
+      const canvas = document.getElementById('dailyChart');
+      if (!canvas || !canvas.getContext) {
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+
+      if (!Chart) {
+        return;
+      }
+
+      Chart.defaults.color = themePalette.textColor;
       Chart.defaults.font.family = getComputedStyle(document.documentElement).fontFamily;
 
-      const last30 = dailyStats.slice(-30);
-      const weekendFlags = last30.map((entry) => isWeekendDateKey(entry.date));
-      const ctxDaily = document.getElementById('dailyChart').getContext('2d');
       if (dashboardState.charts.daily) {
         dashboardState.charts.daily.destroy();
       }
-      dashboardState.charts.daily = new Chart(ctxDaily, {
+
+      if (!scopedData.length) {
+        dashboardState.charts.daily = null;
+        return;
+      }
+
+      const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
+      dashboardState.charts.daily = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: last30.map((entry) => entry.date),
+          labels: scopedData.map((entry) => entry.date),
           datasets: [
             {
               label: 'Pacientai',
-              data: last30.map((entry) => entry.count),
-              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? weekendAccent : accent)),
+              data: scopedData.map((entry) => entry.count),
+              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent)),
               borderRadius: 12,
             },
             {
               label: 'Naktiniai pacientai',
-              data: last30.map((entry) => entry.night),
-              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? weekendAccentSoft : accentSoft)),
+              data: scopedData.map((entry) => entry.night),
+              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft)),
               borderRadius: 12,
             },
           ],
@@ -3265,10 +3831,10 @@
           scales: {
             x: {
               ticks: {
-                color: (context) => (weekendFlags[context.index] ? weekendAccent : textColor),
+                color: (ctxTick) => (weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
                 callback(value) {
                   const label = this.getLabelForValue(value);
-                  return label.slice(-5); // rodo tik MM-DD dalį, kad būtų kompaktiška
+                  return label.slice(-5);
                 },
               },
             },
@@ -3283,90 +3849,152 @@
           },
         },
       });
+    }
+
+    function updateChartPeriod(period) {
+      const numeric = Number.parseInt(period, 10);
+      if (!Number.isFinite(numeric) || numeric <= 0) {
+        return;
+      }
+      dashboardState.chartPeriod = numeric;
+      const data = dashboardState.chartData.dailyWindow || [];
+      syncChartPeriodButtons(numeric);
+      if (!data.length) {
+        buildSparklineSummary([]);
+        if (selectors.dailyCaptionContext) {
+          selectors.dailyCaptionContext.textContent = '';
+        }
+        return;
+      }
+      loadChartJs()
+        .then((Chart) => {
+          dashboardState.chartLib = Chart;
+          renderDailyChart(data, numeric, Chart, getThemePalette());
+        })
+        .catch((error) => {
+          console.error('Nepavyko atnaujinti grafiko laikotarpio:', error);
+        });
+    }
+
+    async function renderCharts(dailyStats, funnelTotals, heatmapData) {
+      const Chart = await loadChartJs();
+      if (!Chart) {
+        throw new Error('Chart.js biblioteka nepasiekiama');
+      }
+      const palette = getThemePalette();
+      Chart.defaults.color = palette.textColor;
+      Chart.defaults.font.family = getComputedStyle(document.documentElement).fontFamily;
+
+      if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod <= 0) {
+        dashboardState.chartPeriod = 30;
+      }
+
+      dashboardState.chartLib = Chart;
+      dashboardState.chartData.dailyWindow = Array.isArray(dailyStats) ? dailyStats.slice() : [];
+      dashboardState.chartData.funnel = funnelTotals || computeFunnelStats(dailyStats);
+      dashboardState.chartData.heatmap = heatmapData;
+
+      renderDailyChart(dashboardState.chartData.dailyWindow, dashboardState.chartPeriod, Chart, palette);
 
       const dowCounts = Array(7).fill(0);
       const dowTotals = Array(7).fill(0);
-      dailyStats.forEach((entry) => {
-        const dayIndex = (new Date(entry.date).getDay() + 6) % 7; // 0 -> pirmadienis
+      (dailyStats || []).forEach((entry) => {
+        const dayIndex = (new Date(entry.date).getDay() + 6) % 7;
         dowCounts[dayIndex] += entry.count;
         dowTotals[dayIndex] += 1;
       });
       const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
       const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
-      const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? weekendAccent : accent));
+      const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
       const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
       const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
 
-      const ctxDow = document.getElementById('dowChart').getContext('2d');
-      if (dashboardState.charts.dow) {
-        dashboardState.charts.dow.destroy();
+      const ctxDowCanvas = document.getElementById('dowChart');
+      if (ctxDowCanvas && ctxDowCanvas.getContext) {
+        const ctxDow = ctxDowCanvas.getContext('2d');
+        if (dashboardState.charts.dow) {
+          dashboardState.charts.dow.destroy();
+        }
+        const isWeekendIndex = (index) => index >= 5;
+        dashboardState.charts.dow = new Chart(ctxDow, {
+          type: 'line',
+          data: {
+            labels: dowLabels,
+            datasets: [
+              {
+                label: 'Vidutinis pacientų skaičius',
+                data: dowAverages,
+                fill: true,
+                tension: 0.35,
+                borderColor: palette.accent,
+                backgroundColor: palette.accentSoft,
+                pointBackgroundColor: dowPointColors,
+                pointBorderColor: dowPointColors,
+                pointRadius: dowPointRadii,
+                pointHoverRadius: dowHoverRadii,
+                segment: {
+                  borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccent : palette.accent),
+                  backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccentSoft : palette.accentSoft),
+                },
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label(context) {
+                    return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
+                },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback(value) {
+                    return decimalFormatter.format(value);
+                  },
+                },
+              },
+            },
+          },
+        });
       }
-      const isWeekendIndex = (index) => index >= 5;
-      dashboardState.charts.dow = new Chart(ctxDow, {
-        type: 'line',
-        data: {
-          labels: dowLabels,
-          datasets: [
-            {
-              label: 'Vidutinis pacientų skaičius',
-              data: dowAverages,
-              fill: true,
-              tension: 0.35,
-              borderColor: accent,
-              backgroundColor: accentSoft,
-              pointBackgroundColor: dowPointColors,
-              pointBorderColor: dowPointColors,
-              pointRadius: dowPointRadii,
-              pointHoverRadius: dowHoverRadii,
-              segment: {
-                borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? weekendAccent : accent),
-                backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? weekendAccentSoft : accentSoft),
-              },
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label(context) {
-                  return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
-                },
-              },
-            },
-          },
-          scales: {
-            x: {
-              ticks: {
-                color: (context) => (isWeekendIndex(context.index) ? weekendAccent : textColor),
-              },
-            },
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback(value) {
-                  return decimalFormatter.format(value);
-                },
-              },
-            },
-          },
-        },
-      });
 
-      const funnelData = funnelTotals || computeFunnelStats(dailyStats);
       const funnelCanvas = document.getElementById('funnelChart');
       if (funnelCanvas) {
         if (dashboardState.charts.funnel && typeof dashboardState.charts.funnel.destroy === 'function') {
           dashboardState.charts.funnel.destroy();
         }
         dashboardState.charts.funnel = null;
-        renderFunnelShape(funnelCanvas, funnelData, accent, textColor);
+        renderFunnelShape(funnelCanvas, dashboardState.chartData.funnel, palette.accent, palette.textColor);
       }
 
-      renderArrivalHeatmap(selectors.heatmapContainer, heatmapData, accent);
+      renderArrivalHeatmap(selectors.heatmapContainer, heatmapData, palette.accent);
+    }
+
+    function rerenderChartsForTheme() {
+      const hasAnyData = (dashboardState.chartData.dailyWindow && dashboardState.chartData.dailyWindow.length)
+        || dashboardState.chartData.funnel
+        || (dashboardState.chartData.heatmap && Object.keys(dashboardState.chartData.heatmap).length);
+      if (!hasAnyData) {
+        checkKpiContrast();
+        return;
+      }
+      renderCharts(dashboardState.chartData.dailyWindow, dashboardState.chartData.funnel, dashboardState.chartData.heatmap)
+        .catch((error) => {
+          console.error('Nepavyko perpiešti grafikų pakeitus temą:', error);
+        });
     }
 
     /**
@@ -3381,6 +4009,150 @@
       return `${numberFormatter.format(count)} <span class="table-percent">(${shareText})</span>`;
     }
 
+    function extractCompareMetricsFromRow(row) {
+      if (!row || !row.dataset || !row.dataset.compareId) {
+        return null;
+      }
+      const id = row.dataset.compareId;
+      const label = row.dataset.compareLabel || row.cells?.[0]?.textContent?.trim() || id;
+      const sortKey = row.dataset.compareSort || label;
+      const total = Number.parseFloat(row.dataset.total || '0');
+      const avgStay = Number.parseFloat(row.dataset.avgStay || '0');
+      const emsShare = Number.parseFloat(row.dataset.emsShare || '0');
+      const hospShare = Number.parseFloat(row.dataset.hospShare || '0');
+      return {
+        id,
+        group: row.dataset.compareGroup || 'unknown',
+        label,
+        sortKey,
+        total: Number.isFinite(total) ? total : 0,
+        avgStay: Number.isFinite(avgStay) ? avgStay : 0,
+        emsShare: Number.isFinite(emsShare) ? emsShare : 0,
+        hospShare: Number.isFinite(hospShare) ? hospShare : 0,
+      };
+    }
+
+    function updateCompareSummary() {
+      if (!selectors.compareSummary) {
+        return;
+      }
+      if (!dashboardState.compare.active) {
+        selectors.compareSummary.textContent = TEXT.compare.prompt;
+        return;
+      }
+      const selections = dashboardState.compare.selections;
+      if (!selections.length) {
+        selectors.compareSummary.textContent = TEXT.compare.prompt;
+        return;
+      }
+      if (selections.length === 1) {
+        selectors.compareSummary.textContent = TEXT.compare.insufficient;
+        return;
+      }
+      const sorted = [...selections].sort((a, b) => (a.sortKey > b.sortKey ? 1 : -1));
+      const older = sorted[0];
+      const newer = sorted[sorted.length - 1];
+      const totalDiff = newer.total - older.total;
+      const avgStayDiff = newer.avgStay - older.avgStay;
+      const emsShareDiff = (newer.emsShare - older.emsShare) * 100;
+      const hospShareDiff = (newer.hospShare - older.hospShare) * 100;
+      const diffToText = (value, formatter, unit = '') => {
+        if (Math.abs(value) < 0.0001) {
+          return 'pokyčių nėra';
+        }
+        const sign = value > 0 ? '+' : '−';
+        return `${sign}${formatter(Math.abs(value))}${unit}`;
+      };
+      const totalDiffText = diffToText(totalDiff, (val) => numberFormatter.format(Math.round(val)));
+      const avgDiffText = diffToText(avgStayDiff, (val) => decimalFormatter.format(val), ' val.');
+      const emsDiffText = diffToText(emsShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.');
+      const hospDiffText = diffToText(hospShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.');
+      const summaryTitle = TEXT.compare.summaryTitle(newer.label, older.label);
+      selectors.compareSummary.innerHTML = `
+        <strong>${summaryTitle}</strong>
+        <ul>
+          <li><strong>${TEXT.compare.metrics.total}:</strong> ${numberFormatter.format(newer.total)} vs ${numberFormatter.format(older.total)} (Δ ${totalDiffText})</li>
+          <li><strong>${TEXT.compare.metrics.avgStay}:</strong> ${decimalFormatter.format(newer.avgStay)} vs ${decimalFormatter.format(older.avgStay)} (Δ ${avgDiffText})</li>
+          <li><strong>${TEXT.compare.metrics.emsShare}:</strong> ${percentFormatter.format(newer.emsShare)} vs ${percentFormatter.format(older.emsShare)} (Δ ${emsDiffText})</li>
+          <li><strong>${TEXT.compare.metrics.hospShare}:</strong> ${percentFormatter.format(newer.hospShare)} vs ${percentFormatter.format(older.hospShare)} (Δ ${hospDiffText})</li>
+        </ul>
+      `;
+    }
+
+    function syncCompareActivation() {
+      const active = dashboardState.compare.active;
+      const rows = [];
+      if (selectors.recentTable) {
+        rows.push(...selectors.recentTable.querySelectorAll('tr[data-compare-id]'));
+      }
+      if (selectors.monthlyTable) {
+        rows.push(...selectors.monthlyTable.querySelectorAll('tr[data-compare-id]'));
+      }
+      rows.forEach((row) => {
+        if (!active) {
+          row.classList.remove('table-row--selectable', 'table-row--selected');
+          row.removeAttribute('tabindex');
+          row.removeAttribute('role');
+          row.removeAttribute('aria-pressed');
+          return;
+        }
+        row.classList.add('table-row--selectable');
+        row.setAttribute('role', 'button');
+        row.setAttribute('tabindex', '0');
+        const metrics = extractCompareMetricsFromRow(row);
+        const isSelected = metrics && dashboardState.compare.selections.some((item) => item.id === metrics.id);
+        row.classList.toggle('table-row--selected', Boolean(isSelected));
+        row.setAttribute('aria-pressed', String(Boolean(isSelected)));
+      });
+      updateCompareSummary();
+    }
+
+    function clearCompareSelection() {
+      dashboardState.compare.selections = [];
+      syncCompareActivation();
+    }
+
+    function handleCompareRowSelection(row) {
+      if (!dashboardState.compare.active) {
+        return;
+      }
+      const metrics = extractCompareMetricsFromRow(row);
+      if (!metrics) {
+        return;
+      }
+      const existingIndex = dashboardState.compare.selections.findIndex((item) => item.id === metrics.id);
+      if (existingIndex >= 0) {
+        dashboardState.compare.selections.splice(existingIndex, 1);
+      } else {
+        if (dashboardState.compare.selections.length >= 2) {
+          dashboardState.compare.selections.shift();
+        }
+        dashboardState.compare.selections.push(metrics);
+      }
+      syncCompareActivation();
+    }
+
+    function setCompareMode(active) {
+      const normalized = Boolean(active);
+      dashboardState.compare.active = normalized;
+      if (selectors.compareToggle) {
+        selectors.compareToggle.textContent = normalized ? TEXT.compare.active : TEXT.compare.toggle;
+        selectors.compareToggle.setAttribute('aria-pressed', String(normalized));
+      }
+      if (selectors.compareCard) {
+        if (normalized) {
+          selectors.compareCard.removeAttribute('hidden');
+        } else {
+          selectors.compareCard.setAttribute('hidden', 'hidden');
+        }
+      }
+      if (!normalized) {
+        clearCompareSelection();
+      } else {
+        syncCompareActivation();
+      }
+    }
+
     function renderRecentTable(recentDailyStats) {
       selectors.recentTable.replaceChildren();
       if (!recentDailyStats.length) {
@@ -3390,6 +4162,7 @@
         cell.textContent = TEXT.recent.empty;
         row.appendChild(cell);
         selectors.recentTable.appendChild(row);
+        syncCompareActivation();
         return;
       }
 
@@ -3414,8 +4187,20 @@
             <td>${formatValueWithShare(entry.hospitalized, total)}</td>
             <td>${formatValueWithShare(entry.discharged, total)}</td>
           `;
+          const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+          const emsShare = total > 0 ? entry.ems / total : 0;
+          const hospShare = total > 0 ? entry.hospitalized / total : 0;
+          row.dataset.compareId = `recent-${entry.date}`;
+          row.dataset.compareGroup = 'recent';
+          row.dataset.compareLabel = displayDate;
+          row.dataset.compareSort = entry.date;
+          row.dataset.total = String(total);
+          row.dataset.avgStay = String(avgStay);
+          row.dataset.emsShare = String(emsShare);
+          row.dataset.hospShare = String(hospShare);
           selectors.recentTable.appendChild(row);
         });
+      syncCompareActivation();
     }
 
     function formatMonthLabel(monthKey) {
@@ -3440,6 +4225,7 @@
         cell.textContent = TEXT.monthly.empty;
         row.appendChild(cell);
         selectors.monthlyTable.appendChild(row);
+        syncCompareActivation();
         return;
       }
 
@@ -3457,8 +4243,20 @@
           <td>${formatValueWithShare(entry.hospitalized, total)}</td>
           <td>${formatValueWithShare(entry.discharged, total)}</td>
         `;
+        const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+        const emsShare = total > 0 ? entry.ems / total : 0;
+        const hospShare = total > 0 ? entry.hospitalized / total : 0;
+        row.dataset.compareId = `monthly-${entry.month}`;
+        row.dataset.compareGroup = 'monthly';
+        row.dataset.compareLabel = formatMonthLabel(entry.month);
+        row.dataset.compareSort = entry.month;
+        row.dataset.total = String(total);
+        row.dataset.avgStay = String(avgStay);
+        row.dataset.emsShare = String(emsShare);
+        row.dataset.hospShare = String(hospShare);
         selectors.monthlyTable.appendChild(row);
       });
+      syncCompareActivation();
     }
 
     function drawFunnelShape(canvas, steps, accentColor, textColor) {
@@ -3644,6 +4442,7 @@
       }
     }
 
+    initializeTheme();
     applySettingsToText();
     applyTextContent();
     applyFooterSource();
@@ -3652,6 +4451,79 @@
 
     initializeKpiFilters();
     loadDashboard();
+
+    if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
+      selectors.chartPeriodButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const period = Number.parseInt(button.dataset.chartPeriod || '', 10);
+          updateChartPeriod(period);
+        });
+      });
+    }
+
+    if (selectors.themeToggleBtn) {
+      selectors.themeToggleBtn.addEventListener('click', () => {
+        toggleTheme();
+      });
+    }
+
+    if (selectors.compareToggle) {
+      selectors.compareToggle.addEventListener('click', () => {
+        setCompareMode(!dashboardState.compare.active);
+      });
+      selectors.compareToggle.setAttribute('aria-pressed', 'false');
+    }
+
+    if (selectors.compareClear) {
+      selectors.compareClear.addEventListener('click', () => {
+        clearCompareSelection();
+        if (dashboardState.compare.active) {
+          updateCompareSummary();
+        }
+      });
+    }
+
+    const handleCompareClick = (event) => {
+      if (!dashboardState.compare.active) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const row = target.closest('tr[data-compare-id]');
+      if (row) {
+        handleCompareRowSelection(row);
+      }
+    };
+
+    const handleCompareKeydown = (event) => {
+      if (!dashboardState.compare.active) {
+        return;
+      }
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const row = target.closest('tr[data-compare-id]');
+      if (row) {
+        event.preventDefault();
+        handleCompareRowSelection(row);
+      }
+    };
+
+    if (selectors.recentTable) {
+      selectors.recentTable.addEventListener('click', handleCompareClick);
+      selectors.recentTable.addEventListener('keydown', handleCompareKeydown);
+    }
+
+    if (selectors.monthlyTable) {
+      selectors.monthlyTable.addEventListener('click', handleCompareClick);
+      selectors.monthlyTable.addEventListener('keydown', handleCompareKeydown);
+    }
 
     const refreshButton = selectors.refreshBtn;
     if (refreshButton) {
@@ -3704,6 +4576,10 @@
         }
         event.preventDefault();
         resetKpiFilters({ fromKeyboard: true });
+      }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'L' || event.key === 'l')) {
+        event.preventDefault();
+        toggleTheme();
       }
     });
   </script>
