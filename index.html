@@ -804,7 +804,7 @@
         </figure>
         <figure class="chart-card">
           <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
-          <figcaption id="funnelChartTitle">Pacientų srauto piltuvėlis (atvykę → sprendimas)</figcaption>
+          <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
         </figure>
       </div>
     </section>
@@ -1150,14 +1150,14 @@
       },
       charts: {
         title: 'Pacientų srautai',
-        subtitle: 'Kasdieniai skaičiai, srauto piltuvėlis ir atvykimų žemėlapis',
+        subtitle: 'Kasdieniai skaičiai, srautas pagal sprendimą ir atvykimų žemėlapis',
         dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
-        funnelCaption: 'Pacientų srauto piltuvėlis (atvykę → sprendimas).',
+        funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
         funnelSteps: [
           { key: 'arrived', label: 'Atvykę' },
-          { key: 'hospitalized', label: 'Hospitalizuoti' },
           { key: 'discharged', label: 'Išleisti' },
+          { key: 'hospitalized', label: 'Hospitalizuoti' },
         ],
         funnelEmpty: 'Piltuvėlio sugeneruoti nepavyko – šiuo metu nėra atvykimų duomenų.',
         heatmapCaption: 'Vidutinis pacientų atvykimų skaičius per dieną pagal savaitės dieną ir valandą.',
@@ -3029,8 +3029,8 @@
         ? TEXT.charts.funnelSteps
         : [
             { key: 'arrived', label: 'Atvykę' },
-            { key: 'hospitalized', label: 'Hospitalizuoti' },
             { key: 'discharged', label: 'Išleisti' },
+            { key: 'hospitalized', label: 'Hospitalizuoti' },
           ];
 
       const steps = stepsConfig.map((step) => ({
