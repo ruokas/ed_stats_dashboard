@@ -577,6 +577,36 @@
       font-size: 0.85rem;
     }
 
+    .table-flag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      margin-left: 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .table-flag--weekend {
+      background: var(--color-weekend);
+      color: #fff;
+    }
+
+    tbody tr.recent-table-row--weekend {
+      background: var(--color-weekend-soft);
+    }
+
+    tbody tr.recent-table-row--weekend:hover {
+      background: rgba(249, 115, 22, 0.28);
+    }
+
+    tbody tr.recent-table-row--weekend td:first-child {
+      color: var(--color-weekend);
+      font-weight: 600;
+    }
+
     tbody tr:nth-child(even) {
       background: rgba(37, 99, 235, 0.03);
     }
@@ -3369,9 +3399,17 @@
           const row = document.createElement('tr');
           const dateValue = dateKeyToDate(entry.date);
           const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
+          const weekend = isWeekendDateKey(entry.date);
           const total = Number.isFinite(entry.count) ? entry.count : 0;
+          if (weekend) {
+            row.classList.add('recent-table-row--weekend');
+            row.dataset.weekend = 'true';
+          }
+          const weekendBadge = weekend
+            ? '<span class="table-flag table-flag--weekend" aria-hidden="true">Savaitgalis</span><span class="sr-only"> (savaitgalis)</span>'
+            : '';
           row.innerHTML = `
-            <td>${displayDate}</td>
+            <td>${displayDate}${weekendBadge}</td>
             <td>${numberFormatter.format(total)}</td>
             <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
             <td>${formatValueWithShare(entry.night, total)}</td>
