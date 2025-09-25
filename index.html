@@ -1154,6 +1154,12 @@
         dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         funnelCaption: 'Pacientų srauto piltuvėlis (atvykę → sprendimas).',
+        funnelSteps: [
+          { key: 'arrived', label: 'Atvykę' },
+          { key: 'hospitalized', label: 'Hospitalizuoti' },
+          { key: 'discharged', label: 'Išleisti' },
+        ],
+        funnelEmpty: 'Piltuvėlio sugeneruoti nepavyko – šiuo metu nėra atvykimų duomenų.',
         heatmapCaption: 'Vidutinis pacientų atvykimų skaičius per dieną pagal savaitės dieną ir valandą.',
         heatmapEmpty: 'Šiame laikotarpyje atvykimų duomenų nėra.',
         heatmapLegend: 'Tamsesnė spalva reiškia didesnį vidutinį atvykimų skaičių per dieną.',
@@ -2819,64 +2825,13 @@
       });
 
       const funnelData = funnelTotals || computeFunnelStats(dailyStats);
-      const ctxFunnelNode = document.getElementById('funnelChart');
-      if (ctxFunnelNode) {
-        const ctxFunnel = ctxFunnelNode.getContext('2d');
-        if (dashboardState.charts.funnel) {
+      const funnelCanvas = document.getElementById('funnelChart');
+      if (funnelCanvas) {
+        if (dashboardState.charts.funnel && typeof dashboardState.charts.funnel.destroy === 'function') {
           dashboardState.charts.funnel.destroy();
         }
-        dashboardState.charts.funnel = new Chart(ctxFunnel, {
-          type: 'bar',
-          data: {
-            labels: ['Atvykę', 'Hospitalizuoti', 'Išleisti'],
-            datasets: [
-              {
-                label: 'Pacientai',
-                data: [funnelData.arrived, funnelData.hospitalized, funnelData.discharged],
-                backgroundColor: [
-                  computeHeatmapColor(accent, 0.9),
-                  computeHeatmapColor(accent, 0.6),
-                  computeHeatmapColor(accent, 0.35),
-                ],
-                borderRadius: 18,
-                borderSkipped: false,
-                barPercentage: 0.7,
-                categoryPercentage: 0.7,
-              },
-            ],
-          },
-          options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label(context) {
-                    const value = context.parsed.x;
-                    return `${context.label}: ${numberFormatter.format(value)}`;
-                  },
-                },
-              },
-            },
-            scales: {
-              x: {
-                beginAtZero: true,
-                ticks: {
-                  callback(value) {
-                    return numberFormatter.format(value);
-                  },
-                },
-              },
-              y: {
-                ticks: {
-                  color: textColor,
-                },
-              },
-            },
-          },
-        });
+        dashboardState.charts.funnel = null;
+        renderFunnelShape(funnelCanvas, funnelData, accent, textColor);
       }
 
       renderArrivalHeatmap(selectors.heatmapContainer, heatmapData, accent);
@@ -2957,6 +2912,146 @@
         `;
         selectors.monthlyTable.appendChild(row);
       });
+    }
+
+    function drawFunnelShape(canvas, steps, accentColor, textColor) {
+      if (!canvas) {
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      if (width === 0 || height === 0) {
+        return;
+      }
+      const dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+      }
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(dpr, dpr);
+
+      const rawValues = steps.map((step) => step.value || 0);
+      const baselineValue = rawValues.length ? rawValues[0] : 0;
+      const maxValue = Math.max(baselineValue, ...rawValues);
+      const fontFamily = getComputedStyle(document.documentElement).fontFamily;
+
+      if (!Number.isFinite(maxValue) || maxValue <= 0) {
+        ctx.fillStyle = textColor;
+        ctx.font = `500 14px ${fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(TEXT.charts.funnelEmpty || 'Piltuvėlio duomenų nėra.', width / 2, height / 2);
+        ctx.restore();
+        return;
+      }
+
+      const paddingX = Math.min(48, width * 0.12);
+      const paddingTop = 18;
+      const paddingBottom = 26;
+      const availableHeight = Math.max(0, height - paddingTop - paddingBottom);
+      const stepGap = Math.min(16, availableHeight * 0.08);
+      const totalGap = stepGap * Math.max(0, steps.length - 1);
+      const effectiveHeight = Math.max(0, availableHeight - totalGap);
+      const segmentHeight = steps.length > 0 ? effectiveHeight / steps.length : 0;
+      const baseWidth = Math.max(0, width - paddingX * 2);
+      const centerX = width / 2;
+
+      const colorSteps = steps.map((_, index) => {
+        const intensity = Math.max(0.15, 0.85 - index * 0.22);
+        return computeHeatmapColor(accentColor, intensity);
+      });
+
+      steps.forEach((step, index) => {
+        const previousValue = index === 0 ? baselineValue : steps[index - 1].value || 0;
+        const currentValue = step.value || 0;
+        const divisor = baselineValue > 0 ? baselineValue : maxValue;
+        const topRatio = divisor > 0 ? Math.min(1, Math.max(currentValue, previousValue) / divisor) : 1;
+        const bottomRatio = divisor > 0 ? Math.min(1, currentValue / divisor) : 0;
+        const topWidthRaw = topRatio * baseWidth;
+        const bottomWidthRaw = bottomRatio * baseWidth;
+        const minWidth = baseWidth * 0.08;
+        const bottomWidth = currentValue > 0 ? Math.max(minWidth, bottomWidthRaw) : bottomWidthRaw;
+        const topWidth = Math.max(bottomWidth, topWidthRaw);
+        const shapeHeight = Math.max(20, segmentHeight);
+        const topY = paddingTop + index * (shapeHeight + stepGap);
+        const bottomY = topY + shapeHeight;
+        const topHalfWidth = topWidth / 2;
+        const bottomHalfWidth = bottomWidth / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX - topHalfWidth, topY);
+        ctx.lineTo(centerX + topHalfWidth, topY);
+        ctx.lineTo(centerX + bottomHalfWidth, bottomY);
+        ctx.lineTo(centerX - bottomHalfWidth, bottomY);
+        ctx.closePath();
+        ctx.fillStyle = colorSteps[index] || accentColor;
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 8;
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.stroke();
+
+        const labelFontSize = Math.max(12, Math.min(16, shapeHeight * 0.28));
+        const valueFontSize = Math.max(14, Math.min(20, shapeHeight * 0.36));
+        const percent = divisor > 0 ? (currentValue / divisor) * 100 : 0;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const centerY = topY + shapeHeight / 2;
+        ctx.font = `500 ${labelFontSize}px ${fontFamily}`;
+        ctx.fillText(step.label, centerX, centerY - valueFontSize * 0.7);
+        ctx.font = `600 ${valueFontSize}px ${fontFamily}`;
+        ctx.fillText(numberFormatter.format(currentValue), centerX, centerY);
+        ctx.font = `400 ${Math.max(11, labelFontSize - 1)}px ${fontFamily}`;
+        ctx.fillText(`${decimalFormatter.format(percent)}%`, centerX, Math.min(bottomY - 10, centerY + valueFontSize * 0.95));
+      });
+
+      ctx.restore();
+    }
+
+    function renderFunnelShape(canvas, funnelData, accentColor, textColor) {
+      if (!canvas) {
+        return;
+      }
+
+      const stepsConfig = Array.isArray(TEXT.charts.funnelSteps) && TEXT.charts.funnelSteps.length
+        ? TEXT.charts.funnelSteps
+        : [
+            { key: 'arrived', label: 'Atvykę' },
+            { key: 'hospitalized', label: 'Hospitalizuoti' },
+            { key: 'discharged', label: 'Išleisti' },
+          ];
+
+      const steps = stepsConfig.map((step) => ({
+        label: step.label,
+        value: Number.isFinite(Number(funnelData?.[step.key])) ? Number(funnelData[step.key]) : 0,
+      }));
+
+      canvas.__funnelState = { steps, accentColor, textColor };
+
+      if (!canvas.__funnelObserver && typeof ResizeObserver === 'function') {
+        const observer = new ResizeObserver(() => {
+          if (canvas.__funnelState) {
+            const { steps: currentSteps, accentColor: currentAccent, textColor: currentText } = canvas.__funnelState;
+            drawFunnelShape(canvas, currentSteps, currentAccent, currentText);
+          }
+        });
+        observer.observe(canvas);
+        canvas.__funnelObserver = observer;
+      }
+
+      drawFunnelShape(canvas, steps, accentColor, textColor);
     }
 
     async function loadDashboard() {
