@@ -228,6 +228,60 @@
       gap: 18px;
     }
 
+    .kpi-controls {
+      margin-bottom: 18px;
+      padding: 16px 20px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-elevated);
+      display: grid;
+      gap: 12px;
+    }
+
+    .kpi-controls__form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .kpi-filter {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 160px;
+      flex: 1 1 160px;
+    }
+
+    .kpi-filter span {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-filter select {
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: rgba(37, 99, 235, 0.04);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .kpi-filter select:focus-visible {
+      outline: none;
+      border-color: rgba(37, 99, 235, 0.65);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+
+    .kpi-controls__summary {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
     .kpi-card {
       list-style: none;
       background: var(--color-surface);
@@ -428,6 +482,15 @@
       .chart-card,
       .chart-card--wide {
         grid-column: 1 / -1;
+      }
+
+      .kpi-controls__form {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .kpi-filter {
+        width: 100%;
       }
 
       .heatmap-table {
@@ -646,6 +709,11 @@
       transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease;
     }
 
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+
     .btn-primary {
       background: var(--color-accent);
       color: #fff;
@@ -779,6 +847,41 @@
           <h2 id="kpiHeading" class="section__title">Pagrindiniai rodikliai</h2>
           <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
         </div>
+      </div>
+      <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle">
+        <h3 id="kpiFiltersTitle" class="sr-only">KPI filtrai</h3>
+        <form id="kpiFiltersForm" class="kpi-controls__form">
+          <label class="kpi-filter" for="kpiWindow">
+            <span>Laikotarpis</span>
+            <select id="kpiWindow" name="window" aria-label="Pasirinkite KPI laikotarpį dienomis"></select>
+          </label>
+          <label class="kpi-filter" for="kpiShift">
+            <span>Pamaina</span>
+            <select id="kpiShift" name="shift" aria-label="Filtruoti pagal pamainą">
+              <option value="all">Visos</option>
+              <option value="day">Dieninės</option>
+              <option value="night">Naktinės</option>
+            </select>
+          </label>
+          <label class="kpi-filter" for="kpiArrival">
+            <span>Atvykimo tipas</span>
+            <select id="kpiArrival" name="arrival" aria-label="Filtruoti pagal atvykimo tipą">
+              <option value="all">Visi</option>
+              <option value="ems">Tik GMP</option>
+              <option value="self">Be GMP</option>
+            </select>
+          </label>
+          <label class="kpi-filter" for="kpiDisposition">
+            <span>Būsena išvykstant</span>
+            <select id="kpiDisposition" name="disposition" aria-label="Filtruoti pagal išvykimo sprendimą">
+              <option value="all">Visi</option>
+              <option value="hospitalized">Hospitalizuoti</option>
+              <option value="discharged">Išleisti</option>
+            </select>
+          </label>
+          <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
+        </form>
+        <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite">Rodomi numatytieji KPI.</p>
       </div>
       <div id="kpiGrid" class="kpi-grid" role="list"></div>
     </section>
@@ -1223,6 +1326,37 @@
 
     let settings = loadSettings();
 
+    const KPI_WINDOW_OPTION_BASE = [7, 14, 30, 60, 90, 180];
+    const KPI_FILTER_LABELS = {
+      shift: {
+        all: 'visos pamainos',
+        day: 'dieninės pamainos',
+        night: 'naktinės pamainos',
+      },
+      arrival: {
+        all: 'visi atvykimai',
+        ems: 'tik GMP',
+        self: 'be GMP',
+      },
+      disposition: {
+        all: 'visos būsenos',
+        hospitalized: 'hospitalizuoti',
+        discharged: 'išleisti',
+      },
+    };
+
+    function getDefaultKpiFilters() {
+      const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
+        ? Number(settings.calculations.windowDays)
+        : DEFAULT_SETTINGS.calculations.windowDays;
+      return {
+        window: configuredWindow,
+        shift: 'all',
+        arrival: 'all',
+        disposition: 'all',
+      };
+    }
+
     // Formatai datoms ir skaičiams (LT locale).
     const numberFormatter = new Intl.NumberFormat('lt-LT');
     const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1270,6 +1404,13 @@
       cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
       recentSection: document.querySelector('[data-section="recent"]'),
       monthlySection: document.querySelector('[data-section="monthly"]'),
+      kpiFiltersForm: document.getElementById('kpiFiltersForm'),
+      kpiWindow: document.getElementById('kpiWindow'),
+      kpiShift: document.getElementById('kpiShift'),
+      kpiArrival: document.getElementById('kpiArrival'),
+      kpiDisposition: document.getElementById('kpiDisposition'),
+      kpiFiltersReset: document.getElementById('kpiFiltersReset'),
+      kpiActiveInfo: document.getElementById('kpiActiveFilters'),
     };
 
     function cloneSettings(value) {
@@ -1737,6 +1878,16 @@
       }
       const extracted = extractSettingsFromForm(selectors.settingsForm);
       settings = normalizeSettings(extracted);
+      const previousFilters = dashboardState.kpi.filters;
+      const defaultFilters = getDefaultKpiFilters();
+      dashboardState.kpi.filters = {
+        ...defaultFilters,
+        shift: previousFilters.shift,
+        arrival: previousFilters.arrival,
+        disposition: previousFilters.disposition,
+      };
+      refreshKpiWindowOptions();
+      syncKpiFilterControls();
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
@@ -1752,6 +1903,9 @@
         return;
       }
       settings = normalizeSettings({});
+      dashboardState.kpi.filters = getDefaultKpiFilters();
+      refreshKpiWindowOptions();
+      syncKpiFilterControls();
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
@@ -1772,6 +1926,13 @@
       },
       usingFallback: false,
       lastErrorMessage: '',
+      rawRecords: [],
+      dailyStats: [],
+      kpi: {
+        filters: getDefaultKpiFilters(),
+        records: [],
+        daily: [],
+      },
     };
 
     /**
@@ -2520,6 +2681,187 @@
       };
     }
 
+    function refreshKpiWindowOptions() {
+      const select = selectors.kpiWindow;
+      if (!select) {
+        return;
+      }
+      const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
+        ? Number(settings.calculations.windowDays)
+        : DEFAULT_SETTINGS.calculations.windowDays;
+      const currentWindow = Number.isFinite(Number(dashboardState.kpi?.filters?.window))
+        ? Number(dashboardState.kpi.filters.window)
+        : configuredWindow;
+      const uniqueValues = [...new Set([...KPI_WINDOW_OPTION_BASE, configuredWindow, currentWindow])]
+        .filter((value) => Number.isFinite(value) && value > 0)
+        .sort((a, b) => a - b);
+      const options = uniqueValues.map((value) => {
+        const option = document.createElement('option');
+        option.value = String(value);
+        option.textContent = `${value} d.`;
+        return option;
+      });
+      select.replaceChildren(...options);
+    }
+
+    function syncKpiFilterControls() {
+      const filters = dashboardState.kpi.filters;
+      if (selectors.kpiWindow && Number.isFinite(filters.window)) {
+        const windowValue = String(filters.window);
+        const existing = Array.from(selectors.kpiWindow.options).some((option) => option.value === windowValue);
+        if (!existing) {
+          const option = document.createElement('option');
+          option.value = windowValue;
+          option.textContent = `${filters.window} d.`;
+          selectors.kpiWindow.appendChild(option);
+        }
+        selectors.kpiWindow.value = windowValue;
+      }
+      if (selectors.kpiShift) {
+        selectors.kpiShift.value = filters.shift;
+      }
+      if (selectors.kpiArrival) {
+        selectors.kpiArrival.value = filters.arrival;
+      }
+      if (selectors.kpiDisposition) {
+        selectors.kpiDisposition.value = filters.disposition;
+      }
+    }
+
+    function recordMatchesKpiFilters(record, filters) {
+      if (!record) {
+        return false;
+      }
+      if (filters.shift === 'day' && record.night) {
+        return false;
+      }
+      if (filters.shift === 'night' && !record.night) {
+        return false;
+      }
+      if (filters.arrival === 'ems' && !record.ems) {
+        return false;
+      }
+      if (filters.arrival === 'self' && record.ems) {
+        return false;
+      }
+      if (filters.disposition === 'hospitalized' && !record.hospitalized) {
+        return false;
+      }
+      if (filters.disposition === 'discharged' && record.hospitalized) {
+        return false;
+      }
+      return true;
+    }
+
+    function updateKpiSummary({ records, dailyStats, windowDays }) {
+      if (!selectors.kpiActiveInfo) {
+        return;
+      }
+      const totalRecords = Array.isArray(records) ? records.length : 0;
+      const fallbackCount = Array.isArray(dailyStats)
+        ? dailyStats.reduce((acc, entry) => acc + (Number.isFinite(entry?.count) ? entry.count : 0), 0)
+        : 0;
+      const approxCount = totalRecords || fallbackCount;
+      const daysCovered = Array.isArray(dailyStats) ? dailyStats.length : 0;
+      const parts = [];
+      if (Number.isFinite(windowDays) && windowDays > 0) {
+        parts.push(`Laikotarpis: ${windowDays} d.`);
+      } else {
+        parts.push('Laikotarpis: visas');
+      }
+      const shiftLabel = KPI_FILTER_LABELS.shift[dashboardState.kpi.filters.shift];
+      const arrivalLabel = KPI_FILTER_LABELS.arrival[dashboardState.kpi.filters.arrival];
+      const dispositionLabel = KPI_FILTER_LABELS.disposition[dashboardState.kpi.filters.disposition];
+      parts.push(`Pamaina: ${shiftLabel}`);
+      parts.push(`Atvykimas: ${arrivalLabel}`);
+      parts.push(`Būsena: ${dispositionLabel}`);
+      if (daysCovered > 0) {
+        parts.push(`Dienų: ${numberFormatter.format(daysCovered)}`);
+      }
+      const base = approxCount > 0
+        ? `Rodoma ${numberFormatter.format(approxCount)} pacientų įrašų${totalRecords ? '' : ' (agreguota)'}`
+        : 'Filtrams atitinkančių įrašų nerasta';
+      const detail = parts.join(' • ');
+      selectors.kpiActiveInfo.textContent = detail ? `${base} • ${detail}` : base;
+    }
+
+    function applyKpiFiltersAndRender() {
+      const filters = dashboardState.kpi.filters;
+      const windowDays = Number.isFinite(filters.window) ? filters.window : DEFAULT_SETTINGS.calculations.windowDays;
+      const hasRawRecords = Array.isArray(dashboardState.rawRecords) && dashboardState.rawRecords.length > 0;
+      let filteredRecords = [];
+      let filteredDailyStats = [];
+
+      if (hasRawRecords) {
+        const scopedRecords = filterRecordsByWindow(dashboardState.rawRecords, windowDays);
+        filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, filters));
+        filteredDailyStats = computeDailyStats(filteredRecords);
+      } else {
+        const scopedDaily = filterDailyStatsByWindow(dashboardState.dailyStats, windowDays);
+        filteredDailyStats = scopedDaily.slice();
+      }
+
+      dashboardState.kpi.records = filteredRecords;
+      dashboardState.kpi.daily = filteredDailyStats;
+      renderKpis(filteredDailyStats);
+      updateKpiSummary({ records: filteredRecords, dailyStats: filteredDailyStats, windowDays });
+    }
+
+    function handleKpiFilterInput(event) {
+      const target = event.target;
+      if (!target || !('name' in target)) {
+        return;
+      }
+      const { name, value } = target;
+      const filters = dashboardState.kpi.filters;
+      if (name === 'window') {
+        const numeric = Number.parseInt(value, 10);
+        if (Number.isFinite(numeric) && numeric > 0) {
+          filters.window = numeric;
+        }
+      } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
+        filters.shift = value;
+      } else if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
+        filters.arrival = value;
+      } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
+        filters.disposition = value;
+      }
+      applyKpiFiltersAndRender();
+    }
+
+    function resetKpiFilters({ fromKeyboard } = {}) {
+      dashboardState.kpi.filters = getDefaultKpiFilters();
+      refreshKpiWindowOptions();
+      syncKpiFilterControls();
+      applyKpiFiltersAndRender();
+      if (fromKeyboard && selectors.kpiFiltersReset) {
+        selectors.kpiFiltersReset.focus();
+      }
+    }
+
+    function initializeKpiFilters() {
+      if (!selectors.kpiFiltersForm) {
+        return;
+      }
+      refreshKpiWindowOptions();
+      syncKpiFilterControls();
+      selectors.kpiFiltersForm.addEventListener('change', handleKpiFilterInput);
+      selectors.kpiFiltersForm.addEventListener('submit', (event) => event.preventDefault());
+      if (selectors.kpiFiltersReset) {
+        selectors.kpiFiltersReset.addEventListener('click', (event) => {
+          event.preventDefault();
+          resetKpiFilters();
+        });
+      }
+      if ((dashboardState.kpi.records && dashboardState.kpi.records.length) || (dashboardState.kpi.daily && dashboardState.kpi.daily.length)) {
+        updateKpiSummary({
+          records: dashboardState.kpi.records,
+          dailyStats: dashboardState.kpi.daily,
+          windowDays: dashboardState.kpi.filters.window,
+        });
+      }
+    }
+
     function formatKpiValue(value, format) {
       if (value == null || Number.isNaN(value)) {
         return '–';
@@ -3060,9 +3402,15 @@
         setStatus('loading');
         const rawData = await fetchData();
         const dailyStats = computeDailyStats(rawData);
+        dashboardState.rawRecords = rawData;
+        dashboardState.dailyStats = dailyStats;
         const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
           ? Number(settings.calculations.windowDays)
           : DEFAULT_SETTINGS.calculations.windowDays;
+        if (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0) {
+          dashboardState.kpi.filters.window = windowDays;
+          syncKpiFilterControls();
+        }
         const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
         const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
           ? Number(settings.calculations.recentDays)
@@ -3072,7 +3420,7 @@
         const filteredRecords = filterRecordsByWindow(rawData, windowDays);
         const heatmapData = computeArrivalHeatmap(filteredRecords);
         const funnelData = computeFunnelStats(lastWindowDailyStats);
-        renderKpis(dailyStats);
+        applyKpiFiltersAndRender();
         await renderCharts(lastWindowDailyStats, funnelData, heatmapData);
         renderRecentTable(recentDailyStats);
         const monthlyStats = computeMonthlyStats(lastWindowDailyStats);
@@ -3093,6 +3441,7 @@
     applySectionVisibility();
     populateSettingsForm();
 
+    initializeKpiFilters();
     loadDashboard();
 
     const refreshButton = selectors.refreshBtn;
@@ -3138,6 +3487,14 @@
       if ((event.ctrlKey || event.metaKey) && event.key === ',') {
         event.preventDefault();
         openSettingsDialog();
+      }
+      if (!event.ctrlKey && !event.metaKey && event.shiftKey && (event.key === 'R' || event.key === 'r')) {
+        const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
+        if (tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
+          return;
+        }
+        event.preventDefault();
+        resetKpiFilters({ fromKeyboard: true });
       }
     });
   </script>
