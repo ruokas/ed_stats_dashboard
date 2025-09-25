@@ -1,4 +1,4 @@
-# Skubios pagalbos statistikos skydelis
+# RŠL SMPS statistika
 
 Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus, paskutinės savaitės kasdienę ir savaitinę suvestines.
 
