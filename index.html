@@ -308,16 +308,48 @@
       opacity: 1;
     }
 
-    .kpi-card h3 {
+    .kpi-card__header {
       margin: 0 0 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .kpi-card h3 {
+      margin: 0;
       font-size: 0.95rem;
       font-weight: 600;
       color: var(--color-text-muted);
     }
 
+    .kpi-card__meta {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border-radius: 999px;
+      padding: 2px 10px;
+      white-space: nowrap;
+    }
+
     .kpi-mainline {
-      margin: 0;
+      margin: 0 0 8px;
       display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .kpi-mainline__label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-mainline__value {
+      display: inline-flex;
       align-items: baseline;
       gap: 8px;
       flex-wrap: wrap;
@@ -330,21 +362,20 @@
       line-height: 1.1;
     }
 
-    .kpi-unit,
-    .kpi-aux,
-    .kpi-year-label {
+    .kpi-unit {
       font-size: clamp(0.85rem, 0.8rem + 0.4vw, 1rem);
       font-weight: 600;
       color: var(--color-text-muted);
-      text-transform: none;
     }
 
-    .kpi-year-label {
-      letter-spacing: 0.04em;
+    .kpi-share {
+      margin: 0 0 8px;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
     }
 
     .kpi-monthline {
-      margin: 12px 0 0;
+      margin: 0 0 0;
       font-size: 0.85rem;
       color: var(--color-text);
       line-height: 1.5;
@@ -352,8 +383,13 @@
 
     .kpi-card small {
       display: block;
-      margin-top: 12px;
+      margin-top: 14px;
       font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-empty {
+      font-size: 0.85rem;
       color: var(--color-text-muted);
     }
 
@@ -1217,6 +1253,15 @@
       kpis: {
         title: 'Pagrindiniai rodikliai',
         subtitle: 'Metiniai vidurkiai ir mėnesio palyginimas',
+        yearLabel: 'Metinis vidurkis',
+        yearAverageReference: 'metinis vidurkis',
+        monthPrefix: 'Šio mėnesio rezultatas',
+        monthPrefixShort: 'Šio mėn.',
+        monthNoData: 'Šio mėnesio duomenų nėra.',
+        shareHeading: 'Metinė dalis',
+        windowAllLabel: 'Visi duomenys',
+        windowYearSuffix: 'metai',
+        noYearData: 'Metiniam vidurkiui apskaičiuoti nepakanka duomenų.',
         items: {
           patientsPerDay: {
             label: 'Pacientų vidurkis per dieną',
@@ -1326,7 +1371,7 @@
 
     let settings = loadSettings();
 
-    const KPI_WINDOW_OPTION_BASE = [7, 14, 30, 60, 90, 180];
+    const KPI_WINDOW_OPTION_BASE = [7, 14, 30, 60, 90, 180, 365];
     const KPI_FILTER_LABELS = {
       shift: {
         all: 'visos pamainos',
@@ -2693,12 +2738,22 @@
         ? Number(dashboardState.kpi.filters.window)
         : configuredWindow;
       const uniqueValues = [...new Set([...KPI_WINDOW_OPTION_BASE, configuredWindow, currentWindow])]
-        .filter((value) => Number.isFinite(value) && value > 0)
-        .sort((a, b) => a - b);
+        .filter((value) => Number.isFinite(value) && value >= 0)
+        .sort((a, b) => {
+          if (a === 0) return 1;
+          if (b === 0) return -1;
+          return a - b;
+        });
       const options = uniqueValues.map((value) => {
         const option = document.createElement('option');
         option.value = String(value);
-        option.textContent = `${value} d.`;
+        if (value === 0) {
+          option.textContent = TEXT.kpis.windowAllLabel;
+        } else if (value === 365) {
+          option.textContent = `${value} d. (${TEXT.kpis.windowYearSuffix})`;
+        } else {
+          option.textContent = `${value} d.`;
+        }
         return option;
       });
       select.replaceChildren(...options);
@@ -2767,7 +2822,7 @@
       if (Number.isFinite(windowDays) && windowDays > 0) {
         parts.push(`Laikotarpis: ${windowDays} d.`);
       } else {
-        parts.push('Laikotarpis: visas');
+        parts.push(`Laikotarpis: ${TEXT.kpis.windowAllLabel.toLowerCase()}`);
       }
       const shiftLabel = KPI_FILTER_LABELS.shift[dashboardState.kpi.filters.shift];
       const arrivalLabel = KPI_FILTER_LABELS.arrival[dashboardState.kpi.filters.arrival];
@@ -2816,7 +2871,7 @@
       const filters = dashboardState.kpi.filters;
       if (name === 'window') {
         const numeric = Number.parseInt(value, 10);
-        if (Number.isFinite(numeric) && numeric > 0) {
+        if (Number.isFinite(numeric) && numeric >= 0) {
           filters.window = numeric;
         }
       } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
@@ -2879,7 +2934,7 @@
       if (monthValue == null || !Number.isFinite(monthValue)) {
         return '';
       }
-      const referenceLabel = yearLabel ? `${yearLabel} vidurkis` : 'metinis vidurkis';
+      const referenceLabel = yearLabel ? `${yearLabel} vidurkis` : TEXT.kpis.yearAverageReference;
       if (deltaType === 'percent') {
         if (yearValue == null || !Number.isFinite(yearValue) || Math.abs(yearValue) < Number.EPSILON) {
           return '';
@@ -2925,9 +2980,11 @@
     }) {
       const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
       if (!monthHasData) {
-        return monthLabel ? `Šio mėn. (${monthLabel}) duomenų nėra.` : 'Šio mėnesio duomenų nėra.';
+        return monthLabel
+          ? `${TEXT.kpis.monthPrefixShort} (${monthLabel}): ${TEXT.kpis.monthNoData}`
+          : TEXT.kpis.monthNoData;
       }
-      const descriptor = monthLabel ? `Šio mėn. (${monthLabel})` : 'Šio mėn.';
+      const descriptor = monthLabel ? `${TEXT.kpis.monthPrefix} (${monthLabel})` : TEXT.kpis.monthPrefix;
       const parts = [];
       if (monthValue != null && Number.isFinite(monthValue)) {
         const formattedMonthValue = formatKpiValue(monthValue, item.valueFormat);
@@ -2938,7 +2995,7 @@
         parts.push(`${percentFormatter.format(monthShare)} visų`);
       }
       if (!parts.length) {
-        return `${descriptor}: duomenų nepakanka.`;
+        return `${descriptor}: ${TEXT.kpis.monthNoData}`;
       }
       let text = `${descriptor}: ${parts.join(', ')}`;
       const deltaText = computeDeltaText(item.deltaType, yearValue, monthValue, item.unit, item.valueFormat, yearLabel);
@@ -2946,7 +3003,7 @@
         text += ` ${deltaText}`;
       }
       if (item.shareKey && yearShare != null && Number.isFinite(yearShare)) {
-        const shareLabel = item.shareLabel ?? 'Metinė dalis';
+        const shareLabel = item.shareLabel ?? TEXT.kpis.shareHeading;
         const shareReference = yearLabel ? `${shareLabel} (${yearLabel})` : shareLabel;
         text += ` (${shareReference}: ${percentFormatter.format(yearShare)})`;
       }
@@ -2961,8 +3018,14 @@
         card.className = 'kpi-card';
         card.setAttribute('role', 'listitem');
         card.innerHTML = `
-          <h3>Rodiklių nepakanka</h3>
-          <p class="kpi-monthline">Metiniams vidurkiams apskaičiuoti reikalingi bent vienos dienos duomenys.</p>
+          <div class="kpi-card__header">
+            <h3>Rodiklių nepakanka</h3>
+          </div>
+          <p class="kpi-mainline">
+            <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
+            <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
+          </p>
+          <p class="kpi-monthline">${TEXT.kpis.monthNoData}</p>
           <small>Įkelkite CSV su bent vienu įrašu ir bandykite dar kartą.</small>
         `;
         selectors.kpiGrid.appendChild(card);
@@ -3006,16 +3069,11 @@
             break;
         }
 
-        const mainlineParts = [`<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>`];
-        if (item.unit) {
-          mainlineParts.push(`<span class="kpi-unit">${item.unit}</span>`);
-        }
-        if (item.shareKey && yearShare != null && Number.isFinite(yearShare)) {
-          mainlineParts.push(`<span class="kpi-aux">${percentFormatter.format(yearShare)}</span>`);
-        }
-        if (yearLabel) {
-          mainlineParts.push(`<span class="kpi-year-label">${yearLabel}</span>`);
-        }
+        const hasYearValue = yearValue != null && Number.isFinite(yearValue);
+        const unitHtml = item.unit && hasYearValue ? `<span class="kpi-unit">${item.unit}</span>` : '';
+        const mainValueHtml = hasYearValue
+          ? `<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>${unitHtml}`
+          : `<span class="kpi-empty">${TEXT.kpis.noYearData}</span>`;
 
         const monthLine = buildMonthLine({
           item,
@@ -3028,9 +3086,21 @@
           yearLabel,
         });
 
+        const shareLine = item.shareKey && yearShare != null && Number.isFinite(yearShare)
+          ? `<p class="kpi-share">${item.shareLabel ?? TEXT.kpis.shareHeading}: <strong>${percentFormatter.format(yearShare)}</strong></p>`
+          : '';
+        const meta = yearLabel ? `<span class="kpi-card__meta">${yearLabel}</span>` : '';
+
         card.innerHTML = `
-          <h3>${item.label}</h3>
-          <p class="kpi-mainline">${mainlineParts.join('')}</p>
+          <div class="kpi-card__header">
+            <h3>${item.label}</h3>
+            ${meta}
+          </div>
+          <p class="kpi-mainline">
+            <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
+            <span class="kpi-mainline__value">${mainValueHtml}</span>
+          </p>
+          ${shareLine}
           <p class="kpi-monthline">${monthLine}</p>
           <small>${item.hint}</small>
         `;
