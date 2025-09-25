@@ -328,6 +328,10 @@
       grid-column: span 8;
     }
 
+    .chart-card--heatmap {
+      grid-column: span 12;
+    }
+
     .chart-card figcaption {
       font-size: 0.95rem;
       color: var(--color-text-muted);
@@ -794,7 +798,7 @@
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
           <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
         </figure>
-        <figure class="chart-card chart-card--wide">
+        <figure class="chart-card chart-card--heatmap">
           <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
           <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
         </figure>
