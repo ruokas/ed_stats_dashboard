@@ -465,26 +465,10 @@
 
     .chart-card__toolbar {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: flex-start;
       gap: 16px;
       flex-wrap: wrap;
-    }
-
-    .chart-card__sparkline {
-      flex: 1 1 220px;
-      min-width: 200px;
-      background: var(--color-surface-alt);
-      border-radius: 12px;
-      border: 1px solid var(--color-border);
-      padding: 8px 12px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .chart-card__sparkline canvas {
-      width: 100% !important;
-      height: 40px !important;
     }
 
     .chart-card__summary {
@@ -1187,9 +1171,6 @@
       <div class="chart-grid">
         <figure class="chart-card">
           <div class="chart-card__toolbar">
-            <div class="chart-card__sparkline" aria-hidden="true">
-              <canvas id="dailySparkline" height="56"></canvas>
-            </div>
             <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
               <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
               <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
@@ -1591,6 +1572,9 @@
         periodNoData: 'Šiam laikotarpiui duomenų nepakanka.',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
+        funnelCaptionWithYear: (year) => (year
+          ? `Pacientų srautas pagal sprendimą – ${year} m. (atvykę → sprendimas).`
+          : 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).'),
         funnelSteps: [
           { key: 'arrived', label: 'Atvykę' },
           { key: 'discharged', label: 'Išleisti' },
@@ -1738,7 +1722,6 @@
       funnelCaption: document.getElementById('funnelChartTitle'),
       heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
       heatmapContainer: document.getElementById('arrivalHeatmap'),
-      dailySparkline: document.getElementById('dailySparkline'),
       dailySparklineSummary: document.getElementById('dailySparklineSummary'),
       chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
       recentHeading: document.getElementById('recentHeading'),
@@ -2332,7 +2315,10 @@
         selectors.dailyCaptionContext.textContent = '';
       }
       selectors.dowCaption.textContent = TEXT.charts.dowCaption;
-      selectors.funnelCaption.textContent = TEXT.charts.funnelCaption;
+      const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
+        ? TEXT.charts.funnelCaptionWithYear(null)
+        : TEXT.charts.funnelCaption;
+      selectors.funnelCaption.textContent = funnelCaptionText;
       selectors.heatmapCaption.textContent = TEXT.charts.heatmapCaption;
       selectors.recentHeading.textContent = TEXT.recent.title;
       selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
@@ -2919,15 +2905,51 @@
         .map((item) => item.entry);
     }
 
-    function computeFunnelStats(dailyStats) {
-      return (Array.isArray(dailyStats) ? dailyStats : []).reduce(
-        (acc, entry) => ({
-          arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
-          hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
-          discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
+    function computeFunnelStats(dailyStats, targetYear) {
+      const entries = Array.isArray(dailyStats) ? dailyStats : [];
+      const withYear = entries
+        .map((entry) => {
+          const date = typeof entry?.date === 'string' ? dateKeyToDate(entry.date) : null;
+          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return null;
+          }
+          return { entry, year: date.getUTCFullYear() };
+        })
+        .filter(Boolean);
+
+      if (!withYear.length) {
+        const totals = entries.reduce(
+          (acc, entry) => ({
+            arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
+            hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
+            discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
+          }),
+          { arrived: 0, hospitalized: 0, discharged: 0 }
+        );
+        return { ...totals, year: null };
+      }
+
+      let effectiveYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
+      if (!Number.isFinite(effectiveYear)) {
+        effectiveYear = withYear.reduce((latest, item) => (item.year > latest ? item.year : latest), withYear[0].year);
+      }
+
+      let scoped = withYear.filter((item) => item.year === effectiveYear);
+      if (!scoped.length) {
+        scoped = withYear;
+        effectiveYear = withYear[0].year;
+      }
+
+      const aggregated = scoped.reduce(
+        (acc, item) => ({
+          arrived: acc.arrived + (Number.isFinite(item.entry?.count) ? item.entry.count : 0),
+          hospitalized: acc.hospitalized + (Number.isFinite(item.entry?.hospitalized) ? item.entry.hospitalized : 0),
+          discharged: acc.discharged + (Number.isFinite(item.entry?.discharged) ? item.entry.discharged : 0),
         }),
         { arrived: 0, hospitalized: 0, discharged: 0 }
       );
+
+      return { ...aggregated, year: effectiveYear };
     }
 
     const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Treč', 'Ketv', 'Penkt', 'Šešt', 'Sekm'];
@@ -3662,7 +3684,7 @@
       });
     }
 
-    function buildSparklineSummary(data) {
+    function updateDailyPeriodSummary(data) {
       if (!selectors.dailySparklineSummary) {
         return;
       }
@@ -3683,76 +3705,6 @@
       selectors.dailySparklineSummary.textContent = TEXT.charts.periodSummary(data.length, avgText, diffText);
     }
 
-    function updateDailySparkline(data, palette) {
-      if (!selectors.dailySparkline) {
-        return;
-      }
-      const canvas = selectors.dailySparkline;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        return;
-      }
-      const values = Array.isArray(data) ? data.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0)) : [];
-      const width = canvas.clientWidth || (canvas.parentElement ? canvas.parentElement.clientWidth : 240) || 240;
-      const height = canvas.clientHeight || 40;
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = palette.textMuted;
-      ctx.beginPath();
-      ctx.moveTo(6, height - 6);
-      ctx.lineTo(width - 6, height - 6);
-      ctx.stroke();
-
-      if (!values.length || values.every((value) => !Number.isFinite(value))) {
-        return;
-      }
-
-      const minValue = Math.min(...values);
-      const maxValue = Math.max(...values);
-      const range = Math.max(maxValue - minValue, 1);
-      const paddingX = 6;
-      const paddingY = 6;
-      const points = values.map((value, index) => {
-        const ratio = values.length > 1 ? index / (values.length - 1) : 0.5;
-        const normalized = range === 0 ? 0.5 : (value - minValue) / range;
-        const x = paddingX + ratio * (width - paddingX * 2);
-        const y = height - paddingY - normalized * (height - paddingY * 2);
-        return { x, y };
-      });
-
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, height - paddingY);
-      points.forEach((point) => {
-        ctx.lineTo(point.x, point.y);
-      });
-      ctx.lineTo(points[points.length - 1].x, height - paddingY);
-      ctx.closePath();
-      ctx.fillStyle = palette.accentSoft;
-      ctx.fill();
-
-      ctx.beginPath();
-      points.forEach((point, index) => {
-        if (index === 0) {
-          ctx.moveTo(point.x, point.y);
-        } else {
-          ctx.lineTo(point.x, point.y);
-        }
-      });
-      ctx.strokeStyle = palette.accent;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      const lastPoint = points[points.length - 1];
-      ctx.beginPath();
-      ctx.arc(lastPoint.x, lastPoint.y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = palette.accent;
-      ctx.fill();
-    }
-
     function renderDailyChart(dailyStats, period, ChartLib, palette) {
       const Chart = ChartLib;
       const themePalette = palette || getThemePalette();
@@ -3760,8 +3712,7 @@
       dashboardState.chartPeriod = normalizedPeriod;
       syncChartPeriodButtons(normalizedPeriod);
       const scopedData = Array.isArray(dailyStats) ? dailyStats.slice(-normalizedPeriod) : [];
-      buildSparklineSummary(scopedData);
-      updateDailySparkline(scopedData, themePalette);
+      updateDailyPeriodSummary(scopedData);
       if (selectors.dailyCaptionContext) {
         const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
         const dateValue = lastEntry?.date ? dateKeyToDate(lastEntry.date) : null;
@@ -3860,7 +3811,7 @@
       const data = dashboardState.chartData.dailyWindow || [];
       syncChartPeriodButtons(numeric);
       if (!data.length) {
-        buildSparklineSummary([]);
+        updateDailyPeriodSummary([]);
         if (selectors.dailyCaptionContext) {
           selectors.dailyCaptionContext.textContent = '';
         }
@@ -3891,7 +3842,8 @@
 
       dashboardState.chartLib = Chart;
       dashboardState.chartData.dailyWindow = Array.isArray(dailyStats) ? dailyStats.slice() : [];
-      dashboardState.chartData.funnel = funnelTotals || computeFunnelStats(dailyStats);
+      const funnelSource = funnelTotals || computeFunnelStats(dashboardState.dailyStats);
+      dashboardState.chartData.funnel = funnelSource;
       dashboardState.chartData.heatmap = heatmapData;
 
       renderDailyChart(dashboardState.chartData.dailyWindow, dashboardState.chartPeriod, Chart, palette);
@@ -3969,6 +3921,14 @@
             },
           },
         });
+      }
+
+      if (selectors.funnelCaption) {
+        const funnelYear = dashboardState.chartData.funnel?.year ?? null;
+        const captionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
+          ? TEXT.charts.funnelCaptionWithYear(funnelYear)
+          : TEXT.charts.funnelCaption;
+        selectors.funnelCaption.textContent = captionText;
       }
 
       const funnelCanvas = document.getElementById('funnelChart');
@@ -4421,7 +4381,7 @@
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
         const filteredRecords = filterRecordsByWindow(rawData, windowDays);
         const heatmapData = computeArrivalHeatmap(filteredRecords);
-        const funnelData = computeFunnelStats(lastWindowDailyStats);
+        const funnelData = computeFunnelStats(dashboardState.dailyStats);
         applyKpiFiltersAndRender();
         await renderCharts(lastWindowDailyStats, funnelData, heatmapData);
         renderRecentTable(recentDailyStats);
