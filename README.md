@@ -4,7 +4,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ## Savybės
 - 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
-- 📊 KPI kortelės, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
+- 📊 KPI kortelės su metiniais vidurkiais ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
 - 🛡️ Automatinis demonstracinių duomenų rezervas ir aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
