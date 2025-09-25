@@ -799,28 +799,29 @@
       </div>
     </section>
 
-    <section class="section" aria-labelledby="weeklyHeading" data-section="weekly">
+    <section class="section" aria-labelledby="monthlyHeading" data-section="monthly">
       <div class="section__header">
         <div>
-          <h2 id="weeklyHeading" class="section__title">Savaitinė suvestinė</h2>
-          <p id="weeklySubtitle" class="section__subtitle">ISO savaitės, paskaičiuotos iš pasirinktų duomenų</p>
+          <h2 id="monthlyHeading" class="section__title">Mėnesinė suvestinė</h2>
+          <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
         </div>
       </div>
-      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="weeklyHeading">
-        <table aria-describedby="weeklySubtitle">
-          <caption id="weeklyCaption" class="sr-only">Savaitinė pacientų ir vidutinio buvimo laiko suvestinė</caption>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="monthlyHeading">
+        <table aria-describedby="monthlySubtitle">
+          <caption id="monthlyCaption" class="sr-only">Mėnesių pacientų suvestinė: sumos ir vidurkiai</caption>
           <thead>
             <tr>
-              <th scope="col">Savaitė</th>
-              <th scope="col">Pacientai</th>
-              <th scope="col">Vid. laikas (val.)</th>
+              <th scope="col">Mėnuo</th>
+              <th scope="col">Pacientai (suma)</th>
+              <th scope="col">Vid. per dieną</th>
+              <th scope="col">Vid. buvimo laikas (val.)</th>
               <th scope="col">Naktiniai pacientai</th>
               <th scope="col">GMP</th>
               <th scope="col">Hospitalizuoti</th>
               <th scope="col">Išleisti</th>
             </tr>
           </thead>
-          <tbody id="weeklyTable"></tbody>
+          <tbody id="monthlyTable"></tbody>
         </table>
       </div>
     </section>
@@ -961,12 +962,12 @@
           </div>
           <div class="settings-inline">
             <div class="settings-field">
-              <label for="settingsWeeklyTitle"><span>Savaitinės suvestinės pavadinimas</span></label>
-              <input id="settingsWeeklyTitle" name="output.weeklyTitle" type="text">
+              <label for="settingsMonthlyTitle"><span>Mėnesinės suvestinės pavadinimas</span></label>
+              <input id="settingsMonthlyTitle" name="output.monthlyTitle" type="text">
             </div>
             <div class="settings-field">
-              <label for="settingsWeeklySubtitle"><span>Savaitinės suvestinės paantraštė</span></label>
-              <input id="settingsWeeklySubtitle" name="output.weeklySubtitle" type="text">
+              <label for="settingsMonthlySubtitle"><span>Mėnesinės suvestinės paantraštė</span></label>
+              <input id="settingsMonthlySubtitle" name="output.monthlySubtitle" type="text">
             </div>
           </div>
           <div class="settings-field">
@@ -977,9 +978,9 @@
             <input id="settingsShowRecent" name="output.showRecent" type="checkbox">
             <span>Rodyti „Paskutinės dienos“ lentelę.</span>
           </label>
-          <label class="settings-checkbox" for="settingsShowWeekly">
-            <input id="settingsShowWeekly" name="output.showWeekly" type="checkbox">
-            <span>Rodyti „Savaitinė suvestinė“ lentelę.</span>
+          <label class="settings-checkbox" for="settingsShowMonthly">
+            <input id="settingsShowMonthly" name="output.showMonthly" type="checkbox">
+            <span>Rodyti „Mėnesinė suvestinė“ lentelę.</span>
           </label>
         </section>
       </div>
@@ -1127,10 +1128,10 @@
         caption: 'Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė.',
         empty: 'Šiame laikotarpyje duomenų nėra.',
       },
-      weekly: {
-        title: 'Savaitinė suvestinė',
-        subtitle: 'ISO savaitės (paskutinės 30 dienos).',
-        caption: 'Savaitinė pacientų ir vidutinio buvimo laiko suvestinė.',
+      monthly: {
+        title: 'Mėnesinė suvestinė',
+        subtitle: 'Kalendoriniai mėnesiai (paskutiniai 12 mėnesių).',
+        caption: 'Mėnesių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
       },
     };
@@ -1169,11 +1170,11 @@
         chartsSubtitle: TEXT.charts.subtitle,
         recentTitle: TEXT.recent.title,
         recentSubtitle: TEXT.recent.subtitle,
-        weeklyTitle: TEXT.weekly.title,
-        weeklySubtitle: TEXT.weekly.subtitle,
+        monthlyTitle: TEXT.monthly.title,
+        monthlySubtitle: TEXT.monthly.subtitle,
         footerSource: DEFAULT_FOOTER_SOURCE,
         showRecent: true,
-        showWeekly: true,
+        showMonthly: true,
       },
     };
 
@@ -1215,17 +1216,17 @@
       recentSubtitle: document.getElementById('recentSubtitle'),
       recentCaption: document.getElementById('recentCaption'),
       recentTable: document.getElementById('recentTable'),
-      weeklyHeading: document.getElementById('weeklyHeading'),
-      weeklySubtitle: document.getElementById('weeklySubtitle'),
-      weeklyCaption: document.getElementById('weeklyCaption'),
-      weeklyTable: document.getElementById('weeklyTable'),
+      monthlyHeading: document.getElementById('monthlyHeading'),
+      monthlySubtitle: document.getElementById('monthlySubtitle'),
+      monthlyCaption: document.getElementById('monthlyCaption'),
+      monthlyTable: document.getElementById('monthlyTable'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       settingsDialog: document.getElementById('settingsDialog'),
       settingsForm: document.getElementById('settingsForm'),
       resetSettingsBtn: document.getElementById('resetSettingsBtn'),
       cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
       recentSection: document.querySelector('[data-section="recent"]'),
-      weeklySection: document.querySelector('[data-section="weekly"]'),
+      monthlySection: document.querySelector('[data-section="monthly"]'),
     };
 
     function cloneSettings(value) {
@@ -1314,11 +1315,20 @@
       merged.output.chartsSubtitle = merged.output.chartsSubtitle != null ? String(merged.output.chartsSubtitle) : DEFAULT_SETTINGS.output.chartsSubtitle;
       merged.output.recentTitle = merged.output.recentTitle != null ? String(merged.output.recentTitle) : DEFAULT_SETTINGS.output.recentTitle;
       merged.output.recentSubtitle = merged.output.recentSubtitle != null ? String(merged.output.recentSubtitle) : DEFAULT_SETTINGS.output.recentSubtitle;
-      merged.output.weeklyTitle = merged.output.weeklyTitle != null ? String(merged.output.weeklyTitle) : DEFAULT_SETTINGS.output.weeklyTitle;
-      merged.output.weeklySubtitle = merged.output.weeklySubtitle != null ? String(merged.output.weeklySubtitle) : DEFAULT_SETTINGS.output.weeklySubtitle;
+      if (merged.output.monthlyTitle == null && merged.output.weeklyTitle != null) {
+        merged.output.monthlyTitle = merged.output.weeklyTitle;
+      }
+      if (merged.output.monthlySubtitle == null && merged.output.weeklySubtitle != null) {
+        merged.output.monthlySubtitle = merged.output.weeklySubtitle;
+      }
+      if (merged.output.showMonthly == null && merged.output.showWeekly != null) {
+        merged.output.showMonthly = merged.output.showWeekly;
+      }
+      merged.output.monthlyTitle = merged.output.monthlyTitle != null ? String(merged.output.monthlyTitle) : DEFAULT_SETTINGS.output.monthlyTitle;
+      merged.output.monthlySubtitle = merged.output.monthlySubtitle != null ? String(merged.output.monthlySubtitle) : DEFAULT_SETTINGS.output.monthlySubtitle;
       merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
       merged.output.showRecent = Boolean(merged.output.showRecent);
-      merged.output.showWeekly = Boolean(merged.output.showWeekly);
+      merged.output.showMonthly = Boolean(merged.output.showMonthly);
 
       return merged;
     }
@@ -1354,8 +1364,8 @@
       TEXT.charts.subtitle = settings.output.chartsSubtitle || DEFAULT_SETTINGS.output.chartsSubtitle;
       TEXT.recent.title = settings.output.recentTitle || DEFAULT_SETTINGS.output.recentTitle;
       TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
-      TEXT.weekly.title = settings.output.weeklyTitle || DEFAULT_SETTINGS.output.weeklyTitle;
-      TEXT.weekly.subtitle = settings.output.weeklySubtitle || DEFAULT_SETTINGS.output.weeklySubtitle;
+      TEXT.monthly.title = settings.output.monthlyTitle || DEFAULT_SETTINGS.output.monthlyTitle;
+      TEXT.monthly.subtitle = settings.output.monthlySubtitle || DEFAULT_SETTINGS.output.monthlySubtitle;
     }
 
     function applyFooterSource() {
@@ -1379,7 +1389,7 @@
 
     function applySectionVisibility() {
       toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
-      toggleSectionVisibility(selectors.weeklySection, settings.output.showWeekly);
+      toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
     }
 
     function parseCandidateList(value, fallback = '') {
@@ -1544,11 +1554,11 @@
       assign('output.chartsSubtitle', settings.output.chartsSubtitle);
       assign('output.recentTitle', settings.output.recentTitle);
       assign('output.recentSubtitle', settings.output.recentSubtitle);
-      assign('output.weeklyTitle', settings.output.weeklyTitle);
-      assign('output.weeklySubtitle', settings.output.weeklySubtitle);
+      assign('output.monthlyTitle', settings.output.monthlyTitle);
+      assign('output.monthlySubtitle', settings.output.monthlySubtitle);
       assign('output.footerSource', settings.output.footerSource);
       assign('output.showRecent', settings.output.showRecent);
-      assign('output.showWeekly', settings.output.showWeekly);
+      assign('output.showMonthly', settings.output.showMonthly);
     }
 
     function extractSettingsFromForm(form) {
@@ -1584,11 +1594,11 @@
           chartsSubtitle: '',
           recentTitle: '',
           recentSubtitle: '',
-          weeklyTitle: '',
-          weeklySubtitle: '',
+          monthlyTitle: '',
+          monthlySubtitle: '',
           footerSource: '',
           showRecent: false,
-          showWeekly: false,
+          showMonthly: false,
         },
       };
 
@@ -1635,11 +1645,11 @@
       result.output.chartsSubtitle = readText('output.chartsSubtitle').trim();
       result.output.recentTitle = readText('output.recentTitle').trim();
       result.output.recentSubtitle = readText('output.recentSubtitle').trim();
-      result.output.weeklyTitle = readText('output.weeklyTitle').trim();
-      result.output.weeklySubtitle = readText('output.weeklySubtitle').trim();
+      result.output.monthlyTitle = readText('output.monthlyTitle').trim();
+      result.output.monthlySubtitle = readText('output.monthlySubtitle').trim();
       result.output.footerSource = readText('output.footerSource').trim();
       result.output.showRecent = readCheckbox('output.showRecent');
-      result.output.showWeekly = readCheckbox('output.showWeekly');
+      result.output.showMonthly = readCheckbox('output.showMonthly');
 
       return result;
     }
@@ -1746,9 +1756,9 @@
       selectors.recentHeading.textContent = TEXT.recent.title;
       selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
       selectors.recentCaption.textContent = TEXT.recent.caption;
-      selectors.weeklyHeading.textContent = TEXT.weekly.title;
-      selectors.weeklySubtitle.textContent = TEXT.weekly.subtitle;
-      selectors.weeklyCaption.textContent = TEXT.weekly.caption;
+      selectors.monthlyHeading.textContent = TEXT.monthly.title;
+      selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
+      selectors.monthlyCaption.textContent = TEXT.monthly.caption;
       hideStatusNote();
     }
 
@@ -2352,19 +2362,16 @@
       }));
     }
 
-    function computeWeeklyStats(daily) {
-      const weeklyMap = new Map();
+    function computeMonthlyStats(daily) {
+      const monthlyMap = new Map();
       daily.forEach((entry) => {
-        const dt = new Date(entry.date);
-        const tmp = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
-        const dayNum = tmp.getUTCDay() || 7;
-        tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-        const weekNo = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
-        const key = `${tmp.getUTCFullYear()}-S${String(weekNo).padStart(2, '0')}`;
-        if (!weeklyMap.has(key)) {
-          weeklyMap.set(key, {
-            week: key,
+        if (!entry?.date) {
+          return;
+        }
+        const monthKey = entry.date.slice(0, 7);
+        if (!monthlyMap.has(monthKey)) {
+          monthlyMap.set(monthKey, {
+            month: monthKey,
             count: 0,
             night: 0,
             ems: 0,
@@ -2372,9 +2379,10 @@
             hospitalized: 0,
             totalTime: 0,
             durations: 0,
+            dayCount: 0,
           });
         }
-        const summary = weeklyMap.get(key);
+        const summary = monthlyMap.get(monthKey);
         summary.count += entry.count;
         summary.night += entry.night;
         summary.ems += entry.ems;
@@ -2382,9 +2390,10 @@
         summary.hospitalized += entry.hospitalized;
         summary.totalTime += entry.totalTime;
         summary.durations += entry.durations;
+        summary.dayCount += 1;
       });
 
-      return Array.from(weeklyMap.values()).sort((a, b) => (a.week > b.week ? 1 : -1));
+      return Array.from(monthlyMap.values()).sort((a, b) => (a.month > b.month ? 1 : -1));
     }
 
     function aggregatePeriodSummary(entries) {
@@ -2862,30 +2871,45 @@
         });
     }
 
-    function renderWeeklyTable(weeklyStats) {
-      selectors.weeklyTable.replaceChildren();
-      if (!weeklyStats.length) {
+    function formatMonthLabel(monthKey) {
+      if (typeof monthKey !== 'string') {
+        return '';
+      }
+      const [yearStr, monthStr] = monthKey.split('-');
+      const year = Number.parseInt(yearStr, 10);
+      const monthIndex = Number.parseInt(monthStr, 10) - 1;
+      if (!Number.isFinite(year) || !Number.isFinite(monthIndex)) {
+        return monthKey;
+      }
+      return monthFormatter.format(new Date(Date.UTC(year, Math.max(0, monthIndex), 1)));
+    }
+
+    function renderMonthlyTable(monthlyStats) {
+      selectors.monthlyTable.replaceChildren();
+      if (!monthlyStats.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 7;
-        cell.textContent = TEXT.weekly.empty;
+        cell.colSpan = 8;
+        cell.textContent = TEXT.monthly.empty;
         row.appendChild(cell);
-        selectors.weeklyTable.appendChild(row);
+        selectors.monthlyTable.appendChild(row);
         return;
       }
 
-      weeklyStats.forEach((entry) => {
+      monthlyStats.forEach((entry) => {
         const row = document.createElement('tr');
+        const avgPerDay = entry.dayCount > 0 ? entry.count / entry.dayCount : 0;
         row.innerHTML = `
-          <td>${entry.week}</td>
+          <td>${formatMonthLabel(entry.month)}</td>
           <td>${numberFormatter.format(entry.count)}</td>
+          <td>${oneDecimalFormatter.format(avgPerDay)}</td>
           <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
           <td>${numberFormatter.format(entry.night)}</td>
           <td>${numberFormatter.format(entry.ems)}</td>
           <td>${numberFormatter.format(entry.hospitalized)}</td>
           <td>${numberFormatter.format(entry.discharged)}</td>
         `;
-        selectors.weeklyTable.appendChild(row);
+        selectors.monthlyTable.appendChild(row);
       });
     }
 
@@ -2909,8 +2933,8 @@
         renderKpis(dailyStats);
         await renderCharts(lastWindowDailyStats, funnelData, heatmapData);
         renderRecentTable(recentDailyStats);
-        const weeklyStats = computeWeeklyStats(lastWindowDailyStats);
-        renderWeeklyTable(weeklyStats);
+        const monthlyStats = computeMonthlyStats(lastWindowDailyStats);
+        renderMonthlyTable(monthlyStats);
         setStatus('success');
       } catch (error) {
         console.error('Nepavyko apdoroti duomenų:', error);
