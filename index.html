@@ -1167,16 +1167,16 @@
           <h2 id="chartHeading" class="section__title">Pacientų srautai</h2>
           <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
         </div>
+        <div class="section__actions">
+          <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
+            <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
+            <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
+            <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
+          </div>
+        </div>
       </div>
       <div class="chart-grid">
         <figure class="chart-card">
-          <div class="chart-card__toolbar">
-            <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
-              <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
-              <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
-              <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
-            </div>
-          </div>
           <p id="dailySparklineSummary" class="chart-card__summary" aria-live="polite">Ruošiama santrauka...</p>
           <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
           <figcaption id="dailyChartTitle">
@@ -2271,6 +2271,8 @@
       dailyStats: [],
       chartPeriod: 30,
       chartData: {
+        baseDaily: [],
+        baseRecords: [],
         dailyWindow: [],
         funnel: null,
         heatmap: null,
@@ -2310,7 +2312,7 @@
       selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
-      selectors.dailyCaption.textContent = TEXT.charts.dailyCaption;
+      selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
       if (selectors.dailyCaptionContext) {
         selectors.dailyCaptionContext.textContent = '';
       }
@@ -2903,6 +2905,28 @@
       return decorated
         .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
         .map((item) => item.entry);
+    }
+
+    function prepareChartDataForPeriod(period) {
+      const normalized = Number.isFinite(Number(period)) && Number(period) > 0
+        ? Number(period)
+        : 30;
+      const baseDaily = Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
+        ? dashboardState.chartData.baseDaily
+        : dashboardState.dailyStats;
+      const baseRecords = Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+        ? dashboardState.chartData.baseRecords
+        : dashboardState.rawRecords;
+      const scopedDaily = filterDailyStatsByWindow(baseDaily, normalized);
+      const scopedRecords = filterRecordsByWindow(baseRecords, normalized);
+      const funnelData = computeFunnelStats(scopedDaily);
+      const heatmapData = computeArrivalHeatmap(scopedRecords);
+
+      dashboardState.chartData.dailyWindow = scopedDaily;
+      dashboardState.chartData.funnel = funnelData;
+      dashboardState.chartData.heatmap = heatmapData;
+
+      return { daily: scopedDaily, funnel: funnelData, heatmap: heatmapData };
     }
 
     function computeFunnelStats(dailyStats, targetYear) {
@@ -3684,6 +3708,20 @@
       });
     }
 
+    function formatDailyCaption(period) {
+      const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientų srautai';
+      if (!Number.isFinite(period) || period <= 0) {
+        return base;
+      }
+      const normalized = Math.max(1, Math.round(period));
+      const formattedDays = numberFormatter.format(normalized);
+      const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
+      if (base.includes('(')) {
+        return base.replace(/\(.*?\)/, `(${suffix})`);
+      }
+      return `${base} (${suffix})`;
+    }
+
     function updateDailyPeriodSummary(data) {
       if (!selectors.dailySparklineSummary) {
         return;
@@ -3711,6 +3749,9 @@
       const normalizedPeriod = Number.isFinite(Number(period)) && Number(period) > 0 ? Number(period) : 30;
       dashboardState.chartPeriod = normalizedPeriod;
       syncChartPeriodButtons(normalizedPeriod);
+      if (selectors.dailyCaption) {
+        selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
+      }
       const scopedData = Array.isArray(dailyStats) ? dailyStats.slice(-normalizedPeriod) : [];
       updateDailyPeriodSummary(scopedData);
       if (selectors.dailyCaptionContext) {
@@ -3808,20 +3849,21 @@
         return;
       }
       dashboardState.chartPeriod = numeric;
-      const data = dashboardState.chartData.dailyWindow || [];
       syncChartPeriodButtons(numeric);
-      if (!data.length) {
+      if (selectors.dailyCaption) {
+        selectors.dailyCaption.textContent = formatDailyCaption(numeric);
+      }
+      const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
+        || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+      if (!hasBaseData) {
         updateDailyPeriodSummary([]);
         if (selectors.dailyCaptionContext) {
           selectors.dailyCaptionContext.textContent = '';
         }
         return;
       }
-      loadChartJs()
-        .then((Chart) => {
-          dashboardState.chartLib = Chart;
-          renderDailyChart(data, numeric, Chart, getThemePalette());
-        })
+      const scoped = prepareChartDataForPeriod(numeric);
+      renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
         .catch((error) => {
           console.error('Nepavyko atnaujinti grafiko laikotarpio:', error);
         });
@@ -3841,16 +3883,28 @@
       }
 
       dashboardState.chartLib = Chart;
-      dashboardState.chartData.dailyWindow = Array.isArray(dailyStats) ? dailyStats.slice() : [];
-      const funnelSource = funnelTotals || computeFunnelStats(dashboardState.dailyStats);
-      dashboardState.chartData.funnel = funnelSource;
-      dashboardState.chartData.heatmap = heatmapData;
+      const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
+      dashboardState.chartData.dailyWindow = scopedDaily;
 
-      renderDailyChart(dashboardState.chartData.dailyWindow, dashboardState.chartPeriod, Chart, palette);
+      const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily);
+      dashboardState.chartData.funnel = funnelSource;
+
+      let heatmapSource = heatmapData ?? null;
+      if (!heatmapSource || !heatmapSource.matrix) {
+        const fallbackRecords = Array.isArray(dashboardState.chartData.baseRecords)
+          && dashboardState.chartData.baseRecords.length
+          ? dashboardState.chartData.baseRecords
+          : dashboardState.rawRecords;
+        const scopedRecords = filterRecordsByWindow(fallbackRecords, dashboardState.chartPeriod);
+        heatmapSource = computeArrivalHeatmap(scopedRecords);
+      }
+      dashboardState.chartData.heatmap = heatmapSource;
+
+      renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
 
       const dowCounts = Array(7).fill(0);
       const dowTotals = Array(7).fill(0);
-      (dailyStats || []).forEach((entry) => {
+      scopedDaily.forEach((entry) => {
         const dayIndex = (new Date(entry.date).getDay() + 6) % 7;
         dowCounts[dayIndex] += entry.count;
         dowTotals[dayIndex] += 1;
@@ -3940,7 +3994,7 @@
         renderFunnelShape(funnelCanvas, dashboardState.chartData.funnel, palette.accent, palette.textColor);
       }
 
-      renderArrivalHeatmap(selectors.heatmapContainer, heatmapData, palette.accent);
+      renderArrivalHeatmap(selectors.heatmapContainer, dashboardState.chartData.heatmap, palette.accent);
     }
 
     function rerenderChartsForTheme() {
@@ -4380,10 +4434,11 @@
         const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
         const filteredRecords = filterRecordsByWindow(rawData, windowDays);
-        const heatmapData = computeArrivalHeatmap(filteredRecords);
-        const funnelData = computeFunnelStats(dashboardState.dailyStats);
+        dashboardState.chartData.baseDaily = lastWindowDailyStats.slice();
+        dashboardState.chartData.baseRecords = filteredRecords.slice();
+        const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         applyKpiFiltersAndRender();
-        await renderCharts(lastWindowDailyStats, funnelData, heatmapData);
+        await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
         renderRecentTable(recentDailyStats);
         const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
         // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
