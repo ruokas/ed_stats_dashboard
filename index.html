@@ -3405,11 +3405,8 @@
             row.classList.add('recent-table-row--weekend');
             row.dataset.weekend = 'true';
           }
-          const weekendBadge = weekend
-            ? '<span class="table-flag table-flag--weekend" aria-hidden="true">Savaitgalis</span><span class="sr-only"> (savaitgalis)</span>'
-            : '';
           row.innerHTML = `
-            <td>${displayDate}${weekendBadge}</td>
+            <td>${displayDate}</td>
             <td>${numberFormatter.format(total)}</td>
             <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
             <td>${formatValueWithShare(entry.night, total)}</td>
