@@ -306,7 +306,7 @@
     .chart-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 20px;
+      gap: 14px;
       align-items: stretch;
       grid-auto-flow: row dense;
     }
@@ -319,7 +319,7 @@
       box-shadow: var(--shadow-elevated);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
       grid-column: span 4;
     }
 
@@ -348,7 +348,7 @@
       border-collapse: separate;
       border-spacing: 4px;
       font-size: 0.8rem;
-      min-width: 720px;
+      min-width: 960px;
     }
 
     .heatmap-table thead th {
@@ -1149,9 +1149,9 @@
         dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         funnelCaption: 'Pacientų srauto piltuvėlis (atvykę → sprendimas).',
-        heatmapCaption: 'Pacientų atvykimai pagal savaitės dieną ir valandą.',
+        heatmapCaption: 'Vidutinis pacientų atvykimų skaičius per dieną pagal savaitės dieną ir valandą.',
         heatmapEmpty: 'Šiame laikotarpyje atvykimų duomenų nėra.',
-        heatmapLegend: 'Tamsesnė spalva reiškia didesnį atvykimų skaičių.',
+        heatmapLegend: 'Tamsesnė spalva reiškia didesnį vidutinį atvykimų skaičių per dieną.',
       },
       recent: {
         title: 'Paskutinės 7 dienos',
@@ -2242,7 +2242,7 @@
 
     function computeArrivalHeatmap(records) {
       const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
-      let max = 0;
+      const weekdayDays = Array.from({ length: 7 }, () => new Set());
       (Array.isArray(records) ? records : []).forEach((entry) => {
         if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
           return;
@@ -2254,11 +2254,21 @@
           return;
         }
         matrix[dayIndex][hour] += 1;
-        if (matrix[dayIndex][hour] > max) {
-          max = matrix[dayIndex][hour];
-        }
+        const dateKey = entry.arrival.toISOString().split('T')[0];
+        weekdayDays[dayIndex].add(dateKey);
       });
-      return { matrix, max };
+      let max = 0;
+      const averaged = matrix.map((row, dayIndex) => {
+        const divisor = weekdayDays[dayIndex].size || 1;
+        return row.map((value) => {
+          const average = divisor ? value / divisor : 0;
+          if (average > max) {
+            max = average;
+          }
+          return average;
+        });
+      });
+      return { matrix: averaged, max };
     }
 
     function computeHeatmapColor(accentColor, intensity) {
@@ -2326,9 +2336,9 @@
           const color = intensity > 0 ? computeHeatmapColor(accentColor, intensity) : 'var(--color-surface-alt)';
           badge.style.backgroundColor = color;
           badge.style.color = intensity > 0.55 ? '#fff' : intensity > 0 ? 'var(--color-text)' : 'var(--color-text-muted)';
-          badge.textContent = value > 0 ? String(value) : '';
+          badge.textContent = value > 0 ? oneDecimalFormatter.format(value) : '';
           badge.tabIndex = value > 0 ? 0 : -1;
-          const label = `${HEATMAP_WEEKDAY_FULL[dayIndex] || ''}, ${HEATMAP_HOURS[hourIndex]} – ${numberFormatter.format(value)} pacientų`;
+          const label = `${HEATMAP_WEEKDAY_FULL[dayIndex] || ''}, ${HEATMAP_HOURS[hourIndex]} – ${oneDecimalFormatter.format(value)} pacientų (vidutiniškai per dieną)`;
           cell.setAttribute('aria-label', label);
           badge.setAttribute('title', label);
           cell.appendChild(badge);
