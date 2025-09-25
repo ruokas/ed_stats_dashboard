@@ -3592,8 +3592,13 @@
         applyKpiFiltersAndRender();
         await renderCharts(lastWindowDailyStats, funnelData, heatmapData);
         renderRecentTable(recentDailyStats);
-        const monthlyStats = computeMonthlyStats(lastWindowDailyStats);
-        renderMonthlyTable(monthlyStats);
+        const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
+        // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
+        const monthsLimit = 12;
+        const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
+          ? monthlyStats.slice(-monthsLimit)
+          : monthlyStats;
+        renderMonthlyTable(limitedMonthlyStats);
         setStatus('success');
       } catch (error) {
         console.error('Nepavyko apdoroti duomenų:', error);
