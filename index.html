@@ -274,11 +274,39 @@
       color: var(--color-text-muted);
     }
 
-    .kpi-card strong {
-      display: block;
+    .kpi-mainline {
+      margin: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .kpi-main-value {
       font-size: clamp(1.8rem, 1.5rem + 1vw, 2.2rem);
       font-weight: 700;
       color: var(--color-text);
+      line-height: 1.1;
+    }
+
+    .kpi-unit,
+    .kpi-aux,
+    .kpi-year-label {
+      font-size: clamp(0.85rem, 0.8rem + 0.4vw, 1rem);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: none;
+    }
+
+    .kpi-year-label {
+      letter-spacing: 0.04em;
+    }
+
+    .kpi-monthline {
+      margin: 12px 0 0;
+      font-size: 0.85rem;
+      color: var(--color-text);
+      line-height: 1.5;
     }
 
     .kpi-card small {
@@ -997,14 +1025,40 @@
       footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
       kpis: {
         title: 'Pagrindiniai rodikliai',
-        subtitle: 'Pastarųjų 30 dienų dinamika',
+        subtitle: 'Metiniai vidurkiai ir mėnesio palyginimas',
         items: {
-          total: { label: 'Pacientai iš viso', hint: 'Visų apsilankymų suma.' },
-          avgTime: { label: 'Vid. buvimo trukmė (val.)', hint: 'Skaičiuojama pagal turimus atvykimo / išrašymo laikus.' },
-          night: { label: 'Naktiniai apsilankymai', hint: 'Pacientai tarp 20:00 ir 07:00 val.' },
-          ems: { label: 'GMP atvežti', hint: 'Registruoti kaip atvykę su GMP.' },
-          hospitalized: { label: 'Hospitalizuoti', hint: 'Pacientai nukreipti į stacionarą.', },
-          discharged: { label: 'Išleisti namo', hint: 'Pacientai išvykę į namus ar ambulatorinę priežiūrą.' },
+          patientsPerDay: {
+            label: 'Pacientų vidurkis per dieną',
+            hint: 'Metinis vidurkis pagal naujausius kalendorinius metus.',
+            unit: 'pac./d.',
+            valueFormat: 'oneDecimal',
+            deltaType: 'percent',
+          },
+          avgTime: {
+            label: 'Vidutinė buvimo trukmė',
+            hint: 'Valandomis pagal įrašus su atvykimo ir išrašymo laiku.',
+            unit: 'val.',
+            valueFormat: 'decimal',
+            deltaType: 'absolute',
+          },
+          hospitalized: {
+            label: 'Hospitalizuoti pacientai',
+            hint: 'Metinis hospitalizuojamų skaičius per dieną ir jų dalis nuo visų atvykimų.',
+            unit: 'pac./d.',
+            valueFormat: 'oneDecimal',
+            deltaType: 'percent',
+            shareKey: 'hospitalizedShare',
+            shareLabel: 'Hospitalizacijų dalis',
+          },
+          discharged: {
+            label: 'Išleisti pacientai',
+            hint: 'Metinis išleidžiamų skaičius per dieną ir jų dalis nuo visų atvykimų.',
+            unit: 'pac./d.',
+            valueFormat: 'oneDecimal',
+            deltaType: 'percent',
+            shareKey: 'dischargedShare',
+            shareLabel: 'Išleidimų dalis',
+          },
         },
       },
       charts: {
@@ -1074,6 +1128,9 @@
     // Formatai datoms ir skaičiams (LT locale).
     const numberFormatter = new Intl.NumberFormat('lt-LT');
     const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const oneDecimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const percentFormatter = new Intl.NumberFormat('lt-LT', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
     const dailyDateFormatter = new Intl.DateTimeFormat('lt-LT', {
       weekday: 'short',
@@ -2100,36 +2157,247 @@
       return Array.from(weeklyMap.values()).sort((a, b) => (a.week > b.week ? 1 : -1));
     }
 
-    function renderKpis(dailyStats) {
-      const totals = dailyStats.reduce((acc, item) => {
-        acc.count += item.count;
-        acc.night += item.night;
-        acc.ems += item.ems;
-        acc.discharged += item.discharged;
-        acc.hospitalized += item.hospitalized;
-        acc.totalTime += item.totalTime;
-        acc.durations += item.durations;
+    function aggregatePeriodSummary(entries) {
+      if (!Array.isArray(entries)) {
+        return { days: 0, totalCount: 0, totalHospitalized: 0, totalDischarged: 0, totalTime: 0, durationCount: 0 };
+      }
+      return entries.reduce((acc, entry) => {
+        acc.days += 1;
+        const count = Number.isFinite(entry?.count) ? entry.count : 0;
+        const hospitalized = Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+        const discharged = Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+        const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
+        const durations = Number.isFinite(entry?.durations) ? entry.durations : 0;
+        acc.totalCount += count;
+        acc.totalHospitalized += hospitalized;
+        acc.totalDischarged += discharged;
+        acc.totalTime += totalTime;
+        acc.durationCount += durations;
         return acc;
-      }, { count: 0, night: 0, ems: 0, discharged: 0, hospitalized: 0, totalTime: 0, durations: 0 });
+      }, { days: 0, totalCount: 0, totalHospitalized: 0, totalDischarged: 0, totalTime: 0, durationCount: 0 });
+    }
 
-      const avgTimeOverall = totals.durations ? totals.totalTime / totals.durations : 0;
-      const kpiValues = {
-        total: numberFormatter.format(totals.count),
-        avgTime: decimalFormatter.format(avgTimeOverall),
-        night: numberFormatter.format(totals.night),
-        ems: numberFormatter.format(totals.ems),
-        hospitalized: numberFormatter.format(totals.hospitalized),
-        discharged: numberFormatter.format(totals.discharged),
+    function derivePeriodMetrics(summary) {
+      const days = Number.isFinite(summary?.days) ? summary.days : 0;
+      const totalCount = Number.isFinite(summary?.totalCount) ? summary.totalCount : 0;
+      const totalHospitalized = Number.isFinite(summary?.totalHospitalized) ? summary.totalHospitalized : 0;
+      const totalDischarged = Number.isFinite(summary?.totalDischarged) ? summary.totalDischarged : 0;
+      const totalTime = Number.isFinite(summary?.totalTime) ? summary.totalTime : 0;
+      const durationCount = Number.isFinite(summary?.durationCount) ? summary.durationCount : 0;
+      return {
+        days,
+        totalCount,
+        patientsPerDay: days > 0 ? totalCount / days : null,
+        avgTime: durationCount > 0 ? totalTime / durationCount : null,
+        hospitalizedPerDay: days > 0 ? totalHospitalized / days : null,
+        hospitalizedShare: totalCount > 0 ? totalHospitalized / totalCount : null,
+        dischargedPerDay: days > 0 ? totalDischarged / days : null,
+        dischargedShare: totalCount > 0 ? totalDischarged / totalCount : null,
       };
+    }
 
+    function buildYearMonthMetrics(dailyStats) {
+      if (!Array.isArray(dailyStats) || dailyStats.length === 0) {
+        return null;
+      }
+      const latest = dailyStats.reduce((acc, entry) => (entry.date > acc.date ? entry : acc), dailyStats[0]);
+      const [yearStr = '', monthStr = ''] = (latest?.date ?? '').split('-');
+      const year = Number.parseInt(yearStr, 10);
+      if (!Number.isFinite(year)) {
+        return null;
+      }
+      let yearEntries = dailyStats.filter((entry) => typeof entry?.date === 'string' && entry.date.startsWith(`${yearStr}-`));
+      if (!yearEntries.length) {
+        yearEntries = [...dailyStats];
+      }
+      const monthKey = monthStr ? `${yearStr}-${monthStr}` : null;
+      const monthEntries = monthKey
+        ? dailyStats.filter((entry) => typeof entry?.date === 'string' && entry.date.startsWith(monthKey))
+        : [];
+      const yearSummary = derivePeriodMetrics(aggregatePeriodSummary(yearEntries));
+      const monthSummary = derivePeriodMetrics(aggregatePeriodSummary(monthEntries));
+      const monthNumeric = Number.parseInt(monthStr, 10);
+      const monthLabel = Number.isFinite(monthNumeric)
+        ? monthFormatter.format(new Date(year, Math.max(0, monthNumeric - 1), 1))
+        : '';
+      return {
+        yearLabel: `${yearStr} m.`,
+        monthLabel,
+        yearMetrics: yearSummary,
+        monthMetrics: monthSummary,
+      };
+    }
+
+    function formatKpiValue(value, format) {
+      if (value == null || Number.isNaN(value)) {
+        return '–';
+      }
+      if (format === 'decimal') {
+        return decimalFormatter.format(value);
+      }
+      if (format === 'integer') {
+        return numberFormatter.format(Math.round(value));
+      }
+      return oneDecimalFormatter.format(value);
+    }
+
+    function computeDeltaText(deltaType, yearValue, monthValue, unit, format, yearLabel) {
+      if (monthValue == null || !Number.isFinite(monthValue)) {
+        return '';
+      }
+      const referenceLabel = yearLabel ? `${yearLabel} vidurkis` : 'metinis vidurkis';
+      if (deltaType === 'percent') {
+        if (yearValue == null || !Number.isFinite(yearValue) || Math.abs(yearValue) < Number.EPSILON) {
+          return '';
+        }
+        const diffRatio = (monthValue - yearValue) / yearValue;
+        if (!Number.isFinite(diffRatio)) {
+          return '';
+        }
+        if (Math.abs(diffRatio) < 0.0005) {
+          return `(≈ ${referenceLabel})`;
+        }
+        const direction = diffRatio > 0 ? '↑' : '↓';
+        return `(${direction} ${percentFormatter.format(Math.abs(diffRatio))} vs. ${referenceLabel})`;
+      }
+      if (deltaType === 'absolute') {
+        if (yearValue == null || !Number.isFinite(yearValue)) {
+          return '';
+        }
+        const diff = monthValue - yearValue;
+        if (!Number.isFinite(diff)) {
+          return '';
+        }
+        if (Math.abs(diff) < 0.005) {
+          return `(≈ ${referenceLabel})`;
+        }
+        const sign = diff > 0 ? '+' : '−';
+        const formattedDiff = formatKpiValue(Math.abs(diff), format);
+        const unitSuffix = unit ? ` ${unit}` : '';
+        return `(${sign}${formattedDiff}${unitSuffix} vs. ${referenceLabel})`;
+      }
+      return '';
+    }
+
+    function buildMonthLine({
+      item,
+      monthLabel,
+      monthMetrics,
+      yearValue,
+      monthValue,
+      yearShare,
+      monthShare,
+      yearLabel,
+    }) {
+      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+      if (!monthHasData) {
+        return monthLabel ? `Šio mėn. (${monthLabel}) duomenų nėra.` : 'Šio mėnesio duomenų nėra.';
+      }
+      const descriptor = monthLabel ? `Šio mėn. (${monthLabel})` : 'Šio mėn.';
+      const parts = [];
+      if (monthValue != null && Number.isFinite(monthValue)) {
+        const formattedMonthValue = formatKpiValue(monthValue, item.valueFormat);
+        const unitSuffix = item.unit ? ` ${item.unit}` : '';
+        parts.push(`${formattedMonthValue}${unitSuffix}`.trim());
+      }
+      if (item.shareKey && monthShare != null && Number.isFinite(monthShare)) {
+        parts.push(`${percentFormatter.format(monthShare)} visų`);
+      }
+      if (!parts.length) {
+        return `${descriptor}: duomenų nepakanka.`;
+      }
+      let text = `${descriptor}: ${parts.join(', ')}`;
+      const deltaText = computeDeltaText(item.deltaType, yearValue, monthValue, item.unit, item.valueFormat, yearLabel);
+      if (deltaText) {
+        text += ` ${deltaText}`;
+      }
+      if (item.shareKey && yearShare != null && Number.isFinite(yearShare)) {
+        const shareLabel = item.shareLabel ?? 'Metinė dalis';
+        const shareReference = yearLabel ? `${shareLabel} (${yearLabel})` : shareLabel;
+        text += ` (${shareReference}: ${percentFormatter.format(yearShare)})`;
+      }
+      return text;
+    }
+
+    function renderKpis(dailyStats) {
       selectors.kpiGrid.replaceChildren();
-      Object.entries(TEXT.kpis.items).forEach(([key, item]) => {
+      const periodMetrics = buildYearMonthMetrics(dailyStats);
+      if (!periodMetrics) {
         const card = document.createElement('article');
         card.className = 'kpi-card';
         card.setAttribute('role', 'listitem');
         card.innerHTML = `
+          <h3>Rodiklių nepakanka</h3>
+          <p class="kpi-monthline">Metiniams vidurkiams apskaičiuoti reikalingi bent vienos dienos duomenys.</p>
+          <small>Įkelkite CSV su bent vienu įrašu ir bandykite dar kartą.</small>
+        `;
+        selectors.kpiGrid.appendChild(card);
+        return;
+      }
+
+      const { yearMetrics, monthMetrics, yearLabel, monthLabel } = periodMetrics;
+
+      Object.entries(TEXT.kpis.items).forEach(([key, item]) => {
+        const card = document.createElement('article');
+        card.className = 'kpi-card';
+        card.setAttribute('role', 'listitem');
+
+        let yearValue = null;
+        let monthValue = null;
+        let yearShare = null;
+        let monthShare = null;
+
+        switch (key) {
+          case 'patientsPerDay':
+            yearValue = yearMetrics.patientsPerDay;
+            monthValue = monthMetrics.patientsPerDay;
+            break;
+          case 'avgTime':
+            yearValue = yearMetrics.avgTime;
+            monthValue = monthMetrics.avgTime;
+            break;
+          case 'hospitalized':
+            yearValue = yearMetrics.hospitalizedPerDay;
+            monthValue = monthMetrics.hospitalizedPerDay;
+            yearShare = yearMetrics.hospitalizedShare;
+            monthShare = monthMetrics.hospitalizedShare;
+            break;
+          case 'discharged':
+            yearValue = yearMetrics.dischargedPerDay;
+            monthValue = monthMetrics.dischargedPerDay;
+            yearShare = yearMetrics.dischargedShare;
+            monthShare = monthMetrics.dischargedShare;
+            break;
+          default:
+            break;
+        }
+
+        const mainlineParts = [`<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>`];
+        if (item.unit) {
+          mainlineParts.push(`<span class="kpi-unit">${item.unit}</span>`);
+        }
+        if (item.shareKey && yearShare != null && Number.isFinite(yearShare)) {
+          mainlineParts.push(`<span class="kpi-aux">${percentFormatter.format(yearShare)}</span>`);
+        }
+        if (yearLabel) {
+          mainlineParts.push(`<span class="kpi-year-label">${yearLabel}</span>`);
+        }
+
+        const monthLine = buildMonthLine({
+          item,
+          monthLabel,
+          monthMetrics,
+          yearValue,
+          monthValue,
+          yearShare,
+          monthShare,
+          yearLabel,
+        });
+
+        card.innerHTML = `
           <h3>${item.label}</h3>
-          <strong>${kpiValues[key] ?? '–'}</strong>
+          <p class="kpi-mainline">${mainlineParts.join('')}</p>
+          <p class="kpi-monthline">${monthLine}</p>
           <small>${item.hint}</small>
         `;
         selectors.kpiGrid.appendChild(card);
@@ -2342,7 +2610,7 @@
           : DEFAULT_SETTINGS.calculations.recentDays;
         const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
-        renderKpis(lastWindowDailyStats);
+        renderKpis(dailyStats);
         await renderCharts(lastWindowDailyStats);
         renderRecentTable(recentDailyStats);
         const weeklyStats = computeWeeklyStats(lastWindowDailyStats);
