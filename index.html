@@ -2576,35 +2576,104 @@
     /**
      * CSV duomenų apdorojimo pagalbinės funkcijos: diagnostika, atsisiuntimas ir transformacija.
      */
+    function formatUrlForDiagnostics(rawUrl) {
+      if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
+        return '';
+      }
+      try {
+        const parsed = new URL(rawUrl);
+        const safeParams = new URLSearchParams();
+        parsed.searchParams.forEach((value, key) => {
+          if (/token|key|auth|secret|signature|pass/i.test(key)) {
+            safeParams.append(key, '***');
+            return;
+          }
+          safeParams.append(key, value);
+        });
+        const query = safeParams.toString();
+        return `${parsed.origin}${parsed.pathname}${query ? `?${query}` : ''}`;
+      } catch (parseError) {
+        console.warn('Nepavyko normalizuoti URL diagnostikai:', parseError);
+        return rawUrl;
+      }
+    }
+
     function describeError(error) {
       if (!error) {
         return TEXT.status.error;
       }
       const message = typeof error === 'string' ? error : error.message ?? TEXT.status.error;
+      const hints = [];
+      const diagnostic = typeof error === 'object' && error ? error.diagnostic : null;
+
+      if (diagnostic?.url) {
+        hints.push(`URL: ${diagnostic.url}.`);
+      }
+
+      if (diagnostic?.type === 'http') {
+        if (diagnostic.status === 404) {
+          hints.push('Patikrinkite, ar „Google Sheet“ paskelbta per „File → Share → Publish to web → CSV“ ir kad naudojamas publikuotas CSV adresas.');
+        } else if (diagnostic.status === 403) {
+          hints.push('Patikrinkite bendrinimo teises – dokumentas turi būti pasiekiamas be prisijungimo.');
+        } else if (diagnostic.status === 0) {
+          hints.push('Gautas atsakas be statuso – tikėtina tinklo arba CORS klaida.');
+        }
+        if (diagnostic.statusText) {
+          hints.push(`Serverio atsakymas: ${diagnostic.statusText}.`);
+        }
+      }
+
+      if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
+        hints.push('Nepavyko pasiekti šaltinio – patikrinkite interneto ryšį ir ar serveris leidžia CORS užklausas iš šio puslapio.');
+      }
+
+      if (/HTML atsakas/i.test(message)) {
+        hints.push('Gautas HTML vietoje CSV – nuorodoje turi būti „.../pub?output=csv“.');
+      }
+
+      if (diagnostic?.hint) {
+        hints.push(diagnostic.hint);
+      }
+
+      const renderedHints = hints.length ? ` ${hints.join(' ')}` : '';
       if (/HTTP klaida:\s*404/.test(message)) {
-        return 'HTTP 404 – nuoroda nerasta arba dokumentas nepublikuotas.';
+        return `HTTP 404 – nuoroda nerasta arba dokumentas nepublikuotas.${renderedHints}`;
       }
       if (/HTTP klaida:\s*403/.test(message)) {
-        return 'HTTP 403 – prieiga uždrausta (patikrinkite bendrinimo teises).';
+        return `HTTP 403 – prieiga uždrausta.${renderedHints}`;
       }
       if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
-        return 'Nepavyko pasiekti šaltinio (tinklo ar CORS apribojimas).';
+        return `Nepavyko pasiekti šaltinio.${renderedHints}`;
       }
       if (/HTML atsakas/i.test(message)) {
-        return 'Gautas HTML atsakas vietoje CSV (reikia „Publish to web → CSV“ nuorodos).';
+        return `Gautas HTML atsakas vietoje CSV.${renderedHints}`;
       }
-      return message;
+      return `${message}${renderedHints}`.trim();
     }
 
     async function downloadCsv(url) {
       const response = await fetch(url, { cache: 'no-store' });
+      const statusText = response.statusText || '';
       if (!response.ok) {
-        throw new Error(`HTTP klaida: ${response.status}`);
+        const error = new Error(`HTTP klaida: ${response.status}`);
+        error.diagnostic = {
+          type: 'http',
+          status: response.status,
+          statusText,
+          url: formatUrlForDiagnostics(url),
+        };
+        throw error;
       }
       const textContent = await response.text();
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html') || /^<!doctype html/i.test(textContent.trim())) {
-        throw new Error('HTML atsakas vietoje CSV – patikrinkite, ar nuoroda publikuota kaip CSV.');
+        const error = new Error('HTML atsakas vietoje CSV – patikrinkite, ar nuoroda publikuota kaip CSV.');
+        error.diagnostic = {
+          type: 'html',
+          url: formatUrlForDiagnostics(url),
+          hint: 'Google Sheets lange pasirinkite „File → Share → Publish to web → CSV“ ir naudokite gautą CSV nuorodą.',
+        };
+        throw error;
       }
       return textContent;
     }
