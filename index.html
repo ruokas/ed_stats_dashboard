@@ -62,6 +62,12 @@
       --shadow-elevated: 0 16px 30px -18px rgba(15, 23, 42, 0.75);
     }
 
+    body[data-theme="dark"] select option,
+    body[data-theme="dark"] select optgroup {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
     .container {
       width: min(1220px, 92vw);
       margin: 0 auto;
