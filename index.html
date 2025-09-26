@@ -14,6 +14,9 @@
       --color-text-muted: #475569;
       --color-accent: #2563eb;
       --color-accent-soft: rgba(37, 99, 235, 0.12);
+      --color-input-bg: rgba(37, 99, 235, 0.04);
+      --color-input-bg-hover: rgba(37, 99, 235, 0.08);
+      --color-input-placeholder: rgba(15, 23, 42, 0.45);
       --color-success: #16a34a;
       --color-weekend: #f97316;
       --color-weekend-soft: rgba(249, 115, 22, 0.2);
@@ -23,6 +26,11 @@
 
     * {
       box-sizing: border-box;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--color-input-placeholder);
     }
 
     body {
@@ -43,6 +51,9 @@
       --color-text-muted: #94a3b8;
       --color-accent: #60a5fa;
       --color-accent-soft: rgba(96, 165, 250, 0.2);
+      --color-input-bg: rgba(96, 165, 250, 0.14);
+      --color-input-bg-hover: rgba(96, 165, 250, 0.22);
+      --color-input-placeholder: rgba(226, 232, 240, 0.6);
       --color-success: #22c55e;
       --color-weekend: #fb923c;
       --color-weekend-soft: rgba(251, 146, 60, 0.3);
@@ -403,17 +414,23 @@
     .kpi-filter select {
       border-radius: 12px;
       border: 1px solid var(--color-border);
-      background: rgba(37, 99, 235, 0.04);
+      background: var(--color-input-bg);
+      color: var(--color-text);
       padding: 10px 12px;
       font-size: 0.95rem;
       font-family: inherit;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .kpi-filter select:hover,
+    .kpi-filter select:focus-visible {
+      background: var(--color-input-bg-hover);
     }
 
     .kpi-filter select:focus-visible {
       outline: none;
-      border-color: rgba(37, 99, 235, 0.65);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-soft);
     }
 
     .kpi-controls__summary {
@@ -1036,19 +1053,29 @@
     .settings-field select {
       border-radius: 12px;
       border: 1px solid var(--color-border);
-      background: rgba(37, 99, 235, 0.04);
+      background: var(--color-input-bg);
+      color: var(--color-text);
       padding: 10px 12px;
       font-size: 0.95rem;
       font-family: inherit;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .settings-field input:hover,
+    .settings-field textarea:hover,
+    .settings-field select:hover,
+    .settings-field input:focus-visible,
+    .settings-field textarea:focus-visible,
+    .settings-field select:focus-visible {
+      background: var(--color-input-bg-hover);
     }
 
     .settings-field input:focus-visible,
     .settings-field textarea:focus-visible,
     .settings-field select:focus-visible {
       outline: none;
-      border-color: rgba(37, 99, 235, 0.65);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-soft);
     }
 
     .settings-field textarea {
