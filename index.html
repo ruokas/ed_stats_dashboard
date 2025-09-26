@@ -3337,15 +3337,33 @@
       container.appendChild(legend);
     }
 
+    function formatLocalDateKey(date) {
+      if (!(date instanceof Date)) {
+        return '';
+      }
+      const time = date.getTime();
+      if (Number.isNaN(time)) {
+        return '';
+      }
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     function computeDailyStats(data) {
       const dailyMap = new Map();
       data.forEach((record) => {
         let dateKey = '';
-        if (record.arrival instanceof Date && !Number.isNaN(record.arrival)) {
-          dateKey = record.arrival.toISOString().split('T')[0];
-        } else if (record.discharge instanceof Date && !Number.isNaN(record.discharge)) {
-          dateKey = record.discharge.toISOString().split('T')[0];
+        if (record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())) {
+          dateKey = formatLocalDateKey(record.arrival);
+        } else if (record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())) {
+          dateKey = formatLocalDateKey(record.discharge);
         } else {
+          return;
+        }
+
+        if (!dateKey) {
           return;
         }
 
