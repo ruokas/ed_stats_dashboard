@@ -417,17 +417,70 @@
       color: var(--color-text-muted);
     }
 
-    .kpi-share {
-      margin: 0 0 8px;
-      font-size: 0.85rem;
+    .kpi-card__tags {
+      margin: 12px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .kpi-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--color-surface-alt);
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      font-size: 0.78rem;
+      color: var(--color-text);
+      line-height: 1.1;
+    }
+
+    .kpi-tag strong {
+      font-size: 0.82rem;
+      color: var(--color-text);
+    }
+
+    .kpi-tag__label {
+      font-weight: 500;
       color: var(--color-text-muted);
     }
 
-    .kpi-monthline {
-      margin: 0 0 0;
-      font-size: 0.85rem;
-      color: var(--color-text);
-      line-height: 1.5;
+    .kpi-tag__context {
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-tag__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .kpi-tag--muted {
+      background: rgba(148, 163, 184, 0.12);
+      border-color: rgba(148, 163, 184, 0.28);
+      color: var(--color-text-muted);
+    }
+
+    .kpi-tag--delta-up {
+      background: rgba(22, 163, 74, 0.18);
+      border-color: rgba(22, 163, 74, 0.32);
+      color: var(--color-success);
+    }
+
+    .kpi-tag--delta-down {
+      background: rgba(220, 38, 38, 0.18);
+      border-color: rgba(220, 38, 38, 0.32);
+      color: #dc2626;
+    }
+
+    .kpi-tag--delta-neutral {
+      background: rgba(37, 99, 235, 0.14);
+      border-color: rgba(37, 99, 235, 0.28);
+      color: var(--color-accent);
     }
 
     .kpi-card small {
@@ -1501,11 +1554,16 @@
         subtitle: 'Pasirinkto laikotarpio vidurkiai ir mėnesio palyginimas',
         yearLabel: 'Pasirinkto laikotarpio vidurkis',
         yearAverageReference: 'pasirinkto laikotarpio vidurkis',
+        yearAverageReferenceShort: 'vid.',
         monthPrefix: 'Šio mėnesio rezultatas',
         monthPrefixShort: 'Šio mėn.',
         monthNoData: 'Šio mėnesio duomenų nėra.',
+        monthNoDataShort: 'Šio mėn. duomenų nėra',
+        monthShareLabel: 'Mėn. dalis',
         shareHeading: 'Pasirinkto laikotarpio dalis',
+        shareShortLabel: 'Laikotarpio dalis',
         windowAllLabel: 'Visas laikotarpis',
+        windowAllShortLabel: 'viso laik.',
         windowYearSuffix: 'metai',
         noYearData: 'Pasirinktam laikotarpiui apskaičiuoti nepakanka duomenų.',
         items: {
@@ -3489,48 +3547,86 @@
       return oneDecimalFormatter.format(value);
     }
 
-    function computeDeltaText(deltaType, yearValue, monthValue, unit, format, referenceLabel) {
+    function formatPercentCompact(value) {
+      const formatted = percentFormatter.format(value);
+      return formatted.replace(/\s?%/, '%');
+    }
+
+    function computeDeltaDescriptor(deltaType, yearValue, monthValue, unit, format, referenceLabel) {
       if (monthValue == null || !Number.isFinite(monthValue)) {
-        return '';
+        return null;
       }
-      const normalizedReference = referenceLabel === TEXT.kpis.windowAllLabel
+      const isWholePeriod = referenceLabel === TEXT.kpis.windowAllLabel;
+      const normalizedReference = isWholePeriod
         ? 'Viso laikotarpio'
         : referenceLabel;
       const referenceText = normalizedReference ? `${normalizedReference} vidurkis` : TEXT.kpis.yearAverageReference;
+      const referenceShort = isWholePeriod
+        ? TEXT.kpis.windowAllShortLabel
+        : (referenceLabel || TEXT.kpis.yearAverageReferenceShort);
       if (deltaType === 'percent') {
         if (yearValue == null || !Number.isFinite(yearValue) || Math.abs(yearValue) < Number.EPSILON) {
-          return '';
+          return null;
         }
         const diffRatio = (monthValue - yearValue) / yearValue;
         if (!Number.isFinite(diffRatio)) {
-          return '';
+          return null;
         }
         if (Math.abs(diffRatio) < 0.0005) {
-          return `(≈ ${referenceText})`;
+          return {
+            direction: 'neutral',
+            shortText: '≈',
+            context: referenceShort,
+            ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
+          };
         }
         const direction = diffRatio > 0 ? '↑' : '↓';
-        return `(${direction} ${percentFormatter.format(Math.abs(diffRatio))} vs. ${referenceText})`;
+        const shortText = `${diffRatio > 0 ? '+' : '−'}${formatPercentCompact(Math.abs(diffRatio))}`;
+        const ariaLabel = diffRatio > 0
+          ? `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} didesnis nei ${referenceText}.`
+          : `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} mažesnis nei ${referenceText}.`;
+        return {
+          direction: diffRatio > 0 ? 'up' : 'down',
+          icon: direction,
+          shortText,
+          context: `vs ${referenceShort}`,
+          ariaLabel,
+        };
       }
       if (deltaType === 'absolute') {
         if (yearValue == null || !Number.isFinite(yearValue)) {
-          return '';
+          return null;
         }
         const diff = monthValue - yearValue;
         if (!Number.isFinite(diff)) {
-          return '';
+          return null;
         }
         if (Math.abs(diff) < 0.005) {
-          return `(≈ ${referenceText})`;
+          return {
+            direction: 'neutral',
+            shortText: '≈',
+            context: referenceShort,
+            ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
+          };
         }
         const sign = diff > 0 ? '+' : '−';
         const formattedDiff = formatKpiValue(Math.abs(diff), format);
         const unitSuffix = unit ? ` ${unit}` : '';
-        return `(${sign}${formattedDiff}${unitSuffix} vs. ${referenceText})`;
+        const ariaLabel = diff > 0
+          ? `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} ilgesnis nei ${referenceText}.`
+          : `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} trumpesnis nei ${referenceText}.`;
+        return {
+          direction: diff > 0 ? 'up' : 'down',
+          icon: diff > 0 ? '↑' : '↓',
+          shortText: `${sign}${formattedDiff}${unitSuffix}`,
+          context: `vs ${referenceShort}`,
+          ariaLabel,
+        };
       }
-      return '';
+      return null;
     }
 
-    function buildMonthLine({
+    function buildMonthTags({
       item,
       monthLabel,
       monthMetrics,
@@ -3541,36 +3637,77 @@
       referenceLabel,
     }) {
       const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+      const monthDescriptor = monthLabel
+        ? `${TEXT.kpis.monthPrefixShort} (${monthLabel})`
+        : TEXT.kpis.monthPrefixShort;
+      const tags = [];
+      const tagWrapper = (content, extraClass = '', ariaLabel) => {
+        const aria = ariaLabel ? ` aria-label="${ariaLabel}"` : '';
+        return `<span class="kpi-tag${extraClass ? ` ${extraClass}` : ''}" role="listitem"${aria}>${content}</span>`;
+      };
+
       if (!monthHasData) {
-        return monthLabel
-          ? `${TEXT.kpis.monthPrefixShort} (${monthLabel}): ${TEXT.kpis.monthNoData}`
-          : TEXT.kpis.monthNoData;
+        tags.push(tagWrapper(
+          `<span class="kpi-tag__label">${monthDescriptor}</span><span>${TEXT.kpis.monthNoDataShort}</span>`,
+          ' kpi-tag--muted',
+        ));
+        return tags;
       }
-      const descriptor = monthLabel ? `${TEXT.kpis.monthPrefix} (${monthLabel})` : TEXT.kpis.monthPrefix;
-      const parts = [];
+
       if (monthValue != null && Number.isFinite(monthValue)) {
         const formattedMonthValue = formatKpiValue(monthValue, item.valueFormat);
-        const unitSuffix = item.unit ? ` ${item.unit}` : '';
-        parts.push(`${formattedMonthValue}${unitSuffix}`.trim());
+        const unitSuffix = item.unit ? ` <span class="kpi-tag__context">${item.unit}</span>` : '';
+        tags.push(tagWrapper(
+          `<span class="kpi-tag__label">${monthDescriptor}</span><strong>${formattedMonthValue}</strong>${unitSuffix}`,
+        ));
       }
+
+      const deltaDescriptor = computeDeltaDescriptor(
+        item.deltaType,
+        yearValue,
+        monthValue,
+        item.unit,
+        item.valueFormat,
+        referenceLabel,
+      );
+
+      if (deltaDescriptor) {
+        const { direction, shortText, context, ariaLabel, icon } = deltaDescriptor;
+        const directionClass = direction ? ` kpi-tag--delta-${direction}` : '';
+        const iconHtml = icon ? `<span class="kpi-tag__icon" aria-hidden="true">${icon}</span>` : '';
+        const content = `${iconHtml}<strong>${shortText}</strong><span class="kpi-tag__context">${context}</span>`;
+        tags.push(tagWrapper(content, directionClass || ' kpi-tag--delta-neutral', ariaLabel));
+      }
+
       if (item.shareKey && monthShare != null && Number.isFinite(monthShare)) {
-        parts.push(`${percentFormatter.format(monthShare)} visų`);
+        tags.push(tagWrapper(
+          `<span class="kpi-tag__label">${TEXT.kpis.monthShareLabel}</span><strong>${formatPercentCompact(monthShare)}</strong>`,
+          ' kpi-tag--muted',
+        ));
       }
-      if (!parts.length) {
-        return `${descriptor}: ${TEXT.kpis.monthNoData}`;
-      }
-      let text = `${descriptor}: ${parts.join(', ')}`;
-      const deltaText = computeDeltaText(item.deltaType, yearValue, monthValue, item.unit, item.valueFormat, referenceLabel);
-      if (deltaText) {
-        text += ` ${deltaText}`;
-      }
+
       if (item.shareKey && yearShare != null && Number.isFinite(yearShare)) {
-        const shareLabel = item.shareLabel ?? TEXT.kpis.shareHeading;
-        const shareReferenceLabel = referenceLabel === TEXT.kpis.windowAllLabel ? 'Viso laikotarpio' : referenceLabel;
-        const shareReference = shareReferenceLabel ? `${shareLabel} (${shareReferenceLabel})` : shareLabel;
-        text += ` (${shareReference}: ${percentFormatter.format(yearShare)})`;
+        const referenceShort = referenceLabel === TEXT.kpis.windowAllLabel
+          ? TEXT.kpis.windowAllShortLabel
+          : (referenceLabel || TEXT.kpis.shareShortLabel);
+        const ariaLabel = referenceLabel
+          ? `${item.shareLabel ?? TEXT.kpis.shareHeading} (${referenceLabel}): ${percentFormatter.format(yearShare)}`
+          : `${item.shareLabel ?? TEXT.kpis.shareHeading}: ${percentFormatter.format(yearShare)}`;
+        tags.push(tagWrapper(
+          `<span class="kpi-tag__label">${TEXT.kpis.shareShortLabel}</span><strong>${formatPercentCompact(yearShare)}</strong><span class="kpi-tag__context">${referenceShort}</span>`,
+          ' kpi-tag--muted',
+          ariaLabel,
+        ));
       }
-      return text;
+
+      if (!tags.length) {
+        tags.push(tagWrapper(
+          `<span class="kpi-tag__label">${monthDescriptor}</span><span>${TEXT.kpis.monthNoDataShort}</span>`,
+          ' kpi-tag--muted',
+        ));
+      }
+
+      return tags;
     }
 
     function renderKpis(dailyStats) {
@@ -3588,7 +3725,12 @@
             <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
             <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
           </p>
-          <p class="kpi-monthline">${TEXT.kpis.monthNoData}</p>
+          <div class="kpi-card__tags" role="list">
+            <span class="kpi-tag kpi-tag--muted" role="listitem">
+              <span class="kpi-tag__label">${TEXT.kpis.monthPrefixShort}</span>
+              <span>${TEXT.kpis.monthNoDataShort}</span>
+            </span>
+          </div>
           <small>Įkelkite CSV su bent vienu įrašu ir bandykite dar kartą.</small>
         `;
         selectors.kpiGrid.appendChild(card);
@@ -3638,7 +3780,7 @@
           ? `<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>${unitHtml}`
           : `<span class="kpi-empty">${TEXT.kpis.noYearData}</span>`;
 
-        const monthLine = buildMonthLine({
+        const monthTags = buildMonthTags({
           item,
           monthLabel,
           monthMetrics,
@@ -3649,9 +3791,6 @@
           referenceLabel,
         });
 
-        const shareLine = item.shareKey && yearShare != null && Number.isFinite(yearShare)
-          ? `<p class="kpi-share">${item.shareLabel ?? TEXT.kpis.shareHeading}: <strong>${percentFormatter.format(yearShare)}</strong></p>`
-          : '';
         const metaLabel = yearLabel || referenceLabel;
         const meta = metaLabel ? `<span class="kpi-card__meta">${metaLabel}</span>` : '';
 
@@ -3664,8 +3803,7 @@
             <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
             <span class="kpi-mainline__value">${mainValueHtml}</span>
           </p>
-          ${shareLine}
-          <p class="kpi-monthline">${monthLine}</p>
+          <div class="kpi-card__tags" role="list">${monthTags.join('')}</div>
           <small>${item.hint}</small>
         `;
         selectors.kpiGrid.appendChild(card);
