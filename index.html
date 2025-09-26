@@ -178,6 +178,19 @@
       border-color: rgba(148, 163, 184, 0.5);
     }
 
+    .theme-toggle .theme-icon {
+      display: none;
+    }
+
+    .theme-toggle[data-theme="light"] .icon--sun,
+    .theme-toggle:not([data-theme]) .icon--sun {
+      display: block;
+    }
+
+    .theme-toggle[data-theme="dark"] .icon--moon {
+      display: block;
+    }
+
     .theme-toggle[aria-pressed="true"] {
       background: rgba(255, 255, 255, 0.35);
       color: #0f172a;
@@ -1175,9 +1188,14 @@
       </div>
       <div class="hero__actions">
         <div class="hero__buttons">
-          <button id="themeToggleBtn" type="button" class="icon-button theme-toggle" aria-pressed="false" aria-label="Perjungti šviesią/tamsią temą" title="Perjungti šviesią/tamsią temą (Ctrl+Shift+L)">
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75a5.25 5.25 0 1 0 5.25 5.25 5.25 5.25 0 0 0-5.25-5.25Zm0 13.5v3.75m6.364-3.114-2.652-2.652m-9.426 2.652 2.652-2.652M4.5 9h3.75m7.5 0H19.5"/>
+          <button id="themeToggleBtn" type="button" class="icon-button theme-toggle" aria-pressed="false" aria-label="Perjungti šviesią/tamsią temą" title="Perjungti šviesią/tamsią temą (Ctrl+Shift+L)" data-theme="light">
+            <!-- Saulės ir mėnulio ikonų keitimas pagal aktyvią temą -->
+            <svg class="theme-icon icon--sun" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="4" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m0 13.5V21m9-9h-2.25M5.25 12H3m15.364 6.364-1.59-1.59M7.227 7.227 5.636 5.636m12.728 0-1.59 1.59M7.227 16.773l-1.59 1.59" />
+            </svg>
+            <svg class="theme-icon icon--moon" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 0 1 11.21 3 7.5 7.5 0 1 0 21 12.79Z" />
             </svg>
           </button>
           <button id="openSettingsBtn" type="button" class="icon-button settings-btn" aria-haspopup="dialog" aria-label="Atidaryti nustatymus" title="Atidaryti nustatymus (Ctrl+,)">
