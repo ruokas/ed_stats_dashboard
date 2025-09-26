@@ -471,12 +471,6 @@
       flex-wrap: wrap;
     }
 
-    .chart-card__summary {
-      margin: 0;
-      font-size: 0.85rem;
-      color: var(--color-text-muted);
-    }
-
     .chart-period {
       display: inline-flex;
       align-items: center;
@@ -1177,7 +1171,6 @@
       </div>
       <div class="chart-grid">
         <figure class="chart-card">
-          <p id="dailySparklineSummary" class="chart-card__summary" aria-live="polite">Ruošiama santrauka...</p>
           <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
           <figcaption id="dailyChartTitle">
             <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
@@ -1568,8 +1561,6 @@
         subtitle: 'Kasdieniai skaičiai, srautas pagal sprendimą ir atvykimų žemėlapis',
         dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
         dailyContext: (date) => (date ? `Atnaujinta pagal duomenis iki ${date}.` : ''),
-        periodSummary: (days, avgText, diffText) => `${days} d. vidurkis: ${avgText} (${diffText}).`,
-        periodNoData: 'Šiam laikotarpiui duomenų nepakanka.',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
         funnelCaptionWithYear: (year) => (year
@@ -1722,7 +1713,6 @@
       funnelCaption: document.getElementById('funnelChartTitle'),
       heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
       heatmapContainer: document.getElementById('arrivalHeatmap'),
-      dailySparklineSummary: document.getElementById('dailySparklineSummary'),
       chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
       recentHeading: document.getElementById('recentHeading'),
       recentSubtitle: document.getElementById('recentSubtitle'),
@@ -3722,27 +3712,6 @@
       return `${base} (${suffix})`;
     }
 
-    function updateDailyPeriodSummary(data) {
-      if (!selectors.dailySparklineSummary) {
-        return;
-      }
-      if (!Array.isArray(data) || !data.length) {
-        selectors.dailySparklineSummary.textContent = TEXT.charts.periodNoData;
-        return;
-      }
-      const counts = data.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
-      const total = counts.reduce((sum, value) => sum + value, 0);
-      const average = data.length > 0 ? total / data.length : 0;
-      const first = counts[0] ?? 0;
-      const last = counts[counts.length - 1] ?? 0;
-      const diff = last - first;
-      const avgText = `${numberFormatter.format(Math.round(average))} pacientai`;
-      const diffText = diff === 0
-        ? 'pokyčių nėra nuo periodo pradžios'
-        : `${diff > 0 ? '↑' : '↓'} ${numberFormatter.format(Math.abs(diff))} pacientai vs periodo pradžia`;
-      selectors.dailySparklineSummary.textContent = TEXT.charts.periodSummary(data.length, avgText, diffText);
-    }
-
     function renderDailyChart(dailyStats, period, ChartLib, palette) {
       const Chart = ChartLib;
       const themePalette = palette || getThemePalette();
@@ -3753,7 +3722,6 @@
         selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
       }
       const scopedData = Array.isArray(dailyStats) ? dailyStats.slice(-normalizedPeriod) : [];
-      updateDailyPeriodSummary(scopedData);
       if (selectors.dailyCaptionContext) {
         const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
         const dateValue = lastEntry?.date ? dateKeyToDate(lastEntry.date) : null;
