@@ -244,6 +244,58 @@
       color: #fff;
     }
 
+    /* Mobile header adjustments */
+    @media (max-width: 640px) {
+      header.hero {
+        padding: 20px 0 18px;
+      }
+
+      .hero__content {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .hero__title {
+        font-size: clamp(1.35rem, 1.2rem + 1vw, 1.8rem);
+      }
+
+      .hero__subtitle {
+        font-size: 0.9rem;
+        max-width: none;
+      }
+
+      .hero__actions {
+        width: 100%;
+        align-items: flex-start;
+        gap: 6px;
+        margin-top: 4px;
+      }
+
+      .hero__buttons {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 6px;
+        flex-wrap: nowrap;
+      }
+
+      .hero__buttons button.icon-button {
+        width: 40px;
+        height: 40px;
+      }
+
+      .status {
+        text-align: left;
+        font-size: 0.8rem;
+        width: 100%;
+      }
+
+      .status-note {
+        font-size: 0.78rem;
+        padding: 6px 10px;
+        width: 100%;
+      }
+    }
+
     main {
       flex: 1;
       padding: 40px 0 64px;
