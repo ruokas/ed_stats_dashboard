@@ -710,19 +710,6 @@
       color: #fff;
     }
 
-    tbody tr.recent-table-row--weekend {
-      background: var(--color-weekend-soft);
-    }
-
-    tbody tr.recent-table-row--weekend:hover {
-      background: rgba(249, 115, 22, 0.28);
-    }
-
-    tbody tr.recent-table-row--weekend td:first-child {
-      color: var(--color-weekend);
-      font-weight: 600;
-    }
-
     tbody tr:nth-child(even) {
       background: rgba(37, 99, 235, 0.03);
     }
@@ -1606,6 +1593,7 @@
     const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
     const THEME_STORAGE_KEY = 'edDashboardTheme';
     const DEFAULT_FOOTER_SOURCE = 'Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).';
+    const DEFAULT_KPI_WINDOW_DAYS = 365;
     const DEFAULT_SETTINGS = {
       dataSource: {
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEM0XB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv',
@@ -1624,7 +1612,7 @@
         dayKeywords: 'dien,ryt,vak,day',
       },
       calculations: {
-        windowDays: 365,
+        windowDays: DEFAULT_KPI_WINDOW_DAYS,
         recentDays: 7,
         nightStartHour: 20,
         nightEndHour: 7,
@@ -1671,8 +1659,11 @@
       const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
         ? Number(settings.calculations.windowDays)
         : DEFAULT_SETTINGS.calculations.windowDays;
+      const defaultWindow = Number.isFinite(configuredWindow) && configuredWindow > 0
+        ? configuredWindow
+        : DEFAULT_KPI_WINDOW_DAYS;
       return {
-        window: configuredWindow,
+        window: defaultWindow,
         shift: 'all',
         arrival: 'all',
         disposition: 'all',
@@ -3293,11 +3284,17 @@
       if (!select) {
         return;
       }
-      const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
+      const configuredWindowRaw = Number.isFinite(Number(settings?.calculations?.windowDays))
         ? Number(settings.calculations.windowDays)
         : DEFAULT_SETTINGS.calculations.windowDays;
-      const currentWindow = Number.isFinite(Number(dashboardState.kpi?.filters?.window))
+      const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
+        ? configuredWindowRaw
+        : DEFAULT_KPI_WINDOW_DAYS;
+      const currentWindowRaw = Number.isFinite(Number(dashboardState.kpi?.filters?.window))
         ? Number(dashboardState.kpi.filters.window)
+        : configuredWindow;
+      const currentWindow = Number.isFinite(currentWindowRaw) && currentWindowRaw > 0
+        ? currentWindowRaw
         : configuredWindow;
       const uniqueValues = [...new Set([...KPI_WINDOW_OPTION_BASE, configuredWindow, currentWindow])]
         .filter((value) => Number.isFinite(value) && value >= 0)
@@ -4154,12 +4151,7 @@
           const row = document.createElement('tr');
           const dateValue = dateKeyToDate(entry.date);
           const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
-          const weekend = isWeekendDateKey(entry.date);
           const total = Number.isFinite(entry.count) ? entry.count : 0;
-          if (weekend) {
-            row.classList.add('recent-table-row--weekend');
-            row.dataset.weekend = 'true';
-          }
           row.innerHTML = `
             <td>${displayDate}</td>
             <td>${numberFormatter.format(total)}</td>
