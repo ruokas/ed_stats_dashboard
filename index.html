@@ -677,6 +677,11 @@
       font-size: 0.95rem;
     }
 
+    td {
+      position: relative;
+      transition: background-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+    }
+
     th {
       font-weight: 600;
       color: var(--color-text-muted);
@@ -716,6 +721,28 @@
 
     tbody tr:hover {
       background: rgba(37, 99, 235, 0.06);
+    }
+
+    .table-cell--max {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0.05));
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+      font-weight: 600;
+      border-radius: 12px;
+    }
+
+    .table-cell--max .table-percent {
+      color: inherit;
+      font-weight: 500;
+    }
+
+    body[data-theme="dark"] .table-cell--max {
+      background: linear-gradient(135deg, rgba(96, 165, 250, 0.35), rgba(15, 23, 42, 0.6));
+      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.6);
+      color: #f8fafc;
+    }
+
+    body[data-theme="dark"] .table-cell--max .table-percent {
+      color: rgba(226, 232, 240, 0.92);
     }
 
     body[data-theme="dark"] tbody tr:nth-child(even) {
@@ -3988,6 +4015,55 @@
       return `${numberFormatter.format(count)} <span class="table-percent">(${shareText})</span>`;
     }
 
+    function setCellNumericValue(cell, value) {
+      if (!cell) {
+        return;
+      }
+      const normalized = Number.isFinite(value) ? value : 0;
+      cell.dataset.value = String(normalized);
+    }
+
+    function highlightTableMaxima(tbody, columnIndices) {
+      if (!tbody || !Array.isArray(columnIndices) || !columnIndices.length) {
+        return;
+      }
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      if (!rows.length) {
+        return;
+      }
+      rows.forEach((row) => {
+        Array.from(row.cells).forEach((cell) => {
+          cell.classList.remove('table-cell--max');
+        });
+      });
+      columnIndices.forEach((columnIndex) => {
+        let maxValue = Number.NEGATIVE_INFINITY;
+        const trackedCells = [];
+        rows.forEach((row) => {
+          const cell = row.cells[columnIndex];
+          if (!cell) {
+            return;
+          }
+          const value = Number.parseFloat(cell.dataset.value ?? '');
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          trackedCells.push({ cell, value });
+          if (value > maxValue) {
+            maxValue = value;
+          }
+        });
+        if (!trackedCells.length || !Number.isFinite(maxValue)) {
+          return;
+        }
+        trackedCells
+          .filter(({ value }) => value === maxValue)
+          .forEach(({ cell }) => {
+            cell.classList.add('table-cell--max');
+          });
+      });
+    }
+
     function extractCompareMetricsFromRow(row) {
       if (!row || !row.dataset || !row.dataset.compareId) {
         return null;
@@ -4164,6 +4240,12 @@
           const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
           const emsShare = total > 0 ? entry.ems / total : 0;
           const hospShare = total > 0 ? entry.hospitalized / total : 0;
+          setCellNumericValue(row.cells[1], total);
+          setCellNumericValue(row.cells[2], avgStay);
+          setCellNumericValue(row.cells[3], entry.night);
+          setCellNumericValue(row.cells[4], entry.ems);
+          setCellNumericValue(row.cells[5], entry.hospitalized);
+          setCellNumericValue(row.cells[6], entry.discharged);
           row.dataset.compareId = `recent-${entry.date}`;
           row.dataset.compareGroup = 'recent';
           row.dataset.compareLabel = displayDate;
@@ -4174,6 +4256,7 @@
           row.dataset.hospShare = String(hospShare);
           selectors.recentTable.appendChild(row);
         });
+      highlightTableMaxima(selectors.recentTable, [1, 2, 3, 4, 5, 6]);
       syncCompareActivation();
     }
 
@@ -4220,6 +4303,13 @@
         const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
         const emsShare = total > 0 ? entry.ems / total : 0;
         const hospShare = total > 0 ? entry.hospitalized / total : 0;
+        setCellNumericValue(row.cells[1], total);
+        setCellNumericValue(row.cells[2], avgPerDay);
+        setCellNumericValue(row.cells[3], avgStay);
+        setCellNumericValue(row.cells[4], entry.night);
+        setCellNumericValue(row.cells[5], entry.ems);
+        setCellNumericValue(row.cells[6], entry.hospitalized);
+        setCellNumericValue(row.cells[7], entry.discharged);
         row.dataset.compareId = `monthly-${entry.month}`;
         row.dataset.compareGroup = 'monthly';
         row.dataset.compareLabel = formatMonthLabel(entry.month);
@@ -4230,6 +4320,7 @@
         row.dataset.hospShare = String(hospShare);
         selectors.monthlyTable.appendChild(row);
       });
+      highlightTableMaxima(selectors.monthlyTable, [1, 2, 3, 4, 5, 6, 7]);
       syncCompareActivation();
     }
 
