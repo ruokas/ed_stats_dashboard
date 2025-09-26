@@ -20,6 +20,7 @@
       --color-success: #16a34a;
       --color-weekend: #f97316;
       --color-weekend-soft: rgba(249, 115, 22, 0.2);
+      --chart-grid: rgba(15, 23, 42, 0.12);
       --shadow-elevated: 0 20px 40px -24px rgba(15, 23, 42, 0.45);
       font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -57,6 +58,7 @@
       --color-success: #22c55e;
       --color-weekend: #fb923c;
       --color-weekend-soft: rgba(251, 146, 60, 0.3);
+      --chart-grid: rgba(148, 163, 184, 0.25);
       --shadow-elevated: 0 16px 30px -18px rgba(15, 23, 42, 0.75);
     }
 
@@ -4096,8 +4098,13 @@
       });
     }
 
+    function getThemeStyleTarget() {
+      return document.body || document.documentElement;
+    }
+
     function getThemePalette() {
-      const rootStyles = getComputedStyle(document.documentElement);
+      const styleTarget = getThemeStyleTarget();
+      const rootStyles = getComputedStyle(styleTarget);
       return {
         accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
         accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
@@ -4105,6 +4112,7 @@
         weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
         textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
         textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
+        gridColor: rootStyles.getPropertyValue('--chart-grid').trim() || 'rgba(15, 23, 42, 0.12)',
       };
     }
 
@@ -4163,8 +4171,10 @@
         return;
       }
 
+      const styleTarget = getThemeStyleTarget();
       Chart.defaults.color = themePalette.textColor;
-      Chart.defaults.font.family = getComputedStyle(document.documentElement).fontFamily;
+      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+      Chart.defaults.borderColor = themePalette.gridColor;
 
       if (dashboardState.charts.daily) {
         dashboardState.charts.daily.destroy();
@@ -4200,7 +4210,13 @@
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { display: true, position: 'bottom' },
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                color: themePalette.textColor,
+              },
+            },
             tooltip: {
               callbacks: {
                 label(context) {
@@ -4218,13 +4234,22 @@
                   return label.slice(-5);
                 },
               },
+              grid: {
+                color: themePalette.gridColor,
+                drawBorder: false,
+              },
             },
             y: {
               beginAtZero: true,
               ticks: {
+                color: themePalette.textColor,
                 callback(value) {
                   return numberFormatter.format(value);
                 },
+              },
+              grid: {
+                color: themePalette.gridColor,
+                drawBorder: false,
               },
             },
           },
@@ -4264,8 +4289,10 @@
         throw new Error('Chart.js biblioteka nepasiekiama');
       }
       const palette = getThemePalette();
+      const styleTarget = getThemeStyleTarget();
       Chart.defaults.color = palette.textColor;
-      Chart.defaults.font.family = getComputedStyle(document.documentElement).fontFamily;
+      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+      Chart.defaults.borderColor = palette.gridColor;
 
       if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod <= 0) {
         dashboardState.chartPeriod = 30;
@@ -4352,13 +4379,22 @@
                 ticks: {
                   color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
                 },
+                grid: {
+                  color: palette.gridColor,
+                  drawBorder: false,
+                },
               },
               y: {
                 beginAtZero: true,
                 ticks: {
+                  color: palette.textColor,
                   callback(value) {
                     return decimalFormatter.format(value);
                   },
+                },
+                grid: {
+                  color: palette.gridColor,
+                  drawBorder: false,
                 },
               },
             },
@@ -4683,7 +4719,7 @@
       const rawValues = steps.map((step) => step.value || 0);
       const baselineValue = rawValues.length ? rawValues[0] : 0;
       const maxValue = Math.max(baselineValue, ...rawValues);
-      const fontFamily = getComputedStyle(document.documentElement).fontFamily;
+      const fontFamily = getComputedStyle(getThemeStyleTarget()).fontFamily;
 
       if (!Number.isFinite(maxValue) || maxValue <= 0) {
         ctx.fillStyle = textColor;
