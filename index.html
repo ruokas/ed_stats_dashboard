@@ -3290,8 +3290,10 @@
           return;
         }
         matrix[dayIndex][hour] += 1;
-        const dateKey = entry.arrival.toISOString().split('T')[0];
-        weekdayDays[dayIndex].add(dateKey);
+        const dateKey = formatLocalDateKey(entry.arrival);
+        if (dateKey) {
+          weekdayDays[dayIndex].add(dateKey);
+        }
       });
       let max = 0;
       const averaged = matrix.map((row, dayIndex) => {
