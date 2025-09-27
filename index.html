@@ -2980,7 +2980,42 @@
       return candidates.some((candidate) => matchesWildcard(normalized, candidate));
     }
 
+    function isNightByArrival(arrivalDate, calculations) {
+      if (!(arrivalDate instanceof Date) || Number.isNaN(arrivalDate.getTime())) {
+        return null;
+      }
+      const startRaw = Number.isFinite(Number(calculations?.nightStartHour))
+        ? Number(calculations.nightStartHour)
+        : DEFAULT_SETTINGS.calculations.nightStartHour;
+      const endRaw = Number.isFinite(Number(calculations?.nightEndHour))
+        ? Number(calculations.nightEndHour)
+        : DEFAULT_SETTINGS.calculations.nightEndHour;
+      const dayMinutes = 24 * 60;
+      const normalizeMinutes = (value) => {
+        if (!Number.isFinite(value)) {
+          return 0;
+        }
+        const minutes = Math.round(value * 60);
+        const wrapped = ((minutes % dayMinutes) + dayMinutes) % dayMinutes;
+        return wrapped;
+      };
+      const startMinutes = normalizeMinutes(startRaw);
+      const endMinutes = normalizeMinutes(endRaw);
+      const arrivalMinutes = arrivalDate.getHours() * 60 + arrivalDate.getMinutes();
+      if (startMinutes === endMinutes) {
+        return arrivalMinutes === startMinutes;
+      }
+      if (startMinutes < endMinutes) {
+        return arrivalMinutes >= startMinutes && arrivalMinutes < endMinutes;
+      }
+      return arrivalMinutes >= startMinutes || arrivalMinutes < endMinutes;
+    }
+
     function detectNight(dayNightValue, arrivalDate, csvRuntime, calculations) {
+      const byArrival = isNightByArrival(arrivalDate, calculations);
+      if (typeof byArrival === 'boolean') {
+        return byArrival;
+      }
       const value = dayNightValue != null ? String(dayNightValue).trim().toLowerCase() : '';
       if (value) {
         if (csvRuntime.nightKeywords.some((keyword) => keyword && value.includes(keyword))) {
@@ -2989,22 +3024,6 @@
         if (csvRuntime.dayKeywords.some((keyword) => keyword && value.includes(keyword))) {
           return false;
         }
-      }
-      if (arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime())) {
-        const start = Number.isFinite(Number(calculations.nightStartHour))
-          ? Number(calculations.nightStartHour)
-          : DEFAULT_SETTINGS.calculations.nightStartHour;
-        const end = Number.isFinite(Number(calculations.nightEndHour))
-          ? Number(calculations.nightEndHour)
-          : DEFAULT_SETTINGS.calculations.nightEndHour;
-        const hour = arrivalDate.getHours();
-        if (start === end) {
-          return hour === start;
-        }
-        if (start < end) {
-          return hour >= start && hour < end;
-        }
-        return hour >= start || hour < end;
       }
       return false;
     }
@@ -3386,18 +3405,44 @@
       return `${year}-${month}-${day}`;
     }
 
+    function resolveShiftStartHour(calculationSettings) {
+      const fallback = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
+        ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
+        : 7;
+      if (Number.isFinite(Number(calculationSettings?.shiftStartHour))) {
+        return Number(calculationSettings.shiftStartHour);
+      }
+      if (Number.isFinite(Number(calculationSettings?.nightEndHour))) {
+        return Number(calculationSettings.nightEndHour);
+      }
+      return fallback;
+    }
+
+    function computeShiftDateKey(referenceDate, shiftStartHour) {
+      if (!(referenceDate instanceof Date) || Number.isNaN(referenceDate.getTime())) {
+        return '';
+      }
+      const dayMinutes = 24 * 60;
+      const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
+      const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
+      const arrivalMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
+      const shiftAnchor = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+      if (arrivalMinutes < startMinutes) {
+        shiftAnchor.setDate(shiftAnchor.getDate() - 1);
+      }
+      return formatLocalDateKey(shiftAnchor);
+    }
+
     function computeDailyStats(data) {
+      const shiftStartHour = resolveShiftStartHour(settings?.calculations);
       const dailyMap = new Map();
       data.forEach((record) => {
-        let dateKey = '';
-        if (record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())) {
-          dateKey = formatLocalDateKey(record.arrival);
-        } else if (record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())) {
-          dateKey = formatLocalDateKey(record.discharge);
-        } else {
-          return;
-        }
-
+        const reference = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+          ? record.arrival
+          : record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+            ? record.discharge
+            : null;
+        const dateKey = computeShiftDateKey(reference, shiftStartHour);
         if (!dateKey) {
           return;
         }
