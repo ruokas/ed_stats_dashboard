@@ -1722,6 +1722,7 @@
         fallbackNote: (reason) => `Nepavyko pasiekti nuotolinio šaltinio: ${reason}.`,
         errorDetails: (details) => `Nepavyko įkelti duomenų${details ? ` (${details})` : ''}.`,
         errorAdvice: 'Patikrinkite, ar „Google Sheet“ paskelbta pasirinkus „File → Share → Publish to web → CSV“.',
+        chartLibWarning: 'Nepavyko įkelti grafikų bibliotekos – rodomi KPI ir lentelės be grafinių vizualizacijų.',
       },
       footer: (timestamp) => `Atnaujinta ${timestamp}`,
       footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
@@ -3349,6 +3350,103 @@
       return `rgba(37, 99, 235, ${alpha.toFixed(3)})`;
     }
 
+    function clampNumber(value, min, max) {
+      if (!Number.isFinite(value)) {
+        return min;
+      }
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function parseColor(color) {
+      if (typeof color !== 'string') {
+        return null;
+      }
+      const trimmed = color.trim();
+      const hexMatch = /^#?([a-f\d]{6})$/i.exec(trimmed);
+      if (hexMatch) {
+        const numeric = Number.parseInt(hexMatch[1], 16);
+        return {
+          r: (numeric >> 16) & 255,
+          g: (numeric >> 8) & 255,
+          b: numeric & 255,
+        };
+      }
+      const rgbMatch = trimmed.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+      if (rgbMatch) {
+        const [, r, g, b] = rgbMatch;
+        return {
+          r: Number.parseInt(r, 10),
+          g: Number.parseInt(g, 10),
+          b: Number.parseInt(b, 10),
+        };
+      }
+      return null;
+    }
+
+    function rgbToString(rgb) {
+      if (!rgb) {
+        return '';
+      }
+      const { r, g, b } = rgb;
+      return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+    }
+
+    function blendRgb(base, target, weight) {
+      const baseRgb = typeof base === 'string' ? parseColor(base) : base;
+      const targetRgb = typeof target === 'string' ? parseColor(target) : target;
+      if (!baseRgb || !targetRgb) {
+        return baseRgb || targetRgb || null;
+      }
+      const clamped = clampNumber(weight, 0, 1);
+      return {
+        r: baseRgb.r + (targetRgb.r - baseRgb.r) * clamped,
+        g: baseRgb.g + (targetRgb.g - baseRgb.g) * clamped,
+        b: baseRgb.b + (targetRgb.b - baseRgb.b) * clamped,
+      };
+    }
+
+    function lightenColor(color, amount) {
+      const base = parseColor(color);
+      if (!base) {
+        return color;
+      }
+      const blended = blendRgb(base, { r: 255, g: 255, b: 255 }, clampNumber(amount, 0, 1));
+      return rgbToString(blended);
+    }
+
+    function darkenColor(color, amount) {
+      const base = parseColor(color);
+      if (!base) {
+        return color;
+      }
+      const blended = blendRgb(base, { r: 0, g: 0, b: 0 }, clampNumber(amount, 0, 1));
+      return rgbToString(blended);
+    }
+
+    function withAlpha(color, alpha) {
+      const rgb = parseColor(color);
+      if (!rgb) {
+        return color;
+      }
+      const normalized = clampNumber(alpha, 0, 1);
+      return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${normalized})`;
+    }
+
+    function drawRoundedRectPath(ctx, x, y, width, height, radius) {
+      const effectiveRadius = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+      ctx.beginPath();
+      ctx.moveTo(x + effectiveRadius, y);
+      ctx.lineTo(x + width - effectiveRadius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + effectiveRadius);
+      ctx.lineTo(x + width, y + height - effectiveRadius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - effectiveRadius, y + height);
+      ctx.lineTo(x + effectiveRadius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - effectiveRadius);
+      ctx.lineTo(x, y + effectiveRadius);
+      ctx.quadraticCurveTo(x, y, x + effectiveRadius, y);
+      ctx.closePath();
+    }
+
     function renderArrivalHeatmap(container, heatmapData, accentColor) {
       if (!container) {
         return;
@@ -4332,6 +4430,23 @@
       });
     }
 
+    function clearCanvasById(id) {
+      const canvas = document.getElementById(id);
+      if (!canvas || typeof canvas.getContext !== 'function') {
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+      if (!ctx || typeof ctx.clearRect !== 'function') {
+        return;
+      }
+      const width = canvas.width || canvas.offsetWidth || canvas.clientWidth || 0;
+      const height = canvas.height || canvas.offsetHeight || canvas.clientHeight || 0;
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.restore();
+    }
+
     function updateChartPeriod(period) {
       const numeric = Number.parseInt(period, 10);
       if (!Number.isFinite(numeric) || numeric <= 0) {
@@ -4359,21 +4474,20 @@
     }
 
     async function renderCharts(dailyStats, funnelTotals, heatmapData) {
-      const Chart = await loadChartJs();
-      if (!Chart) {
-        throw new Error('Chart.js biblioteka nepasiekiama');
+      let Chart = null;
+      try {
+        Chart = await loadChartJs();
+      } catch (error) {
+        console.error('Nepavyko įkelti Chart.js bibliotekos:', error);
+        Chart = null;
       }
+
       const palette = getThemePalette();
-      const styleTarget = getThemeStyleTarget();
-      Chart.defaults.color = palette.textColor;
-      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
-      Chart.defaults.borderColor = palette.gridColor;
 
       if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod <= 0) {
         dashboardState.chartPeriod = 30;
       }
 
-      dashboardState.chartLib = Chart;
       const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
       dashboardState.chartData.dailyWindow = scopedDaily;
 
@@ -4393,88 +4507,108 @@
 
       renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
 
-      const dowCounts = Array(7).fill(0);
-      const dowTotals = Array(7).fill(0);
-      scopedDaily.forEach((entry) => {
-        const dayIndex = (new Date(entry.date).getDay() + 6) % 7;
-        dowCounts[dayIndex] += entry.count;
-        dowTotals[dayIndex] += 1;
-      });
-      const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-      const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
-      const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
-      const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
-      const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
+      if (Chart) {
+        dashboardState.chartLib = Chart;
+        const styleTarget = getThemeStyleTarget();
+        Chart.defaults.color = palette.textColor;
+        Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+        Chart.defaults.borderColor = palette.gridColor;
 
-      const ctxDowCanvas = document.getElementById('dowChart');
-      if (ctxDowCanvas && ctxDowCanvas.getContext) {
-        const ctxDow = ctxDowCanvas.getContext('2d');
-        if (dashboardState.charts.dow) {
+        const dowCounts = Array(7).fill(0);
+        const dowTotals = Array(7).fill(0);
+        scopedDaily.forEach((entry) => {
+          const dayIndex = (new Date(entry.date).getDay() + 6) % 7;
+          dowCounts[dayIndex] += entry.count;
+          dowTotals[dayIndex] += 1;
+        });
+        const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
+        const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
+        const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
+        const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
+        const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
+
+        const ctxDowCanvas = document.getElementById('dowChart');
+        if (ctxDowCanvas && ctxDowCanvas.getContext) {
+          const ctxDow = ctxDowCanvas.getContext('2d');
+          if (dashboardState.charts.dow) {
+            dashboardState.charts.dow.destroy();
+          }
+          const isWeekendIndex = (index) => index >= 5;
+          dashboardState.charts.dow = new Chart(ctxDow, {
+            type: 'line',
+            data: {
+              labels: dowLabels,
+              datasets: [
+                {
+                  label: 'Vidutinis pacientų skaičius',
+                  data: dowAverages,
+                  fill: true,
+                  tension: 0.35,
+                  borderColor: palette.accent,
+                  backgroundColor: palette.accentSoft,
+                  pointBackgroundColor: dowPointColors,
+                  pointBorderColor: dowPointColors,
+                  pointRadius: dowPointRadii,
+                  pointHoverRadius: dowHoverRadii,
+                  segment: {
+                    borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccent : palette.accent),
+                    backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccentSoft : palette.accentSoft),
+                  },
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label(context) {
+                      return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
+                  },
+                  grid: {
+                    color: palette.gridColor,
+                    drawBorder: false,
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    color: palette.textColor,
+                    callback(value) {
+                      return decimalFormatter.format(value);
+                    },
+                  },
+                  grid: {
+                    color: palette.gridColor,
+                    drawBorder: false,
+                  },
+                },
+              },
+            },
+          });
+        }
+      } else {
+        dashboardState.chartLib = null;
+        if (dashboardState.charts.daily && typeof dashboardState.charts.daily.destroy === 'function') {
+          dashboardState.charts.daily.destroy();
+        }
+        dashboardState.charts.daily = null;
+        if (dashboardState.charts.dow && typeof dashboardState.charts.dow.destroy === 'function') {
           dashboardState.charts.dow.destroy();
         }
-        const isWeekendIndex = (index) => index >= 5;
-        dashboardState.charts.dow = new Chart(ctxDow, {
-          type: 'line',
-          data: {
-            labels: dowLabels,
-            datasets: [
-              {
-                label: 'Vidutinis pacientų skaičius',
-                data: dowAverages,
-                fill: true,
-                tension: 0.35,
-                borderColor: palette.accent,
-                backgroundColor: palette.accentSoft,
-                pointBackgroundColor: dowPointColors,
-                pointBorderColor: dowPointColors,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-                segment: {
-                  borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccent : palette.accent),
-                  backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccentSoft : palette.accentSoft),
-                },
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label(context) {
-                    return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
-                  },
-                },
-              },
-            },
-            scales: {
-              x: {
-                ticks: {
-                  color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
-                },
-                grid: {
-                  color: palette.gridColor,
-                  drawBorder: false,
-                },
-              },
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  color: palette.textColor,
-                  callback(value) {
-                    return decimalFormatter.format(value);
-                  },
-                },
-                grid: {
-                  color: palette.gridColor,
-                  drawBorder: false,
-                },
-              },
-            },
-          },
-        });
+        dashboardState.charts.dow = null;
+        clearCanvasById('dailyChart');
+        clearCanvasById('dowChart');
       }
 
       if (selectors.funnelCaption) {
@@ -4495,6 +4629,8 @@
       }
 
       renderArrivalHeatmap(selectors.heatmapContainer, dashboardState.chartData.heatmap, palette.accent);
+
+      return { chartsLoaded: Boolean(Chart) };
     }
 
     function rerenderChartsForTheme() {
@@ -4506,6 +4642,19 @@
         return;
       }
       renderCharts(dashboardState.chartData.dailyWindow, dashboardState.chartData.funnel, dashboardState.chartData.heatmap)
+        .then((result) => {
+          if (result?.chartsLoaded === false) {
+            const warningMessage = TEXT.status.chartLibWarning;
+            const existingNote = selectors.statusNote?.textContent?.trim() || '';
+            const hasWarning = existingNote.includes(warningMessage);
+            const combinedNote = existingNote
+              ? hasWarning
+                ? existingNote
+                : `${existingNote} ${warningMessage}`
+              : warningMessage;
+            showStatusNote(combinedNote, 'warning');
+          }
+        })
         .catch((error) => {
           console.error('Nepavyko perpiešti grafikų pakeitus temą:', error);
         });
@@ -4817,10 +4966,32 @@
       const baseWidth = Math.max(0, width - paddingX * 2);
       const centerX = width / 2;
 
+      const panelMarginX = Math.max(10, paddingX * 0.65);
+      const panelMarginTop = Math.max(12, paddingTop * 0.7);
+      const panelMarginBottom = Math.max(12, paddingBottom * 0.6);
+      const panelX = panelMarginX;
+      const panelY = panelMarginTop;
+      const panelWidth = Math.max(0, width - panelX * 2);
+      const panelHeight = Math.max(0, height - panelMarginBottom - panelY);
+
+      const panelGradient = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
+      panelGradient.addColorStop(0, withAlpha(lightenColor(accentColor, 0.75), 0.14));
+      panelGradient.addColorStop(1, withAlpha(darkenColor(accentColor, 0.45), 0.06));
+      ctx.save();
+      drawRoundedRectPath(ctx, panelX, panelY, panelWidth, panelHeight, 18);
+      ctx.fillStyle = panelGradient;
+      ctx.fill();
+      ctx.strokeStyle = withAlpha(darkenColor(accentColor, 0.55), 0.12);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+
       const colorSteps = steps.map((_, index) => {
-        const intensity = Math.max(0.15, 0.85 - index * 0.22);
-        return computeHeatmapColor(accentColor, intensity);
+        const lightenBy = Math.max(0.08, 0.18 - index * 0.04);
+        return lightenColor(accentColor, lightenBy);
       });
+
+      let previousGeometry = null;
 
       steps.forEach((step, index) => {
         const previousValue = index === 0 ? baselineValue : steps[index - 1].value || 0;
@@ -4839,36 +5010,102 @@
         const topHalfWidth = topWidth / 2;
         const bottomHalfWidth = bottomWidth / 2;
 
+        const baseColor = colorSteps[index] || accentColor;
+        const highlightColor = lightenColor(baseColor, 0.3);
+        const shadowColor = darkenColor(baseColor, 0.35);
+        const outlineColor = withAlpha(darkenColor(baseColor, 0.45), 0.38);
+
         ctx.beginPath();
         ctx.moveTo(centerX - topHalfWidth, topY);
         ctx.lineTo(centerX + topHalfWidth, topY);
         ctx.lineTo(centerX + bottomHalfWidth, bottomY);
         ctx.lineTo(centerX - bottomHalfWidth, bottomY);
         ctx.closePath();
-        ctx.fillStyle = colorSteps[index] || accentColor;
-        ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
-        ctx.shadowBlur = 16;
-        ctx.shadowOffsetY = 8;
+        const gradient = ctx.createLinearGradient(centerX, topY, centerX, bottomY);
+        gradient.addColorStop(0, withAlpha(highlightColor, 0.92));
+        gradient.addColorStop(0.55, withAlpha(baseColor, 0.97));
+        gradient.addColorStop(1, withAlpha(shadowColor, 0.94));
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = withAlpha(darkenColor(baseColor, 0.6), 0.28);
+        ctx.shadowBlur = 22;
+        ctx.shadowOffsetY = 10;
         ctx.fill();
 
         ctx.shadowColor = 'transparent';
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = outlineColor;
+        ctx.stroke();
+
+        ctx.strokeStyle = withAlpha(highlightColor, 0.35);
         ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(centerX - topHalfWidth + 1, topY + 1);
+        ctx.lineTo(centerX + topHalfWidth - 1, topY + 1);
         ctx.stroke();
 
         const labelFontSize = Math.max(12, Math.min(16, shapeHeight * 0.28));
         const valueFontSize = Math.max(14, Math.min(20, shapeHeight * 0.36));
         const percent = divisor > 0 ? (currentValue / divisor) * 100 : 0;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        const centerY = topY + shapeHeight / 2;
+
+        ctx.save();
+        ctx.fillStyle = withAlpha('#ffffff', 0.96);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const centerY = topY + shapeHeight / 2;
         ctx.font = `500 ${labelFontSize}px ${fontFamily}`;
-        ctx.fillText(step.label, centerX, centerY - valueFontSize * 0.7);
+        ctx.fillText(step.label, centerX, centerY - valueFontSize * 0.72);
         ctx.font = `600 ${valueFontSize}px ${fontFamily}`;
-        ctx.fillText(numberFormatter.format(currentValue), centerX, centerY);
+        ctx.fillText(numberFormatter.format(currentValue), centerX, centerY + 1);
         ctx.font = `400 ${Math.max(11, labelFontSize - 1)}px ${fontFamily}`;
-        ctx.fillText(`${decimalFormatter.format(percent)}%`, centerX, Math.min(bottomY - 10, centerY + valueFontSize * 0.95));
+        ctx.fillText(`${decimalFormatter.format(percent)}%`, centerX, Math.min(bottomY - 12, centerY + valueFontSize * 0.92));
+        ctx.restore();
+
+        const drop = Math.max(0, previousValue - currentValue);
+        if (index > 0 && drop > 0 && stepGap > 6) {
+          const dropPercent = previousValue > 0 ? (drop / previousValue) * 100 : 0;
+          const dropLabel = `-${numberFormatter.format(drop)} (${decimalFormatter.format(dropPercent)}%)`;
+          const connectorStartX = centerX + (previousGeometry ? previousGeometry.bottomHalfWidth : topHalfWidth);
+          const connectorStartY = topY;
+          const connectorTargetY = topY - stepGap / 2;
+          const pillPaddingX = 10;
+          const pillPaddingY = 6;
+
+          ctx.save();
+          ctx.font = `500 ${Math.max(11, labelFontSize - 1)}px ${fontFamily}`;
+          ctx.textBaseline = 'middle';
+          const metrics = ctx.measureText(dropLabel);
+          const textHeight = (metrics.actualBoundingBoxAscent || 10) + (metrics.actualBoundingBoxDescent || 4);
+          const pillWidth = metrics.width + pillPaddingX * 2;
+          const pillHeight = Math.max(22, textHeight + pillPaddingY * 2);
+          const maxX = width - Math.max(16, paddingX * 0.5);
+          const pillX = Math.min(maxX - pillWidth, connectorStartX + 22);
+          const pillY = connectorTargetY - pillHeight / 2;
+
+          const connectorMidX = pillX - 12;
+          const connectorMidY = connectorTargetY;
+          const connectorColor = withAlpha(darkenColor(baseColor, 0.25), 0.38);
+          ctx.strokeStyle = connectorColor;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(connectorStartX, connectorStartY);
+          ctx.lineTo(connectorMidX, connectorMidY);
+          ctx.lineTo(pillX, pillY + pillHeight / 2);
+          ctx.stroke();
+
+          drawRoundedRectPath(ctx, pillX, pillY, pillWidth, pillHeight, Math.min(12, pillHeight / 2));
+          ctx.fillStyle = withAlpha(lightenColor(baseColor, 0.32), 0.16);
+          ctx.fill();
+          ctx.strokeStyle = withAlpha(darkenColor(baseColor, 0.35), 0.28);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.fillStyle = withAlpha(darkenColor(baseColor, 0.55), 0.82);
+          ctx.textAlign = 'center';
+          ctx.fillText(dropLabel, pillX + pillWidth / 2, pillY + pillHeight / 2 + 0.5);
+          ctx.restore();
+        }
+
+        previousGeometry = { bottomHalfWidth, color: baseColor };
       });
 
       ctx.restore();
@@ -4933,7 +5170,13 @@
         dashboardState.chartData.baseRecords = filteredRecords.slice();
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         applyKpiFiltersAndRender();
-        await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
+        let chartsResult = { chartsLoaded: true };
+        try {
+          chartsResult = await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
+        } catch (chartError) {
+          console.error('Nepavyko sugeneruoti grafinių vizualizacijų:', chartError);
+          chartsResult = { chartsLoaded: false };
+        }
         renderRecentTable(recentDailyStats);
         const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
         // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
@@ -4943,6 +5186,17 @@
           : monthlyStats;
         renderMonthlyTable(limitedMonthlyStats);
         setStatus('success');
+        if (chartsResult?.chartsLoaded === false) {
+          const warningMessage = TEXT.status.chartLibWarning;
+          const existingNote = selectors.statusNote?.textContent?.trim() || '';
+          const hasWarning = existingNote.includes(warningMessage);
+          const combinedNote = existingNote
+            ? hasWarning
+              ? existingNote
+              : `${existingNote} ${warningMessage}`
+            : warningMessage;
+          showStatusNote(combinedNote, 'warning');
+        }
       } catch (error) {
         console.error('Nepavyko apdoroti duomenų:', error);
         dashboardState.usingFallback = false;
