@@ -1171,11 +1171,33 @@
       color: var(--color-accent);
     }
 
+    .btn-secondary[aria-pressed="true"] {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 12px 30px -18px rgba(15, 23, 42, 0.4);
+    }
+
+    body[data-theme="dark"] .btn-secondary[aria-pressed="true"] {
+      box-shadow: 0 12px 30px -18px rgba(15, 23, 42, 0.65);
+    }
+
     .btn-secondary:hover,
     .btn-secondary:focus-visible {
       transform: translateY(-1px);
       background: rgba(37, 99, 235, 0.08);
       border-color: rgba(37, 99, 235, 0.55);
+      outline: none;
+    }
+
+    .btn-secondary[aria-pressed="true"]:hover,
+    .btn-secondary[aria-pressed="true"]:focus-visible {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 16px 36px -18px rgba(15, 23, 42, 0.5);
       outline: none;
     }
 
