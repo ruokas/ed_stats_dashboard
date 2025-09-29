@@ -1540,11 +1540,11 @@
             <tr>
               <th scope="col" id="feedbackColumnMonth">Mėnuo</th>
               <th scope="col" id="feedbackColumnResponses">Atsakymai</th>
-              <th scope="col" id="feedbackColumnOverall">Bendra patirtis (vid.)</th>
-              <th scope="col" id="feedbackColumnDoctors">Gydytojų darbas (vid.)</th>
-              <th scope="col" id="feedbackColumnNurses">Slaugytojų darbas (vid.)</th>
-              <th scope="col" id="feedbackColumnAides">Padėjėjų darbas (vid.)</th>
-              <th scope="col" id="feedbackColumnWaiting">Laukimo vertinimas (vid.)</th>
+              <th scope="col" id="feedbackColumnOverall">Bendra patirtis (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnDoctors">Gydytojų darbas (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnNurses">Slaugytojų darbas (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnAides">Padėjėjų darbas (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnWaiting">Laukimo vertinimas (vid. 1–5)</th>
               <th scope="col" id="feedbackColumnContact">Bendravo su padėjėjais</th>
             </tr>
           </thead>
@@ -1819,11 +1819,14 @@
 2024-02-08T19:30:00+02:00,2024-02-08T23:05:00+02:00,Vakare,NE,
 2024-02-09T23:10:00+02:00,2024-02-10T02:20:00+02:00,Naktis,TAIP,Traumatologija`;
     const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?
-2024-02-01T09:12:00+02:00,Pacientas,9,9,10,Taip,10,8
-2024-02-02T18:40:00+02:00,Artimasis,7,8,7,Ne,,6
-2024-02-03T12:05:00+02:00,Pacientas,10,10,10,Taip,10,9
-2024-02-04T22:20:00+02:00,Artimasis,6,6,5,Taip,6,4
-2024-02-05T08:55:00+02:00,Pacientas,8,9,8,Ne,,7`;
+2024-02-01T09:12:00+02:00,Pacientas,4,4,5,Taip,5,4
+2024-02-02T18:40:00+02:00,Artimasis,3,4,3,Ne,,3
+2024-02-03T12:05:00+02:00,Pacientas,5,5,5,Taip,5,5
+2024-02-04T22:20:00+02:00,Artimasis,2,3,2,Taip,3,2
+2024-02-05T08:55:00+02:00,Pacientas,4,5,4,Ne,,4`;
+    const FEEDBACK_RATING_MIN = 1;
+    const FEEDBACK_RATING_MAX = 5;
+    const FEEDBACK_LEGACY_MAX = 10;
     /**
      * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
      */
@@ -1942,7 +1945,7 @@
           {
             key: 'overallAverage',
             title: 'Bendra patirtis',
-            description: 'Vidurkis (1–10) pagal bendros patirties klausimą.',
+            description: 'Vidurkis (1–5) pagal bendros patirties klausimą.',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
             countKey: 'overallCount',
@@ -1950,7 +1953,7 @@
           {
             key: 'doctorsAverage',
             title: 'Gydytojų darbas',
-            description: 'Vidurkis (1–10) apie gydytojų darbą.',
+            description: 'Vidurkis (1–5) apie gydytojų darbą.',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
             countKey: 'doctorsCount',
@@ -1958,7 +1961,7 @@
           {
             key: 'nursesAverage',
             title: 'Slaugytojų darbas',
-            description: 'Vidurkis (1–10) apie slaugytojų darbą.',
+            description: 'Vidurkis (1–5) apie slaugytojų darbą.',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
             countKey: 'nursesCount',
@@ -1966,7 +1969,7 @@
           {
             key: 'aidesAverage',
             title: 'Slaugytojų padėjėjų darbas',
-            description: 'Atsiliepimai iš pacientų, bendravusių su padėjėjais.',
+            description: 'Vidurkis (1–5) iš pacientų, bendravusių su padėjėjais.',
             empty: 'Nėra duomenų.',
             format: 'decimal',
             countKey: 'aidesResponses',
@@ -1974,7 +1977,7 @@
           {
             key: 'waitingAverage',
             title: 'Laukimo laikas',
-            description: 'Vidutinis laukimo vertinimas (1–10).',
+            description: 'Vidutinis laukimo vertinimas (1–5).',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
             countKey: 'waitingCount',
@@ -2001,11 +2004,11 @@
           headers: {
             month: 'Mėnuo',
             responses: 'Atsakymai',
-            overall: 'Bendra patirtis (vid.)',
-            doctors: 'Gydytojų darbas (vid.)',
-            nurses: 'Slaugytojų darbas (vid.)',
-            aides: 'Padėjėjų darbas (vid.)',
-            waiting: 'Laukimo vertinimas (vid.)',
+            overall: 'Bendra patirtis (vid. 1–5)',
+            doctors: 'Gydytojų darbas (vid. 1–5)',
+            nurses: 'Slaugytojų darbas (vid. 1–5)',
+            aides: 'Padėjėjų darbas (vid. 1–5)',
+            waiting: 'Laukimo vertinimas (vid. 1–5)',
             contact: 'Bendravo su padėjėjais',
           },
           placeholder: '—',
@@ -3574,6 +3577,21 @@
       return -1;
     }
 
+    function normalizeFeedbackRating(value) {
+      if (!Number.isFinite(value)) {
+        return null;
+      }
+      if (value >= FEEDBACK_RATING_MIN && value <= FEEDBACK_RATING_MAX) {
+        return value;
+      }
+      if (value > FEEDBACK_RATING_MAX && value <= FEEDBACK_LEGACY_MAX) {
+        const scaled = (value / FEEDBACK_LEGACY_MAX) * FEEDBACK_RATING_MAX;
+        const clamped = Math.min(FEEDBACK_RATING_MAX, Math.max(FEEDBACK_RATING_MIN, scaled));
+        return clamped;
+      }
+      return null;
+    }
+
     function parseFeedbackRatingCell(value) {
       if (value == null) {
         return null;
@@ -3585,12 +3603,12 @@
       const normalized = text.replace(',', '.');
       const direct = Number.parseFloat(normalized);
       if (Number.isFinite(direct)) {
-        return direct;
+        return normalizeFeedbackRating(direct);
       }
       const match = normalized.match(/(-?\d+(?:\.\d+)?)/);
       if (match) {
         const fallback = Number.parseFloat(match[1]);
-        return Number.isFinite(fallback) ? fallback : null;
+        return normalizeFeedbackRating(fallback);
       }
       return null;
     }
@@ -4153,7 +4171,9 @@
           const value = entry?.[key];
           return Number.isFinite(value) ? Number(value) : null;
         })
-        .filter((value) => Number.isFinite(value));
+        .filter((value) => Number.isFinite(value)
+          && value >= FEEDBACK_RATING_MIN
+          && value <= FEEDBACK_RATING_MAX);
 
       const overallRatings = collectValues('overallRating');
       const doctorsRatings = collectValues('doctorsRating');
@@ -4206,23 +4226,34 @@
         const bucket = monthlyMap.get(monthKey);
         bucket.responses += 1;
 
-        if (Number.isFinite(entry?.overallRating)) {
+        if (Number.isFinite(entry?.overallRating)
+          && entry.overallRating >= FEEDBACK_RATING_MIN
+          && entry.overallRating <= FEEDBACK_RATING_MAX) {
           bucket.overallSum += Number(entry.overallRating);
           bucket.overallCount += 1;
         }
-        if (Number.isFinite(entry?.doctorsRating)) {
+        if (Number.isFinite(entry?.doctorsRating)
+          && entry.doctorsRating >= FEEDBACK_RATING_MIN
+          && entry.doctorsRating <= FEEDBACK_RATING_MAX) {
           bucket.doctorsSum += Number(entry.doctorsRating);
           bucket.doctorsCount += 1;
         }
-        if (Number.isFinite(entry?.nursesRating)) {
+        if (Number.isFinite(entry?.nursesRating)
+          && entry.nursesRating >= FEEDBACK_RATING_MIN
+          && entry.nursesRating <= FEEDBACK_RATING_MAX) {
           bucket.nursesSum += Number(entry.nursesRating);
           bucket.nursesCount += 1;
         }
-        if (entry?.aidesContact === true && Number.isFinite(entry?.aidesRating)) {
+        if (entry?.aidesContact === true
+          && Number.isFinite(entry?.aidesRating)
+          && entry.aidesRating >= FEEDBACK_RATING_MIN
+          && entry.aidesRating <= FEEDBACK_RATING_MAX) {
           bucket.aidesSum += Number(entry.aidesRating);
           bucket.aidesCount += 1;
         }
-        if (Number.isFinite(entry?.waitingRating)) {
+        if (Number.isFinite(entry?.waitingRating)
+          && entry.waitingRating >= FEEDBACK_RATING_MIN
+          && entry.waitingRating <= FEEDBACK_RATING_MAX) {
           bucket.waitingSum += Number(entry.waitingRating);
           bucket.waitingCount += 1;
         }
