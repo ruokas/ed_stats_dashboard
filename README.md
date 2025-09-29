@@ -22,7 +22,6 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 ## Konfigūracija
 - Tekstai (LT, su kabliuku EN) – `TEXT` objektas `index.html` viršuje arba nustatymų dialoge nurodyti pavadinimai/paantraštės.
 - Duomenų šaltinis, lovų užimtumo ir atsiliepimų CSV su demonstraciniais rinkiniais – nustatymų dialogas („Duomenų šaltinis“, „Lovų užimtumo duomenys“ ir „CSV stulpelių atitikimas“ skyriai).
-- Lovų užimtumo CSV viršutinė eilutė turi naudoti antraštes **Timestamp**, **Pacientų skaičius**, **Lovų užimtumas** (kableliai kaip skyrikliai). Galite pridėti sinonimų, jei norite naudoti kitokius pavadinimus.
 - GMP laukas numatytai atpažįsta reikšmes „GMP“, „su GMP“ ir „GMP (su GMP)“, o tuščias hospitalizavimo stulpelis reiškia išrašytą pacientą.
 - Spalvų schema ir kampai – CSS kintamieji `:root` bloke (`index.html`).
 - Grafikai – Chart.js nustatymai `renderCharts()` funkcijoje (`index.html`).
