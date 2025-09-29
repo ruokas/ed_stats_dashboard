@@ -3255,7 +3255,9 @@
       if (!raw) {
         return null;
       }
-      const isoCandidate = raw.includes('T') ? raw : raw.replace(' ', 'T');
+      const normalized = raw.replace(/\s+/g, ' ').trim();
+      let isoCandidate = normalized.includes('T') ? normalized : normalized.replace(' ', 'T');
+      isoCandidate = isoCandidate.replace(' T', 'T').replace(' +', '+').replace(' -', '-');
       let parsed = new Date(isoCandidate);
       if (!Number.isNaN(parsed?.getTime?.())) {
         return parsed;
