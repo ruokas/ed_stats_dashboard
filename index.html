@@ -1636,7 +1636,7 @@
           <div class="settings-field">
             <label for="settingsCapacityUrl"><span>CSV nuoroda (lovų užimtumas)</span></label>
             <input id="settingsCapacityUrl" name="dataSource.capacity.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
-            <p class="settings-hint">Šiame faile turi būti stulpeliai: Timestamp, total patients in ED, bed occupancy. Naudokite tą pačią „Publish to web → CSV“ nuorodą.</p>
+            <p class="settings-hint">Šiame faile turi būti stulpeliai: Timestamp, Pacientų skaičius, Lovų užimtumas. Naudokite tą pačią „Publish to web → CSV“ nuorodą.</p>
           </div>
           <label class="settings-checkbox" for="settingsCapacityUseFallback">
             <input id="settingsCapacityUseFallback" name="dataSource.capacity.useFallback" type="checkbox">
@@ -1876,7 +1876,7 @@
 2024-02-03T12:05:00+02:00,Pacientas,5,5,5,Taip,5,5
 2024-02-04T22:20:00+02:00,Artimasis,2,3,2,Taip,3,2
 2024-02-05T08:55:00+02:00,Pacientas,4,5,4,Ne,,4`;
-    const DEFAULT_CAPACITY_CSV = `Timestamp,total patients in ED,bed occupancy
+    const DEFAULT_CAPACITY_CSV = `Timestamp,Pacientų skaičius,Lovų užimtumas
 2024-02-01T07:00:00+02:00,18,72
 2024-02-01T11:00:00+02:00,22,88
 2024-02-01T19:00:00+02:00,16,64
@@ -1892,9 +1892,9 @@
     const FEEDBACK_LEGACY_MAX = 10;
     const CAPACITY_HIGH_THRESHOLD = 0.9;
     const CAPACITY_HEADER_CANDIDATES = {
-      timestamp: 'timestamp,time,datetime,data laikas,laikas,recorded at',
-      patients: 'total patients in ed,total patients,patients in ed,patients,ed patients',
-      occupancy: 'bed occupancy,occupancy,bed occupancy %,lovų užimtumas,uzimtumas',
+      timestamp: 'timestamp,time,datetime,data laikas,laikas,įrašymo laikas,irasymo laikas,recorded at',
+      patients: 'pacientų skaičius,pacientu skaicius,total patients in ed,total patients,patients in ed,patients,ed patients',
+      occupancy: 'lovų užimtumas,lovu uzimtumas,bed occupancy,occupancy,bed occupancy %,užimtumas %,uzimtumas %,uzimtumas',
     };
     /**
      * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
@@ -3752,10 +3752,10 @@
         missing.push('Timestamp');
       }
       if (patientsIndex < 0) {
-        missing.push('total patients in ED');
+        missing.push('Pacientų skaičius');
       }
       if (occupancyIndex < 0) {
-        missing.push('bed occupancy');
+        missing.push('Lovų užimtumas');
       }
       if (missing.length) {
         throw new Error(`Lovų užimtumo CSV nerasti stulpeliai: ${missing.join(', ')}`);
