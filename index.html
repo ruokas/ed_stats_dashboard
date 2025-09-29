@@ -1513,13 +1513,13 @@
           <caption id="recentCaption" class="sr-only">Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė</caption>
           <thead>
             <tr>
-              <th scope="col">Data</th>
-              <th scope="col">Pacientai</th>
-              <th scope="col">Vid. laikas (val.)</th>
-              <th scope="col">Naktiniai pacientai</th>
-              <th scope="col">GMP</th>
-              <th scope="col">Hospitalizuoti</th>
-              <th scope="col">Išleisti</th>
+              <th scope="col" id="recentColumnDate">Data</th>
+              <th scope="col" id="recentColumnPatients">Pacientai</th>
+              <th scope="col" id="recentColumnAvgStay">Vid. laikas (val.)</th>
+              <th scope="col" id="recentColumnNight">Naktiniai pacientai</th>
+              <th scope="col" id="recentColumnEms">GMP</th>
+              <th scope="col" id="recentColumnHospitalized">Hospitalizuoti</th>
+              <th scope="col" id="recentColumnDischarged">Išleisti</th>
             </tr>
           </thead>
           <tbody id="recentTable"></tbody>
@@ -1539,14 +1539,14 @@
           <caption id="monthlyCaption" class="sr-only">Mėnesių pacientų suvestinė: sumos ir vidurkiai</caption>
           <thead>
             <tr>
-              <th scope="col">Mėnuo</th>
-              <th scope="col">Pacientai (suma)</th>
-              <th scope="col">Vid. per dieną</th>
-              <th scope="col">Vid. buvimo laikas (val.)</th>
-              <th scope="col">Naktiniai pacientai</th>
-              <th scope="col">GMP</th>
-              <th scope="col">Hospitalizuoti</th>
-              <th scope="col">Išleisti</th>
+              <th scope="col" id="monthlyColumnMonth">Mėnuo</th>
+              <th scope="col" id="monthlyColumnPatientsTotal">Pacientai (suma)</th>
+              <th scope="col" id="monthlyColumnPatientsPerDay">Vid. per dieną</th>
+              <th scope="col" id="monthlyColumnAvgStay">Vid. buvimo laikas (val.)</th>
+              <th scope="col" id="monthlyColumnNight">Naktiniai pacientai</th>
+              <th scope="col" id="monthlyColumnEms">GMP</th>
+              <th scope="col" id="monthlyColumnHospitalized">Hospitalizuoti</th>
+              <th scope="col" id="monthlyColumnDischarged">Išleisti</th>
             </tr>
           </thead>
           <tbody id="monthlyTable"></tbody>
@@ -1628,6 +1628,24 @@
             <label for="settingsFeedbackFallbackCsv"><span>Demonstracinis CSV (atsiliepimai)</span></label>
             <textarea id="settingsFeedbackFallbackCsv" name="dataSource.feedback.fallbackCsv" spellcheck="false"></textarea>
             <p class="settings-hint">CSV turi turėti stulpelius: data, įvertinimas, komentaro tekstas, kanalas ir (pasirinktinai) nuotaikos reikšmė.</p>
+          </div>
+        </section>
+
+        <section class="settings-section" aria-labelledby="settingsCapacityDataTitle">
+          <h3 id="settingsCapacityDataTitle">Lovų užimtumo duomenys</h3>
+          <div class="settings-field">
+            <label for="settingsCapacityUrl"><span>CSV nuoroda (lovų užimtumas)</span></label>
+            <input id="settingsCapacityUrl" name="dataSource.capacity.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
+            <p class="settings-hint">Šiame faile turi būti stulpeliai: Timestamp, total patients in ED, bed occupancy. Naudokite tą pačią „Publish to web → CSV“ nuorodą.</p>
+          </div>
+          <label class="settings-checkbox" for="settingsCapacityUseFallback">
+            <input id="settingsCapacityUseFallback" name="dataSource.capacity.useFallback" type="checkbox">
+            <span>Naudoti demonstracinį lovų užimtumo rinkinį, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
+          </label>
+          <div class="settings-field">
+            <label for="settingsCapacityFallbackCsv"><span>Demonstracinis CSV (lovų užimtumas)</span></label>
+            <textarea id="settingsCapacityFallbackCsv" name="dataSource.capacity.fallbackCsv" spellcheck="false"></textarea>
+            <p class="settings-hint">Kiekvienoje eilutėje pateikite laiką, tuo metu ED buvusių pacientų skaičių ir lovų užimtumą procentais.</p>
           </div>
         </section>
 
@@ -1858,9 +1876,26 @@
 2024-02-03T12:05:00+02:00,Pacientas,5,5,5,Taip,5,5
 2024-02-04T22:20:00+02:00,Artimasis,2,3,2,Taip,3,2
 2024-02-05T08:55:00+02:00,Pacientas,4,5,4,Ne,,4`;
+    const DEFAULT_CAPACITY_CSV = `Timestamp,total patients in ED,bed occupancy
+2024-02-01T07:00:00+02:00,18,72
+2024-02-01T11:00:00+02:00,22,88
+2024-02-01T19:00:00+02:00,16,64
+2024-02-02T08:00:00+02:00,20,75
+2024-02-02T17:30:00+02:00,24,92
+2024-02-03T09:15:00+02:00,19,70
+2024-02-03T21:45:00+02:00,15,58
+2024-02-04T10:30:00+02:00,23,90
+2024-02-05T06:45:00+02:00,17,68
+2024-02-05T18:10:00+02:00,25,95`;
     const FEEDBACK_RATING_MIN = 1;
     const FEEDBACK_RATING_MAX = 5;
     const FEEDBACK_LEGACY_MAX = 10;
+    const CAPACITY_HIGH_THRESHOLD = 0.9;
+    const CAPACITY_HEADER_CANDIDATES = {
+      timestamp: 'timestamp,time,datetime,data laikas,laikas,recorded at',
+      patients: 'total patients in ed,total patients,patients in ed,patients,ed patients',
+      occupancy: 'bed occupancy,occupancy,bed occupancy %,lovų užimtumas,uzimtumas',
+    };
     /**
      * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
      */
@@ -1957,18 +1992,40 @@
         heatmapCaption: 'Vidutinis pacientų atvykimų skaičius per dieną pagal savaitės dieną ir valandą.',
         heatmapEmpty: 'Šiame laikotarpyje atvykimų duomenų nėra.',
         heatmapLegend: 'Tamsesnė spalva reiškia didesnį vidutinį atvykimų skaičių per dieną.',
+        capacityPatientsLabel: 'Vid. pacientų skaičius skyriuje',
+        capacityAverageLabel: 'Lovų užimtumas (vid.)',
+        capacityAxisLabel: 'Lovų užimtumas (%)',
       },
       recent: {
         title: 'Paskutinės 7 dienos',
         subtitle: 'Kasdienė suvestinė pagal naujausius duomenis.',
         caption: 'Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė.',
         empty: 'Šiame laikotarpyje duomenų nėra.',
+        headers: {
+          date: 'Data',
+          patients: 'Pacientai',
+          avgStay: 'Vid. laikas (val.)',
+          night: 'Naktiniai pacientai',
+          ems: 'GMP',
+          hospitalized: 'Hospitalizuoti',
+          discharged: 'Išleisti',
+        },
       },
       monthly: {
         title: 'Mėnesinė suvestinė',
         subtitle: 'Kalendoriniai mėnesiai (paskutiniai 12 mėnesių).',
         caption: 'Mėnesių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
+        headers: {
+          month: 'Mėnuo',
+          patientsTotal: 'Pacientai (suma)',
+          patientsPerDay: 'Vid. per dieną',
+          avgStay: 'Vid. buvimo laikas (val.)',
+          night: 'Naktiniai pacientai',
+          ems: 'GMP',
+          hospitalized: 'Hospitalizuoti',
+          discharged: 'Išleisti',
+        },
       },
       feedback: {
         title: 'Pacientų atsiliepimai',
@@ -2080,6 +2137,13 @@
           hospShare: 'Hospitalizacijų dalis',
         },
       },
+      capacity: {
+        status: {
+          fallback: (reason) => `Lovų užimtumas rodomas iš demonstracinio šaltinio: ${reason}`,
+          error: (reason) => `Lovų užimtumo nepavyko įkelti: ${reason}`,
+          missingUrl: 'Nenurodytas lovų užimtumo duomenų URL.',
+        },
+      },
     };
 
     const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
@@ -2095,6 +2159,11 @@
           url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4ghdkkUJw5pYjb7nTDgoGdaTIUjLT7bD_8q05QyBNR4Z-tTVqhWMvXGemJUIneXyyUF_8-O-EftK/pub?gid=369777093&single=true&output=csv',
           useFallback: true,
           fallbackCsv: DEFAULT_FEEDBACK_CSV,
+        },
+        capacity: {
+          url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv',
+          useFallback: true,
+          fallbackCsv: DEFAULT_CAPACITY_CSV,
         },
       },
       csv: {
@@ -2313,6 +2382,14 @@
       merged.dataSource.feedback.fallbackCsv = typeof merged.dataSource.feedback.fallbackCsv === 'string'
         ? merged.dataSource.feedback.fallbackCsv
         : DEFAULT_SETTINGS.dataSource.feedback.fallbackCsv;
+      if (!merged.dataSource.capacity || typeof merged.dataSource.capacity !== 'object') {
+        merged.dataSource.capacity = cloneSettings(DEFAULT_SETTINGS.dataSource.capacity);
+      }
+      merged.dataSource.capacity.url = (merged.dataSource.capacity.url ?? '').trim();
+      merged.dataSource.capacity.useFallback = Boolean(merged.dataSource.capacity.useFallback);
+      merged.dataSource.capacity.fallbackCsv = typeof merged.dataSource.capacity.fallbackCsv === 'string'
+        ? merged.dataSource.capacity.fallbackCsv
+        : DEFAULT_SETTINGS.dataSource.capacity.fallbackCsv;
 
       ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
         .forEach((key) => {
@@ -2581,6 +2658,9 @@
       assign('dataSource.feedback.url', settings.dataSource.feedback?.url);
       assign('dataSource.feedback.useFallback', settings.dataSource.feedback?.useFallback);
       assign('dataSource.feedback.fallbackCsv', settings.dataSource.feedback?.fallbackCsv);
+      assign('dataSource.capacity.url', settings.dataSource.capacity?.url);
+      assign('dataSource.capacity.useFallback', settings.dataSource.capacity?.useFallback);
+      assign('dataSource.capacity.fallbackCsv', settings.dataSource.capacity?.fallbackCsv);
 
       assign('csv.arrival', settings.csv.arrival);
       assign('csv.discharge', settings.csv.discharge);
@@ -2623,6 +2703,11 @@
           useFallback: false,
           fallbackCsv: '',
           feedback: {
+            url: '',
+            useFallback: false,
+            fallbackCsv: '',
+          },
+          capacity: {
             url: '',
             useFallback: false,
             fallbackCsv: '',
@@ -2688,6 +2773,9 @@
       result.dataSource.feedback.url = readText('dataSource.feedback.url').trim();
       result.dataSource.feedback.useFallback = readCheckbox('dataSource.feedback.useFallback');
       result.dataSource.feedback.fallbackCsv = readText('dataSource.feedback.fallbackCsv').trim();
+      result.dataSource.capacity.url = readText('dataSource.capacity.url').trim();
+      result.dataSource.capacity.useFallback = readCheckbox('dataSource.capacity.useFallback');
+      result.dataSource.capacity.fallbackCsv = readText('dataSource.capacity.fallbackCsv').trim();
 
       result.csv.arrival = readText('csv.arrival').trim();
       result.csv.discharge = readText('csv.discharge').trim();
@@ -2842,6 +2930,12 @@
         usingFallback: false,
         lastErrorMessage: '',
       },
+      capacity: {
+        raw: [],
+        daily: [],
+        usingFallback: false,
+        lastErrorMessage: '',
+      },
     };
 
     /**
@@ -2920,6 +3014,32 @@
       if (selectors.compareSummary) {
         selectors.compareSummary.textContent = TEXT.compare.prompt;
       }
+      const assignHeaderText = (id, value) => {
+        if (!id || !value) {
+          return;
+        }
+        const node = document.getElementById(id);
+        if (node) {
+          node.textContent = value;
+        }
+      };
+      const recentHeaders = TEXT.recent?.headers || {};
+      assignHeaderText('recentColumnDate', recentHeaders.date);
+      assignHeaderText('recentColumnPatients', recentHeaders.patients);
+      assignHeaderText('recentColumnAvgStay', recentHeaders.avgStay);
+      assignHeaderText('recentColumnNight', recentHeaders.night);
+      assignHeaderText('recentColumnEms', recentHeaders.ems);
+      assignHeaderText('recentColumnHospitalized', recentHeaders.hospitalized);
+      assignHeaderText('recentColumnDischarged', recentHeaders.discharged);
+      const monthlyHeaders = TEXT.monthly?.headers || {};
+      assignHeaderText('monthlyColumnMonth', monthlyHeaders.month);
+      assignHeaderText('monthlyColumnPatientsTotal', monthlyHeaders.patientsTotal);
+      assignHeaderText('monthlyColumnPatientsPerDay', monthlyHeaders.patientsPerDay);
+      assignHeaderText('monthlyColumnAvgStay', monthlyHeaders.avgStay);
+      assignHeaderText('monthlyColumnNight', monthlyHeaders.night);
+      assignHeaderText('monthlyColumnEms', monthlyHeaders.ems);
+      assignHeaderText('monthlyColumnHospitalized', monthlyHeaders.hospitalized);
+      assignHeaderText('monthlyColumnDischarged', monthlyHeaders.discharged);
       hideStatusNote();
     }
 
@@ -2943,6 +3063,28 @@
       }
       selectors.statusNote.textContent = message;
       selectors.statusNote.dataset.tone = tone;
+      selectors.statusNote.removeAttribute('hidden');
+    }
+
+    function appendStatusNote(message, tone = 'info') {
+      if (!selectors.statusNote || !message) {
+        return;
+      }
+      const current = selectors.statusNote.textContent || '';
+      if (!current) {
+        showStatusNote(message, tone);
+        return;
+      }
+      const combined = current.includes(message) ? current : `${current} ${message}`.trim();
+      selectors.statusNote.textContent = combined;
+      const existingTone = selectors.statusNote.dataset.tone || 'info';
+      if (tone === 'error' || existingTone === 'error') {
+        selectors.statusNote.dataset.tone = 'error';
+      } else if (tone === 'warning' || existingTone === 'warning') {
+        selectors.statusNote.dataset.tone = 'warning';
+      } else {
+        selectors.statusNote.dataset.tone = tone;
+      }
       selectors.statusNote.removeAttribute('hidden');
     }
 
@@ -3122,11 +3264,27 @@
       }
       if (dashboardState.feedback.usingFallback) {
         const reason = dashboardState.feedback.lastErrorMessage || TEXT.status.error;
-        showStatusNote(TEXT.feedback.status.fallback(reason), 'warning');
+        appendStatusNote(TEXT.feedback.status.fallback(reason), 'warning');
+      } else if (dashboardState.feedback.lastErrorMessage) {
+        appendStatusNote(TEXT.feedback.status.error(dashboardState.feedback.lastErrorMessage), 'warning');
+      }
+    }
+
+    function applyCapacityStatusNote() {
+      const statusText = TEXT.capacity?.status;
+      if (dashboardState.capacity.usingFallback) {
+        const reason = dashboardState.capacity.lastErrorMessage || TEXT.status.error;
+        const message = typeof statusText?.fallback === 'function'
+          ? statusText.fallback(reason)
+          : `Lovų užimtumas rodomas iš demonstracinio šaltinio: ${reason}`;
+        appendStatusNote(message, 'warning');
         return;
       }
-      if (dashboardState.feedback.lastErrorMessage) {
-        showStatusNote(TEXT.feedback.status.error(dashboardState.feedback.lastErrorMessage), 'warning');
+      if (dashboardState.capacity.lastErrorMessage) {
+        const message = typeof statusText?.error === 'function'
+          ? statusText.error(dashboardState.capacity.lastErrorMessage)
+          : `Lovų užimtumo nepavyko įkelti: ${dashboardState.capacity.lastErrorMessage}`;
+        appendStatusNote(message, 'warning');
       }
     }
 
@@ -3536,6 +3694,157 @@
       return dataRows.map((cols) => mapRow(header, cols, delimiter, columnIndices, csvRuntime, settings.calculations));
     }
 
+    function parseCapacityNumber(value) {
+      if (value == null) {
+        return null;
+      }
+      const normalized = String(value).replace(',', '.').trim();
+      if (!normalized) {
+        return null;
+      }
+      const parsed = Number.parseFloat(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function normalizeCapacityOccupancy(value) {
+      const numeric = parseCapacityNumber(value);
+      if (numeric == null) {
+        return null;
+      }
+      let ratio = numeric;
+      if (ratio > 1.5) {
+        ratio /= 100;
+      }
+      if (ratio > 1 && ratio <= 1.5) {
+        ratio = 1;
+      }
+      if (!Number.isFinite(ratio)) {
+        return null;
+      }
+      if (ratio < 0) {
+        ratio = 0;
+      }
+      if (ratio > 1) {
+        ratio = 1;
+      }
+      return ratio;
+    }
+
+    function transformCapacityCsv(text) {
+      if (!text) {
+        throw new Error('Lovų užimtumo CSV failas tuščias.');
+      }
+      const { rows, delimiter } = parseCsv(text);
+      if (!rows.length) {
+        throw new Error('Lovų užimtumo CSV neturi eilučių.');
+      }
+      const header = rows[0].map((cell) => String(cell ?? '').trim());
+      const headerNormalized = header.map((column, index) => ({
+        original: column,
+        normalized: column.toLowerCase(),
+        index,
+      }));
+      const timestampIndex = resolveColumnIndex(headerNormalized, parseCandidateList(CAPACITY_HEADER_CANDIDATES.timestamp));
+      const patientsIndex = resolveColumnIndex(headerNormalized, parseCandidateList(CAPACITY_HEADER_CANDIDATES.patients));
+      const occupancyIndex = resolveColumnIndex(headerNormalized, parseCandidateList(CAPACITY_HEADER_CANDIDATES.occupancy));
+      const missing = [];
+      if (timestampIndex < 0) {
+        missing.push('Timestamp');
+      }
+      if (patientsIndex < 0) {
+        missing.push('total patients in ED');
+      }
+      if (occupancyIndex < 0) {
+        missing.push('bed occupancy');
+      }
+      if (missing.length) {
+        throw new Error(`Lovų užimtumo CSV nerasti stulpeliai: ${missing.join(', ')}`);
+      }
+
+      const dataRows = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
+      const shiftStartHour = resolveShiftStartHour(settings?.calculations);
+      const records = [];
+
+      dataRows.forEach((cols) => {
+        const normalized = [...cols];
+        if (normalized.length < header.length) {
+          normalized.push(...Array(header.length - normalized.length).fill(''));
+        } else if (normalized.length > header.length) {
+          const extras = normalized.splice(header.length - 1);
+          normalized[header.length - 1] = [normalized[header.length - 1], ...extras].join(delimiter);
+        }
+        const timestampRaw = normalized[timestampIndex] ?? '';
+        const patientsRaw = normalized[patientsIndex] ?? '';
+        const occupancyRaw = normalized[occupancyIndex] ?? '';
+        const timestamp = parseDate(timestampRaw);
+        if (!(timestamp instanceof Date) || Number.isNaN(timestamp.getTime())) {
+          return;
+        }
+        const dateKey = computeShiftDateKey(timestamp, shiftStartHour);
+        if (!dateKey) {
+          return;
+        }
+        const patients = parseCapacityNumber(patientsRaw);
+        const occupancy = normalizeCapacityOccupancy(occupancyRaw);
+        if (patients == null && occupancy == null) {
+          return;
+        }
+        records.push({
+          timestamp,
+          dateKey,
+          patients: Number.isFinite(patients) ? patients : null,
+          occupancy: occupancy != null ? occupancy : null,
+        });
+      });
+
+      if (!records.length) {
+        throw new Error('Lovų užimtumo įrašų nerasta arba stulpelių reikšmės tuščios.');
+      }
+
+      const dailyMap = new Map();
+      records.forEach((record) => {
+        const bucket = dailyMap.get(record.dateKey) || {
+          date: record.dateKey,
+          capacityPatientsSum: 0,
+          capacityPatientsCount: 0,
+          capacityPatientsMax: 0,
+          capacityOccupancySum: 0,
+          capacityOccupancyCount: 0,
+          capacityOccupancyMax: 0,
+          capacityHighCount: 0,
+        };
+        if (Number.isFinite(record.patients)) {
+          bucket.capacityPatientsSum += record.patients;
+          bucket.capacityPatientsCount += 1;
+          bucket.capacityPatientsMax = Math.max(bucket.capacityPatientsMax, record.patients);
+        }
+        if (Number.isFinite(record.occupancy)) {
+          bucket.capacityOccupancySum += record.occupancy;
+          bucket.capacityOccupancyCount += 1;
+          bucket.capacityOccupancyMax = Math.max(bucket.capacityOccupancyMax, record.occupancy);
+          if (record.occupancy >= CAPACITY_HIGH_THRESHOLD) {
+            bucket.capacityHighCount += 1;
+          }
+        }
+        dailyMap.set(record.dateKey, bucket);
+      });
+
+      const daily = Array.from(dailyMap.values())
+        .map((entry) => ({
+          date: entry.date,
+          capacityPatientsSum: entry.capacityPatientsSum,
+          capacityPatientsCount: entry.capacityPatientsCount,
+          capacityPatientsMax: entry.capacityPatientsMax,
+          capacityOccupancySum: entry.capacityOccupancySum,
+          capacityOccupancyCount: entry.capacityOccupancyCount,
+          capacityOccupancyMax: entry.capacityOccupancyMax,
+          capacityHighCount: entry.capacityHighCount,
+        }))
+        .sort((a, b) => (a.date > b.date ? 1 : -1));
+
+      return { records, daily };
+    }
+
     /**
      * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio) su demonstraciniu rezervu.
      */
@@ -3575,6 +3884,61 @@
         }
         dashboardState.usingFallback = false;
         throw error;
+      }
+    }
+
+    async function fetchCapacityData() {
+      const config = settings?.dataSource?.capacity || DEFAULT_SETTINGS.dataSource.capacity;
+      const url = (config?.url ?? '').trim();
+      const useFallback = Boolean(config?.useFallback);
+      const fallbackCsv = typeof config?.fallbackCsv === 'string'
+        ? config.fallbackCsv
+        : DEFAULT_SETTINGS.dataSource.capacity.fallbackCsv;
+      const fallbackContent = useFallback ? fallbackCsv : '';
+
+      if (!url) {
+        if (fallbackContent) {
+          try {
+            const dataset = transformCapacityCsv(fallbackContent);
+            dashboardState.capacity.usingFallback = true;
+            dashboardState.capacity.lastErrorMessage = TEXT.capacity.status.missingUrl;
+            return dataset;
+          } catch (error) {
+            console.error('Klaida skaitant demonstracinius lovų užimtumo duomenis:', error);
+            dashboardState.capacity.usingFallback = false;
+            dashboardState.capacity.lastErrorMessage = describeError(error);
+            return { records: [], daily: [] };
+          }
+        }
+        dashboardState.capacity.usingFallback = false;
+        dashboardState.capacity.lastErrorMessage = TEXT.capacity.status.missingUrl;
+        return { records: [], daily: [] };
+      }
+
+      try {
+        const csvText = await downloadCsv(url);
+        const dataset = transformCapacityCsv(csvText);
+        dashboardState.capacity.usingFallback = false;
+        dashboardState.capacity.lastErrorMessage = '';
+        return dataset;
+      } catch (error) {
+        console.error('Nepavyko atsisiųsti lovų užimtumo CSV:', error);
+        const friendly = describeError(error);
+        dashboardState.capacity.lastErrorMessage = friendly;
+        if (fallbackContent) {
+          try {
+            const dataset = transformCapacityCsv(fallbackContent);
+            dashboardState.capacity.usingFallback = true;
+            return dataset;
+          } catch (fallbackError) {
+            console.error('Klaida skaitant demonstracinį lovų užimtumo CSV:', fallbackError);
+            dashboardState.capacity.usingFallback = false;
+            dashboardState.capacity.lastErrorMessage = describeError(fallbackError);
+            return { records: [], daily: [] };
+          }
+        }
+        dashboardState.capacity.usingFallback = false;
+        return { records: [], daily: [] };
       }
     }
 
@@ -3828,6 +4192,34 @@
      * @param {Array<{date: string}>} dailyStats
      * @param {number} days
      */
+    function mergeDailyWithCapacity(dailyStats, capacityDaily) {
+      const capacityMap = new Map();
+      const defaults = {
+        capacityPatientsSum: 0,
+        capacityPatientsCount: 0,
+        capacityPatientsMax: 0,
+        capacityOccupancySum: 0,
+        capacityOccupancyCount: 0,
+        capacityOccupancyMax: 0,
+        capacityHighCount: 0,
+      };
+      if (Array.isArray(capacityDaily)) {
+        capacityDaily.forEach((entry) => {
+          if (entry && typeof entry === 'object' && typeof entry.date === 'string') {
+            capacityMap.set(entry.date, { ...defaults, ...entry });
+          }
+        });
+      }
+      return (Array.isArray(dailyStats) ? dailyStats : []).map((entry) => {
+        const capacity = capacityMap.get(entry.date);
+        return {
+          ...entry,
+          ...defaults,
+          ...(capacity || {}),
+        };
+      });
+    }
+
     function filterDailyStatsByWindow(dailyStats, days) {
       if (!Array.isArray(dailyStats)) {
         return [];
@@ -4191,6 +4583,13 @@
             totalTime: 0,
             durations: 0,
             dayCount: 0,
+            capacityPatientsSum: 0,
+            capacityPatientsCount: 0,
+            capacityPatientsMax: 0,
+            capacityOccupancySum: 0,
+            capacityOccupancyCount: 0,
+            capacityOccupancyMax: 0,
+            capacityHighCount: 0,
           });
         }
         const summary = monthlyMap.get(monthKey);
@@ -4202,9 +4601,41 @@
         summary.totalTime += entry.totalTime;
         summary.durations += entry.durations;
         summary.dayCount += 1;
+        if (Number.isFinite(entry.capacityPatientsSum) && Number.isFinite(entry.capacityPatientsCount)) {
+          summary.capacityPatientsSum += entry.capacityPatientsSum;
+          summary.capacityPatientsCount += entry.capacityPatientsCount;
+        }
+        if (Number.isFinite(entry.capacityPatientsMax)) {
+          summary.capacityPatientsMax = Math.max(summary.capacityPatientsMax, entry.capacityPatientsMax);
+        }
+        if (Number.isFinite(entry.capacityOccupancySum) && Number.isFinite(entry.capacityOccupancyCount)) {
+          summary.capacityOccupancySum += entry.capacityOccupancySum;
+          summary.capacityOccupancyCount += entry.capacityOccupancyCount;
+        }
+        if (Number.isFinite(entry.capacityOccupancyMax)) {
+          summary.capacityOccupancyMax = Math.max(summary.capacityOccupancyMax, entry.capacityOccupancyMax);
+        }
+        if (Number.isFinite(entry.capacityHighCount)) {
+          summary.capacityHighCount += entry.capacityHighCount;
+        }
       });
 
-      return Array.from(monthlyMap.values()).sort((a, b) => (a.month > b.month ? 1 : -1));
+      return Array.from(monthlyMap.values())
+        .sort((a, b) => (a.month > b.month ? 1 : -1))
+        .map((entry) => ({
+          ...entry,
+          capacityAvgPatients: entry.capacityPatientsCount > 0
+            ? entry.capacityPatientsSum / entry.capacityPatientsCount
+            : null,
+          capacityPeakPatients: entry.capacityPatientsMax > 0 ? entry.capacityPatientsMax : null,
+          capacityAvgOccupancy: entry.capacityOccupancyCount > 0
+            ? entry.capacityOccupancySum / entry.capacityOccupancyCount
+            : null,
+          capacityPeakOccupancy: entry.capacityOccupancyMax > 0 ? entry.capacityOccupancyMax : null,
+          capacityHighShare: entry.capacityOccupancyCount > 0
+            ? entry.capacityHighCount / entry.capacityOccupancyCount
+            : null,
+        }));
     }
 
     function computeFeedbackStats(records) {
@@ -4353,7 +4784,21 @@
 
     function aggregatePeriodSummary(entries) {
       if (!Array.isArray(entries)) {
-        return { days: 0, totalCount: 0, totalHospitalized: 0, totalDischarged: 0, totalTime: 0, durationCount: 0 };
+        return {
+          days: 0,
+          totalCount: 0,
+          totalHospitalized: 0,
+          totalDischarged: 0,
+          totalTime: 0,
+          durationCount: 0,
+          capacityPatientsSum: 0,
+          capacityPatientsCount: 0,
+          capacityPatientsMax: 0,
+          capacityOccupancySum: 0,
+          capacityOccupancyCount: 0,
+          capacityOccupancyMax: 0,
+          capacityHighCount: 0,
+        };
       }
       return entries.reduce((acc, entry) => {
         acc.days += 1;
@@ -4362,13 +4807,41 @@
         const discharged = Number.isFinite(entry?.discharged) ? entry.discharged : 0;
         const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
         const durations = Number.isFinite(entry?.durations) ? entry.durations : 0;
+        const capacityPatientsSum = Number.isFinite(entry?.capacityPatientsSum) ? entry.capacityPatientsSum : 0;
+        const capacityPatientsCount = Number.isFinite(entry?.capacityPatientsCount) ? entry.capacityPatientsCount : 0;
+        const capacityPatientsMax = Number.isFinite(entry?.capacityPatientsMax) ? entry.capacityPatientsMax : 0;
+        const capacityOccupancySum = Number.isFinite(entry?.capacityOccupancySum) ? entry.capacityOccupancySum : 0;
+        const capacityOccupancyCount = Number.isFinite(entry?.capacityOccupancyCount) ? entry.capacityOccupancyCount : 0;
+        const capacityOccupancyMax = Number.isFinite(entry?.capacityOccupancyMax) ? entry.capacityOccupancyMax : 0;
+        const capacityHighCount = Number.isFinite(entry?.capacityHighCount) ? entry.capacityHighCount : 0;
         acc.totalCount += count;
         acc.totalHospitalized += hospitalized;
         acc.totalDischarged += discharged;
         acc.totalTime += totalTime;
         acc.durationCount += durations;
+        acc.capacityPatientsSum += capacityPatientsSum;
+        acc.capacityPatientsCount += capacityPatientsCount;
+        acc.capacityPatientsMax = Math.max(acc.capacityPatientsMax, capacityPatientsMax);
+        acc.capacityOccupancySum += capacityOccupancySum;
+        acc.capacityOccupancyCount += capacityOccupancyCount;
+        acc.capacityOccupancyMax = Math.max(acc.capacityOccupancyMax, capacityOccupancyMax);
+        acc.capacityHighCount += capacityHighCount;
         return acc;
-      }, { days: 0, totalCount: 0, totalHospitalized: 0, totalDischarged: 0, totalTime: 0, durationCount: 0 });
+      }, {
+        days: 0,
+        totalCount: 0,
+        totalHospitalized: 0,
+        totalDischarged: 0,
+        totalTime: 0,
+        durationCount: 0,
+        capacityPatientsSum: 0,
+        capacityPatientsCount: 0,
+        capacityPatientsMax: 0,
+        capacityOccupancySum: 0,
+        capacityOccupancyCount: 0,
+        capacityOccupancyMax: 0,
+        capacityHighCount: 0,
+      });
     }
 
     function derivePeriodMetrics(summary) {
@@ -4378,6 +4851,13 @@
       const totalDischarged = Number.isFinite(summary?.totalDischarged) ? summary.totalDischarged : 0;
       const totalTime = Number.isFinite(summary?.totalTime) ? summary.totalTime : 0;
       const durationCount = Number.isFinite(summary?.durationCount) ? summary.durationCount : 0;
+      const capacityPatientsSum = Number.isFinite(summary?.capacityPatientsSum) ? summary.capacityPatientsSum : 0;
+      const capacityPatientsCount = Number.isFinite(summary?.capacityPatientsCount) ? summary.capacityPatientsCount : 0;
+      const capacityPatientsMax = Number.isFinite(summary?.capacityPatientsMax) ? summary.capacityPatientsMax : 0;
+      const capacityOccupancySum = Number.isFinite(summary?.capacityOccupancySum) ? summary.capacityOccupancySum : 0;
+      const capacityOccupancyCount = Number.isFinite(summary?.capacityOccupancyCount) ? summary.capacityOccupancyCount : 0;
+      const capacityOccupancyMax = Number.isFinite(summary?.capacityOccupancyMax) ? summary.capacityOccupancyMax : 0;
+      const capacityHighCount = Number.isFinite(summary?.capacityHighCount) ? summary.capacityHighCount : 0;
       return {
         days,
         totalCount,
@@ -4387,6 +4867,11 @@
         hospitalizedShare: totalCount > 0 ? totalHospitalized / totalCount : null,
         dischargedPerDay: days > 0 ? totalDischarged / days : null,
         dischargedShare: totalCount > 0 ? totalDischarged / totalCount : null,
+        capacityAvgPatients: capacityPatientsCount > 0 ? capacityPatientsSum / capacityPatientsCount : null,
+        capacityPeakPatients: capacityPatientsMax > 0 ? capacityPatientsMax : null,
+        capacityAvgOccupancy: capacityOccupancyCount > 0 ? capacityOccupancySum / capacityOccupancyCount : null,
+        capacityPeakOccupancy: capacityOccupancyMax > 0 ? capacityOccupancyMax : null,
+        capacityHighShare: capacityOccupancyCount > 0 ? capacityHighCount / capacityOccupancyCount : null,
       };
     }
 
@@ -4595,6 +5080,7 @@
         const scopedRecords = filterRecordsByWindow(dashboardState.rawRecords, windowDays);
         filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, filters));
         filteredDailyStats = computeDailyStats(filteredRecords);
+        filteredDailyStats = mergeDailyWithCapacity(filteredDailyStats, dashboardState.capacity.daily);
       } else {
         const scopedDaily = filterDailyStatsByWindow(dashboardState.dailyStats, windowDays);
         filteredDailyStats = scopedDaily.slice();
@@ -4716,6 +5202,9 @@
       }
       if (format === 'integer') {
         return numberFormatter.format(Math.round(value));
+      }
+      if (format === 'percent') {
+        return percentFormatter.format(value);
       }
       return oneDecimalFormatter.format(value);
     }
@@ -5071,23 +5560,75 @@
       }
 
       const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
+      const patientAvgPoints = scopedData.map((entry) => {
+        // Jei nėra lovų užimtumo CSV, naudokime pagrindinį dienos pacientų skaičių, kad grafikas liktų informatyvus.
+        if (Number.isFinite(entry?.capacityPatientsSum) && Number.isFinite(entry?.capacityPatientsCount) && entry.capacityPatientsCount > 0) {
+          const average = entry.capacityPatientsSum / entry.capacityPatientsCount;
+          return Number.isFinite(average) ? average : null;
+        }
+        if (Number.isFinite(entry?.count)) {
+          return entry.count;
+        }
+        return null;
+      });
+      const hasPatientData = patientAvgPoints.some((value) => Number.isFinite(value));
+      const occupancyPoints = scopedData.map((entry) => {
+        if (!Number.isFinite(entry?.capacityOccupancySum) || !Number.isFinite(entry?.capacityOccupancyCount)) {
+          return null;
+        }
+        if (entry.capacityOccupancyCount <= 0) {
+          return null;
+        }
+        const average = entry.capacityOccupancySum / entry.capacityOccupancyCount;
+        if (!Number.isFinite(average)) {
+          return null;
+        }
+        const clamped = Math.max(0, Math.min(1, average));
+        return clamped * 100;
+      });
+      const hasOccupancyData = occupancyPoints.some((value) => Number.isFinite(value));
+      if (!hasPatientData && !hasOccupancyData) {
+        dashboardState.charts.daily = null;
+        return;
+      }
+      const patientsLabel = TEXT.charts.capacityPatientsLabel || 'Vid. pacientų skaičius skyriuje';
+      const occupancyLabel = TEXT.charts.capacityAverageLabel || 'Lovų užimtumas (vid.)';
       dashboardState.charts.daily = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: scopedData.map((entry) => entry.date),
           datasets: [
-            {
-              label: 'Pacientai',
-              data: scopedData.map((entry) => entry.count),
-              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent)),
-              borderRadius: 12,
-            },
-            {
-              label: 'Naktiniai pacientai',
-              data: scopedData.map((entry) => entry.night),
-              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft)),
-              borderRadius: 12,
-            },
+            ...(hasPatientData
+              ? [
+                  {
+                    label: patientsLabel,
+                    data: patientAvgPoints,
+                    backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent)),
+                    borderRadius: 12,
+                    order: 1,
+                    customFormat: 'decimal',
+                  },
+                ]
+              : []),
+            ...(hasOccupancyData
+              ? [
+                  {
+                    type: 'line',
+                    label: occupancyLabel,
+                    data: occupancyPoints,
+                    yAxisID: 'y1',
+                    borderColor: themePalette.textMuted,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.35,
+                    spanGaps: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    customFormat: 'percent',
+                    order: 2,
+                  },
+                ]
+              : []),
           ],
         },
         options: {
@@ -5105,39 +5646,87 @@
             tooltip: {
               callbacks: {
                 label(context) {
+                  if (context.dataset.customFormat === 'percent') {
+                    if (!Number.isFinite(context.parsed.y)) {
+                      return null;
+                    }
+                    return `${context.dataset.label}: ${percentFormatter.format(context.parsed.y / 100)}`;
+                  }
+                  if (context.dataset.customFormat === 'decimal') {
+                    if (!Number.isFinite(context.parsed.y)) {
+                      return `${context.dataset.label}: —`;
+                    }
+                    return `${context.dataset.label}: ${oneDecimalFormatter.format(context.parsed.y)}`;
+                  }
+                  if (!Number.isFinite(context.parsed.y)) {
+                    return `${context.dataset.label}: —`;
+                  }
                   return `${context.dataset.label}: ${numberFormatter.format(context.parsed.y)}`;
                 },
               },
             },
           },
-          scales: {
-            x: {
-              ticks: {
-                color: (ctxTick) => (weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
-                callback(value) {
-                  const label = this.getLabelForValue(value);
-                  return label.slice(-5);
+          scales: (() => {
+            const scales = {
+              x: {
+                ticks: {
+                  color: (ctxTick) => (weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
+                  callback(value) {
+                    const label = this.getLabelForValue(value);
+                    return label.slice(-5);
+                  },
+                },
+                grid: {
+                  color: themePalette.gridColor,
+                  drawBorder: false,
                 },
               },
-              grid: {
-                color: themePalette.gridColor,
-                drawBorder: false,
-              },
-            },
-            y: {
-              beginAtZero: true,
-              ticks: {
-                color: themePalette.textColor,
-                callback(value) {
-                  return numberFormatter.format(value);
+              y: {
+                beginAtZero: true,
+                display: hasPatientData,
+                ticks: {
+                  color: themePalette.textColor,
+                  callback(value) {
+                    return oneDecimalFormatter.format(value);
+                  },
+                },
+                grid: {
+                  color: themePalette.gridColor,
+                  drawBorder: false,
+                },
+                title: {
+                  display: hasPatientData,
+                  text: patientsLabel,
+                  color: themePalette.textColor,
                 },
               },
-              grid: {
-                color: themePalette.gridColor,
-                drawBorder: false,
-              },
-            },
-          },
+            };
+            if (hasOccupancyData) {
+              scales.y1 = {
+                beginAtZero: true,
+                position: 'right',
+                min: 0,
+                max: 100,
+                ticks: {
+                  color: themePalette.textMuted,
+                  callback(value) {
+                    return `${value}%`;
+                  },
+                },
+                grid: {
+                  drawOnChartArea: false,
+                  drawBorder: false,
+                  color: themePalette.gridColor,
+                },
+                title: {
+                  display: true,
+                  text: TEXT.charts.capacityAxisLabel || 'Lovų užimtumas (%)',
+                  color: themePalette.textMuted,
+                },
+              };
+            }
+            return scales;
+          })(),
         },
       });
     }
@@ -6106,9 +6695,10 @@
     async function loadDashboard() {
       try {
         setStatus('loading');
-        const [dataResult, feedbackResult] = await Promise.allSettled([
+        const [dataResult, feedbackResult, capacityResult] = await Promise.allSettled([
           fetchData(),
           fetchFeedbackData(),
+          fetchCapacityData(),
         ]);
 
         if (dataResult.status !== 'fulfilled') {
@@ -6117,6 +6707,7 @@
 
         const rawData = dataResult.value;
         const feedbackRecords = feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
+        const capacityPayload = capacityResult.status === 'fulfilled' ? capacityResult.value : { records: [], daily: [] };
         if (feedbackResult.status === 'rejected') {
           console.error('Nepavyko apdoroti atsiliepimų duomenų:', feedbackResult.reason);
           if (!dashboardState.feedback.lastErrorMessage) {
@@ -6124,10 +6715,21 @@
           }
           dashboardState.feedback.usingFallback = false;
         }
+        if (capacityResult.status === 'rejected') {
+          console.error('Nepavyko apdoroti lovų užimtumo duomenų:', capacityResult.reason);
+          if (!dashboardState.capacity.lastErrorMessage) {
+            dashboardState.capacity.lastErrorMessage = describeError(capacityResult.reason);
+          }
+          dashboardState.capacity.usingFallback = false;
+        }
+
+        dashboardState.capacity.raw = Array.isArray(capacityPayload?.records) ? capacityPayload.records : [];
+        dashboardState.capacity.daily = Array.isArray(capacityPayload?.daily) ? capacityPayload.daily : [];
 
         const dailyStats = computeDailyStats(rawData);
+        const mergedDailyStats = mergeDailyWithCapacity(dailyStats, dashboardState.capacity.daily);
         dashboardState.rawRecords = rawData;
-        dashboardState.dailyStats = dailyStats;
+        dashboardState.dailyStats = mergedDailyStats;
         const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
           ? Number(settings.calculations.windowDays)
           : DEFAULT_SETTINGS.calculations.windowDays;
@@ -6135,7 +6737,7 @@
           dashboardState.kpi.filters.window = windowDays;
           syncKpiFilterControls();
         }
-        const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
+        const lastWindowDailyStats = filterDailyStatsByWindow(dashboardState.dailyStats, windowDays);
         const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
           ? Number(settings.calculations.recentDays)
           : DEFAULT_SETTINGS.calculations.recentDays;
@@ -6161,6 +6763,7 @@
         renderFeedbackSection(feedbackStats);
         setStatus('success');
         applyFeedbackStatusNote();
+        applyCapacityStatusNote();
       } catch (error) {
         console.error('Nepavyko apdoroti duomenų:', error);
         dashboardState.usingFallback = false;
