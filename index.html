@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SMPS statistika</title>
+  <title>RŠL SMPS statistika</title>
   <style>
     :root {
       --color-bg: #f4f7fb;
@@ -1702,6 +1702,10 @@
         <section class="settings-section" aria-labelledby="settingsOutputTitle">
           <h3 id="settingsOutputTitle">Išvesties tekstai ir skyriai</h3>
           <div class="settings-field">
+            <label for="settingsPageTitle"><span>Naršyklės skirtuko pavadinimas</span></label>
+            <input id="settingsPageTitle" name="output.pageTitle" type="text">
+          </div>
+          <div class="settings-field">
             <label for="settingsTitleText"><span>Pagrindinis pavadinimas</span></label>
             <input id="settingsTitleText" name="output.title" type="text">
           </div>
@@ -2086,6 +2090,8 @@
     const THEME_STORAGE_KEY = 'edDashboardTheme';
     const DEFAULT_FOOTER_SOURCE = 'Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).';
     const DEFAULT_KPI_WINDOW_DAYS = 365;
+    const DEFAULT_PAGE_TITLE = document.title || 'RŠL SMPS statistika';
+
     const DEFAULT_SETTINGS = {
       dataSource: {
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv',
@@ -2115,6 +2121,7 @@
         nightEndHour: 7,
       },
       output: {
+        pageTitle: DEFAULT_PAGE_TITLE,
         title: TEXT.title,
         subtitle: TEXT.subtitle,
         kpiTitle: TEXT.kpis.title,
@@ -2346,6 +2353,7 @@
         DEFAULT_SETTINGS.calculations.nightEndHour,
       );
 
+      merged.output.pageTitle = merged.output.pageTitle != null ? String(merged.output.pageTitle) : DEFAULT_SETTINGS.output.pageTitle;
       merged.output.title = merged.output.title != null ? String(merged.output.title) : DEFAULT_SETTINGS.output.title;
       merged.output.subtitle = merged.output.subtitle != null ? String(merged.output.subtitle) : DEFAULT_SETTINGS.output.subtitle;
       merged.output.kpiTitle = merged.output.kpiTitle != null ? String(merged.output.kpiTitle) : DEFAULT_SETTINGS.output.kpiTitle;
@@ -2413,6 +2421,8 @@
       TEXT.feedback.subtitle = settings.output.feedbackSubtitle || DEFAULT_SETTINGS.output.feedbackSubtitle;
       TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
       TEXT.feedback.trend.title = settings.output.feedbackTrendTitle || DEFAULT_SETTINGS.output.feedbackTrendTitle;
+      const pageTitle = settings.output.pageTitle || TEXT.title || DEFAULT_SETTINGS.output.pageTitle;
+      document.title = pageTitle;
     }
 
     function applyFooterSource() {
@@ -2597,6 +2607,7 @@
       assign('calculations.nightStartHour', settings.calculations.nightStartHour);
       assign('calculations.nightEndHour', settings.calculations.nightEndHour);
 
+      assign('output.pageTitle', settings.output.pageTitle);
       assign('output.title', settings.output.title);
       assign('output.subtitle', settings.output.subtitle);
       assign('output.kpiTitle', settings.output.kpiTitle);
@@ -2646,6 +2657,7 @@
           nightEndHour: '',
         },
         output: {
+          pageTitle: '',
           title: '',
           subtitle: '',
           kpiTitle: '',
@@ -2704,6 +2716,7 @@
       result.calculations.nightStartHour = readText('calculations.nightStartHour').trim();
       result.calculations.nightEndHour = readText('calculations.nightEndHour').trim();
 
+      result.output.pageTitle = readText('output.pageTitle').trim();
       result.output.title = readText('output.title').trim();
       result.output.subtitle = readText('output.subtitle').trim();
       result.output.kpiTitle = readText('output.kpiTitle').trim();
