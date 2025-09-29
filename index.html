@@ -3480,7 +3480,7 @@
     }
 
     const FEEDBACK_HEADER_CANDIDATES = {
-      date: 'timestamp,gauta,data,received,created,submitted,laikas',
+      date: 'timestamp,gauta,data,received,created,submitted,laikas,pildymo data,pildymo laikas,pildymo data ir laikas,užpildymo data,užpildymo laikas,forma pateikta,data pateikta,atsakymo data,atsakymo laikas,įrašo data,įrašo laikas',
       respondent: 'kas pildo formą?,kas pildo formą,kas pildo forma,respondentas,role,dalyvis,tipas',
       overall: 'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
       doctors: 'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
@@ -3496,12 +3496,38 @@
     function resolveFeedbackColumn(headerNormalized, candidateList) {
       const candidates = parseCandidateList(candidateList, candidateList);
       for (const candidate of candidates) {
-        const normalizedCandidate = candidate.toLowerCase();
+        const trimmed = candidate.trim();
+        if (!trimmed || trimmed.includes('*')) {
+          continue;
+        }
+        const match = headerNormalized.find((column) => column.original === trimmed);
+        if (match) {
+          return match.index;
+        }
+      }
+
+      for (const candidate of candidates) {
+        const trimmed = candidate.trim().toLowerCase();
+        if (!trimmed || candidate.includes('*')) {
+          continue;
+        }
+        const match = headerNormalized.find((column) => column.normalized === trimmed);
+        if (match) {
+          return match.index;
+        }
+      }
+
+      for (const candidate of candidates) {
+        const normalizedCandidate = candidate.trim().toLowerCase();
+        if (!normalizedCandidate) {
+          continue;
+        }
         const match = headerNormalized.find((column) => matchesWildcard(column.normalized, normalizedCandidate));
         if (match) {
           return match.index;
         }
       }
+
       return -1;
     }
 
