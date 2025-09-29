@@ -621,77 +621,95 @@
       color: var(--color-text-muted);
     }
 
-    .kpi-card__tags {
-      margin: 12px 0 0;
+    .kpi-card__details {
+      margin: 16px 0 0;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .kpi-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 999px;
+    .kpi-detail {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
       background: var(--color-surface-alt);
-      border: 1px solid rgba(37, 99, 235, 0.18);
-      font-size: 0.78rem;
-      color: var(--color-text);
-      line-height: 1.1;
+      border: 1px solid rgba(37, 99, 235, 0.12);
+      font-size: 0.85rem;
     }
 
-    .kpi-tag strong {
-      font-size: 0.82rem;
+    .kpi-detail__label {
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-detail__value {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-weight: 600;
+      color: var(--color-text);
+      text-align: right;
+    }
+
+    .kpi-detail__value strong {
+      font-size: 0.95rem;
+      font-weight: 700;
       color: var(--color-text);
     }
 
-    .kpi-tag__label {
+    .kpi-detail__context {
       font-weight: 500;
       color: var(--color-text-muted);
     }
 
-    .kpi-tag__context {
-      font-weight: 500;
-      color: var(--color-text-muted);
-    }
-
-    .kpi-tag__icon {
+    .kpi-detail__icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
     }
 
-    .kpi-tag--muted {
+    .kpi-detail--muted {
       background: rgba(148, 163, 184, 0.12);
       border-color: rgba(148, 163, 184, 0.28);
       color: var(--color-text-muted);
     }
 
-    .kpi-tag--delta-up {
+    .kpi-detail--muted .kpi-detail__value {
+      color: var(--color-text-muted);
+    }
+
+    .kpi-detail--delta-up {
       background: rgba(22, 163, 74, 0.18);
       border-color: rgba(22, 163, 74, 0.32);
       color: var(--color-success);
     }
 
-    .kpi-tag--delta-down {
+    .kpi-detail--delta-up .kpi-detail__value {
+      color: var(--color-success);
+    }
+
+    .kpi-detail--delta-down {
       background: rgba(220, 38, 38, 0.18);
       border-color: rgba(220, 38, 38, 0.32);
       color: #dc2626;
     }
 
-    .kpi-tag--delta-neutral {
+    .kpi-detail--delta-down .kpi-detail__value {
+      color: #dc2626;
+    }
+
+    .kpi-detail--delta-neutral {
       background: rgba(37, 99, 235, 0.14);
       border-color: rgba(37, 99, 235, 0.28);
       color: var(--color-accent);
     }
 
-    .kpi-card small {
-      display: block;
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: var(--color-text-muted);
+    .kpi-detail--delta-neutral .kpi-detail__value {
+      color: var(--color-accent);
     }
 
     .kpi-empty {
@@ -1903,10 +1921,15 @@
         monthShareLabel: 'Mėn. dalis',
         shareHeading: 'Pasirinkto laikotarpio dalis',
         shareShortLabel: 'Laikotarpio dalis',
+        sharePeriodDetail: 'Laikotarpio dalis',
+        shareMonthDetail: 'Šio mėnesio dalis',
+        shareNoData: 'Nepavyko apskaičiuoti dalies.',
         windowAllLabel: 'Visas laikotarpis',
         windowAllShortLabel: 'viso laik.',
         windowYearSuffix: 'metai',
         noYearData: 'Pasirinktam laikotarpiui apskaičiuoti nepakanka duomenų.',
+        deltaLabel: 'Pokytis prieš laikotarpio vidurkį',
+        deltaNoData: 'Nepavyko apskaičiuoti pokyčio.',
         items: {
           patientsPerDay: {
             label: 'Pacientų vidurkis per dieną',
@@ -4812,7 +4835,7 @@
       return null;
     }
 
-    function buildMonthTags({
+    function buildKpiDetails({
       item,
       monthLabel,
       monthMetrics,
@@ -4822,29 +4845,28 @@
       monthShare,
       referenceLabel,
     }) {
-      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
       const monthDescriptor = monthLabel
         ? `${TEXT.kpis.monthPrefixShort} (${monthLabel})`
         : TEXT.kpis.monthPrefixShort;
-      const tags = [];
-      const tagWrapper = (content, extraClass = '', ariaLabel) => {
+      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+      const details = [];
+      const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
         const aria = ariaLabel ? ` aria-label="${ariaLabel}"` : '';
-        return `<span class="kpi-tag${extraClass ? ` ${extraClass}` : ''}" role="listitem"${aria}>${content}</span>`;
+        const extra = extraClass ? ` ${extraClass}` : '';
+        return `<div class="kpi-detail${extra}" role="listitem"${aria}><span class="kpi-detail__label">${label}</span><span class="kpi-detail__value">${valueHtml}</span></div>`;
       };
 
-      if (!monthHasData) {
-        tags.push(tagWrapper(
-          `<span class="kpi-tag__label">${monthDescriptor}</span><span>${TEXT.kpis.monthNoDataShort}</span>`,
-          ' kpi-tag--muted',
+      if (monthHasData && monthValue != null && Number.isFinite(monthValue)) {
+        const unitSuffix = item.unit ? `<span class="kpi-detail__context">${item.unit}</span>` : '';
+        details.push(detailWrapper(
+          monthDescriptor,
+          `<strong>${formatKpiValue(monthValue, item.valueFormat)}</strong>${unitSuffix}`,
         ));
-        return tags;
-      }
-
-      if (monthValue != null && Number.isFinite(monthValue)) {
-        const formattedMonthValue = formatKpiValue(monthValue, item.valueFormat);
-        const unitSuffix = item.unit ? ` <span class="kpi-tag__context">${item.unit}</span>` : '';
-        tags.push(tagWrapper(
-          `<span class="kpi-tag__label">${monthDescriptor}</span><strong>${formattedMonthValue}</strong>${unitSuffix}`,
+      } else {
+        details.push(detailWrapper(
+          monthDescriptor,
+          `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
+          'kpi-detail--muted',
         ));
       }
 
@@ -4859,41 +4881,53 @@
 
       if (deltaDescriptor) {
         const { direction, shortText, context, ariaLabel, icon } = deltaDescriptor;
-        const directionClass = direction ? ` kpi-tag--delta-${direction}` : '';
-        const iconHtml = icon ? `<span class="kpi-tag__icon" aria-hidden="true">${icon}</span>` : '';
-        const content = `${iconHtml}<strong>${shortText}</strong><span class="kpi-tag__context">${context}</span>`;
-        tags.push(tagWrapper(content, directionClass || ' kpi-tag--delta-neutral', ariaLabel));
-      }
-
-      if (item.shareKey && monthShare != null && Number.isFinite(monthShare)) {
-        tags.push(tagWrapper(
-          `<span class="kpi-tag__label">${TEXT.kpis.monthShareLabel}</span><strong>${formatPercentCompact(monthShare)}</strong>`,
-          ' kpi-tag--muted',
+        const directionClass = direction ? `kpi-detail--delta-${direction}` : 'kpi-detail--muted';
+        const iconHtml = icon ? `<span class="kpi-detail__icon" aria-hidden="true">${icon}</span>` : '';
+        const contextHtml = context ? `<span class="kpi-detail__context">${context}</span>` : '';
+        const valueHtml = `${iconHtml}<strong>${shortText}</strong>${contextHtml}`;
+        details.push(detailWrapper(TEXT.kpis.deltaLabel, valueHtml, directionClass, ariaLabel));
+      } else {
+        details.push(detailWrapper(
+          TEXT.kpis.deltaLabel,
+          `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
+          'kpi-detail--muted',
         ));
       }
 
-      if (item.shareKey && yearShare != null && Number.isFinite(yearShare)) {
+      if (item.shareKey) {
         const referenceShort = referenceLabel === TEXT.kpis.windowAllLabel
           ? TEXT.kpis.windowAllShortLabel
           : (referenceLabel || TEXT.kpis.shareShortLabel);
-        const ariaLabel = referenceLabel
-          ? `${item.shareLabel ?? TEXT.kpis.shareHeading} (${referenceLabel}): ${percentFormatter.format(yearShare)}`
-          : `${item.shareLabel ?? TEXT.kpis.shareHeading}: ${percentFormatter.format(yearShare)}`;
-        tags.push(tagWrapper(
-          `<span class="kpi-tag__label">${TEXT.kpis.shareShortLabel}</span><strong>${formatPercentCompact(yearShare)}</strong><span class="kpi-tag__context">${referenceShort}</span>`,
-          ' kpi-tag--muted',
-          ariaLabel,
-        ));
+
+        if (yearShare != null && Number.isFinite(yearShare)) {
+          details.push(detailWrapper(
+            item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
+            `<strong>${formatPercentCompact(yearShare)}</strong><span class="kpi-detail__context">${referenceShort}</span>`,
+          ));
+        } else {
+          details.push(detailWrapper(
+            item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
+            `<span class="kpi-empty">${TEXT.kpis.shareNoData}</span>`,
+            'kpi-detail--muted',
+          ));
+        }
+
+        if (monthHasData && monthShare != null && Number.isFinite(monthShare)) {
+          const monthContext = monthLabel || TEXT.kpis.monthPrefixShort;
+          details.push(detailWrapper(
+            TEXT.kpis.shareMonthDetail,
+            `<strong>${formatPercentCompact(monthShare)}</strong><span class="kpi-detail__context">${monthContext}</span>`,
+          ));
+        } else {
+          details.push(detailWrapper(
+            TEXT.kpis.shareMonthDetail,
+            `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
+            'kpi-detail--muted',
+          ));
+        }
       }
 
-      if (!tags.length) {
-        tags.push(tagWrapper(
-          `<span class="kpi-tag__label">${monthDescriptor}</span><span>${TEXT.kpis.monthNoDataShort}</span>`,
-          ' kpi-tag--muted',
-        ));
-      }
-
-      return tags;
+      return details.join('');
     }
 
     function renderKpis(dailyStats) {
@@ -4911,13 +4945,12 @@
             <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
             <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
           </p>
-          <div class="kpi-card__tags" role="list">
-            <span class="kpi-tag kpi-tag--muted" role="listitem">
-              <span class="kpi-tag__label">${TEXT.kpis.monthPrefixShort}</span>
-              <span>${TEXT.kpis.monthNoDataShort}</span>
-            </span>
+          <div class="kpi-card__details" role="list">
+            <div class="kpi-detail kpi-detail--muted" role="listitem">
+              <span class="kpi-detail__label">${TEXT.kpis.monthPrefixShort}</span>
+              <span class="kpi-detail__value"><span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span></span>
+            </div>
           </div>
-          <small>Įkelkite CSV su bent vienu įrašu ir bandykite dar kartą.</small>
         `;
         selectors.kpiGrid.appendChild(card);
         return;
@@ -4966,7 +4999,7 @@
           ? `<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>${unitHtml}`
           : `<span class="kpi-empty">${TEXT.kpis.noYearData}</span>`;
 
-        const monthTags = buildMonthTags({
+        const detailHtml = buildKpiDetails({
           item,
           monthLabel,
           monthMetrics,
@@ -4989,8 +5022,7 @@
             <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
             <span class="kpi-mainline__value">${mainValueHtml}</span>
           </p>
-          <div class="kpi-card__tags" role="list">${monthTags.join('')}</div>
-          <small>${item.hint}</small>
+          <div class="kpi-card__details" role="list">${detailHtml}</div>
         `;
         selectors.kpiGrid.appendChild(card);
       });
