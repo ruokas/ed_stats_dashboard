@@ -361,6 +361,36 @@
       max-width: 720px;
     }
 
+    .feedback-graphs {
+      margin: 24px 0;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-elevated);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 260px;
+    }
+
+    .feedback-trend-message {
+      margin: 0;
+      padding: 24px 16px 8px;
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-graphs canvas {
+      width: 100%;
+      height: clamp(240px, 35vw, 360px);
+    }
+
+    .feedback-graphs canvas[hidden] {
+      display: none;
+    }
+
     .feedback-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1533,6 +1563,10 @@
         </div>
       </div>
       <div id="feedbackCards" class="feedback-cards" role="list"></div>
+      <div class="feedback-graphs" role="presentation">
+        <p id="feedbackTrendMessage" class="feedback-trend-message" role="status" aria-live="polite" hidden></p>
+        <canvas id="feedbackTrendChart" role="img" aria-describedby="feedbackSubtitle" hidden></canvas>
+      </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="feedbackHeading">
         <table aria-describedby="feedbackSubtitle feedbackDescription">
           <caption id="feedbackCaption" class="sr-only">Mėnesio atsiliepimų suvestinė pagal apklausos vertinimus.</caption>
@@ -1941,6 +1975,20 @@
         subtitle: 'Apibendrinti apklausos rezultatai.',
         description: 'Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.',
         empty: 'Kol kas nėra apibendrintų atsiliepimų.',
+        trend: {
+          title: 'Bendro vertinimo dinamika',
+          empty: 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.',
+          unavailable: 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.',
+          aria: (label, from, to) => {
+            if (from && to && from !== to) {
+              return `${label} mėnesių trendas nuo ${from} iki ${to}.`;
+            }
+            if (from) {
+              return `${label} mėnesio trendas (${from}).`;
+            }
+            return `${label} mėnesio trendas.`;
+          },
+        },
         cards: [
           {
             key: 'overallAverage',
@@ -2080,6 +2128,7 @@
         feedbackTitle: TEXT.feedback.title,
         feedbackSubtitle: TEXT.feedback.subtitle,
         feedbackDescription: TEXT.feedback.description,
+        feedbackTrendTitle: TEXT.feedback.trend.title,
         footerSource: DEFAULT_FOOTER_SOURCE,
         showRecent: true,
         showMonthly: true,
@@ -2176,6 +2225,8 @@
       feedbackDescription: document.getElementById('feedbackDescription'),
       feedbackCaption: document.getElementById('feedbackCaption'),
       feedbackCards: document.getElementById('feedbackCards'),
+      feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
+      feedbackTrendChart: document.getElementById('feedbackTrendChart'),
       feedbackTable: document.getElementById('feedbackTable'),
       feedbackColumnMonth: document.getElementById('feedbackColumnMonth'),
       feedbackColumnResponses: document.getElementById('feedbackColumnResponses'),
@@ -2361,6 +2412,7 @@
       TEXT.feedback.title = settings.output.feedbackTitle || DEFAULT_SETTINGS.output.feedbackTitle;
       TEXT.feedback.subtitle = settings.output.feedbackSubtitle || DEFAULT_SETTINGS.output.feedbackSubtitle;
       TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
+      TEXT.feedback.trend.title = settings.output.feedbackTrendTitle || DEFAULT_SETTINGS.output.feedbackTrendTitle;
     }
 
     function applyFooterSource() {
@@ -2758,6 +2810,7 @@
         daily: null,
         dow: null,
         funnel: null,
+        feedbackTrend: null,
       },
       chartLib: null,
       usingFallback: false,
@@ -5089,6 +5142,235 @@
       });
     }
 
+    async function renderFeedbackTrendChart(monthlyStats) {
+      const canvas = selectors.feedbackTrendChart || document.getElementById('feedbackTrendChart');
+      const messageElement = selectors.feedbackTrendMessage || document.getElementById('feedbackTrendMessage');
+
+      const setTrendMessage = (text) => {
+        if (messageElement) {
+          if (text) {
+            messageElement.textContent = text;
+            messageElement.hidden = false;
+          } else {
+            messageElement.textContent = '';
+            messageElement.hidden = true;
+          }
+        }
+        if (canvas) {
+          if (text) {
+            canvas.setAttribute('aria-hidden', 'true');
+            canvas.hidden = true;
+          } else {
+            canvas.removeAttribute('aria-hidden');
+            canvas.hidden = false;
+          }
+        }
+      };
+
+      if (!canvas || typeof canvas.getContext !== 'function') {
+        const fallbackText = TEXT.feedback?.trend?.unavailable
+          || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
+        setTrendMessage(fallbackText);
+        return;
+      }
+
+      const monthlyArray = Array.isArray(monthlyStats)
+        ? monthlyStats.filter((entry) => entry && typeof entry === 'object')
+        : [];
+
+      const normalized = monthlyArray.reduce((acc, entry) => {
+        const rawMonth = typeof entry.month === 'string' ? entry.month.trim() : '';
+        if (!rawMonth) {
+          return acc;
+        }
+
+        const rawAverage = entry?.overallAverage;
+        let average = null;
+        if (typeof rawAverage === 'number') {
+          average = Number.isFinite(rawAverage) ? rawAverage : null;
+        } else if (typeof rawAverage === 'string') {
+          const parsed = Number.parseFloat(rawAverage.replace(',', '.'));
+          average = Number.isFinite(parsed) ? parsed : null;
+        } else if (rawAverage != null) {
+          const coerced = Number(rawAverage);
+          average = Number.isFinite(coerced) ? coerced : null;
+        }
+
+        if (average == null) {
+          return acc;
+        }
+
+        acc.push({
+          ...entry,
+          month: rawMonth,
+          overallAverage: average,
+        });
+        return acc;
+      }, []);
+
+      if (!normalized.length) {
+        if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+          dashboardState.charts.feedbackTrend.destroy();
+        }
+        dashboardState.charts.feedbackTrend = null;
+        const emptyText = TEXT.feedback?.trend?.empty
+          || 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.';
+        setTrendMessage(emptyText);
+        return;
+      }
+
+      const Chart = dashboardState.chartLib ?? await loadChartJs();
+      if (!Chart) {
+        const unavailableText = TEXT.feedback?.trend?.unavailable
+          || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
+        if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+          dashboardState.charts.feedbackTrend.destroy();
+        }
+        dashboardState.charts.feedbackTrend = null;
+        setTrendMessage(unavailableText);
+        return;
+      }
+      if (!dashboardState.chartLib) {
+        dashboardState.chartLib = Chart;
+      }
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        const unavailableText = TEXT.feedback?.trend?.unavailable
+          || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
+        if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+          dashboardState.charts.feedbackTrend.destroy();
+        }
+        dashboardState.charts.feedbackTrend = null;
+        setTrendMessage(unavailableText);
+        return;
+      }
+
+      if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+        dashboardState.charts.feedbackTrend.destroy();
+      }
+
+      const palette = getThemePalette();
+      const styleTarget = getThemeStyleTarget();
+      Chart.defaults.color = palette.textColor;
+      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+      Chart.defaults.borderColor = palette.gridColor;
+
+      const datasetLabel = TEXT.feedback?.table?.headers?.overall || 'Bendra patirtis (vid. 1–5)';
+      const chartTitle = TEXT.feedback?.trend?.title || 'Bendro vertinimo dinamika';
+      const sorted = normalized
+        .slice()
+        .sort((a, b) => {
+          const aDate = new Date(`${a.month}-01T00:00:00Z`);
+          const bDate = new Date(`${b.month}-01T00:00:00Z`);
+          const aTime = Number.isFinite(aDate.getTime()) ? aDate.getTime() : 0;
+          const bTime = Number.isFinite(bDate.getTime()) ? bDate.getTime() : 0;
+          return aTime - bTime;
+        });
+
+      const labels = sorted.map((entry) => formatMonthLabel(entry.month));
+      const dataPoints = sorted.map((entry) => entry.overallAverage);
+      const minRating = Number.isFinite(FEEDBACK_RATING_MIN) ? FEEDBACK_RATING_MIN : 1;
+      const maxRating = Number.isFinite(FEEDBACK_RATING_MAX) ? FEEDBACK_RATING_MAX : 5;
+      const rawMin = Math.min(...dataPoints);
+      const rawMax = Math.max(...dataPoints);
+      const range = rawMax - rawMin;
+      const padding = range > 0 ? range * 0.25 : 0.2;
+      const minValue = Math.max(minRating, rawMin - padding);
+      const maxValue = Math.min(maxRating, rawMax + padding);
+      const tickStep = range >= 1 ? 0.5 : 0.1;
+
+      const ariaBuilder = TEXT.feedback?.trend?.aria;
+      if (typeof ariaBuilder === 'function') {
+        const firstLabel = labels[0] || '';
+        const lastLabel = labels[labels.length - 1] || '';
+        canvas.setAttribute('aria-label', ariaBuilder(datasetLabel, firstLabel, lastLabel));
+      } else {
+        canvas.setAttribute('aria-label', `${datasetLabel} mėnesio trendas.`);
+      }
+
+      setTrendMessage('');
+
+      dashboardState.charts.feedbackTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: datasetLabel,
+              data: dataPoints,
+              borderColor: palette.accent,
+              backgroundColor: palette.accentSoft,
+              borderWidth: 2,
+              fill: true,
+              tension: 0.35,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: palette.accent,
+              pointBorderColor: palette.accent,
+              spanGaps: true,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: chartTitle,
+              color: palette.textColor,
+              font: {
+                weight: '600',
+                size: 14,
+              },
+              padding: {
+                bottom: 12,
+              },
+            },
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  if (Number.isFinite(context.parsed.y)) {
+                    return `${datasetLabel}: ${oneDecimalFormatter.format(context.parsed.y)}`;
+                  }
+                  return datasetLabel;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: palette.textMuted,
+              },
+              grid: {
+                color: palette.gridColor,
+                drawBorder: false,
+              },
+            },
+            y: {
+              beginAtZero: false,
+              min: minValue,
+              max: maxValue,
+              ticks: {
+                color: palette.textColor,
+                stepSize: tickStep,
+                callback(value) {
+                  return oneDecimalFormatter.format(value);
+                },
+              },
+              grid: {
+                color: palette.gridColor,
+                drawBorder: false,
+              },
+            },
+          },
+        },
+      });
+    }
+
     function updateChartPeriod(period) {
       const numeric = Number.parseInt(period, 10);
       if (!Number.isFinite(numeric) || numeric <= 0) {
@@ -5255,6 +5537,12 @@
     }
 
     function rerenderChartsForTheme() {
+      const feedbackMonthly = Array.isArray(dashboardState.feedback?.monthly)
+        ? dashboardState.feedback.monthly
+        : [];
+      renderFeedbackTrendChart(feedbackMonthly).catch((error) => {
+        console.error('Nepavyko perpiešti atsiliepimų trendo grafiko pakeitus temą:', error);
+      });
       const hasAnyData = (dashboardState.chartData.dailyWindow && dashboardState.chartData.dailyWindow.length)
         || dashboardState.chartData.funnel
         || (dashboardState.chartData.heatmap && Object.keys(dashboardState.chartData.heatmap).length);
@@ -5596,6 +5884,9 @@
         cell.textContent = TEXT.feedback.table.empty;
         row.appendChild(cell);
         selectors.feedbackTable.appendChild(row);
+        renderFeedbackTrendChart([]).catch((error) => {
+          console.error('Nepavyko atnaujinti atsiliepimų trendo grafiko:', error);
+        });
         return;
       }
 
@@ -5666,6 +5957,10 @@
 
           selectors.feedbackTable.appendChild(row);
         });
+
+      renderFeedbackTrendChart(monthly).catch((error) => {
+        console.error('Nepavyko atnaujinti atsiliepimų trendo grafiko:', error);
+      });
     }
 
     function drawFunnelShape(canvas, steps, accentColor, textColor) {
