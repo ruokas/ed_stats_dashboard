@@ -12,6 +12,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🛡️ Automatinis demonstracinių duomenų rezervas ir aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
 - ⚙️ Nustatymų dialogas (Ctrl+,) CSV laukų, skaičiavimo logikos ir išvesties tekstų pritaikymui be kodo keitimo (saugoma `localStorage`).
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
+- 🛏️ Integruotas lovų užimtumo CSV – kasdieniame grafike greta ED pacientų vidurkio rodoma lovų apkrova (%), leidžianti matyti perkrovos riziką.
 
 ## Diegimas
 1. Atsisiųskite saugomą saugyklą arba jos ZIP: `git clone https://example.com/ed_stats_dashboard.git`.
@@ -20,7 +21,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ## Konfigūracija
 - Tekstai (LT, su kabliuku EN) – `TEXT` objektas `index.html` viršuje arba nustatymų dialoge nurodyti pavadinimai/paantraštės.
-- Duomenų šaltinis, demonstraciniai įrašai ir CSV stulpelių atitikmenys – nustatymų dialogas („Duomenų šaltinis“ ir „CSV stulpelių atitikimas“ skyriai).
+- Duomenų šaltinis, lovų užimtumo ir atsiliepimų CSV su demonstraciniais rinkiniais – nustatymų dialogas („Duomenų šaltinis“, „Lovų užimtumo duomenys“ ir „CSV stulpelių atitikimas“ skyriai).
 - GMP laukas numatytai atpažįsta reikšmes „GMP“, „su GMP“ ir „GMP (su GMP)“, o tuščias hospitalizavimo stulpelis reiškia išrašytą pacientą.
 - Spalvų schema ir kampai – CSS kintamieji `:root` bloke (`index.html`).
 - Grafikai – Chart.js nustatymai `renderCharts()` funkcijoje (`index.html`).
@@ -48,9 +49,10 @@ Visi pakeitimai saugomi naršyklės `localStorage` ir gali būti atstatyti mygtu
 3. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus.
 4. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės persikrauna.
 5. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir lentelės (jei jos nepaslėptos nustatymuose) užsipildo.
-6. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
-7. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
-8. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 7 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
+6. Įsitikinkite, jog dienos grafike matote dvi ašis: stulpelius su vidutiniu ED pacientų skaičiumi ir liniją su lovų užimtumu (%).
+7. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
+8. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
+9. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 8 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
