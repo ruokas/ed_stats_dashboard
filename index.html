@@ -71,8 +71,11 @@
     }
 
     .container {
-      width: min(1220px, 92vw);
+      width: 100%;
+      max-width: 100%;
       margin: 0 auto;
+      padding-left: clamp(16px, 3vw, 48px);
+      padding-right: clamp(16px, 3vw, 48px);
     }
 
     .section-nav {
@@ -88,12 +91,12 @@
     }
 
     .section-nav__bar {
-      width: min(1220px, 92vw);
+      width: 100%;
       margin: 0 auto;
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 10px 0;
+      padding: 10px clamp(16px, 3vw, 48px);
     }
 
     .section-nav__title {
