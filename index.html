@@ -79,44 +79,46 @@
     }
 
     .section-nav {
-      position: sticky;
-      top: 0;
-      z-index: 6;
-      background: var(--color-surface);
+      position: relative;
+      top: auto;
+      z-index: auto;
+      background: transparent;
       display: flex;
       justify-content: center;
-      border-bottom: 1px solid var(--color-border);
-      box-shadow: 0 8px 16px -14px rgba(15, 23, 42, 0.4);
-      backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: none;
+      box-shadow: none;
+      backdrop-filter: none;
     }
 
     .section-nav__bar {
       width: 100%;
-      margin: 0 auto;
+      margin: 0;
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 10px clamp(16px, 3vw, 48px);
+      padding: 0;
+      justify-content: center;
     }
 
     .section-nav__title {
       flex: 0 0 auto;
       font-weight: 600;
       font-size: 0.95rem;
-      color: var(--color-text);
+      color: rgba(255, 255, 255, 0.88);
       white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
-      max-width: 40%;
+      max-width: 0;
       opacity: 0;
       transform: translateY(-6px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
+      transition: opacity 0.2s ease, transform 0.2s ease, max-width 0.2s ease;
       pointer-events: none;
     }
 
     .section-nav__title[data-visible="true"] {
       opacity: 1;
       transform: translateY(0);
+      max-width: 40%;
       pointer-events: auto;
     }
 
@@ -179,6 +181,12 @@
       box-shadow: 0 12px 28px -16px rgba(8, 12, 32, 0.9);
     }
 
+    body[data-theme="dark"] header.hero.hero--compact,
+    body[data-theme="dark"] header.hero[data-compact="true"] {
+      box-shadow: 0 20px 38px -20px rgba(8, 12, 32, 0.85);
+      filter: saturate(150%);
+    }
+
     .section-nav__link {
       display: inline-flex;
       align-items: center;
@@ -211,16 +219,53 @@
       display: none;
     }
 
+    header.hero .section-nav__bar {
+      justify-content: center;
+    }
+
+    header.hero .section-nav__inner {
+      justify-content: center;
+    }
+
+    header.hero .section-nav__link {
+      color: rgba(255, 255, 255, 0.82);
+      box-shadow: none;
+    }
+
+    header.hero .section-nav__link:hover,
+    header.hero .section-nav__link:focus-visible {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.24);
+    }
+
+    header.hero .section-nav__link.is-active,
+    header.hero .section-nav__link[aria-current="true"] {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+    }
+
     header.hero {
       background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 55%),
                   linear-gradient(135deg, #081231, #0b1d4d);
       color: #fff;
-      padding: 20px 0 16px;
-      position: relative;
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 8;
       overflow: hidden;
+      transition: padding 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, filter 0.25s ease;
     }
 
-    .hero::after {
+    header.hero.hero--compact,
+    header.hero[data-compact="true"] {
+      padding: 10px 0;
+      box-shadow: 0 16px 32px -22px rgba(15, 23, 42, 0.6);
+      filter: saturate(120%);
+    }
+
+    header.hero::after {
       content: "";
       position: absolute;
       inset: 0;
@@ -228,13 +273,27 @@
       pointer-events: none;
     }
 
+    header.hero.hero--compact::after,
+    header.hero[data-compact="true"]::after {
+      background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 70%);
+    }
+
     .hero__content {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+      grid-template-areas: "identity nav actions";
       align-items: center;
-      justify-content: space-between;
-      gap: 24px;
+      gap: clamp(16px, 3vw, 28px);
       position: relative;
       z-index: 1;
+    }
+
+    .hero__identity {
+      grid-area: identity;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
     }
 
     .hero__title {
@@ -248,9 +307,27 @@
       font-size: 0.9rem;
       color: rgba(255, 255, 255, 0.85);
       max-width: 460px;
+      transition: opacity 0.25s ease, max-height 0.25s ease;
+    }
+
+    header.hero.hero--compact .hero__subtitle,
+    header.hero[data-compact="true"] .hero__subtitle {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      margin: 0;
+    }
+
+    .hero__nav {
+      grid-area: nav;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .hero__actions {
+      grid-area: actions;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
@@ -401,16 +478,71 @@
       color: #fff;
     }
 
-    /* Mobile header adjustments */
-    @media (max-width: 640px) {
+    @media (max-width: 1200px) {
+      .hero__content {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+          "identity actions"
+          "nav actions";
+      }
+
+      .hero__actions {
+        align-items: flex-end;
+        justify-self: end;
+      }
+
+      .hero__nav .section-nav__bar,
+      .hero__nav .section-nav__inner {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 900px) {
       header.hero {
-        padding: 16px 0 14px;
+        padding: 14px 0;
       }
 
       .hero__content {
-        flex-direction: column;
-        gap: 16px;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "identity"
+          "actions"
+          "nav";
+        gap: 18px;
       }
+
+      .hero__actions {
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .hero__buttons {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .hero__nav .section-nav__bar,
+      .hero__nav .section-nav__inner {
+        justify-content: flex-start;
+      }
+    }
+
+    /* Mobile header adjustments */
+    @media (max-width: 640px) {
+        header.hero {
+          padding: 14px 0;
+      }
+
+        .hero__content {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-areas:
+            "identity"
+            "actions"
+            "nav";
+          gap: 18px;
+        }
 
       .hero__title {
         font-size: clamp(1.35rem, 1.2rem + 1vw, 1.8rem);
@@ -421,24 +553,29 @@
         max-width: none;
       }
 
-      .hero__actions {
-        width: 100%;
-        align-items: flex-start;
-        gap: 6px;
-        margin-top: 4px;
-      }
+        .hero__actions {
+          width: 100%;
+          align-items: flex-start;
+          gap: 8px;
+          margin-top: 0;
+        }
 
-      .hero__buttons {
-        width: 100%;
-        justify-content: flex-start;
-        gap: 6px;
-        flex-wrap: nowrap;
-      }
+        .hero__buttons {
+          width: 100%;
+          justify-content: flex-start;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
 
-      .hero__buttons button.icon-button {
-        width: 36px;
-        height: 36px;
-      }
+        .hero__nav .section-nav__bar,
+        .hero__nav .section-nav__inner {
+          justify-content: flex-start;
+        }
+
+        .hero__buttons button.icon-button {
+          width: 36px;
+          height: 36px;
+        }
 
       .status {
         text-align: left;
@@ -1789,20 +1926,6 @@
     }
 
     @media (max-width: 768px) {
-      .hero__content {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .hero__actions {
-        align-items: flex-start;
-      }
-
-      .hero__buttons {
-        width: 100%;
-        justify-content: flex-start;
-      }
-
       .section-nav__bar {
         gap: 12px;
       }
@@ -1864,12 +1987,24 @@
   </style>
 </head>
 <body>
-  <header class="hero" role="banner">
+  <header class="hero" role="banner" data-compact="false">
     <div class="container hero__content">
-      <div>
+      <div class="hero__identity">
         <h1 id="pageTitle" class="hero__title">RŠL SMPS statistika</h1>
         <p id="pageSubtitle" class="hero__subtitle">Greita statistikos apžvalga.</p>
       </div>
+      <nav class="section-nav hero__nav" aria-label="Pagrindinės sekcijos">
+        <div class="section-nav__bar">
+          <div class="section-nav__title" id="stickyTitle" aria-hidden="true">RŠL SMPS statistika</div>
+          <div class="section-nav__inner">
+            <a class="section-nav__link" href="#kpiHeading">Rodikliai</a>
+            <a class="section-nav__link" href="#chartHeading">Grafikai</a>
+            <a class="section-nav__link" href="#recentHeading">Paskutinės dienos</a>
+            <a class="section-nav__link" href="#monthlyHeading">Mėnesiai</a>
+            <a class="section-nav__link" href="#feedbackHeading">Atsiliepimai</a>
+          </div>
+        </div>
+      </nav>
       <div class="hero__actions">
         <div class="hero__buttons">
           <button id="themeToggleBtn" type="button" class="icon-button theme-toggle" aria-pressed="false" aria-label="Perjungti šviesią/tamsią temą" title="Perjungti šviesią/tamsią temą (Ctrl+Shift+L)" data-theme="light">
@@ -1899,18 +2034,6 @@
       </div>
     </div>
   </header>
-  <nav class="section-nav" aria-label="Pagrindinės sekcijos">
-    <div class="section-nav__bar">
-      <div class="section-nav__title" id="stickyTitle" aria-hidden="true">RŠL SMPS statistika</div>
-      <div class="section-nav__inner">
-      <a class="section-nav__link" href="#kpiHeading">Rodikliai</a>
-      <a class="section-nav__link" href="#chartHeading">Grafikai</a>
-      <a class="section-nav__link" href="#recentHeading">Paskutinės dienos</a>
-      <a class="section-nav__link" href="#monthlyHeading">Mėnesiai</a>
-      <a class="section-nav__link" href="#feedbackHeading">Atsiliepimai</a>
-      </div>
-    </div>
-  </nav>
   <main class="container" role="main">
     <section class="section" aria-labelledby="kpiHeading" data-section="kpi">
       <div class="section__header">
@@ -2897,6 +3020,7 @@
     let layoutResizeObserver = null;
     const stickyTitleState = { heroVisible: true, observer: null };
     const scrollTopState = { visible: false, rafHandle: null };
+    const heroCompactState = { compact: false, rafHandle: null };
     let initialScrollFixed = false;
 
     function computeVisibleRatio(rect) {
@@ -2924,6 +3048,7 @@
       const rootStyle = document.documentElement.style;
       rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
       rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
+      scheduleHeroCompactUpdate();
     }
 
     function updateStickyTitleVisibility(heroVisible) {
@@ -2932,7 +3057,7 @@
       if (!stickyTitle) {
         return;
       }
-      const shouldShow = !heroVisible;
+      const shouldShow = heroCompactState.compact || !heroVisible;
       stickyTitle.dataset.visible = shouldShow ? 'true' : 'false';
       stickyTitle.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
     }
@@ -2997,6 +3122,56 @@
         scrollTopState.rafHandle = null;
         updateScrollTopButtonVisibility();
       });
+    }
+
+    function applyHeroCompactState(shouldCompact) {
+      const hero = selectors.hero;
+      if (!hero) {
+        return;
+      }
+      if (heroCompactState.compact === shouldCompact) {
+        return;
+      }
+      heroCompactState.compact = shouldCompact;
+      hero.classList.toggle('hero--compact', shouldCompact);
+      hero.dataset.compact = shouldCompact ? 'true' : 'false';
+      updateStickyTitleVisibility(stickyTitleState.heroVisible);
+    }
+
+    function updateHeroCompactState() {
+      if (!selectors.hero) {
+        return;
+      }
+      const offset = getScrollOffset();
+      const heroHeight = layoutMetrics.hero > 0
+        ? layoutMetrics.hero
+        : selectors.hero.getBoundingClientRect().height;
+      const threshold = Math.max(64, Math.round(heroHeight * 0.35));
+      const shouldCompact = offset > threshold;
+      applyHeroCompactState(shouldCompact);
+    }
+
+    function scheduleHeroCompactUpdate() {
+      if (heroCompactState.rafHandle) {
+        return;
+      }
+      const raf = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (cb) => window.setTimeout(cb, 16);
+      heroCompactState.rafHandle = raf(() => {
+        heroCompactState.rafHandle = null;
+        updateHeroCompactState();
+      });
+    }
+
+    function initializeHeroCompactMode() {
+      if (!selectors.hero) {
+        return;
+      }
+      applyHeroCompactState(false);
+      updateHeroCompactState();
+      window.addEventListener('scroll', scheduleHeroCompactUpdate, { passive: true });
+      window.addEventListener('resize', scheduleHeroCompactUpdate, { passive: true });
     }
 
     function initializeScrollTopButton() {
@@ -7785,6 +7960,7 @@
     applyFooterSource();
     initializeSectionNavigation();
     initializeStickyTitleObserver();
+    initializeHeroCompactMode();
     initializeScrollTopButton();
     applySectionVisibility();
     populateSettingsForm();
