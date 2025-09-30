@@ -655,12 +655,14 @@
       color: var(--color-text-muted);
     }
 
-    .kpi-controls__summary-row {
+    .kpi-header-actions {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 12px;
       flex-wrap: wrap;
+      margin-left: auto;
+      min-width: 0;
     }
 
     .kpi-controls__toggle {
@@ -1145,18 +1147,20 @@
     }
 
     @media (max-width: 768px) {
-      .kpi-controls__summary-row {
+      .kpi-header-actions {
+        width: 100%;
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
+        margin-left: 0;
       }
 
-      .kpi-controls__toggle {
+      .kpi-header-actions .kpi-controls__toggle {
         width: 100%;
         justify-content: space-between;
       }
 
-      .kpi-controls__summary {
+      .kpi-header-actions .kpi-controls__summary {
         width: 100%;
         justify-content: flex-start;
       }
@@ -1718,13 +1722,13 @@
           <h2 id="kpiHeading" class="section__title">Pagrindiniai rodikliai</h2>
           <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
         </div>
+        <div class="section__actions kpi-header-actions">
+          <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
+          <button type="button" id="kpiFiltersToggle" class="kpi-controls__toggle" aria-controls="kpiFiltersForm" aria-expanded="false">Filtrai</button>
+        </div>
       </div>
       <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle" data-expanded="false">
         <h3 id="kpiFiltersTitle" class="sr-only">KPI filtrai</h3>
-        <div class="kpi-controls__summary-row">
-          <button type="button" id="kpiFiltersToggle" class="kpi-controls__toggle" aria-controls="kpiFiltersForm" aria-expanded="false">Filtrai</button>
-          <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
-        </div>
         <form id="kpiFiltersForm" class="kpi-controls__form">
           <label class="kpi-filter" for="kpiWindow">
             <span>Laikotarpis</span>
