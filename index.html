@@ -3020,8 +3020,6 @@
     let layoutResizeObserver = null;
     const stickyTitleState = { heroVisible: true, observer: null };
     const scrollTopState = { visible: false, rafHandle: null };
-    const heroCompactState = { compact: false, rafHandle: null };
-    let initialScrollFixed = false;
 
     function computeVisibleRatio(rect) {
       if (!rect) {
@@ -3048,7 +3046,6 @@
       const rootStyle = document.documentElement.style;
       rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
       rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
-      scheduleHeroCompactUpdate();
     }
 
     function updateStickyTitleVisibility(heroVisible) {
@@ -3057,7 +3054,7 @@
       if (!stickyTitle) {
         return;
       }
-      const shouldShow = heroCompactState.compact || !heroVisible;
+      const shouldShow = !heroVisible;
       stickyTitle.dataset.visible = shouldShow ? 'true' : 'false';
       stickyTitle.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
     }
@@ -3124,56 +3121,6 @@
       });
     }
 
-    function applyHeroCompactState(shouldCompact) {
-      const hero = selectors.hero;
-      if (!hero) {
-        return;
-      }
-      if (heroCompactState.compact === shouldCompact) {
-        return;
-      }
-      heroCompactState.compact = shouldCompact;
-      hero.classList.toggle('hero--compact', shouldCompact);
-      hero.dataset.compact = shouldCompact ? 'true' : 'false';
-      updateStickyTitleVisibility(stickyTitleState.heroVisible);
-    }
-
-    function updateHeroCompactState() {
-      if (!selectors.hero) {
-        return;
-      }
-      const offset = getScrollOffset();
-      const heroHeight = layoutMetrics.hero > 0
-        ? layoutMetrics.hero
-        : selectors.hero.getBoundingClientRect().height;
-      const threshold = Math.max(64, Math.round(heroHeight * 0.35));
-      const shouldCompact = offset > threshold;
-      applyHeroCompactState(shouldCompact);
-    }
-
-    function scheduleHeroCompactUpdate() {
-      if (heroCompactState.rafHandle) {
-        return;
-      }
-      const raf = typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame.bind(window)
-        : (cb) => window.setTimeout(cb, 16);
-      heroCompactState.rafHandle = raf(() => {
-        heroCompactState.rafHandle = null;
-        updateHeroCompactState();
-      });
-    }
-
-    function initializeHeroCompactMode() {
-      if (!selectors.hero) {
-        return;
-      }
-      applyHeroCompactState(false);
-      updateHeroCompactState();
-      window.addEventListener('scroll', scheduleHeroCompactUpdate, { passive: true });
-      window.addEventListener('resize', scheduleHeroCompactUpdate, { passive: true });
-    }
-
     function initializeScrollTopButton() {
       const button = selectors.scrollTopBtn;
       if (!button) {
@@ -3198,59 +3145,6 @@
       });
       window.addEventListener('scroll', scheduleScrollTopUpdate, { passive: true });
       window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
-    }
-
-    function ensureHeroVisibleIfNeeded() {
-      if (initialScrollFixed) {
-        return;
-      }
-      if (window.location.hash) {
-        initialScrollFixed = true;
-        return;
-      }
-      const hero = selectors.hero;
-      if (!hero) {
-        initialScrollFixed = true;
-        return;
-      }
-      const rect = hero.getBoundingClientRect();
-      if (rect.top >= -8) {
-        initialScrollFixed = true;
-        return;
-      }
-      const currentOffset = getScrollOffset();
-      const target = Math.max(0, Math.round(currentOffset + rect.top - 8));
-      if (Math.abs(target - currentOffset) < 1) {
-        initialScrollFixed = true;
-        return;
-      }
-      if (typeof window.scrollTo === 'function') {
-        try {
-          window.scrollTo({ top: target, behavior: 'auto' });
-        } catch (error) {
-          window.scrollTo(0, target);
-        }
-      } else {
-        document.documentElement.scrollTop = target;
-        document.body.scrollTop = target;
-      }
-      initialScrollFixed = true;
-    }
-
-    function scheduleInitialScrollFix() {
-      if (initialScrollFixed) {
-        return;
-      }
-      const runner = () => {
-        ensureHeroVisibleIfNeeded();
-      };
-      if (typeof window.requestAnimationFrame === 'function') {
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(runner);
-        });
-      } else {
-        window.setTimeout(runner, 0);
-      }
     }
 
     function updateActiveNavLink(headingId) {
@@ -7960,7 +7854,6 @@
     applyFooterSource();
     initializeSectionNavigation();
     initializeStickyTitleObserver();
-    initializeHeroCompactMode();
     initializeScrollTopButton();
     applySectionVisibility();
     populateSettingsForm();
@@ -8111,13 +8004,6 @@
       }
     });
 
-    if (document.readyState === 'complete') {
-      scheduleInitialScrollFix();
-    } else {
-      window.addEventListener('load', () => {
-        scheduleInitialScrollFix();
-      }, { once: true });
-    }
   </script>
 </body>
 </html>
