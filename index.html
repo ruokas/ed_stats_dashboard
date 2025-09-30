@@ -662,7 +662,7 @@
     #recentHeading,
     #monthlyHeading,
     #feedbackHeading {
-      scroll-margin-top: calc(var(--section-nav-height, 0px) + 16px);
+      scroll-margin-top: calc(var(--hero-height, 0px) + 16px);
     }
 
     .section__subtitle {
@@ -3290,7 +3290,10 @@
       if (sectionObserver) {
         sectionObserver.disconnect();
       }
-      const topOffset = Math.max(0, Math.round(layoutMetrics.nav));
+      const topOffset = Math.max(
+        0,
+        Math.round(Math.max(layoutMetrics.hero || 0, layoutMetrics.nav || 0)),
+      );
       sectionObserver = new IntersectionObserver(handleSectionIntersection, {
         rootMargin: `-${topOffset}px 0px -55% 0px`,
         threshold: [0.1, 0.25, 0.5, 0.75, 1],
