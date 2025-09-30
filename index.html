@@ -811,10 +811,17 @@
       margin-top: 4px;
     }
 
-    /* Fiksuotas grafiko aukštis, kad Chart.js neplėstų kanvos – keiskite jei reikia daugiau vietos. */
+    /* Fiksuotas grafiko aukštis, kad Chart.js neplėstų kanvos – padidintas, kad stulpeliai nebūtų suspausti. */
     .chart-card canvas {
       width: 100% !important;
-      height: 320px !important;
+      min-height: 360px;
+      height: clamp(360px, 36vh, 480px) !important;
+    }
+
+    /* Papildomas aukštis pacientų srautų grafiko kortelėms. */
+    .chart-card--tall canvas {
+      min-height: 420px;
+      height: clamp(420px, 45vh, 560px) !important;
     }
 
     .heatmap-scroll {
@@ -909,7 +916,13 @@
       }
 
       .chart-card canvas {
-        height: 260px !important;
+        min-height: 280px;
+        height: clamp(280px, 55vh, 340px) !important;
+      }
+
+      .chart-card--tall canvas {
+        min-height: 340px;
+        height: clamp(340px, 65vh, 400px) !important;
       }
 
       .chart-grid {
@@ -1487,14 +1500,14 @@
         </div>
       </div>
       <div class="chart-grid">
-        <figure class="chart-card">
+        <figure class="chart-card chart-card--tall">
           <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
           <figcaption id="dailyChartTitle">
             <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
             <span id="dailyChartContext" class="chart-caption__context"></span>
           </figcaption>
         </figure>
-        <figure class="chart-card">
+        <figure class="chart-card chart-card--tall">
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
           <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
         </figure>
@@ -5116,6 +5129,8 @@
       }
 
       const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
+      // Užtikrina, kad X ašies etiketės nebūtų sutankintos – rodome ~12 reikšmių.
+      const tickEvery = Math.max(1, Math.ceil(scopedData.length / 12));
       dashboardState.charts.daily = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -5158,8 +5173,15 @@
           scales: {
             x: {
               ticks: {
+                autoSkip: false,
+                maxRotation: 0,
+                minRotation: 0,
+                padding: 8,
                 color: (ctxTick) => (weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
-                callback(value) {
+                callback(value, index) {
+                  if (index % tickEvery !== 0) {
+                    return '';
+                  }
                   const label = this.getLabelForValue(value);
                   return label.slice(-5);
                 },
@@ -5172,6 +5194,7 @@
             y: {
               beginAtZero: true,
               ticks: {
+                padding: 6,
                 color: themePalette.textColor,
                 callback(value) {
                   return numberFormatter.format(value);
