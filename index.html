@@ -260,9 +260,35 @@
 
     header.hero.hero--compact,
     header.hero[data-compact="true"] {
-      padding: 10px 0;
-      box-shadow: 0 16px 32px -22px rgba(15, 23, 42, 0.6);
-      filter: saturate(120%);
+      padding: 8px 0;
+      box-shadow: 0 18px 36px -24px rgba(15, 23, 42, 0.65);
+      filter: saturate(135%);
+    }
+
+    /* Kompaktiško hero režimo detalizacija */
+    header.hero[data-compact="true"] .hero__content {
+      gap: clamp(12px, 2vw, 20px);
+    }
+
+    header.hero[data-compact="true"] .hero__title {
+      font-size: clamp(1.2rem, 0.95rem + 0.6vw, 1.6rem);
+    }
+
+    header.hero[data-compact="true"] .hero__actions {
+      gap: 4px;
+    }
+
+    header.hero[data-compact="true"] .hero__buttons {
+      gap: 6px;
+    }
+
+    header.hero[data-compact="true"] button.icon-button {
+      width: 34px;
+      height: 34px;
+    }
+
+    header.hero[data-compact="true"] .section-nav__link {
+      padding: 6px 12px;
     }
 
     header.hero::after {
@@ -3020,6 +3046,12 @@
     let layoutResizeObserver = null;
     const stickyTitleState = { heroVisible: true, observer: null };
     const scrollTopState = { visible: false, rafHandle: null };
+    const heroCompactState = {
+      compact: false,
+      rafHandle: null,
+      enterOffset: 160,
+      exitOffset: 100,
+    };
 
     function computeVisibleRatio(rect) {
       if (!rect) {
@@ -3046,6 +3078,49 @@
       const rootStyle = document.documentElement.style;
       rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
       rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
+      // Kompaktiškėjimo slenkstis: koreguokite koeficientą, jei reikia ankstesnio/perdėto susitraukimo.
+      const enter = heroHeight > 0 ? heroHeight * 0.55 : 160;
+      heroCompactState.enterOffset = Math.max(80, Math.round(enter));
+      heroCompactState.exitOffset = Math.max(40, Math.round(heroCompactState.enterOffset * 0.6));
+    }
+
+    function applyHeroCompactMode(shouldCompact) {
+      if (!selectors.hero) {
+        return;
+      }
+      // Vykdome realų perėjimą tarp didesnio ir kompaktiško hero režimų.
+      selectors.hero.dataset.compact = shouldCompact ? 'true' : 'false';
+      selectors.hero.classList.toggle('hero--compact', shouldCompact);
+    }
+
+    function evaluateHeroCompactMode() {
+      if (!selectors.hero) {
+        return;
+      }
+      const offset = getScrollOffset();
+      let shouldCompact = heroCompactState.compact;
+      if (heroCompactState.compact) {
+        shouldCompact = offset > heroCompactState.exitOffset;
+      } else {
+        shouldCompact = offset > heroCompactState.enterOffset;
+      }
+      if (heroCompactState.compact !== shouldCompact) {
+        heroCompactState.compact = shouldCompact;
+        applyHeroCompactMode(shouldCompact);
+      }
+    }
+
+    function scheduleHeroCompactEvaluation() {
+      if (heroCompactState.rafHandle) {
+        return;
+      }
+      const raf = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (cb) => window.setTimeout(cb, 16);
+      heroCompactState.rafHandle = raf(() => {
+        heroCompactState.rafHandle = null;
+        evaluateHeroCompactMode();
+      });
     }
 
     function updateStickyTitleVisibility(heroVisible) {
@@ -3147,6 +3222,19 @@
       window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
     }
 
+    function initializeHeroCompactMode() {
+      if (!selectors.hero) {
+        return;
+      }
+      heroCompactState.compact = selectors.hero.dataset.compact === 'true';
+      applyHeroCompactMode(heroCompactState.compact);
+      evaluateHeroCompactMode();
+      window.addEventListener('scroll', scheduleHeroCompactEvaluation, { passive: true });
+      window.addEventListener('resize', scheduleHeroCompactEvaluation, { passive: true });
+      window.addEventListener('orientationchange', scheduleHeroCompactEvaluation);
+      window.addEventListener('load', scheduleHeroCompactEvaluation);
+    }
+
     function updateActiveNavLink(headingId) {
       sectionNavState.activeHeadingId = headingId;
       sectionNavState.items.forEach((item) => {
@@ -3226,6 +3314,7 @@
         updateLayoutMetrics();
         refreshSectionObserver();
         updateScrollTopButtonVisibility();
+        evaluateHeroCompactMode();
         return;
       }
       if (layoutRefreshHandle) {
@@ -3236,6 +3325,7 @@
         updateLayoutMetrics();
         refreshSectionObserver();
         updateScrollTopButtonVisibility();
+        evaluateHeroCompactMode();
       });
     }
 
@@ -7853,6 +7943,7 @@
     applyTextContent();
     applyFooterSource();
     initializeSectionNavigation();
+    initializeHeroCompactMode();
     initializeStickyTitleObserver();
     initializeScrollTopButton();
     applySectionVisibility();
