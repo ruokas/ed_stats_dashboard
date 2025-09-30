@@ -810,10 +810,13 @@
     }
 
     .feedback-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      display: flex;
+      flex-wrap: nowrap;
       gap: 16px;
       margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-gutter: stable both-edges;
     }
 
     .feedback-card {
@@ -826,6 +829,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      flex: 0 0 clamp(220px, 22vw, 280px);
     }
 
     .feedback-card__title {
@@ -2782,14 +2786,6 @@
             empty: 'Nėra vertinimų.',
             format: 'decimal',
             countKey: 'waitingCount',
-          },
-          {
-            key: 'contactShare',
-            title: 'Bendravo su padėjėjais',
-            description: 'Dalies, pasirinkusių „Taip“, procentas.',
-            empty: 'Nėra duomenų.',
-            format: 'percent',
-            countKey: 'contactResponses',
           },
           {
             key: 'totalResponses',
