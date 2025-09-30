@@ -517,32 +517,133 @@
 
     .feedback-graphs {
       margin: 24px 0;
-      padding: 16px;
+      padding: 20px;
       border-radius: 18px;
       border: 1px solid var(--color-border);
       background: var(--color-surface);
       box-shadow: var(--shadow-elevated);
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      min-height: 260px;
+      gap: 12px;
     }
 
-    .feedback-trend-message {
+    .feedback-trend-card__header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .feedback-trend-card__titles {
+      flex: 1 1 240px;
+      min-width: 200px;
+    }
+
+    .feedback-trend-card__title {
       margin: 0;
-      padding: 24px 16px 8px;
-      text-align: center;
-      font-size: 0.95rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .feedback-trend-card__subtitle {
+      margin: 4px 0 0;
+      font-size: 0.9rem;
       color: var(--color-text-muted);
     }
 
+    .feedback-trend-card__controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .feedback-trend-card__controls-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-trend-card__buttons {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 999px;
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+    }
+
+    .feedback-trend-card__button {
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feedback-trend-card__button:hover,
+    .feedback-trend-card__button:focus-visible {
+      outline: none;
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+
+    .feedback-trend-card__button[data-active="true"],
+    .feedback-trend-card__button[aria-pressed="true"] {
+      background: var(--color-accent);
+      color: #fff;
+      box-shadow: 0 6px 16px -8px rgba(37, 99, 235, 0.6);
+    }
+
+    body[data-theme="dark"] .feedback-trend-card__buttons {
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    body[data-theme="dark"] .feedback-trend-card__button[data-active="true"],
+    body[data-theme="dark"] .feedback-trend-card__button[aria-pressed="true"] {
+      color: #0b1120;
+    }
+
+    .feedback-trend-summary {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-trend-card__body {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: clamp(240px, 35vw, 360px);
+    }
+
     .feedback-graphs canvas {
+      flex: 1 1 auto;
       width: 100%;
       height: clamp(240px, 35vw, 360px);
     }
 
     .feedback-graphs canvas[hidden] {
       display: none;
+    }
+
+    .feedback-trend-message {
+      margin: 0;
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      padding: 24px 16px;
     }
 
     .feedback-cards {
@@ -1975,9 +2076,26 @@
         </div>
       </div>
       <div id="feedbackCards" class="feedback-cards" role="list"></div>
-      <div class="feedback-graphs" role="presentation">
-        <p id="feedbackTrendMessage" class="feedback-trend-message" role="status" aria-live="polite" hidden></p>
-        <canvas id="feedbackTrendChart" role="img" aria-describedby="feedbackSubtitle" hidden></canvas>
+      <div class="feedback-graphs feedback-trend-card" role="presentation">
+        <div class="feedback-trend-card__header">
+          <div class="feedback-trend-card__titles">
+            <h3 id="feedbackTrendTitle" class="feedback-trend-card__title">Bendro vertinimo dinamika</h3>
+            <p id="feedbackTrendSubtitle" class="feedback-trend-card__subtitle">—</p>
+          </div>
+          <div class="feedback-trend-card__controls">
+            <span id="feedbackTrendControlsLabel" class="feedback-trend-card__controls-label">Laikotarpis</span>
+            <div id="feedbackTrendControls" class="feedback-trend-card__buttons" role="group" aria-labelledby="feedbackTrendControlsLabel">
+              <button type="button" class="feedback-trend-card__button" data-trend-months="3" aria-pressed="false">3 mėn.</button>
+              <button type="button" class="feedback-trend-card__button" data-trend-months="6" aria-pressed="false">6 mėn.</button>
+              <button type="button" class="feedback-trend-card__button" data-trend-months="12" aria-pressed="false">12 mėn.</button>
+            </div>
+          </div>
+        </div>
+        <p id="feedbackTrendSummary" class="feedback-trend-summary" hidden></p>
+        <div class="feedback-trend-card__body">
+          <canvas id="feedbackTrendChart" role="img" aria-describedby="feedbackTrendSubtitle feedbackTrendSummary" hidden></canvas>
+          <p id="feedbackTrendMessage" class="feedback-trend-message" role="status" aria-live="polite" hidden></p>
+        </div>
       </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="feedbackHeading">
         <table aria-describedby="feedbackSubtitle feedbackDescription">
@@ -2419,6 +2537,22 @@
         empty: 'Kol kas nėra apibendrintų atsiliepimų.',
         trend: {
           title: 'Bendro vertinimo dinamika',
+          subtitle: (months) => {
+            if (!Number.isFinite(months) || months <= 0) {
+              return 'Visų prieinamų mėnesių dinamika';
+            }
+            const normalized = Math.max(1, Math.round(months));
+            if (normalized === 1) {
+              return 'Paskutinio mėnesio dinamika';
+            }
+            return `Paskutinių ${normalized} mėnesių dinamika`;
+          },
+          controlsLabel: 'Laikotarpis',
+          periods: [
+            { months: 3, label: '3 mėn.' },
+            { months: 6, label: '6 mėn.' },
+            { months: 12, label: '12 mėn.' },
+          ],
           empty: 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.',
           unavailable: 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.',
           aria: (label, from, to) => {
@@ -2429,6 +2563,31 @@
               return `${label} mėnesio trendas (${from}).`;
             }
             return `${label} mėnesio trendas.`;
+          },
+          averageLabel: 'Vidutinis įvertinimas',
+          responsesLabel: 'Atsakymų skaičius',
+          summary: (info) => {
+            if (!info || typeof info !== 'object') {
+              return '';
+            }
+            const parts = [];
+            if (info.average?.formatted) {
+              parts.push(`Vidurkis ${info.average.formatted}`);
+            }
+            if (info.best?.label && info.best?.formatted) {
+              parts.push(`Geriausias ${info.best.label} (${info.best.formatted})`);
+            }
+            if (info.worst?.label && info.worst?.formatted) {
+              parts.push(`Silpniausias ${info.worst.label} (${info.worst.formatted})`);
+            }
+            if (info.responses?.minFormatted && info.responses?.maxFormatted) {
+              if (info.responses.minFormatted === info.responses.maxFormatted) {
+                parts.push(`${info.responses.label || 'Atsakymai/mėn.'}: ${info.responses.minFormatted}`);
+              } else {
+                parts.push(`${info.responses.label || 'Atsakymai/mėn.'}: ${info.responses.minFormatted}–${info.responses.maxFormatted}`);
+              }
+            }
+            return parts.join(' • ');
           },
         },
         cards: [
@@ -2677,6 +2836,12 @@
       feedbackDescription: document.getElementById('feedbackDescription'),
       feedbackCaption: document.getElementById('feedbackCaption'),
       feedbackCards: document.getElementById('feedbackCards'),
+      feedbackTrendTitle: document.getElementById('feedbackTrendTitle'),
+      feedbackTrendSubtitle: document.getElementById('feedbackTrendSubtitle'),
+      feedbackTrendControls: document.getElementById('feedbackTrendControls'),
+      feedbackTrendControlsLabel: document.getElementById('feedbackTrendControlsLabel'),
+      feedbackTrendButtons: Array.from(document.querySelectorAll('[data-trend-months]')),
+      feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
       feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
       feedbackTrendChart: document.getElementById('feedbackTrendChart'),
       feedbackTable: document.getElementById('feedbackTable'),
@@ -3714,6 +3879,7 @@
         monthly: [],
         usingFallback: false,
         lastErrorMessage: '',
+        trendWindow: 6,
       },
     };
 
@@ -3772,6 +3938,29 @@
       if (selectors.feedbackDescription) {
         selectors.feedbackDescription.textContent = TEXT.feedback.description;
       }
+      if (selectors.feedbackTrendTitle) {
+        selectors.feedbackTrendTitle.textContent = TEXT.feedback.trend.title;
+      }
+      updateFeedbackTrendSubtitle();
+      if (selectors.feedbackTrendControlsLabel) {
+        selectors.feedbackTrendControlsLabel.textContent = TEXT.feedback.trend.controlsLabel;
+      }
+      if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
+        const periodConfig = Array.isArray(TEXT.feedback.trend.periods) ? TEXT.feedback.trend.periods : [];
+        selectors.feedbackTrendButtons.forEach((button) => {
+          const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+          const config = periodConfig.find((item) => Number.parseInt(item?.months, 10) === months);
+          if (config?.label) {
+            button.textContent = config.label;
+          }
+          if (config?.hint) {
+            button.title = config.hint;
+          } else {
+            button.removeAttribute('title');
+          }
+        });
+      }
+      syncFeedbackTrendControls();
       if (selectors.feedbackCaption) {
         selectors.feedbackCaption.textContent = TEXT.feedback.table.caption;
       }
@@ -6039,6 +6228,7 @@
         accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
         weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
         weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
+        success: rootStyles.getPropertyValue('--color-success').trim() || '#16a34a',
         textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
         textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
         gridColor: rootStyles.getPropertyValue('--chart-grid').trim() || 'rgba(15, 23, 42, 0.12)',
@@ -6053,6 +6243,44 @@
         const buttonPeriod = Number.parseInt(button.dataset.chartPeriod, 10);
         const isActive = Number.isFinite(buttonPeriod) && buttonPeriod === period;
         button.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function getActiveFeedbackTrendWindow() {
+      const raw = dashboardState.feedback?.trendWindow;
+      if (Number.isFinite(raw) && raw > 0) {
+        return Math.max(1, Math.round(raw));
+      }
+      return null;
+    }
+
+    function updateFeedbackTrendSubtitle() {
+      if (!selectors.feedbackTrendSubtitle) {
+        return;
+      }
+      const builder = TEXT.feedback?.trend?.subtitle;
+      const activeWindow = getActiveFeedbackTrendWindow();
+      if (typeof builder === 'function') {
+        selectors.feedbackTrendSubtitle.textContent = builder(activeWindow);
+      } else if (typeof builder === 'string') {
+        selectors.feedbackTrendSubtitle.textContent = builder;
+      } else if (Number.isFinite(activeWindow) && activeWindow > 0) {
+        selectors.feedbackTrendSubtitle.textContent = `Paskutinių ${activeWindow} mėnesių dinamika`;
+      } else {
+        selectors.feedbackTrendSubtitle.textContent = 'Visų prieinamų mėnesių dinamika';
+      }
+    }
+
+    function syncFeedbackTrendControls() {
+      if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
+        return;
+      }
+      const activeWindow = getActiveFeedbackTrendWindow();
+      selectors.feedbackTrendButtons.forEach((button) => {
+        const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+        const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
+        button.setAttribute('aria-pressed', String(Boolean(isActive)));
+        button.dataset.active = String(Boolean(isActive));
       });
     }
 
@@ -6209,6 +6437,20 @@
     async function renderFeedbackTrendChart(monthlyStats) {
       const canvas = selectors.feedbackTrendChart || document.getElementById('feedbackTrendChart');
       const messageElement = selectors.feedbackTrendMessage || document.getElementById('feedbackTrendMessage');
+      const summaryElement = selectors.feedbackTrendSummary || document.getElementById('feedbackTrendSummary');
+
+      const updateSummary = (text) => {
+        if (!summaryElement) {
+          return;
+        }
+        if (text) {
+          summaryElement.textContent = text;
+          summaryElement.hidden = false;
+        } else {
+          summaryElement.textContent = '';
+          summaryElement.hidden = true;
+        }
+      };
 
       const setTrendMessage = (text) => {
         if (messageElement) {
@@ -6229,7 +6471,13 @@
             canvas.hidden = false;
           }
         }
+        if (text) {
+          updateSummary('');
+        }
       };
+
+      syncFeedbackTrendControls();
+      updateFeedbackTrendSubtitle();
 
       if (!canvas || typeof canvas.getContext !== 'function') {
         const fallbackText = TEXT.feedback?.trend?.unavailable
@@ -6242,35 +6490,51 @@
         ? monthlyStats.filter((entry) => entry && typeof entry === 'object')
         : [];
 
-      const normalized = monthlyArray.reduce((acc, entry) => {
-        const rawMonth = typeof entry.month === 'string' ? entry.month.trim() : '';
-        if (!rawMonth) {
-          return acc;
-        }
+      const normalized = monthlyArray
+        .map((entry) => {
+          const rawMonth = typeof entry.month === 'string' ? entry.month.trim() : '';
+          if (!rawMonth) {
+            return null;
+          }
+          const monthLabel = formatMonthLabel(rawMonth) || rawMonth;
 
-        const rawAverage = entry?.overallAverage;
-        let average = null;
-        if (typeof rawAverage === 'number') {
-          average = Number.isFinite(rawAverage) ? rawAverage : null;
-        } else if (typeof rawAverage === 'string') {
-          const parsed = Number.parseFloat(rawAverage.replace(',', '.'));
-          average = Number.isFinite(parsed) ? parsed : null;
-        } else if (rawAverage != null) {
-          const coerced = Number(rawAverage);
-          average = Number.isFinite(coerced) ? coerced : null;
-        }
+          const rawAverage = entry?.overallAverage;
+          let overallAverage = null;
+          if (Number.isFinite(rawAverage)) {
+            overallAverage = Number(rawAverage);
+          } else if (typeof rawAverage === 'string') {
+            const parsed = Number.parseFloat(rawAverage.replace(',', '.'));
+            overallAverage = Number.isFinite(parsed) ? parsed : null;
+          } else if (rawAverage != null) {
+            const coerced = Number(rawAverage);
+            overallAverage = Number.isFinite(coerced) ? coerced : null;
+          }
 
-        if (average == null) {
-          return acc;
-        }
+          if (!Number.isFinite(overallAverage)) {
+            return null;
+          }
 
-        acc.push({
-          ...entry,
-          month: rawMonth,
-          overallAverage: average,
-        });
-        return acc;
-      }, []);
+          let responses = null;
+          const rawResponses = entry?.responses;
+          if (Number.isFinite(rawResponses)) {
+            responses = Number(rawResponses);
+          } else if (typeof rawResponses === 'string') {
+            const parsedResponses = Number.parseFloat(rawResponses.replace(',', '.'));
+            responses = Number.isFinite(parsedResponses) ? parsedResponses : null;
+          } else if (rawResponses != null) {
+            const coercedResponses = Number(rawResponses);
+            responses = Number.isFinite(coercedResponses) ? coercedResponses : null;
+          }
+
+          return {
+            month: rawMonth,
+            label: monthLabel,
+            overallAverage,
+            responses,
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.month.localeCompare(b.month));
 
       if (!normalized.length) {
         if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
@@ -6282,6 +6546,15 @@
         setTrendMessage(emptyText);
         return;
       }
+
+      const scoped = (() => {
+        const activeWindow = getActiveFeedbackTrendWindow();
+        if (Number.isFinite(activeWindow) && activeWindow > 0) {
+          const subset = normalized.slice(-Math.max(1, Math.round(activeWindow)));
+          return subset.length ? subset : normalized.slice();
+        }
+        return normalized.slice();
+      })();
 
       const Chart = dashboardState.chartLib ?? await loadChartJs();
       if (!Chart) {
@@ -6320,118 +6593,302 @@
       Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
       Chart.defaults.borderColor = palette.gridColor;
 
-      const datasetLabel = TEXT.feedback?.table?.headers?.overall || 'Bendra patirtis (vid. 1–5)';
-      const chartTitle = TEXT.feedback?.trend?.title || 'Bendro vertinimo dinamika';
-      const sorted = normalized
-        .slice()
-        .sort((a, b) => {
-          const aDate = new Date(`${a.month}-01T00:00:00Z`);
-          const bDate = new Date(`${b.month}-01T00:00:00Z`);
-          const aTime = Number.isFinite(aDate.getTime()) ? aDate.getTime() : 0;
-          const bTime = Number.isFinite(bDate.getTime()) ? bDate.getTime() : 0;
-          return aTime - bTime;
-        });
-
-      const labels = sorted.map((entry) => formatMonthLabel(entry.month));
-      const dataPoints = sorted.map((entry) => entry.overallAverage);
-      const minRating = Number.isFinite(FEEDBACK_RATING_MIN) ? FEEDBACK_RATING_MIN : 1;
-      const maxRating = Number.isFinite(FEEDBACK_RATING_MAX) ? FEEDBACK_RATING_MAX : 5;
-      const rawMin = Math.min(...dataPoints);
-      const rawMax = Math.max(...dataPoints);
-      const range = rawMax - rawMin;
-      const padding = range > 0 ? range * 0.25 : 0.2;
-      const minValue = Math.max(minRating, rawMin - padding);
-      const maxValue = Math.min(maxRating, rawMax + padding);
-      const tickStep = range >= 1 ? 0.5 : 0.1;
-
-      const ariaBuilder = TEXT.feedback?.trend?.aria;
-      if (typeof ariaBuilder === 'function') {
-        const firstLabel = labels[0] || '';
-        const lastLabel = labels[labels.length - 1] || '';
-        canvas.setAttribute('aria-label', ariaBuilder(datasetLabel, firstLabel, lastLabel));
-      } else {
-        canvas.setAttribute('aria-label', `${datasetLabel} mėnesio trendas.`);
+      const labels = scoped.map((entry) => entry.label);
+      const ratingValues = scoped.map((entry) => entry.overallAverage);
+      const numericRatings = ratingValues.filter((value) => Number.isFinite(value));
+      if (!numericRatings.length) {
+        updateSummary('');
+        const emptyText = TEXT.feedback?.trend?.empty
+          || 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.';
+        setTrendMessage(emptyText);
+        return;
       }
 
+      const responsesValues = scoped.map((entry) => (Number.isFinite(entry.responses) ? entry.responses : null));
+      const numericResponses = responsesValues.filter((value) => Number.isFinite(value));
+      const hasResponses = numericResponses.length > 0;
+      const responsesLabel = TEXT.feedback?.trend?.responsesLabel || 'Atsakymų skaičius';
+      const datasetLabel = TEXT.feedback?.table?.headers?.overall || 'Bendra patirtis (vid. 1–5)';
+      const referenceLabel = TEXT.feedback?.trend?.averageLabel || 'Vidutinis įvertinimas';
+      const chartTitle = TEXT.feedback?.trend?.title || 'Bendro vertinimo dinamika';
+
+      let bestIndex = null;
+      let worstIndex = null;
+      ratingValues.forEach((value, index) => {
+        if (!Number.isFinite(value)) {
+          return;
+        }
+        if (bestIndex == null || value > ratingValues[bestIndex]) {
+          bestIndex = index;
+        }
+        if (worstIndex == null || value < ratingValues[worstIndex]) {
+          worstIndex = index;
+        }
+      });
+
+      const averageValue = numericRatings.reduce((sum, value) => sum + value, 0) / numericRatings.length;
+      const responsesMin = hasResponses ? Math.min(...numericResponses) : null;
+      const responsesMax = hasResponses ? Math.max(...numericResponses) : null;
+
+      const summaryInfo = {
+        average: {
+          raw: averageValue,
+          formatted: oneDecimalFormatter.format(averageValue),
+        },
+        best: bestIndex != null
+          ? {
+              raw: ratingValues[bestIndex],
+              formatted: oneDecimalFormatter.format(ratingValues[bestIndex]),
+              label: labels[bestIndex] || '',
+            }
+          : null,
+        worst: worstIndex != null
+          ? {
+              raw: ratingValues[worstIndex],
+              formatted: oneDecimalFormatter.format(ratingValues[worstIndex]),
+              label: labels[worstIndex] || '',
+            }
+          : null,
+        responses: hasResponses
+          ? {
+              min: responsesMin,
+              max: responsesMax,
+              minFormatted: numberFormatter.format(Math.round(responsesMin)),
+              maxFormatted: numberFormatter.format(Math.round(responsesMax)),
+              label: responsesLabel,
+            }
+          : null,
+      };
+
+      const summaryBuilder = TEXT.feedback?.trend?.summary;
+      const summaryText = typeof summaryBuilder === 'function'
+        ? summaryBuilder(summaryInfo)
+        : (() => {
+            const parts = [`Vidurkis ${summaryInfo.average.formatted}`];
+            if (summaryInfo.best?.label && summaryInfo.best?.formatted) {
+              parts.push(`Geriausias ${summaryInfo.best.label} (${summaryInfo.best.formatted})`);
+            }
+            if (summaryInfo.worst?.label && summaryInfo.worst?.formatted) {
+              parts.push(`Silpniausias ${summaryInfo.worst.label} (${summaryInfo.worst.formatted})`);
+            }
+            if (summaryInfo.responses?.minFormatted && summaryInfo.responses?.maxFormatted) {
+              if (summaryInfo.responses.minFormatted === summaryInfo.responses.maxFormatted) {
+                parts.push(`${responsesLabel}: ${summaryInfo.responses.minFormatted}`);
+              } else {
+                parts.push(`${responsesLabel}: ${summaryInfo.responses.minFormatted}–${summaryInfo.responses.maxFormatted}`);
+              }
+            }
+            return parts.join(' • ');
+          })();
+
+      updateSummary(summaryText);
       setTrendMessage('');
+
+      const ariaBuilder = TEXT.feedback?.trend?.aria;
+      const firstLabel = labels[0] || '';
+      const lastLabel = labels[labels.length - 1] || '';
+      if (typeof ariaBuilder === 'function') {
+        canvas.setAttribute('aria-label', ariaBuilder(chartTitle, firstLabel, lastLabel));
+      } else {
+        canvas.setAttribute('aria-label', `${chartTitle}: ${firstLabel}${lastLabel && firstLabel !== lastLabel ? ` – ${lastLabel}` : ''}`);
+      }
+
+      const ratingMin = Math.min(...numericRatings);
+      const ratingMax = Math.max(...numericRatings);
+      const ratingRange = ratingMax - ratingMin;
+      const padding = numericRatings.length > 1 ? Math.max(0.2, ratingRange * 0.25) : 0.2;
+      const yMin = Math.max(1, Math.floor((ratingMin - padding) * 10) / 10);
+      const yMax = Math.min(5, Math.ceil((ratingMax + padding) * 10) / 10);
+
+      const pointColors = ratingValues.map((_, index) => {
+        if (index === bestIndex && palette.success) {
+          return palette.success;
+        }
+        if (index === worstIndex) {
+          return palette.weekendAccent;
+        }
+        return palette.accent;
+      });
+      const pointRadii = ratingValues.map((_, index) => (index === bestIndex || index === worstIndex ? 6 : 4));
+      const pointHoverRadii = pointRadii.map((radius) => radius + 2);
+
+      const datasets = [];
+
+      if (hasResponses) {
+        datasets.push({
+          type: 'bar',
+          label: responsesLabel,
+          data: responsesValues,
+          backgroundColor: palette.accentSoft,
+          borderColor: 'transparent',
+          borderRadius: 10,
+          maxBarThickness: 36,
+          yAxisID: 'yResponses',
+          order: 0,
+        });
+      }
+
+      datasets.push({
+        type: 'line',
+        label: datasetLabel,
+        data: ratingValues,
+        yAxisID: 'yRatings',
+        borderColor: palette.accent,
+        backgroundColor: palette.accentSoft,
+        borderWidth: 2,
+        tension: 0.35,
+        spanGaps: true,
+        fill: false,
+        pointBackgroundColor: pointColors,
+        pointBorderColor: pointColors,
+        pointRadius: pointRadii,
+        pointHoverRadius: pointHoverRadii,
+        order: 2,
+      });
+
+      if (Number.isFinite(averageValue)) {
+        datasets.push({
+          type: 'line',
+          label: referenceLabel,
+          data: ratingValues.map(() => averageValue),
+          yAxisID: 'yRatings',
+          borderColor: palette.textMuted,
+          borderWidth: 1.5,
+          borderDash: [6, 6],
+          fill: false,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          order: 1,
+        });
+      }
+
+      const scales = {
+        x: {
+          ticks: {
+            color: palette.textMuted,
+          },
+          grid: {
+            color: palette.gridColor,
+            drawBorder: false,
+          },
+        },
+        yRatings: {
+          position: 'left',
+          min: yMin,
+          max: yMax,
+          ticks: {
+            color: palette.textColor,
+            callback(value) {
+              return oneDecimalFormatter.format(value);
+            },
+          },
+          grid: {
+            color: palette.gridColor,
+            drawBorder: false,
+          },
+        },
+      };
+
+      if (hasResponses) {
+        const suggestedMax = responsesMax ? responsesMax * 1.15 : undefined;
+        scales.yResponses = {
+          position: 'right',
+          beginAtZero: true,
+          suggestedMax,
+          grid: {
+            drawOnChartArea: false,
+            drawBorder: false,
+          },
+          ticks: {
+            color: palette.textMuted,
+            callback(value) {
+              return numberFormatter.format(Math.round(value));
+            },
+          },
+        };
+      }
 
       dashboardState.charts.feedbackTrend = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
-          datasets: [
-            {
-              label: datasetLabel,
-              data: dataPoints,
-              borderColor: palette.accent,
-              backgroundColor: palette.accentSoft,
-              borderWidth: 2,
-              fill: true,
-              tension: 0.35,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              pointBackgroundColor: palette.accent,
-              pointBorderColor: palette.accent,
-              spanGaps: true,
-            },
-          ],
+          datasets,
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
           plugins: {
             title: {
-              display: true,
-              text: chartTitle,
-              color: palette.textColor,
-              font: {
-                weight: '600',
-                size: 14,
-              },
-              padding: {
-                bottom: 12,
+              display: false,
+            },
+            legend: {
+              display: datasets.length > 1,
+              position: 'bottom',
+              labels: {
+                color: palette.textMuted,
+                usePointStyle: true,
+                padding: 16,
               },
             },
-            legend: { display: false },
             tooltip: {
               callbacks: {
                 label(context) {
-                  if (Number.isFinite(context.parsed.y)) {
-                    return `${datasetLabel}: ${oneDecimalFormatter.format(context.parsed.y)}`;
+                  const value = context.parsed?.y;
+                  const label = context.dataset?.label || '';
+                  if (context.dataset?.yAxisID === 'yResponses') {
+                    if (Number.isFinite(value)) {
+                      return `${label}: ${numberFormatter.format(Math.round(value))}`;
+                    }
+                    return label;
                   }
-                  return datasetLabel;
+                  if (Number.isFinite(value)) {
+                    return `${label}: ${oneDecimalFormatter.format(value)}`;
+                  }
+                  return label;
                 },
               },
             },
           },
-          scales: {
-            x: {
-              ticks: {
-                color: palette.textMuted,
-              },
-              grid: {
-                color: palette.gridColor,
-                drawBorder: false,
-              },
-            },
-            y: {
-              beginAtZero: false,
-              min: minValue,
-              max: maxValue,
-              ticks: {
-                color: palette.textColor,
-                stepSize: tickStep,
-                callback(value) {
-                  return oneDecimalFormatter.format(value);
-                },
-              },
-              grid: {
-                color: palette.gridColor,
-                drawBorder: false,
-              },
-            },
-          },
+          scales,
         },
+      });
+    }
+
+    function setFeedbackTrendWindow(months) {
+      const normalized = Number.isFinite(months) && months > 0
+        ? Math.max(1, Math.round(months))
+        : null;
+      if (dashboardState.feedback.trendWindow === normalized) {
+        return;
+      }
+      dashboardState.feedback.trendWindow = normalized;
+      syncFeedbackTrendControls();
+      updateFeedbackTrendSubtitle();
+      const monthly = Array.isArray(dashboardState.feedback.monthly)
+        ? dashboardState.feedback.monthly
+        : [];
+      renderFeedbackTrendChart(monthly).catch((error) => {
+        console.error('Nepavyko atnaujinti atsiliepimų trendo laikotarpio:', error);
+      });
+    }
+
+    function initializeFeedbackTrendControls() {
+      if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
+        return;
+      }
+      selectors.feedbackTrendButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+          if (Number.isFinite(months) && months > 0) {
+            setFeedbackTrendWindow(months);
+          } else {
+            setFeedbackTrendWindow(null);
+          }
+        });
       });
     }
 
@@ -7276,6 +7733,7 @@
     populateSettingsForm();
 
     initializeKpiFilters();
+    initializeFeedbackTrendControls();
     loadDashboard();
 
     if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
