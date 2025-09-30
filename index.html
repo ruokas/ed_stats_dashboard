@@ -451,6 +451,14 @@
         padding: 6px 10px;
         width: 100%;
       }
+
+      .chart-year-filter {
+        padding: 6px 8px;
+      }
+
+      .chart-year-filter span {
+        display: none;
+      }
     }
 
     main {
@@ -1005,26 +1013,42 @@
     .chart-controls {
       display: flex;
       align-items: center;
+      gap: 8px;
       flex-wrap: wrap;
-      gap: 12px;
+      width: 100%;
     }
 
     .chart-period {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 6px 8px;
       background: var(--color-surface-alt);
-      border-radius: 999px;
+      border-radius: 16px;
       border: 1px solid var(--color-border);
+      flex: 1 1 320px;
+      min-width: 0;
+    }
+
+    .chart-period .chip-button {
+      flex: 1 1 72px;
+      min-width: 72px;
+      text-align: center;
     }
 
     .chart-year-filter {
       display: inline-flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 8px;
       font-size: 0.78rem;
       color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 6px 10px;
+      margin-left: auto;
+      min-height: 36px;
+      white-space: nowrap;
     }
 
     .chart-year-filter select {
@@ -1032,12 +1056,16 @@
       background: var(--color-input-bg);
       border: 1px solid var(--color-border);
       border-radius: 12px;
-      padding: 6px 12px;
+      padding: 6px 28px 6px 12px;
       font-size: 0.85rem;
       font-weight: 600;
       color: var(--color-text);
       cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      min-height: 0;
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 120px;
     }
 
     .chart-year-filter select:hover,
@@ -1226,20 +1254,24 @@
       }
 
       .chart-controls {
-        width: 100%;
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
       }
 
+      .chart-period {
+        flex: 1 1 auto;
+      }
+
       .chart-year-filter {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
         font-size: 0.85rem;
+        width: 100%;
+        justify-content: space-between;
+        margin-left: 0;
       }
 
       .chart-year-filter select {
+        flex: 1 1 auto;
         width: 100%;
       }
 
