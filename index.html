@@ -2894,6 +2894,7 @@
     let layoutResizeObserver = null;
     const stickyTitleState = { heroVisible: true, observer: null };
     const scrollTopState = { visible: false, rafHandle: null };
+    let initialScrollFixed = false;
 
     function computeVisibleRatio(rect) {
       if (!rect) {
@@ -3019,6 +3020,59 @@
       });
       window.addEventListener('scroll', scheduleScrollTopUpdate, { passive: true });
       window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
+    }
+
+    function ensureHeroVisibleIfNeeded() {
+      if (initialScrollFixed) {
+        return;
+      }
+      if (window.location.hash) {
+        initialScrollFixed = true;
+        return;
+      }
+      const hero = selectors.hero;
+      if (!hero) {
+        initialScrollFixed = true;
+        return;
+      }
+      const rect = hero.getBoundingClientRect();
+      if (rect.top >= -8) {
+        initialScrollFixed = true;
+        return;
+      }
+      const currentOffset = getScrollOffset();
+      const target = Math.max(0, Math.round(currentOffset + rect.top - 8));
+      if (Math.abs(target - currentOffset) < 1) {
+        initialScrollFixed = true;
+        return;
+      }
+      if (typeof window.scrollTo === 'function') {
+        try {
+          window.scrollTo({ top: target, behavior: 'auto' });
+        } catch (error) {
+          window.scrollTo(0, target);
+        }
+      } else {
+        document.documentElement.scrollTop = target;
+        document.body.scrollTop = target;
+      }
+      initialScrollFixed = true;
+    }
+
+    function scheduleInitialScrollFix() {
+      if (initialScrollFixed) {
+        return;
+      }
+      const runner = () => {
+        ensureHeroVisibleIfNeeded();
+      };
+      if (typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(runner);
+        });
+      } else {
+        window.setTimeout(runner, 0);
+      }
     }
 
     function updateActiveNavLink(headingId) {
@@ -7877,6 +7931,14 @@
         toggleTheme();
       }
     });
+
+    if (document.readyState === 'complete') {
+      scheduleInitialScrollFix();
+    } else {
+      window.addEventListener('load', () => {
+        scheduleInitialScrollFix();
+      }, { once: true });
+    }
   </script>
 </body>
 </html>
