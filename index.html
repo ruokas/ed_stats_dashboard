@@ -87,13 +87,43 @@
       backdrop-filter: saturate(180%) blur(12px);
     }
 
-    .section-nav__inner {
+    .section-nav__bar {
       width: min(1220px, 92vw);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 0;
+    }
+
+    .section-nav__title {
+      flex: 0 0 auto;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--color-text);
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 40%;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    .section-nav__title[data-visible="true"] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .section-nav__inner {
+      flex: 1 1 auto;
+      min-width: 0;
       display: flex;
       align-items: center;
       gap: 12px;
       overflow-x: auto;
-      padding: 10px 0;
       scrollbar-width: thin;
     }
 
@@ -104,6 +134,46 @@
     .section-nav__inner::-webkit-scrollbar-thumb {
       background: rgba(15, 23, 42, 0.15);
       border-radius: 999px;
+    }
+
+    .scroll-top-btn {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      border: none;
+      border-radius: 999px;
+      background: var(--color-accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 10px 18px;
+      box-shadow: 0 12px 28px -16px rgba(15, 23, 42, 0.65);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .scroll-top-btn[data-visible="true"] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .scroll-top-btn:hover,
+    .scroll-top-btn:focus-visible {
+      box-shadow: 0 18px 32px -18px rgba(15, 23, 42, 0.65);
+      outline: none;
+    }
+
+    .scroll-top-btn:focus-visible {
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22), 0 18px 32px -18px rgba(15, 23, 42, 0.65);
+    }
+
+    body[data-theme="dark"] .scroll-top-btn {
+      box-shadow: 0 12px 28px -16px rgba(8, 12, 32, 0.9);
     }
 
     .section-nav__link {
@@ -1431,6 +1501,15 @@
         justify-content: flex-start;
       }
 
+      .section-nav__bar {
+        gap: 12px;
+      }
+
+      .section-nav__title {
+        font-size: 0.85rem;
+        max-width: 60%;
+      }
+
       .section__header {
         align-items: flex-start;
       }
@@ -1462,6 +1541,13 @@
       .settings-footer-actions .btn,
       .settings-footer .btn-danger {
         width: 100%;
+      }
+
+      .scroll-top-btn {
+        right: 16px;
+        bottom: 16px;
+        padding: 8px 14px;
+        font-size: 0.85rem;
       }
     }
 
@@ -1512,12 +1598,15 @@
     </div>
   </header>
   <nav class="section-nav" aria-label="Pagrindinės sekcijos">
-    <div class="section-nav__inner">
+    <div class="section-nav__bar">
+      <div class="section-nav__title" id="stickyTitle" aria-hidden="true">RŠL SMPS statistika</div>
+      <div class="section-nav__inner">
       <a class="section-nav__link" href="#kpiHeading">Rodikliai</a>
       <a class="section-nav__link" href="#chartHeading">Grafikai</a>
       <a class="section-nav__link" href="#recentHeading">Paskutinės dienos</a>
       <a class="section-nav__link" href="#monthlyHeading">Mėnesiai</a>
       <a class="section-nav__link" href="#feedbackHeading">Atsiliepimai</a>
+      </div>
     </div>
   </nav>
   <main class="container" role="main">
@@ -1700,6 +1789,16 @@
       </div>
     </section>
   </main>
+
+  <button type="button"
+          id="scrollTopBtn"
+          class="scroll-top-btn"
+          aria-label="Grįžti į puslapio pradžią"
+          title="Grįžti į puslapio pradžią (Home)"
+          aria-hidden="true"
+          data-visible="false">
+    Grįžti į pradžią
+  </button>
 
   <dialog id="settingsDialog" aria-labelledby="settingsTitle">
     <form method="dialog" id="settingsForm" class="settings-form">
@@ -1992,6 +2091,7 @@
         dark: 'Tamsi tema',
         contrastWarning: 'Dėmesio: pasirinkta tema gali turėti nepakankamą KPI kortelių kontrastą. Apsvarstykite kitą temą.',
       },
+      scrollTop: 'Grįžti į pradžią',
       status: {
         loading: 'Kraunama...',
         error: 'Nepavyko įkelti duomenų. Patikrinkite ryšį ir bandykite dar kartą.',
@@ -2255,6 +2355,7 @@
         feedbackDescription: TEXT.feedback.description,
         feedbackTrendTitle: TEXT.feedback.trend.title,
         footerSource: DEFAULT_FOOTER_SOURCE,
+        scrollTopLabel: TEXT.scrollTop,
         showRecent: true,
         showMonthly: true,
         showFeedback: true,
@@ -2322,6 +2423,7 @@
       hero: document.querySelector('header.hero'),
       title: document.getElementById('pageTitle'),
       subtitle: document.getElementById('pageSubtitle'),
+      stickyTitle: document.getElementById('stickyTitle'),
       refreshBtn: document.getElementById('refreshBtn'),
       status: document.getElementById('status'),
       statusNote: document.getElementById('statusNote'),
@@ -2387,6 +2489,7 @@
       compareClear: document.getElementById('compareClear'),
       sectionNav: document.querySelector('.section-nav'),
       sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
+      scrollTopBtn: document.getElementById('scrollTopBtn'),
     };
 
     const sectionNavState = {
@@ -2401,6 +2504,8 @@
     let sectionObserver = null;
     let layoutRefreshHandle = null;
     let layoutResizeObserver = null;
+    const stickyTitleState = { heroVisible: true, observer: null };
+    const scrollTopState = { visible: false, rafHandle: null };
 
     function computeVisibleRatio(rect) {
       if (!rect) {
@@ -2427,6 +2532,105 @@
       const rootStyle = document.documentElement.style;
       rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
       rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
+    }
+
+    function updateStickyTitleVisibility(heroVisible) {
+      stickyTitleState.heroVisible = heroVisible;
+      const stickyTitle = selectors.stickyTitle;
+      if (!stickyTitle) {
+        return;
+      }
+      const shouldShow = !heroVisible;
+      stickyTitle.dataset.visible = shouldShow ? 'true' : 'false';
+      stickyTitle.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    }
+
+    function initializeStickyTitleObserver() {
+      const stickyTitle = selectors.stickyTitle;
+      if (!stickyTitle) {
+        return;
+      }
+      updateStickyTitleVisibility(true);
+      if (stickyTitleState.observer && typeof stickyTitleState.observer.disconnect === 'function') {
+        stickyTitleState.observer.disconnect();
+        stickyTitleState.observer = null;
+      }
+      if (typeof IntersectionObserver !== 'function' || !selectors.hero) {
+        updateStickyTitleVisibility(false);
+        return;
+      }
+      const observer = new IntersectionObserver((entries) => {
+        const entry = entries && entries.length ? entries[0] : null;
+        const isVisible = Boolean(entry) && entry.isIntersecting && entry.intersectionRatio > 0.12;
+        updateStickyTitleVisibility(isVisible);
+      }, { threshold: [0, 0.12, 0.5] });
+      observer.observe(selectors.hero);
+      stickyTitleState.observer = observer;
+    }
+
+    function getScrollOffset() {
+      if (typeof window.scrollY === 'number') {
+        return window.scrollY;
+      }
+      if (typeof window.pageYOffset === 'number') {
+        return window.pageYOffset;
+      }
+      return (document.documentElement && document.documentElement.scrollTop) || (document.body && document.body.scrollTop) || 0;
+    }
+
+    function updateScrollTopButtonVisibility() {
+      const button = selectors.scrollTopBtn;
+      if (!button) {
+        return;
+      }
+      const threshold = Math.max(160, Math.round(layoutMetrics.hero + layoutMetrics.nav + 40));
+      const offset = getScrollOffset();
+      const shouldShow = offset > threshold;
+      if (scrollTopState.visible !== shouldShow) {
+        scrollTopState.visible = shouldShow;
+        button.dataset.visible = shouldShow ? 'true' : 'false';
+      }
+      button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+      button.setAttribute('tabindex', shouldShow ? '0' : '-1');
+    }
+
+    function scheduleScrollTopUpdate() {
+      if (scrollTopState.rafHandle) {
+        return;
+      }
+      const raf = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (cb) => window.setTimeout(cb, 16);
+      scrollTopState.rafHandle = raf(() => {
+        scrollTopState.rafHandle = null;
+        updateScrollTopButtonVisibility();
+      });
+    }
+
+    function initializeScrollTopButton() {
+      const button = selectors.scrollTopBtn;
+      if (!button) {
+        return;
+      }
+      button.setAttribute('aria-hidden', 'true');
+      button.setAttribute('tabindex', '-1');
+      updateScrollTopButtonVisibility();
+      button.addEventListener('click', () => {
+        const prefersReduced = typeof window.matchMedia === 'function'
+          && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof window.scrollTo === 'function') {
+          if (!prefersReduced && 'scrollBehavior' in document.documentElement.style) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo(0, 0);
+          }
+        } else {
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }
+      });
+      window.addEventListener('scroll', scheduleScrollTopUpdate, { passive: true });
+      window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
     }
 
     function updateActiveNavLink(headingId) {
@@ -2507,6 +2711,7 @@
       if (typeof window.requestAnimationFrame !== 'function') {
         updateLayoutMetrics();
         refreshSectionObserver();
+        updateScrollTopButtonVisibility();
         return;
       }
       if (layoutRefreshHandle) {
@@ -2516,6 +2721,7 @@
         layoutRefreshHandle = null;
         updateLayoutMetrics();
         refreshSectionObserver();
+        updateScrollTopButtonVisibility();
       });
     }
 
@@ -2804,6 +3010,7 @@
       merged.output.feedbackSubtitle = merged.output.feedbackSubtitle != null ? String(merged.output.feedbackSubtitle) : DEFAULT_SETTINGS.output.feedbackSubtitle;
       merged.output.feedbackDescription = merged.output.feedbackDescription != null ? String(merged.output.feedbackDescription) : DEFAULT_SETTINGS.output.feedbackDescription;
       merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
+      merged.output.scrollTopLabel = merged.output.scrollTopLabel != null ? String(merged.output.scrollTopLabel) : DEFAULT_SETTINGS.output.scrollTopLabel;
       merged.output.showRecent = Boolean(merged.output.showRecent);
       merged.output.showMonthly = Boolean(merged.output.showMonthly);
       merged.output.showFeedback = Boolean(merged.output.showFeedback);
@@ -2848,6 +3055,7 @@
       TEXT.feedback.subtitle = settings.output.feedbackSubtitle || DEFAULT_SETTINGS.output.feedbackSubtitle;
       TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
       TEXT.feedback.trend.title = settings.output.feedbackTrendTitle || DEFAULT_SETTINGS.output.feedbackTrendTitle;
+      TEXT.scrollTop = settings.output.scrollTopLabel || DEFAULT_SETTINGS.output.scrollTopLabel;
       const pageTitle = settings.output.pageTitle || TEXT.title || DEFAULT_SETTINGS.output.pageTitle;
       document.title = pageTitle;
     }
@@ -3290,6 +3498,9 @@
      */
     function applyTextContent() {
       selectors.title.textContent = TEXT.title;
+      if (selectors.stickyTitle) {
+        selectors.stickyTitle.textContent = TEXT.title;
+      }
       selectors.subtitle.textContent = TEXT.subtitle;
       if (selectors.refreshBtn) {
         selectors.refreshBtn.setAttribute('aria-label', TEXT.refresh);
@@ -3357,6 +3568,11 @@
       }
       if (selectors.compareToggle) {
         selectors.compareToggle.textContent = TEXT.compare.toggle;
+      }
+      if (selectors.scrollTopBtn) {
+        selectors.scrollTopBtn.textContent = TEXT.scrollTop;
+        selectors.scrollTopBtn.setAttribute('aria-label', TEXT.scrollTop);
+        selectors.scrollTopBtn.title = `${TEXT.scrollTop} (Home)`;
       }
       if (selectors.compareSummary) {
         selectors.compareSummary.textContent = TEXT.compare.prompt;
@@ -6642,6 +6858,8 @@
     applyTextContent();
     applyFooterSource();
     initializeSectionNavigation();
+    initializeStickyTitleObserver();
+    initializeScrollTopButton();
     applySectionVisibility();
     populateSettingsForm();
 
