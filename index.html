@@ -1002,6 +1002,13 @@
       flex-wrap: wrap;
     }
 
+    .chart-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
     .chart-period {
       display: inline-flex;
       align-items: center;
@@ -1010,6 +1017,34 @@
       background: var(--color-surface-alt);
       border-radius: 999px;
       border: 1px solid var(--color-border);
+    }
+
+    .chart-year-filter {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+    }
+
+    .chart-year-filter select {
+      appearance: none;
+      background: var(--color-input-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text);
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .chart-year-filter select:hover,
+    .chart-year-filter select:focus-visible {
+      background: var(--color-input-bg-hover);
+      border-color: rgba(37, 99, 235, 0.35);
+      outline: none;
     }
 
     .chip-button {
@@ -1188,6 +1223,24 @@
       .chart-card--tall canvas {
         min-height: 340px;
         height: clamp(340px, 65vh, 400px) !important;
+      }
+
+      .chart-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .chart-year-filter {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+      }
+
+      .chart-year-filter select {
+        width: 100%;
       }
 
       .chart-grid {
@@ -1778,12 +1831,21 @@
           <h2 id="chartHeading" class="section__title">Pacientų srautai</h2>
           <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
         </div>
-        <div class="section__actions">
+        <div class="section__actions chart-controls">
           <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
             <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
             <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
             <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
+            <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
+            <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
+            <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
           </div>
+          <label class="chart-year-filter" for="chartYear">
+            <span id="chartYearLabel">Metai</span>
+            <select id="chartYear" aria-label="Filtruoti grafikus pagal kalendorinius metus">
+              <option value="all">Visi metai</option>
+            </select>
+          </label>
         </div>
       </div>
       <div class="chart-grid">
@@ -2294,6 +2356,8 @@
         funnelCaptionWithYear: (year) => (year
           ? `Pacientų srautas pagal sprendimą – ${year} m. (atvykę → sprendimas).`
           : 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).'),
+        yearFilterLabel: 'Metai',
+        yearFilterAll: 'Visi metai',
         funnelSteps: [
           { key: 'arrived', label: 'Atvykę' },
           { key: 'discharged', label: 'Išleisti' },
@@ -2565,6 +2629,8 @@
       funnelCaption: document.getElementById('funnelChartTitle'),
       heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
       heatmapContainer: document.getElementById('arrivalHeatmap'),
+      chartYearLabel: document.getElementById('chartYearLabel'),
+      chartYearSelect: document.getElementById('chartYear'),
       chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
       recentHeading: document.getElementById('recentHeading'),
       recentSubtitle: document.getElementById('recentSubtitle'),
@@ -3592,6 +3658,7 @@
       rawRecords: [],
       dailyStats: [],
       chartPeriod: 30,
+      chartYear: null,
       chartData: {
         baseDaily: [],
         baseRecords: [],
@@ -3643,6 +3710,15 @@
       selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+      if (selectors.chartYearLabel) {
+        selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
+      }
+      if (selectors.chartYearSelect) {
+        const firstOption = selectors.chartYearSelect.querySelector('option[value="all"]');
+        if (firstOption) {
+          firstOption.textContent = TEXT.charts.yearFilterAll;
+        }
+      }
       selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
       if (selectors.dailyCaptionContext) {
         selectors.dailyCaptionContext.textContent = '';
@@ -4665,6 +4741,90 @@
         .map((item) => item.entry);
     }
 
+    function filterDailyStatsByYear(dailyStats, year) {
+      if (!Number.isFinite(year)) {
+        return Array.isArray(dailyStats) ? dailyStats.slice() : [];
+      }
+      const targetYear = Number(year);
+      return (Array.isArray(dailyStats) ? dailyStats : []).filter((entry) => {
+        if (!entry || typeof entry.date !== 'string') {
+          return false;
+        }
+        const date = dateKeyToDate(entry.date);
+        return date instanceof Date
+          && !Number.isNaN(date.getTime())
+          && date.getUTCFullYear() === targetYear;
+      });
+    }
+
+    function filterRecordsByYear(records, year) {
+      if (!Number.isFinite(year)) {
+        return Array.isArray(records) ? records.slice() : [];
+      }
+      const targetYear = Number(year);
+      return (Array.isArray(records) ? records : []).filter((entry) => {
+        const arrivalYear = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())
+          ? entry.arrival.getFullYear()
+          : null;
+        const dischargeYear = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())
+          ? entry.discharge.getFullYear()
+          : null;
+        const referenceYear = Number.isFinite(arrivalYear) ? arrivalYear : dischargeYear;
+        return Number.isFinite(referenceYear) && referenceYear === targetYear;
+      });
+    }
+
+    function getAvailableYearsFromDaily(dailyStats) {
+      const years = new Set();
+      (Array.isArray(dailyStats) ? dailyStats : []).forEach((entry) => {
+        if (!entry || typeof entry.date !== 'string') {
+          return;
+        }
+        const date = dateKeyToDate(entry.date);
+        if (date instanceof Date && !Number.isNaN(date.getTime())) {
+          years.add(date.getUTCFullYear());
+        }
+      });
+      return Array.from(years).sort((a, b) => b - a);
+    }
+
+    function populateChartYearOptions(dailyStats) {
+      if (!selectors.chartYearSelect) {
+        return;
+      }
+      const years = getAvailableYearsFromDaily(dailyStats);
+      selectors.chartYearSelect.replaceChildren();
+      const defaultOption = document.createElement('option');
+      defaultOption.value = 'all';
+      defaultOption.textContent = TEXT.charts.yearFilterAll;
+      selectors.chartYearSelect.appendChild(defaultOption);
+      years.forEach((year) => {
+        const option = document.createElement('option');
+        option.value = String(year);
+        option.textContent = `${year} m.`;
+        selectors.chartYearSelect.appendChild(option);
+      });
+      const currentYear = Number.isFinite(dashboardState.chartYear) ? dashboardState.chartYear : null;
+      const hasCurrent = Number.isFinite(currentYear) && years.includes(currentYear);
+      if (hasCurrent) {
+        selectors.chartYearSelect.value = String(currentYear);
+      } else {
+        selectors.chartYearSelect.value = 'all';
+        dashboardState.chartYear = null;
+      }
+      syncChartYearControl();
+    }
+
+    function syncChartYearControl() {
+      if (!selectors.chartYearSelect) {
+        return;
+      }
+      const value = Number.isFinite(dashboardState.chartYear) ? String(dashboardState.chartYear) : 'all';
+      if (selectors.chartYearSelect.value !== value) {
+        selectors.chartYearSelect.value = value;
+      }
+    }
+
     function prepareChartDataForPeriod(period) {
       const normalized = Number.isFinite(Number(period)) && Number(period) > 0
         ? Number(period)
@@ -4675,9 +4835,12 @@
       const baseRecords = Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
         ? dashboardState.chartData.baseRecords
         : dashboardState.rawRecords;
-      const scopedDaily = filterDailyStatsByWindow(baseDaily, normalized);
-      const scopedRecords = filterRecordsByWindow(baseRecords, normalized);
-      const funnelData = computeFunnelStats(scopedDaily);
+      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+      const yearScopedDaily = filterDailyStatsByYear(baseDaily, selectedYear);
+      const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
+      const scopedDaily = filterDailyStatsByWindow(yearScopedDaily, normalized);
+      const scopedRecords = filterRecordsByWindow(yearScopedRecords, normalized);
+      const funnelData = computeFunnelStats(scopedDaily, selectedYear, yearScopedDaily);
       const heatmapData = computeArrivalHeatmap(scopedRecords);
 
       dashboardState.chartData.dailyWindow = scopedDaily;
@@ -4687,8 +4850,10 @@
       return { daily: scopedDaily, funnel: funnelData, heatmap: heatmapData };
     }
 
-    function computeFunnelStats(dailyStats, targetYear) {
-      const entries = Array.isArray(dailyStats) ? dailyStats : [];
+    function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
+      const primaryEntries = Array.isArray(dailyStats) ? dailyStats : [];
+      const fallbackEntries = Array.isArray(fallbackDailyStats) ? fallbackDailyStats : [];
+      const entries = primaryEntries.length ? primaryEntries : fallbackEntries;
       const withYear = entries
         .map((entry) => {
           const date = typeof entry?.date === 'string' ? dateKeyToDate(entry.date) : null;
@@ -4708,18 +4873,31 @@
           }),
           { arrived: 0, hospitalized: 0, discharged: 0 }
         );
-        return { ...totals, year: null };
+        const normalizedYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
+        return { ...totals, year: normalizedYear };
       }
 
       let effectiveYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
       if (!Number.isFinite(effectiveYear)) {
-        effectiveYear = withYear.reduce((latest, item) => (item.year > latest ? item.year : latest), withYear[0].year);
+        const uniqueYears = withYear.reduce((acc, item) => {
+          if (!acc.includes(item.year)) {
+            acc.push(item.year);
+          }
+          return acc;
+        }, []);
+        if (uniqueYears.length === 1) {
+          effectiveYear = uniqueYears[0];
+        } else if (!primaryEntries.length && uniqueYears.length) {
+          effectiveYear = uniqueYears.reduce((latest, year) => (year > latest ? year : latest), uniqueYears[0]);
+        }
       }
 
-      let scoped = withYear.filter((item) => item.year === effectiveYear);
-      if (!scoped.length) {
-        scoped = withYear;
-        effectiveYear = withYear[0].year;
+      let scoped = withYear;
+      if (Number.isFinite(effectiveYear)) {
+        scoped = withYear.filter((item) => item.year === effectiveYear);
+        if (!scoped.length) {
+          scoped = withYear;
+        }
       }
 
       const aggregated = scoped.reduce(
@@ -4731,7 +4909,7 @@
         { arrived: 0, hospitalized: 0, discharged: 0 }
       );
 
-      return { ...aggregated, year: effectiveYear };
+      return { ...aggregated, year: Number.isFinite(effectiveYear) ? effectiveYear : null };
     }
 
     const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Treč', 'Ketv', 'Penkt', 'Šešt', 'Sekm'];
@@ -5854,10 +6032,13 @@
       const normalized = Math.max(1, Math.round(period));
       const formattedDays = numberFormatter.format(normalized);
       const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
+      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+      const yearFragment = Number.isFinite(selectedYear) ? `, ${selectedYear} m.` : '';
+      const combinedSuffix = `${suffix}${yearFragment}`;
       if (base.includes('(')) {
-        return base.replace(/\(.*?\)/, `(${suffix})`);
+        return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
       }
-      return `${base} (${suffix})`;
+      return `${base} (${combinedSuffix})`;
     }
 
     function renderDailyChart(dailyStats, period, ChartLib, palette) {
@@ -6248,6 +6429,30 @@
         });
     }
 
+    function updateChartYear(year) {
+      const numeric = Number.isFinite(year) ? Math.trunc(year) : Number.parseInt(String(year), 10);
+      const normalized = Number.isFinite(numeric) ? numeric : null;
+      dashboardState.chartYear = normalized;
+      syncChartYearControl();
+      if (selectors.dailyCaption) {
+        selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
+      }
+      const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
+        || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+      if (!hasBaseData) {
+        updateDailyPeriodSummary([]);
+        if (selectors.dailyCaptionContext) {
+          selectors.dailyCaptionContext.textContent = '';
+        }
+        return;
+      }
+      const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
+      renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
+        .catch((error) => {
+          console.error('Nepavyko atnaujinti grafiko metų filtro:', error);
+        });
+    }
+
     async function renderCharts(dailyStats, funnelTotals, heatmapData) {
       const Chart = await loadChartJs();
       if (!Chart) {
@@ -6267,7 +6472,13 @@
       const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
       dashboardState.chartData.dailyWindow = scopedDaily;
 
-      const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily);
+      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+      const baseDailyForFallback = Array.isArray(dashboardState.chartData.baseDaily)
+        && dashboardState.chartData.baseDaily.length
+        ? dashboardState.chartData.baseDaily
+        : dashboardState.dailyStats;
+      const fallbackDaily = filterDailyStatsByYear(baseDailyForFallback, selectedYear);
+      const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
       dashboardState.chartData.funnel = funnelSource;
 
       let heatmapSource = heatmapData ?? null;
@@ -6276,7 +6487,8 @@
           && dashboardState.chartData.baseRecords.length
           ? dashboardState.chartData.baseRecords
           : dashboardState.rawRecords;
-        const scopedRecords = filterRecordsByWindow(fallbackRecords, dashboardState.chartPeriod);
+        const yearScopedRecords = filterRecordsByYear(fallbackRecords, selectedYear);
+        const scopedRecords = filterRecordsByWindow(yearScopedRecords, dashboardState.chartPeriod);
         heatmapSource = computeArrivalHeatmap(scopedRecords);
       }
       dashboardState.chartData.heatmap = heatmapSource;
@@ -6979,6 +7191,7 @@
         const dailyStats = computeDailyStats(rawData);
         dashboardState.rawRecords = rawData;
         dashboardState.dailyStats = dailyStats;
+        populateChartYearOptions(dailyStats);
         const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
           ? Number(settings.calculations.windowDays)
           : DEFAULT_SETTINGS.calculations.windowDays;
@@ -6992,9 +7205,8 @@
           : DEFAULT_SETTINGS.calculations.recentDays;
         const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
-        const filteredRecords = filterRecordsByWindow(rawData, windowDays);
-        dashboardState.chartData.baseDaily = lastWindowDailyStats.slice();
-        dashboardState.chartData.baseRecords = filteredRecords.slice();
+        dashboardState.chartData.baseDaily = dailyStats.slice();
+        dashboardState.chartData.baseRecords = Array.isArray(rawData) ? rawData.slice() : [];
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         applyKpiFiltersAndRender();
         await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
@@ -7040,6 +7252,17 @@
           const period = Number.parseInt(button.dataset.chartPeriod || '', 10);
           updateChartPeriod(period);
         });
+      });
+    }
+
+    if (selectors.chartYearSelect) {
+      selectors.chartYearSelect.addEventListener('change', (event) => {
+        const { value } = event.target;
+        if (value === 'all') {
+          updateChartYear(null);
+        } else {
+          updateChartYear(value);
+        }
       });
     }
 
