@@ -588,17 +588,25 @@
 
     .kpi-controls {
       margin-bottom: 18px;
-      padding: 16px 20px;
+      padding: 14px 16px;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: 16px;
       box-shadow: var(--shadow-elevated);
       display: grid;
+      gap: 10px;
+    }
+
+    .kpi-controls__summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .kpi-controls__toggle {
-      display: none;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
@@ -610,7 +618,22 @@
       font-size: 0.9rem;
       padding: 8px 16px;
       cursor: pointer;
-      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .kpi-controls__toggle::after {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-bottom: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      transform: rotate(45deg);
+      transition: transform 0.2s ease;
+    }
+
+    .kpi-controls[data-expanded="true"] .kpi-controls__toggle::after {
+      transform: rotate(-135deg);
     }
 
     .kpi-controls__toggle:focus-visible {
@@ -625,10 +648,14 @@
     }
 
     .kpi-controls__form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: flex-end;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px 16px;
+      align-items: end;
+    }
+
+    .kpi-controls[data-expanded="false"] .kpi-controls__form {
+      display: none;
     }
 
     .kpi-filter {
@@ -667,9 +694,32 @@
       box-shadow: 0 0 0 3px var(--color-accent-soft);
     }
 
+    .kpi-controls__reset {
+      justify-self: end;
+      align-self: center;
+    }
+
     .kpi-controls__summary {
       margin: 0;
       font-size: 0.85rem;
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border-radius: 999px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1 1 auto;
+      min-width: 0;
+      justify-content: flex-end;
+    }
+
+    .kpi-controls__summary[data-default="true"] {
+      background: transparent;
+      padding-inline: 0;
       color: var(--color-text-muted);
     }
 
@@ -1041,21 +1091,28 @@
     }
 
     @media (max-width: 768px) {
-      .kpi-controls {
-        padding: 14px 16px;
+      .kpi-controls__summary-row {
+        flex-direction: column;
+        align-items: stretch;
         gap: 8px;
       }
 
       .kpi-controls__toggle {
-        display: inline-flex;
+        width: 100%;
+        justify-content: space-between;
       }
 
-      .kpi-controls[data-expanded="false"] .kpi-controls__form {
-        display: none;
+      .kpi-controls__summary {
+        width: 100%;
+        justify-content: flex-start;
       }
 
-      .kpi-controls[data-expanded="false"] .kpi-controls__summary {
-        margin-top: 0;
+      .kpi-controls__form {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-controls__reset {
+        justify-self: stretch;
       }
 
       .chart-card canvas {
@@ -1084,15 +1141,6 @@
 
       .chart-period {
         align-self: flex-start;
-      }
-
-      .kpi-controls__form {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .kpi-filter {
-        width: 100%;
       }
 
       .heatmap-table {
@@ -1617,9 +1665,12 @@
           <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
         </div>
       </div>
-      <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle" data-expanded="true">
+      <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle" data-expanded="false">
         <h3 id="kpiFiltersTitle" class="sr-only">KPI filtrai</h3>
-        <button type="button" id="kpiFiltersToggle" class="kpi-controls__toggle" aria-controls="kpiFiltersForm" aria-expanded="true">Filtrai</button>
+        <div class="kpi-controls__summary-row">
+          <button type="button" id="kpiFiltersToggle" class="kpi-controls__toggle" aria-controls="kpiFiltersForm" aria-expanded="false">Filtrai</button>
+          <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
+        </div>
         <form id="kpiFiltersForm" class="kpi-controls__form">
           <label class="kpi-filter" for="kpiWindow">
             <span>Laikotarpis</span>
@@ -1649,9 +1700,8 @@
               <option value="discharged">Išleisti</option>
             </select>
           </label>
-          <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
+          <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small kpi-controls__reset" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
         </form>
-        <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite">Rodomi numatytieji KPI.</p>
       </div>
       <div id="kpiGrid" class="kpi-grid" role="list"></div>
     </section>
@@ -2384,8 +2434,8 @@
     };
 
     const KPI_FILTER_TOGGLE_LABELS = {
-      show: 'Rodyti filtrus',
-      hide: 'Slėpti filtrus',
+      show: 'Išskleisti filtrus',
+      hide: 'Sutraukti filtrus',
     };
 
     function getDefaultKpiFilters() {
@@ -5209,36 +5259,55 @@
       return true;
     }
 
+    function toSentenceCase(label) {
+      if (typeof label !== 'string' || !label.length) {
+        return '';
+      }
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
     function updateKpiSummary({ records, dailyStats, windowDays }) {
       if (!selectors.kpiActiveInfo) {
         return;
       }
+      const filters = dashboardState.kpi.filters;
+      const defaultFilters = getDefaultKpiFilters();
       const totalRecords = Array.isArray(records) ? records.length : 0;
-      const fallbackCount = Array.isArray(dailyStats)
-        ? dailyStats.reduce((acc, entry) => acc + (Number.isFinite(entry?.count) ? entry.count : 0), 0)
-        : 0;
-      const approxCount = totalRecords || fallbackCount;
-      const daysCovered = Array.isArray(dailyStats) ? dailyStats.length : 0;
-      const parts = [];
-      if (Number.isFinite(windowDays) && windowDays > 0) {
-        parts.push(`Laikotarpis: ${windowDays} d.`);
-      } else {
-        parts.push(`Laikotarpis: ${TEXT.kpis.windowAllLabel.toLowerCase()}`);
+      const hasAggregatedData = Array.isArray(dailyStats)
+        ? dailyStats.some((entry) => Number.isFinite(entry?.count) && entry.count > 0)
+        : false;
+      const hasData = totalRecords > 0 || hasAggregatedData;
+      const summaryParts = [];
+      const isWindowDefault = Number.isFinite(windowDays)
+        ? windowDays === defaultFilters.window
+        : false;
+      const isShiftDefault = filters.shift === defaultFilters.shift;
+      const isArrivalDefault = filters.arrival === defaultFilters.arrival;
+      const isDispositionDefault = filters.disposition === defaultFilters.disposition;
+
+      if (Number.isFinite(windowDays) && windowDays > 0 && !isWindowDefault) {
+        summaryParts.push(`${windowDays} d.`);
       }
-      const shiftLabel = KPI_FILTER_LABELS.shift[dashboardState.kpi.filters.shift];
-      const arrivalLabel = KPI_FILTER_LABELS.arrival[dashboardState.kpi.filters.arrival];
-      const dispositionLabel = KPI_FILTER_LABELS.disposition[dashboardState.kpi.filters.disposition];
-      parts.push(`Pamaina: ${shiftLabel}`);
-      parts.push(`Atvykimas: ${arrivalLabel}`);
-      parts.push(`Būsena: ${dispositionLabel}`);
-      if (daysCovered > 0) {
-        parts.push(`Dienų: ${numberFormatter.format(daysCovered)}`);
+      if (!isShiftDefault) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.shift[filters.shift]));
       }
-      const base = approxCount > 0
-        ? `Rodoma ${numberFormatter.format(approxCount)} pacientų įrašų${totalRecords ? '' : ' (agreguota)'}`
-        : 'Filtrams atitinkančių įrašų nerasta';
-      const detail = parts.join(' • ');
-      selectors.kpiActiveInfo.textContent = detail ? `${base} • ${detail}` : base;
+      if (!isArrivalDefault) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.arrival[filters.arrival]));
+      }
+      if (!isDispositionDefault) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.disposition[filters.disposition]));
+      }
+      let text = summaryParts.join(' • ');
+      if (!hasData) {
+        text = text ? `Įrašų nerasta • ${text}` : 'Įrašų nerasta';
+      }
+      if (!text) {
+        selectors.kpiActiveInfo.textContent = 'Numatytieji filtrai';
+        selectors.kpiActiveInfo.dataset.default = 'true';
+        return;
+      }
+      selectors.kpiActiveInfo.textContent = text;
+      selectors.kpiActiveInfo.dataset.default = 'false';
     }
 
     function applyKpiFiltersAndRender() {
@@ -5312,48 +5381,38 @@
       if (selectors.kpiFiltersToggle && selectors.kpiControls) {
         const toggleButton = selectors.kpiFiltersToggle;
         const controlsWrapper = selectors.kpiControls;
-        const mediaQuery = window.matchMedia('(max-width: 768px)');
 
-        const setToggleLabel = (expanded) => {
+        const setExpandedState = (expanded) => {
           const label = expanded ? KPI_FILTER_TOGGLE_LABELS.hide : KPI_FILTER_TOGGLE_LABELS.show;
+          controlsWrapper.dataset.expanded = expanded ? 'true' : 'false';
+          toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
           toggleButton.textContent = label;
           toggleButton.setAttribute('aria-label', label);
-        };
-
-        const syncFromMedia = (isInitial = false) => {
-          const isCompact = mediaQuery.matches;
-          toggleButton.hidden = !isCompact;
-          if (!isCompact) {
-            controlsWrapper.dataset.expanded = 'true';
-            toggleButton.setAttribute('aria-expanded', 'true');
-            setToggleLabel(true);
-            return;
-          }
-          if (isInitial) {
-            controlsWrapper.dataset.expanded = 'false';
-          }
-          const expanded = controlsWrapper.dataset.expanded !== 'false';
-          toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-          setToggleLabel(expanded);
+          toggleButton.setAttribute('title', label);
         };
 
         toggleButton.addEventListener('click', () => {
-          const expanded = selectors.kpiControls.dataset.expanded !== 'false';
+          const expanded = controlsWrapper.dataset.expanded !== 'false';
           const nextState = !expanded;
-          selectors.kpiControls.dataset.expanded = nextState ? 'true' : 'false';
-          toggleButton.setAttribute('aria-expanded', nextState ? 'true' : 'false');
-          setToggleLabel(nextState);
+          setExpandedState(nextState);
+          if (nextState && selectors.kpiFiltersForm) {
+            const firstField = selectors.kpiFiltersForm.querySelector('select, button, [tabindex]');
+            if (firstField && typeof firstField.focus === 'function') {
+              window.requestAnimationFrame(() => {
+                try {
+                  firstField.focus({ preventScroll: true });
+                } catch (error) {
+                  firstField.focus();
+                }
+              });
+            }
+          }
           if (!nextState) {
             toggleButton.focus();
           }
         });
 
-        if (typeof mediaQuery.addEventListener === 'function') {
-          mediaQuery.addEventListener('change', () => syncFromMedia(false));
-        } else if (typeof mediaQuery.addListener === 'function') {
-          mediaQuery.addListener(() => syncFromMedia(false));
-        }
-        syncFromMedia(true);
+        setExpandedState(controlsWrapper.dataset.expanded !== 'false');
       }
       if ((dashboardState.kpi.records && dashboardState.kpi.records.length) || (dashboardState.kpi.daily && dashboardState.kpi.daily.length)) {
         updateKpiSummary({
