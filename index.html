@@ -22,6 +22,8 @@
       --color-weekend-soft: rgba(249, 115, 22, 0.2);
       --chart-grid: rgba(15, 23, 42, 0.12);
       --shadow-elevated: 0 20px 40px -24px rgba(15, 23, 42, 0.45);
+      --hero-height: 0px;
+      --section-nav-height: 0px;
       font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
@@ -71,6 +73,69 @@
     .container {
       width: min(1220px, 92vw);
       margin: 0 auto;
+    }
+
+    .section-nav {
+      position: sticky;
+      top: var(--hero-height, 0px);
+      z-index: 6;
+      background: var(--color-surface);
+      display: flex;
+      justify-content: center;
+      border-bottom: 1px solid var(--color-border);
+      box-shadow: 0 8px 16px -14px rgba(15, 23, 42, 0.4);
+      backdrop-filter: saturate(180%) blur(12px);
+    }
+
+    .section-nav__inner {
+      width: min(1220px, 92vw);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 10px 0;
+      scrollbar-width: thin;
+    }
+
+    .section-nav__inner::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .section-nav__inner::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.15);
+      border-radius: 999px;
+    }
+
+    .section-nav__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: var(--color-text-muted);
+      font-weight: 500;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .section-nav__link:hover,
+    .section-nav__link:focus-visible {
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+
+    .section-nav__link.is-active,
+    .section-nav__link[aria-current="true"] {
+      background: rgba(37, 99, 235, 0.18);
+      color: var(--color-accent);
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.28);
+    }
+
+    .section-nav__link[aria-hidden="true"] {
+      display: none;
     }
 
     header.hero {
@@ -346,6 +411,14 @@
     .section__title {
       font-size: 1.4rem;
       margin: 0;
+    }
+
+    #kpiHeading,
+    #chartHeading,
+    #recentHeading,
+    #monthlyHeading,
+    #feedbackHeading {
+      scroll-margin-top: calc(var(--hero-height, 0px) + var(--section-nav-height, 0px) + 24px);
     }
 
     .section__subtitle {
@@ -1438,8 +1511,17 @@
       </div>
     </div>
   </header>
+  <nav class="section-nav" aria-label="Pagrindinės sekcijos">
+    <div class="section-nav__inner">
+      <a class="section-nav__link" href="#kpiHeading">Rodikliai</a>
+      <a class="section-nav__link" href="#chartHeading">Grafikai</a>
+      <a class="section-nav__link" href="#recentHeading">Paskutinės dienos</a>
+      <a class="section-nav__link" href="#monthlyHeading">Mėnesiai</a>
+      <a class="section-nav__link" href="#feedbackHeading">Atsiliepimai</a>
+    </div>
+  </nav>
   <main class="container" role="main">
-    <section class="section" aria-labelledby="kpiHeading">
+    <section class="section" aria-labelledby="kpiHeading" data-section="kpi">
       <div class="section__header">
         <div>
           <h2 id="kpiHeading" class="section__title">Pagrindiniai rodikliai</h2>
@@ -1485,7 +1567,7 @@
       <div id="kpiGrid" class="kpi-grid" role="list"></div>
     </section>
 
-    <section class="section" aria-labelledby="chartHeading">
+    <section class="section" aria-labelledby="chartHeading" data-section="chart">
       <div class="section__header">
         <div>
           <h2 id="chartHeading" class="section__title">Pacientų srautai</h2>
@@ -2237,6 +2319,7 @@
     });
 
     const selectors = {
+      hero: document.querySelector('header.hero'),
       title: document.getElementById('pageTitle'),
       subtitle: document.getElementById('pageSubtitle'),
       refreshBtn: document.getElementById('refreshBtn'),
@@ -2302,7 +2385,314 @@
       compareCard: document.getElementById('compareCard'),
       compareSummary: document.getElementById('compareSummary'),
       compareClear: document.getElementById('compareClear'),
+      sectionNav: document.querySelector('.section-nav'),
+      sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
     };
+
+    const sectionNavState = {
+      initialized: false,
+      items: [],
+      itemBySection: new Map(),
+      activeHeadingId: '',
+    };
+
+    const sectionVisibility = new Map();
+    const layoutMetrics = { hero: 0, nav: 0 };
+    let sectionObserver = null;
+    let layoutRefreshHandle = null;
+    let layoutResizeObserver = null;
+
+    function computeVisibleRatio(rect) {
+      if (!rect) {
+        return 0;
+      }
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const elementHeight = Math.max(rect.height, 1);
+      if (viewportHeight <= 0 || elementHeight <= 0) {
+        return 0;
+      }
+      const visibleTop = Math.max(rect.top, 0);
+      const visibleBottom = Math.min(rect.bottom, viewportHeight);
+      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+      return Math.max(0, Math.min(1, visibleHeight / elementHeight));
+    }
+
+    function updateLayoutMetrics() {
+      const heroElement = selectors.hero || document.querySelector('header.hero');
+      const navElement = selectors.sectionNav;
+      const heroHeight = heroElement ? heroElement.getBoundingClientRect().height : 0;
+      const navHeight = navElement ? navElement.getBoundingClientRect().height : 0;
+      layoutMetrics.hero = heroHeight;
+      layoutMetrics.nav = navHeight;
+      const rootStyle = document.documentElement.style;
+      rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
+      rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
+    }
+
+    function updateActiveNavLink(headingId) {
+      sectionNavState.activeHeadingId = headingId;
+      sectionNavState.items.forEach((item) => {
+        const isActive = Boolean(headingId) && item.headingId === headingId && !item.link.hidden;
+        if (isActive) {
+          item.link.setAttribute('aria-current', 'true');
+        } else {
+          item.link.removeAttribute('aria-current');
+        }
+        item.link.classList.toggle('is-active', isActive);
+      });
+    }
+
+    function evaluateActiveSection() {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      const visibleItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden') && !item.link.hidden);
+      if (!visibleItems.length) {
+        updateActiveNavLink('');
+        return;
+      }
+      const sorted = visibleItems
+        .map((item) => {
+          const data = sectionVisibility.get(item.headingId) || { ratio: 0, top: Number.POSITIVE_INFINITY };
+          return { item, ratio: data.ratio, top: data.top };
+        })
+        .sort((a, b) => {
+          const ratioDiff = b.ratio - a.ratio;
+          if (Math.abs(ratioDiff) > 0.0001) {
+            return ratioDiff;
+          }
+          return a.top - b.top;
+        });
+      const best = sorted.find((candidate) => candidate.ratio > 0)
+        ?? sorted.find((candidate) => candidate.top >= 0)
+        ?? sorted[0];
+      if (best && best.item.headingId !== sectionNavState.activeHeadingId) {
+        updateActiveNavLink(best.item.headingId);
+      }
+    }
+
+    function refreshSectionObserver() {
+      const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
+      if (!observedItems.length) {
+        if (sectionObserver) {
+          sectionObserver.disconnect();
+          sectionObserver = null;
+        }
+        evaluateActiveSection();
+        return;
+      }
+      if (sectionObserver) {
+        sectionObserver.disconnect();
+      }
+      const topOffset = Math.max(0, Math.round(layoutMetrics.hero + layoutMetrics.nav));
+      sectionObserver = new IntersectionObserver(handleSectionIntersection, {
+        rootMargin: `-${topOffset}px 0px -55% 0px`,
+        threshold: [0.1, 0.25, 0.5, 0.75, 1],
+      });
+      observedItems.forEach((item) => {
+        sectionObserver.observe(item.section);
+        const rect = item.section.getBoundingClientRect();
+        sectionVisibility.set(item.headingId, {
+          ratio: computeVisibleRatio(rect),
+          top: rect.top,
+        });
+      });
+      evaluateActiveSection();
+    }
+
+    function scheduleLayoutRefresh() {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      if (typeof window.requestAnimationFrame !== 'function') {
+        updateLayoutMetrics();
+        refreshSectionObserver();
+        return;
+      }
+      if (layoutRefreshHandle) {
+        window.cancelAnimationFrame(layoutRefreshHandle);
+      }
+      layoutRefreshHandle = window.requestAnimationFrame(() => {
+        layoutRefreshHandle = null;
+        updateLayoutMetrics();
+        refreshSectionObserver();
+      });
+    }
+
+    function handleSectionIntersection(entries) {
+      entries.forEach((entry) => {
+        const item = sectionNavState.itemBySection.get(entry.target);
+        if (!item) {
+          return;
+        }
+        if (item.link.hidden || (item.section && item.section.hasAttribute('hidden'))) {
+          sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+          return;
+        }
+        sectionVisibility.set(item.headingId, {
+          ratio: entry.isIntersecting ? entry.intersectionRatio : 0,
+          top: entry.boundingClientRect.top,
+        });
+      });
+      evaluateActiveSection();
+    }
+
+    function handleNavKeydown(event) {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      const controllableKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+      if (!controllableKeys.includes(event.key)) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof HTMLAnchorElement)) {
+        return;
+      }
+      const visibleLinks = sectionNavState.items
+        .map((item) => item.link)
+        .filter((link) => link && !link.hidden && !link.hasAttribute('aria-hidden'));
+      if (!visibleLinks.length) {
+        return;
+      }
+      const currentIndex = visibleLinks.indexOf(target);
+      if (currentIndex === -1) {
+        return;
+      }
+      event.preventDefault();
+      let nextIndex = currentIndex;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        nextIndex = (currentIndex + 1) % visibleLinks.length;
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        nextIndex = (currentIndex - 1 + visibleLinks.length) % visibleLinks.length;
+      } else if (event.key === 'Home') {
+        nextIndex = 0;
+      } else if (event.key === 'End') {
+        nextIndex = visibleLinks.length - 1;
+      }
+      const nextLink = visibleLinks[nextIndex];
+      if (nextLink && typeof nextLink.focus === 'function') {
+        nextLink.focus({ preventScroll: true });
+      }
+    }
+
+    function setupNavKeyboardNavigation() {
+      if (!selectors.sectionNav || selectors.sectionNav.dataset.keyboard === 'bound') {
+        return;
+      }
+      selectors.sectionNav.addEventListener('keydown', handleNavKeydown);
+      selectors.sectionNav.dataset.keyboard = 'bound';
+    }
+
+    function syncSectionNavVisibility() {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      let hasVisible = false;
+      sectionNavState.items.forEach((item) => {
+        const { link, section } = item;
+        const sectionVisible = Boolean(section) && !section.hasAttribute('hidden');
+        if (sectionVisible) {
+          hasVisible = true;
+          link.hidden = false;
+          link.removeAttribute('aria-hidden');
+          link.removeAttribute('tabindex');
+          const rect = section.getBoundingClientRect();
+          sectionVisibility.set(item.headingId, {
+            ratio: computeVisibleRatio(rect),
+            top: rect.top,
+          });
+        } else {
+          link.hidden = true;
+          link.setAttribute('aria-hidden', 'true');
+          link.setAttribute('tabindex', '-1');
+          sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+          if (sectionObserver && section) {
+            sectionObserver.unobserve(section);
+          }
+        }
+      });
+
+      if (!hasVisible) {
+        updateActiveNavLink('');
+      } else if (!sectionNavState.activeHeadingId) {
+        const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
+        if (firstVisible) {
+          updateActiveNavLink(firstVisible.headingId);
+        }
+      } else {
+        const activeItem = sectionNavState.items.find((item) => item.headingId === sectionNavState.activeHeadingId);
+        if (!activeItem || activeItem.link.hidden) {
+          const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
+          updateActiveNavLink(firstVisible ? firstVisible.headingId : '');
+        }
+      }
+
+      evaluateActiveSection();
+      scheduleLayoutRefresh();
+    }
+
+    function initializeSectionNavigation() {
+      if (sectionNavState.initialized) {
+        scheduleLayoutRefresh();
+        return;
+      }
+      if (!selectors.sectionNav) {
+        return;
+      }
+      const links = Array.from(selectors.sectionNav.querySelectorAll('.section-nav__link'));
+      selectors.sectionNavLinks = links;
+      sectionNavState.items = [];
+      sectionNavState.itemBySection = new Map();
+      sectionVisibility.clear();
+
+      links.forEach((link) => {
+        const href = link.getAttribute('href') || '';
+        const headingId = href.startsWith('#') ? href.slice(1) : '';
+        const headingEl = headingId ? document.getElementById(headingId) : null;
+        const sectionEl = headingEl ? headingEl.closest('section[data-section]') : null;
+        if (!headingId || !sectionEl) {
+          link.hidden = true;
+          link.setAttribute('aria-hidden', 'true');
+          link.setAttribute('tabindex', '-1');
+          return;
+        }
+        const item = { link, headingId, section: sectionEl };
+        sectionNavState.items.push(item);
+        sectionNavState.itemBySection.set(sectionEl, item);
+        sectionVisibility.set(headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+      });
+
+      if (!sectionNavState.items.length) {
+        return;
+      }
+
+      selectors.sectionNavLinks = sectionNavState.items.map((item) => item.link);
+
+      sectionNavState.initialized = true;
+      setupNavKeyboardNavigation();
+
+      if (typeof ResizeObserver === 'function') {
+        if (layoutResizeObserver && typeof layoutResizeObserver.disconnect === 'function') {
+          layoutResizeObserver.disconnect();
+        }
+        layoutResizeObserver = new ResizeObserver(() => {
+          scheduleLayoutRefresh();
+        });
+        if (selectors.hero) {
+          layoutResizeObserver.observe(selectors.hero);
+        }
+        if (selectors.sectionNav) {
+          layoutResizeObserver.observe(selectors.sectionNav);
+        }
+      }
+
+      window.addEventListener('resize', scheduleLayoutRefresh, { passive: true });
+      window.addEventListener('load', scheduleLayoutRefresh);
+
+      updateLayoutMetrics();
+      syncSectionNavVisibility();
+    }
 
     function cloneSettings(value) {
       return JSON.parse(JSON.stringify(value));
@@ -2485,6 +2875,7 @@
       toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
       toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
       toggleSectionVisibility(selectors.feedbackSection, settings.output.showFeedback);
+      syncSectionNavVisibility();
     }
 
     function parseCandidateList(value, fallback = '') {
@@ -6250,6 +6641,7 @@
     applySettingsToText();
     applyTextContent();
     applyFooterSource();
+    initializeSectionNavigation();
     applySectionVisibility();
     populateSettingsForm();
 
