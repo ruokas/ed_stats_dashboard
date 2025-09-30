@@ -811,17 +811,17 @@
       margin-top: 4px;
     }
 
-    /* Fiksuotas grafiko aukštis, kad Chart.js neplėstų kanvos – padidintas, kad stulpeliai nebūtų suspausti. */
+    /* Fiksuotas grafiko aukštis, kad Chart.js neplėstų kanvos – sumažintas, kad grafikai neužimtų per daug vietos. */
     .chart-card canvas {
       width: 100% !important;
-      min-height: 360px;
-      height: clamp(360px, 36vh, 480px) !important;
+      min-height: 280px;
+      height: clamp(280px, 30vh, 400px) !important;
     }
 
     /* Papildomas aukštis pacientų srautų grafiko kortelėms. */
     .chart-card--tall canvas {
-      min-height: 420px;
-      height: clamp(420px, 45vh, 560px) !important;
+      min-height: 340px;
+      height: clamp(340px, 36vh, 480px) !important;
     }
 
     .heatmap-scroll {
@@ -1982,7 +1982,7 @@
         title: 'Pacientų srautai',
         subtitle: 'Kasdieniai skaičiai, srautas pagal sprendimą ir atvykimų žemėlapis',
         dailyCaption: 'Kasdieniai pacientų srautai (paskutinės 30 dienų).',
-        dailyContext: (date) => (date ? `Atnaujinta pagal duomenis iki ${date}.` : ''),
+        dailyContext: () => '',
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
         funnelCaptionWithYear: (year) => (year
@@ -2227,6 +2227,7 @@
     const percentFormatter = new Intl.NumberFormat('lt-LT', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
     const shortDateFormatter = new Intl.DateTimeFormat('lt-LT', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const monthDayFormatter = new Intl.DateTimeFormat('lt-LT', { month: '2-digit', day: '2-digit' });
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
     const dailyDateFormatter = new Intl.DateTimeFormat('lt-LT', {
       weekday: 'short',
@@ -5129,8 +5130,8 @@
       }
 
       const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
-      // Užtikrina, kad X ašies etiketės nebūtų sutankintos – rodome ~12 reikšmių.
-      const tickEvery = Math.max(1, Math.ceil(scopedData.length / 12));
+      // Užtikrina, kad X ašies etiketės nepersidengtų – rodome iki 8 reikšmių.
+      const tickEvery = Math.max(1, Math.ceil(scopedData.length / 8));
       dashboardState.charts.daily = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -5176,14 +5177,21 @@
                 autoSkip: false,
                 maxRotation: 0,
                 minRotation: 0,
-                padding: 8,
+                padding: 10,
                 color: (ctxTick) => (weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
                 callback(value, index) {
                   if (index % tickEvery !== 0) {
                     return '';
                   }
-                  const label = this.getLabelForValue(value);
-                  return label.slice(-5);
+                  const rawLabel = this.getLabelForValue(value);
+                  if (!rawLabel) {
+                    return '';
+                  }
+                  const dateObj = dateKeyToDate(rawLabel);
+                  if (dateObj instanceof Date && !Number.isNaN(dateObj.getTime())) {
+                    return monthDayFormatter.format(dateObj);
+                  }
+                  return rawLabel.slice(5);
                 },
               },
               grid: {
