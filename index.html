@@ -814,9 +814,8 @@
       flex-wrap: nowrap;
       gap: 16px;
       margin-bottom: 20px;
-      overflow-x: auto;
       padding-bottom: 4px;
-      scrollbar-gutter: stable both-edges;
+      width: 100%;
     }
 
     .feedback-card {
@@ -829,7 +828,24 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      flex: 0 0 clamp(220px, 22vw, 280px);
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    @media (max-width: 960px) {
+      .feedback-cards {
+        flex-wrap: wrap;
+      }
+
+      .feedback-card {
+        flex: 1 1 calc(50% - 16px);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .feedback-card {
+        flex-basis: 100%;
+      }
     }
 
     .feedback-card__title {
