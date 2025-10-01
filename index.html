@@ -345,6 +345,12 @@
       margin-top: 32px;
     }
 
+    .ed-dashboard__chart-message {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
     .ed-dashboard__tables {
       display: grid;
       gap: clamp(18px, 3vw, 28px);
@@ -2236,7 +2242,7 @@
               aria-selected="false"
               aria-controls="panelEd"
               tabindex="-1">
-        ED skydelis
+        RŠL SMPS skydelis
       </button>
     </div>
     <div id="panelOverview" class="tab-panel" data-tab-panel="overview" role="tabpanel" aria-labelledby="tabOverview">
@@ -2452,8 +2458,8 @@
       <section class="section" aria-labelledby="edHeading">
         <div class="section__header">
           <div>
-            <h2 id="edHeading" class="section__title">Skubiosios pagalbos skydelis</h2>
-            <p id="edSubtitle" class="section__subtitle">Operatyviniai ED rodikliai</p>
+            <h2 id="edHeading" class="section__title">RŠL SMPS skydelis</h2>
+            <p id="edSubtitle" class="section__subtitle">Gyvi duomenys iš naujausio CSV įrašo</p>
           </div>
         </div>
         <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
@@ -2461,36 +2467,11 @@
         <div class="ed-dashboard__tables">
           <section class="ed-dashboard__group" aria-labelledby="edDispositionsTitle">
             <h3 id="edDispositionsTitle" class="section__subtitle">Pacientų kategorijos</h3>
-            <div class="table-wrapper" role="region" aria-labelledby="edDispositionsTitle">
-              <table aria-describedby="edDispositionsCaption">
-                <caption id="edDispositionsCaption" class="sr-only">Pacientų kategorijų vidurkiai ir dalis.</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" id="edDispositionsHeaderName">Kategorija</th>
-                    <th scope="col" id="edDispositionsHeaderCount">Vid. pacientai</th>
-                    <th scope="col" id="edDispositionsHeaderShare">Dalis</th>
-                  </tr>
-                </thead>
-                <tbody id="edDispositionsTable"></tbody>
-              </table>
-            </div>
-          </section>
-          <section class="ed-dashboard__group" aria-labelledby="edTimelineTitle">
-            <h3 id="edTimelineTitle" class="section__subtitle">Naujausių įrašų dinamika</h3>
-            <div class="table-wrapper" role="region" aria-labelledby="edTimelineTitle">
-              <table aria-describedby="edTimelineCaption">
-                <caption id="edTimelineCaption" class="sr-only">Naujausių ED suvestinių įrašų rodikliai.</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" id="edTimelineHeaderDate">Data / laikas</th>
-                    <th scope="col" id="edTimelineHeaderPatients">Pacientai</th>
-                    <th scope="col" id="edTimelineHeaderLos">Užimta lovų</th>
-                    <th scope="col" id="edTimelineHeaderDoor">Personalas (S / G)</th>
-                  </tr>
-                </thead>
-                <tbody id="edTimelineTable"></tbody>
-              </table>
-            </div>
+            <figure class="chart-card chart-card--tall">
+              <canvas id="edDispositionsChart" role="img" aria-labelledby="edDispositionsTitle edDispositionsCaption"></canvas>
+              <figcaption id="edDispositionsCaption">Pacientų kategorijų pasiskirstymas pagal naujausią įrašą.</figcaption>
+            </figure>
+            <p id="edDispositionsMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
           </section>
         </div>
       </section>
@@ -2657,7 +2638,7 @@
             </div>
             <div class="settings-field">
               <label for="settingsTabEdLabel"><span>ED skirtuko pavadinimas</span></label>
-              <input id="settingsTabEdLabel" name="output.tabEdLabel" type="text" placeholder="ED skydelis">
+              <input id="settingsTabEdLabel" name="output.tabEdLabel" type="text" placeholder="RŠL SMPS skydelis">
             </div>
           </div>
           <div class="settings-inline">
@@ -2713,11 +2694,11 @@
           <div class="settings-inline">
             <div class="settings-field">
               <label for="settingsEdTitle"><span>ED skyriaus pavadinimas</span></label>
-              <input id="settingsEdTitle" name="output.edTitle" type="text" placeholder="Skubiosios pagalbos skydelis">
+              <input id="settingsEdTitle" name="output.edTitle" type="text" placeholder="RŠL SMPS skydelis">
             </div>
             <div class="settings-field">
               <label for="settingsEdSubtitle"><span>ED skyriaus paantraštė</span></label>
-              <input id="settingsEdSubtitle" name="output.edSubtitle" type="text" placeholder="Operatyviniai ED rodikliai">
+              <input id="settingsEdSubtitle" name="output.edSubtitle" type="text" placeholder="Gyvi duomenys iš naujausio CSV įrašo">
             </div>
           </div>
           <div class="settings-field">
@@ -2830,6 +2811,7 @@
 15,11,1:4.2,1:7.5,3,4,4,3,1
 17,13,1:4.8,1:8.2,3,5,5,3,1
 21,16,1:5.4,1:9.5,4,6,6,4,1`;
+    const ED_TOTAL_BEDS = 29;
     const FEEDBACK_RATING_MIN = 1;
     const FEEDBACK_RATING_MAX = 5;
     const FEEDBACK_LEGACY_MAX = 10;
@@ -2850,7 +2832,7 @@
       scrollTop: 'Grįžti į pradžią',
       tabs: {
         overview: 'Bendras vaizdas',
-        ed: 'ED skydelis',
+        ed: 'RŠL SMPS skydelis',
       },
       status: {
         loading: 'Kraunama...',
@@ -2864,8 +2846,8 @@
       footer: (timestamp) => `Atnaujinta ${timestamp}`,
       footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
       ed: {
-        title: 'Skubiosios pagalbos skydelis',
-        subtitle: 'Operatyviniai ED rodikliai iš papildomo CSV.',
+        title: 'RŠL SMPS skydelis',
+        subtitle: 'Gyvi duomenys iš naujausio CSV įrašo.',
         status: {
           loading: 'Kraunami ED duomenys...',
           empty: 'ED duomenų nerasta.',
@@ -2904,35 +2886,66 @@
               empty: '—',
               format: 'percent',
             },
+            {
+              key: 'avgLosMonthMinutes',
+              secondaryKey: 'avgLosYearMinutes',
+              title: 'Vid. laikas skyriuje',
+              description: 'Šis mėnuo vs šie metai (val.).',
+              empty: '—',
+              format: 'hours',
+            },
+            {
+              key: 'hospitalizedMonthShare',
+              secondaryKey: 'hospitalizedYearShare',
+              title: 'Hospitalizacijų dalis (mėn./metai)',
+              description: 'Šio mėnesio ir metų palyginimas.',
+              empty: '—',
+              format: 'percent',
+            },
           ],
           snapshot: [
             {
-              key: 'avgCurrentPatients',
-              title: 'Vid. pacientų skyriuje',
-              description: 'Vidutinis pacientų skaičius pagal CSV įrašus.',
+              key: 'currentPatients',
+              title: 'Pacientai skyriuje dabar',
+              description: 'Naujausio CSV įrašo reikšmė.',
               empty: '—',
-              format: 'oneDecimal',
             },
             {
-              key: 'avgOccupiedBeds',
-              title: 'Vid. užimtos lovos',
-              description: 'Vidutinė užimtų lovų reikšmė.',
+              key: 'occupiedBeds',
+              title: 'Užimtos lovos dabar',
+              description: 'Naujausio įrašo reikšmė (iš 29).',
               empty: '—',
-              format: 'oneDecimal',
+              format: 'beds',
             },
             {
-              key: 'avgNursePatientsPerStaff',
-              title: 'Vid. slaugytojų santykis',
-              description: 'Pacientai vienai slaugytojai (1:n).',
+              key: 'nursePatientsPerStaff',
+              title: 'Slaugytojų santykis (1:n)',
+              description: 'Pacientai vienai slaugytojai.',
               empty: '—',
               format: 'ratio',
             },
             {
-              key: 'avgDoctorPatientsPerStaff',
-              title: 'Vid. gydytojų santykis',
-              description: 'Pacientai vienam gydytojui (1:n).',
+              key: 'doctorPatientsPerStaff',
+              title: 'Gydytojų santykis (1:n)',
+              description: 'Pacientai vienam gydytojui.',
               empty: '—',
               format: 'ratio',
+            },
+            {
+              key: 'avgLosMonthMinutes',
+              secondaryKey: 'avgLosYearMinutes',
+              title: 'Vid. laikas skyriuje',
+              description: 'Šis mėnuo vs šie metai (val.).',
+              empty: '—',
+              format: 'hours',
+            },
+            {
+              key: 'hospitalizedMonthShare',
+              secondaryKey: 'hospitalizedYearShare',
+              title: 'Hospitalizacijų dalis',
+              description: 'Šis mėnuo vs šie metai.',
+              empty: '—',
+              format: 'percent',
             },
           ],
         },
@@ -2941,53 +2954,19 @@
             title: 'Pacientų išvykimo sprendimai',
             caption: 'Pacientų išvykimo sprendimų pasiskirstymas.',
             empty: 'Nėra duomenų apie išvykimo sprendimus.',
-            headers: {
-              name: 'Sprendimas',
-              count: 'Pacientai',
-              share: 'Dalis',
-            },
           },
           snapshot: {
             title: 'Pacientų kategorijos',
-            caption: 'Vidutinė pacientų triažo kategorijų struktūra.',
-            empty: 'Nėra duomenų apie pacientų kategorijas.',
-            headers: {
-              name: 'Kategorija',
-              count: 'Vid. pacientai',
-              share: 'Dalis',
-            },
-          },
-        },
-        timeline: {
-          legacy: {
-            title: 'Paskutinių dienų dinamika',
-            caption: 'Kasdieniai ED rodikliai pagal naujausius įrašus.',
-            empty: 'Nėra pakankamai dienų duomenų.',
-            headers: {
-              date: 'Data',
-              patients: 'Pacientai',
-              los: 'Vid. buvimo trukmė',
-              door: 'Vid. iki gydytojo',
-            },
-          },
-          snapshot: {
-            title: 'Naujausių įrašų dinamika',
-            caption: 'Paskutiniai CSV įrašai su užimtumu ir personalo santykiais.',
-            empty: 'Nėra pakankamai įrašų.',
-            headers: {
-              date: 'Data / laikas',
-              patients: 'Pacientai',
-              los: 'Užimta lovų',
-              door: 'Personalas (S / G)',
-            },
+            caption: 'Pacientų kategorijų pasiskirstymas pagal naujausią įrašą.',
+            empty: 'Nėra kategorijų duomenų.',
           },
         },
         triage: {
-          category1: '1 kategorija – kritinė',
-          category2: '2 kategorija – labai skubi',
-          category3: '3 kategorija – skubi',
-          category4: '4 kategorija – vidutinė',
-          category5: '5 kategorija – mažiausiai skubi',
+          category1: '1 kategorija',
+          category2: '2 kategorija',
+          category3: '3 kategorija',
+          category4: '4 kategorija',
+          category5: '5 kategorija',
         },
         ratioLabels: {
           nurses: 'Slaugyt.',
@@ -3429,18 +3408,9 @@
       edStatus: document.getElementById('edStatus'),
       edCards: document.getElementById('edCards'),
       edDispositionsTitle: document.getElementById('edDispositionsTitle'),
-      edTimelineTitle: document.getElementById('edTimelineTitle'),
-      edDispositionsTable: document.getElementById('edDispositionsTable'),
-      edTimelineTable: document.getElementById('edTimelineTable'),
       edDispositionsCaption: document.getElementById('edDispositionsCaption'),
-      edTimelineCaption: document.getElementById('edTimelineCaption'),
-      edDispositionsHeaderName: document.getElementById('edDispositionsHeaderName'),
-      edDispositionsHeaderCount: document.getElementById('edDispositionsHeaderCount'),
-      edDispositionsHeaderShare: document.getElementById('edDispositionsHeaderShare'),
-      edTimelineHeaderDate: document.getElementById('edTimelineHeaderDate'),
-      edTimelineHeaderPatients: document.getElementById('edTimelineHeaderPatients'),
-      edTimelineHeaderLos: document.getElementById('edTimelineHeaderLos'),
-      edTimelineHeaderDoor: document.getElementById('edTimelineHeaderDoor'),
+      edDispositionsChart: document.getElementById('edDispositionsChart'),
+      edDispositionsMessage: document.getElementById('edDispositionsMessage'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
       settingsDialog: document.getElementById('settingsDialog'),
@@ -4539,6 +4509,7 @@
         dow: null,
         funnel: null,
         feedbackTrend: null,
+        edDispositions: null,
       },
       chartLib: null,
       usingFallback: false,
@@ -5946,14 +5917,18 @@
         uniqueDates: 0,
         avgDailyPatients: null,
         avgLosMinutes: null,
+        avgLosMonthMinutes: null,
+        avgLosYearMinutes: null,
         avgDoorToProviderMinutes: null,
         avgDecisionToLeaveMinutes: null,
         hospitalizedShare: null,
+        hospitalizedMonthShare: null,
+        hospitalizedYearShare: null,
         entryCount: 0,
-        avgCurrentPatients: null,
-        avgOccupiedBeds: null,
-        avgNursePatientsPerStaff: null,
-        avgDoctorPatientsPerStaff: null,
+        currentPatients: null,
+        occupiedBeds: null,
+        nursePatientsPerStaff: null,
+        doctorPatientsPerStaff: null,
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
         generatedAt: new Date(),
@@ -6137,6 +6112,7 @@
       const dispositions = new Map();
       const categoryTotals = { hospitalized: 0, discharged: 0, left: 0, transfer: 0, other: 0 };
       const dailyBuckets = new Map();
+      const monthBuckets = new Map();
       const validRecords = Array.isArray(records)
         ? records.filter((record) => record && typeof record.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.dateKey))
         : [];
@@ -6189,6 +6165,27 @@
           decisionCount += 1;
         }
         dailyBuckets.set(dateKey, bucket);
+
+        const monthKey = typeof dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+          ? dateKey.slice(0, 7)
+          : '';
+        if (monthKey) {
+          const monthBucket = monthBuckets.get(monthKey) || {
+            count: 0,
+            hospitalized: 0,
+            losSum: 0,
+            losCount: 0,
+          };
+          monthBucket.count += 1;
+          if (dispositionCategory === 'hospitalized') {
+            monthBucket.hospitalized += 1;
+          }
+          if (Number.isFinite(losMinutes)) {
+            monthBucket.losSum += losMinutes;
+            monthBucket.losCount += 1;
+          }
+          monthBuckets.set(monthKey, monthBucket);
+        }
       });
 
       summary.uniqueDates = dailyBuckets.size;
@@ -6208,6 +6205,38 @@
         summary.hospitalizedShare = categoryTotals.hospitalized / summary.totalPatients;
       }
       summary.generatedAt = new Date();
+
+      if (monthBuckets.size > 0) {
+        const sortedMonthKeys = Array.from(monthBuckets.keys()).sort();
+        const latestMonthKey = sortedMonthKeys[sortedMonthKeys.length - 1];
+        const currentMonth = monthBuckets.get(latestMonthKey);
+        if (currentMonth) {
+          summary.avgLosMonthMinutes = currentMonth.losCount > 0
+            ? currentMonth.losSum / currentMonth.losCount
+            : null;
+          summary.hospitalizedMonthShare = currentMonth.count > 0
+            ? currentMonth.hospitalized / currentMonth.count
+            : null;
+          const currentYear = typeof latestMonthKey === 'string' ? latestMonthKey.slice(0, 4) : '';
+          if (currentYear) {
+            const yearTotals = { count: 0, hospitalized: 0, losSum: 0, losCount: 0 };
+            monthBuckets.forEach((bucket, key) => {
+              if (typeof key === 'string' && key.startsWith(currentYear)) {
+                yearTotals.count += bucket.count;
+                yearTotals.hospitalized += bucket.hospitalized;
+                yearTotals.losSum += bucket.losSum;
+                yearTotals.losCount += bucket.losCount;
+              }
+            });
+            summary.avgLosYearMinutes = yearTotals.losCount > 0
+              ? yearTotals.losSum / yearTotals.losCount
+              : null;
+            summary.hospitalizedYearShare = yearTotals.count > 0
+              ? yearTotals.hospitalized / yearTotals.count
+              : null;
+          }
+        }
+      }
 
       const dispositionsList = Array.from(dispositions.values())
         .map((entry) => ({
@@ -6238,10 +6267,10 @@
     function summarizeSnapshotRecords(records) {
       const result = {
         entryCount: 0,
-        avgCurrentPatients: null,
-        avgOccupiedBeds: null,
-        avgNursePatientsPerStaff: null,
-        avgDoctorPatientsPerStaff: null,
+        currentPatients: null,
+        occupiedBeds: null,
+        nursePatientsPerStaff: null,
+        doctorPatientsPerStaff: null,
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
         generatedAt: null,
@@ -6267,78 +6296,6 @@
       }
 
       result.entryCount = wrapped.length;
-      let currentSum = 0;
-      let currentCount = 0;
-      let bedsSum = 0;
-      let bedsCount = 0;
-      let nurseSum = 0;
-      let nurseCount = 0;
-      let doctorSum = 0;
-      let doctorCount = 0;
-      const categorySums = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-      const categoryCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
-      wrapped.forEach(({ record }) => {
-        if (Number.isFinite(record.currentPatients)) {
-          currentSum += record.currentPatients;
-          currentCount += 1;
-        }
-        if (Number.isFinite(record.occupiedBeds)) {
-          bedsSum += record.occupiedBeds;
-          bedsCount += 1;
-        }
-        if (Number.isFinite(record.nurseRatio)) {
-          nurseSum += record.nurseRatio;
-          nurseCount += 1;
-        }
-        if (Number.isFinite(record.doctorRatio)) {
-          doctorSum += record.doctorRatio;
-          doctorCount += 1;
-        }
-        if (record.categories && typeof record.categories === 'object') {
-          ['1', '2', '3', '4', '5'].forEach((key) => {
-            const numericKey = Number.parseInt(key, 10);
-            const value = record.categories[key];
-            if (Number.isFinite(value)) {
-              categorySums[numericKey] += value;
-              categoryCounts[numericKey] += 1;
-            }
-          });
-        }
-      });
-
-      if (currentCount > 0) {
-        result.avgCurrentPatients = currentSum / currentCount;
-      }
-      if (bedsCount > 0) {
-        result.avgOccupiedBeds = bedsSum / bedsCount;
-      }
-      if (nurseCount > 0) {
-        result.avgNursePatientsPerStaff = nurseSum / nurseCount;
-      }
-      if (doctorCount > 0) {
-        result.avgDoctorPatientsPerStaff = doctorSum / doctorCount;
-      }
-
-      const categoryAverages = [];
-      let totalCategoryAverage = 0;
-      ['1', '2', '3', '4', '5'].forEach((key) => {
-        const numericKey = Number.parseInt(key, 10);
-        if (categoryCounts[numericKey] > 0) {
-          const average = categorySums[numericKey] / categoryCounts[numericKey];
-          totalCategoryAverage += average;
-          categoryAverages.push({
-            key,
-            label: TEXT?.ed?.triage?.[`category${key}`] || `${key} kategorija`,
-            count: average,
-          });
-        }
-      });
-      result.dispositions = categoryAverages.map((entry) => ({
-        label: entry.label,
-        count: entry.count,
-        share: totalCategoryAverage > 0 ? entry.count / totalCategoryAverage : null,
-      }));
 
       const sortedByTime = [...wrapped].sort((a, b) => {
         const timeA = a.record.timestamp instanceof Date && !Number.isNaN(a.record.timestamp.getTime())
@@ -6365,22 +6322,38 @@
         } else {
           result.latestSnapshotLabel = '';
         }
+        if (Number.isFinite(latest.currentPatients)) {
+          result.currentPatients = latest.currentPatients;
+        }
+        if (Number.isFinite(latest.occupiedBeds)) {
+          result.occupiedBeds = latest.occupiedBeds;
+        }
+        if (Number.isFinite(latest.nurseRatio)) {
+          result.nursePatientsPerStaff = latest.nurseRatio;
+        }
+        if (Number.isFinite(latest.doctorRatio)) {
+          result.doctorPatientsPerStaff = latest.doctorRatio;
+        }
+        if (latest.categories && typeof latest.categories === 'object') {
+          const categoryEntries = [];
+          let total = 0;
+          ['1', '2', '3', '4', '5'].forEach((key) => {
+            const value = latest.categories[key];
+            if (Number.isFinite(value) && value >= 0) {
+              const label = TEXT?.ed?.triage?.[`category${key}`] || `${key} kategorija`;
+              categoryEntries.push({ label, count: value, key });
+              total += value;
+            }
+          });
+          result.dispositions = categoryEntries.map((entry) => ({
+            label: entry.label,
+            count: entry.count,
+            share: total > 0 ? entry.count / total : null,
+            categoryKey: entry.key,
+          }));
+        }
       }
       result.generatedAt = result.latestSnapshotAt || new Date();
-
-      result.daily = sortedByTime.slice(0, 10).map(({ record }) => ({
-        dateKey: record.dateKey,
-        timestamp: record.timestamp instanceof Date && !Number.isNaN(record.timestamp.getTime()) ? record.timestamp : null,
-        label: record.timestamp instanceof Date && !Number.isNaN(record.timestamp.getTime())
-          ? record.timestamp.toISOString()
-          : (record.rawTimestamp || record.dateKey),
-        patients: Number.isFinite(record.currentPatients) ? record.currentPatients : null,
-        occupiedBeds: Number.isFinite(record.occupiedBeds) ? record.occupiedBeds : null,
-        nurseRatio: Number.isFinite(record.nurseRatio) ? record.nurseRatio : null,
-        nurseRatioText: record.nurseRatioText || '',
-        doctorRatio: Number.isFinite(record.doctorRatio) ? record.doctorRatio : null,
-        doctorRatioText: record.doctorRatioText || '',
-      }));
 
       return result;
     }
@@ -6423,18 +6396,22 @@
         summary.uniqueDates = legacy.summary.uniqueDates;
         summary.avgDailyPatients = legacy.summary.avgDailyPatients;
         summary.avgLosMinutes = legacy.summary.avgLosMinutes;
+        summary.avgLosMonthMinutes = legacy.summary.avgLosMonthMinutes;
+        summary.avgLosYearMinutes = legacy.summary.avgLosYearMinutes;
         summary.avgDoorToProviderMinutes = legacy.summary.avgDoorToProviderMinutes;
         summary.avgDecisionToLeaveMinutes = legacy.summary.avgDecisionToLeaveMinutes;
         summary.hospitalizedShare = legacy.summary.hospitalizedShare;
+        summary.hospitalizedMonthShare = legacy.summary.hospitalizedMonthShare;
+        summary.hospitalizedYearShare = legacy.summary.hospitalizedYearShare;
         summary.generatedAt = legacy.summary.generatedAt;
       }
 
       let snapshot = {
         entryCount: 0,
-        avgCurrentPatients: null,
-        avgOccupiedBeds: null,
-        avgNursePatientsPerStaff: null,
-        avgDoctorPatientsPerStaff: null,
+        currentPatients: null,
+        occupiedBeds: null,
+        nursePatientsPerStaff: null,
+        doctorPatientsPerStaff: null,
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
         generatedAt: null,
@@ -6444,10 +6421,10 @@
       if (hasSnapshot) {
         snapshot = summarizeSnapshotRecords(records);
         summary.entryCount = snapshot.entryCount;
-        summary.avgCurrentPatients = snapshot.avgCurrentPatients;
-        summary.avgOccupiedBeds = snapshot.avgOccupiedBeds;
-        summary.avgNursePatientsPerStaff = snapshot.avgNursePatientsPerStaff;
-        summary.avgDoctorPatientsPerStaff = snapshot.avgDoctorPatientsPerStaff;
+        summary.currentPatients = snapshot.currentPatients;
+        summary.occupiedBeds = snapshot.occupiedBeds;
+        summary.nursePatientsPerStaff = snapshot.nursePatientsPerStaff;
+        summary.doctorPatientsPerStaff = snapshot.doctorPatientsPerStaff;
         summary.latestSnapshotLabel = snapshot.latestSnapshotLabel;
         summary.latestSnapshotAt = snapshot.latestSnapshotAt;
         if (snapshot.generatedAt) {
@@ -8680,6 +8657,25 @@
       renderFeedbackTrendChart(feedbackMonthly).catch((error) => {
         console.error('Nepavyko perpiešti atsiliepimų trendo grafiko pakeitus temą:', error);
       });
+      const edData = dashboardState.ed || {};
+      const edSummary = edData.summary || createEmptyEdSummary(edData.meta?.type);
+      const edMode = typeof edSummary?.mode === 'string' ? edSummary.mode : (edData.meta?.type || 'legacy');
+      const edHasSnapshot = Number.isFinite(edSummary?.currentPatients)
+        || Number.isFinite(edSummary?.occupiedBeds)
+        || Number.isFinite(edSummary?.nursePatientsPerStaff)
+        || Number.isFinite(edSummary?.doctorPatientsPerStaff);
+      const edVariant = edMode === 'snapshot'
+        || (edMode === 'hybrid' && edHasSnapshot)
+        ? 'snapshot'
+        : 'legacy';
+      const edDispositionsText = TEXT.ed.dispositions?.[edVariant] || TEXT.ed.dispositions?.legacy || {};
+      renderEdDispositionsChart(
+        Array.isArray(edData.dispositions) ? edData.dispositions : [],
+        edDispositionsText,
+        edVariant,
+      ).catch((error) => {
+        console.error('Nepavyko perpiešti pacientų kategorijų grafiko pakeitus temą:', error);
+      });
       const hasAnyData = (dashboardState.chartData.dailyWindow && dashboardState.chartData.dailyWindow.length)
         || dashboardState.chartData.funnel
         || (dashboardState.chartData.heatmap && Object.keys(dashboardState.chartData.heatmap).length);
@@ -8977,6 +8973,11 @@
             return null;
           }
           return `1:${oneDecimalFormatter.format(rawValue)}`;
+        case 'beds':
+          if (!Number.isFinite(rawValue)) {
+            return null;
+          }
+          return `${numberFormatter.format(Math.round(rawValue))}/${numberFormatter.format(ED_TOTAL_BEDS)}`;
         default:
           if (!Number.isFinite(rawValue)) {
             return null;
@@ -8985,28 +8986,54 @@
       }
     }
 
-    function renderEdDashboard(edData) {
+    async function renderEdDashboard(edData) {
       if (!selectors.edPanel) {
         return;
       }
       const dataset = edData || {};
       const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
       const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
-      const daily = Array.isArray(dataset.daily) ? dataset.daily : [];
       const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
-      const hasSnapshotMetrics = Number.isFinite(summary?.avgCurrentPatients)
-        || Number.isFinite(summary?.avgOccupiedBeds)
-        || Number.isFinite(summary?.avgNursePatientsPerStaff)
-        || Number.isFinite(summary?.avgDoctorPatientsPerStaff);
+      const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
+        || Number.isFinite(summary?.occupiedBeds)
+        || Number.isFinite(summary?.nursePatientsPerStaff)
+        || Number.isFinite(summary?.doctorPatientsPerStaff);
       const displayVariant = summaryMode === 'snapshot'
         || (summaryMode === 'hybrid' && hasSnapshotMetrics)
         ? 'snapshot'
         : 'legacy';
+
+      const overviewDailyStats = Array.isArray(dashboardState?.kpi?.daily) && dashboardState.kpi.daily.length
+        ? dashboardState.kpi.daily
+        : (Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : []);
+      const configuredWindowRaw = Number.isFinite(Number(dashboardState?.kpi?.filters?.window))
+        ? Number(dashboardState.kpi.filters.window)
+        : (Number.isFinite(Number(settings?.calculations?.windowDays))
+          ? Number(settings.calculations.windowDays)
+          : DEFAULT_KPI_WINDOW_DAYS);
+      const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
+        ? configuredWindowRaw
+        : DEFAULT_KPI_WINDOW_DAYS;
+      if (overviewDailyStats.length) {
+        const overviewMetrics = buildYearMonthMetrics(overviewDailyStats, configuredWindow);
+        if (overviewMetrics) {
+          const { yearMetrics, monthMetrics } = overviewMetrics;
+          const yearAvgMinutes = Number.isFinite(yearMetrics?.avgTime) ? yearMetrics.avgTime * 60 : null;
+          const monthAvgMinutes = Number.isFinite(monthMetrics?.avgTime) ? monthMetrics.avgTime * 60 : null;
+          const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare) ? yearMetrics.hospitalizedShare : null;
+          const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare) ? monthMetrics.hospitalizedShare : null;
+
+          summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
+          summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : null;
+          summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : null;
+          summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
+          summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : null;
+          summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : null;
+        }
+      }
       const cardsConfigSource = TEXT.ed.cards || {};
       const cardConfigs = Array.isArray(cardsConfigSource[displayVariant]) ? cardsConfigSource[displayVariant] : [];
       const dispositionsText = TEXT.ed.dispositions?.[displayVariant] || TEXT.ed.dispositions?.legacy || {};
-      const timelineText = TEXT.ed.timeline?.[displayVariant] || TEXT.ed.timeline?.legacy || {};
-      const ratioLabels = TEXT.ed.ratioLabels || { nurses: 'Slaugyt.', doctors: 'Gyd.' };
       const updatedAt = summary.generatedAt instanceof Date && !Number.isNaN(summary.generatedAt.getTime())
         ? summary.generatedAt
         : (dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime()) ? dataset.updatedAt : null);
@@ -9017,8 +9044,6 @@
           if (!config || typeof config !== 'object') {
             return;
           }
-          const rawValue = summary?.[config.key];
-          const formatted = formatEdCardValue(rawValue, config.format);
           const card = document.createElement('article');
           card.className = 'ed-dashboard__card';
           card.setAttribute('role', 'listitem');
@@ -9029,15 +9054,40 @@
 
           const value = document.createElement('p');
           value.className = 'ed-dashboard__card-value';
-          if (formatted != null) {
-            if (config.format === 'hours') {
-              value.textContent = `${formatted} val.`;
-            } else if (config.format === 'minutes') {
-              value.textContent = `${formatted} min.`;
-            } else {
-              value.textContent = formatted;
+          let hasValue = false;
+          if (config.secondaryKey) {
+            const primaryRaw = summary?.[config.key];
+            const secondaryRaw = summary?.[config.secondaryKey];
+            const primaryFormatted = formatEdCardValue(primaryRaw, config.format);
+            const secondaryFormatted = formatEdCardValue(secondaryRaw, config.format);
+            const suffix = config.format === 'hours'
+              ? ' val.'
+              : (config.format === 'minutes' ? ' min.' : '');
+            const primaryText = primaryFormatted != null
+              ? `${primaryFormatted}${suffix}`
+              : '—';
+            const secondaryText = secondaryFormatted != null
+              ? `${secondaryFormatted}${suffix}`
+              : '—';
+            if (primaryFormatted != null || secondaryFormatted != null) {
+              value.textContent = `${primaryText} / ${secondaryText}`;
+              hasValue = true;
             }
           } else {
+            const rawValue = summary?.[config.key];
+            const formatted = formatEdCardValue(rawValue, config.format);
+            if (formatted != null) {
+              if (config.format === 'hours') {
+                value.textContent = `${formatted} val.`;
+              } else if (config.format === 'minutes') {
+                value.textContent = `${formatted} min.`;
+              } else {
+                value.textContent = formatted;
+              }
+              hasValue = true;
+            }
+          }
+          if (!hasValue) {
             value.textContent = config.empty ?? '—';
           }
 
@@ -9056,154 +9106,22 @@
       if (selectors.edDispositionsCaption) {
         selectors.edDispositionsCaption.textContent = dispositionsText.caption || '';
       }
-      if (selectors.edTimelineTitle) {
-        selectors.edTimelineTitle.textContent = timelineText.title || '';
-      }
-      if (selectors.edTimelineCaption) {
-        selectors.edTimelineCaption.textContent = timelineText.caption || '';
+      if (selectors.edDispositionsMessage) {
+        selectors.edDispositionsMessage.hidden = true;
+        selectors.edDispositionsMessage.textContent = '';
       }
 
-      if (selectors.edDispositionsHeaderName) {
-        selectors.edDispositionsHeaderName.textContent = dispositionsText.headers?.name || '';
-      }
-      if (selectors.edDispositionsHeaderCount) {
-        selectors.edDispositionsHeaderCount.textContent = dispositionsText.headers?.count || '';
-      }
-      if (selectors.edDispositionsHeaderShare) {
-        selectors.edDispositionsHeaderShare.textContent = dispositionsText.headers?.share || '';
-      }
-      if (selectors.edTimelineHeaderDate) {
-        selectors.edTimelineHeaderDate.textContent = timelineText.headers?.date || '';
-      }
-      if (selectors.edTimelineHeaderPatients) {
-        selectors.edTimelineHeaderPatients.textContent = timelineText.headers?.patients || '';
-      }
-      if (selectors.edTimelineHeaderLos) {
-        selectors.edTimelineHeaderLos.textContent = timelineText.headers?.los || '';
-      }
-      if (selectors.edTimelineHeaderDoor) {
-        selectors.edTimelineHeaderDoor.textContent = timelineText.headers?.door || '';
-      }
-
-      if (selectors.edDispositionsTable) {
-        selectors.edDispositionsTable.replaceChildren();
-        if (!dispositions.length) {
-          const row = document.createElement('tr');
-          const cell = document.createElement('td');
-          cell.colSpan = 3;
-          cell.textContent = dispositionsText.empty || '';
-          row.appendChild(cell);
-          selectors.edDispositionsTable.appendChild(row);
-        } else {
-          dispositions.forEach((entry) => {
-            const row = document.createElement('tr');
-            const nameCell = document.createElement('td');
-            nameCell.textContent = entry.label;
-            const countCell = document.createElement('td');
-            if (Number.isFinite(entry.count)) {
-              countCell.textContent = displayVariant === 'snapshot'
-                ? oneDecimalFormatter.format(entry.count)
-                : numberFormatter.format(entry.count);
-            } else {
-              countCell.textContent = '—';
-            }
-            const shareCell = document.createElement('td');
-            shareCell.textContent = Number.isFinite(entry.share)
-              ? percentFormatter.format(entry.share)
-              : '—';
-            row.append(nameCell, countCell, shareCell);
-            selectors.edDispositionsTable.appendChild(row);
-          });
+      try {
+        await renderEdDispositionsChart(dispositions, dispositionsText, displayVariant);
+      } catch (error) {
+        console.error('Nepavyko atvaizduoti pacientų kategorijų grafiko:', error);
+        if (selectors.edDispositionsChart) {
+          selectors.edDispositionsChart.hidden = true;
+          selectors.edDispositionsChart.setAttribute('aria-hidden', 'true');
         }
-      }
-
-      if (selectors.edTimelineTable) {
-        selectors.edTimelineTable.replaceChildren();
-        if (!daily.length) {
-          const row = document.createElement('tr');
-          const cell = document.createElement('td');
-          cell.colSpan = 4;
-          cell.textContent = timelineText.empty || '';
-          row.appendChild(cell);
-          selectors.edTimelineTable.appendChild(row);
-        } else {
-          daily.slice(0, 10).forEach((entry) => {
-            const row = document.createElement('tr');
-            const dateCell = document.createElement('td');
-            if (displayVariant === 'snapshot') {
-              let label = '';
-              if (entry.timestamp instanceof Date && !Number.isNaN(entry.timestamp.getTime())) {
-                label = statusTimeFormatter.format(entry.timestamp);
-              } else if (typeof entry.label === 'string' && entry.label) {
-                if (/^\d{4}-\d{2}-\d{2}$/.test(entry.label)) {
-                  const parsed = dateKeyToDate(entry.label);
-                  label = parsed instanceof Date && !Number.isNaN(parsed.getTime())
-                    ? statusTimeFormatter.format(parsed)
-                    : entry.label;
-                } else if (entry.label.startsWith('snapshot-')) {
-                  label = `Įrašas #${entry.label.replace('snapshot-', '')}`;
-                } else {
-                  label = entry.label;
-                }
-              } else if (typeof entry.dateKey === 'string' && entry.dateKey) {
-                if (/^\d{4}-\d{2}-\d{2}$/.test(entry.dateKey)) {
-                  const parsedKey = dateKeyToDate(entry.dateKey);
-                  label = parsedKey instanceof Date && !Number.isNaN(parsedKey.getTime())
-                    ? statusTimeFormatter.format(parsedKey)
-                    : entry.dateKey;
-                } else if (entry.dateKey.startsWith('snapshot-')) {
-                  label = `Įrašas #${entry.dateKey.replace('snapshot-', '')}`;
-                } else {
-                  label = entry.dateKey;
-                }
-              }
-              dateCell.textContent = label || '—';
-            } else {
-              const date = dateKeyToDate(entry.dateKey);
-              dateCell.textContent = date instanceof Date && !Number.isNaN(date.getTime())
-                ? shortDateFormatter.format(date)
-                : entry.dateKey;
-            }
-
-            const patientsCell = document.createElement('td');
-            patientsCell.textContent = Number.isFinite(entry.patients)
-              ? numberFormatter.format(entry.patients)
-              : '—';
-
-            const thirdCell = document.createElement('td');
-            const fourthCell = document.createElement('td');
-            if (displayVariant === 'snapshot') {
-              thirdCell.textContent = Number.isFinite(entry.occupiedBeds)
-                ? numberFormatter.format(entry.occupiedBeds)
-                : '—';
-              const ratioParts = [];
-              if (Number.isFinite(entry.nurseRatio)) {
-                ratioParts.push(`${ratioLabels.nurses} 1:${oneDecimalFormatter.format(entry.nurseRatio)}`);
-              } else if (entry.nurseRatioText) {
-                ratioParts.push(`${ratioLabels.nurses} ${entry.nurseRatioText}`);
-              }
-              if (Number.isFinite(entry.doctorRatio)) {
-                ratioParts.push(`${ratioLabels.doctors} 1:${oneDecimalFormatter.format(entry.doctorRatio)}`);
-              } else if (entry.doctorRatioText) {
-                ratioParts.push(`${ratioLabels.doctors} ${entry.doctorRatioText}`);
-              }
-              fourthCell.textContent = ratioParts.length ? ratioParts.join(' • ') : '—';
-            } else {
-              if (Number.isFinite(entry.avgLosMinutes)) {
-                thirdCell.textContent = `${oneDecimalFormatter.format(entry.avgLosMinutes / 60)} val.`;
-              } else {
-                thirdCell.textContent = '—';
-              }
-              if (Number.isFinite(entry.avgDoorMinutes)) {
-                fourthCell.textContent = `${numberFormatter.format(Math.round(entry.avgDoorMinutes))} min.`;
-              } else {
-                fourthCell.textContent = '—';
-              }
-            }
-
-            row.append(dateCell, patientsCell, thirdCell, fourthCell);
-            selectors.edTimelineTable.appendChild(row);
-          });
+        if (selectors.edDispositionsMessage) {
+          selectors.edDispositionsMessage.textContent = dispositionsText.empty || 'Nepavyko atvaizduoti grafiko.';
+          selectors.edDispositionsMessage.hidden = false;
         }
       }
 
@@ -9236,6 +9154,168 @@
         selectors.edStatus.textContent = message;
         selectors.edStatus.dataset.tone = tone;
       }
+    }
+
+    async function renderEdDispositionsChart(dispositions, text, displayVariant) {
+      const canvas = selectors.edDispositionsChart;
+      const messageEl = selectors.edDispositionsMessage || null;
+      if (!canvas) {
+        if (messageEl) {
+          messageEl.textContent = '';
+          messageEl.hidden = true;
+        }
+        return;
+      }
+
+      if (messageEl) {
+        messageEl.textContent = '';
+        messageEl.hidden = true;
+      }
+
+      if (dashboardState.charts.edDispositions && typeof dashboardState.charts.edDispositions.destroy === 'function') {
+        dashboardState.charts.edDispositions.destroy();
+      }
+      dashboardState.charts.edDispositions = null;
+
+      const validEntries = Array.isArray(dispositions)
+        ? dispositions
+          .filter((entry) => Number.isFinite(entry?.count) && entry.count >= 0)
+          .map((entry) => ({
+            ...entry,
+            categoryKey: entry?.categoryKey != null ? String(entry.categoryKey) : null,
+          }))
+        : [];
+
+      if (!validEntries.length) {
+        canvas.hidden = true;
+        canvas.setAttribute('aria-hidden', 'true');
+        if (messageEl) {
+          messageEl.textContent = text.empty || 'Nėra duomenų grafiko sudarymui.';
+          messageEl.hidden = false;
+        }
+        return;
+      }
+
+      const Chart = await loadChartJs();
+      if (!Chart) {
+        throw new Error('Chart.js biblioteka nepasiekiama');
+      }
+      if (!dashboardState.chartLib) {
+        dashboardState.chartLib = Chart;
+      }
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Nepavyko gauti grafiko konteksto');
+      }
+
+      canvas.hidden = false;
+      canvas.removeAttribute('aria-hidden');
+
+      const palette = getThemePalette();
+      const CATEGORY_COLORS = {
+        '1': { background: '#2563eb', border: '#1d4ed8' },
+        '2': { background: '#dc2626', border: '#b91c1c' },
+        '3': { background: '#facc15', border: '#eab308' },
+        '4': { background: '#16a34a', border: '#15803d' },
+        '5': { background: '#6b7280', border: '#4b5563' },
+      };
+      const fallbackSequence = ['#2563eb', '#dc2626', '#facc15', '#16a34a', '#6b7280'];
+      const backgroundColors = validEntries.map((entry, index) => {
+        const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
+        if (key && CATEGORY_COLORS[key]) {
+          return CATEGORY_COLORS[key].background;
+        }
+        return fallbackSequence[index % fallbackSequence.length];
+      });
+      const borderColors = validEntries.map((entry, index) => {
+        const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
+        if (key && CATEGORY_COLORS[key]) {
+          return CATEGORY_COLORS[key].border;
+        }
+        return fallbackSequence[index % fallbackSequence.length];
+      });
+
+      const values = validEntries.map((entry) => Number(entry.count));
+      const labels = validEntries.map((entry) => entry.label);
+      const total = values.reduce((sum, value) => (Number.isFinite(value) ? sum + value : sum), 0);
+
+      const formatValue = (value) => {
+        if (!Number.isFinite(value)) {
+          return '—';
+        }
+        if (displayVariant === 'snapshot') {
+          return numberFormatter.format(Math.round(value));
+        }
+        if (Math.abs(value) >= 1) {
+          return oneDecimalFormatter.format(value);
+        }
+        return decimalFormatter.format(value);
+      };
+
+      const tooltipFormatter = (context) => {
+        const label = context.label || '';
+        const value = Number(context.parsed ?? 0);
+        const percent = total > 0 ? value / total : 0;
+        return `${label}: ${formatValue(value)} (${percentFormatter.format(percent)})`;
+      };
+
+      dashboardState.charts.edDispositions = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: text?.title || 'Pacientų kategorijos',
+              data: values,
+              backgroundColor: backgroundColors,
+              borderColor: borderColors,
+              borderWidth: 1,
+              borderRadius: 8,
+              maxBarThickness: 48,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label: tooltipFormatter,
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false,
+                drawBorder: false,
+              },
+              ticks: {
+                color: palette.textColor,
+              },
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: palette.gridColor,
+                drawBorder: false,
+              },
+              ticks: {
+                color: palette.textColor,
+                precision: 0,
+                callback(value) {
+                  return numberFormatter.format(value);
+                },
+              },
+            },
+          },
+        },
+      });
     }
 
     function renderFeedbackSection(feedbackData) {
@@ -9558,7 +9638,7 @@
             updatedAt: new Date(),
           };
         }
-        renderEdDashboard(dashboardState.ed);
+        await renderEdDashboard(dashboardState.ed);
 
         if (dataResult.status !== 'fulfilled') {
           throw dataResult.reason;
@@ -9610,14 +9690,14 @@
         renderFeedbackSection(feedbackStats);
         setStatus('success');
         applyFeedbackStatusNote();
-        renderEdDashboard(dashboardState.ed);
+        await renderEdDashboard(dashboardState.ed);
       } catch (error) {
         console.error('Nepavyko apdoroti duomenų:', error);
         dashboardState.usingFallback = false;
         const friendlyMessage = describeError(error);
         dashboardState.lastErrorMessage = friendlyMessage;
         setStatus('error', friendlyMessage);
-        renderEdDashboard(dashboardState.ed);
+        await renderEdDashboard(dashboardState.ed);
       }
     }
 
