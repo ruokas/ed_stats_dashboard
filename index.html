@@ -298,6 +298,59 @@
       color: var(--color-text-muted);
     }
 
+    .ed-dashboard__actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .ed-panel-close-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .ed-panel-close-btn svg {
+      width: 1.1em;
+      height: 1.1em;
+    }
+
+    .ed-panel-close-btn:hover,
+    .ed-panel-close-btn:focus-visible {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: #fff;
+      box-shadow: 0 14px 28px -20px rgba(37, 99, 235, 0.65);
+      outline: none;
+    }
+
+    .ed-panel-close-btn:focus-visible {
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 14px 28px -20px rgba(37, 99, 235, 0.65);
+    }
+
+    body[data-theme="dark"] .ed-panel-close-btn {
+      background: rgba(96, 165, 250, 0.16);
+      border-color: rgba(96, 165, 250, 0.35);
+      color: var(--color-text);
+    }
+
+    body[data-theme="dark"] .ed-panel-close-btn:hover,
+    body[data-theme="dark"] .ed-panel-close-btn:focus-visible {
+      background: rgba(96, 165, 250, 0.45);
+      border-color: rgba(96, 165, 250, 0.75);
+    }
+
     .ed-dashboard__status[data-tone="success"] {
       color: var(--color-success);
     }
@@ -2845,6 +2898,18 @@
           <div>
             <h2 id="edHeading" class="section__title">RŠL SMPS skydelis</h2>
           </div>
+          <div class="section__actions ed-dashboard__actions">
+            <button type="button"
+                    id="closeEdPanelBtn"
+                    class="ed-panel-close-btn"
+                    aria-label="Grįžti į pagrindinį skydelį">
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m11 7-5 5 5 5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12h12" />
+              </svg>
+              <span>Grįžti į pagrindinį skydelį</span>
+            </button>
+          </div>
         </div>
         <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
         <div id="edCards" class="ed-dashboard__cards" role="list"></div>
@@ -3249,6 +3314,7 @@
       ed: {
         title: 'RŠL SMPS skydelis',
         subtitle: 'Naujausi duomenys',
+        closeButton: (label) => `Grįžti į ${label}`,
         status: {
           loading: 'Kraunami ED duomenys...',
           empty: 'ED duomenų nerasta.',
@@ -3778,6 +3844,7 @@
       tabPanels: Array.from(document.querySelectorAll('[data-tab-panel]')),
       tabOverview: document.getElementById('tabOverview'),
       edNavButton: document.getElementById('edNavButton'),
+      closeEdPanelBtn: document.getElementById('closeEdPanelBtn'),
       overviewPanel: document.getElementById('panelOverview'),
       edPanel: document.getElementById('panelEd'),
       refreshBtn: document.getElementById('refreshBtn'),
@@ -5069,6 +5136,20 @@
         const currentLabel = isActive ? closeLabel : openLabel;
         selectors.edNavButton.setAttribute('aria-label', currentLabel);
         selectors.edNavButton.title = currentLabel;
+      }
+      if (selectors.closeEdPanelBtn) {
+        const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
+        const closeLabel = typeof TEXT.ed?.closeButton === 'function'
+          ? TEXT.ed.closeButton(overviewLabel)
+          : (TEXT.ed?.closeButton || `Grįžti į ${overviewLabel}`);
+        selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
+        selectors.closeEdPanelBtn.title = closeLabel;
+        const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
+        if (labelSpan) {
+          labelSpan.textContent = closeLabel;
+        } else {
+          selectors.closeEdPanelBtn.textContent = closeLabel;
+        }
       }
       if (selectors.refreshBtn) {
         selectors.refreshBtn.setAttribute('aria-label', TEXT.refresh);
@@ -10815,6 +10896,12 @@
           focusPanel: !isActive,
           restoreFocus: isActive,
         });
+      });
+    }
+
+    if (selectors.closeEdPanelBtn) {
+      selectors.closeEdPanelBtn.addEventListener('click', () => {
+        setActiveTab('overview', { restoreFocus: true });
       });
     }
 
