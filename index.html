@@ -4654,6 +4654,30 @@
         && typeof selectors.edNavButton.focus === 'function') {
         selectors.edNavButton.focus();
       }
+      updateFullscreenControls();
+    }
+
+    function updateFullscreenControls() {
+      if (!selectors.edNavButton) {
+        return;
+      }
+      const panelLabel = selectors.edNavButton.dataset.panelLabel
+        || settings?.output?.tabEdLabel
+        || TEXT.tabs.ed;
+      const openLabel = selectors.edNavButton.dataset.openLabel
+        || (typeof TEXT.edToggle?.open === 'function'
+          ? TEXT.edToggle.open(panelLabel)
+          : `Atidaryti ${panelLabel}`);
+      const closeLabel = selectors.edNavButton.dataset.closeLabel
+        || (typeof TEXT.edToggle?.close === 'function'
+          ? TEXT.edToggle.close(panelLabel)
+          : `Uždaryti ${panelLabel}`);
+      const isFullscreen = dashboardState.fullscreen === true;
+      const isEdActive = dashboardState.activeTab === 'ed';
+      const activeLabel = isFullscreen && isEdActive ? closeLabel : openLabel;
+      selectors.edNavButton.setAttribute('aria-label', activeLabel);
+      selectors.edNavButton.title = activeLabel;
+      selectors.edNavButton.dataset.fullscreenAvailable = isEdActive ? 'true' : 'false';
     }
 
     /**
@@ -8635,6 +8659,7 @@
           selectors.edHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
+      updateFullscreenControls();
       scheduleLayoutRefresh();
     }
 
