@@ -341,6 +341,10 @@
       color: var(--color-text-muted);
     }
 
+    .ed-dashboard__card-meta:empty {
+      display: none;
+    }
+
     .ed-dashboard__group {
       margin-top: 32px;
     }
@@ -567,6 +571,34 @@
       transform: translateY(0);
     }
 
+    button.fullscreen-toggle {
+      background: #fff;
+      color: var(--color-accent);
+      border: 1px solid rgba(37, 99, 235, 0.1);
+    }
+
+    button.fullscreen-toggle:hover,
+    button.fullscreen-toggle:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 34px -22px rgba(15, 23, 42, 0.7);
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    button.fullscreen-toggle:active {
+      transform: translateY(0);
+    }
+
+    body[data-theme="dark"] button.fullscreen-toggle {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(148, 163, 184, 0.4);
+      color: var(--color-text);
+    }
+
+    body[data-theme="dark"] button.fullscreen-toggle:hover,
+    body[data-theme="dark"] button.fullscreen-toggle:focus-visible {
+      background: rgba(15, 23, 42, 0.85);
+    }
+
     button.settings-btn {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.35);
@@ -618,6 +650,38 @@
     body[data-theme="dark"] .theme-toggle[aria-pressed="true"] {
       background: rgba(96, 165, 250, 0.3);
       color: #e2e8f0;
+    }
+
+    .fullscreen-exit-btn {
+      position: fixed;
+      top: clamp(12px, 2vw, 24px);
+      right: clamp(12px, 2vw, 24px);
+      z-index: 30;
+    }
+
+    .fullscreen-icon {
+      display: none;
+    }
+
+    #fullscreenToggleBtn[aria-pressed="false"] .fullscreen-icon--enter,
+    #fullscreenToggleBtn:not([aria-pressed]) .fullscreen-icon--enter {
+      display: block;
+    }
+
+    #fullscreenToggleBtn[aria-pressed="true"] .fullscreen-icon--exit {
+      display: block;
+    }
+
+    .fullscreen-exit-btn .fullscreen-icon--exit {
+      display: block;
+    }
+
+    body[data-fullscreen="true"] header.hero {
+      display: none;
+    }
+
+    body[data-fullscreen="true"] main.container {
+      padding-top: clamp(16px, 3vw, 40px);
     }
 
     body[data-theme="dark"] .kpi-filter span {
@@ -2206,6 +2270,20 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 0 1 11.21 3 7.5 7.5 0 1 0 21 12.79Z" />
             </svg>
           </button>
+          <button id="fullscreenToggleBtn" type="button" class="icon-button fullscreen-toggle" aria-pressed="false" aria-label="Pilnas ekranas" title="Pilnas ekranas (Ctrl+Shift+F)">
+            <svg class="fullscreen-icon fullscreen-icon--enter" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 15v5h-5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 15v5h5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 9V4h-5" />
+            </svg>
+            <svg class="fullscreen-icon fullscreen-icon--exit" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 4H4v5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h5v5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 20H4v-5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 20h5v-5" />
+            </svg>
+          </button>
           <button id="openSettingsBtn" type="button" class="icon-button settings-btn" aria-haspopup="dialog" aria-label="Atidaryti nustatymus" title="Atidaryti nustatymus (Ctrl+,)">
             <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/>
@@ -2459,7 +2537,7 @@
         <div class="section__header">
           <div>
             <h2 id="edHeading" class="section__title">RŠL SMPS skydelis</h2>
-            <p id="edSubtitle" class="section__subtitle">Gyvi duomenys iš naujausio CSV įrašo</p>
+            <p id="edSubtitle" class="section__subtitle">Naujausi duomenys</p>
           </div>
         </div>
         <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
@@ -2477,6 +2555,20 @@
       </section>
     </div>
   </main>
+
+  <button type="button"
+          id="exitFullscreenBtn"
+          class="icon-button fullscreen-toggle fullscreen-exit-btn"
+          aria-label="Išeiti iš pilno ekrano"
+          title="Išeiti iš pilno ekrano (Esc)"
+          hidden>
+    <svg class="fullscreen-icon fullscreen-icon--exit" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 4H4v5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h5v5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 20H4v-5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 20h5v-5" />
+    </svg>
+  </button>
 
   <button type="button"
           id="scrollTopBtn"
@@ -2698,7 +2790,7 @@
             </div>
             <div class="settings-field">
               <label for="settingsEdSubtitle"><span>ED skyriaus paantraštė</span></label>
-              <input id="settingsEdSubtitle" name="output.edSubtitle" type="text" placeholder="Gyvi duomenys iš naujausio CSV įrašo">
+              <input id="settingsEdSubtitle" name="output.edSubtitle" type="text" placeholder="Naujausi duomenys">
             </div>
           </div>
           <div class="settings-field">
@@ -2823,6 +2915,10 @@
       subtitle: 'Greita statistikos apžvalga.',
       refresh: 'Perkrauti duomenis',
       settings: 'Nustatymai',
+      layout: {
+        enterFullscreen: 'Pilnas ekranas',
+        exitFullscreen: 'Išeiti iš pilno ekrano',
+      },
       theme: {
         toggle: 'Perjungti šviesią/tamsią temą',
         light: 'Šviesi tema',
@@ -2847,11 +2943,11 @@
       footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
       ed: {
         title: 'RŠL SMPS skydelis',
-        subtitle: 'Gyvi duomenys iš naujausio CSV įrašo.',
+        subtitle: 'Naujausi duomenys',
         status: {
           loading: 'Kraunami ED duomenys...',
           empty: 'ED duomenų nerasta.',
-          success: (timestamp) => `ED duomenys atnaujinti ${timestamp}.`,
+          success: (timestamp) => `Duomenys atnaujinti ${timestamp}.`,
           fallback: (reason, timestamp) => `Rodomi ED demonstraciniai duomenys${timestamp ? ` (${timestamp})` : ''}. Priežastis: ${reason}`,
           error: (reason) => `Nepavyko įkelti ED duomenų: ${reason}`,
           noUrl: 'Nenurodytas ED duomenų URL. Rodomi demonstraciniai duomenys.',
@@ -2907,13 +3003,13 @@
             {
               key: 'currentPatients',
               title: 'Pacientai skyriuje dabar',
-              description: 'Naujausio CSV įrašo reikšmė.',
+              description: '',
               empty: '—',
             },
             {
               key: 'occupiedBeds',
               title: 'Užimtos lovos dabar',
-              description: 'Naujausio įrašo reikšmė (iš 29).',
+              description: '',
               empty: '—',
               format: 'beds',
             },
@@ -3413,6 +3509,8 @@
       edDispositionsMessage: document.getElementById('edDispositionsMessage'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
+      fullscreenToggleBtn: document.getElementById('fullscreenToggleBtn'),
+      exitFullscreenBtn: document.getElementById('exitFullscreenBtn'),
       settingsDialog: document.getElementById('settingsDialog'),
       settingsForm: document.getElementById('settingsForm'),
       resetSettingsBtn: document.getElementById('resetSettingsBtn'),
@@ -4526,6 +4624,7 @@
         heatmap: null,
       },
       theme: 'light',
+      fullscreen: false,
       activeTab: 'overview',
       compare: {
         active: false,
@@ -4556,6 +4655,45 @@
       },
     };
 
+    function updateFullscreenControls() {
+      const enterLabel = TEXT.layout?.enterFullscreen || 'Pilnas ekranas';
+      const exitLabel = TEXT.layout?.exitFullscreen || 'Išeiti iš pilno ekrano';
+      const isActive = dashboardState.fullscreen === true;
+      if (selectors.fullscreenToggleBtn) {
+        selectors.fullscreenToggleBtn.setAttribute('aria-label', isActive ? exitLabel : enterLabel);
+        selectors.fullscreenToggleBtn.title = `${isActive ? exitLabel : enterLabel} (Ctrl+Shift+F)`;
+        selectors.fullscreenToggleBtn.setAttribute('aria-pressed', String(isActive));
+      }
+      if (selectors.exitFullscreenBtn) {
+        selectors.exitFullscreenBtn.hidden = !isActive;
+        selectors.exitFullscreenBtn.setAttribute('aria-label', exitLabel);
+        selectors.exitFullscreenBtn.title = `${exitLabel} (Esc)`;
+      }
+    }
+
+    function setFullscreenMode(active, options = {}) {
+      const previousState = dashboardState.fullscreen === true;
+      const isActive = Boolean(active);
+      dashboardState.fullscreen = isActive;
+      if (isActive) {
+        document.body.setAttribute('data-fullscreen', 'true');
+      } else {
+        document.body.removeAttribute('data-fullscreen');
+      }
+      updateFullscreenControls();
+      if (isActive && !previousState && selectors.exitFullscreenBtn && typeof selectors.exitFullscreenBtn.focus === 'function') {
+        selectors.exitFullscreenBtn.focus();
+      }
+      if (!isActive && previousState && options.restoreFocus && selectors.fullscreenToggleBtn && typeof selectors.fullscreenToggleBtn.focus === 'function') {
+        selectors.fullscreenToggleBtn.focus();
+      }
+    }
+
+    function toggleFullscreenMode(options = {}) {
+      const nextState = !(dashboardState.fullscreen === true);
+      setFullscreenMode(nextState, options);
+    }
+
     /**
      * Pirminis tekstų suleidimas iš konfigūracijos (galima perrašyti iš kitų failų).
      */
@@ -4583,6 +4721,7 @@
         selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
         selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
       }
+      updateFullscreenControls();
       selectors.kpiHeading.textContent = TEXT.kpis.title;
       selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
       selectors.chartHeading.textContent = TEXT.charts.title;
@@ -8977,7 +9116,16 @@
           if (!Number.isFinite(rawValue)) {
             return null;
           }
-          return `${numberFormatter.format(Math.round(rawValue))}/${numberFormatter.format(ED_TOTAL_BEDS)}`;
+          {
+            const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? ED_TOTAL_BEDS : 0;
+            const occupied = Math.max(0, Math.round(rawValue));
+            if (totalBeds > 0) {
+              const share = occupied / totalBeds;
+              const percentText = percentFormatter.format(share);
+              return `${numberFormatter.format(occupied)}/${numberFormatter.format(totalBeds)} (${percentText})`;
+            }
+            return numberFormatter.format(occupied);
+          }
         default:
           if (!Number.isFinite(rawValue)) {
             return null;
@@ -9743,6 +9891,18 @@
       });
     }
 
+    if (selectors.fullscreenToggleBtn) {
+      selectors.fullscreenToggleBtn.addEventListener('click', () => {
+        toggleFullscreenMode({ restoreFocus: true });
+      });
+    }
+
+    if (selectors.exitFullscreenBtn) {
+      selectors.exitFullscreenBtn.addEventListener('click', () => {
+        setFullscreenMode(false, { restoreFocus: true });
+      });
+    }
+
     if (selectors.compareToggle) {
       selectors.compareToggle.addEventListener('click', () => {
         setCompareMode(!dashboardState.compare.active);
@@ -9856,6 +10016,14 @@
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'L' || event.key === 'l')) {
         event.preventDefault();
         toggleTheme();
+      }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'F' || event.key === 'f')) {
+        event.preventDefault();
+        toggleFullscreenMode({ restoreFocus: true });
+      }
+      if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key === 'Escape' && dashboardState.fullscreen) {
+        event.preventDefault();
+        setFullscreenMode(false, { restoreFocus: true });
       }
     });
 
