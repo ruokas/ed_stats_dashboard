@@ -1530,7 +1530,7 @@
       grid-auto-flow: row dense;
     }
 
-    .chart-card {
+    .chart-card { 
       background: var(--color-surface);
       border-radius: 14px;
       border: 1px solid var(--color-border);
@@ -1671,6 +1671,26 @@
     .chart-card figcaption {
       font-size: 0.95rem;
       color: var(--color-text-muted);
+    }
+
+    .chart-card--funnel {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(24px, 3vw, 32px);
+      gap: clamp(12px, 2.4vw, 20px);
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .chart-card--funnel canvas {
+      width: 100%;
+      height: clamp(260px, 30vh, 360px);
+      display: block;
+      border-radius: 16px;
+    }
+
+    .chart-card--funnel figcaption {
+      font-size: 0.9rem;
+      transition: color 0.3s ease;
     }
 
     .chart-card--ed-modern {
@@ -2781,7 +2801,7 @@
           <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
           <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
         </figure>
-        <figure class="chart-card">
+        <figure class="chart-card chart-card--funnel">
           <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
           <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
         </figure>
@@ -10285,6 +10305,87 @@
 
       dashboardState.charts.edDispositions = chartInstance;
     }
+    function clampColorChannel(value) {
+      return Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
+    }
+
+    function parseColorToRgb(color) {
+      if (typeof color !== 'string') {
+        return null;
+      }
+      const trimmed = color.trim();
+      if (!trimmed) {
+        return null;
+      }
+      if (trimmed.startsWith('#')) {
+        let hex = trimmed.slice(1);
+        if (hex.length === 3 || hex.length === 4) {
+          hex = hex
+            .split('')
+            .map((char) => char + char)
+            .join('');
+        }
+        if (hex.length === 6 || hex.length === 8) {
+          const r = parseInt(hex.slice(0, 2), 16);
+          const g = parseInt(hex.slice(2, 4), 16);
+          const b = parseInt(hex.slice(4, 6), 16);
+          if ([r, g, b].every((channel) => Number.isFinite(channel))) {
+            return { r, g, b };
+          }
+        }
+        return null;
+      }
+      const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+      if (rgbMatch) {
+        const parts = rgbMatch[1]
+          .split(',')
+          .map((part) => Number.parseFloat(part.trim()))
+          .filter((value, index) => index < 3 && Number.isFinite(value));
+        if (parts.length === 3) {
+          const [r, g, b] = parts;
+          return { r: clampColorChannel(r), g: clampColorChannel(g), b: clampColorChannel(b) };
+        }
+      }
+      return null;
+    }
+
+    function relativeLuminance({ r, g, b }) {
+      const normalize = (channel) => {
+        const ratio = channel / 255;
+        if (ratio <= 0.03928) {
+          return ratio / 12.92;
+        }
+        return ((ratio + 0.055) / 1.055) ** 2.4;
+      };
+      const linearR = normalize(clampColorChannel(r));
+      const linearG = normalize(clampColorChannel(g));
+      const linearB = normalize(clampColorChannel(b));
+      return 0.2126 * linearR + 0.7152 * linearG + 0.0722 * linearB;
+    }
+
+    function rgbToRgba(rgb, alpha) {
+      const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1;
+      const formattedAlpha = safeAlpha === 1 ? '1' : Number(safeAlpha.toFixed(3)).toString();
+      return `rgba(${clampColorChannel(rgb.r)}, ${clampColorChannel(rgb.g)}, ${clampColorChannel(rgb.b)}, ${formattedAlpha})`;
+    }
+
+    function buildFunnelTextPalette(baseColor) {
+      const fallbackRgb = { r: 15, g: 23, b: 42 };
+      const rgb = parseColorToRgb(baseColor) || fallbackRgb;
+      const luminance = relativeLuminance(rgb);
+      const isLightText = luminance > 0.55;
+      return {
+        value: rgbToRgba(rgb, isLightText ? 0.94 : 0.98),
+        label: rgbToRgba(rgb, isLightText ? 0.82 : 0.74),
+        percent: rgbToRgba(rgb, isLightText ? 0.72 : 0.66),
+        guide: rgbToRgba(rgb, isLightText ? 0.52 : 0.22),
+        outline: rgbToRgba(rgb, isLightText ? 0.36 : 0.2),
+        fallback: rgbToRgba(rgb, isLightText ? 0.9 : 0.92),
+        shadow: isLightText ? 'rgba(8, 12, 32, 0.45)' : 'rgba(255, 255, 255, 0.3)',
+        shadowBlur: isLightText ? 8 : 5,
+      };
+    }
+
     function drawFunnelShape(canvas, steps, accentColor, textColor) {
       if (!canvas) {
         return;
@@ -10312,9 +10413,10 @@
       const baselineValue = rawValues.length ? rawValues[0] : 0;
       const maxValue = Math.max(baselineValue, ...rawValues);
       const fontFamily = getComputedStyle(getThemeStyleTarget()).fontFamily;
+      const textPalette = buildFunnelTextPalette(textColor);
 
       if (!Number.isFinite(maxValue) || maxValue <= 0) {
-        ctx.fillStyle = textColor;
+        ctx.fillStyle = textPalette.fallback;
         ctx.font = `500 14px ${fontFamily}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -10323,70 +10425,117 @@
         return;
       }
 
-      const paddingX = Math.min(48, width * 0.12);
-      const paddingTop = 18;
-      const paddingBottom = 26;
-      const availableHeight = Math.max(0, height - paddingTop - paddingBottom);
-      const stepGap = Math.min(16, availableHeight * 0.08);
-      const totalGap = stepGap * Math.max(0, steps.length - 1);
-      const effectiveHeight = Math.max(0, availableHeight - totalGap);
-      const segmentHeight = steps.length > 0 ? effectiveHeight / steps.length : 0;
-      const baseWidth = Math.max(0, width - paddingX * 2);
-      const centerX = width / 2;
-
-      const colorSteps = steps.map((_, index) => {
-        const intensity = Math.max(0.15, 0.85 - index * 0.22);
-        return computeHeatmapColor(accentColor, intensity);
+      const paddingX = Math.max(24, Math.min(56, width * 0.1));
+      const paddingTop = Math.max(24, height * 0.08);
+      const labelAreaHeight = Math.max(72, height * 0.22);
+      const paddingBottom = Math.max(32, height * 0.12);
+      const funnelHeight = Math.max(48, height - paddingTop - labelAreaHeight - paddingBottom);
+      const centerY = paddingTop + labelAreaHeight + funnelHeight / 2;
+      const stepsCount = steps.length;
+      const xSpacing = stepsCount > 1 ? (width - paddingX * 2) / (stepsCount - 1) : 0;
+      const xPositions = steps.map((_, index) => (stepsCount > 1 ? paddingX + index * xSpacing : width / 2));
+      const referenceValue = baselineValue > 0 ? baselineValue : maxValue;
+      const maxThickness = funnelHeight;
+      const minThickness = Math.max(18, maxThickness * 0.18);
+      const thicknesses = steps.map((step) => {
+        const value = Math.max(0, step.value || 0);
+        if (!Number.isFinite(value) || referenceValue <= 0) {
+          return minThickness;
+        }
+        const rawRatio = value / referenceValue;
+        const safeRatio = Math.min(1, Math.max(0, rawRatio));
+        return Math.max(minThickness, safeRatio * maxThickness);
       });
+
+      const topPoints = xPositions.map((x, index) => ({ x, y: centerY - thicknesses[index] / 2 }));
+      const bottomPoints = xPositions.map((x, index) => ({ x, y: centerY + thicknesses[index] / 2 })).reverse();
+
+      const accentGradientColor = typeof accentColor === 'string' && accentColor.trim() ? accentColor : '#8b5cf6';
+      const gradient = ctx.createLinearGradient(paddingX, topPoints[0]?.y ?? centerY, width - paddingX, bottomPoints[0]?.y ?? centerY);
+      gradient.addColorStop(0, '#ffb56b');
+      gradient.addColorStop(0.45, '#ff6f91');
+      gradient.addColorStop(0.78, '#f472b6');
+      gradient.addColorStop(1, accentGradientColor);
+
+      ctx.beginPath();
+      if (topPoints.length) {
+        ctx.moveTo(topPoints[0].x, topPoints[0].y);
+        for (let i = 1; i < topPoints.length; i += 1) {
+          const prev = topPoints[i - 1];
+          const current = topPoints[i];
+          const midX = (prev.x + current.x) / 2;
+          ctx.bezierCurveTo(midX, prev.y, midX, current.y, current.x, current.y);
+        }
+      }
+      if (bottomPoints.length) {
+        ctx.lineTo(bottomPoints[0].x, bottomPoints[0].y);
+        for (let i = 1; i < bottomPoints.length; i += 1) {
+          const prev = bottomPoints[i - 1];
+          const current = bottomPoints[i];
+          const midX = (prev.x + current.x) / 2;
+          ctx.bezierCurveTo(midX, prev.y, midX, current.y, current.x, current.y);
+        }
+      }
+      ctx.closePath();
+
+      ctx.shadowColor = 'rgba(15, 23, 42, 0.5)';
+      ctx.shadowBlur = 32;
+      ctx.shadowOffsetY = 24;
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = textPalette.outline;
+      ctx.stroke();
+
+      const funnelTop = topPoints.length ? Math.min(...topPoints.map((point) => point.y)) : paddingTop + labelAreaHeight;
+      const funnelBottom = bottomPoints.length ? Math.max(...bottomPoints.map((point) => point.y)) : centerY + maxThickness / 2;
+
+      const valueFontSize = Math.max(22, Math.min(34, width * 0.05));
+      const labelFontSize = Math.max(12, Math.min(16, valueFontSize * 0.45));
+      const percentFontSize = Math.max(11, Math.min(14, valueFontSize * 0.38));
+      const valueBaselineY = paddingTop + valueFontSize;
+      const labelBaselineY = valueBaselineY + labelFontSize + 6;
+      const percentBaselineY = labelBaselineY + percentFontSize + 6;
+      const labelAreaBottom = percentBaselineY + 6;
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.shadowColor = textPalette.shadow;
+      ctx.shadowBlur = textPalette.shadowBlur;
+      ctx.shadowOffsetY = 1;
 
       steps.forEach((step, index) => {
-        const previousValue = index === 0 ? baselineValue : steps[index - 1].value || 0;
-        const currentValue = step.value || 0;
-        const divisor = baselineValue > 0 ? baselineValue : maxValue;
-        const topRatio = divisor > 0 ? Math.min(1, Math.max(currentValue, previousValue) / divisor) : 1;
-        const bottomRatio = divisor > 0 ? Math.min(1, currentValue / divisor) : 0;
-        const topWidthRaw = topRatio * baseWidth;
-        const bottomWidthRaw = bottomRatio * baseWidth;
-        const minWidth = baseWidth * 0.08;
-        const bottomWidth = currentValue > 0 ? Math.max(minWidth, bottomWidthRaw) : bottomWidthRaw;
-        const topWidth = Math.max(bottomWidth, topWidthRaw);
-        const shapeHeight = Math.max(20, segmentHeight);
-        const topY = paddingTop + index * (shapeHeight + stepGap);
-        const bottomY = topY + shapeHeight;
-        const topHalfWidth = topWidth / 2;
-        const bottomHalfWidth = bottomWidth / 2;
-
-        ctx.beginPath();
-        ctx.moveTo(centerX - topHalfWidth, topY);
-        ctx.lineTo(centerX + topHalfWidth, topY);
-        ctx.lineTo(centerX + bottomHalfWidth, bottomY);
-        ctx.lineTo(centerX - bottomHalfWidth, bottomY);
-        ctx.closePath();
-        ctx.fillStyle = colorSteps[index] || accentColor;
-        ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
-        ctx.shadowBlur = 16;
-        ctx.shadowOffsetY = 8;
-        ctx.fill();
-
-        ctx.shadowColor = 'transparent';
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.stroke();
-
-        const labelFontSize = Math.max(12, Math.min(16, shapeHeight * 0.28));
-        const valueFontSize = Math.max(14, Math.min(20, shapeHeight * 0.36));
-        const percent = divisor > 0 ? (currentValue / divisor) * 100 : 0;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const centerY = topY + shapeHeight / 2;
+        const x = xPositions[index];
+        const rawValue = Math.max(0, step.value || 0);
+        const ratio = referenceValue > 0 ? Math.max(0, rawValue / referenceValue) : 0;
+        ctx.fillStyle = textPalette.value;
+        ctx.font = `700 ${valueFontSize}px ${fontFamily}`;
+        ctx.fillText(numberFormatter.format(Math.round(rawValue)), x, valueBaselineY);
+        ctx.fillStyle = textPalette.label;
         ctx.font = `500 ${labelFontSize}px ${fontFamily}`;
-        ctx.fillText(step.label, centerX, centerY - valueFontSize * 0.7);
-        ctx.font = `600 ${valueFontSize}px ${fontFamily}`;
-        ctx.fillText(numberFormatter.format(currentValue), centerX, centerY);
-        ctx.font = `400 ${Math.max(11, labelFontSize - 1)}px ${fontFamily}`;
-        ctx.fillText(`${decimalFormatter.format(percent)}%`, centerX, Math.min(bottomY - 10, centerY + valueFontSize * 0.95));
+        ctx.fillText(step.label, x, labelBaselineY);
+        ctx.fillStyle = textPalette.percent;
+        ctx.font = `600 ${percentFontSize}px ${fontFamily}`;
+        ctx.fillText(percentFormatter.format(ratio), x, percentBaselineY);
       });
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      if (stepsCount > 0) {
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = textPalette.guide;
+        steps.forEach((_, index) => {
+          const x = xPositions[index];
+          const lineStartY = Math.min(funnelTop - 6, labelAreaBottom + 12);
+          ctx.beginPath();
+          ctx.moveTo(x, lineStartY);
+          ctx.lineTo(x, funnelBottom + 18);
+          ctx.stroke();
+        });
+      }
 
       ctx.restore();
     }
