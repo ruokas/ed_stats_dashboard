@@ -3295,18 +3295,6 @@
           </div>
           <div class="section__actions ed-dashboard__actions">
             <button type="button"
-                    id="toggleTvBtn"
-                    class="icon-button ed-panel-toggle"
-                    aria-pressed="false"
-                    aria-label="Įjungti ekraną (Ctrl+Shift+T)"
-                    title="Įjungti ekraną (Ctrl+Shift+T)">
-              <svg class="ed-panel-toggle__icon" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="5" width="18" height="12" rx="2" ry="2" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8" />
-              </svg>
-              <span class="sr-only" data-tv-toggle-label>Įjungti ekraną</span>
-            </button>
-            <button type="button"
                     id="closeEdPanelBtn"
                     class="ed-panel-close-btn"
                     aria-label="Grįžti į pagrindinį skydelį">
@@ -3332,44 +3320,6 @@
               <figcaption id="edDispositionsCaption" class="chart-card__caption">Pacientų pasiskirstymas pagal naujausią įrašą.</figcaption>
             </figure>
             <p id="edDispositionsMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
-          </section>
-        </div>
-      </section>
-      <section id="edTvPanel" class="ed-tv" aria-live="polite" hidden>
-        <header class="ed-tv__header">
-          <div class="ed-tv__branding">
-            <h2 id="edTvTitle">RŠL SMPS ekranas</h2>
-            <p id="edTvSubtitle">Operatyvinė skyrių apžvalga</p>
-          </div>
-          <div class="ed-tv__clock" role="group" aria-labelledby="edTvTitle">
-            <span id="edTvClockTime" class="ed-tv__clock-time">00:00</span>
-            <span id="edTvClockDate" class="ed-tv__clock-date">—</span>
-          </div>
-          <div class="ed-tv__meta">
-            <p id="edTvUpdated">Atnaujinta —</p>
-            <p id="edTvStatusText" class="ed-tv__status">Kraunama...</p>
-          </div>
-        </header>
-        <p id="edTvNotice" class="ed-tv__notice" role="status" hidden></p>
-        <div class="ed-tv__grid">
-          <section class="ed-tv__group" aria-labelledby="edTvPrimaryTitle">
-            <h3 id="edTvPrimaryTitle" class="ed-tv__group-title">Ši akimirka</h3>
-            <ul id="edTvPrimaryMetrics" class="ed-tv__metrics"></ul>
-          </section>
-          <section class="ed-tv__group" aria-labelledby="edTvStaffTitle">
-            <h3 id="edTvStaffTitle" class="ed-tv__group-title">Komandos apkrova</h3>
-            <ul id="edTvStaffMetrics" class="ed-tv__metrics ed-tv__metrics--compact"></ul>
-          </section>
-          <section class="ed-tv__group" aria-labelledby="edTvFlowTitle">
-            <h3 id="edTvFlowTitle" class="ed-tv__group-title">Srautai ir trukmės</h3>
-            <ul id="edTvFlowMetrics" class="ed-tv__metrics ed-tv__metrics--compact"></ul>
-          </section>
-          <section class="ed-tv__group ed-tv__group--wide" aria-labelledby="edTvTriageTitle">
-            <div class="ed-tv__group-header">
-              <h3 id="edTvTriageTitle" class="ed-tv__group-title">Pacientų pasiskirstymas</h3>
-              <span id="edTvTriageMeta" class="ed-tv__group-meta"></span>
-            </div>
-            <ul id="edTvTriageList" class="ed-tv__triage-list"></ul>
           </section>
         </div>
       </section>
@@ -3735,56 +3685,6 @@
       edToggle: {
         open: (label) => `Atidaryti ${label}`,
         close: (label) => `Uždaryti ${label}`,
-      },
-      edTv: {
-        title: 'RŠL SMPS ekranas',
-        subtitle: 'Operatyvinė skyrių apžvalga realiu laiku',
-        toggle: {
-          enter: 'Įjungti ekraną',
-          exit: 'Išjungti ekraną',
-        },
-        updated: (timestamp) => `Atnaujinta ${timestamp}`,
-        updatedUnknown: 'Atnaujinimo laikas nenustatytas',
-        notices: {
-          fallback: 'Rodomi demonstraciniai duomenys.',
-          error: 'Nepavyko įkelti naujausių ED duomenų.',
-          empty: 'Šiuo metu nėra ED duomenų rodymui.',
-        },
-        groups: {
-          snapshot: {
-            now: 'Ši akimirka',
-            staff: 'Komandos apkrova',
-            flow: 'Srautai ir trukmės',
-            triage: 'Pacientų pasiskirstymas',
-          },
-          legacy: {
-            now: 'Ši akimirka',
-            staff: 'Komandos apkrova',
-            flow: 'Srautai ir trukmės',
-            triage: 'Sprendimų pasiskirstymas',
-          },
-        },
-        metrics: {
-          currentPatients: 'Šiuo metu pacientų',
-          occupiedBeds: 'Užimta lovų',
-          freeBeds: 'Laisvos lovos',
-          occupancy: 'Užimtumas',
-          bedStatus: 'Lovų būklė',
-          bedOccupied: 'Užimta',
-          bedFree: 'Laisvos',
-          nurseRatio: 'Slaugytojai',
-          doctorRatio: 'Gydytojai',
-          nurseRatioShort: 'Sl.',
-          doctorRatioShort: 'Gyd.',
-          staffCombined: 'Santykiai',
-          avgDaily: 'Vid. pacientų/d.',
-          avgLos: 'Vid. buvimas',
-          door: 'Durys → gyd.',
-          decision: 'Sprendimas → išvykimas',
-          hospitalizedShare: 'Hospitalizuojama dalis',
-        },
-        triageTotal: (total) => `Iš viso: ${total}`,
-        triageEmpty: 'Pasiskirstymo duomenų nėra.',
       },
       status: {
         loading: 'Kraunama...',
@@ -5655,6 +5555,19 @@
     }
 
     function setTvMode(active, options = {}) {
+      if (!selectors.edTvPanel) {
+        dashboardState.tvMode = false;
+        document.body.removeAttribute('data-tv-mode');
+        if (selectors.edStandardSection) {
+          selectors.edStandardSection.removeAttribute('hidden');
+          selectors.edStandardSection.removeAttribute('aria-hidden');
+        }
+        stopTvClock();
+        if (!options.silent) {
+          scheduleLayoutRefresh();
+        }
+        return;
+      }
       const shouldEnable = Boolean(active);
       const previous = dashboardState.tvMode === true;
       if (shouldEnable === previous && !options.force) {
@@ -9944,6 +9857,12 @@
     }
 
     function initializeTvMode() {
+      if (!selectors.edTvPanel) {
+        dashboardState.tvMode = false;
+        document.body.removeAttribute('data-tv-mode');
+        stopTvClock();
+        return;
+      }
       updateTvToggleControls();
       if (selectors.edTvToggleBtn) {
         selectors.edTvToggleBtn.addEventListener('click', () => {
@@ -11844,15 +11763,6 @@
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'L' || event.key === 'l')) {
         event.preventDefault();
         toggleTheme();
-      }
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'T' || event.key === 't')) {
-        event.preventDefault();
-        if (dashboardState.activeTab !== 'ed') {
-          setActiveTab('ed', { focusPanel: true });
-          setTvMode(true, { force: true });
-        } else {
-          setTvMode(!(dashboardState.tvMode === true));
-        }
       }
       if (!event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'A' || event.key === 'a')) {
         const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
