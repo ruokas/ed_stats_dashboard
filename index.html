@@ -4716,10 +4716,16 @@
       const enterLabel = TEXT.layout?.enterFullscreen || 'Pilnas ekranas';
       const exitLabel = TEXT.layout?.exitFullscreen || 'Išeiti iš pilno ekrano';
       const isActive = dashboardState.fullscreen === true;
+      const toggleAvailable = dashboardState.activeTab === 'ed' && !isActive;
       if (selectors.fullscreenToggleBtn) {
-        selectors.fullscreenToggleBtn.setAttribute('aria-label', isActive ? exitLabel : enterLabel);
-        selectors.fullscreenToggleBtn.title = `${isActive ? exitLabel : enterLabel} (Ctrl+Shift+F)`;
-        selectors.fullscreenToggleBtn.setAttribute('aria-pressed', String(isActive));
+        selectors.fullscreenToggleBtn.hidden = !toggleAvailable;
+        selectors.fullscreenToggleBtn.setAttribute('aria-hidden', toggleAvailable ? 'false' : 'true');
+        selectors.fullscreenToggleBtn.disabled = !toggleAvailable;
+        selectors.fullscreenToggleBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        if (toggleAvailable) {
+          selectors.fullscreenToggleBtn.setAttribute('aria-label', enterLabel);
+          selectors.fullscreenToggleBtn.title = `${enterLabel} (Ctrl+Shift+F)`;
+        }
       }
       if (selectors.exitFullscreenBtn) {
         selectors.exitFullscreenBtn.hidden = !isActive;
@@ -4749,7 +4755,12 @@
         }
       }
       updateFullscreenControls();
-      if (isActive && !previousState && selectors.exitFullscreenBtn && typeof selectors.exitFullscreenBtn.focus === 'function') {
+      const shouldFocusExit = options.focusExit !== false;
+      if (isActive
+        && !previousState
+        && shouldFocusExit
+        && selectors.exitFullscreenBtn
+        && typeof selectors.exitFullscreenBtn.focus === 'function') {
         selectors.exitFullscreenBtn.focus();
       }
       if (!isActive && previousState && options.restoreFocus && selectors.fullscreenToggleBtn && typeof selectors.fullscreenToggleBtn.focus === 'function') {
@@ -8737,7 +8748,10 @@
           selectors.fullscreenToggleBtn.disabled = true;
         }
       }
-      if (!fullscreenAvailable && dashboardState.fullscreen) {
+      if (fullscreenAvailable) {
+        // Atidarant ED skiltį automatiškai perjungiame į pilno ekrano režimą.
+        setFullscreenMode(true, { focusExit: false });
+      } else if (dashboardState.fullscreen) {
         setFullscreenMode(false, { restoreFocus: false });
       }
       if (focusPanel) {
