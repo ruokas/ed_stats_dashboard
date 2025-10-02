@@ -1611,186 +1611,81 @@
       color: var(--color-text-muted);
     }
 
-    .chart-caption__context {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--color-text-muted);
-      margin-top: 4px;
+    .chart-card--ed-distribution {
+      align-items: stretch;
+      gap: 12px;
+      max-width: 440px;
+      margin-inline: auto;
     }
 
-    /* Fiksuotas grafiko aukštis, kad Chart.js neplėstų kanvos – sumažintas, kad grafikai neužimtų per daug vietos. */
-    .chart-card canvas {
+    .chart-card--ed-distribution .chart-card__canvas {
+      width: 100%;
+      max-width: 240px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .chart-card--ed-distribution canvas {
       width: 100% !important;
-      min-height: 280px;
-      height: clamp(280px, 30vh, 400px) !important;
+      height: 100% !important;
     }
 
-    /* Papildomas aukštis pacientų srautų grafiko kortelėms. */
-    .chart-card--tall canvas {
-      min-height: 340px;
-      height: clamp(340px, 36vh, 480px) !important;
-    }
-
-    .heatmap-scroll {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    .heatmap-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 4px;
-      font-size: 0.8rem;
-      min-width: 960px;
-    }
-
-    .heatmap-table thead th {
-      text-align: center;
-      font-weight: 600;
-      color: var(--color-text-muted);
-      padding: 4px 2px;
-      white-space: nowrap;
-    }
-
-    .heatmap-table tbody th {
-      text-align: left;
-      font-weight: 600;
-      color: var(--color-text-muted);
-      padding: 6px 8px;
-      white-space: nowrap;
-    }
-
-    .heatmap-table td {
+    .chart-card--ed-distribution .chart-card__legend {
+      display: grid;
+      gap: 6px;
       padding: 0;
+      margin: 0;
+      list-style: none;
+      width: 100%;
     }
 
-    .heatmap-cell {
+    .chart-card--ed-distribution .chart-card__legend-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-      min-width: 36px;
-      height: 32px;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: transform 0.1s ease;
+      justify-content: space-between;
+      gap: 10px;
     }
 
-    .heatmap-cell:hover,
-    .heatmap-cell:focus-visible {
-      transform: scale(1.05);
-      outline: 2px solid rgba(37, 99, 235, 0.25);
-      outline-offset: 1px;
+    .chart-card--ed-distribution .chart-card__legend-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
     }
 
-    .heatmap-empty {
-      margin: 0;
+    .chart-card--ed-distribution .chart-card__legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .chart-card--ed-distribution .chart-card__legend-label {
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chart-card--ed-distribution .chart-card__legend-share {
+      font-size: 0.85rem;
       color: var(--color-text-muted);
-      font-size: 0.9rem;
-    }
-
-    .heatmap-legend {
-      margin: 12px 0 0;
-      font-size: 0.8rem;
-      color: var(--color-text-muted);
-    }
-
-    @media (max-width: 1200px) {
-      .chart-card {
-        grid-column: span 6;
-      }
-
-      .chart-card--wide {
-        grid-column: span 12;
-      }
+      font-variant-numeric: tabular-nums;
+      margin-left: auto;
     }
 
     @media (max-width: 768px) {
-      .kpi-header-actions {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-        margin-left: 0;
-      }
-
-      .kpi-header-actions .kpi-controls__toggle {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .kpi-header-actions .kpi-controls__summary {
-        width: 100%;
-        justify-content: flex-start;
-      }
-
-      .kpi-controls__form {
-        grid-template-columns: 1fr;
-      }
-
-      .kpi-controls__reset {
-        justify-self: stretch;
-      }
-
-      .chart-card canvas {
-        min-height: 280px;
-        height: clamp(280px, 55vh, 340px) !important;
-      }
-
-      .chart-card--tall canvas {
-        min-height: 340px;
-        height: clamp(340px, 65vh, 400px) !important;
-      }
-
-      .chart-controls {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-      }
-
-      .chart-period {
-        flex: 1 1 auto;
-      }
-
-      .chart-year-filter {
-        font-size: 0.85rem;
-        width: 100%;
-        justify-content: space-between;
-        margin-left: 0;
-      }
-
-      .chart-year-filter select {
-        flex: 1 1 auto;
-        width: 100%;
-      }
-
-      .chart-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .chart-card,
-      .chart-card--wide {
-        grid-column: 1 / -1;
-      }
-
-      .chart-card__toolbar {
-        flex-direction: column;
+      .chart-card--ed-distribution {
         align-items: stretch;
       }
 
-      .chart-period {
-        align-self: flex-start;
-      }
-
-      .heatmap-table {
-        min-width: 640px;
-      }
-
-      .table-wrapper {
-        max-height: 360px;
-        padding: 10px;
+      .chart-card--ed-distribution .chart-card__canvas {
+        width: min(100%, 240px);
       }
     }
-
     .table-wrapper {
       background: var(--color-surface);
       border-radius: 14px;
@@ -2517,10 +2412,15 @@
         <div id="edCards" class="ed-dashboard__cards" role="list"></div>
         <div class="ed-dashboard__tables">
           <section class="ed-dashboard__group" aria-labelledby="edDispositionsTitle">
-            <h3 id="edDispositionsTitle" class="section__subtitle">Pacientų kategorijos</h3>
-            <figure class="chart-card chart-card--tall">
-              <canvas id="edDispositionsChart" role="img" aria-labelledby="edDispositionsTitle edDispositionsCaption"></canvas>
-              <figcaption id="edDispositionsCaption">Pacientų kategorijų pasiskirstymas pagal naujausią įrašą.</figcaption>
+            <h3 id="edDispositionsTitle" class="section__subtitle">Pacientų pasiskirstymas pagal kategorijas</h3>
+            <figure class="chart-card chart-card--tall chart-card--ed-distribution">
+              <div class="chart-card__canvas" role="presentation">
+                <canvas id="edDispositionsChart"
+                        role="img"
+                        aria-labelledby="edDispositionsTitle edDispositionsCaption"></canvas>
+              </div>
+              <ul id="edDispositionsLegend" class="chart-card__legend" role="list"></ul>
+              <figcaption id="edDispositionsCaption" class="chart-card__caption">Pacientų pasiskirstymas pagal naujausią įrašą.</figcaption>
             </figure>
             <p id="edDispositionsMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
           </section>
@@ -3023,11 +2923,13 @@
             title: 'Pacientų išvykimo sprendimai',
             caption: 'Pacientų išvykimo sprendimų pasiskirstymas.',
             empty: 'Nėra duomenų apie išvykimo sprendimus.',
+            legendTitle: 'Išvykimo sprendimų kategorijos',
           },
           snapshot: {
-            title: 'Pacientų kategorijos',
-            caption: 'Pacientų kategorijų pasiskirstymas pagal naujausią įrašą.',
+            title: 'Pacientų pasiskirstymas pagal kategorijas',
+            caption: 'Pacientų pasiskirstymas pagal naujausią įrašą.',
             empty: 'Nėra kategorijų duomenų.',
+            legendTitle: 'Pacientų kategorijos',
           },
         },
         triage: {
@@ -3479,6 +3381,7 @@
       edDispositionsTitle: document.getElementById('edDispositionsTitle'),
       edDispositionsCaption: document.getElementById('edDispositionsCaption'),
       edDispositionsChart: document.getElementById('edDispositionsChart'),
+      edDispositionsLegend: document.getElementById('edDispositionsLegend'),
       edDispositionsMessage: document.getElementById('edDispositionsMessage'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
@@ -9397,11 +9300,17 @@
 
     async function renderEdDispositionsChart(dispositions, text, displayVariant) {
       const canvas = selectors.edDispositionsChart;
+      const legendContainer = selectors.edDispositionsLegend || null;
       const messageEl = selectors.edDispositionsMessage || null;
+
       if (!canvas) {
         if (messageEl) {
           messageEl.textContent = '';
           messageEl.hidden = true;
+        }
+        if (legendContainer) {
+          legendContainer.innerHTML = '';
+          legendContainer.hidden = true;
         }
         return;
       }
@@ -9409,6 +9318,16 @@
       if (messageEl) {
         messageEl.textContent = '';
         messageEl.hidden = true;
+      }
+
+      if (legendContainer) {
+        legendContainer.innerHTML = '';
+        legendContainer.hidden = true;
+        if (text?.legendTitle) {
+          legendContainer.setAttribute('aria-label', text.legendTitle);
+        } else {
+          legendContainer.removeAttribute('aria-label');
+        }
       }
 
       if (dashboardState.charts.edDispositions && typeof dashboardState.charts.edDispositions.destroy === 'function') {
@@ -9419,17 +9338,22 @@
       const validEntries = Array.isArray(dispositions)
         ? dispositions
           .filter((entry) => Number.isFinite(entry?.count) && entry.count >= 0)
-          .map((entry) => ({
+          .map((entry, index) => ({
             ...entry,
             categoryKey: entry?.categoryKey != null ? String(entry.categoryKey) : null,
+            label: entry?.label || `Kategorija ${entry?.categoryKey ?? index + 1}`,
           }))
         : [];
 
       if (!validEntries.length) {
         canvas.hidden = true;
         canvas.setAttribute('aria-hidden', 'true');
+        if (legendContainer) {
+          legendContainer.innerHTML = '';
+          legendContainer.hidden = true;
+        }
         if (messageEl) {
-          messageEl.textContent = text.empty || 'Nėra duomenų grafiko sudarymui.';
+          messageEl.textContent = text?.empty || 'Nėra duomenų grafiko sudarymui.';
           messageEl.hidden = false;
         }
         return;
@@ -9452,32 +9376,30 @@
       canvas.removeAttribute('aria-hidden');
 
       const palette = getThemePalette();
-      const CATEGORY_COLORS = {
-        '1': { background: '#2563eb', border: '#1d4ed8' },
-        '2': { background: '#dc2626', border: '#b91c1c' },
-        '3': { background: '#facc15', border: '#eab308' },
-        '4': { background: '#16a34a', border: '#15803d' },
-        '5': { background: '#6b7280', border: '#4b5563' },
-      };
-      const fallbackSequence = ['#2563eb', '#dc2626', '#facc15', '#16a34a', '#6b7280'];
-      const backgroundColors = validEntries.map((entry, index) => {
-        const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
-        if (key && CATEGORY_COLORS[key]) {
-          return CATEGORY_COLORS[key].background;
-        }
-        return fallbackSequence[index % fallbackSequence.length];
-      });
-      const borderColors = validEntries.map((entry, index) => {
-        const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
-        if (key && CATEGORY_COLORS[key]) {
-          return CATEGORY_COLORS[key].border;
-        }
-        return fallbackSequence[index % fallbackSequence.length];
-      });
+      const styleTarget = getThemeStyleTarget();
+      const computedStyles = getComputedStyle(styleTarget);
+      const surfaceColor = computedStyles.getPropertyValue('--color-surface').trim() || '#ffffff';
+      const borderColor = computedStyles.getPropertyValue('--color-border').trim() || 'rgba(37, 99, 235, 0.12)';
+      const isDarkTheme = styleTarget?.dataset?.theme === 'dark';
+      const colorPalette = isDarkTheme
+        ? ['#60a5fa', '#38bdf8', '#34d399', '#a78bfa', '#f472b6', '#facc15']
+        : ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#c7d2fe', '#e0e7ff'];
 
-      const values = validEntries.map((entry) => Number(entry.count));
-      const labels = validEntries.map((entry) => entry.label);
+      const values = validEntries.map((entry) => Number(entry.count) || 0);
       const total = values.reduce((sum, value) => (Number.isFinite(value) ? sum + value : sum), 0);
+
+      const chartEntries = validEntries.map((entry, index) => {
+        const count = Number(values[index]) || 0;
+        const percent = total > 0 ? count / total : 0;
+        const color = colorPalette[index % colorPalette.length];
+        return {
+          ...entry,
+          chartIndex: index,
+          count,
+          percent,
+          color,
+        };
+      });
 
       const formatValue = (value) => {
         if (!Number.isFinite(value)) {
@@ -9492,221 +9414,82 @@
         return decimalFormatter.format(value);
       };
 
-      const tooltipFormatter = (context) => {
-        const label = context.label || '';
-        const value = Number(context.parsed ?? 0);
-        const percent = total > 0 ? value / total : 0;
-        return `${label}: ${formatValue(value)} (${percentFormatter.format(percent)})`;
-      };
-
-      dashboardState.charts.edDispositions = new Chart(ctx, {
-        type: 'bar',
+      const chartInstance = new Chart(ctx, {
+        type: 'doughnut',
         data: {
-          labels,
+          labels: chartEntries.map((entry) => entry.label),
           datasets: [
             {
-              label: text?.title || 'Pacientų kategorijos',
-              data: values,
-              backgroundColor: backgroundColors,
-              borderColor: borderColors,
-              borderWidth: 1,
-              borderRadius: 8,
-              maxBarThickness: 48,
+              data: chartEntries.map((entry) => entry.count),
+              backgroundColor: chartEntries.map((entry) => entry.color),
+              borderColor: surfaceColor,
+              borderWidth: 1.5,
+              hoverOffset: 4,
             },
           ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          cutout: '58%',
+          animation: {
+            duration: 400,
+          },
           plugins: {
             legend: {
               display: false,
             },
             tooltip: {
+              displayColors: false,
+              backgroundColor: surfaceColor,
+              borderColor,
+              borderWidth: 1,
+              titleColor: palette.textColor,
+              bodyColor: palette.textColor,
               callbacks: {
-                label: tooltipFormatter,
-              },
-            },
-          },
-          scales: {
-            x: {
-              grid: {
-                display: false,
-                drawBorder: false,
-              },
-              ticks: {
-                color: palette.textColor,
-              },
-            },
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: palette.gridColor,
-                drawBorder: false,
-              },
-              ticks: {
-                color: palette.textColor,
-                precision: 0,
-                callback(value) {
-                  return numberFormatter.format(value);
+                label(context) {
+                  const value = Number(context.parsed) || 0;
+                  const label = context.label || '';
+                  const share = total > 0 ? value / total : 0;
+                  return `${label}: ${formatValue(value)} (${percentFormatter.format(share)})`;
                 },
               },
             },
           },
         },
       });
+
+      dashboardState.charts.edDispositions = chartInstance;
+
+      if (legendContainer) {
+        chartEntries.forEach((entry) => {
+          const item = document.createElement('li');
+          item.className = 'chart-card__legend-item';
+
+          const info = document.createElement('div');
+          info.className = 'chart-card__legend-info';
+
+          const dot = document.createElement('span');
+          dot.className = 'chart-card__legend-dot';
+          dot.style.setProperty('background-color', entry.color);
+
+          const labelEl = document.createElement('span');
+          labelEl.className = 'chart-card__legend-label';
+          labelEl.textContent = entry.label;
+
+          info.append(dot, labelEl);
+
+          const share = document.createElement('span');
+          share.className = 'chart-card__legend-share';
+          share.textContent = percentFormatter.format(entry.percent);
+          share.setAttribute('aria-label', `${entry.label}: ${percentFormatter.format(entry.percent)}`);
+
+          item.append(info, share);
+          legendContainer.appendChild(item);
+        });
+        legendContainer.hidden = chartEntries.length === 0;
+      }
     }
-
-    function renderFeedbackSection(feedbackData) {
-      if (selectors.feedbackCards) {
-        selectors.feedbackCards.replaceChildren();
-        const summary = feedbackData?.summary ?? {};
-        const cardsConfig = Array.isArray(TEXT.feedback.cards) ? TEXT.feedback.cards : [];
-
-        cardsConfig.forEach((config) => {
-          if (!config || typeof config !== 'object') {
-            return;
-          }
-
-          const rawValue = summary?.[config.key];
-          let value = null;
-          if (Number.isFinite(rawValue)) {
-            switch (config.format) {
-              case 'percent':
-                value = percentFormatter.format(rawValue);
-                break;
-              case 'integer':
-                value = numberFormatter.format(Math.round(rawValue));
-                break;
-              case 'decimal':
-              default:
-                value = oneDecimalFormatter.format(rawValue);
-                break;
-            }
-          }
-
-          const card = document.createElement('article');
-          card.className = 'feedback-card';
-          card.setAttribute('role', 'listitem');
-
-          const title = document.createElement('p');
-          title.className = 'feedback-card__title';
-          title.textContent = config.title;
-
-          const metric = document.createElement('p');
-          metric.className = 'feedback-card__value';
-          metric.textContent = value ?? config.empty;
-
-          const meta = document.createElement('p');
-          meta.className = 'feedback-card__meta';
-          const metaParts = [config.description];
-          if (config.countKey) {
-            const count = summary?.[config.countKey];
-            if (Number.isFinite(count) && count > 0) {
-              metaParts.push(`n=${numberFormatter.format(Math.round(count))}`);
-            }
-          }
-          meta.textContent = metaParts.join(' • ');
-
-          card.append(title, metric, meta);
-          selectors.feedbackCards.appendChild(card);
-        });
-      }
-
-      if (!selectors.feedbackTable) {
-        return;
-      }
-
-      selectors.feedbackTable.replaceChildren();
-      const monthly = Array.isArray(feedbackData?.monthly) ? feedbackData.monthly.slice() : [];
-      if (!monthly.length) {
-        const row = document.createElement('tr');
-        const cell = document.createElement('td');
-        const headerCells = selectors.feedbackTable.parentElement?.querySelectorAll('thead th').length || 1;
-        cell.colSpan = Math.max(1, headerCells);
-        cell.className = 'feedback-empty';
-        cell.textContent = TEXT.feedback.table.empty;
-        row.appendChild(cell);
-        selectors.feedbackTable.appendChild(row);
-        renderFeedbackTrendChart([]).catch((error) => {
-          console.error('Nepavyko atnaujinti atsiliepimų trendo grafiko:', error);
-        });
-        return;
-      }
-
-      const placeholder = TEXT.feedback.table.placeholder || '—';
-      const formatAverage = (value) => {
-        if (Number.isFinite(value)) {
-          return oneDecimalFormatter.format(value);
-        }
-        return placeholder;
-      };
-
-      monthly
-        .sort((a, b) => {
-          if (a?.month === b?.month) {
-            return 0;
-          }
-          return a?.month > b?.month ? -1 : 1;
-        })
-        .forEach((entry) => {
-          const row = document.createElement('tr');
-
-          const monthCell = document.createElement('td');
-          monthCell.textContent = typeof entry?.month === 'string' && entry.month
-            ? formatMonthLabel(entry.month)
-            : placeholder;
-
-          const responsesCell = document.createElement('td');
-          responsesCell.textContent = Number.isFinite(entry?.responses)
-            ? numberFormatter.format(Math.round(entry.responses))
-            : placeholder;
-
-          const overallCell = document.createElement('td');
-          overallCell.textContent = formatAverage(entry?.overallAverage);
-
-          const doctorsCell = document.createElement('td');
-          doctorsCell.textContent = formatAverage(entry?.doctorsAverage);
-
-          const nursesCell = document.createElement('td');
-          nursesCell.textContent = formatAverage(entry?.nursesAverage);
-
-          const aidesCell = document.createElement('td');
-          aidesCell.textContent = formatAverage(entry?.aidesAverage);
-
-          const waitingCell = document.createElement('td');
-          waitingCell.textContent = formatAverage(entry?.waitingAverage);
-
-          const contactCell = document.createElement('td');
-          if (Number.isFinite(entry?.contactShare)) {
-            const base = percentFormatter.format(entry.contactShare);
-            const sample = Number.isFinite(entry?.contactResponses) && entry.contactResponses > 0
-              ? ` (n=${numberFormatter.format(Math.round(entry.contactResponses))})`
-              : '';
-            contactCell.textContent = `${base}${sample}`;
-          } else {
-            contactCell.textContent = placeholder;
-          }
-
-          row.append(
-            monthCell,
-            responsesCell,
-            overallCell,
-            doctorsCell,
-            nursesCell,
-            aidesCell,
-            waitingCell,
-            contactCell,
-          );
-
-          selectors.feedbackTable.appendChild(row);
-        });
-
-      renderFeedbackTrendChart(monthly).catch((error) => {
-        console.error('Nepavyko atnaujinti atsiliepimų trendo grafiko:', error);
-      });
-    }
-
     function drawFunnelShape(canvas, steps, accentColor, textColor) {
       if (!canvas) {
         return;
