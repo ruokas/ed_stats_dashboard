@@ -191,7 +191,8 @@
       filter: saturate(150%);
     }
 
-    .section-nav__link {
+    .section-nav__link,
+    .section-nav__trigger {
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -202,10 +203,16 @@
       font-weight: 500;
       transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
       white-space: nowrap;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font: inherit;
     }
 
     .section-nav__link:hover,
-    .section-nav__link:focus-visible {
+    .section-nav__link:focus-visible,
+    .section-nav__trigger:hover,
+    .section-nav__trigger:focus-visible {
       background: var(--color-accent-soft);
       color: var(--color-accent);
       outline: none;
@@ -213,7 +220,8 @@
     }
 
     .section-nav__link.is-active,
-    .section-nav__link[aria-current="true"] {
+    .section-nav__link[aria-current="true"],
+    .section-nav__trigger[aria-pressed="true"] {
       background: rgba(37, 99, 235, 0.18);
       color: var(--color-accent);
       box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.28);
@@ -390,20 +398,24 @@
       justify-content: center;
     }
 
-    header.hero .section-nav__link {
+    header.hero .section-nav__link,
+    header.hero .section-nav__trigger {
       color: rgba(255, 255, 255, 0.82);
       box-shadow: none;
     }
 
     header.hero .section-nav__link:hover,
-    header.hero .section-nav__link:focus-visible {
+    header.hero .section-nav__link:focus-visible,
+    header.hero .section-nav__trigger:hover,
+    header.hero .section-nav__trigger:focus-visible {
       background: rgba(255, 255, 255, 0.18);
       color: #fff;
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.24);
     }
 
     header.hero .section-nav__link.is-active,
-    header.hero .section-nav__link[aria-current="true"] {
+    header.hero .section-nav__link[aria-current="true"],
+    header.hero .section-nav__trigger[aria-pressed="true"] {
       background: rgba(255, 255, 255, 0.22);
       color: #fff;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
@@ -597,6 +609,43 @@
     body[data-theme="dark"] button.fullscreen-toggle:hover,
     body[data-theme="dark"] button.fullscreen-toggle:focus-visible {
       background: rgba(15, 23, 42, 0.85);
+    }
+
+    button.ed-panel-toggle {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #fff;
+      box-shadow: 0 12px 28px -20px rgba(15, 23, 42, 0.8);
+    }
+
+    button.ed-panel-toggle:hover,
+    button.ed-panel-toggle:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 18px 36px -24px rgba(15, 23, 42, 0.85);
+    }
+
+    button.ed-panel-toggle.is-active {
+      background: #fff;
+      color: var(--color-accent);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    body[data-theme="dark"] button.ed-panel-toggle {
+      background: rgba(15, 23, 42, 0.7);
+      border-color: rgba(148, 163, 184, 0.4);
+      color: var(--color-text);
+    }
+
+    body[data-theme="dark"] button.ed-panel-toggle:hover,
+    body[data-theme="dark"] button.ed-panel-toggle:focus-visible {
+      background: rgba(15, 23, 42, 0.85);
+      box-shadow: 0 18px 32px -20px rgba(8, 12, 32, 0.85);
+    }
+
+    body[data-theme="dark"] button.ed-panel-toggle.is-active {
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--color-accent);
     }
 
     button.settings-btn {
@@ -2260,6 +2309,18 @@
       </nav>
       <div class="hero__actions">
         <div class="hero__buttons">
+          <button id="edNavButton"
+                  type="button"
+                  class="icon-button ed-panel-toggle"
+                  aria-pressed="false"
+                  aria-label="Atidaryti RŠL SMPS skydelį"
+                  title="Atidaryti RŠL SMPS skydelį">
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="7" width="18" height="11" rx="2" ry="2" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m9 3 3 3 3-3" />
+            </svg>
+          </button>
           <button id="themeToggleBtn" type="button" class="icon-button theme-toggle" aria-pressed="false" aria-label="Perjungti šviesią/tamsią temą" title="Perjungti šviesią/tamsią temą (Ctrl+Shift+L)" data-theme="light">
             <!-- Saulės ir mėnulio ikonų keitimas pagal aktyvią temą -->
             <svg class="theme-icon icon--sun" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
@@ -2302,28 +2363,7 @@
     </div>
   </header>
   <main class="container" role="main">
-    <div id="tabSwitcher" class="tab-switcher" role="tablist" aria-label="Puslapio rodiniai">
-      <button type="button"
-              id="tabOverview"
-              class="tab-switcher__btn"
-              data-tab-target="overview"
-              role="tab"
-              aria-selected="true"
-              aria-controls="panelOverview">
-        Bendras vaizdas
-      </button>
-      <button type="button"
-              id="tabEd"
-              class="tab-switcher__btn"
-              data-tab-target="ed"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panelEd"
-              tabindex="-1">
-        RŠL SMPS skydelis
-      </button>
-    </div>
-    <div id="panelOverview" class="tab-panel" data-tab-panel="overview" role="tabpanel" aria-labelledby="tabOverview">
+    <div id="panelOverview" class="tab-panel" data-tab-panel="overview" role="tabpanel" aria-labelledby="kpiHeading">
     <section class="section" aria-labelledby="kpiHeading" data-section="kpi">
       <div class="section__header">
         <div>
@@ -2532,7 +2572,7 @@
       </div>
     </section>
     </div>
-    <div id="panelEd" class="tab-panel" data-tab-panel="ed" role="tabpanel" aria-labelledby="tabEd" hidden>
+    <div id="panelEd" class="tab-panel" data-tab-panel="ed" role="tabpanel" aria-labelledby="edHeading" hidden>
       <section class="section" aria-labelledby="edHeading">
         <div class="section__header">
           <div>
@@ -2928,6 +2968,10 @@
       tabs: {
         overview: 'Bendras vaizdas',
         ed: 'RŠL SMPS skydelis',
+      },
+      edToggle: {
+        open: (label) => `Atidaryti ${label}`,
+        close: (label) => `Uždaryti ${label}`,
       },
       status: {
         loading: 'Kraunama...',
@@ -3459,7 +3503,7 @@
       tabButtons: Array.from(document.querySelectorAll('[data-tab-target]')),
       tabPanels: Array.from(document.querySelectorAll('[data-tab-panel]')),
       tabOverview: document.getElementById('tabOverview'),
-      tabEd: document.getElementById('tabEd'),
+      edNavButton: document.getElementById('edNavButton'),
       overviewPanel: document.getElementById('panelOverview'),
       edPanel: document.getElementById('panelEd'),
       refreshBtn: document.getElementById('refreshBtn'),
@@ -4733,8 +4777,21 @@
       if (selectors.tabOverview) {
         selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
       }
-      if (selectors.tabEd) {
-        selectors.tabEd.textContent = settings.output.tabEdLabel || TEXT.tabs.ed;
+      if (selectors.edNavButton) {
+        const edNavLabel = settings.output.tabEdLabel || TEXT.tabs.ed;
+        const openLabel = typeof TEXT.edToggle?.open === 'function'
+          ? TEXT.edToggle.open(edNavLabel)
+          : `Atidaryti ${edNavLabel}`;
+        const closeLabel = typeof TEXT.edToggle?.close === 'function'
+          ? TEXT.edToggle.close(edNavLabel)
+          : `Uždaryti ${edNavLabel}`;
+        selectors.edNavButton.dataset.panelLabel = edNavLabel;
+        selectors.edNavButton.dataset.openLabel = openLabel;
+        selectors.edNavButton.dataset.closeLabel = closeLabel;
+        const isActive = dashboardState.activeTab === 'ed';
+        const currentLabel = isActive ? closeLabel : openLabel;
+        selectors.edNavButton.setAttribute('aria-label', currentLabel);
+        selectors.edNavButton.title = currentLabel;
       }
       if (selectors.refreshBtn) {
         selectors.refreshBtn.setAttribute('aria-label', TEXT.refresh);
@@ -8620,8 +8677,9 @@
             return;
           }
           const isActive = button.dataset.tabTarget === normalized;
+          const allowFocus = isActive || (button.dataset.tabTarget === 'overview' && normalized === 'ed');
           button.setAttribute('aria-selected', String(isActive));
-          button.setAttribute('tabindex', isActive ? '0' : '-1');
+          button.setAttribute('tabindex', allowFocus ? '0' : '-1');
           button.classList.toggle('is-active', isActive);
         });
       }
@@ -8648,6 +8706,25 @@
           selectors.sectionNav.setAttribute('hidden', 'hidden');
           selectors.sectionNav.setAttribute('aria-hidden', 'true');
         }
+      }
+      if (selectors.edNavButton) {
+        const edActive = normalized === 'ed';
+        selectors.edNavButton.setAttribute('aria-pressed', edActive ? 'true' : 'false');
+        selectors.edNavButton.classList.toggle('is-active', edActive);
+        const panelLabel = selectors.edNavButton.dataset.panelLabel
+          || settings?.output?.tabEdLabel
+          || TEXT.tabs.ed;
+        const openLabel = selectors.edNavButton.dataset.openLabel
+          || (typeof TEXT.edToggle?.open === 'function'
+            ? TEXT.edToggle.open(panelLabel)
+            : `Atidaryti ${panelLabel}`);
+        const closeLabel = selectors.edNavButton.dataset.closeLabel
+          || (typeof TEXT.edToggle?.close === 'function'
+            ? TEXT.edToggle.close(panelLabel)
+            : `Uždaryti ${panelLabel}`);
+        const activeLabel = edActive ? closeLabel : openLabel;
+        selectors.edNavButton.setAttribute('aria-label', activeLabel);
+        selectors.edNavButton.title = activeLabel;
       }
       const fullscreenAvailable = normalized === 'ed';
       if (selectors.fullscreenToggleBtn) {
@@ -10064,6 +10141,14 @@
     if (selectors.monthlyTable) {
       selectors.monthlyTable.addEventListener('click', handleCompareClick);
       selectors.monthlyTable.addEventListener('keydown', handleCompareKeydown);
+    }
+
+    if (selectors.edNavButton) {
+      selectors.edNavButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        const isActive = dashboardState.activeTab === 'ed';
+        setActiveTab(isActive ? 'overview' : 'ed', { focusPanel: !isActive });
+      });
     }
 
     const refreshButton = selectors.refreshBtn;
