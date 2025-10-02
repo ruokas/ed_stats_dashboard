@@ -1659,6 +1659,15 @@
       grid-column: span 12;
     }
 
+    .chart-card--compact {
+      gap: 8px;
+    }
+
+    .chart-card--compact canvas {
+      min-height: 220px;
+      height: clamp(220px, 26vh, 320px) !important;
+    }
+
     .chart-card figcaption {
       font-size: 0.95rem;
       color: var(--color-text-muted);
@@ -2916,20 +2925,11 @@
         <div class="ed-dashboard__tables">
           <section class="ed-dashboard__group" aria-labelledby="edDispositionsTitle">
             <h3 id="edDispositionsTitle" class="section__subtitle">Pacientų pasiskirstymas pagal kategorijas</h3>
-            <figure class="chart-card chart-card--tall chart-card--ed-modern">
+            <figure class="chart-card chart-card--compact">
               <div class="chart-card__canvas-wrapper">
                 <canvas id="edDispositionsChart"
                         role="img"
-                        aria-labelledby="edDispositionsTitle edDispositionsCaption"
-                        aria-describedby="edDispositionsLegendHint"></canvas>
-                <div id="edDispositionsCenter" class="chart-card__center" aria-live="polite"></div>
-              </div>
-              <div class="chart-card__legend-wrapper">
-                <div class="chart-card__legend-header">
-                  <h4 id="edDispositionsLegendTitle" class="chart-card__legend-title">Kategorijų suvestinė</h4>
-                  <p id="edDispositionsLegendHint" class="chart-card__legend-hint">Užveskite ar spauskite kategoriją, kad išryškintumėte grafike.</p>
-                </div>
-                <ul id="edDispositionsLegend" class="chart-card__legend" role="list" aria-describedby="edDispositionsLegendHint"></ul>
+                        aria-labelledby="edDispositionsTitle edDispositionsCaption"></canvas>
               </div>
               <figcaption id="edDispositionsCaption" class="chart-card__caption">Pacientų pasiskirstymas pagal naujausią įrašą.</figcaption>
             </figure>
@@ -3903,11 +3903,7 @@
       edCards: document.getElementById('edCards'),
       edDispositionsTitle: document.getElementById('edDispositionsTitle'),
       edDispositionsCaption: document.getElementById('edDispositionsCaption'),
-      edDispositionsLegendTitle: document.getElementById('edDispositionsLegendTitle'),
-      edDispositionsLegendHint: document.getElementById('edDispositionsLegendHint'),
       edDispositionsChart: document.getElementById('edDispositionsChart'),
-      edDispositionsLegend: document.getElementById('edDispositionsLegend'),
-      edDispositionsCenter: document.getElementById('edDispositionsCenter'),
       edDispositionsMessage: document.getElementById('edDispositionsMessage'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
@@ -10041,38 +10037,12 @@
 
     async function renderEdDispositionsChart(dispositions, text, displayVariant) {
       const canvas = selectors.edDispositionsChart;
-      const legendContainer = selectors.edDispositionsLegend || null;
-      const legendWrapper = legendContainer ? legendContainer.closest('.chart-card__legend-wrapper') : null;
-      const centerEl = selectors.edDispositionsCenter || null;
-      const legendTitleEl = selectors.edDispositionsLegendTitle || null;
-      const legendHintEl = selectors.edDispositionsLegendHint || null;
       const messageEl = selectors.edDispositionsMessage || null;
-
-      if (legendTitleEl) {
-        legendTitleEl.textContent = text?.legendTitle || 'Kategorijos';
-      }
-      if (legendHintEl) {
-        legendHintEl.textContent = text?.legendHint || 'Užveskite arba spauskite, kad išryškintumėte grafike.';
-      }
-      if (legendContainer) {
-        legendContainer.setAttribute('aria-label', text?.legendTitle || 'Kategorijos');
-      }
 
       if (!canvas) {
         if (messageEl) {
           messageEl.textContent = '';
           messageEl.hidden = true;
-        }
-        if (legendContainer) {
-          legendContainer.innerHTML = '';
-        }
-        if (legendWrapper) {
-          legendWrapper.hidden = true;
-        }
-        if (centerEl) {
-          centerEl.textContent = '';
-          centerEl.hidden = true;
-          centerEl.style.removeProperty('--center-accent');
         }
         return;
       }
@@ -10080,18 +10050,6 @@
       if (messageEl) {
         messageEl.textContent = '';
         messageEl.hidden = true;
-      }
-
-      if (legendContainer) {
-        legendContainer.innerHTML = '';
-      }
-      if (legendWrapper) {
-        legendWrapper.hidden = true;
-      }
-      if (centerEl) {
-        centerEl.textContent = '';
-        centerEl.hidden = true;
-        centerEl.style.removeProperty('--center-accent');
       }
 
       if (dashboardState.charts.edDispositions && typeof dashboardState.charts.edDispositions.destroy === 'function') {
@@ -10138,73 +10096,24 @@
       const palette = getThemePalette();
       const styleTarget = getThemeStyleTarget();
       const computedStyles = getComputedStyle(styleTarget);
-      const surfaceColor = computedStyles.getPropertyValue('--color-surface').trim() || '#ffffff';
       const borderBaseColor = computedStyles.getPropertyValue('--color-border').trim() || 'rgba(37, 99, 235, 0.15)';
-
-      const clampChannel = (value) => Math.min(255, Math.max(0, Math.round(value)));
-      const parseColor = (value) => {
-        if (!value) {
-          return null;
-        }
-        const hexMatch = value.trim().match(/^#?([a-f\d]{6})$/i);
-        if (hexMatch) {
-          const numeric = Number.parseInt(hexMatch[1], 16);
-          return [
-            (numeric >> 16) & 255,
-            (numeric >> 8) & 255,
-            numeric & 255,
-          ];
-        }
-        const rgbMatch = value.trim().match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-        if (rgbMatch) {
-          return [
-            Number.parseInt(rgbMatch[1], 10),
-            Number.parseInt(rgbMatch[2], 10),
-            Number.parseInt(rgbMatch[3], 10),
-          ];
-        }
-        return null;
-      };
-      const mixColor = (inputColor, targetTuple, ratio) => {
-        const tuple = parseColor(inputColor);
-        if (!tuple) {
-          return inputColor;
-        }
-        const safeRatio = Math.min(1, Math.max(0, ratio));
-        const mixed = tuple.map((channel, index) => clampChannel(channel * (1 - safeRatio) + targetTuple[index] * safeRatio));
-        return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
-      };
-      const lightenColor = (inputColor, ratio) => mixColor(inputColor, [255, 255, 255], ratio);
-      const darkenColor = (inputColor, ratio) => mixColor(inputColor, [0, 0, 0], ratio);
-      const withAlpha = (inputColor, alpha) => {
-        const tuple = parseColor(inputColor);
-        if (!tuple) {
-          return inputColor;
-        }
-        const safeAlpha = Math.min(1, Math.max(0, alpha));
-        return `rgba(${tuple[0]}, ${tuple[1]}, ${tuple[2]}, ${safeAlpha})`;
-      };
+      const theme = styleTarget?.dataset?.theme || 'light';
+      const tooltipBackground = theme === 'dark' ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.96)';
+      const tooltipBorder = theme === 'dark' ? 'rgba(148, 163, 184, 0.35)' : borderBaseColor;
 
       const CATEGORY_COLORS = {
-        '1': { background: '#8da4ff', border: '#6b7dff' },
-        '2': { background: '#f9a8d4', border: '#f472b6' },
-        '3': { background: '#fde68a', border: '#fcd34d' },
-        '4': { background: '#a5f3fc', border: '#67e8f9' },
-        '5': { background: '#c4b5fd', border: '#a78bfa' },
+        '1': '#8da4ff',
+        '2': '#f9a8d4',
+        '3': '#fde68a',
+        '4': '#a5f3fc',
+        '5': '#c4b5fd',
       };
       const fallbackSequence = ['#8da4ff', '#f9a8d4', '#fde68a', '#a5f3fc', '#c4b5fd'];
 
-      const backgroundBaseColors = validEntries.map((entry, index) => {
+      const backgroundColors = validEntries.map((entry, index) => {
         const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
         if (key && CATEGORY_COLORS[key]) {
-          return CATEGORY_COLORS[key].background;
-        }
-        return fallbackSequence[index % fallbackSequence.length];
-      });
-      const borderBaseColors = validEntries.map((entry, index) => {
-        const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
-        if (key && CATEGORY_COLORS[key]) {
-          return CATEGORY_COLORS[key].border;
+          return CATEGORY_COLORS[key];
         }
         return fallbackSequence[index % fallbackSequence.length];
       });
@@ -10217,16 +10126,11 @@
         const percent = total > 0 ? count / total : 0;
         return {
           ...entry,
-          chartIndex: index,
           count,
           percent,
-          color: backgroundBaseColors[index] || palette.accent,
-          borderColor: borderBaseColors[index] || palette.accent,
+          color: backgroundColors[index] || palette.accent,
         };
       });
-      const legendEntries = chartEntries.slice().sort((a, b) => b.count - a.count);
-
-      const highlightIndex = -1;
 
       const formatValue = (value) => {
         if (!Number.isFinite(value)) {
@@ -10242,67 +10146,7 @@
       };
 
       const datasetLabel = text?.title || 'Pacientų kategorijos';
-      const centerLabel = text?.centerLabel || 'Viso pacientų';
-      const legendAction = text?.legendAction || 'Išryškinti kategoriją grafike';
-      const shareSuffix = text?.centerShareSuffix || 'viso srauto';
-      const centerMetaDefault = text?.centerMetaDefault || 'Pasirinkite kategoriją, kad matytumėte dalį.';
-
-      const centerDefaults = {
-        value: formatValue(total),
-        label: centerLabel,
-        meta: centerMetaDefault || '',
-        accent: legendEntries[0]?.color || palette.accent,
-        chartIndex: null,
-      };
-      const legendButtons = [];
-      let currentCenterKey = '';
-
-      const setLegendActive = (chartIndex) => {
-        legendButtons.forEach((button) => {
-          const isActive = Number(button.dataset.chartIndex) === chartIndex;
-          button.classList.toggle('is-active', isActive);
-          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
-      };
-
-      const updateCenter = (entry = null) => {
-        if (!centerEl) {
-          return;
-        }
-        const stateKey = entry ? `entry-${entry.chartIndex}` : 'default';
-        if (stateKey === currentCenterKey) {
-          return;
-        }
-        currentCenterKey = stateKey;
-        const payload = entry
-          ? {
-              value: formatValue(entry.count),
-              label: entry.label,
-              meta: `${percentFormatter.format(entry.percent)} ${shareSuffix}`,
-              accent: entry.color || palette.accent,
-              chartIndex: entry.chartIndex,
-            }
-          : { ...centerDefaults };
-        centerEl.replaceChildren();
-        const valueEl = document.createElement('span');
-        valueEl.className = 'chart-card__center-value';
-        valueEl.textContent = payload.value;
-        const labelEl = document.createElement('span');
-        labelEl.className = 'chart-card__center-label';
-        labelEl.textContent = payload.label;
-        centerEl.append(valueEl, labelEl);
-        if (payload.meta) {
-          const metaEl = document.createElement('span');
-          metaEl.className = 'chart-card__center-meta';
-          metaEl.textContent = payload.meta;
-          centerEl.append(metaEl);
-        }
-        centerEl.style.setProperty('--center-accent', payload.accent || palette.accent);
-        centerEl.hidden = false;
-        setLegendActive(payload.chartIndex != null ? Number(payload.chartIndex) : null);
-      };
-
-      updateCenter();
+      const totalLabel = text?.centerLabel || 'Viso pacientų';
 
       const labels = chartEntries.map((entry) => entry.label);
       const ariaSummary = chartEntries
@@ -10314,31 +10158,17 @@
         .filter(Boolean)
         .join('; ');
       if (ariaSummary) {
-        canvas.setAttribute('aria-label', `${datasetLabel} – ${ariaSummary}`);
+        canvas.setAttribute('aria-label', `${datasetLabel} – ${ariaSummary}. ${totalLabel}: ${formatValue(total)}.`);
+      } else {
+        canvas.setAttribute('aria-label', datasetLabel);
       }
-
-      const segmentGradient = (context, baseColor) => {
-        if (!context?.chart?.chartArea) {
-          return baseColor;
-        }
-        const { chart } = context;
-        const { chartArea } = chart;
-        const centerX = (chartArea.left + chartArea.right) / 2;
-        const centerY = (chartArea.top + chartArea.bottom) / 2;
-        const radius = Math.min(chartArea.width, chartArea.height) / 2;
-        const gradient = chart.ctx.createRadialGradient(centerX, centerY, radius * 0.25, centerX, centerY, radius);
-        gradient.addColorStop(0, lightenColor(baseColor, 0.42));
-        gradient.addColorStop(0.65, baseColor);
-        gradient.addColorStop(1, darkenColor(baseColor, 0.08));
-        return gradient;
-      };
 
       const tooltipLabel = (context) => {
         const entry = chartEntries[context.dataIndex];
         if (!entry) {
           return '';
         }
-        return `${entry.label}: ${formatValue(entry.count)} pac. (${percentFormatter.format(entry.percent)})`;
+        return `${entry.label}: ${formatValue(entry.count)} pac.`;
       };
 
       const tooltipAfterLabel = (context) => {
@@ -10349,80 +10179,24 @@
         return `Dalis: ${percentFormatter.format(entry.percent)}`;
       };
 
-      const tooltipFooter = () => `Viso: ${formatValue(total)} pac.`;
-
-      const haloPlugin = {
-        id: 'edDispositionsHalo',
-        beforeDraw(chartInstance) {
-          const { ctx: chartCtx, chartArea } = chartInstance;
-          if (!chartArea) {
-            return;
-          }
-          const centerX = (chartArea.left + chartArea.right) / 2;
-          const centerY = (chartArea.top + chartArea.bottom) / 2;
-          const radius = Math.min(chartArea.width, chartArea.height) / 2;
-          chartCtx.save();
-          const gradient = chartCtx.createRadialGradient(centerX, centerY, radius * 0.25, centerX, centerY, radius * 1.18);
-          gradient.addColorStop(0, withAlpha(lightenColor(palette.accent, 0.2), 0.16));
-          gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-          chartCtx.globalCompositeOperation = 'destination-over';
-          chartCtx.fillStyle = gradient;
-          chartCtx.beginPath();
-          chartCtx.arc(centerX, centerY, radius * 1.18, 0, Math.PI * 2);
-          chartCtx.fill();
-          chartCtx.restore();
-        },
-      };
-
-      const centerLabelPlugin = {
-        id: 'edDispositionsCenterLabel',
-        afterEvent(chartInstance) {
-          const active = chartInstance.getActiveElements();
-          if (active && active.length) {
-            const index = active[0].index;
-            const entry = chartEntries[index];
-            if (entry) {
-              updateCenter(entry);
-            }
-          } else if (currentCenterKey !== 'default') {
-            updateCenter();
-          }
-        },
-      };
+      const tooltipFooter = () => `${totalLabel}: ${formatValue(total)} pac.`;
 
       const chartInstance = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'bar',
         data: {
           labels,
           datasets: [
             {
               label: datasetLabel,
               data: chartEntries.map((entry) => entry.count),
-              backgroundColor: (context) => {
-                const entry = chartEntries[context.dataIndex];
-                const baseColor = entry?.color || palette.accent;
-                return segmentGradient(context, baseColor);
-              },
-              hoverBackgroundColor: (context) => {
-                const entry = chartEntries[context.dataIndex];
-                const baseColor = entry ? lightenColor(entry.color, 0.12) : lightenColor(palette.accent, 0.12);
-                return segmentGradient(context, baseColor);
-              },
-              borderColor: (context) => {
-                const entry = chartEntries[context.dataIndex];
-                const color = entry?.borderColor || palette.accent;
-                return withAlpha(color, context.dataIndex === highlightIndex ? 0.95 : 0.85);
-              },
-              hoverBorderColor: (context) => {
-                const entry = chartEntries[context.dataIndex];
-                const color = entry ? lightenColor(entry.borderColor, 0.12) : lightenColor(palette.accent, 0.12);
-                return withAlpha(color, 1);
-              },
-              borderWidth: (context) => (context.dataIndex === highlightIndex ? 2.8 : 2),
-              offset: (context) => (context.dataIndex === highlightIndex ? 14 : 6),
-              hoverOffset: 18,
-              spacing: 4,
-              borderAlign: 'inner',
+              backgroundColor: chartEntries.map((entry) => entry.color),
+              borderColor: chartEntries.map(() => 'rgba(15, 23, 42, 0.12)'),
+              borderWidth: 1,
+              borderSkipped: false,
+              borderRadius: 8,
+              maxBarThickness: 44,
+              barPercentage: 0.55,
+              categoryPercentage: 0.6,
             },
           ],
         },
@@ -10431,23 +10205,49 @@
           maintainAspectRatio: false,
           layout: {
             padding: {
-              top: 16,
-              right: 16,
-              bottom: 16,
-              left: 16,
+              top: 8,
+              right: 12,
+              bottom: 8,
+              left: 12,
             },
           },
-          cutout: '62%',
-          rotation: -90,
+          scales: {
+            x: {
+              grid: {
+                display: false,
+                drawBorder: false,
+              },
+              ticks: {
+                color: palette.textMuted,
+                font: {
+                  size: 12,
+                  weight: '600',
+                },
+              },
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: palette.gridColor,
+                drawBorder: false,
+              },
+              ticks: {
+                color: palette.textMuted,
+                font: {
+                  size: 12,
+                },
+              },
+            },
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: withAlpha(surfaceColor, styleTarget.dataset.theme === 'dark' ? 0.92 : 0.96),
-              borderColor: withAlpha(borderBaseColor, 0.8),
+              backgroundColor: tooltipBackground,
+              borderColor: tooltipBorder,
               borderWidth: 1,
-              cornerRadius: 14,
-              padding: 12,
               displayColors: false,
+              padding: 10,
+              bodySpacing: 6,
               titleColor: palette.textColor,
               bodyColor: palette.textColor,
               titleFont: {
@@ -10468,92 +10268,22 @@
               },
             },
           },
-          animation: {
-            animateRotate: true,
-            animateScale: true,
-            duration: 900,
-            easing: 'cubicBezier(0.22, 0.68, 0, 1)',
+          elements: {
+            bar: {
+              borderRadius: 8,
+              borderSkipped: false,
+            },
+          },
+          animation: false,
+          transitions: {
+            active: { animation: { duration: 0 } },
+            show: { animation: { duration: 0 } },
+            hide: { animation: { duration: 0 } },
           },
         },
-        plugins: [haloPlugin, centerLabelPlugin],
       });
 
       dashboardState.charts.edDispositions = chartInstance;
-
-      const applyActive = (index) => {
-        if (!chartInstance || typeof chartInstance.setActiveElements !== 'function') {
-          return;
-        }
-        if (typeof index === 'number' && index >= 0) {
-          chartInstance.setActiveElements([{ datasetIndex: 0, index }]);
-        } else {
-          chartInstance.setActiveElements([]);
-        }
-        chartInstance.update();
-      };
-
-      if (legendContainer) {
-        legendEntries.forEach((entry) => {
-          const item = document.createElement('li');
-          item.className = 'chart-card__legend-item';
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = 'chart-card__legend-button';
-          button.dataset.chartIndex = String(entry.chartIndex);
-          button.style.setProperty('--legend-color', entry.color || palette.accent);
-          button.setAttribute('aria-pressed', 'false');
-          button.setAttribute('aria-label', `${legendAction}: ${entry.label}`);
-          button.title = `${legendAction}: ${entry.label}`;
-          const dot = document.createElement('span');
-          dot.className = 'chart-card__legend-dot';
-          dot.setAttribute('aria-hidden', 'true');
-          const textWrap = document.createElement('span');
-          textWrap.className = 'chart-card__legend-text';
-          const labelEl = document.createElement('span');
-          labelEl.className = 'chart-card__legend-label';
-          labelEl.textContent = entry.label;
-          const metaEl = document.createElement('span');
-          metaEl.className = 'chart-card__legend-meta';
-          const countEl = document.createElement('span');
-          countEl.textContent = `${formatValue(entry.count)} pac.`;
-          const percentEl = document.createElement('span');
-          percentEl.textContent = percentFormatter.format(entry.percent);
-          metaEl.append(countEl, percentEl);
-          textWrap.append(labelEl, metaEl);
-          button.append(dot, textWrap);
-          const handleActivate = (index) => {
-            if (typeof index === 'number' && index >= 0) {
-              applyActive(index);
-              updateCenter(chartEntries[index]);
-            } else {
-              applyActive(null);
-              updateCenter();
-            }
-          };
-          button.addEventListener('mouseenter', () => handleActivate(entry.chartIndex));
-          button.addEventListener('focus', () => handleActivate(entry.chartIndex));
-          button.addEventListener('mouseleave', () => {
-            if (document.activeElement !== button) {
-              handleActivate(null);
-            }
-          });
-          button.addEventListener('blur', () => handleActivate(null));
-          button.addEventListener('click', () => handleActivate(entry.chartIndex));
-          item.appendChild(button);
-          legendContainer.appendChild(item);
-          legendButtons.push(button);
-        });
-        if (legendWrapper) {
-          legendWrapper.hidden = legendEntries.length === 0;
-        }
-      }
-
-      currentCenterKey = '';
-      updateCenter();
-
-      if (centerEl) {
-        centerEl.hidden = false;
-      }
     }
     function drawFunnelShape(canvas, steps, accentColor, textColor) {
       if (!canvas) {
