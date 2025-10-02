@@ -2270,7 +2270,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 0 1 11.21 3 7.5 7.5 0 1 0 21 12.79Z" />
             </svg>
           </button>
-          <button id="fullscreenToggleBtn" type="button" class="icon-button fullscreen-toggle" aria-pressed="false" aria-label="Pilnas ekranas" title="Pilnas ekranas (Ctrl+Shift+F)">
+          <button id="fullscreenToggleBtn" type="button" class="icon-button fullscreen-toggle" aria-pressed="false" aria-label="Pilnas ekranas" title="Pilnas ekranas (Ctrl+Shift+F)" hidden aria-hidden="true" disabled>
             <svg class="fullscreen-icon fullscreen-icon--enter" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M20 15v5h-5" />
@@ -3032,6 +3032,13 @@
               description: 'Pacientai vienam gydytojui.',
               empty: '—',
               format: 'ratio',
+            },
+            {
+              key: 'avgLosHospitalizedMinutes',
+              title: 'Vid. buvimo trukmė (hospitalizuoti)',
+              description: 'Vidutinė stacionarizuotų pacientų buvimo trukmė (val.).',
+              empty: '—',
+              format: 'hours',
             },
             {
               key: 'avgLosMonthMinutes',
