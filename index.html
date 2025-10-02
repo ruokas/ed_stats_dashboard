@@ -2969,6 +2969,13 @@
               format: 'hours',
             },
             {
+              key: 'avgLosHospitalizedMinutes',
+              title: 'Vid. buvimo trukmė (hospitalizuoti)',
+              description: 'Vidutinė stacionarizuotų pacientų buvimo trukmė (val.).',
+              empty: '—',
+              format: 'hours',
+            },
+            {
               key: 'avgDoorToProviderMinutes',
               title: 'Vid. iki gydytojo',
               description: 'Vidutinis „durys iki gydytojo“ laikas (min.).',
@@ -6056,6 +6063,7 @@
         uniqueDates: 0,
         avgDailyPatients: null,
         avgLosMinutes: null,
+        avgLosHospitalizedMinutes: null,
         avgLosMonthMinutes: null,
         avgLosYearMinutes: null,
         avgDoorToProviderMinutes: null,
@@ -6261,6 +6269,8 @@
 
       let losSum = 0;
       let losCount = 0;
+      let hospitalizedLosSum = 0;
+      let hospitalizedLosCount = 0;
       let doorSum = 0;
       let doorCount = 0;
       let decisionSum = 0;
@@ -6292,6 +6302,10 @@
           bucket.losCount += 1;
           losSum += losMinutes;
           losCount += 1;
+          if (dispositionCategory === 'hospitalized') {
+            hospitalizedLosSum += losMinutes;
+            hospitalizedLosCount += 1;
+          }
         }
         if (Number.isFinite(doorToProviderMinutes)) {
           bucket.doorSum += doorToProviderMinutes;
@@ -6314,6 +6328,8 @@
             hospitalized: 0,
             losSum: 0,
             losCount: 0,
+            hospitalizedLosSum: 0,
+            hospitalizedLosCount: 0,
           };
           monthBucket.count += 1;
           if (dispositionCategory === 'hospitalized') {
@@ -6322,6 +6338,10 @@
           if (Number.isFinite(losMinutes)) {
             monthBucket.losSum += losMinutes;
             monthBucket.losCount += 1;
+            if (dispositionCategory === 'hospitalized') {
+              monthBucket.hospitalizedLosSum += losMinutes;
+              monthBucket.hospitalizedLosCount += 1;
+            }
           }
           monthBuckets.set(monthKey, monthBucket);
         }
@@ -6333,6 +6353,9 @@
       }
       if (losCount > 0) {
         summary.avgLosMinutes = losSum / losCount;
+      }
+      if (hospitalizedLosCount > 0) {
+        summary.avgLosHospitalizedMinutes = hospitalizedLosSum / hospitalizedLosCount;
       }
       if (doorCount > 0) {
         summary.avgDoorToProviderMinutes = doorSum / doorCount;
@@ -6358,13 +6381,15 @@
             : null;
           const currentYear = typeof latestMonthKey === 'string' ? latestMonthKey.slice(0, 4) : '';
           if (currentYear) {
-            const yearTotals = { count: 0, hospitalized: 0, losSum: 0, losCount: 0 };
+            const yearTotals = { count: 0, hospitalized: 0, losSum: 0, losCount: 0, hospitalizedLosSum: 0, hospitalizedLosCount: 0 };
             monthBuckets.forEach((bucket, key) => {
               if (typeof key === 'string' && key.startsWith(currentYear)) {
                 yearTotals.count += bucket.count;
                 yearTotals.hospitalized += bucket.hospitalized;
                 yearTotals.losSum += bucket.losSum;
                 yearTotals.losCount += bucket.losCount;
+                yearTotals.hospitalizedLosSum += bucket.hospitalizedLosSum;
+                yearTotals.hospitalizedLosCount += bucket.hospitalizedLosCount;
               }
             });
             summary.avgLosYearMinutes = yearTotals.losCount > 0
@@ -6373,6 +6398,9 @@
             summary.hospitalizedYearShare = yearTotals.count > 0
               ? yearTotals.hospitalized / yearTotals.count
               : null;
+            if (yearTotals.hospitalizedLosCount > 0) {
+              summary.avgLosHospitalizedMinutes = yearTotals.hospitalizedLosSum / yearTotals.hospitalizedLosCount;
+            }
           }
         }
       }
@@ -6535,6 +6563,7 @@
         summary.uniqueDates = legacy.summary.uniqueDates;
         summary.avgDailyPatients = legacy.summary.avgDailyPatients;
         summary.avgLosMinutes = legacy.summary.avgLosMinutes;
+        summary.avgLosHospitalizedMinutes = legacy.summary.avgLosHospitalizedMinutes;
         summary.avgLosMonthMinutes = legacy.summary.avgLosMonthMinutes;
         summary.avgLosYearMinutes = legacy.summary.avgLosYearMinutes;
         summary.avgDoorToProviderMinutes = legacy.summary.avgDoorToProviderMinutes;
@@ -6920,6 +6949,8 @@
             hospitalized: 0,
             totalTime: 0,
             durations: 0,
+            hospitalizedTime: 0,
+            hospitalizedDurations: 0,
           });
         }
         const summary = dailyMap.get(dateKey);
@@ -6936,6 +6967,10 @@
           if (Number.isFinite(duration) && duration >= 0 && duration <= 24) { // ignoruojame >24 val. buvimo laikus
             summary.totalTime += duration;
             summary.durations += 1;
+            if (record.hospitalized) {
+              summary.hospitalizedTime += duration;
+              summary.hospitalizedDurations += 1;
+            }
           }
         }
       });
@@ -6943,6 +6978,7 @@
       return Array.from(dailyMap.values()).sort((a, b) => (a.date > b.date ? 1 : -1)).map((item) => ({
         ...item,
         avgTime: item.durations ? item.totalTime / item.durations : 0,
+        avgHospitalizedTime: item.hospitalizedDurations ? item.hospitalizedTime / item.hospitalizedDurations : 0,
       }));
     }
 
@@ -6963,6 +6999,8 @@
             hospitalized: 0,
             totalTime: 0,
             durations: 0,
+            hospitalizedTime: 0,
+            hospitalizedDurations: 0,
             dayCount: 0,
           });
         }
@@ -6974,6 +7012,8 @@
         summary.hospitalized += entry.hospitalized;
         summary.totalTime += entry.totalTime;
         summary.durations += entry.durations;
+        summary.hospitalizedTime += entry.hospitalizedTime;
+        summary.hospitalizedDurations += entry.hospitalizedDurations;
         summary.dayCount += 1;
       });
 
@@ -7126,7 +7166,16 @@
 
     function aggregatePeriodSummary(entries) {
       if (!Array.isArray(entries)) {
-        return { days: 0, totalCount: 0, totalHospitalized: 0, totalDischarged: 0, totalTime: 0, durationCount: 0 };
+        return {
+          days: 0,
+          totalCount: 0,
+          totalHospitalized: 0,
+          totalDischarged: 0,
+          totalTime: 0,
+          durationCount: 0,
+          totalHospitalizedTime: 0,
+          hospitalizedDurationCount: 0,
+        };
       }
       return entries.reduce((acc, entry) => {
         acc.days += 1;
@@ -7135,13 +7184,26 @@
         const discharged = Number.isFinite(entry?.discharged) ? entry.discharged : 0;
         const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
         const durations = Number.isFinite(entry?.durations) ? entry.durations : 0;
+        const hospitalizedTime = Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
+        const hospitalizedDurations = Number.isFinite(entry?.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
         acc.totalCount += count;
         acc.totalHospitalized += hospitalized;
         acc.totalDischarged += discharged;
         acc.totalTime += totalTime;
         acc.durationCount += durations;
+        acc.totalHospitalizedTime += hospitalizedTime;
+        acc.hospitalizedDurationCount += hospitalizedDurations;
         return acc;
-      }, { days: 0, totalCount: 0, totalHospitalized: 0, totalDischarged: 0, totalTime: 0, durationCount: 0 });
+      }, {
+        days: 0,
+        totalCount: 0,
+        totalHospitalized: 0,
+        totalDischarged: 0,
+        totalTime: 0,
+        durationCount: 0,
+        totalHospitalizedTime: 0,
+        hospitalizedDurationCount: 0,
+      });
     }
 
     function derivePeriodMetrics(summary) {
@@ -7151,11 +7213,16 @@
       const totalDischarged = Number.isFinite(summary?.totalDischarged) ? summary.totalDischarged : 0;
       const totalTime = Number.isFinite(summary?.totalTime) ? summary.totalTime : 0;
       const durationCount = Number.isFinite(summary?.durationCount) ? summary.durationCount : 0;
+      const totalHospitalizedTime = Number.isFinite(summary?.totalHospitalizedTime) ? summary.totalHospitalizedTime : 0;
+      const hospitalizedDurationCount = Number.isFinite(summary?.hospitalizedDurationCount)
+        ? summary.hospitalizedDurationCount
+        : 0;
       return {
         days,
         totalCount,
         patientsPerDay: days > 0 ? totalCount / days : null,
         avgTime: durationCount > 0 ? totalTime / durationCount : null,
+        avgHospitalizedTime: hospitalizedDurationCount > 0 ? totalHospitalizedTime / hospitalizedDurationCount : null,
         hospitalizedPerDay: days > 0 ? totalHospitalized / days : null,
         hospitalizedShare: totalCount > 0 ? totalHospitalized / totalCount : null,
         dischargedPerDay: days > 0 ? totalDischarged / days : null,
@@ -9167,11 +9234,15 @@
         if (overviewMetrics) {
           const { yearMetrics, monthMetrics } = overviewMetrics;
           const yearAvgMinutes = Number.isFinite(yearMetrics?.avgTime) ? yearMetrics.avgTime * 60 : null;
+          const yearHospLosMinutes = Number.isFinite(yearMetrics?.avgHospitalizedTime)
+            ? yearMetrics.avgHospitalizedTime * 60
+            : null;
           const monthAvgMinutes = Number.isFinite(monthMetrics?.avgTime) ? monthMetrics.avgTime * 60 : null;
           const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare) ? yearMetrics.hospitalizedShare : null;
           const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare) ? monthMetrics.hospitalizedShare : null;
 
           summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
+          summary.avgLosHospitalizedMinutes = yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
           summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : null;
           summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : null;
           summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
