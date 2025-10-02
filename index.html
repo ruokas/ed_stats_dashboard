@@ -10305,6 +10305,87 @@
 
       dashboardState.charts.edDispositions = chartInstance;
     }
+    function clampColorChannel(value) {
+      return Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
+    }
+
+    function parseColorToRgb(color) {
+      if (typeof color !== 'string') {
+        return null;
+      }
+      const trimmed = color.trim();
+      if (!trimmed) {
+        return null;
+      }
+      if (trimmed.startsWith('#')) {
+        let hex = trimmed.slice(1);
+        if (hex.length === 3 || hex.length === 4) {
+          hex = hex
+            .split('')
+            .map((char) => char + char)
+            .join('');
+        }
+        if (hex.length === 6 || hex.length === 8) {
+          const r = parseInt(hex.slice(0, 2), 16);
+          const g = parseInt(hex.slice(2, 4), 16);
+          const b = parseInt(hex.slice(4, 6), 16);
+          if ([r, g, b].every((channel) => Number.isFinite(channel))) {
+            return { r, g, b };
+          }
+        }
+        return null;
+      }
+      const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+      if (rgbMatch) {
+        const parts = rgbMatch[1]
+          .split(',')
+          .map((part) => Number.parseFloat(part.trim()))
+          .filter((value, index) => index < 3 && Number.isFinite(value));
+        if (parts.length === 3) {
+          const [r, g, b] = parts;
+          return { r: clampColorChannel(r), g: clampColorChannel(g), b: clampColorChannel(b) };
+        }
+      }
+      return null;
+    }
+
+    function relativeLuminance({ r, g, b }) {
+      const normalize = (channel) => {
+        const ratio = channel / 255;
+        if (ratio <= 0.03928) {
+          return ratio / 12.92;
+        }
+        return ((ratio + 0.055) / 1.055) ** 2.4;
+      };
+      const linearR = normalize(clampColorChannel(r));
+      const linearG = normalize(clampColorChannel(g));
+      const linearB = normalize(clampColorChannel(b));
+      return 0.2126 * linearR + 0.7152 * linearG + 0.0722 * linearB;
+    }
+
+    function rgbToRgba(rgb, alpha) {
+      const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1;
+      const formattedAlpha = safeAlpha === 1 ? '1' : Number(safeAlpha.toFixed(3)).toString();
+      return `rgba(${clampColorChannel(rgb.r)}, ${clampColorChannel(rgb.g)}, ${clampColorChannel(rgb.b)}, ${formattedAlpha})`;
+    }
+
+    function buildFunnelTextPalette(baseColor) {
+      const fallbackRgb = { r: 15, g: 23, b: 42 };
+      const rgb = parseColorToRgb(baseColor) || fallbackRgb;
+      const luminance = relativeLuminance(rgb);
+      const isLightText = luminance > 0.55;
+      return {
+        value: rgbToRgba(rgb, isLightText ? 0.94 : 0.98),
+        label: rgbToRgba(rgb, isLightText ? 0.82 : 0.74),
+        percent: rgbToRgba(rgb, isLightText ? 0.72 : 0.66),
+        guide: rgbToRgba(rgb, isLightText ? 0.52 : 0.22),
+        outline: rgbToRgba(rgb, isLightText ? 0.36 : 0.2),
+        fallback: rgbToRgba(rgb, isLightText ? 0.9 : 0.92),
+        shadow: isLightText ? 'rgba(8, 12, 32, 0.45)' : 'rgba(255, 255, 255, 0.3)',
+        shadowBlur: isLightText ? 8 : 5,
+      };
+    }
+
     function drawFunnelShape(canvas, steps, accentColor, textColor) {
       if (!canvas) {
         return;
@@ -10332,9 +10413,10 @@
       const baselineValue = rawValues.length ? rawValues[0] : 0;
       const maxValue = Math.max(baselineValue, ...rawValues);
       const fontFamily = getComputedStyle(getThemeStyleTarget()).fontFamily;
+      const textPalette = buildFunnelTextPalette(textColor);
 
       if (!Number.isFinite(maxValue) || maxValue <= 0) {
-        ctx.fillStyle = textColor;
+        ctx.fillStyle = textPalette.fallback;
         ctx.font = `500 14px ${fontFamily}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -10403,7 +10485,7 @@
       ctx.fill();
       ctx.shadowColor = 'transparent';
       ctx.lineWidth = 1.2;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.strokeStyle = textPalette.outline;
       ctx.stroke();
 
       const funnelTop = topPoints.length ? Math.min(...topPoints.map((point) => point.y)) : paddingTop + labelAreaHeight;
@@ -10419,25 +10501,32 @@
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
+      ctx.shadowColor = textPalette.shadow;
+      ctx.shadowBlur = textPalette.shadowBlur;
+      ctx.shadowOffsetY = 1;
 
       steps.forEach((step, index) => {
         const x = xPositions[index];
         const rawValue = Math.max(0, step.value || 0);
         const ratio = referenceValue > 0 ? Math.max(0, rawValue / referenceValue) : 0;
-        ctx.fillStyle = 'rgba(248, 250, 255, 0.96)';
+        ctx.fillStyle = textPalette.value;
         ctx.font = `700 ${valueFontSize}px ${fontFamily}`;
         ctx.fillText(numberFormatter.format(Math.round(rawValue)), x, valueBaselineY);
-        ctx.fillStyle = 'rgba(226, 232, 255, 0.78)';
+        ctx.fillStyle = textPalette.label;
         ctx.font = `500 ${labelFontSize}px ${fontFamily}`;
         ctx.fillText(step.label, x, labelBaselineY);
-        ctx.fillStyle = 'rgba(165, 180, 252, 0.85)';
+        ctx.fillStyle = textPalette.percent;
         ctx.font = `600 ${percentFontSize}px ${fontFamily}`;
         ctx.fillText(percentFormatter.format(ratio), x, percentBaselineY);
       });
 
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
       if (stepsCount > 0) {
         ctx.lineWidth = 1.2;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+        ctx.strokeStyle = textPalette.guide;
         steps.forEach((_, index) => {
           const x = xPositions[index];
           const lineStartY = Math.min(funnelTop - 6, labelAreaBottom + 12);
