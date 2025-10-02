@@ -2537,7 +2537,6 @@
         <div class="section__header">
           <div>
             <h2 id="edHeading" class="section__title">RŠL SMPS skydelis</h2>
-            <p id="edSubtitle" class="section__subtitle">Naujausi duomenys</p>
           </div>
         </div>
         <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
@@ -4680,12 +4679,23 @@
 
     function setFullscreenMode(active, options = {}) {
       const previousState = dashboardState.fullscreen === true;
-      const isActive = Boolean(active);
+      const allowFullscreen = dashboardState.activeTab === 'ed';
+      const requestedActive = Boolean(active);
+      const isActive = requestedActive && allowFullscreen;
       dashboardState.fullscreen = isActive;
       if (isActive) {
         document.body.setAttribute('data-fullscreen', 'true');
       } else {
         document.body.removeAttribute('data-fullscreen');
+      }
+      if (selectors.tabSwitcher) {
+        if (isActive) {
+          selectors.tabSwitcher.setAttribute('hidden', 'hidden');
+          selectors.tabSwitcher.setAttribute('aria-hidden', 'true');
+        } else {
+          selectors.tabSwitcher.removeAttribute('hidden');
+          selectors.tabSwitcher.removeAttribute('aria-hidden');
+        }
       }
       updateFullscreenControls();
       if (isActive && !previousState && selectors.exitFullscreenBtn && typeof selectors.exitFullscreenBtn.focus === 'function') {
@@ -4697,6 +4707,9 @@
     }
 
     function toggleFullscreenMode(options = {}) {
+      if (dashboardState.activeTab !== 'ed') {
+        return;
+      }
       const nextState = !(dashboardState.fullscreen === true);
       setFullscreenMode(nextState, options);
     }
@@ -8629,6 +8642,20 @@
           selectors.sectionNav.setAttribute('aria-hidden', 'true');
         }
       }
+      const fullscreenAvailable = normalized === 'ed';
+      if (selectors.fullscreenToggleBtn) {
+        selectors.fullscreenToggleBtn.hidden = !fullscreenAvailable;
+        if (fullscreenAvailable) {
+          selectors.fullscreenToggleBtn.removeAttribute('aria-hidden');
+          selectors.fullscreenToggleBtn.disabled = false;
+        } else {
+          selectors.fullscreenToggleBtn.setAttribute('aria-hidden', 'true');
+          selectors.fullscreenToggleBtn.disabled = true;
+        }
+      }
+      if (!fullscreenAvailable && dashboardState.fullscreen) {
+        setFullscreenMode(false, { restoreFocus: false });
+      }
       if (focusPanel) {
         const targetPanel = normalized === 'ed' ? selectors.edPanel : selectors.overviewPanel;
         if (targetPanel && typeof targetPanel.focus === 'function') {
@@ -10089,6 +10116,9 @@
         toggleTheme();
       }
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'F' || event.key === 'f')) {
+        if (dashboardState.activeTab !== 'ed') {
+          return;
+        }
         event.preventDefault();
         toggleFullscreenMode({ restoreFocus: true });
       }
