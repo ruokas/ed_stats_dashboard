@@ -583,34 +583,6 @@
       transform: translateY(0);
     }
 
-    button.fullscreen-toggle {
-      background: #fff;
-      color: var(--color-accent);
-      border: 1px solid rgba(37, 99, 235, 0.1);
-    }
-
-    button.fullscreen-toggle:hover,
-    button.fullscreen-toggle:focus-visible {
-      transform: translateY(-1px);
-      box-shadow: 0 16px 34px -22px rgba(15, 23, 42, 0.7);
-      background: rgba(255, 255, 255, 0.92);
-    }
-
-    button.fullscreen-toggle:active {
-      transform: translateY(0);
-    }
-
-    body[data-theme="dark"] button.fullscreen-toggle {
-      background: rgba(15, 23, 42, 0.7);
-      border-color: rgba(148, 163, 184, 0.4);
-      color: var(--color-text);
-    }
-
-    body[data-theme="dark"] button.fullscreen-toggle:hover,
-    body[data-theme="dark"] button.fullscreen-toggle:focus-visible {
-      background: rgba(15, 23, 42, 0.85);
-    }
-
     button.ed-panel-toggle {
       background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.35);
@@ -699,30 +671,6 @@
     body[data-theme="dark"] .theme-toggle[aria-pressed="true"] {
       background: rgba(96, 165, 250, 0.3);
       color: #e2e8f0;
-    }
-
-    .fullscreen-exit-btn {
-      position: fixed;
-      top: clamp(12px, 2vw, 24px);
-      right: clamp(12px, 2vw, 24px);
-      z-index: 30;
-    }
-
-    .fullscreen-icon {
-      display: none;
-    }
-
-    #fullscreenToggleBtn[aria-pressed="false"] .fullscreen-icon--enter,
-    #fullscreenToggleBtn:not([aria-pressed]) .fullscreen-icon--enter {
-      display: block;
-    }
-
-    #fullscreenToggleBtn[aria-pressed="true"] .fullscreen-icon--exit {
-      display: block;
-    }
-
-    .fullscreen-exit-btn .fullscreen-icon--exit {
-      display: block;
     }
 
     body[data-fullscreen="true"] header.hero {
@@ -2331,20 +2279,6 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 0 1 11.21 3 7.5 7.5 0 1 0 21 12.79Z" />
             </svg>
           </button>
-          <button id="fullscreenToggleBtn" type="button" class="icon-button fullscreen-toggle" aria-pressed="false" aria-label="Pilnas ekranas" title="Pilnas ekranas (Ctrl+Shift+F)" hidden aria-hidden="true" disabled>
-            <svg class="fullscreen-icon fullscreen-icon--enter" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M20 15v5h-5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 15v5h5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M20 9V4h-5" />
-            </svg>
-            <svg class="fullscreen-icon fullscreen-icon--exit" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 4H4v5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h5v5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 20H4v-5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 20h5v-5" />
-            </svg>
-          </button>
           <button id="openSettingsBtn" type="button" class="icon-button settings-btn" aria-haspopup="dialog" aria-label="Atidaryti nustatymus" title="Atidaryti nustatymus (Ctrl+,)">
             <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/>
@@ -2594,20 +2528,6 @@
       </section>
     </div>
   </main>
-
-  <button type="button"
-          id="exitFullscreenBtn"
-          class="icon-button fullscreen-toggle fullscreen-exit-btn"
-          aria-label="Išeiti iš pilno ekrano"
-          title="Išeiti iš pilno ekrano (Esc)"
-          hidden>
-    <svg class="fullscreen-icon fullscreen-icon--exit" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M9 4H4v5" />
-      <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h5v5" />
-      <path stroke-linecap="round" stroke-linejoin="round" d="M9 20H4v-5" />
-      <path stroke-linecap="round" stroke-linejoin="round" d="M15 20h5v-5" />
-    </svg>
-  </button>
 
   <button type="button"
           id="scrollTopBtn"
@@ -2954,10 +2874,6 @@
       subtitle: 'Greita statistikos apžvalga.',
       refresh: 'Perkrauti duomenis',
       settings: 'Nustatymai',
-      layout: {
-        enterFullscreen: 'Pilnas ekranas',
-        exitFullscreen: 'Išeiti iš pilno ekrano',
-      },
       theme: {
         toggle: 'Perjungti šviesią/tamsią temą',
         light: 'Šviesi tema',
@@ -3566,8 +3482,6 @@
       edDispositionsMessage: document.getElementById('edDispositionsMessage'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
-      fullscreenToggleBtn: document.getElementById('fullscreenToggleBtn'),
-      exitFullscreenBtn: document.getElementById('exitFullscreenBtn'),
       settingsDialog: document.getElementById('settingsDialog'),
       settingsForm: document.getElementById('settingsForm'),
       resetSettingsBtn: document.getElementById('resetSettingsBtn'),
@@ -4712,28 +4626,6 @@
       },
     };
 
-    function updateFullscreenControls() {
-      const enterLabel = TEXT.layout?.enterFullscreen || 'Pilnas ekranas';
-      const exitLabel = TEXT.layout?.exitFullscreen || 'Išeiti iš pilno ekrano';
-      const isActive = dashboardState.fullscreen === true;
-      const toggleAvailable = dashboardState.activeTab === 'ed' && !isActive;
-      if (selectors.fullscreenToggleBtn) {
-        selectors.fullscreenToggleBtn.hidden = !toggleAvailable;
-        selectors.fullscreenToggleBtn.setAttribute('aria-hidden', toggleAvailable ? 'false' : 'true');
-        selectors.fullscreenToggleBtn.disabled = !toggleAvailable;
-        selectors.fullscreenToggleBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        if (toggleAvailable) {
-          selectors.fullscreenToggleBtn.setAttribute('aria-label', enterLabel);
-          selectors.fullscreenToggleBtn.title = `${enterLabel} (Ctrl+Shift+F)`;
-        }
-      }
-      if (selectors.exitFullscreenBtn) {
-        selectors.exitFullscreenBtn.hidden = !isActive;
-        selectors.exitFullscreenBtn.setAttribute('aria-label', exitLabel);
-        selectors.exitFullscreenBtn.title = `${exitLabel} (Esc)`;
-      }
-    }
-
     function setFullscreenMode(active, options = {}) {
       const previousState = dashboardState.fullscreen === true;
       const allowFullscreen = dashboardState.activeTab === 'ed';
@@ -4754,26 +4646,14 @@
           selectors.tabSwitcher.removeAttribute('aria-hidden');
         }
       }
-      updateFullscreenControls();
-      const shouldFocusExit = options.focusExit !== false;
-      if (isActive
-        && !previousState
-        && shouldFocusExit
-        && selectors.exitFullscreenBtn
-        && typeof selectors.exitFullscreenBtn.focus === 'function') {
-        selectors.exitFullscreenBtn.focus();
+      const shouldRestoreFocus = options.restoreFocus;
+      if (!isActive
+        && previousState
+        && shouldRestoreFocus
+        && selectors.edNavButton
+        && typeof selectors.edNavButton.focus === 'function') {
+        selectors.edNavButton.focus();
       }
-      if (!isActive && previousState && options.restoreFocus && selectors.fullscreenToggleBtn && typeof selectors.fullscreenToggleBtn.focus === 'function') {
-        selectors.fullscreenToggleBtn.focus();
-      }
-    }
-
-    function toggleFullscreenMode(options = {}) {
-      if (dashboardState.activeTab !== 'ed') {
-        return;
-      }
-      const nextState = !(dashboardState.fullscreen === true);
-      setFullscreenMode(nextState, options);
     }
 
     /**
@@ -8679,7 +8559,7 @@
       }
     }
 
-    function setActiveTab(tabId, { focusPanel = false } = {}) {
+    function setActiveTab(tabId, { focusPanel = false, restoreFocus = false } = {}) {
       const normalized = tabId === 'ed' ? 'ed' : 'overview';
       dashboardState.activeTab = normalized;
       if (selectors.tabButtons && selectors.tabButtons.length) {
@@ -8738,21 +8618,11 @@
         selectors.edNavButton.title = activeLabel;
       }
       const fullscreenAvailable = normalized === 'ed';
-      if (selectors.fullscreenToggleBtn) {
-        selectors.fullscreenToggleBtn.hidden = !fullscreenAvailable;
-        if (fullscreenAvailable) {
-          selectors.fullscreenToggleBtn.removeAttribute('aria-hidden');
-          selectors.fullscreenToggleBtn.disabled = false;
-        } else {
-          selectors.fullscreenToggleBtn.setAttribute('aria-hidden', 'true');
-          selectors.fullscreenToggleBtn.disabled = true;
-        }
-      }
       if (fullscreenAvailable) {
         // Atidarant ED skiltį automatiškai perjungiame į pilno ekrano režimą.
-        setFullscreenMode(true, { focusExit: false });
+        setFullscreenMode(true);
       } else if (dashboardState.fullscreen) {
-        setFullscreenMode(false, { restoreFocus: false });
+        setFullscreenMode(false, { restoreFocus });
       }
       if (focusPanel) {
         const targetPanel = normalized === 'ed' ? selectors.edPanel : selectors.overviewPanel;
@@ -10087,18 +9957,6 @@
       });
     }
 
-    if (selectors.fullscreenToggleBtn) {
-      selectors.fullscreenToggleBtn.addEventListener('click', () => {
-        toggleFullscreenMode({ restoreFocus: true });
-      });
-    }
-
-    if (selectors.exitFullscreenBtn) {
-      selectors.exitFullscreenBtn.addEventListener('click', () => {
-        setFullscreenMode(false, { restoreFocus: true });
-      });
-    }
-
     if (selectors.compareToggle) {
       selectors.compareToggle.addEventListener('click', () => {
         setCompareMode(!dashboardState.compare.active);
@@ -10161,7 +10019,10 @@
       selectors.edNavButton.addEventListener('click', (event) => {
         event.preventDefault();
         const isActive = dashboardState.activeTab === 'ed';
-        setActiveTab(isActive ? 'overview' : 'ed', { focusPanel: !isActive });
+        setActiveTab(isActive ? 'overview' : 'ed', {
+          focusPanel: !isActive,
+          restoreFocus: isActive,
+        });
       });
     }
 
@@ -10221,16 +10082,25 @@
         event.preventDefault();
         toggleTheme();
       }
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'F' || event.key === 'f')) {
-        if (dashboardState.activeTab !== 'ed') {
+      if (!event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'A' || event.key === 'a')) {
+        const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
+        const isEditable = event.target && typeof event.target === 'object'
+          && 'isContentEditable' in event.target
+          && event.target.isContentEditable === true;
+        if (tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
           return;
         }
-        event.preventDefault();
-        toggleFullscreenMode({ restoreFocus: true });
+        if (isEditable) {
+          return;
+        }
+        if (dashboardState.activeTab === 'ed') {
+          event.preventDefault();
+          setActiveTab('overview', { restoreFocus: true });
+        }
       }
       if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key === 'Escape' && dashboardState.fullscreen) {
         event.preventDefault();
-        setFullscreenMode(false, { restoreFocus: true });
+        setActiveTab('overview', { restoreFocus: true });
       }
     });
 
