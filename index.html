@@ -292,10 +292,158 @@
       display: none !important;
     }
 
+    .ed-dashboard {
+      position: relative;
+      border-radius: 32px;
+      padding: clamp(24px, 4vw, 48px);
+      background:
+        linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0))
+        , var(--color-surface);
+      border: 1px solid rgba(37, 99, 235, 0.14);
+      box-shadow: 0 40px 80px -48px rgba(15, 23, 42, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(20px, 3vw, 32px);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .ed-dashboard::before {
+      content: '';
+      position: absolute;
+      inset: auto -40% -60% 10%;
+      height: clamp(220px, 32vw, 320px);
+      background: radial-gradient(circle at center, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0));
+      opacity: 0.75;
+      pointer-events: none;
+      filter: blur(0);
+    }
+
+    body[data-theme="dark"] .ed-dashboard {
+      background:
+        linear-gradient(135deg, rgba(96, 165, 250, 0.14), rgba(15, 23, 42, 0.4))
+        , rgba(15, 23, 42, 0.9);
+      border-color: rgba(96, 165, 250, 0.18);
+      box-shadow: 0 48px 90px -46px rgba(8, 12, 32, 0.9);
+    }
+
+    body[data-theme="dark"] .ed-dashboard::before {
+      background: radial-gradient(circle at center, rgba(96, 165, 250, 0.25), rgba(37, 99, 235, 0));
+      opacity: 1;
+    }
+
+    .ed-dashboard__summary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: clamp(12px, 2vw, 20px);
+    }
+
+    .ed-dashboard__status-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
     .ed-dashboard__status {
-      margin: 0 0 24px;
-      font-size: 0.95rem;
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.12);
+      color: var(--color-accent);
+      font-weight: 600;
+      letter-spacing: 0.015em;
+      font-size: 0.85rem;
+      line-height: 1.3;
+      border: 1px solid rgba(37, 99, 235, 0.16);
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .ed-dashboard__status::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    }
+
+    .ed-dashboard__status[data-tone="success"] {
+      background: rgba(22, 163, 74, 0.12);
+      border-color: rgba(22, 163, 74, 0.2);
+      color: var(--color-success);
+    }
+
+    .ed-dashboard__status[data-tone="success"]::before {
+      box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.18);
+    }
+
+    .ed-dashboard__status[data-tone="warning"] {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.2);
+      color: var(--color-warning);
+    }
+
+    .ed-dashboard__status[data-tone="warning"]::before {
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+    }
+
+    .ed-dashboard__status[data-tone="error"] {
+      background: rgba(220, 38, 38, 0.12);
+      border-color: rgba(220, 38, 38, 0.2);
+      color: var(--color-danger);
+    }
+
+    .ed-dashboard__status[data-tone="error"]::before {
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.18);
+    }
+
+    body[data-theme="dark"] .ed-dashboard__status {
+      background: rgba(96, 165, 250, 0.18);
+      border-color: rgba(96, 165, 250, 0.28);
+      color: var(--color-accent);
+    }
+
+    body[data-theme="dark"] .ed-dashboard__status::before {
+      box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.22);
+    }
+
+    body[data-theme="dark"] .ed-dashboard__status[data-tone="warning"] {
+      background: rgba(251, 191, 36, 0.16);
+      border-color: rgba(251, 191, 36, 0.26);
+      color: rgba(251, 191, 36, 0.95);
+    }
+
+    body[data-theme="dark"] .ed-dashboard__status[data-tone="error"] {
+      background: rgba(248, 113, 113, 0.18);
+      border-color: rgba(248, 113, 113, 0.26);
+      color: rgba(248, 113, 113, 0.95);
+    }
+
+    .ed-dashboard__status-meta {
+      margin: 0;
+      font-size: 0.85rem;
       color: var(--color-text-muted);
+    }
+
+    .ed-dashboard__status-meta[hidden] {
+      display: none;
+    }
+
+    .ed-dashboard__layout {
+      display: grid;
+      gap: clamp(20px, 3vw, 32px);
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .ed-dashboard__column {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 2vw, 24px);
     }
 
     .ed-dashboard__actions {
@@ -351,35 +499,44 @@
       border-color: rgba(96, 165, 250, 0.75);
     }
 
-    .ed-dashboard__status[data-tone="success"] {
-      color: var(--color-success);
-    }
-
-    .ed-dashboard__status[data-tone="warning"] {
-      color: var(--color-warning);
-    }
-
-    .ed-dashboard__status[data-tone="error"] {
-      color: var(--color-danger);
-    }
-
     .ed-dashboard__cards {
       display: grid;
       gap: clamp(16px, 2vw, 24px);
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      margin-bottom: 32px;
     }
 
     .ed-dashboard__card {
-      border-radius: 18px;
-      padding: clamp(18px, 2vw, 24px);
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      box-shadow: 0 18px 36px -30px rgba(15, 23, 42, 0.55);
+      position: relative;
+      overflow: hidden;
+      border-radius: 20px;
+      padding: clamp(18px, 2vw, 26px);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 255, 0.8));
+      border: 1px solid rgba(37, 99, 235, 0.08);
+      box-shadow: 0 24px 50px -32px rgba(15, 23, 42, 0.55);
       display: flex;
       flex-direction: column;
       gap: 8px;
       min-height: 150px;
+    }
+
+    .ed-dashboard__card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0));
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    body[data-theme="dark"] .ed-dashboard__card {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.75));
+      border-color: rgba(96, 165, 250, 0.12);
+      box-shadow: 0 26px 60px -32px rgba(8, 12, 32, 0.9);
+    }
+
+    body[data-theme="dark"] .ed-dashboard__card::after {
+      background: linear-gradient(160deg, rgba(96, 165, 250, 0.12), rgba(96, 165, 250, 0));
+      opacity: 0.9;
     }
 
     .ed-dashboard__card-title {
@@ -406,10 +563,6 @@
       display: none;
     }
 
-    .ed-dashboard__group {
-      margin-top: 32px;
-    }
-
     .ed-dashboard__chart-message {
       margin-top: 12px;
       font-size: 0.9rem;
@@ -417,7 +570,8 @@
     }
 
     .ed-dashboard__tables {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: clamp(18px, 3vw, 28px);
     }
 
@@ -780,11 +934,30 @@
       .ed-tv__triage-meta {
         align-items: flex-start;
       }
+
+      .ed-dashboard {
+        padding: 24px 20px;
+        border-radius: 26px;
+      }
+
+      .ed-dashboard__status {
+        font-size: 0.75rem;
+        padding: 6px 14px;
+      }
+
+      .ed-dashboard__shortcuts {
+        gap: 8px;
+      }
+
+      .ed-dashboard__shortcut {
+        font-size: 0.74rem;
+        padding: 5px 10px;
+      }
     }
 
     @media (min-width: 1100px) {
-      .ed-dashboard__tables {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      .ed-dashboard__layout {
+        grid-template-columns: minmax(0, 1.75fr) minmax(0, 1.25fr);
       }
     }
 
@@ -3306,21 +3479,32 @@
             </button>
           </div>
         </div>
-        <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
-        <div id="edCards" class="ed-dashboard__cards" role="list"></div>
-        <div class="ed-dashboard__tables">
-          <section class="ed-dashboard__group" aria-labelledby="edDispositionsTitle">
-            <h3 id="edDispositionsTitle" class="section__subtitle">Pacientų pasiskirstymas pagal kategorijas</h3>
-            <figure class="chart-card chart-card--compact">
-              <div class="chart-card__canvas-wrapper">
-                <canvas id="edDispositionsChart"
-                        role="img"
-                        aria-labelledby="edDispositionsTitle edDispositionsCaption"></canvas>
-              </div>
-              <figcaption id="edDispositionsCaption" class="chart-card__caption">Pacientų pasiskirstymas pagal naujausią įrašą.</figcaption>
-            </figure>
-            <p id="edDispositionsMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
-          </section>
+        <div class="ed-dashboard" role="region" aria-labelledby="edHeading">
+          <div class="ed-dashboard__summary">
+            <div class="ed-dashboard__status-wrapper">
+              <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
+              <p id="edStatusTimestamp" class="ed-dashboard__status-meta" hidden></p>
+            </div>
+          </div>
+          <div class="ed-dashboard__layout">
+            <div class="ed-dashboard__column ed-dashboard__column--metrics">
+              <div id="edCards" class="ed-dashboard__cards" role="list"></div>
+            </div>
+            <div class="ed-dashboard__column ed-dashboard__column--charts ed-dashboard__tables">
+              <section class="ed-dashboard__group" aria-labelledby="edDispositionsTitle">
+                <h3 id="edDispositionsTitle" class="section__subtitle">Pacientų pasiskirstymas pagal kategorijas</h3>
+                <figure class="chart-card chart-card--compact">
+                  <div class="chart-card__canvas-wrapper">
+                    <canvas id="edDispositionsChart"
+                            role="img"
+                            aria-labelledby="edDispositionsTitle edDispositionsCaption"></canvas>
+                  </div>
+                  <figcaption id="edDispositionsCaption" class="chart-card__caption">Pacientų pasiskirstymas pagal naujausią įrašą.</figcaption>
+                </figure>
+                <p id="edDispositionsMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
+              </section>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -4285,6 +4469,7 @@
       edHeading: document.getElementById('edHeading'),
       edSubtitle: document.getElementById('edSubtitle'),
       edStatus: document.getElementById('edStatus'),
+      edStatusTimestamp: document.getElementById('edStatusTimestamp'),
       edCards: document.getElementById('edCards'),
       edDispositionsTitle: document.getElementById('edDispositionsTitle'),
       edDispositionsCaption: document.getElementById('edDispositionsCaption'),
@@ -5786,6 +5971,10 @@
       if (selectors.edStatus) {
         selectors.edStatus.textContent = TEXT.ed.status.loading;
         selectors.edStatus.dataset.tone = 'info';
+      }
+      if (selectors.edStatusTimestamp) {
+        selectors.edStatusTimestamp.textContent = '';
+        selectors.edStatusTimestamp.hidden = true;
       }
       if (selectors.compareToggle) {
         selectors.compareToggle.textContent = TEXT.compare.toggle;
@@ -10975,6 +11164,15 @@
         selectors.edStatus.textContent = statusInfo.message;
         selectors.edStatus.dataset.tone = statusInfo.tone;
       }
+      if (selectors.edStatusTimestamp) {
+        if (statusInfo.timestamp) {
+          selectors.edStatusTimestamp.textContent = `Atnaujinta ${statusInfo.timestamp}`;
+          selectors.edStatusTimestamp.hidden = false;
+        } else {
+          selectors.edStatusTimestamp.textContent = '';
+          selectors.edStatusTimestamp.hidden = true;
+        }
+      }
       updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
     }
 
@@ -11503,6 +11701,10 @@
         if (selectors.edStatus) {
           selectors.edStatus.textContent = TEXT.ed.status.loading;
           selectors.edStatus.dataset.tone = 'info';
+        }
+        if (selectors.edStatusTimestamp) {
+          selectors.edStatusTimestamp.textContent = '';
+          selectors.edStatusTimestamp.hidden = true;
         }
         const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
           fetchData(),
