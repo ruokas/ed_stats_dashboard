@@ -4374,6 +4374,24 @@
       };
     }
 
+    function sanitizeKpiFilters(filters) {
+      const defaults = getDefaultKpiFilters();
+      const normalized = { ...defaults, ...(filters || {}) };
+      if (!Number.isFinite(normalized.window) || normalized.window < 0) {
+        normalized.window = defaults.window;
+      }
+      if (!(normalized.shift in KPI_FILTER_LABELS.shift)) {
+        normalized.shift = defaults.shift;
+      }
+      if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
+        normalized.arrival = defaults.arrival;
+      }
+      if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
+        normalized.disposition = defaults.disposition;
+      }
+      return normalized;
+    }
+
     // Formatai datoms ir skaičiams (LT locale).
     const numberFormatter = new Intl.NumberFormat('lt-LT');
     const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -5600,6 +5618,7 @@
       lastErrorMessage: '',
       rawRecords: [],
       dailyStats: [],
+      dataMeta: null,
       chartPeriod: 30,
       chartYear: null,
       chartData: {
@@ -6275,9 +6294,35 @@
       return `${message}${renderedHints}`.trim();
     }
 
-    async function downloadCsv(url) {
-      const response = await fetch(url, { cache: 'no-store' });
+    function createTextSignature(text) {
+      if (typeof text !== 'string') {
+        return '';
+      }
+      const length = text.length;
+      const head = text.slice(0, 128);
+      return `${length}:${head}`;
+    }
+
+    async function downloadCsv(url, cacheInfo = null) {
+      const headers = {};
+      if (cacheInfo?.etag) {
+        headers['If-None-Match'] = cacheInfo.etag;
+      }
+      if (cacheInfo?.lastModified) {
+        headers['If-Modified-Since'] = cacheInfo.lastModified;
+      }
+      const response = await fetch(url, { cache: 'no-store', headers });
       const statusText = response.statusText || '';
+      if (response.status === 304) {
+        return {
+          status: 304,
+          text: '',
+          contentType: response.headers.get('content-type') ?? '',
+          etag: cacheInfo?.etag || '',
+          lastModified: cacheInfo?.lastModified || '',
+          signature: cacheInfo?.signature || '',
+        };
+      }
       if (!response.ok) {
         const error = new Error(`HTTP klaida: ${response.status}`);
         error.diagnostic = {
@@ -6299,7 +6344,185 @@
         };
         throw error;
       }
-      return textContent;
+      const etag = response.headers.get('etag') ?? '';
+      const lastModified = response.headers.get('last-modified') ?? '';
+      return {
+        status: response.status,
+        text: textContent,
+        contentType,
+        etag,
+        lastModified,
+        signature: etag || lastModified || createTextSignature(textContent),
+      };
+    }
+
+    const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
+    const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
+    const DATA_CACHE_VERSION = 1;
+    let dataWorkerCounter = 0;
+    let kpiWorkerJobToken = 0;
+
+    function getDataCacheKey(url) {
+      if (!url) {
+        return '';
+      }
+      return `${DATA_CACHE_PREFIX}${encodeURIComponent(url)}`;
+    }
+
+    function serializeRecordsForCache(records) {
+      if (!Array.isArray(records)) {
+        return [];
+      }
+      return records.map((record) => {
+        const entry = { ...record };
+        entry.arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+          ? record.arrival.toISOString()
+          : null;
+        entry.discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+          ? record.discharge.toISOString()
+          : null;
+        return entry;
+      });
+    }
+
+    function deserializeRecordsFromCache(records) {
+      if (!Array.isArray(records)) {
+        return [];
+      }
+      return records.map((record) => {
+        const entry = { ...record };
+        entry.arrival = parseDate(record.arrival);
+        entry.discharge = parseDate(record.discharge);
+        entry.night = Boolean(record.night);
+        entry.ems = Boolean(record.ems);
+        entry.hospitalized = Boolean(record.hospitalized);
+        return entry;
+      });
+    }
+
+    function readDataCache(url) {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return null;
+      }
+      const key = getDataCacheKey(url);
+      if (!key) {
+        return null;
+      }
+      try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) {
+          return null;
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.version !== DATA_CACHE_VERSION) {
+          return null;
+        }
+        return {
+          etag: parsed.etag || '',
+          lastModified: parsed.lastModified || '',
+          signature: parsed.signature || '',
+          records: deserializeRecordsFromCache(parsed.records),
+          dailyStats: Array.isArray(parsed.dailyStats) ? parsed.dailyStats : [],
+          timestamp: parsed.timestamp || 0,
+        };
+      } catch (error) {
+        console.warn('Nepavyko nuskaityti duomenų iš talpyklos:', error);
+        return null;
+      }
+    }
+
+    function writeDataCache(url, payload) {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const key = getDataCacheKey(url);
+      if (!key) {
+        return;
+      }
+      try {
+        const data = {
+          version: DATA_CACHE_VERSION,
+          etag: payload?.etag || '',
+          lastModified: payload?.lastModified || '',
+          signature: payload?.signature || '',
+          timestamp: Date.now(),
+          records: serializeRecordsForCache(payload?.records),
+          dailyStats: Array.isArray(payload?.dailyStats) ? payload.dailyStats : [],
+        };
+        window.localStorage.setItem(key, JSON.stringify(data));
+      } catch (error) {
+        console.warn('Nepavyko išsaugoti duomenų talpykloje:', error);
+      }
+    }
+
+    function clearDataCache(url) {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+      }
+      const key = getDataCacheKey(url);
+      if (!key) {
+        return;
+      }
+      try {
+        window.localStorage.removeItem(key);
+      } catch (error) {
+        console.warn('Nepavyko išvalyti duomenų talpyklos įrašo:', error);
+      }
+    }
+
+    function runWorkerJob(message) {
+      if (typeof Worker !== 'function') {
+        return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
+      }
+      const jobId = `data-job-${Date.now()}-${dataWorkerCounter += 1}`;
+      const worker = new Worker(DATA_WORKER_URL);
+      return new Promise((resolve, reject) => {
+        const cleanup = () => {
+          try {
+            worker.terminate();
+          } catch (error) {
+            console.warn('Nepavyko uždaryti duomenų workerio:', error);
+          }
+        };
+        worker.addEventListener('message', (event) => {
+          const data = event.data;
+          if (!data || data.id !== jobId) {
+            return;
+          }
+          cleanup();
+          if (data.status === 'error') {
+            const error = new Error(data.error?.message || 'Worker klaida.');
+            error.name = data.error?.name || error.name;
+            if (data.error?.stack) {
+              error.stack = data.error.stack;
+            }
+            reject(error);
+            return;
+          }
+          resolve(data.payload);
+        });
+        worker.addEventListener('error', (event) => {
+          cleanup();
+          reject(event.error || new Error(event.message || 'Worker klaida.'));
+        });
+        try {
+          worker.postMessage({
+            id: jobId,
+            ...message,
+          });
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+      });
+    }
+
+    function runDataWorker(csvText, options) {
+      return runWorkerJob({ type: 'transformCsv', csvText, options });
+    }
+
+    function runKpiWorkerJob(payload) {
+      return runWorkerJob({ type: 'applyKpiFilters', ...payload });
     }
 
     function detectDelimiter(text) {
@@ -6486,132 +6709,6 @@
       return day === 0 || day === 6;
     }
 
-    function parseBoolean(value, trueValues) {
-      if (value == null) {
-        return false;
-      }
-      const normalized = String(value).trim().toLowerCase();
-      if (!normalized) {
-        return false;
-      }
-      const candidates = Array.isArray(trueValues) && trueValues.length
-        ? trueValues
-        : toNormalizedList(DEFAULT_SETTINGS.csv.trueValues, DEFAULT_SETTINGS.csv.trueValues);
-      return candidates.some((candidate) => matchesWildcard(normalized, candidate));
-    }
-
-    function isNightByArrival(arrivalDate, calculations) {
-      if (!(arrivalDate instanceof Date) || Number.isNaN(arrivalDate.getTime())) {
-        return null;
-      }
-      const startRaw = Number.isFinite(Number(calculations?.nightStartHour))
-        ? Number(calculations.nightStartHour)
-        : DEFAULT_SETTINGS.calculations.nightStartHour;
-      const endRaw = Number.isFinite(Number(calculations?.nightEndHour))
-        ? Number(calculations.nightEndHour)
-        : DEFAULT_SETTINGS.calculations.nightEndHour;
-      const dayMinutes = 24 * 60;
-      const normalizeMinutes = (value) => {
-        if (!Number.isFinite(value)) {
-          return 0;
-        }
-        const minutes = Math.round(value * 60);
-        const wrapped = ((minutes % dayMinutes) + dayMinutes) % dayMinutes;
-        return wrapped;
-      };
-      const startMinutes = normalizeMinutes(startRaw);
-      const endMinutes = normalizeMinutes(endRaw);
-      const arrivalMinutes = arrivalDate.getHours() * 60 + arrivalDate.getMinutes();
-      if (startMinutes === endMinutes) {
-        return arrivalMinutes === startMinutes;
-      }
-      if (startMinutes < endMinutes) {
-        return arrivalMinutes >= startMinutes && arrivalMinutes < endMinutes;
-      }
-      return arrivalMinutes >= startMinutes || arrivalMinutes < endMinutes;
-    }
-
-    function detectNight(dayNightValue, arrivalDate, csvRuntime, calculations) {
-      const byArrival = isNightByArrival(arrivalDate, calculations);
-      if (typeof byArrival === 'boolean') {
-        return byArrival;
-      }
-      const value = dayNightValue != null ? String(dayNightValue).trim().toLowerCase() : '';
-      if (value) {
-        if (csvRuntime.nightKeywords.some((keyword) => keyword && value.includes(keyword))) {
-          return true;
-        }
-        if (csvRuntime.dayKeywords.some((keyword) => keyword && value.includes(keyword))) {
-          return false;
-        }
-      }
-      return false;
-    }
-
-    function mapRow(header, cols, delimiter, indices, csvRuntime, calculations) {
-      const normalized = [...cols];
-      if (normalized.length < header.length) {
-        normalized.push(...Array(header.length - normalized.length).fill(''));
-      } else if (normalized.length > header.length) {
-        const extras = normalized.splice(header.length - 1);
-        normalized[header.length - 1] = [normalized[header.length - 1], ...extras].join(delimiter);
-      }
-      const entry = {};
-      header.forEach((column, idx) => {
-        entry[column] = normalized[idx] != null ? String(normalized[idx]).trim() : '';
-      });
-      const arrivalRaw = normalized[indices.arrival] ?? '';
-      const dischargeRaw = normalized[indices.discharge] ?? '';
-      const dayNightRaw = normalized[indices.dayNight] ?? '';
-      const gmpRaw = normalized[indices.gmp] ?? '';
-      const departmentRaw = normalized[indices.department] ?? '';
-      entry.arrival = parseDate(arrivalRaw);
-      entry.discharge = parseDate(dischargeRaw);
-      entry.night = detectNight(dayNightRaw, entry.arrival, csvRuntime, calculations);
-      entry.ems = parseBoolean(gmpRaw, csvRuntime.trueValues);
-      entry.hospitalized = detectHospitalized(departmentRaw, csvRuntime);
-      return entry;
-    }
-
-    function transformCsv(text) {
-      if (!text) {
-        throw new Error('CSV turinys tuščias.');
-      }
-      const { rows, delimiter } = parseCsv(text);
-      if (!rows.length) {
-        throw new Error('CSV failas tuščias.');
-      }
-      const header = rows[0].map((cell) => String(cell ?? '').trim());
-      const headerNormalized = header.map((column, index) => ({
-        original: column,
-        normalized: column.toLowerCase(),
-        index,
-      }));
-      const csvRuntime = buildCsvRuntime(settings.csv);
-      const columnIndices = {
-        arrival: resolveColumnIndex(headerNormalized, csvRuntime.arrivalHeaders),
-        discharge: resolveColumnIndex(headerNormalized, csvRuntime.dischargeHeaders),
-        dayNight: resolveColumnIndex(headerNormalized, csvRuntime.dayNightHeaders),
-        gmp: resolveColumnIndex(headerNormalized, csvRuntime.gmpHeaders),
-        department: resolveColumnIndex(headerNormalized, csvRuntime.departmentHeaders),
-      };
-      const missing = Object.entries(columnIndices)
-        .filter(([key, index]) => {
-          if (index >= 0) {
-            return false;
-          }
-          if (key === 'department' && !csvRuntime.requireDepartment) {
-            return false;
-          }
-          return true;
-        })
-        .map(([key]) => csvRuntime.labels[key]);
-      if (missing.length) {
-        throw new Error(`CSV faile nerasti stulpeliai: ${missing.join(', ')}`);
-      }
-      const dataRows = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
-      return dataRows.map((cols) => mapRow(header, cols, delimiter, columnIndices, csvRuntime, settings.calculations));
-    }
 
     /**
      * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio) su demonstraciniu rezervu.
@@ -6619,30 +6716,100 @@
     async function fetchData() {
       const { url, fallbackCsv, useFallback } = settings.dataSource;
       const fallbackContent = useFallback ? fallbackCsv : '';
+      const workerOptions = {
+        csvSettings: settings.csv || {},
+        csvDefaults: DEFAULT_SETTINGS.csv || {},
+        calculations: settings.calculations || {},
+        calculationDefaults: DEFAULT_SETTINGS.calculations || {},
+      };
       if (!url) {
         if (fallbackContent) {
           dashboardState.usingFallback = true;
           dashboardState.lastErrorMessage = 'Nenurodytas duomenų URL.';
-          return transformCsv(fallbackContent);
+          const dataset = await runDataWorker(fallbackContent, workerOptions);
+          return {
+            records: Array.isArray(dataset?.records) ? dataset.records : [],
+            dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
+            meta: { fromFallback: true },
+          };
         }
         dashboardState.usingFallback = false;
         dashboardState.lastErrorMessage = 'Nenurodytas duomenų URL.';
         throw new Error('Nenurodytas duomenų URL.');
       }
+
+      const cacheEntry = readDataCache(url);
+
       try {
-        const csvText = await downloadCsv(url);
-        const dataset = transformCsv(csvText);
+        let download = await downloadCsv(url, cacheEntry);
+        if (download.status === 304) {
+          if (cacheEntry?.records && cacheEntry?.dailyStats) {
+            dashboardState.usingFallback = false;
+            dashboardState.lastErrorMessage = '';
+            return {
+              records: cacheEntry.records,
+              dailyStats: cacheEntry.dailyStats,
+              meta: {
+                etag: cacheEntry.etag,
+                lastModified: cacheEntry.lastModified,
+                signature: cacheEntry.signature,
+                fromCache: true,
+              },
+            };
+          }
+          clearDataCache(url);
+          download = await downloadCsv(url, null);
+        }
+
+        const dataset = await runDataWorker(download.text, workerOptions);
+        const result = {
+          records: Array.isArray(dataset?.records) ? dataset.records : [],
+          dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
+          meta: {
+            etag: download.etag,
+            lastModified: download.lastModified,
+            signature: download.signature,
+            fromCache: false,
+          },
+        };
+        writeDataCache(url, {
+          etag: download.etag,
+          lastModified: download.lastModified,
+          signature: download.signature,
+          records: result.records,
+          dailyStats: result.dailyStats,
+        });
         dashboardState.usingFallback = false;
         dashboardState.lastErrorMessage = '';
-        return dataset;
+        return result;
       } catch (error) {
         console.error('Nepavyko atsisiųsti CSV duomenų:', error);
         dashboardState.lastErrorMessage = describeError(error);
+        if (cacheEntry?.records && cacheEntry?.dailyStats) {
+          console.warn('Naudojami talpyklos duomenys dėl klaidos.');
+          dashboardState.usingFallback = false;
+          return {
+            records: cacheEntry.records,
+            dailyStats: cacheEntry.dailyStats,
+            meta: {
+              etag: cacheEntry.etag,
+              lastModified: cacheEntry.lastModified,
+              signature: cacheEntry.signature,
+              fromCache: true,
+              fallbackReason: dashboardState.lastErrorMessage,
+            },
+          };
+        }
         if (fallbackContent) {
           try {
-            const dataset = transformCsv(fallbackContent);
+            const fallbackDataset = await runDataWorker(fallbackContent, workerOptions);
+            const result = {
+              records: Array.isArray(fallbackDataset?.records) ? fallbackDataset.records : [],
+              dailyStats: Array.isArray(fallbackDataset?.dailyStats) ? fallbackDataset.dailyStats : [],
+              meta: { fromFallback: true },
+            };
             dashboardState.usingFallback = true;
-            return dataset;
+            return result;
           } catch (fallbackError) {
             console.error('Klaida skaitant demonstracinius duomenis:', fallbackError);
             dashboardState.usingFallback = false;
@@ -6724,8 +6891,8 @@
       }
 
       try {
-        const csvText = await downloadCsv(url);
-        const result = transformEdCsv(csvText);
+        const download = await downloadCsv(url);
+        const result = transformEdCsv(download.text);
         return finalize(result);
       } catch (error) {
         const friendly = describeError(error);
@@ -6970,8 +7137,8 @@
       }
 
       try {
-        const csvText = await downloadCsv(url);
-        const dataset = transformFeedbackCsv(csvText);
+        const download = await downloadCsv(url);
+        const dataset = transformFeedbackCsv(download.text);
         dashboardState.feedback.usingFallback = false;
         dashboardState.feedback.lastErrorMessage = '';
         return dataset;
@@ -8596,26 +8763,79 @@
       selectors.kpiActiveInfo.dataset.default = 'false';
     }
 
-    function applyKpiFiltersAndRender() {
-      const filters = dashboardState.kpi.filters;
-      const windowDays = Number.isFinite(filters.window) ? filters.window : DEFAULT_SETTINGS.calculations.windowDays;
+    function applyKpiFiltersLocally(filters) {
+      const normalizedFilters = sanitizeKpiFilters(filters);
+      const windowDays = Number.isFinite(normalizedFilters.window)
+        ? normalizedFilters.window
+        : DEFAULT_SETTINGS.calculations.windowDays;
       const hasRawRecords = Array.isArray(dashboardState.rawRecords) && dashboardState.rawRecords.length > 0;
       let filteredRecords = [];
       let filteredDailyStats = [];
 
       if (hasRawRecords) {
         const scopedRecords = filterRecordsByWindow(dashboardState.rawRecords, windowDays);
-        filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, filters));
+        filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, normalizedFilters));
         filteredDailyStats = computeDailyStats(filteredRecords);
       } else {
         const scopedDaily = filterDailyStatsByWindow(dashboardState.dailyStats, windowDays);
         filteredDailyStats = scopedDaily.slice();
       }
 
-      dashboardState.kpi.records = filteredRecords;
-      dashboardState.kpi.daily = filteredDailyStats;
-      renderKpis(filteredDailyStats);
-      updateKpiSummary({ records: filteredRecords, dailyStats: filteredDailyStats, windowDays });
+      return {
+        filters: normalizedFilters,
+        records: filteredRecords,
+        dailyStats: filteredDailyStats,
+        windowDays,
+      };
+    }
+
+    async function applyKpiFiltersAndRender() {
+      const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters);
+      dashboardState.kpi.filters = { ...normalizedFilters };
+      const defaultFilters = getDefaultKpiFilters();
+      const windowDays = normalizedFilters.window;
+      const workerPayload = {
+        filters: normalizedFilters,
+        defaultFilters,
+        windowDays,
+        records: Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : [],
+        dailyStats: Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : [],
+        calculations: settings?.calculations || {},
+        calculationDefaults: DEFAULT_SETTINGS.calculations,
+      };
+      const jobToken = ++kpiWorkerJobToken;
+
+      try {
+        const result = await runKpiWorkerJob(workerPayload);
+        if (jobToken !== kpiWorkerJobToken) {
+          return;
+        }
+        const filteredRecords = Array.isArray(result?.records) ? result.records : [];
+        const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
+        const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
+        dashboardState.kpi.records = filteredRecords;
+        dashboardState.kpi.daily = filteredDailyStats;
+        renderKpis(filteredDailyStats);
+        updateKpiSummary({
+          records: filteredRecords,
+          dailyStats: filteredDailyStats,
+          windowDays: effectiveWindow,
+        });
+      } catch (error) {
+        console.error('Nepavyko pritaikyti KPI filtrų worker\'yje:', error);
+        if (jobToken !== kpiWorkerJobToken) {
+          return;
+        }
+        const fallback = applyKpiFiltersLocally(normalizedFilters);
+        dashboardState.kpi.records = fallback.records;
+        dashboardState.kpi.daily = fallback.dailyStats;
+        renderKpis(fallback.dailyStats);
+        updateKpiSummary({
+          records: fallback.records,
+          dailyStats: fallback.dailyStats,
+          windowDays: fallback.windowDays,
+        });
+      }
     }
 
     function handleKpiFilterInput(event) {
@@ -8637,14 +8857,14 @@
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
         filters.disposition = value;
       }
-      applyKpiFiltersAndRender();
+      void applyKpiFiltersAndRender();
     }
 
     function resetKpiFilters({ fromKeyboard } = {}) {
       dashboardState.kpi.filters = getDefaultKpiFilters();
       refreshKpiWindowOptions();
       syncKpiFilterControls();
-      applyKpiFiltersAndRender();
+      void applyKpiFiltersAndRender();
       if (fromKeyboard && selectors.kpiFiltersReset) {
         selectors.kpiFiltersReset.focus();
       }
@@ -11735,7 +11955,7 @@
           throw dataResult.reason;
         }
 
-        const rawData = dataResult.value;
+        const dataset = dataResult.value || {};
         const feedbackRecords = feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
         if (feedbackResult.status === 'rejected') {
           console.error('Nepavyko apdoroti atsiliepimų duomenų:', feedbackResult.reason);
@@ -11745,9 +11965,13 @@
           dashboardState.feedback.usingFallback = false;
         }
 
-        const dailyStats = computeDailyStats(rawData);
-        dashboardState.rawRecords = rawData;
+        const rawRecords = Array.isArray(dataset.records) ? dataset.records : [];
+        const dailyStats = Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
+          ? dataset.dailyStats
+          : computeDailyStats(rawRecords);
+        dashboardState.rawRecords = rawRecords;
         dashboardState.dailyStats = dailyStats;
+        dashboardState.dataMeta = dataset.meta || null;
         populateChartYearOptions(dailyStats);
         const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
           ? Number(settings.calculations.windowDays)
@@ -11763,9 +11987,9 @@
         const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
         dashboardState.chartData.baseDaily = dailyStats.slice();
-        dashboardState.chartData.baseRecords = Array.isArray(rawData) ? rawData.slice() : [];
+        dashboardState.chartData.baseRecords = rawRecords.slice();
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-        applyKpiFiltersAndRender();
+        await applyKpiFiltersAndRender();
         await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
         renderRecentTable(recentDailyStats);
         const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
