@@ -575,29 +575,6 @@
       gap: clamp(18px, 3vw, 28px);
     }
 
-    .ed-hourly__header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .ed-hourly__meta {
-      margin: 0;
-      font-size: 0.85rem;
-      color: var(--color-text-muted);
-    }
-
-    .ed-hourly__table-wrapper {
-      max-height: 320px;
-    }
-
-    .ed-hourly__table-wrapper td:nth-child(n + 2),
-    .ed-hourly__table-wrapper th:nth-child(n + 2) {
-      text-align: right;
-    }
-
     body[data-tv-mode="true"] {
       background: radial-gradient(circle at top, #102040, #050816 55%, #02040c 100%);
       color: #e2e8f0;
@@ -3526,34 +3503,6 @@
                 </figure>
                 <p id="edDispositionsMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
               </section>
-              <section class="ed-dashboard__group" aria-labelledby="edHourlyTitle">
-                <div class="ed-hourly__header">
-                  <h3 id="edHourlyTitle" class="section__subtitle">Valandiniai srautai</h3>
-                  <p id="edHourlyMeta" class="ed-hourly__meta" hidden></p>
-                </div>
-                <figure class="chart-card chart-card--compact">
-                  <div class="chart-card__canvas-wrapper">
-                    <canvas id="edHourlyChart"
-                            role="img"
-                            aria-labelledby="edHourlyTitle edHourlyCaption"></canvas>
-                  </div>
-                  <figcaption id="edHourlyCaption" class="chart-card__caption">Vidutinis pacientų atvykimų ir išvykimų skaičius pagal paros valandą.</figcaption>
-                </figure>
-                <p id="edHourlyMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
-                <div class="table-wrapper ed-hourly__table-wrapper" role="region" aria-live="polite" aria-labelledby="edHourlyTitle">
-                  <table id="edHourlyTable" aria-describedby="edHourlyCaption edHourlyMeta">
-                    <caption id="edHourlyTableCaption" class="sr-only">Vidutiniai pacientų srautai per paros valandas.</caption>
-                    <thead>
-                      <tr>
-                        <th scope="col" id="edHourlyColumnHour">Valanda</th>
-                        <th scope="col" id="edHourlyColumnArrivals">Vid. atvykimai</th>
-                        <th scope="col" id="edHourlyColumnDischarges">Vid. išvykimai</th>
-                      </tr>
-                    </thead>
-                    <tbody id="edHourlyTableBody"></tbody>
-                  </table>
-                </div>
-              </section>
             </div>
           </div>
         </div>
@@ -4061,44 +4010,6 @@
             legendAction: 'Išryškinti kategoriją grafike',
           },
         },
-        hourly: {
-          title: 'Valandiniai srautai',
-          caption: 'Vidutinis pacientų atvykimų ir išvykimų skaičius pagal paros valandą.',
-          tableCaption: 'Vidutiniai pacientų atvykimai ir išvykimai pagal paros valandą.',
-          empty: 'Nepakanka duomenų valandiniams srautams apskaičiuoti.',
-          table: {
-            hour: 'Valanda',
-            arrivals: 'Vid. atvykimai',
-            discharges: 'Vid. išvykimai',
-          },
-          legend: {
-            arrivals: 'Atvykimai',
-            discharges: 'Išvykimai',
-          },
-          tooltipSuffix: 'pac./val.',
-          meta(days) {
-            if (!Number.isFinite(days) || days <= 0) {
-              return '';
-            }
-            const formatter = new Intl.NumberFormat('lt-LT');
-            const formatted = formatter.format(days);
-            if (days === 1) {
-              return 'Apskaičiuota pagal 1 dienos duomenis.';
-            }
-            return `Apskaičiuota pagal ${formatted} dienų duomenis.`;
-          },
-          tooltipFooter(days) {
-            if (!Number.isFinite(days) || days <= 0) {
-              return '';
-            }
-            const formatter = new Intl.NumberFormat('lt-LT');
-            const formatted = formatter.format(days);
-            if (days === 1) {
-              return 'Pagal 1 dienos duomenis';
-            }
-            return `Pagal ${formatted} dienų duomenis`;
-          },
-        },
         triage: {
           category1: '1 kategorija',
           category2: '2 kategorija',
@@ -4582,18 +4493,6 @@
       edDispositionsCaption: document.getElementById('edDispositionsCaption'),
       edDispositionsChart: document.getElementById('edDispositionsChart'),
       edDispositionsMessage: document.getElementById('edDispositionsMessage'),
-      edHourlyTitle: document.getElementById('edHourlyTitle'),
-      edHourlyCaption: document.getElementById('edHourlyCaption'),
-      edHourlyMeta: document.getElementById('edHourlyMeta'),
-      edHourlyChart: document.getElementById('edHourlyChart'),
-      edHourlyMessage: document.getElementById('edHourlyMessage'),
-      edHourlyTableWrapper: document.querySelector('.ed-hourly__table-wrapper'),
-      edHourlyTable: document.getElementById('edHourlyTable'),
-      edHourlyTableBody: document.getElementById('edHourlyTableBody'),
-      edHourlyTableCaption: document.getElementById('edHourlyTableCaption'),
-      edHourlyColumnHour: document.getElementById('edHourlyColumnHour'),
-      edHourlyColumnArrivals: document.getElementById('edHourlyColumnArrivals'),
-      edHourlyColumnDischarges: document.getElementById('edHourlyColumnDischarges'),
       edStandardSection: document.getElementById('edStandardSection'),
       edTvToggleBtn: document.getElementById('toggleTvBtn'),
       edTvPanel: document.getElementById('edTvPanel'),
@@ -5713,7 +5612,6 @@
         funnel: null,
         feedbackTrend: null,
         edDispositions: null,
-        edHourly: null,
       },
       chartLib: null,
       usingFallback: false,
@@ -5756,7 +5654,6 @@
         summary: null,
         dispositions: [],
         daily: [],
-        hourly: [],
         usingFallback: false,
         lastErrorMessage: '',
         error: null,
@@ -6937,7 +6834,6 @@
         summary: createEmptyEdSummary(),
         dispositions: [],
         daily: [],
-        hourly: [],
         meta: { type: 'legacy' },
         usingFallback: false,
         lastErrorMessage: '',
@@ -6960,7 +6856,6 @@
           summary: aggregates.summary,
           dispositions: aggregates.dispositions,
           daily: aggregates.daily,
-          hourly: Array.isArray(aggregates.hourly) ? aggregates.hourly : [],
           meta: { ...payload.meta, ...(aggregates.meta || {}) },
           usingFallback: Boolean(options.usingFallback),
           lastErrorMessage: options.lastErrorMessage || '',
@@ -7661,8 +7556,6 @@
           dateKey,
           timestamp: timestamp instanceof Date && !Number.isNaN(timestamp.getTime()) ? timestamp : null,
           rawTimestamp: timestampRaw,
-          arrival: arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate : null,
-          discharge: departureDate instanceof Date && !Number.isNaN(departureDate.getTime()) ? departureDate : null,
           disposition: dispositionInfo.label,
           dispositionCategory: dispositionInfo.category,
           losMinutes: Number.isFinite(losMinutes) && losMinutes >= 0 ? losMinutes : null,
@@ -7687,18 +7580,11 @@
       const categoryTotals = { hospitalized: 0, discharged: 0, left: 0, transfer: 0, other: 0 };
       const dailyBuckets = new Map();
       const monthBuckets = new Map();
-      const hourlyBuckets = Array.from({ length: 24 }, (_, hour) => ({
-        hour,
-        arrivals: 0,
-        discharges: 0,
-        arrivalDates: new Set(),
-        dischargeDates: new Set(),
-      }));
       const validRecords = Array.isArray(records)
         ? records.filter((record) => record && typeof record.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.dateKey))
         : [];
       if (!validRecords.length) {
-        return { summary, dispositions: [], daily: [], hourly: [] };
+        return { summary, dispositions: [], daily: [] };
       }
 
       let losSum = 0;
@@ -7721,29 +7607,6 @@
         dispositionEntry.count += 1;
         const categoryKey = dispositionCategory && categoryTotals[dispositionCategory] != null ? dispositionCategory : 'other';
         categoryTotals[categoryKey] += 1;
-
-        if (record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())) {
-          const arrivalHour = record.arrival.getHours();
-          if (arrivalHour >= 0 && arrivalHour <= 23) {
-            const bucket = hourlyBuckets[arrivalHour];
-            bucket.arrivals += 1;
-            const arrivalDayKey = toDateKeyFromDate(record.arrival);
-            if (arrivalDayKey) {
-              bucket.arrivalDates.add(arrivalDayKey);
-            }
-          }
-        }
-        if (record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())) {
-          const dischargeHour = record.discharge.getHours();
-          if (dischargeHour >= 0 && dischargeHour <= 23) {
-            const bucket = hourlyBuckets[dischargeHour];
-            bucket.discharges += 1;
-            const dischargeDayKey = toDateKeyFromDate(record.discharge);
-            if (dischargeDayKey) {
-              bucket.dischargeDates.add(dischargeDayKey);
-            }
-          }
-        }
 
         const bucket = dailyBuckets.get(dateKey) || {
           dateKey,
@@ -7825,23 +7688,6 @@
       }
       summary.generatedAt = new Date();
 
-      const defaultDayCount = summary.uniqueDates > 0 ? summary.uniqueDates : 0;
-      const hourly = hourlyBuckets.map((bucket) => {
-        const arrivalDays = bucket.arrivalDates.size;
-        const dischargeDays = bucket.dischargeDates.size;
-        const arrivalDivisor = arrivalDays || defaultDayCount;
-        const dischargeDivisor = dischargeDays || defaultDayCount;
-        return {
-          hour: bucket.hour,
-          arrivals: bucket.arrivals,
-          discharges: bucket.discharges,
-          arrivalDays,
-          dischargeDays,
-          avgArrivals: arrivalDivisor > 0 ? bucket.arrivals / arrivalDivisor : 0,
-          avgDischarges: dischargeDivisor > 0 ? bucket.discharges / dischargeDivisor : 0,
-        };
-      });
-
       if (monthBuckets.size > 0) {
         const sortedMonthKeys = Array.from(monthBuckets.keys()).sort();
         const latestMonthKey = sortedMonthKeys[sortedMonthKeys.length - 1];
@@ -7902,7 +7748,7 @@
         }))
         .sort((a, b) => (a.dateKey === b.dateKey ? 0 : (a.dateKey > b.dateKey ? -1 : 1)));
 
-      return { summary, dispositions: dispositionsList, daily, hourly };
+      return { summary, dispositions: dispositionsList, daily };
     }
 
     function summarizeSnapshotRecords(records) {
@@ -8027,10 +7873,10 @@
 
       const summary = createEmptyEdSummary(mode);
       if (!Array.isArray(records) || !records.length) {
-        return { summary, dispositions: [], daily: [], hourly: [], meta: { type: mode } };
+        return { summary, dispositions: [], daily: [], meta: { type: mode } };
       }
 
-      let legacy = { summary: createEmptyEdSummary('legacy'), dispositions: [], daily: [], hourly: [] };
+      let legacy = { summary: createEmptyEdSummary('legacy'), dispositions: [], daily: [] };
       if (hasLegacy) {
         legacy = summarizeLegacyRecords(records);
         summary.totalPatients = legacy.summary.totalPatients;
@@ -8076,22 +7922,18 @@
 
       let dispositions = [];
       let daily = [];
-      let hourly = [];
       if (mode === 'snapshot') {
         dispositions = snapshot.dispositions;
         daily = snapshot.daily;
-        hourly = [];
       } else if (mode === 'hybrid') {
         dispositions = snapshot.dispositions.length ? snapshot.dispositions : legacy.dispositions;
         daily = snapshot.daily.length ? snapshot.daily : legacy.daily;
-        hourly = Array.isArray(legacy.hourly) ? legacy.hourly : [];
       } else {
         dispositions = legacy.dispositions;
         daily = legacy.daily;
-        hourly = Array.isArray(legacy.hourly) ? legacy.hourly : [];
       }
 
-      return { summary, dispositions, daily, hourly, meta: { type: mode } };
+      return { summary, dispositions, daily, meta: { type: mode } };
     }
 
     function getAvailableYearsFromDaily(dailyStats) {
@@ -10673,13 +10515,6 @@
       ).catch((error) => {
         console.error('Nepavyko perpiešti pacientų kategorijų grafiko pakeitus temą:', error);
       });
-      renderEdHourlyChart(
-        Array.isArray(edData.hourly) ? edData.hourly : [],
-        TEXT.ed.hourly || {},
-        { dayCount: edSummary?.uniqueDates }
-      ).catch((error) => {
-        console.error('Nepavyko perpiešti valandinių srautų grafiko pakeitus temą:', error);
-      });
       const hasAnyData = (dashboardState.chartData.dailyWindow && dashboardState.chartData.dailyWindow.length)
         || dashboardState.chartData.funnel
         || (dashboardState.chartData.heatmap && Object.keys(dashboardState.chartData.heatmap).length);
@@ -11453,7 +11288,6 @@
       const cardsConfigSource = TEXT.ed.cards || {};
       const cardConfigs = Array.isArray(cardsConfigSource[displayVariant]) ? cardsConfigSource[displayVariant] : [];
       const dispositionsText = TEXT.ed.dispositions?.[displayVariant] || TEXT.ed.dispositions?.legacy || {};
-      const hourlyText = TEXT.ed.hourly || {};
       const updatedAt = summary.generatedAt instanceof Date && !Number.isNaN(summary.generatedAt.getTime())
         ? summary.generatedAt
         : (dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime()) ? dataset.updatedAt : null);
@@ -11542,23 +11376,6 @@
         if (selectors.edDispositionsMessage) {
           selectors.edDispositionsMessage.textContent = dispositionsText.empty || 'Nepavyko atvaizduoti grafiko.';
           selectors.edDispositionsMessage.hidden = false;
-        }
-      }
-
-      try {
-        await updateEdHourlySection(Array.isArray(dataset.hourly) ? dataset.hourly : [], summary, hourlyText);
-      } catch (error) {
-        console.error('Nepavyko atvaizduoti valandinių srautų:', error);
-        if (selectors.edHourlyChart) {
-          selectors.edHourlyChart.hidden = true;
-          selectors.edHourlyChart.setAttribute('aria-hidden', 'true');
-        }
-        if (selectors.edHourlyTableWrapper) {
-          selectors.edHourlyTableWrapper.setAttribute('hidden', 'hidden');
-        }
-        if (selectors.edHourlyMessage) {
-          selectors.edHourlyMessage.textContent = hourlyText.empty || 'Nepavyko atvaizduoti grafiko.';
-          selectors.edHourlyMessage.hidden = false;
         }
       }
 
@@ -11828,338 +11645,6 @@
       });
 
       dashboardState.charts.edDispositions = chartInstance;
-    }
-
-    async function renderEdHourlyChart(hourlyData, text = {}, options = {}) {
-      const canvas = selectors.edHourlyChart;
-      const messageEl = selectors.edHourlyMessage || null;
-
-      if (!canvas) {
-        if (messageEl) {
-          messageEl.textContent = text?.empty || '';
-          messageEl.hidden = !messageEl.textContent;
-        }
-        return;
-      }
-
-      if (messageEl) {
-        messageEl.textContent = '';
-        messageEl.hidden = true;
-      }
-
-      if (dashboardState.charts.edHourly && typeof dashboardState.charts.edHourly.destroy === 'function') {
-        dashboardState.charts.edHourly.destroy();
-      }
-      dashboardState.charts.edHourly = null;
-
-      const normalized = Array.isArray(hourlyData)
-        ? hourlyData
-          .map((entry) => ({
-            hour: Number.isFinite(entry?.hour) ? Math.max(0, Math.min(23, Number(entry.hour))) : 0,
-            avgArrivals: Number.isFinite(entry?.avgArrivals) ? Math.max(0, Number(entry.avgArrivals)) : 0,
-            avgDischarges: Number.isFinite(entry?.avgDischarges) ? Math.max(0, Number(entry.avgDischarges)) : 0,
-          }))
-          .sort((a, b) => a.hour - b.hour)
-        : [];
-
-      const hasAnyData = normalized.some((entry) => entry.avgArrivals > 0 || entry.avgDischarges > 0);
-      if (!hasAnyData) {
-        canvas.hidden = true;
-        canvas.setAttribute('aria-hidden', 'true');
-        if (messageEl) {
-          messageEl.textContent = text?.empty || 'Nepakanka duomenų grafiko sudarymui.';
-          messageEl.hidden = false;
-        }
-        return;
-      }
-
-      const Chart = await loadChartJs();
-      if (!Chart) {
-        throw new Error('Chart.js biblioteka nepasiekiama');
-      }
-      if (!dashboardState.chartLib) {
-        dashboardState.chartLib = Chart;
-      }
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Nepavyko gauti grafiko konteksto');
-      }
-
-      canvas.hidden = false;
-      canvas.removeAttribute('aria-hidden');
-
-      const palette = getThemePalette();
-      const styleTarget = getThemeStyleTarget();
-      const computedStyles = getComputedStyle(styleTarget);
-      const theme = styleTarget?.dataset?.theme || 'light';
-      const borderBaseColor = computedStyles.getPropertyValue('--color-border').trim() || 'rgba(37, 99, 235, 0.15)';
-      const tooltipBackground = theme === 'dark' ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.96)';
-      const tooltipBorder = theme === 'dark' ? 'rgba(148, 163, 184, 0.35)' : borderBaseColor;
-
-      const toRgba = (color, alpha) => {
-        const rgb = parseColorToRgb(color);
-        if (!rgb) {
-          return color;
-        }
-        return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
-      };
-
-      const labels = normalized.map((entry) => `${String(entry.hour).padStart(2, '0')}:00`);
-      const arrivalValues = normalized.map((entry) => entry.avgArrivals);
-      const dischargeValues = normalized.map((entry) => entry.avgDischarges);
-      const arrivalLabel = text?.legend?.arrivals || 'Atvykimai';
-      const dischargeLabel = text?.legend?.discharges || 'Išvykimai';
-      const unitSuffix = text?.tooltipSuffix || 'pac./val.';
-      const dayCount = Number.isFinite(options?.dayCount) ? Number(options.dayCount) : 0;
-      const footerText = typeof text?.tooltipFooter === 'function'
-        ? text.tooltipFooter(dayCount)
-        : (dayCount > 0
-          ? (dayCount === 1 ? 'Pagal 1 dienos duomenis' : `Pagal ${numberFormatter.format(dayCount)} dienų duomenis`)
-          : '');
-
-      const arrivalBase = palette.accent || '#2563eb';
-      const dischargeBase = palette.success || '#16a34a';
-      const chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: arrivalLabel,
-              data: arrivalValues,
-              backgroundColor: toRgba(arrivalBase, 0.75),
-              borderColor: toRgba(arrivalBase, 0.95),
-              borderWidth: 1,
-              barPercentage: 0.65,
-              categoryPercentage: 0.8,
-              borderRadius: 10,
-              maxBarThickness: 38,
-            },
-            {
-              label: dischargeLabel,
-              data: dischargeValues,
-              backgroundColor: toRgba(dischargeBase, 0.6),
-              borderColor: toRgba(dischargeBase, 0.9),
-              borderWidth: 1,
-              barPercentage: 0.65,
-              categoryPercentage: 0.8,
-              borderRadius: 10,
-              maxBarThickness: 38,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: {
-            padding: {
-              top: 8,
-              right: 12,
-              bottom: 8,
-              left: 12,
-            },
-          },
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          scales: {
-            x: {
-              stacked: false,
-              grid: {
-                display: false,
-                drawBorder: false,
-              },
-              ticks: {
-                color: palette.textMuted,
-                font: {
-                  size: 12,
-                  weight: '600',
-                },
-              },
-            },
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: palette.gridColor,
-                drawBorder: false,
-              },
-              ticks: {
-                color: palette.textMuted,
-                font: {
-                  size: 12,
-                },
-              },
-            },
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              labels: {
-                color: palette.textMuted,
-                font: {
-                  size: 12,
-                  weight: '600',
-                },
-              },
-            },
-            tooltip: {
-              backgroundColor: tooltipBackground,
-              borderColor: tooltipBorder,
-              borderWidth: 1,
-              displayColors: true,
-              padding: 10,
-              bodySpacing: 6,
-              titleColor: palette.textColor,
-              bodyColor: palette.textColor,
-              titleFont: {
-                size: 13,
-                weight: '700',
-              },
-              bodyFont: {
-                size: 13,
-                weight: '500',
-              },
-              callbacks: {
-                label(context) {
-                  const value = Number.isFinite(context?.parsed?.y) ? context.parsed.y : 0;
-                  const formatted = oneDecimalFormatter.format(value);
-                  const datasetLabel = context.dataset?.label || '';
-                  return `${datasetLabel}: ${formatted} ${unitSuffix}`;
-                },
-                footer() {
-                  return footerText || '';
-                },
-              },
-            },
-          },
-          elements: {
-            bar: {
-              borderRadius: 10,
-              borderSkipped: false,
-            },
-          },
-          animation: false,
-          transitions: {
-            active: { animation: { duration: 0 } },
-            show: { animation: { duration: 0 } },
-            hide: { animation: { duration: 0 } },
-          },
-        },
-      });
-
-      dashboardState.charts.edHourly = chartInstance;
-    }
-
-    async function updateEdHourlySection(hourlyData, summary, text) {
-      const titleEl = selectors.edHourlyTitle;
-      const captionEl = selectors.edHourlyCaption;
-      const tableCaptionEl = selectors.edHourlyTableCaption;
-      const columnHour = selectors.edHourlyColumnHour;
-      const columnArrivals = selectors.edHourlyColumnArrivals;
-      const columnDischarges = selectors.edHourlyColumnDischarges;
-      const tableWrapper = selectors.edHourlyTableWrapper;
-      const tableBody = selectors.edHourlyTableBody;
-      const metaEl = selectors.edHourlyMeta;
-      const messageEl = selectors.edHourlyMessage;
-
-      if (titleEl) {
-        titleEl.textContent = text?.title || 'Valandiniai srautai';
-      }
-      if (captionEl) {
-        captionEl.textContent = text?.caption || '';
-      }
-      if (tableCaptionEl) {
-        tableCaptionEl.textContent = text?.tableCaption || text?.caption || '';
-      }
-      if (columnHour) {
-        columnHour.textContent = text?.table?.hour || 'Valanda';
-      }
-      if (columnArrivals) {
-        columnArrivals.textContent = text?.table?.arrivals || 'Vid. atvykimai';
-      }
-      if (columnDischarges) {
-        columnDischarges.textContent = text?.table?.discharges || 'Vid. išvykimai';
-      }
-
-      if (messageEl) {
-        messageEl.textContent = '';
-        messageEl.hidden = true;
-      }
-
-      if (tableBody) {
-        tableBody.replaceChildren();
-      }
-
-      const normalized = Array.isArray(hourlyData)
-        ? hourlyData
-          .map((entry) => ({
-            hour: Number.isFinite(entry?.hour) ? Math.max(0, Math.min(23, Number(entry.hour))) : 0,
-            avgArrivals: Number.isFinite(entry?.avgArrivals) ? Math.max(0, Number(entry.avgArrivals)) : 0,
-            avgDischarges: Number.isFinite(entry?.avgDischarges) ? Math.max(0, Number(entry.avgDischarges)) : 0,
-          }))
-          .sort((a, b) => a.hour - b.hour)
-        : [];
-
-      const hasAnyData = normalized.some((entry) => entry.avgArrivals > 0 || entry.avgDischarges > 0);
-
-      if (!hasAnyData) {
-        if (tableWrapper) {
-          tableWrapper.setAttribute('hidden', 'hidden');
-        }
-        if (metaEl) {
-          metaEl.textContent = '';
-          metaEl.hidden = true;
-        }
-        if (messageEl) {
-          messageEl.textContent = text?.empty || 'Nepakanka duomenų valandiniams srautams apskaičiuoti.';
-          messageEl.hidden = false;
-        }
-        await renderEdHourlyChart([], text, { dayCount: summary?.uniqueDates });
-        return;
-      }
-
-      if (tableWrapper) {
-        tableWrapper.removeAttribute('hidden');
-      }
-
-      normalized.forEach((entry) => {
-        if (!tableBody) {
-          return;
-        }
-        const row = document.createElement('tr');
-        const hourCell = document.createElement('th');
-        hourCell.setAttribute('scope', 'row');
-        hourCell.textContent = `${String(entry.hour).padStart(2, '0')}:00`;
-        const arrivalsCell = document.createElement('td');
-        arrivalsCell.textContent = oneDecimalFormatter.format(entry.avgArrivals);
-        const dischargesCell = document.createElement('td');
-        dischargesCell.textContent = oneDecimalFormatter.format(entry.avgDischarges);
-        row.append(hourCell, arrivalsCell, dischargesCell);
-        tableBody.appendChild(row);
-      });
-
-      const dayCount = Number.isFinite(summary?.uniqueDates) ? Number(summary.uniqueDates) : 0;
-      if (metaEl) {
-        const metaText = typeof text?.meta === 'function'
-          ? text.meta(dayCount)
-          : (dayCount > 0
-            ? (dayCount === 1
-              ? 'Apskaičiuota pagal 1 dienos duomenis.'
-              : `Apskaičiuota pagal ${numberFormatter.format(dayCount)} dienų duomenis.`)
-            : '');
-        if (metaText) {
-          metaEl.textContent = metaText;
-          metaEl.hidden = false;
-        } else {
-          metaEl.textContent = '';
-          metaEl.hidden = true;
-        }
-      }
-
-      await renderEdHourlyChart(normalized, text, { dayCount });
     }
     function clampColorChannel(value) {
       return Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
@@ -12458,7 +11943,6 @@
             summary: fallbackSummary,
             dispositions: [],
             daily: [],
-            hourly: [],
             usingFallback: false,
             lastErrorMessage: reason,
             error: reason,
