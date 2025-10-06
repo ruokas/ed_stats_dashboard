@@ -334,7 +334,7 @@ export const TEXT = {
             if (!Number.isFinite(months) || months <= 0) {
               return 'Visų prieinamų mėnesių dinamika';
             }
-            const normalized = Math.max(1, Math.round(months));
+export const normalized = Math.max(1, Math.round(months));
             if (normalized === 1) {
               return 'Paskutinio mėnesio dinamika';
             }
@@ -363,7 +363,7 @@ export const TEXT = {
             if (!info || typeof info !== 'object') {
               return '';
             }
-            const parts = [];
+export const parts = [];
             if (info.average?.formatted) {
               parts.push(`Vidurkis ${info.average.formatted}`);
             }
@@ -573,10 +573,10 @@ export const KPI_FILTER_TOGGLE_LABELS = {
     };
 
     function getDefaultKpiFilters() {
-      const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
+export const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
         ? Number(settings.calculations.windowDays)
         : DEFAULT_SETTINGS.calculations.windowDays;
-      const defaultWindow = Number.isFinite(configuredWindow) && configuredWindow > 0
+export const defaultWindow = Number.isFinite(configuredWindow) && configuredWindow > 0
         ? configuredWindow
         : DEFAULT_KPI_WINDOW_DAYS;
       return {
@@ -588,8 +588,8 @@ export const KPI_FILTER_TOGGLE_LABELS = {
     }
 
     function sanitizeKpiFilters(filters) {
-      const defaults = getDefaultKpiFilters();
-      const normalized = { ...defaults, ...(filters || {}) };
+export const defaults = getDefaultKpiFilters();
+export const normalized = { ...defaults, ...(filters || {}) };
       if (!Number.isFinite(normalized.window) || normalized.window < 0) {
         normalized.window = defaults.window;
       }
