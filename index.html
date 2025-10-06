@@ -2944,6 +2944,26 @@
       font-size: 1.1rem;
     }
 
+    .settings-fieldset {
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin: 0;
+      display: grid;
+      gap: 16px;
+      background: rgba(37, 99, 235, 0.05);
+    }
+
+    body[data-theme="dark"] .settings-fieldset {
+      background: rgba(96, 165, 250, 0.08);
+    }
+
+    .settings-fieldset legend {
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0 6px;
+    }
+
     .settings-field {
       display: flex;
       flex-direction: column;
@@ -3410,6 +3430,33 @@
       </div>
     </section>
 
+    <section class="section section--compact" aria-labelledby="yearlyHeading" data-section="yearly">
+      <div class="section__header">
+        <div>
+          <h2 id="yearlyHeading" class="section__title">Metinė suvestinė</h2>
+          <p id="yearlySubtitle" class="section__subtitle">Kalendoriniai metai (paskutiniai 5 metai)</p>
+        </div>
+      </div>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="yearlyHeading">
+        <table aria-describedby="yearlySubtitle">
+          <caption id="yearlyCaption" class="sr-only">Metinių pacientų suvestinė: sumos ir vidurkiai</caption>
+          <thead>
+            <tr>
+              <th scope="col">Metai</th>
+              <th scope="col">Pacientai (suma)</th>
+              <th scope="col">Vid. per dieną</th>
+              <th scope="col">Vid. buvimo laikas (val.)</th>
+              <th scope="col">Naktiniai pacientai</th>
+              <th scope="col">GMP</th>
+              <th scope="col">Hospitalizuoti</th>
+              <th scope="col">Išleisti</th>
+            </tr>
+          </thead>
+          <tbody id="yearlyTable"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="section section--compact" aria-labelledby="feedbackHeading" data-section="feedback">
       <div class="section__header">
         <div>
@@ -3543,6 +3590,28 @@
             <textarea id="settingsFallbackCsv" name="dataSource.fallbackCsv" spellcheck="false"></textarea>
             <p class="settings-hint">Palikite tuščią, jei nereikia rezervinio rinkinio. Galite įklijuoti savo CSV iškarpą.</p>
           </div>
+
+          <fieldset class="settings-fieldset">
+            <legend>Papildomas istorinis šaltinis</legend>
+            <label class="settings-checkbox" for="settingsHistoricalEnabled">
+              <input id="settingsHistoricalEnabled" name="dataSource.historical.enabled" type="checkbox">
+              <span>Naudoti šį papildomą šaltinį kartu su pagrindiniu.</span>
+            </label>
+            <div class="settings-field">
+              <label for="settingsHistoricalUrl"><span>CSV nuoroda (istoriniai 5 metai)</span></label>
+              <input id="settingsHistoricalUrl" name="dataSource.historical.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
+              <p class="settings-hint">Nuoroda bus sujungta su pagrindiniais duomenimis. Naudokite „Publish to web → CSV“ adresą.</p>
+            </div>
+            <label class="settings-checkbox" for="settingsHistoricalUseFallback">
+              <input id="settingsHistoricalUseFallback" name="dataSource.historical.useFallback" type="checkbox">
+              <span>Naudoti demonstracinį istorinių duomenų CSV, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
+            </label>
+            <div class="settings-field">
+              <label for="settingsHistoricalFallbackCsv"><span>Demonstracinis CSV (istoriniai)</span></label>
+              <textarea id="settingsHistoricalFallbackCsv" name="dataSource.historical.fallbackCsv" spellcheck="false"></textarea>
+              <p class="settings-hint">Palikite tuščią, jei rezervinis istorinių duomenų šaltinis nereikalingas.</p>
+            </div>
+          </fieldset>
         </section>
 
         <section class="settings-section" aria-labelledby="settingsFeedbackDataTitle">
@@ -3715,6 +3784,16 @@
           </div>
           <div class="settings-inline">
             <div class="settings-field">
+              <label for="settingsYearlyTitle"><span>Metinės suvestinės pavadinimas</span></label>
+              <input id="settingsYearlyTitle" name="output.yearlyTitle" type="text">
+            </div>
+            <div class="settings-field">
+              <label for="settingsYearlySubtitle"><span>Metinės suvestinės paantraštė</span></label>
+              <input id="settingsYearlySubtitle" name="output.yearlySubtitle" type="text">
+            </div>
+          </div>
+          <div class="settings-inline">
+            <div class="settings-field">
               <label for="settingsFeedbackTitle"><span>„Atsiliepimų“ pavadinimas</span></label>
               <input id="settingsFeedbackTitle" name="output.feedbackTitle" type="text">
             </div>
@@ -3748,6 +3827,10 @@
           <label class="settings-checkbox" for="settingsShowMonthly">
             <input id="settingsShowMonthly" name="output.showMonthly" type="checkbox">
             <span>Rodyti „Mėnesinė suvestinė“ lentelę.</span>
+          </label>
+          <label class="settings-checkbox" for="settingsShowYearly">
+            <input id="settingsShowYearly" name="output.showYearly" type="checkbox">
+            <span>Rodyti „Metinė suvestinė“ lentelę.</span>
           </label>
           <label class="settings-checkbox" for="settingsShowFeedback">
             <input id="settingsShowFeedback" name="output.showFeedback" type="checkbox">
@@ -4121,6 +4204,12 @@
         caption: 'Mėnesių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
       },
+      yearly: {
+        title: 'Metinė suvestinė',
+        subtitle: 'Kalendoriniai metai (paskutiniai 5 metai).',
+        caption: 'Metinių pacientų suvestinė: sumos ir vidurkiai.',
+        empty: 'Metinių duomenų lentelė bus parodyta užkrovus failą.',
+      },
       feedback: {
         title: 'Pacientų atsiliepimai',
         subtitle: 'Apibendrinti apklausos rezultatai.',
@@ -4268,12 +4357,13 @@
 
     const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
     const THEME_STORAGE_KEY = 'edDashboardTheme';
-    const DEFAULT_FOOTER_SOURCE = 'Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).';
+    const DEFAULT_FOOTER_SOURCE = 'Duomenys: pagrindinis ir papildomas (istorinis) Google Sheets CSV (automat. nuskaitymas kaskart atnaujinant).';
     const DEFAULT_KPI_WINDOW_DAYS = 365;
     const DEFAULT_PAGE_TITLE = document.title || 'RŠL SMPS statistika';
 
     const DEFAULT_SETTINGS = {
       dataSource: {
+        // Pagrindinis operatyvinių duomenų šaltinis (Google Sheets → Publish to CSV)
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv',
         useFallback: true,
         fallbackCsv: DEFAULT_DEMO_CSV,
@@ -4286,6 +4376,13 @@
           url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv',
           useFallback: true,
           fallbackCsv: DEFAULT_ED_CSV,
+        },
+        historical: {
+          enabled: true,
+          label: 'Papildomas istorinis (5 metai)',
+          url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?output=csv',
+          useFallback: false,
+          fallbackCsv: '',
         },
       },
       csv: {
@@ -4317,6 +4414,8 @@
         recentSubtitle: TEXT.recent.subtitle,
         monthlyTitle: TEXT.monthly.title,
         monthlySubtitle: TEXT.monthly.subtitle,
+        yearlyTitle: TEXT.yearly.title,
+        yearlySubtitle: TEXT.yearly.subtitle,
         feedbackTitle: TEXT.feedback.title,
         feedbackSubtitle: TEXT.feedback.subtitle,
         feedbackDescription: TEXT.feedback.description,
@@ -4329,6 +4428,7 @@
         edSubtitle: TEXT.ed.subtitle,
         showRecent: true,
         showMonthly: true,
+        showYearly: true,
         showFeedback: true,
       },
     };
@@ -4462,6 +4562,10 @@
       monthlySubtitle: document.getElementById('monthlySubtitle'),
       monthlyCaption: document.getElementById('monthlyCaption'),
       monthlyTable: document.getElementById('monthlyTable'),
+      yearlyHeading: document.getElementById('yearlyHeading'),
+      yearlySubtitle: document.getElementById('yearlySubtitle'),
+      yearlyCaption: document.getElementById('yearlyCaption'),
+      yearlyTable: document.getElementById('yearlyTable'),
       feedbackHeading: document.getElementById('feedbackHeading'),
       feedbackSubtitle: document.getElementById('feedbackSubtitle'),
       feedbackDescription: document.getElementById('feedbackDescription'),
@@ -4520,6 +4624,7 @@
       cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
       recentSection: document.querySelector('[data-section="recent"]'),
       monthlySection: document.querySelector('[data-section="monthly"]'),
+      yearlySection: document.querySelector('[data-section="yearly"]'),
       feedbackSection: document.querySelector('[data-section="feedback"]'),
       kpiControls: document.querySelector('.kpi-controls'),
       kpiFiltersForm: document.getElementById('kpiFiltersForm'),
@@ -5078,6 +5183,19 @@
         ? merged.dataSource.ed.fallbackCsv
         : DEFAULT_SETTINGS.dataSource.ed.fallbackCsv;
 
+      if (!merged.dataSource.historical || typeof merged.dataSource.historical !== 'object') {
+        merged.dataSource.historical = cloneSettings(DEFAULT_SETTINGS.dataSource.historical);
+      }
+      merged.dataSource.historical.enabled = merged.dataSource.historical.enabled !== false;
+      merged.dataSource.historical.url = (merged.dataSource.historical.url ?? '').trim();
+      merged.dataSource.historical.useFallback = Boolean(merged.dataSource.historical.useFallback);
+      merged.dataSource.historical.fallbackCsv = typeof merged.dataSource.historical.fallbackCsv === 'string'
+        ? merged.dataSource.historical.fallbackCsv
+        : DEFAULT_SETTINGS.dataSource.historical.fallbackCsv;
+      merged.dataSource.historical.label = merged.dataSource.historical.label != null
+        ? String(merged.dataSource.historical.label)
+        : DEFAULT_SETTINGS.dataSource.historical.label;
+
       ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
         .forEach((key) => {
           merged.csv[key] = merged.csv[key] != null
@@ -5130,6 +5248,8 @@
       }
       merged.output.monthlyTitle = merged.output.monthlyTitle != null ? String(merged.output.monthlyTitle) : DEFAULT_SETTINGS.output.monthlyTitle;
       merged.output.monthlySubtitle = merged.output.monthlySubtitle != null ? String(merged.output.monthlySubtitle) : DEFAULT_SETTINGS.output.monthlySubtitle;
+      merged.output.yearlyTitle = merged.output.yearlyTitle != null ? String(merged.output.yearlyTitle) : DEFAULT_SETTINGS.output.yearlyTitle;
+      merged.output.yearlySubtitle = merged.output.yearlySubtitle != null ? String(merged.output.yearlySubtitle) : DEFAULT_SETTINGS.output.yearlySubtitle;
       merged.output.feedbackTitle = merged.output.feedbackTitle != null ? String(merged.output.feedbackTitle) : DEFAULT_SETTINGS.output.feedbackTitle;
       merged.output.feedbackSubtitle = merged.output.feedbackSubtitle != null ? String(merged.output.feedbackSubtitle) : DEFAULT_SETTINGS.output.feedbackSubtitle;
       merged.output.feedbackDescription = merged.output.feedbackDescription != null ? String(merged.output.feedbackDescription) : DEFAULT_SETTINGS.output.feedbackDescription;
@@ -5141,6 +5261,7 @@
       merged.output.edSubtitle = merged.output.edSubtitle != null ? String(merged.output.edSubtitle) : DEFAULT_SETTINGS.output.edSubtitle;
       merged.output.showRecent = Boolean(merged.output.showRecent);
       merged.output.showMonthly = Boolean(merged.output.showMonthly);
+      merged.output.showYearly = Boolean(merged.output.showYearly);
       merged.output.showFeedback = Boolean(merged.output.showFeedback);
 
       return merged;
@@ -5183,6 +5304,8 @@
       TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
       TEXT.monthly.title = settings.output.monthlyTitle || DEFAULT_SETTINGS.output.monthlyTitle;
       TEXT.monthly.subtitle = settings.output.monthlySubtitle || DEFAULT_SETTINGS.output.monthlySubtitle;
+      TEXT.yearly.title = settings.output.yearlyTitle || DEFAULT_SETTINGS.output.yearlyTitle;
+      TEXT.yearly.subtitle = settings.output.yearlySubtitle || DEFAULT_SETTINGS.output.yearlySubtitle;
       TEXT.feedback.title = settings.output.feedbackTitle || DEFAULT_SETTINGS.output.feedbackTitle;
       TEXT.feedback.subtitle = settings.output.feedbackSubtitle || DEFAULT_SETTINGS.output.feedbackSubtitle;
       TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
@@ -5214,6 +5337,7 @@
     function applySectionVisibility() {
       toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
       toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
+      toggleSectionVisibility(selectors.yearlySection, settings.output.showYearly);
       toggleSectionVisibility(selectors.feedbackSection, settings.output.showFeedback);
       syncSectionNavVisibility();
     }
@@ -5362,6 +5486,10 @@
       assign('dataSource.ed.url', settings.dataSource.ed?.url);
       assign('dataSource.ed.useFallback', settings.dataSource.ed?.useFallback);
       assign('dataSource.ed.fallbackCsv', settings.dataSource.ed?.fallbackCsv);
+      assign('dataSource.historical.enabled', settings.dataSource.historical?.enabled);
+      assign('dataSource.historical.url', settings.dataSource.historical?.url);
+      assign('dataSource.historical.useFallback', settings.dataSource.historical?.useFallback);
+      assign('dataSource.historical.fallbackCsv', settings.dataSource.historical?.fallbackCsv);
 
       assign('csv.arrival', settings.csv.arrival);
       assign('csv.discharge', settings.csv.discharge);
@@ -5391,6 +5519,8 @@
       assign('output.recentSubtitle', settings.output.recentSubtitle);
       assign('output.monthlyTitle', settings.output.monthlyTitle);
       assign('output.monthlySubtitle', settings.output.monthlySubtitle);
+      assign('output.yearlyTitle', settings.output.yearlyTitle);
+      assign('output.yearlySubtitle', settings.output.yearlySubtitle);
       assign('output.feedbackTitle', settings.output.feedbackTitle);
       assign('output.feedbackSubtitle', settings.output.feedbackSubtitle);
       assign('output.feedbackDescription', settings.output.feedbackDescription);
@@ -5399,6 +5529,7 @@
       assign('output.footerSource', settings.output.footerSource);
       assign('output.showRecent', settings.output.showRecent);
       assign('output.showMonthly', settings.output.showMonthly);
+      assign('output.showYearly', settings.output.showYearly);
       assign('output.showFeedback', settings.output.showFeedback);
     }
 
@@ -5414,6 +5545,12 @@
             fallbackCsv: '',
           },
           ed: {
+            url: '',
+            useFallback: false,
+            fallbackCsv: '',
+          },
+          historical: {
+            enabled: false,
             url: '',
             useFallback: false,
             fallbackCsv: '',
@@ -5448,12 +5585,15 @@
           recentSubtitle: '',
           monthlyTitle: '',
           monthlySubtitle: '',
+          yearlyTitle: '',
+          yearlySubtitle: '',
           feedbackTitle: '',
           feedbackSubtitle: '',
           feedbackDescription: '',
           footerSource: '',
           showRecent: false,
           showMonthly: false,
+          showYearly: false,
           showFeedback: false,
         },
       };
@@ -5483,6 +5623,10 @@
       result.dataSource.ed.url = readText('dataSource.ed.url').trim();
       result.dataSource.ed.useFallback = readCheckbox('dataSource.ed.useFallback');
       result.dataSource.ed.fallbackCsv = readText('dataSource.ed.fallbackCsv').trim();
+      result.dataSource.historical.enabled = readCheckbox('dataSource.historical.enabled');
+      result.dataSource.historical.url = readText('dataSource.historical.url').trim();
+      result.dataSource.historical.useFallback = readCheckbox('dataSource.historical.useFallback');
+      result.dataSource.historical.fallbackCsv = readText('dataSource.historical.fallbackCsv').trim();
 
       result.csv.arrival = readText('csv.arrival').trim();
       result.csv.discharge = readText('csv.discharge').trim();
@@ -5512,6 +5656,8 @@
       result.output.recentSubtitle = readText('output.recentSubtitle').trim();
       result.output.monthlyTitle = readText('output.monthlyTitle').trim();
       result.output.monthlySubtitle = readText('output.monthlySubtitle').trim();
+      result.output.yearlyTitle = readText('output.yearlyTitle').trim();
+      result.output.yearlySubtitle = readText('output.yearlySubtitle').trim();
       result.output.feedbackTitle = readText('output.feedbackTitle').trim();
       result.output.feedbackSubtitle = readText('output.feedbackSubtitle').trim();
       result.output.feedbackDescription = readText('output.feedbackDescription').trim();
@@ -5520,6 +5666,7 @@
       result.output.footerSource = readText('output.footerSource').trim();
       result.output.showRecent = readCheckbox('output.showRecent');
       result.output.showMonthly = readCheckbox('output.showMonthly');
+      result.output.showYearly = readCheckbox('output.showYearly');
       result.output.showFeedback = readCheckbox('output.showFeedback');
 
       return result;
@@ -5926,6 +6073,15 @@
       selectors.monthlyHeading.textContent = TEXT.monthly.title;
       selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
       selectors.monthlyCaption.textContent = TEXT.monthly.caption;
+      if (selectors.yearlyHeading) {
+        selectors.yearlyHeading.textContent = TEXT.yearly.title;
+      }
+      if (selectors.yearlySubtitle) {
+        selectors.yearlySubtitle.textContent = TEXT.yearly.subtitle;
+      }
+      if (selectors.yearlyCaption) {
+        selectors.yearlyCaption.textContent = TEXT.yearly.caption;
+      }
       selectors.feedbackHeading.textContent = TEXT.feedback.title;
       selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
       if (selectors.feedbackDescription) {
@@ -6191,14 +6347,27 @@
       if (dashboardState.usingFallback) {
         selectors.status.textContent = TEXT.status.fallbackSuccess(formatted);
         selectors.footerUpdated.textContent = TEXT.footerFallback(formatted);
-        const noteMessage = dashboardState.lastErrorMessage
+        const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
+          ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
+          : [];
+        const fallbackNote = dashboardState.lastErrorMessage
           ? TEXT.status.fallbackNote(dashboardState.lastErrorMessage)
           : TEXT.status.fallbackNote(TEXT.status.error);
-        showStatusNote(noteMessage, 'warning');
+        const combinedNote = warningsList.length
+          ? `${fallbackNote} ${warningsList.join(' ')}`.trim()
+          : fallbackNote;
+        showStatusNote(combinedNote, 'warning');
       } else {
         selectors.status.textContent = details || TEXT.status.success(formatted);
         selectors.footerUpdated.textContent = TEXT.footer(formatted);
-        hideStatusNote();
+        const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
+          ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
+          : [];
+        if (warningsList.length) {
+          showStatusNote(warningsList.join(' '), 'warning');
+        } else {
+          hideStatusNote();
+        }
       }
     }
 
@@ -6713,113 +6882,285 @@
     /**
      * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio) su demonstraciniu rezervu.
      */
-    async function fetchData() {
-      const { url, fallbackCsv, useFallback } = settings.dataSource;
-      const fallbackContent = useFallback ? fallbackCsv : '';
-      const workerOptions = {
-        csvSettings: settings.csv || {},
-        csvDefaults: DEFAULT_SETTINGS.csv || {},
-        calculations: settings.calculations || {},
-        calculationDefaults: DEFAULT_SETTINGS.calculations || {},
+    async function loadCsvSource(config, workerOptions, { required = false, sourceId = 'primary', label = '' } = {}) {
+      const trimmedUrl = (config?.url ?? '').trim();
+      const allowFallback = Boolean(config?.useFallback);
+      const fallbackRaw = typeof config?.fallbackCsv === 'string' ? config.fallbackCsv : '';
+      const fallbackContent = allowFallback && fallbackRaw.trim().length ? fallbackRaw : '';
+      const missingMessage = config?.missingMessage || 'Nenurodytas duomenų URL.';
+      const result = {
+        records: [],
+        dailyStats: [],
+        meta: {
+          sourceId,
+          url: trimmedUrl,
+          label: label || sourceId,
+        },
+        usingFallback: false,
+        lastErrorMessage: '',
+        error: null,
       };
-      if (!url) {
-        if (fallbackContent) {
-          dashboardState.usingFallback = true;
-          dashboardState.lastErrorMessage = 'Nenurodytas duomenų URL.';
-          const dataset = await runDataWorker(fallbackContent, workerOptions);
-          return {
-            records: Array.isArray(dataset?.records) ? dataset.records : [],
-            dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
-            meta: { fromFallback: true },
-          };
-        }
-        dashboardState.usingFallback = false;
-        dashboardState.lastErrorMessage = 'Nenurodytas duomenų URL.';
-        throw new Error('Nenurodytas duomenų URL.');
-      }
 
-      const cacheEntry = readDataCache(url);
-
-      try {
-        let download = await downloadCsv(url, cacheEntry);
-        if (download.status === 304) {
-          if (cacheEntry?.records && cacheEntry?.dailyStats) {
-            dashboardState.usingFallback = false;
-            dashboardState.lastErrorMessage = '';
-            return {
-              records: cacheEntry.records,
-              dailyStats: cacheEntry.dailyStats,
-              meta: {
-                etag: cacheEntry.etag,
-                lastModified: cacheEntry.lastModified,
-                signature: cacheEntry.signature,
-                fromCache: true,
-              },
-            };
-          }
-          clearDataCache(url);
-          download = await downloadCsv(url, null);
-        }
-
-        const dataset = await runDataWorker(download.text, workerOptions);
-        const result = {
+      const parseDataset = async (csvText) => {
+        const dataset = await runDataWorker(csvText, workerOptions);
+        return {
           records: Array.isArray(dataset?.records) ? dataset.records : [],
           dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
-          meta: {
-            etag: download.etag,
-            lastModified: download.lastModified,
-            signature: download.signature,
-            fromCache: false,
-          },
         };
-        writeDataCache(url, {
+      };
+
+      const assignDataset = (dataset, metaOverrides = {}) => {
+        result.records = dataset.records;
+        result.dailyStats = dataset.dailyStats;
+        result.meta = { ...result.meta, ...metaOverrides };
+      };
+
+      if (!trimmedUrl) {
+        if (fallbackContent) {
+          const dataset = await parseDataset(fallbackContent);
+          assignDataset(dataset, { fromFallback: true });
+          result.usingFallback = true;
+          result.lastErrorMessage = missingMessage;
+          result.error = missingMessage;
+          return result;
+        }
+        result.lastErrorMessage = missingMessage;
+        result.error = missingMessage;
+        if (required) {
+          const error = new Error(missingMessage);
+          error.diagnostic = { type: 'config', sourceId, reason: 'missing-url' };
+          throw error;
+        }
+        return result;
+      }
+
+      const cacheEntry = readDataCache(trimmedUrl);
+
+      try {
+        let download = await downloadCsv(trimmedUrl, cacheEntry);
+        if (download.status === 304) {
+          if (cacheEntry?.records && cacheEntry?.dailyStats) {
+            assignDataset({
+              records: cacheEntry.records,
+              dailyStats: cacheEntry.dailyStats,
+            }, {
+              etag: cacheEntry.etag,
+              lastModified: cacheEntry.lastModified,
+              signature: cacheEntry.signature,
+              fromCache: true,
+            });
+            return result;
+          }
+          clearDataCache(trimmedUrl);
+          download = await downloadCsv(trimmedUrl, null);
+        }
+
+        const dataset = await parseDataset(download.text);
+        assignDataset(dataset, {
+          etag: download.etag,
+          lastModified: download.lastModified,
+          signature: download.signature,
+          fromCache: false,
+        });
+        writeDataCache(trimmedUrl, {
           etag: download.etag,
           lastModified: download.lastModified,
           signature: download.signature,
           records: result.records,
           dailyStats: result.dailyStats,
         });
-        dashboardState.usingFallback = false;
-        dashboardState.lastErrorMessage = '';
         return result;
       } catch (error) {
-        console.error('Nepavyko atsisiųsti CSV duomenų:', error);
-        dashboardState.lastErrorMessage = describeError(error);
+        console.error(`Nepavyko atsisiųsti CSV duomenų (${sourceId}):`, error);
+        const friendly = describeError(error);
+        result.lastErrorMessage = friendly;
+        result.error = friendly;
         if (cacheEntry?.records && cacheEntry?.dailyStats) {
-          console.warn('Naudojami talpyklos duomenys dėl klaidos.');
-          dashboardState.usingFallback = false;
-          return {
+          console.warn(`Naudojami talpyklos duomenys dėl klaidos (${sourceId}).`);
+          assignDataset({
             records: cacheEntry.records,
             dailyStats: cacheEntry.dailyStats,
-            meta: {
-              etag: cacheEntry.etag,
-              lastModified: cacheEntry.lastModified,
-              signature: cacheEntry.signature,
-              fromCache: true,
-              fallbackReason: dashboardState.lastErrorMessage,
-            },
-          };
+          }, {
+            etag: cacheEntry.etag,
+            lastModified: cacheEntry.lastModified,
+            signature: cacheEntry.signature,
+            fromCache: true,
+            fallbackReason: friendly,
+          });
+          return result;
         }
         if (fallbackContent) {
           try {
-            const fallbackDataset = await runDataWorker(fallbackContent, workerOptions);
-            const result = {
-              records: Array.isArray(fallbackDataset?.records) ? fallbackDataset.records : [],
-              dailyStats: Array.isArray(fallbackDataset?.dailyStats) ? fallbackDataset.dailyStats : [],
-              meta: { fromFallback: true },
-            };
-            dashboardState.usingFallback = true;
+            const fallbackDataset = await parseDataset(fallbackContent);
+            assignDataset(fallbackDataset, { fromFallback: true });
+            result.usingFallback = true;
             return result;
           } catch (fallbackError) {
-            console.error('Klaida skaitant demonstracinius duomenis:', fallbackError);
-            dashboardState.usingFallback = false;
-            dashboardState.lastErrorMessage = describeError(fallbackError);
-            throw fallbackError;
+            console.error(`Klaida skaitant demonstracinius duomenis (${sourceId}):`, fallbackError);
+            const fallbackFriendly = describeError(fallbackError);
+            result.lastErrorMessage = fallbackFriendly;
+            result.error = fallbackFriendly;
+            if (required) {
+              throw fallbackError;
+            }
+            return result;
           }
         }
-        dashboardState.usingFallback = false;
-        throw error;
+        if (required) {
+          throw error;
+        }
+        return result;
       }
+    }
+
+    async function fetchData() {
+      const workerOptions = {
+        csvSettings: settings.csv || {},
+        csvDefaults: DEFAULT_SETTINGS.csv || {},
+        calculations: settings.calculations || {},
+        calculationDefaults: DEFAULT_SETTINGS.calculations || {},
+      };
+
+      const mainConfig = {
+        url: settings?.dataSource?.url,
+        useFallback: settings?.dataSource?.useFallback,
+        fallbackCsv: settings?.dataSource?.fallbackCsv,
+        missingMessage: 'Nenurodytas duomenų URL.',
+      };
+
+      const primaryResult = await loadCsvSource(mainConfig, workerOptions, {
+        required: true,
+        sourceId: 'primary',
+        label: 'Pagrindinis CSV',
+      });
+
+      const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
+      const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
+      let combinedRecords = baseRecords.slice();
+      let combinedDailyStats = baseDaily.slice();
+      let usingFallback = Boolean(primaryResult.usingFallback);
+      const fallbackMessages = [];
+      if (primaryResult.usingFallback) {
+        fallbackMessages.push(primaryResult.lastErrorMessage || 'Nenurodytas duomenų URL.');
+      }
+      const warnings = [];
+      const primaryUrl = (settings?.dataSource?.url ?? '').trim();
+      const sources = [
+        {
+          id: 'primary',
+          label: 'Pagrindinis CSV',
+          url: primaryResult.meta?.url || primaryUrl,
+          fromCache: Boolean(primaryResult.meta?.fromCache),
+          fromFallback: Boolean(primaryResult.meta?.fromFallback),
+          usingFallback: primaryResult.usingFallback,
+          lastErrorMessage: primaryResult.lastErrorMessage || '',
+          error: primaryResult.error || '',
+          used: baseRecords.length > 0,
+          enabled: true,
+        },
+      ];
+
+      if (primaryResult.error && !primaryResult.usingFallback && primaryResult.meta?.fromCache) {
+        warnings.push(`Pagrindinis CSV: ${primaryResult.error}`);
+      }
+
+      const historicalDefaults = DEFAULT_SETTINGS?.dataSource?.historical || {};
+      const historicalConfig = settings?.dataSource?.historical || historicalDefaults;
+      const historicalLabel = historicalConfig.label || historicalDefaults.label || 'Papildomas istorinis (5 metai)';
+      const historicalEnabled = historicalConfig.enabled !== false;
+      let historicalMeta = null;
+      let hasHistoricalRecords = false;
+
+      if (historicalEnabled) {
+        const normalizedHistoricalConfig = {
+          url: historicalConfig.url,
+          useFallback: historicalConfig.useFallback,
+          fallbackCsv: historicalConfig.fallbackCsv,
+          missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
+        };
+        const shouldAttempt = (normalizedHistoricalConfig.url ?? '').trim().length > 0
+          || (normalizedHistoricalConfig.useFallback && (normalizedHistoricalConfig.fallbackCsv ?? '').trim().length > 0);
+
+        if (shouldAttempt) {
+          const historicalResult = await loadCsvSource(normalizedHistoricalConfig, workerOptions, {
+            required: false,
+            sourceId: 'historical',
+            label: historicalLabel,
+          });
+          historicalMeta = historicalResult.meta || null;
+          const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
+          if (historicalRecords.length) {
+            combinedRecords = combinedRecords.concat(historicalRecords);
+            hasHistoricalRecords = true;
+          }
+          if (historicalResult.usingFallback) {
+            usingFallback = true;
+            const message = historicalResult.lastErrorMessage || 'Papildomas šaltinis pasiektas iš demonstracinių duomenų.';
+            fallbackMessages.push(`${historicalLabel}: ${message}`);
+          } else if (historicalResult.error) {
+            warnings.push(`${historicalLabel}: ${historicalResult.error}`);
+          }
+          sources.push({
+            id: 'historical',
+            label: historicalLabel,
+            url: historicalResult.meta?.url || (historicalConfig.url ?? ''),
+            fromCache: Boolean(historicalResult.meta?.fromCache),
+            fromFallback: Boolean(historicalResult.meta?.fromFallback),
+            usingFallback: historicalResult.usingFallback,
+            lastErrorMessage: historicalResult.lastErrorMessage || '',
+            error: historicalResult.error || '',
+            used: historicalRecords.length > 0,
+            enabled: true,
+          });
+        } else {
+          sources.push({
+            id: 'historical',
+            label: historicalLabel,
+            url: historicalConfig.url || '',
+            fromCache: false,
+            fromFallback: false,
+            usingFallback: false,
+            lastErrorMessage: '',
+            error: '',
+            used: false,
+            enabled: true,
+          });
+          warnings.push(`${historicalLabel}: Nenurodytas papildomo istorinio šaltinio URL.`);
+        }
+      } else {
+        sources.push({
+          id: 'historical',
+          label: historicalLabel,
+          url: historicalConfig.url || '',
+          fromCache: false,
+          fromFallback: false,
+          usingFallback: false,
+          lastErrorMessage: '',
+          error: '',
+          used: false,
+          enabled: false,
+        });
+      }
+
+      combinedDailyStats = hasHistoricalRecords
+        ? computeDailyStats(combinedRecords)
+        : baseDaily.slice();
+
+      dashboardState.usingFallback = usingFallback;
+      dashboardState.lastErrorMessage = usingFallback ? fallbackMessages.join(' ').trim() : '';
+
+      const meta = {
+        primary: { ...(primaryResult.meta || {}), sourceId: 'primary' },
+        historical: historicalMeta ? { ...historicalMeta, sourceId: 'historical' } : null,
+        sources,
+        warnings,
+      };
+
+      return {
+        records: combinedRecords,
+        dailyStats: combinedDailyStats,
+        meta,
+      };
     }
 
     async function fetchEdData() {
@@ -8338,6 +8679,49 @@
       });
 
       return Array.from(monthlyMap.values()).sort((a, b) => (a.month > b.month ? 1 : -1));
+    }
+
+    function computeYearlyStats(monthlyStats) {
+      const yearlyMap = new Map();
+      monthlyStats.forEach((entry) => {
+        if (!entry?.month) {
+          return;
+        }
+        const yearKey = entry.month.slice(0, 4);
+        if (!yearKey) {
+          return;
+        }
+        if (!yearlyMap.has(yearKey)) {
+          yearlyMap.set(yearKey, {
+            year: yearKey,
+            count: 0,
+            night: 0,
+            ems: 0,
+            discharged: 0,
+            hospitalized: 0,
+            totalTime: 0,
+            durations: 0,
+            hospitalizedTime: 0,
+            hospitalizedDurations: 0,
+            dayCount: 0,
+            monthCount: 0,
+          });
+        }
+        const bucket = yearlyMap.get(yearKey);
+        bucket.count += Number.isFinite(entry.count) ? entry.count : 0;
+        bucket.night += Number.isFinite(entry.night) ? entry.night : 0;
+        bucket.ems += Number.isFinite(entry.ems) ? entry.ems : 0;
+        bucket.discharged += Number.isFinite(entry.discharged) ? entry.discharged : 0;
+        bucket.hospitalized += Number.isFinite(entry.hospitalized) ? entry.hospitalized : 0;
+        bucket.totalTime += Number.isFinite(entry.totalTime) ? entry.totalTime : 0;
+        bucket.durations += Number.isFinite(entry.durations) ? entry.durations : 0;
+        bucket.hospitalizedTime += Number.isFinite(entry.hospitalizedTime) ? entry.hospitalizedTime : 0;
+        bucket.hospitalizedDurations += Number.isFinite(entry.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
+        bucket.dayCount += Number.isFinite(entry.dayCount) ? entry.dayCount : 0;
+        bucket.monthCount += 1;
+      });
+
+      return Array.from(yearlyMap.values()).sort((a, b) => (a.year > b.year ? 1 : -1));
     }
 
     function computeFeedbackStats(records) {
@@ -10619,6 +11003,9 @@
       if (selectors.monthlyTable) {
         rows.push(...selectors.monthlyTable.querySelectorAll('tr[data-compare-id]'));
       }
+      if (selectors.yearlyTable) {
+        rows.push(...selectors.yearlyTable.querySelectorAll('tr[data-compare-id]'));
+      }
       rows.forEach((row) => {
         if (!active) {
           row.classList.remove('table-row--selectable', 'table-row--selected');
@@ -10742,6 +11129,17 @@
       return monthFormatter.format(new Date(Date.UTC(year, Math.max(0, monthIndex), 1)));
     }
 
+    function formatYearLabel(yearKey) {
+      if (typeof yearKey !== 'string') {
+        return '';
+      }
+      const year = Number.parseInt(yearKey, 10);
+      if (!Number.isFinite(year)) {
+        return yearKey;
+      }
+      return `${year} m.`;
+    }
+
     function renderMonthlyTable(monthlyStats) {
       selectors.monthlyTable.replaceChildren();
       if (!monthlyStats.length) {
@@ -10781,6 +11179,52 @@
         row.dataset.emsShare = String(emsShare);
         row.dataset.hospShare = String(hospShare);
         selectors.monthlyTable.appendChild(row);
+      });
+      syncCompareActivation();
+    }
+
+    function renderYearlyTable(yearlyStats) {
+      if (!selectors.yearlyTable) {
+        return;
+      }
+      selectors.yearlyTable.replaceChildren();
+      if (!Array.isArray(yearlyStats) || !yearlyStats.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 8;
+        cell.textContent = TEXT.yearly.empty;
+        row.appendChild(cell);
+        selectors.yearlyTable.appendChild(row);
+        syncCompareActivation();
+        return;
+      }
+
+      yearlyStats.forEach((entry) => {
+        const row = document.createElement('tr');
+        const total = Number.isFinite(entry.count) ? entry.count : 0;
+        const avgPerDay = entry.dayCount > 0 ? total / entry.dayCount : 0;
+        const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+        row.innerHTML = `
+          <td>${formatYearLabel(entry.year)}</td>
+          <td>${numberFormatter.format(total)}</td>
+          <td>${oneDecimalFormatter.format(avgPerDay)}</td>
+          <td>${decimalFormatter.format(avgStay)}</td>
+          <td>${formatValueWithShare(entry.night, total)}</td>
+          <td>${formatValueWithShare(entry.ems, total)}</td>
+          <td>${formatValueWithShare(entry.hospitalized, total)}</td>
+          <td>${formatValueWithShare(entry.discharged, total)}</td>
+        `;
+        const emsShare = total > 0 ? entry.ems / total : 0;
+        const hospShare = total > 0 ? entry.hospitalized / total : 0;
+        row.dataset.compareId = `yearly-${entry.year}`;
+        row.dataset.compareGroup = 'yearly';
+        row.dataset.compareLabel = formatYearLabel(entry.year);
+        row.dataset.compareSort = entry.year;
+        row.dataset.total = String(total);
+        row.dataset.avgStay = String(avgStay);
+        row.dataset.emsShare = String(emsShare);
+        row.dataset.hospShare = String(hospShare);
+        selectors.yearlyTable.appendChild(row);
       });
       syncCompareActivation();
     }
@@ -11999,6 +12443,12 @@
           ? monthlyStats.slice(-monthsLimit)
           : monthlyStats;
         renderMonthlyTable(limitedMonthlyStats);
+        const yearlyStats = computeYearlyStats(monthlyStats);
+        const yearsLimit = 5;
+        const limitedYearlyStats = Number.isFinite(yearsLimit) && yearsLimit > 0
+          ? yearlyStats.slice(-yearsLimit)
+          : yearlyStats;
+        renderYearlyTable(limitedYearlyStats);
         const feedbackStats = computeFeedbackStats(feedbackRecords);
         dashboardState.feedback.summary = feedbackStats.summary;
         dashboardState.feedback.monthly = feedbackStats.monthly;
@@ -12115,6 +12565,11 @@
     if (selectors.monthlyTable) {
       selectors.monthlyTable.addEventListener('click', handleCompareClick);
       selectors.monthlyTable.addEventListener('keydown', handleCompareKeydown);
+    }
+
+    if (selectors.yearlyTable) {
+      selectors.yearlyTable.addEventListener('click', handleCompareClick);
+      selectors.yearlyTable.addEventListener('keydown', handleCompareKeydown);
     }
 
     if (selectors.edNavButton) {

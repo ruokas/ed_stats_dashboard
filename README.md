@@ -4,6 +4,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ## Savybės
 - 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
+- 🔗 Galimybė kartu naudoti pagrindinį operatyvinį ir papildomą 5 metų istorinį CSV šaltinį.
 - 📊 KPI kortelės su aiškia „Metinis vidurkis“ eilute ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
 - 🎯 Interaktyvūs KPI filtrai (laikotarpis, pamaina, GMP, išvykimo sprendimas) su aiškia santrauka ir sparčiuoju **Shift+R**.
@@ -21,7 +22,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ## Konfigūracija
 - Tekstai (LT, su kabliuku EN) – `TEXT` objektas `index.html` viršuje arba nustatymų dialoge nurodyti pavadinimai/paantraštės.
-- Duomenų šaltinis, demonstraciniai įrašai ir CSV stulpelių atitikmenys – nustatymų dialogas („Duomenų šaltinis“ ir „CSV stulpelių atitikimas“ skyriai).
+- Duomenų šaltinis, demonstraciniai įrašai, papildomas istorinis CSV ir stulpelių atitikmenys – nustatymų dialogas („Duomenų šaltinis“ ir „CSV stulpelių atitikimas“ skyriai).
 - GMP laukas numatytai atpažįsta reikšmes „GMP“, „su GMP“ ir „GMP (su GMP)“, o tuščias hospitalizavimo stulpelis reiškia išrašytą pacientą.
 - Spalvų schema ir kampai – CSS kintamieji `:root` bloke (`index.html`).
 - Grafikai – Chart.js nustatymai `renderCharts()` funkcijoje (`index.html`).
