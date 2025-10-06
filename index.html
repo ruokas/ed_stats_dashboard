@@ -2784,6 +2784,73 @@
       font-size: 0.85rem;
     }
 
+    .yearly-trend {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 180px;
+    }
+
+    .yearly-trend__bar-wrapper {
+      flex: 0 0 80px;
+      height: 8px;
+      background: var(--color-input-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .yearly-trend__bar {
+      height: 100%;
+      border-radius: inherit;
+      transition: width 0.3s ease;
+    }
+
+    .yearly-trend__bar--up {
+      background: var(--color-success);
+    }
+
+    .yearly-trend__bar--down {
+      background: var(--color-danger);
+    }
+
+    .yearly-trend__bar--neutral {
+      background: var(--color-text-muted);
+    }
+
+    .yearly-trend__values {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.85rem;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .yearly-trend__diff {
+      font-weight: 600;
+    }
+
+    .yearly-trend__diff--up {
+      color: var(--color-success);
+    }
+
+    .yearly-trend__diff--down {
+      color: var(--color-danger);
+    }
+
+    .yearly-trend__diff--neutral {
+      color: var(--color-text-muted);
+    }
+
+    .yearly-trend__percent {
+      color: var(--color-text-muted);
+    }
+
+    .yearly-trend__placeholder {
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
     .table-flag {
       display: inline-flex;
       align-items: center;
@@ -3450,6 +3517,7 @@
               <th scope="col">GMP</th>
               <th scope="col">Hospitalizuoti</th>
               <th scope="col">Išleisti</th>
+              <th scope="col">Pokytis nuo ankstesnių metų</th>
             </tr>
           </thead>
           <tbody id="yearlyTable"></tbody>
@@ -10922,6 +10990,56 @@
       return `${numberFormatter.format(count)} <span class="table-percent">(${shareText})</span>`;
     }
 
+    function formatSignedNumber(value) {
+      if (!Number.isFinite(value)) {
+        return '—';
+      }
+      if (value === 0) {
+        return numberFormatter.format(0);
+      }
+      const formatted = numberFormatter.format(Math.abs(value));
+      return `${value > 0 ? '+' : '−'}${formatted}`;
+    }
+
+    function formatSignedPercent(value) {
+      if (!Number.isFinite(value)) {
+        return '—';
+      }
+      if (value === 0) {
+        return percentFormatter.format(0);
+      }
+      const formatted = percentFormatter.format(Math.abs(value));
+      return `${value > 0 ? '+' : '−'}${formatted}`;
+    }
+
+    function createYearlyChangeCell(diff, percentChange, maxAbsDiff) {
+      if (!Number.isFinite(diff)) {
+        return '<span class="yearly-trend__placeholder">—</span>';
+      }
+      const direction = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral';
+      const absDiff = Math.abs(diff);
+      const normalized = maxAbsDiff > 0 ? (absDiff / maxAbsDiff) * 100 : 0;
+      const width = direction === 'neutral'
+        ? 0
+        : Math.min(100, Math.max(8, Math.round(normalized)));
+      const diffText = formatSignedNumber(diff);
+      const percentText = Number.isFinite(percentChange) ? formatSignedPercent(percentChange) : '—';
+      const ariaLabel = direction === 'neutral'
+        ? 'Pokytis nepakito (0 pacientų).'
+        : `Pokytis ${direction === 'up' ? 'padidėjo' : 'sumažėjo'} ${numberFormatter.format(absDiff)} pacientais${Number.isFinite(percentChange) ? ` (${percentText})` : ''}.`;
+      return `
+        <div class="yearly-trend" role="img" aria-label="${ariaLabel}">
+          <div class="yearly-trend__bar-wrapper" aria-hidden="true">
+            <div class="yearly-trend__bar yearly-trend__bar--${direction}" style="width: ${width}%;"></div>
+          </div>
+          <div class="yearly-trend__values">
+            <span class="yearly-trend__diff yearly-trend__diff--${direction}">${diffText}</span>
+            <span class="yearly-trend__percent">${percentText}</span>
+          </div>
+        </div>
+      `;
+    }
+
     function extractCompareMetricsFromRow(row) {
       if (!row || !row.dataset || !row.dataset.compareId) {
         return null;
@@ -11189,7 +11307,7 @@
       if (!Array.isArray(yearlyStats) || !yearlyStats.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 8;
+        cell.colSpan = 9;
         cell.textContent = TEXT.yearly.empty;
         row.appendChild(cell);
         selectors.yearlyTable.appendChild(row);
@@ -11197,11 +11315,24 @@
         return;
       }
 
-      yearlyStats.forEach((entry) => {
+      const totals = yearlyStats.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
+      const diffValues = totals.map((total, index) => (index > 0 ? total - totals[index - 1] : Number.NaN));
+      const maxAbsDiff = diffValues.reduce((acc, value) => (Number.isFinite(value)
+        ? Math.max(acc, Math.abs(value))
+        : acc), 0);
+
+      yearlyStats.forEach((entry, index) => {
         const row = document.createElement('tr');
         const total = Number.isFinite(entry.count) ? entry.count : 0;
         const avgPerDay = entry.dayCount > 0 ? total / entry.dayCount : 0;
         const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+        const previousTotal = index > 0 ? totals[index - 1] : Number.NaN;
+        const diff = Number.isFinite(previousTotal) ? total - previousTotal : Number.NaN;
+        const percentChange = Number.isFinite(diff)
+          && Number.isFinite(previousTotal)
+          && previousTotal !== 0
+          ? diff / previousTotal
+          : Number.NaN;
         row.innerHTML = `
           <td>${formatYearLabel(entry.year)}</td>
           <td>${numberFormatter.format(total)}</td>
@@ -11211,6 +11342,7 @@
           <td>${formatValueWithShare(entry.ems, total)}</td>
           <td>${formatValueWithShare(entry.hospitalized, total)}</td>
           <td>${formatValueWithShare(entry.discharged, total)}</td>
+          <td>${createYearlyChangeCell(diff, percentChange, maxAbsDiff)}</td>
         `;
         const emsShare = total > 0 ? entry.ems / total : 0;
         const hospShare = total > 0 ? entry.hospitalized / total : 0;
@@ -11222,6 +11354,8 @@
         row.dataset.avgStay = String(avgStay);
         row.dataset.emsShare = String(emsShare);
         row.dataset.hospShare = String(hospShare);
+        row.dataset.change = Number.isFinite(diff) ? String(diff) : '';
+        row.dataset.changePercent = Number.isFinite(percentChange) ? String(percentChange) : '';
         selectors.yearlyTable.appendChild(row);
       });
       syncCompareActivation();
