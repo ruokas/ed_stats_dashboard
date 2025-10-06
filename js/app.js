@@ -1,0 +1,8360 @@
+import { loadChartJs, preloadChartJs } from './chart-loader.js';
+import {
+  DEFAULT_DEMO_CSV,
+  DEFAULT_FEEDBACK_CSV,
+  DEFAULT_ED_CSV,
+  DEFAULT_SETTINGS,
+  ED_TOTAL_BEDS,
+  FEEDBACK_RATING_MIN,
+  FEEDBACK_RATING_MAX,
+  FEEDBACK_LEGACY_MAX,
+  TEXT,
+} from './config.js';
+
+preloadChartJs();
+
+// Formatai datoms ir skaičiams (LT locale).
+const numberFormatter = new Intl.NumberFormat('lt-LT');
+const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const oneDecimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const percentFormatter = new Intl.NumberFormat('lt-LT', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
+const shortDateFormatter = new Intl.DateTimeFormat('lt-LT', { year: 'numeric', month: '2-digit', day: '2-digit' });
+const monthDayFormatter = new Intl.DateTimeFormat('lt-LT', { month: '2-digit', day: '2-digit' });
+const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
+const tvTimeFormatter = new Intl.DateTimeFormat('lt-LT', { hour: '2-digit', minute: '2-digit' });
+const tvDateFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long', day: '2-digit', month: 'long' });
+const dailyDateFormatter = new Intl.DateTimeFormat('lt-LT', {
+  weekday: 'short',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function capitalizeSentence(text) {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+  return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`;
+}
+
+const selectors = {
+  hero: document.querySelector('header.hero'),
+  title: document.getElementById('pageTitle'),
+  subtitle: document.getElementById('pageSubtitle'),
+  stickyTitle: document.getElementById('stickyTitle'),
+  tabSwitcher: document.getElementById('tabSwitcher'),
+  tabButtons: Array.from(document.querySelectorAll('[data-tab-target]')),
+  tabPanels: Array.from(document.querySelectorAll('[data-tab-panel]')),
+  tabOverview: document.getElementById('tabOverview'),
+  edNavButton: document.getElementById('edNavButton'),
+  closeEdPanelBtn: document.getElementById('closeEdPanelBtn'),
+  overviewPanel: document.getElementById('panelOverview'),
+  edPanel: document.getElementById('panelEd'),
+  refreshBtn: document.getElementById('refreshBtn'),
+  status: document.getElementById('status'),
+  statusNote: document.getElementById('statusNote'),
+  footerUpdated: document.getElementById('footerUpdated'),
+  footerSource: document.getElementById('footerSource'),
+  kpiHeading: document.getElementById('kpiHeading'),
+  kpiSubtitle: document.getElementById('kpiSubtitle'),
+  kpiSummary: document.getElementById('kpiSummary'),
+  kpiGrid: document.getElementById('kpiGrid'),
+  chartHeading: document.getElementById('chartHeading'),
+  chartSubtitle: document.getElementById('chartSubtitle'),
+  dailyCaption: document.getElementById('dailyChartLabel'),
+  dailyCaptionContext: document.getElementById('dailyChartContext'),
+  dowCaption: document.getElementById('dowChartTitle'),
+  funnelCaption: document.getElementById('funnelChartTitle'),
+  heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
+  heatmapContainer: document.getElementById('arrivalHeatmap'),
+  chartYearLabel: document.getElementById('chartYearLabel'),
+  chartYearSelect: document.getElementById('chartYear'),
+  chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
+  recentHeading: document.getElementById('recentHeading'),
+  recentSubtitle: document.getElementById('recentSubtitle'),
+  recentCaption: document.getElementById('recentCaption'),
+  recentTable: document.getElementById('recentTable'),
+  monthlyHeading: document.getElementById('monthlyHeading'),
+  monthlySubtitle: document.getElementById('monthlySubtitle'),
+  monthlyCaption: document.getElementById('monthlyCaption'),
+  monthlyTable: document.getElementById('monthlyTable'),
+  yearlyHeading: document.getElementById('yearlyHeading'),
+  yearlySubtitle: document.getElementById('yearlySubtitle'),
+  yearlyCaption: document.getElementById('yearlyCaption'),
+  yearlyTable: document.getElementById('yearlyTable'),
+  feedbackHeading: document.getElementById('feedbackHeading'),
+  feedbackSubtitle: document.getElementById('feedbackSubtitle'),
+  feedbackDescription: document.getElementById('feedbackDescription'),
+  feedbackCaption: document.getElementById('feedbackCaption'),
+  feedbackCards: document.getElementById('feedbackCards'),
+  feedbackTrendTitle: document.getElementById('feedbackTrendTitle'),
+  feedbackTrendSubtitle: document.getElementById('feedbackTrendSubtitle'),
+  feedbackTrendControls: document.getElementById('feedbackTrendControls'),
+  feedbackTrendControlsLabel: document.getElementById('feedbackTrendControlsLabel'),
+  feedbackTrendButtons: Array.from(document.querySelectorAll('[data-trend-months]')),
+  feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
+  feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
+  feedbackTrendChart: document.getElementById('feedbackTrendChart'),
+  feedbackTable: document.getElementById('feedbackTable'),
+  feedbackColumnMonth: document.getElementById('feedbackColumnMonth'),
+  feedbackColumnResponses: document.getElementById('feedbackColumnResponses'),
+  feedbackColumnOverall: document.getElementById('feedbackColumnOverall'),
+  feedbackColumnDoctors: document.getElementById('feedbackColumnDoctors'),
+  feedbackColumnNurses: document.getElementById('feedbackColumnNurses'),
+  feedbackColumnAides: document.getElementById('feedbackColumnAides'),
+  feedbackColumnWaiting: document.getElementById('feedbackColumnWaiting'),
+  feedbackColumnContact: document.getElementById('feedbackColumnContact'),
+  edHeading: document.getElementById('edHeading'),
+  edSubtitle: document.getElementById('edSubtitle'),
+  edStatus: document.getElementById('edStatus'),
+  edStatusTimestamp: document.getElementById('edStatusTimestamp'),
+  edCards: document.getElementById('edCards'),
+  edDispositionsTitle: document.getElementById('edDispositionsTitle'),
+  edDispositionsCaption: document.getElementById('edDispositionsCaption'),
+  edDispositionsChart: document.getElementById('edDispositionsChart'),
+  edDispositionsMessage: document.getElementById('edDispositionsMessage'),
+  edStandardSection: document.getElementById('edStandardSection'),
+  edTvToggleBtn: document.getElementById('toggleTvBtn'),
+  edTvPanel: document.getElementById('edTvPanel'),
+  edTvTitle: document.getElementById('edTvTitle'),
+  edTvSubtitle: document.getElementById('edTvSubtitle'),
+  edTvClockTime: document.getElementById('edTvClockTime'),
+  edTvClockDate: document.getElementById('edTvClockDate'),
+  edTvUpdated: document.getElementById('edTvUpdated'),
+  edTvStatusText: document.getElementById('edTvStatusText'),
+  edTvNotice: document.getElementById('edTvNotice'),
+  edTvPrimaryTitle: document.getElementById('edTvPrimaryTitle'),
+  edTvStaffTitle: document.getElementById('edTvStaffTitle'),
+  edTvFlowTitle: document.getElementById('edTvFlowTitle'),
+  edTvPrimaryMetrics: document.getElementById('edTvPrimaryMetrics'),
+  edTvStaffMetrics: document.getElementById('edTvStaffMetrics'),
+  edTvFlowMetrics: document.getElementById('edTvFlowMetrics'),
+  edTvTriageTitle: document.getElementById('edTvTriageTitle'),
+  edTvTriageMeta: document.getElementById('edTvTriageMeta'),
+  edTvTriageList: document.getElementById('edTvTriageList'),
+  openSettingsBtn: document.getElementById('openSettingsBtn'),
+  themeToggleBtn: document.getElementById('themeToggleBtn'),
+  settingsDialog: document.getElementById('settingsDialog'),
+  settingsForm: document.getElementById('settingsForm'),
+  resetSettingsBtn: document.getElementById('resetSettingsBtn'),
+  cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
+  recentSection: document.querySelector('[data-section="recent"]'),
+  monthlySection: document.querySelector('[data-section="monthly"]'),
+  yearlySection: document.querySelector('[data-section="yearly"]'),
+  feedbackSection: document.querySelector('[data-section="feedback"]'),
+  kpiControls: document.querySelector('.kpi-controls'),
+  kpiFiltersForm: document.getElementById('kpiFiltersForm'),
+  kpiWindow: document.getElementById('kpiWindow'),
+  kpiShift: document.getElementById('kpiShift'),
+  kpiArrival: document.getElementById('kpiArrival'),
+  kpiDisposition: document.getElementById('kpiDisposition'),
+  kpiFiltersReset: document.getElementById('kpiFiltersReset'),
+  kpiFiltersToggle: document.getElementById('kpiFiltersToggle'),
+  kpiActiveInfo: document.getElementById('kpiActiveFilters'),
+  compareToggle: document.getElementById('compareToggle'),
+  compareCard: document.getElementById('compareCard'),
+  compareSummary: document.getElementById('compareSummary'),
+  compareClear: document.getElementById('compareClear'),
+  sectionNav: document.querySelector('.section-nav'),
+  sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
+  scrollTopBtn: document.getElementById('scrollTopBtn'),
+};
+
+const sectionNavState = {
+  initialized: false,
+  items: [],
+  itemBySection: new Map(),
+  activeHeadingId: '',
+};
+
+const sectionVisibility = new Map();
+const layoutMetrics = { hero: 0, nav: 0 };
+let sectionObserver = null;
+let layoutRefreshHandle = null;
+let layoutResizeObserver = null;
+const stickyTitleState = { heroVisible: true, observer: null };
+const scrollTopState = { visible: false, rafHandle: null };
+const tvState = { clockHandle: null };
+const heroCompactState = {
+  compact: false,
+  rafHandle: null,
+  enterOffset: 160,
+  exitOffset: 100,
+};
+
+function computeVisibleRatio(rect) {
+  if (!rect) {
+    return 0;
+  }
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const elementHeight = Math.max(rect.height, 1);
+  if (viewportHeight <= 0 || elementHeight <= 0) {
+    return 0;
+  }
+  const visibleTop = Math.max(rect.top, 0);
+  const visibleBottom = Math.min(rect.bottom, viewportHeight);
+  const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+  return Math.max(0, Math.min(1, visibleHeight / elementHeight));
+}
+
+function updateLayoutMetrics() {
+  const heroElement = selectors.hero || document.querySelector('header.hero');
+  const navElement = selectors.sectionNav;
+  const heroHeight = heroElement ? heroElement.getBoundingClientRect().height : 0;
+  const navHeight = navElement ? navElement.getBoundingClientRect().height : 0;
+  layoutMetrics.hero = heroHeight;
+  layoutMetrics.nav = navHeight;
+  const rootStyle = document.documentElement.style;
+  rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
+  rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
+  // Kompaktiškėjimo slenkstis: koreguokite koeficientą, jei reikia ankstesnio/perdėto susitraukimo.
+  const enter = heroHeight > 0 ? heroHeight * 0.55 : 160;
+  heroCompactState.enterOffset = Math.max(80, Math.round(enter));
+  heroCompactState.exitOffset = Math.max(40, Math.round(heroCompactState.enterOffset * 0.6));
+}
+
+function applyHeroCompactMode(shouldCompact) {
+  if (!selectors.hero) {
+    return;
+  }
+  // Vykdome realų perėjimą tarp didesnio ir kompaktiško hero režimų.
+  selectors.hero.dataset.compact = shouldCompact ? 'true' : 'false';
+  selectors.hero.classList.toggle('hero--compact', shouldCompact);
+}
+
+function evaluateHeroCompactMode() {
+  if (!selectors.hero) {
+    return;
+  }
+  const offset = getScrollOffset();
+  let shouldCompact = heroCompactState.compact;
+  if (heroCompactState.compact) {
+    shouldCompact = offset > heroCompactState.exitOffset;
+  } else {
+    shouldCompact = offset > heroCompactState.enterOffset;
+  }
+  if (heroCompactState.compact !== shouldCompact) {
+    heroCompactState.compact = shouldCompact;
+    applyHeroCompactMode(shouldCompact);
+  }
+}
+
+function scheduleHeroCompactEvaluation() {
+  if (heroCompactState.rafHandle) {
+    return;
+  }
+  const raf = typeof window.requestAnimationFrame === 'function'
+    ? window.requestAnimationFrame.bind(window)
+    : (cb) => window.setTimeout(cb, 16);
+  heroCompactState.rafHandle = raf(() => {
+    heroCompactState.rafHandle = null;
+    evaluateHeroCompactMode();
+  });
+}
+
+function updateStickyTitleVisibility(heroVisible) {
+  stickyTitleState.heroVisible = heroVisible;
+  const stickyTitle = selectors.stickyTitle;
+  if (!stickyTitle) {
+    return;
+  }
+  const shouldShow = !heroVisible;
+  stickyTitle.dataset.visible = shouldShow ? 'true' : 'false';
+  stickyTitle.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+}
+
+function initializeStickyTitleObserver() {
+  const stickyTitle = selectors.stickyTitle;
+  if (!stickyTitle) {
+    return;
+  }
+  updateStickyTitleVisibility(true);
+  if (stickyTitleState.observer && typeof stickyTitleState.observer.disconnect === 'function') {
+    stickyTitleState.observer.disconnect();
+    stickyTitleState.observer = null;
+  }
+  if (typeof IntersectionObserver !== 'function' || !selectors.hero) {
+    updateStickyTitleVisibility(false);
+    return;
+  }
+  const observer = new IntersectionObserver((entries) => {
+    const entry = entries && entries.length ? entries[0] : null;
+    const isVisible = Boolean(entry) && entry.isIntersecting && entry.intersectionRatio > 0.12;
+    updateStickyTitleVisibility(isVisible);
+  }, { threshold: [0, 0.12, 0.5] });
+  observer.observe(selectors.hero);
+  stickyTitleState.observer = observer;
+}
+
+function getScrollOffset() {
+  if (typeof window.scrollY === 'number') {
+    return window.scrollY;
+  }
+  if (typeof window.pageYOffset === 'number') {
+    return window.pageYOffset;
+  }
+  return (document.documentElement && document.documentElement.scrollTop) || (document.body && document.body.scrollTop) || 0;
+}
+
+function updateScrollTopButtonVisibility() {
+  const button = selectors.scrollTopBtn;
+  if (!button) {
+    return;
+  }
+  const threshold = Math.max(160, Math.round(layoutMetrics.hero + layoutMetrics.nav + 40));
+  const offset = getScrollOffset();
+  const shouldShow = offset > threshold;
+  if (scrollTopState.visible !== shouldShow) {
+    scrollTopState.visible = shouldShow;
+    button.dataset.visible = shouldShow ? 'true' : 'false';
+  }
+  button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+  button.setAttribute('tabindex', shouldShow ? '0' : '-1');
+}
+
+function scheduleScrollTopUpdate() {
+  if (scrollTopState.rafHandle) {
+    return;
+  }
+  const raf = typeof window.requestAnimationFrame === 'function'
+    ? window.requestAnimationFrame.bind(window)
+    : (cb) => window.setTimeout(cb, 16);
+  scrollTopState.rafHandle = raf(() => {
+    scrollTopState.rafHandle = null;
+    updateScrollTopButtonVisibility();
+  });
+}
+
+function initializeScrollTopButton() {
+  const button = selectors.scrollTopBtn;
+  if (!button) {
+    return;
+  }
+  button.setAttribute('aria-hidden', 'true');
+  button.setAttribute('tabindex', '-1');
+  updateScrollTopButtonVisibility();
+  button.addEventListener('click', () => {
+    const prefersReduced = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (typeof window.scrollTo === 'function') {
+      if (!prefersReduced && 'scrollBehavior' in document.documentElement.style) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo(0, 0);
+      }
+    } else {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  });
+  window.addEventListener('scroll', scheduleScrollTopUpdate, { passive: true });
+  window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
+}
+
+function initializeHeroCompactMode() {
+  if (!selectors.hero) {
+    return;
+  }
+  heroCompactState.compact = selectors.hero.dataset.compact === 'true';
+  applyHeroCompactMode(heroCompactState.compact);
+  evaluateHeroCompactMode();
+  window.addEventListener('scroll', scheduleHeroCompactEvaluation, { passive: true });
+  window.addEventListener('resize', scheduleHeroCompactEvaluation, { passive: true });
+  window.addEventListener('orientationchange', scheduleHeroCompactEvaluation);
+  window.addEventListener('load', scheduleHeroCompactEvaluation);
+}
+
+function updateActiveNavLink(headingId) {
+  sectionNavState.activeHeadingId = headingId;
+  sectionNavState.items.forEach((item) => {
+    const isActive = Boolean(headingId) && item.headingId === headingId && !item.link.hidden;
+    if (isActive) {
+      item.link.setAttribute('aria-current', 'true');
+    } else {
+      item.link.removeAttribute('aria-current');
+    }
+    item.link.classList.toggle('is-active', isActive);
+  });
+}
+
+function evaluateActiveSection() {
+  if (!sectionNavState.initialized) {
+    return;
+  }
+  const visibleItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden') && !item.link.hidden);
+  if (!visibleItems.length) {
+    updateActiveNavLink('');
+    return;
+  }
+  const sorted = visibleItems
+    .map((item) => {
+      const data = sectionVisibility.get(item.headingId) || { ratio: 0, top: Number.POSITIVE_INFINITY };
+      return { item, ratio: data.ratio, top: data.top };
+    })
+    .sort((a, b) => {
+      const ratioDiff = b.ratio - a.ratio;
+      if (Math.abs(ratioDiff) > 0.0001) {
+        return ratioDiff;
+      }
+      return a.top - b.top;
+    });
+  const best = sorted.find((candidate) => candidate.ratio > 0)
+    ?? sorted.find((candidate) => candidate.top >= 0)
+    ?? sorted[0];
+  if (best && best.item.headingId !== sectionNavState.activeHeadingId) {
+    updateActiveNavLink(best.item.headingId);
+  }
+}
+
+function refreshSectionObserver() {
+  const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
+  if (!observedItems.length) {
+    if (sectionObserver) {
+      sectionObserver.disconnect();
+      sectionObserver = null;
+    }
+    evaluateActiveSection();
+    return;
+  }
+  if (sectionObserver) {
+    sectionObserver.disconnect();
+  }
+  const topOffset = Math.max(
+    0,
+    Math.round(Math.max(layoutMetrics.hero || 0, layoutMetrics.nav || 0)),
+  );
+  sectionObserver = new IntersectionObserver(handleSectionIntersection, {
+    rootMargin: `-${topOffset}px 0px -55% 0px`,
+    threshold: [0.1, 0.25, 0.5, 0.75, 1],
+  });
+  observedItems.forEach((item) => {
+    sectionObserver.observe(item.section);
+    const rect = item.section.getBoundingClientRect();
+    sectionVisibility.set(item.headingId, {
+      ratio: computeVisibleRatio(rect),
+      top: rect.top,
+    });
+  });
+  evaluateActiveSection();
+}
+
+function scheduleLayoutRefresh() {
+  if (!sectionNavState.initialized) {
+    return;
+  }
+  if (typeof window.requestAnimationFrame !== 'function') {
+    updateLayoutMetrics();
+    refreshSectionObserver();
+    updateScrollTopButtonVisibility();
+    evaluateHeroCompactMode();
+    return;
+  }
+  if (layoutRefreshHandle) {
+    window.cancelAnimationFrame(layoutRefreshHandle);
+  }
+  layoutRefreshHandle = window.requestAnimationFrame(() => {
+    layoutRefreshHandle = null;
+    updateLayoutMetrics();
+    refreshSectionObserver();
+    updateScrollTopButtonVisibility();
+    evaluateHeroCompactMode();
+  });
+}
+
+function handleSectionIntersection(entries) {
+  entries.forEach((entry) => {
+    const item = sectionNavState.itemBySection.get(entry.target);
+    if (!item) {
+      return;
+    }
+    if (item.link.hidden || (item.section && item.section.hasAttribute('hidden'))) {
+      sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+      return;
+    }
+    sectionVisibility.set(item.headingId, {
+      ratio: entry.isIntersecting ? entry.intersectionRatio : 0,
+      top: entry.boundingClientRect.top,
+    });
+  });
+  evaluateActiveSection();
+}
+
+function handleNavKeydown(event) {
+  if (!sectionNavState.initialized) {
+    return;
+  }
+  const controllableKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+  if (!controllableKeys.includes(event.key)) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLAnchorElement)) {
+    return;
+  }
+  const visibleLinks = sectionNavState.items
+    .map((item) => item.link)
+    .filter((link) => link && !link.hidden && !link.hasAttribute('aria-hidden'));
+  if (!visibleLinks.length) {
+    return;
+  }
+  const currentIndex = visibleLinks.indexOf(target);
+  if (currentIndex === -1) {
+    return;
+  }
+  event.preventDefault();
+  let nextIndex = currentIndex;
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    nextIndex = (currentIndex + 1) % visibleLinks.length;
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    nextIndex = (currentIndex - 1 + visibleLinks.length) % visibleLinks.length;
+  } else if (event.key === 'Home') {
+    nextIndex = 0;
+  } else if (event.key === 'End') {
+    nextIndex = visibleLinks.length - 1;
+  }
+  const nextLink = visibleLinks[nextIndex];
+  if (nextLink && typeof nextLink.focus === 'function') {
+    nextLink.focus({ preventScroll: true });
+  }
+}
+
+function setupNavKeyboardNavigation() {
+  if (!selectors.sectionNav || selectors.sectionNav.dataset.keyboard === 'bound') {
+    return;
+  }
+  selectors.sectionNav.addEventListener('keydown', handleNavKeydown);
+  selectors.sectionNav.dataset.keyboard = 'bound';
+}
+
+function syncSectionNavVisibility() {
+  if (!sectionNavState.initialized) {
+    return;
+  }
+  let hasVisible = false;
+  sectionNavState.items.forEach((item) => {
+    const { link, section } = item;
+    const sectionVisible = Boolean(section) && !section.hasAttribute('hidden');
+    if (sectionVisible) {
+      hasVisible = true;
+      link.hidden = false;
+      link.removeAttribute('aria-hidden');
+      link.removeAttribute('tabindex');
+      const rect = section.getBoundingClientRect();
+      sectionVisibility.set(item.headingId, {
+        ratio: computeVisibleRatio(rect),
+        top: rect.top,
+      });
+    } else {
+      link.hidden = true;
+      link.setAttribute('aria-hidden', 'true');
+      link.setAttribute('tabindex', '-1');
+      sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+      if (sectionObserver && section) {
+        sectionObserver.unobserve(section);
+      }
+    }
+  });
+
+  if (!hasVisible) {
+    updateActiveNavLink('');
+  } else if (!sectionNavState.activeHeadingId) {
+    const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
+    if (firstVisible) {
+      updateActiveNavLink(firstVisible.headingId);
+    }
+  } else {
+    const activeItem = sectionNavState.items.find((item) => item.headingId === sectionNavState.activeHeadingId);
+    if (!activeItem || activeItem.link.hidden) {
+      const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
+      updateActiveNavLink(firstVisible ? firstVisible.headingId : '');
+    }
+  }
+
+  evaluateActiveSection();
+  scheduleLayoutRefresh();
+}
+
+function initializeSectionNavigation() {
+  if (sectionNavState.initialized) {
+    scheduleLayoutRefresh();
+    return;
+  }
+  if (!selectors.sectionNav) {
+    return;
+  }
+  const links = Array.from(selectors.sectionNav.querySelectorAll('.section-nav__link'));
+  selectors.sectionNavLinks = links;
+  sectionNavState.items = [];
+  sectionNavState.itemBySection = new Map();
+  sectionVisibility.clear();
+
+  links.forEach((link) => {
+    const href = link.getAttribute('href') || '';
+    const headingId = href.startsWith('#') ? href.slice(1) : '';
+    const headingEl = headingId ? document.getElementById(headingId) : null;
+    const sectionEl = headingEl ? headingEl.closest('section[data-section]') : null;
+    if (!headingId || !sectionEl) {
+      link.hidden = true;
+      link.setAttribute('aria-hidden', 'true');
+      link.setAttribute('tabindex', '-1');
+      return;
+    }
+    const item = { link, headingId, section: sectionEl };
+    sectionNavState.items.push(item);
+    sectionNavState.itemBySection.set(sectionEl, item);
+    sectionVisibility.set(headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+  });
+
+  if (!sectionNavState.items.length) {
+    return;
+  }
+
+  selectors.sectionNavLinks = sectionNavState.items.map((item) => item.link);
+
+  sectionNavState.initialized = true;
+  setupNavKeyboardNavigation();
+
+  if (typeof ResizeObserver === 'function') {
+    if (layoutResizeObserver && typeof layoutResizeObserver.disconnect === 'function') {
+      layoutResizeObserver.disconnect();
+    }
+    layoutResizeObserver = new ResizeObserver(() => {
+      scheduleLayoutRefresh();
+    });
+    if (selectors.hero) {
+      layoutResizeObserver.observe(selectors.hero);
+    }
+    if (selectors.sectionNav) {
+      layoutResizeObserver.observe(selectors.sectionNav);
+    }
+  }
+
+  window.addEventListener('resize', scheduleLayoutRefresh, { passive: true });
+  window.addEventListener('load', scheduleLayoutRefresh);
+
+  updateLayoutMetrics();
+  syncSectionNavVisibility();
+}
+
+function cloneSettings(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function deepMerge(target, source) {
+  if (!source || typeof source !== 'object') {
+    return target;
+  }
+  Object.entries(source).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      target[key] = value.slice();
+    } else if (value && typeof value === 'object') {
+      if (!target[key] || typeof target[key] !== 'object') {
+        target[key] = {};
+      }
+      deepMerge(target[key], value);
+    } else if (value !== undefined) {
+      target[key] = value;
+    }
+  });
+  return target;
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isFinite(parsed)) {
+    let result = parsed;
+    if (Number.isFinite(min) && result < min) {
+      result = min;
+    }
+    if (Number.isFinite(max) && result > max) {
+      result = max;
+    }
+    return result;
+  }
+  return fallback;
+}
+
+function normalizeSettings(rawSettings) {
+  const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), rawSettings ?? {});
+  merged.dataSource.url = (merged.dataSource.url ?? '').trim();
+  merged.dataSource.useFallback = Boolean(merged.dataSource.useFallback);
+  merged.dataSource.fallbackCsv = typeof merged.dataSource.fallbackCsv === 'string'
+    ? merged.dataSource.fallbackCsv
+    : DEFAULT_SETTINGS.dataSource.fallbackCsv;
+  if (!merged.dataSource.feedback || typeof merged.dataSource.feedback !== 'object') {
+    merged.dataSource.feedback = cloneSettings(DEFAULT_SETTINGS.dataSource.feedback);
+  }
+  merged.dataSource.feedback.url = (merged.dataSource.feedback.url ?? '').trim();
+  merged.dataSource.feedback.useFallback = Boolean(merged.dataSource.feedback.useFallback);
+  merged.dataSource.feedback.fallbackCsv = typeof merged.dataSource.feedback.fallbackCsv === 'string'
+    ? merged.dataSource.feedback.fallbackCsv
+    : DEFAULT_SETTINGS.dataSource.feedback.fallbackCsv;
+
+  if (!merged.dataSource.ed || typeof merged.dataSource.ed !== 'object') {
+    merged.dataSource.ed = cloneSettings(DEFAULT_SETTINGS.dataSource.ed);
+  }
+  merged.dataSource.ed.url = (merged.dataSource.ed.url ?? '').trim();
+  merged.dataSource.ed.useFallback = Boolean(merged.dataSource.ed.useFallback);
+  merged.dataSource.ed.fallbackCsv = typeof merged.dataSource.ed.fallbackCsv === 'string'
+    ? merged.dataSource.ed.fallbackCsv
+    : DEFAULT_SETTINGS.dataSource.ed.fallbackCsv;
+
+  if (!merged.dataSource.historical || typeof merged.dataSource.historical !== 'object') {
+    merged.dataSource.historical = cloneSettings(DEFAULT_SETTINGS.dataSource.historical);
+  }
+  merged.dataSource.historical.enabled = merged.dataSource.historical.enabled !== false;
+  merged.dataSource.historical.url = (merged.dataSource.historical.url ?? '').trim();
+  merged.dataSource.historical.useFallback = Boolean(merged.dataSource.historical.useFallback);
+  merged.dataSource.historical.fallbackCsv = typeof merged.dataSource.historical.fallbackCsv === 'string'
+    ? merged.dataSource.historical.fallbackCsv
+    : DEFAULT_SETTINGS.dataSource.historical.fallbackCsv;
+  merged.dataSource.historical.label = merged.dataSource.historical.label != null
+    ? String(merged.dataSource.historical.label)
+    : DEFAULT_SETTINGS.dataSource.historical.label;
+
+  ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
+    .forEach((key) => {
+      merged.csv[key] = merged.csv[key] != null
+        ? String(merged.csv[key])
+        : String(DEFAULT_SETTINGS.csv[key] ?? '');
+    });
+
+  merged.calculations.windowDays = clampNumber(
+    merged.calculations.windowDays,
+    7,
+    365,
+    DEFAULT_SETTINGS.calculations.windowDays,
+  );
+  merged.calculations.recentDays = clampNumber(
+    merged.calculations.recentDays,
+    1,
+    60,
+    DEFAULT_SETTINGS.calculations.recentDays,
+  );
+  merged.calculations.nightStartHour = clampNumber(
+    merged.calculations.nightStartHour,
+    0,
+    23,
+    DEFAULT_SETTINGS.calculations.nightStartHour,
+  );
+  merged.calculations.nightEndHour = clampNumber(
+    merged.calculations.nightEndHour,
+    0,
+    23,
+    DEFAULT_SETTINGS.calculations.nightEndHour,
+  );
+
+  merged.output.pageTitle = merged.output.pageTitle != null ? String(merged.output.pageTitle) : DEFAULT_SETTINGS.output.pageTitle;
+  merged.output.title = merged.output.title != null ? String(merged.output.title) : DEFAULT_SETTINGS.output.title;
+  merged.output.subtitle = merged.output.subtitle != null ? String(merged.output.subtitle) : DEFAULT_SETTINGS.output.subtitle;
+  merged.output.kpiTitle = merged.output.kpiTitle != null ? String(merged.output.kpiTitle) : DEFAULT_SETTINGS.output.kpiTitle;
+  merged.output.kpiSubtitle = merged.output.kpiSubtitle != null ? String(merged.output.kpiSubtitle) : DEFAULT_SETTINGS.output.kpiSubtitle;
+  merged.output.chartsTitle = merged.output.chartsTitle != null ? String(merged.output.chartsTitle) : DEFAULT_SETTINGS.output.chartsTitle;
+  merged.output.chartsSubtitle = merged.output.chartsSubtitle != null ? String(merged.output.chartsSubtitle) : DEFAULT_SETTINGS.output.chartsSubtitle;
+  merged.output.recentTitle = merged.output.recentTitle != null ? String(merged.output.recentTitle) : DEFAULT_SETTINGS.output.recentTitle;
+  merged.output.recentSubtitle = merged.output.recentSubtitle != null ? String(merged.output.recentSubtitle) : DEFAULT_SETTINGS.output.recentSubtitle;
+  if (merged.output.monthlyTitle == null && merged.output.weeklyTitle != null) {
+    merged.output.monthlyTitle = merged.output.weeklyTitle;
+  }
+  if (merged.output.monthlySubtitle == null && merged.output.weeklySubtitle != null) {
+    merged.output.monthlySubtitle = merged.output.weeklySubtitle;
+  }
+  if (merged.output.showMonthly == null && merged.output.showWeekly != null) {
+    merged.output.showMonthly = merged.output.showWeekly;
+  }
+  merged.output.monthlyTitle = merged.output.monthlyTitle != null ? String(merged.output.monthlyTitle) : DEFAULT_SETTINGS.output.monthlyTitle;
+  merged.output.monthlySubtitle = merged.output.monthlySubtitle != null ? String(merged.output.monthlySubtitle) : DEFAULT_SETTINGS.output.monthlySubtitle;
+  merged.output.yearlyTitle = merged.output.yearlyTitle != null ? String(merged.output.yearlyTitle) : DEFAULT_SETTINGS.output.yearlyTitle;
+  merged.output.yearlySubtitle = merged.output.yearlySubtitle != null ? String(merged.output.yearlySubtitle) : DEFAULT_SETTINGS.output.yearlySubtitle;
+  merged.output.feedbackTitle = merged.output.feedbackTitle != null ? String(merged.output.feedbackTitle) : DEFAULT_SETTINGS.output.feedbackTitle;
+  merged.output.feedbackSubtitle = merged.output.feedbackSubtitle != null ? String(merged.output.feedbackSubtitle) : DEFAULT_SETTINGS.output.feedbackSubtitle;
+  merged.output.feedbackDescription = merged.output.feedbackDescription != null ? String(merged.output.feedbackDescription) : DEFAULT_SETTINGS.output.feedbackDescription;
+  merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
+  merged.output.scrollTopLabel = merged.output.scrollTopLabel != null ? String(merged.output.scrollTopLabel) : DEFAULT_SETTINGS.output.scrollTopLabel;
+  merged.output.tabOverviewLabel = merged.output.tabOverviewLabel != null ? String(merged.output.tabOverviewLabel) : DEFAULT_SETTINGS.output.tabOverviewLabel;
+  merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
+  merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
+  merged.output.edSubtitle = merged.output.edSubtitle != null ? String(merged.output.edSubtitle) : DEFAULT_SETTINGS.output.edSubtitle;
+  merged.output.showRecent = Boolean(merged.output.showRecent);
+  merged.output.showMonthly = Boolean(merged.output.showMonthly);
+  merged.output.showYearly = Boolean(merged.output.showYearly);
+  merged.output.showFeedback = Boolean(merged.output.showFeedback);
+
+  return merged;
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) {
+      return normalizeSettings({});
+    }
+    const parsed = JSON.parse(raw);
+    return normalizeSettings(parsed);
+  } catch (error) {
+    console.warn('Nepavyko įkelti nustatymų, naudojami numatytieji.', error);
+    return normalizeSettings({});
+  }
+}
+
+function saveSettings(currentSettings) {
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings));
+  } catch (error) {
+    console.warn('Nepavyko išsaugoti nustatymų.', error);
+  }
+}
+
+function applySettingsToText() {
+  TEXT.title = settings.output.title || DEFAULT_SETTINGS.output.title;
+  TEXT.subtitle = settings.output.subtitle || DEFAULT_SETTINGS.output.subtitle;
+  TEXT.tabs.overview = settings.output.tabOverviewLabel || DEFAULT_SETTINGS.output.tabOverviewLabel;
+  TEXT.tabs.ed = settings.output.tabEdLabel || DEFAULT_SETTINGS.output.tabEdLabel;
+  TEXT.ed.title = settings.output.edTitle || DEFAULT_SETTINGS.output.edTitle;
+  TEXT.ed.subtitle = settings.output.edSubtitle || DEFAULT_SETTINGS.output.edSubtitle;
+  TEXT.kpis.title = settings.output.kpiTitle || DEFAULT_SETTINGS.output.kpiTitle;
+  TEXT.kpis.subtitle = settings.output.kpiSubtitle || DEFAULT_SETTINGS.output.kpiSubtitle;
+  TEXT.charts.title = settings.output.chartsTitle || DEFAULT_SETTINGS.output.chartsTitle;
+  TEXT.charts.subtitle = settings.output.chartsSubtitle || DEFAULT_SETTINGS.output.chartsSubtitle;
+  TEXT.recent.title = settings.output.recentTitle || DEFAULT_SETTINGS.output.recentTitle;
+  TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
+  TEXT.monthly.title = settings.output.monthlyTitle || DEFAULT_SETTINGS.output.monthlyTitle;
+  TEXT.monthly.subtitle = settings.output.monthlySubtitle || DEFAULT_SETTINGS.output.monthlySubtitle;
+  TEXT.yearly.title = settings.output.yearlyTitle || DEFAULT_SETTINGS.output.yearlyTitle;
+  TEXT.yearly.subtitle = settings.output.yearlySubtitle || DEFAULT_SETTINGS.output.yearlySubtitle;
+  TEXT.feedback.title = settings.output.feedbackTitle || DEFAULT_SETTINGS.output.feedbackTitle;
+  TEXT.feedback.subtitle = settings.output.feedbackSubtitle || DEFAULT_SETTINGS.output.feedbackSubtitle;
+  TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
+  TEXT.feedback.trend.title = settings.output.feedbackTrendTitle || DEFAULT_SETTINGS.output.feedbackTrendTitle;
+  TEXT.scrollTop = settings.output.scrollTopLabel || DEFAULT_SETTINGS.output.scrollTopLabel;
+  const pageTitle = settings.output.pageTitle || TEXT.title || DEFAULT_SETTINGS.output.pageTitle;
+  document.title = pageTitle;
+}
+
+function applyFooterSource() {
+  if (selectors.footerSource) {
+    selectors.footerSource.textContent = settings.output.footerSource || DEFAULT_FOOTER_SOURCE;
+  }
+}
+
+function toggleSectionVisibility(element, isVisible) {
+  if (!element) {
+    return;
+  }
+  if (isVisible) {
+    element.removeAttribute('hidden');
+    element.removeAttribute('aria-hidden');
+  } else {
+    element.setAttribute('hidden', 'hidden');
+    element.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function applySectionVisibility() {
+  toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
+  toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
+  toggleSectionVisibility(selectors.yearlySection, settings.output.showYearly);
+  toggleSectionVisibility(selectors.feedbackSection, settings.output.showFeedback);
+  syncSectionNavVisibility();
+}
+
+function parseCandidateList(value, fallback = '') {
+  const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
+  return base
+    .replace(/\r\n/g, '\n')
+    .split(/[\n,|;]+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+}
+
+function toHeaderCandidates(value, fallback) {
+  return parseCandidateList(value, fallback);
+}
+
+function toNormalizedList(value, fallback) {
+  return parseCandidateList(value, fallback).map((token) => token.toLowerCase());
+}
+
+function buildCsvRuntime(csvSettings) {
+  const fallback = DEFAULT_SETTINGS.csv;
+  const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
+  const departmentHeaders = departmentHasValue
+    ? toHeaderCandidates(csvSettings.department, '')
+    : [];
+
+  const runtime = {
+    arrivalHeaders: toHeaderCandidates(csvSettings.arrival, fallback.arrival),
+    dischargeHeaders: toHeaderCandidates(csvSettings.discharge, fallback.discharge),
+    dayNightHeaders: toHeaderCandidates(csvSettings.dayNight, fallback.dayNight),
+    gmpHeaders: toHeaderCandidates(csvSettings.gmp, fallback.gmp),
+    departmentHeaders,
+    trueValues: toNormalizedList(csvSettings.trueValues, fallback.trueValues),
+    hospitalizedValues: toNormalizedList(csvSettings.hospitalizedValues, fallback.hospitalizedValues),
+    nightKeywords: toNormalizedList(csvSettings.nightKeywords, fallback.nightKeywords),
+    dayKeywords: toNormalizedList(csvSettings.dayKeywords, fallback.dayKeywords),
+    labels: {
+      arrival: csvSettings.arrival || fallback.arrival,
+      discharge: csvSettings.discharge || fallback.discharge,
+      dayNight: csvSettings.dayNight || fallback.dayNight,
+      gmp: csvSettings.gmp || fallback.gmp,
+      department: departmentHasValue ? csvSettings.department : fallback.department,
+    },
+  };
+  runtime.hasHospitalizedValues = runtime.hospitalizedValues.length > 0;
+  runtime.requireDepartment = departmentHasValue;
+  return runtime;
+}
+
+function resolveColumnIndex(headerNormalized, candidates) {
+  if (!Array.isArray(candidates) || !candidates.length) {
+    return -1;
+  }
+  for (const candidate of candidates) {
+    const trimmed = candidate.trim();
+    const match = headerNormalized.find((column) => column.original === trimmed);
+    if (match) {
+      return match.index;
+    }
+  }
+  for (const candidate of candidates) {
+    const normalized = candidate.trim().toLowerCase();
+    const match = headerNormalized.find((column) => column.normalized === normalized);
+    if (match) {
+      return match.index;
+    }
+  }
+  for (const candidate of candidates) {
+    const normalized = candidate.trim().toLowerCase();
+    const match = headerNormalized.find((column) => column.normalized.includes(normalized));
+    if (match) {
+      return match.index;
+    }
+  }
+  return -1;
+}
+
+function matchesWildcard(normalized, candidate) {
+  if (!candidate) {
+    return false;
+  }
+  if (candidate === '*') {
+    return normalized.length > 0;
+  }
+  if (!candidate.includes('*')) {
+    return normalized === candidate;
+  }
+  const parts = candidate.split('*').filter((part) => part.length > 0);
+  if (!parts.length) {
+    return normalized.length > 0;
+  }
+  return parts.every((fragment) => normalized.includes(fragment));
+}
+
+function detectHospitalized(value, csvRuntime) {
+  const raw = value != null ? String(value).trim() : '';
+  if (!raw) {
+    return false;
+  }
+  if (!csvRuntime.hasHospitalizedValues) {
+    return true;
+  }
+  const normalized = raw.toLowerCase();
+  return csvRuntime.hospitalizedValues.some((candidate) => matchesWildcard(normalized, candidate));
+}
+
+function getField(form, name) {
+  if (!form) {
+    return null;
+  }
+  const node = form.elements.namedItem(name);
+  if (!node) {
+    return null;
+  }
+  if (typeof RadioNodeList !== 'undefined' && node instanceof RadioNodeList) {
+    return node[0] ?? null;
+  }
+  return node;
+}
+
+function populateSettingsForm() {
+  const form = selectors.settingsForm;
+  if (!form) {
+    return;
+  }
+  const assign = (name, value) => {
+    const field = getField(form, name);
+    if (!field) {
+      return;
+    }
+    if ('type' in field && field.type === 'checkbox') {
+      field.checked = Boolean(value);
+    } else if ('value' in field) {
+      field.value = value ?? '';
+    }
+  };
+
+  assign('dataSource.url', settings.dataSource.url);
+  assign('dataSource.useFallback', settings.dataSource.useFallback);
+  assign('dataSource.fallbackCsv', settings.dataSource.fallbackCsv);
+  assign('dataSource.feedback.url', settings.dataSource.feedback?.url);
+  assign('dataSource.feedback.useFallback', settings.dataSource.feedback?.useFallback);
+  assign('dataSource.feedback.fallbackCsv', settings.dataSource.feedback?.fallbackCsv);
+  assign('dataSource.ed.url', settings.dataSource.ed?.url);
+  assign('dataSource.ed.useFallback', settings.dataSource.ed?.useFallback);
+  assign('dataSource.ed.fallbackCsv', settings.dataSource.ed?.fallbackCsv);
+  assign('dataSource.historical.enabled', settings.dataSource.historical?.enabled);
+  assign('dataSource.historical.url', settings.dataSource.historical?.url);
+  assign('dataSource.historical.useFallback', settings.dataSource.historical?.useFallback);
+  assign('dataSource.historical.fallbackCsv', settings.dataSource.historical?.fallbackCsv);
+
+  assign('csv.arrival', settings.csv.arrival);
+  assign('csv.discharge', settings.csv.discharge);
+  assign('csv.dayNight', settings.csv.dayNight);
+  assign('csv.gmp', settings.csv.gmp);
+  assign('csv.department', settings.csv.department);
+  assign('csv.trueValues', settings.csv.trueValues);
+  assign('csv.hospitalizedValues', settings.csv.hospitalizedValues);
+  assign('csv.nightKeywords', settings.csv.nightKeywords);
+  assign('csv.dayKeywords', settings.csv.dayKeywords);
+
+  assign('calculations.windowDays', settings.calculations.windowDays);
+  assign('calculations.recentDays', settings.calculations.recentDays);
+  assign('calculations.nightStartHour', settings.calculations.nightStartHour);
+  assign('calculations.nightEndHour', settings.calculations.nightEndHour);
+
+  assign('output.pageTitle', settings.output.pageTitle);
+  assign('output.title', settings.output.title);
+  assign('output.subtitle', settings.output.subtitle);
+  assign('output.tabOverviewLabel', settings.output.tabOverviewLabel);
+  assign('output.tabEdLabel', settings.output.tabEdLabel);
+  assign('output.kpiTitle', settings.output.kpiTitle);
+  assign('output.kpiSubtitle', settings.output.kpiSubtitle);
+  assign('output.chartsTitle', settings.output.chartsTitle);
+  assign('output.chartsSubtitle', settings.output.chartsSubtitle);
+  assign('output.recentTitle', settings.output.recentTitle);
+  assign('output.recentSubtitle', settings.output.recentSubtitle);
+  assign('output.monthlyTitle', settings.output.monthlyTitle);
+  assign('output.monthlySubtitle', settings.output.monthlySubtitle);
+  assign('output.yearlyTitle', settings.output.yearlyTitle);
+  assign('output.yearlySubtitle', settings.output.yearlySubtitle);
+  assign('output.feedbackTitle', settings.output.feedbackTitle);
+  assign('output.feedbackSubtitle', settings.output.feedbackSubtitle);
+  assign('output.feedbackDescription', settings.output.feedbackDescription);
+  assign('output.edTitle', settings.output.edTitle);
+  assign('output.edSubtitle', settings.output.edSubtitle);
+  assign('output.footerSource', settings.output.footerSource);
+  assign('output.showRecent', settings.output.showRecent);
+  assign('output.showMonthly', settings.output.showMonthly);
+  assign('output.showYearly', settings.output.showYearly);
+  assign('output.showFeedback', settings.output.showFeedback);
+}
+
+function extractSettingsFromForm(form) {
+  const result = {
+    dataSource: {
+      url: '',
+      useFallback: false,
+      fallbackCsv: '',
+      feedback: {
+        url: '',
+        useFallback: false,
+        fallbackCsv: '',
+      },
+      ed: {
+        url: '',
+        useFallback: false,
+        fallbackCsv: '',
+      },
+      historical: {
+        enabled: false,
+        url: '',
+        useFallback: false,
+        fallbackCsv: '',
+      },
+    },
+    csv: {
+      arrival: '',
+      discharge: '',
+      dayNight: '',
+      gmp: '',
+      department: '',
+      trueValues: '',
+      hospitalizedValues: '',
+      nightKeywords: '',
+      dayKeywords: '',
+    },
+    calculations: {
+      windowDays: '',
+      recentDays: '',
+      nightStartHour: '',
+      nightEndHour: '',
+    },
+    output: {
+      pageTitle: '',
+      title: '',
+      subtitle: '',
+      kpiTitle: '',
+      kpiSubtitle: '',
+      chartsTitle: '',
+      chartsSubtitle: '',
+      recentTitle: '',
+      recentSubtitle: '',
+      monthlyTitle: '',
+      monthlySubtitle: '',
+      yearlyTitle: '',
+      yearlySubtitle: '',
+      feedbackTitle: '',
+      feedbackSubtitle: '',
+      feedbackDescription: '',
+      footerSource: '',
+      showRecent: false,
+      showMonthly: false,
+      showYearly: false,
+      showFeedback: false,
+    },
+  };
+
+  const readText = (name) => {
+    const field = getField(form, name);
+    if (!field || !('value' in field)) {
+      return '';
+    }
+    return String(field.value ?? '');
+  };
+
+  const readCheckbox = (name) => {
+    const field = getField(form, name);
+    if (!field || !('type' in field) || field.type !== 'checkbox') {
+      return false;
+    }
+    return Boolean(field.checked);
+  };
+
+  result.dataSource.url = readText('dataSource.url').trim();
+  result.dataSource.useFallback = readCheckbox('dataSource.useFallback');
+  result.dataSource.fallbackCsv = readText('dataSource.fallbackCsv').trim();
+  result.dataSource.feedback.url = readText('dataSource.feedback.url').trim();
+  result.dataSource.feedback.useFallback = readCheckbox('dataSource.feedback.useFallback');
+  result.dataSource.feedback.fallbackCsv = readText('dataSource.feedback.fallbackCsv').trim();
+  result.dataSource.ed.url = readText('dataSource.ed.url').trim();
+  result.dataSource.ed.useFallback = readCheckbox('dataSource.ed.useFallback');
+  result.dataSource.ed.fallbackCsv = readText('dataSource.ed.fallbackCsv').trim();
+  result.dataSource.historical.enabled = readCheckbox('dataSource.historical.enabled');
+  result.dataSource.historical.url = readText('dataSource.historical.url').trim();
+  result.dataSource.historical.useFallback = readCheckbox('dataSource.historical.useFallback');
+  result.dataSource.historical.fallbackCsv = readText('dataSource.historical.fallbackCsv').trim();
+
+  result.csv.arrival = readText('csv.arrival').trim();
+  result.csv.discharge = readText('csv.discharge').trim();
+  result.csv.dayNight = readText('csv.dayNight').trim();
+  result.csv.gmp = readText('csv.gmp').trim();
+  result.csv.department = readText('csv.department').trim();
+  result.csv.trueValues = readText('csv.trueValues').trim();
+  result.csv.hospitalizedValues = readText('csv.hospitalizedValues').trim();
+  result.csv.nightKeywords = readText('csv.nightKeywords').trim();
+  result.csv.dayKeywords = readText('csv.dayKeywords').trim();
+
+  result.calculations.windowDays = readText('calculations.windowDays').trim();
+  result.calculations.recentDays = readText('calculations.recentDays').trim();
+  result.calculations.nightStartHour = readText('calculations.nightStartHour').trim();
+  result.calculations.nightEndHour = readText('calculations.nightEndHour').trim();
+
+  result.output.pageTitle = readText('output.pageTitle').trim();
+  result.output.title = readText('output.title').trim();
+  result.output.subtitle = readText('output.subtitle').trim();
+  result.output.tabOverviewLabel = readText('output.tabOverviewLabel').trim();
+  result.output.tabEdLabel = readText('output.tabEdLabel').trim();
+  result.output.kpiTitle = readText('output.kpiTitle').trim();
+  result.output.kpiSubtitle = readText('output.kpiSubtitle').trim();
+  result.output.chartsTitle = readText('output.chartsTitle').trim();
+  result.output.chartsSubtitle = readText('output.chartsSubtitle').trim();
+  result.output.recentTitle = readText('output.recentTitle').trim();
+  result.output.recentSubtitle = readText('output.recentSubtitle').trim();
+  result.output.monthlyTitle = readText('output.monthlyTitle').trim();
+  result.output.monthlySubtitle = readText('output.monthlySubtitle').trim();
+  result.output.yearlyTitle = readText('output.yearlyTitle').trim();
+  result.output.yearlySubtitle = readText('output.yearlySubtitle').trim();
+  result.output.feedbackTitle = readText('output.feedbackTitle').trim();
+  result.output.feedbackSubtitle = readText('output.feedbackSubtitle').trim();
+  result.output.feedbackDescription = readText('output.feedbackDescription').trim();
+  result.output.edTitle = readText('output.edTitle').trim();
+  result.output.edSubtitle = readText('output.edSubtitle').trim();
+  result.output.footerSource = readText('output.footerSource').trim();
+  result.output.showRecent = readCheckbox('output.showRecent');
+  result.output.showMonthly = readCheckbox('output.showMonthly');
+  result.output.showYearly = readCheckbox('output.showYearly');
+  result.output.showFeedback = readCheckbox('output.showFeedback');
+
+  return result;
+}
+
+function openSettingsDialog() {
+  if (!selectors.settingsDialog) {
+    return;
+  }
+  if (selectors.settingsDialog.hasAttribute('open')) {
+    return;
+  }
+  populateSettingsForm();
+  if (typeof selectors.settingsDialog.showModal === 'function') {
+    selectors.settingsDialog.showModal();
+  } else {
+    selectors.settingsDialog.setAttribute('open', 'open');
+  }
+  const focusable = selectors.settingsForm?.querySelector('input, textarea, select, button');
+  if (focusable && typeof focusable.focus === 'function') {
+    focusable.focus();
+  }
+}
+
+function closeSettingsDialog() {
+  if (!selectors.settingsDialog) {
+    return;
+  }
+  if (typeof selectors.settingsDialog.close === 'function') {
+    selectors.settingsDialog.close();
+  } else {
+    selectors.settingsDialog.removeAttribute('open');
+  }
+  if (selectors.openSettingsBtn && typeof selectors.openSettingsBtn.focus === 'function') {
+    selectors.openSettingsBtn.focus();
+  }
+}
+
+function handleSettingsSubmit(event) {
+  event.preventDefault();
+  if (!selectors.settingsForm) {
+    return;
+  }
+  const extracted = extractSettingsFromForm(selectors.settingsForm);
+  settings = normalizeSettings(extracted);
+  const previousFilters = dashboardState.kpi.filters;
+  const defaultFilters = getDefaultKpiFilters();
+  dashboardState.kpi.filters = {
+    ...defaultFilters,
+    shift: previousFilters.shift,
+    arrival: previousFilters.arrival,
+    disposition: previousFilters.disposition,
+  };
+  refreshKpiWindowOptions();
+  syncKpiFilterControls();
+  saveSettings(settings);
+  applySettingsToText();
+  applyTextContent();
+  applyFooterSource();
+  applySectionVisibility();
+  closeSettingsDialog();
+  loadDashboard();
+}
+
+function handleResetSettings() {
+  const confirmed = window.confirm('Atstatyti numatytuosius nustatymus?');
+  if (!confirmed) {
+    return;
+  }
+  settings = normalizeSettings({});
+  dashboardState.kpi.filters = getDefaultKpiFilters();
+  refreshKpiWindowOptions();
+  syncKpiFilterControls();
+  saveSettings(settings);
+  applySettingsToText();
+  applyTextContent();
+  applyFooterSource();
+  applySectionVisibility();
+  populateSettingsForm();
+  loadDashboard();
+}
+
+/**
+ * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
+ */
+const dashboardState = {
+  charts: {
+    daily: null,
+    dow: null,
+    funnel: null,
+    feedbackTrend: null,
+    edDispositions: null,
+  },
+  chartLib: null,
+  usingFallback: false,
+  lastErrorMessage: '',
+  rawRecords: [],
+  dailyStats: [],
+  dataMeta: null,
+  chartPeriod: 30,
+  chartYear: null,
+  chartData: {
+    baseDaily: [],
+    baseRecords: [],
+    dailyWindow: [],
+    funnel: null,
+    heatmap: null,
+  },
+  theme: 'light',
+  fullscreen: false,
+  tvMode: false,
+  activeTab: 'overview',
+  compare: {
+    active: false,
+    selections: [],
+  },
+  contrastWarning: false,
+  kpi: {
+    filters: getDefaultKpiFilters(),
+    records: [],
+    daily: [],
+  },
+  feedback: {
+    summary: null,
+    monthly: [],
+    usingFallback: false,
+    lastErrorMessage: '',
+    trendWindow: 6,
+  },
+  ed: {
+    records: [],
+    summary: null,
+    dispositions: [],
+    daily: [],
+    usingFallback: false,
+    lastErrorMessage: '',
+    error: null,
+    updatedAt: null,
+  },
+};
+
+function setFullscreenMode(active, options = {}) {
+  const previousState = dashboardState.fullscreen === true;
+  const allowFullscreen = dashboardState.activeTab === 'ed';
+  const requestedActive = Boolean(active);
+  const isActive = requestedActive && allowFullscreen;
+  dashboardState.fullscreen = isActive;
+  if (isActive) {
+    document.body.setAttribute('data-fullscreen', 'true');
+  } else {
+    document.body.removeAttribute('data-fullscreen');
+  }
+  if (selectors.tabSwitcher) {
+    if (isActive) {
+      selectors.tabSwitcher.setAttribute('hidden', 'hidden');
+      selectors.tabSwitcher.setAttribute('aria-hidden', 'true');
+    } else {
+      selectors.tabSwitcher.removeAttribute('hidden');
+      selectors.tabSwitcher.removeAttribute('aria-hidden');
+    }
+  }
+  const shouldRestoreFocus = options.restoreFocus;
+  if (!isActive
+    && previousState
+    && shouldRestoreFocus
+    && selectors.edNavButton
+    && typeof selectors.edNavButton.focus === 'function') {
+    selectors.edNavButton.focus();
+  }
+  updateFullscreenControls();
+}
+
+function updateFullscreenControls() {
+  if (!selectors.edNavButton) {
+    return;
+  }
+  const panelLabel = selectors.edNavButton.dataset.panelLabel
+    || settings?.output?.tabEdLabel
+    || TEXT.tabs.ed;
+  const openLabel = selectors.edNavButton.dataset.openLabel
+    || (typeof TEXT.edToggle?.open === 'function'
+      ? TEXT.edToggle.open(panelLabel)
+      : `Atidaryti ${panelLabel}`);
+  const closeLabel = selectors.edNavButton.dataset.closeLabel
+    || (typeof TEXT.edToggle?.close === 'function'
+      ? TEXT.edToggle.close(panelLabel)
+      : `Uždaryti ${panelLabel}`);
+  const isFullscreen = dashboardState.fullscreen === true;
+  const isEdActive = dashboardState.activeTab === 'ed';
+  const activeLabel = isFullscreen && isEdActive ? closeLabel : openLabel;
+  selectors.edNavButton.setAttribute('aria-label', activeLabel);
+  selectors.edNavButton.title = activeLabel;
+  selectors.edNavButton.dataset.fullscreenAvailable = isEdActive ? 'true' : 'false';
+  updateTvToggleControls();
+}
+
+function updateTvToggleControls() {
+  if (!selectors.edTvToggleBtn) {
+    return;
+  }
+  const toggleTexts = TEXT.edTv?.toggle || {};
+  const isActive = dashboardState.tvMode === true && dashboardState.activeTab === 'ed';
+  const label = isActive
+    ? (toggleTexts.exit || 'Išjungti ekraną')
+    : (toggleTexts.enter || 'Įjungti ekraną');
+  const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
+  if (labelTarget) {
+    labelTarget.textContent = label;
+  }
+  selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
+  selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
+  selectors.edTvToggleBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+}
+
+function updateEdTvClock() {
+  if (!selectors.edTvClockTime || !selectors.edTvClockDate) {
+    return;
+  }
+  const now = new Date();
+  selectors.edTvClockTime.textContent = tvTimeFormatter.format(now);
+  selectors.edTvClockDate.textContent = capitalizeSentence(tvDateFormatter.format(now));
+}
+
+function startTvClock() {
+  updateEdTvClock();
+  if (tvState.clockHandle != null) {
+    return;
+  }
+  tvState.clockHandle = window.setInterval(updateEdTvClock, 15000);
+}
+
+function stopTvClock() {
+  if (tvState.clockHandle != null) {
+    window.clearInterval(tvState.clockHandle);
+    tvState.clockHandle = null;
+  }
+}
+
+function setTvMode(active, options = {}) {
+  if (!selectors.edTvPanel) {
+    dashboardState.tvMode = false;
+    document.body.removeAttribute('data-tv-mode');
+    if (selectors.edStandardSection) {
+      selectors.edStandardSection.removeAttribute('hidden');
+      selectors.edStandardSection.removeAttribute('aria-hidden');
+    }
+    stopTvClock();
+    if (!options.silent) {
+      scheduleLayoutRefresh();
+    }
+    return;
+  }
+  const shouldEnable = Boolean(active);
+  const previous = dashboardState.tvMode === true;
+  if (shouldEnable === previous && !options.force) {
+    updateTvToggleControls();
+    return;
+  }
+  dashboardState.tvMode = shouldEnable;
+  if (shouldEnable) {
+    document.body.setAttribute('data-tv-mode', 'true');
+    if (selectors.edStandardSection) {
+      selectors.edStandardSection.setAttribute('hidden', 'hidden');
+      selectors.edStandardSection.setAttribute('aria-hidden', 'true');
+    }
+    if (selectors.edTvPanel) {
+      selectors.edTvPanel.removeAttribute('hidden');
+      selectors.edTvPanel.setAttribute('aria-hidden', 'false');
+    }
+    startTvClock();
+    setFullscreenMode(true);
+    const dataset = dashboardState.ed || {};
+    const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
+    const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
+    const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
+    const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
+      || Number.isFinite(summary?.occupiedBeds)
+      || Number.isFinite(summary?.nursePatientsPerStaff)
+      || Number.isFinite(summary?.doctorPatientsPerStaff);
+    const displayVariant = summaryMode === 'snapshot'
+      || (summaryMode === 'hybrid' && hasSnapshotMetrics)
+      ? 'snapshot'
+      : 'legacy';
+    const statusInfo = buildEdStatus(summary, dataset, displayVariant);
+    updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
+  } else {
+    document.body.removeAttribute('data-tv-mode');
+    if (selectors.edStandardSection) {
+      selectors.edStandardSection.removeAttribute('hidden');
+      selectors.edStandardSection.removeAttribute('aria-hidden');
+    }
+    if (selectors.edTvPanel) {
+      selectors.edTvPanel.setAttribute('hidden', 'hidden');
+      selectors.edTvPanel.setAttribute('aria-hidden', 'true');
+    }
+    stopTvClock();
+  }
+  updateTvToggleControls();
+  if (!options.silent) {
+    scheduleLayoutRefresh();
+  }
+}
+
+/**
+ * Pirminis tekstų suleidimas iš konfigūracijos (galima perrašyti iš kitų failų).
+ */
+function applyTextContent() {
+  selectors.title.textContent = TEXT.title;
+  if (selectors.stickyTitle) {
+    selectors.stickyTitle.textContent = TEXT.title;
+  }
+  selectors.subtitle.textContent = TEXT.subtitle;
+  if (selectors.tabOverview) {
+    selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
+  }
+  if (selectors.edNavButton) {
+    const edNavLabel = settings.output.tabEdLabel || TEXT.tabs.ed;
+    const openLabel = typeof TEXT.edToggle?.open === 'function'
+      ? TEXT.edToggle.open(edNavLabel)
+      : `Atidaryti ${edNavLabel}`;
+    const closeLabel = typeof TEXT.edToggle?.close === 'function'
+      ? TEXT.edToggle.close(edNavLabel)
+      : `Uždaryti ${edNavLabel}`;
+    selectors.edNavButton.dataset.panelLabel = edNavLabel;
+    selectors.edNavButton.dataset.openLabel = openLabel;
+    selectors.edNavButton.dataset.closeLabel = closeLabel;
+    const isActive = dashboardState.activeTab === 'ed';
+    const currentLabel = isActive ? closeLabel : openLabel;
+    selectors.edNavButton.setAttribute('aria-label', currentLabel);
+    selectors.edNavButton.title = currentLabel;
+  }
+  if (selectors.closeEdPanelBtn) {
+    const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
+    const closeLabel = typeof TEXT.ed?.closeButton === 'function'
+      ? TEXT.ed.closeButton(overviewLabel)
+      : (TEXT.ed?.closeButton || `Grįžti į ${overviewLabel}`);
+    selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
+    selectors.closeEdPanelBtn.title = closeLabel;
+    const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
+    if (labelSpan) {
+      labelSpan.textContent = closeLabel;
+    } else {
+      selectors.closeEdPanelBtn.textContent = closeLabel;
+    }
+  }
+  if (selectors.edTvToggleBtn) {
+    const toggleTexts = TEXT.edTv?.toggle || {};
+    const isActive = dashboardState.tvMode === true;
+    const label = isActive
+      ? (toggleTexts.exit || 'Išjungti ekraną')
+      : (toggleTexts.enter || 'Įjungti ekraną');
+    const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
+    if (labelTarget) {
+      labelTarget.textContent = label;
+    }
+    selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
+    selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
+  }
+  if (selectors.edTvTitle && TEXT.edTv?.title) {
+    selectors.edTvTitle.textContent = TEXT.edTv.title;
+  }
+  if (selectors.edTvSubtitle) {
+    selectors.edTvSubtitle.textContent = TEXT.edTv?.subtitle || selectors.edTvSubtitle.textContent || '';
+  }
+  if (selectors.refreshBtn) {
+    selectors.refreshBtn.setAttribute('aria-label', TEXT.refresh);
+    selectors.refreshBtn.title = `${TEXT.refresh} (R)`;
+  }
+  if (selectors.openSettingsBtn) {
+    selectors.openSettingsBtn.setAttribute('aria-label', TEXT.settings);
+    selectors.openSettingsBtn.title = `${TEXT.settings} (Ctrl+,)`;
+  }
+  if (selectors.themeToggleBtn) {
+    selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
+    selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
+  }
+  updateFullscreenControls();
+  selectors.kpiHeading.textContent = TEXT.kpis.title;
+  selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
+  selectors.chartHeading.textContent = TEXT.charts.title;
+  selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+  if (selectors.chartYearLabel) {
+    selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
+  }
+  if (selectors.chartYearSelect) {
+    const firstOption = selectors.chartYearSelect.querySelector('option[value="all"]');
+    if (firstOption) {
+      firstOption.textContent = TEXT.charts.yearFilterAll;
+    }
+  }
+  selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
+  if (selectors.dailyCaptionContext) {
+    selectors.dailyCaptionContext.textContent = '';
+  }
+  selectors.dowCaption.textContent = TEXT.charts.dowCaption;
+  const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
+    ? TEXT.charts.funnelCaptionWithYear(null)
+    : TEXT.charts.funnelCaption;
+  selectors.funnelCaption.textContent = funnelCaptionText;
+  selectors.heatmapCaption.textContent = TEXT.charts.heatmapCaption;
+  selectors.recentHeading.textContent = TEXT.recent.title;
+  selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
+  selectors.recentCaption.textContent = TEXT.recent.caption;
+  selectors.monthlyHeading.textContent = TEXT.monthly.title;
+  selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
+  selectors.monthlyCaption.textContent = TEXT.monthly.caption;
+  if (selectors.yearlyHeading) {
+    selectors.yearlyHeading.textContent = TEXT.yearly.title;
+  }
+  if (selectors.yearlySubtitle) {
+    selectors.yearlySubtitle.textContent = TEXT.yearly.subtitle;
+  }
+  if (selectors.yearlyCaption) {
+    selectors.yearlyCaption.textContent = TEXT.yearly.caption;
+  }
+  selectors.feedbackHeading.textContent = TEXT.feedback.title;
+  selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
+  if (selectors.feedbackDescription) {
+    selectors.feedbackDescription.textContent = TEXT.feedback.description;
+  }
+  if (selectors.feedbackTrendTitle) {
+    selectors.feedbackTrendTitle.textContent = TEXT.feedback.trend.title;
+  }
+  updateFeedbackTrendSubtitle();
+  if (selectors.feedbackTrendControlsLabel) {
+    selectors.feedbackTrendControlsLabel.textContent = TEXT.feedback.trend.controlsLabel;
+  }
+  if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
+    const periodConfig = Array.isArray(TEXT.feedback.trend.periods) ? TEXT.feedback.trend.periods : [];
+    selectors.feedbackTrendButtons.forEach((button) => {
+      const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+      const config = periodConfig.find((item) => Number.parseInt(item?.months, 10) === months);
+      if (config?.label) {
+        button.textContent = config.label;
+      }
+      if (config?.hint) {
+        button.title = config.hint;
+      } else {
+        button.removeAttribute('title');
+      }
+    });
+  }
+  syncFeedbackTrendControls();
+  if (selectors.feedbackCaption) {
+    selectors.feedbackCaption.textContent = TEXT.feedback.table.caption;
+  }
+  if (selectors.feedbackColumnMonth) {
+    selectors.feedbackColumnMonth.textContent = TEXT.feedback.table.headers.month;
+  }
+  if (selectors.feedbackColumnResponses) {
+    selectors.feedbackColumnResponses.textContent = TEXT.feedback.table.headers.responses;
+  }
+  if (selectors.feedbackColumnOverall) {
+    selectors.feedbackColumnOverall.textContent = TEXT.feedback.table.headers.overall;
+  }
+  if (selectors.feedbackColumnDoctors) {
+    selectors.feedbackColumnDoctors.textContent = TEXT.feedback.table.headers.doctors;
+  }
+  if (selectors.feedbackColumnNurses) {
+    selectors.feedbackColumnNurses.textContent = TEXT.feedback.table.headers.nurses;
+  }
+  if (selectors.feedbackColumnAides) {
+    selectors.feedbackColumnAides.textContent = TEXT.feedback.table.headers.aides;
+  }
+  if (selectors.feedbackColumnWaiting) {
+    selectors.feedbackColumnWaiting.textContent = TEXT.feedback.table.headers.waiting;
+  }
+  if (selectors.feedbackColumnContact) {
+    selectors.feedbackColumnContact.textContent = TEXT.feedback.table.headers.contact;
+  }
+  if (selectors.edHeading) {
+    selectors.edHeading.textContent = settings.output.edTitle || TEXT.ed.title;
+  }
+  if (selectors.edSubtitle) {
+    selectors.edSubtitle.textContent = settings.output.edSubtitle || TEXT.ed.subtitle;
+  }
+  if (selectors.edStatus) {
+    selectors.edStatus.textContent = TEXT.ed.status.loading;
+    selectors.edStatus.dataset.tone = 'info';
+  }
+  if (selectors.edStatusTimestamp) {
+    selectors.edStatusTimestamp.textContent = '';
+    selectors.edStatusTimestamp.hidden = true;
+  }
+  if (selectors.compareToggle) {
+    selectors.compareToggle.textContent = TEXT.compare.toggle;
+  }
+  if (selectors.scrollTopBtn) {
+    selectors.scrollTopBtn.textContent = TEXT.scrollTop;
+    selectors.scrollTopBtn.setAttribute('aria-label', TEXT.scrollTop);
+    selectors.scrollTopBtn.title = `${TEXT.scrollTop} (Home)`;
+  }
+  if (selectors.compareSummary) {
+    selectors.compareSummary.textContent = TEXT.compare.prompt;
+  }
+  hideStatusNote();
+}
+
+/**
+ * Pagalbinė funkcija būsenos juostai atnaujinti.
+ * @param {('loading'|'success'|'error')} type
+ * @param {string} [details]
+ */
+function hideStatusNote() {
+  if (!selectors.statusNote) return;
+  selectors.statusNote.textContent = '';
+  selectors.statusNote.dataset.tone = 'info';
+  selectors.statusNote.setAttribute('hidden', 'hidden');
+}
+
+function showStatusNote(message, tone = 'info') {
+  if (!selectors.statusNote) return;
+  if (!message) {
+    hideStatusNote();
+    return;
+  }
+  selectors.statusNote.textContent = message;
+  selectors.statusNote.dataset.tone = tone;
+  selectors.statusNote.removeAttribute('hidden');
+}
+
+function updateThemeToggleState(theme) {
+  if (!selectors.themeToggleBtn) {
+    return;
+  }
+  const isDark = theme === 'dark';
+  selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
+  selectors.themeToggleBtn.dataset.theme = theme;
+  selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
+}
+
+function parseColorValue(value) {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (trimmed.startsWith('#')) {
+    const hex = trimmed.slice(1);
+    if (hex.length === 3) {
+      const r = parseInt(hex[0] + hex[0], 16);
+      const g = parseInt(hex[1] + hex[1], 16);
+      const b = parseInt(hex[2] + hex[2], 16);
+      return { r, g, b };
+    }
+    if (hex.length === 6) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      if ([r, g, b].every((component) => Number.isFinite(component))) {
+        return { r, g, b };
+      }
+    }
+    return null;
+  }
+  const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(',').map((part) => Number.parseFloat(part.trim()));
+    if (parts.length >= 3 && parts.slice(0, 3).every((component) => Number.isFinite(component))) {
+      return { r: parts[0], g: parts[1], b: parts[2] };
+    }
+  }
+  return null;
+}
+
+function computeLuminance(rgb) {
+  if (!rgb) {
+    return null;
+  }
+  const normalize = (channel) => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  const r = normalize(rgb.r);
+  const g = normalize(rgb.g);
+  const b = normalize(rgb.b);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function checkKpiContrast() {
+  const rootStyles = getComputedStyle(document.body);
+  const surface = parseColorValue(rootStyles.getPropertyValue('--color-surface'));
+  const text = parseColorValue(rootStyles.getPropertyValue('--color-text'));
+  const surfaceLum = computeLuminance(surface);
+  const textLum = computeLuminance(text);
+  if (surfaceLum == null || textLum == null) {
+    dashboardState.contrastWarning = false;
+    return;
+  }
+  const lighter = Math.max(surfaceLum, textLum);
+  const darker = Math.min(surfaceLum, textLum);
+  const ratio = (lighter + 0.05) / (darker + 0.05);
+  if (ratio < 4.5) {
+    dashboardState.contrastWarning = true;
+    const existingMessage = selectors.statusNote && !selectors.statusNote.hasAttribute('hidden')
+      ? selectors.statusNote.textContent
+      : '';
+    if (existingMessage && existingMessage !== TEXT.theme.contrastWarning) {
+      const combined = existingMessage.includes(TEXT.theme.contrastWarning)
+        ? existingMessage
+        : `${existingMessage} ${TEXT.theme.contrastWarning}`;
+      showStatusNote(combined, 'warning');
+    } else {
+      showStatusNote(TEXT.theme.contrastWarning, 'warning');
+    }
+  } else if (dashboardState.contrastWarning) {
+    dashboardState.contrastWarning = false;
+    if (selectors.statusNote && selectors.statusNote.textContent) {
+      const cleaned = selectors.statusNote.textContent.replace(TEXT.theme.contrastWarning, '').trim();
+      if (cleaned) {
+        selectors.statusNote.textContent = cleaned;
+      } else {
+        hideStatusNote();
+      }
+    }
+  }
+}
+
+function applyTheme(theme, { persist = false } = {}) {
+  const normalized = theme === 'dark' ? 'dark' : 'light';
+  if (normalized === 'dark') {
+    document.body.setAttribute('data-theme', 'dark');
+  } else {
+    document.body.removeAttribute('data-theme');
+  }
+  dashboardState.theme = normalized;
+  updateThemeToggleState(normalized);
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, normalized);
+    } catch (error) {
+      console.warn('Nepavyko išsaugoti temos nustatymo:', error);
+    }
+  }
+  checkKpiContrast();
+}
+
+function initializeTheme() {
+  let storedTheme = null;
+  try {
+    storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  } catch (error) {
+    storedTheme = null;
+  }
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initialTheme = storedTheme === 'dark' || storedTheme === 'light'
+    ? storedTheme
+    : prefersDark
+      ? 'dark'
+      : 'light';
+  applyTheme(initialTheme, { persist: false });
+}
+
+function toggleTheme() {
+  const nextTheme = dashboardState.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(nextTheme, { persist: true });
+  rerenderChartsForTheme();
+}
+
+function setStatus(type, details = '') {
+  if (type === 'loading') {
+    selectors.status.textContent = TEXT.status.loading;
+    selectors.status.classList.remove('status--error');
+    hideStatusNote();
+    return;
+  }
+
+  if (type === 'error') {
+    const message = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
+    selectors.status.textContent = message;
+    selectors.status.classList.add('status--error');
+    selectors.footerUpdated.textContent = message;
+    showStatusNote(TEXT.status.errorAdvice, 'error');
+    return;
+  }
+
+  const formatted = statusTimeFormatter.format(new Date());
+  selectors.status.classList.remove('status--error');
+  if (dashboardState.usingFallback) {
+    selectors.status.textContent = TEXT.status.fallbackSuccess(formatted);
+    selectors.footerUpdated.textContent = TEXT.footerFallback(formatted);
+    const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
+      ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
+      : [];
+    const fallbackNote = dashboardState.lastErrorMessage
+      ? TEXT.status.fallbackNote(dashboardState.lastErrorMessage)
+      : TEXT.status.fallbackNote(TEXT.status.error);
+    const combinedNote = warningsList.length
+      ? `${fallbackNote} ${warningsList.join(' ')}`.trim()
+      : fallbackNote;
+    showStatusNote(combinedNote, 'warning');
+  } else {
+    selectors.status.textContent = details || TEXT.status.success(formatted);
+    selectors.footerUpdated.textContent = TEXT.footer(formatted);
+    const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
+      ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
+      : [];
+    if (warningsList.length) {
+      showStatusNote(warningsList.join(' '), 'warning');
+    } else {
+      hideStatusNote();
+    }
+  }
+}
+
+function applyFeedbackStatusNote() {
+  if (dashboardState.usingFallback || !settings.output.showFeedback) {
+    return;
+  }
+  if (dashboardState.feedback.usingFallback) {
+    const reason = dashboardState.feedback.lastErrorMessage || TEXT.status.error;
+    showStatusNote(TEXT.feedback.status.fallback(reason), 'warning');
+    return;
+  }
+  if (dashboardState.feedback.lastErrorMessage) {
+    showStatusNote(TEXT.feedback.status.error(dashboardState.feedback.lastErrorMessage), 'warning');
+  }
+}
+
+/**
+ * CSV duomenų apdorojimo pagalbinės funkcijos: diagnostika, atsisiuntimas ir transformacija.
+ */
+function formatUrlForDiagnostics(rawUrl) {
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    return '';
+  }
+  try {
+    const parsed = new URL(rawUrl);
+    const safeParams = new URLSearchParams();
+    parsed.searchParams.forEach((value, key) => {
+      if (/token|key|auth|secret|signature|pass/i.test(key)) {
+        safeParams.append(key, '***');
+        return;
+      }
+      safeParams.append(key, value);
+    });
+    const query = safeParams.toString();
+    return `${parsed.origin}${parsed.pathname}${query ? `?${query}` : ''}`;
+  } catch (parseError) {
+    console.warn('Nepavyko normalizuoti URL diagnostikai:', parseError);
+    return rawUrl;
+  }
+}
+
+function describeError(error) {
+  if (!error) {
+    return TEXT.status.error;
+  }
+  const message = typeof error === 'string' ? error : error.message ?? TEXT.status.error;
+  const hints = [];
+  const diagnostic = typeof error === 'object' && error ? error.diagnostic : null;
+
+  if (diagnostic?.url) {
+    hints.push(`URL: ${diagnostic.url}.`);
+  }
+
+  if (diagnostic?.type === 'http') {
+    if (diagnostic.status === 404) {
+      hints.push('Patikrinkite, ar „Google Sheet“ paskelbta per „File → Share → Publish to web → CSV“ ir kad naudojamas publikuotas CSV adresas.');
+    } else if (diagnostic.status === 403) {
+      hints.push('Patikrinkite bendrinimo teises – dokumentas turi būti pasiekiamas be prisijungimo.');
+    } else if (diagnostic.status === 0) {
+      hints.push('Gautas atsakas be statuso – tikėtina tinklo arba CORS klaida.');
+    }
+    if (diagnostic.statusText) {
+      hints.push(`Serverio atsakymas: ${diagnostic.statusText}.`);
+    }
+  }
+
+  if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
+    hints.push('Nepavyko pasiekti šaltinio – patikrinkite interneto ryšį ir ar serveris leidžia CORS užklausas iš šio puslapio.');
+  }
+
+  if (/HTML atsakas/i.test(message)) {
+    hints.push('Gautas HTML vietoje CSV – nuorodoje turi būti „.../pub?output=csv“.');
+  }
+
+  if (diagnostic?.hint) {
+    hints.push(diagnostic.hint);
+  }
+
+  const renderedHints = hints.length ? ` ${hints.join(' ')}` : '';
+  if (/HTTP klaida:\s*404/.test(message)) {
+    return `HTTP 404 – nuoroda nerasta arba dokumentas nepublikuotas.${renderedHints}`;
+  }
+  if (/HTTP klaida:\s*403/.test(message)) {
+    return `HTTP 403 – prieiga uždrausta.${renderedHints}`;
+  }
+  if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
+    return `Nepavyko pasiekti šaltinio.${renderedHints}`;
+  }
+  if (/HTML atsakas/i.test(message)) {
+    return `Gautas HTML atsakas vietoje CSV.${renderedHints}`;
+  }
+  return `${message}${renderedHints}`.trim();
+}
+
+function createTextSignature(text) {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  const length = text.length;
+  const head = text.slice(0, 128);
+  return `${length}:${head}`;
+}
+
+async function downloadCsv(url, cacheInfo = null) {
+  const headers = {};
+  if (cacheInfo?.etag) {
+    headers['If-None-Match'] = cacheInfo.etag;
+  }
+  if (cacheInfo?.lastModified) {
+    headers['If-Modified-Since'] = cacheInfo.lastModified;
+  }
+  const response = await fetch(url, { cache: 'no-store', headers });
+  const statusText = response.statusText || '';
+  if (response.status === 304) {
+    return {
+      status: 304,
+      text: '',
+      contentType: response.headers.get('content-type') ?? '',
+      etag: cacheInfo?.etag || '',
+      lastModified: cacheInfo?.lastModified || '',
+      signature: cacheInfo?.signature || '',
+    };
+  }
+  if (!response.ok) {
+    const error = new Error(`HTTP klaida: ${response.status}`);
+    error.diagnostic = {
+      type: 'http',
+      status: response.status,
+      statusText,
+      url: formatUrlForDiagnostics(url),
+    };
+    throw error;
+  }
+  const textContent = await response.text();
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.includes('text/html') || /^<!doctype html/i.test(textContent.trim())) {
+    const error = new Error('HTML atsakas vietoje CSV – patikrinkite, ar nuoroda publikuota kaip CSV.');
+    error.diagnostic = {
+      type: 'html',
+      url: formatUrlForDiagnostics(url),
+      hint: 'Google Sheets lange pasirinkite „File → Share → Publish to web → CSV“ ir naudokite gautą CSV nuorodą.',
+    };
+    throw error;
+  }
+  const etag = response.headers.get('etag') ?? '';
+  const lastModified = response.headers.get('last-modified') ?? '';
+  return {
+    status: response.status,
+    text: textContent,
+    contentType,
+    etag,
+    lastModified,
+    signature: etag || lastModified || createTextSignature(textContent),
+  };
+}
+
+const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
+const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
+const DATA_CACHE_VERSION = 1;
+let dataWorkerCounter = 0;
+let kpiWorkerJobToken = 0;
+
+function getDataCacheKey(url) {
+  if (!url) {
+    return '';
+  }
+  return `${DATA_CACHE_PREFIX}${encodeURIComponent(url)}`;
+}
+
+function serializeRecordsForCache(records) {
+  if (!Array.isArray(records)) {
+    return [];
+  }
+  return records.map((record) => {
+    const entry = { ...record };
+    entry.arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+      ? record.arrival.toISOString()
+      : null;
+    entry.discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+      ? record.discharge.toISOString()
+      : null;
+    return entry;
+  });
+}
+
+function deserializeRecordsFromCache(records) {
+  if (!Array.isArray(records)) {
+    return [];
+  }
+  return records.map((record) => {
+    const entry = { ...record };
+    entry.arrival = parseDate(record.arrival);
+    entry.discharge = parseDate(record.discharge);
+    entry.night = Boolean(record.night);
+    entry.ems = Boolean(record.ems);
+    entry.hospitalized = Boolean(record.hospitalized);
+    return entry;
+  });
+}
+
+function readDataCache(url) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null;
+  }
+  const key = getDataCacheKey(url);
+  if (!key) {
+    return null;
+  }
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.version !== DATA_CACHE_VERSION) {
+      return null;
+    }
+    return {
+      etag: parsed.etag || '',
+      lastModified: parsed.lastModified || '',
+      signature: parsed.signature || '',
+      records: deserializeRecordsFromCache(parsed.records),
+      dailyStats: Array.isArray(parsed.dailyStats) ? parsed.dailyStats : [],
+      timestamp: parsed.timestamp || 0,
+    };
+  } catch (error) {
+    console.warn('Nepavyko nuskaityti duomenų iš talpyklos:', error);
+    return null;
+  }
+}
+
+function writeDataCache(url, payload) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  const key = getDataCacheKey(url);
+  if (!key) {
+    return;
+  }
+  try {
+    const data = {
+      version: DATA_CACHE_VERSION,
+      etag: payload?.etag || '',
+      lastModified: payload?.lastModified || '',
+      signature: payload?.signature || '',
+      timestamp: Date.now(),
+      records: serializeRecordsForCache(payload?.records),
+      dailyStats: Array.isArray(payload?.dailyStats) ? payload.dailyStats : [],
+    };
+    window.localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Nepavyko išsaugoti duomenų talpykloje:', error);
+  }
+}
+
+function clearDataCache(url) {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  const key = getDataCacheKey(url);
+  if (!key) {
+    return;
+  }
+  try {
+    window.localStorage.removeItem(key);
+  } catch (error) {
+    console.warn('Nepavyko išvalyti duomenų talpyklos įrašo:', error);
+  }
+}
+
+function runWorkerJob(message) {
+  if (typeof Worker !== 'function') {
+    return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
+  }
+  const jobId = `data-job-${Date.now()}-${dataWorkerCounter += 1}`;
+  const worker = new Worker(DATA_WORKER_URL);
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      try {
+        worker.terminate();
+      } catch (error) {
+        console.warn('Nepavyko uždaryti duomenų workerio:', error);
+      }
+    };
+    worker.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || data.id !== jobId) {
+        return;
+      }
+      cleanup();
+      if (data.status === 'error') {
+        const error = new Error(data.error?.message || 'Worker klaida.');
+        error.name = data.error?.name || error.name;
+        if (data.error?.stack) {
+          error.stack = data.error.stack;
+        }
+        reject(error);
+        return;
+      }
+      resolve(data.payload);
+    });
+    worker.addEventListener('error', (event) => {
+      cleanup();
+      reject(event.error || new Error(event.message || 'Worker klaida.'));
+    });
+    try {
+      worker.postMessage({
+        id: jobId,
+        ...message,
+      });
+    } catch (error) {
+      cleanup();
+      reject(error);
+    }
+  });
+}
+
+function runDataWorker(csvText, options) {
+  return runWorkerJob({ type: 'transformCsv', csvText, options });
+}
+
+function runKpiWorkerJob(payload) {
+  return runWorkerJob({ type: 'applyKpiFilters', ...payload });
+}
+
+function detectDelimiter(text) {
+  const sampleLine = text.split('\n').find((line) => line.trim().length > 0) ?? '';
+  const candidates = [',', ';', '\t', '|'];
+  let best = ',';
+  let bestScore = -1;
+  candidates.forEach((delimiter) => {
+    let inQuotes = false;
+    let score = 0;
+    for (let i = 0; i < sampleLine.length; i += 1) {
+      const char = sampleLine[i];
+      if (char === '"') {
+        if (inQuotes && sampleLine[i + 1] === '"') {
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (!inQuotes && char === delimiter) {
+        score += 1;
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = delimiter;
+    }
+  });
+  return bestScore > 0 ? best : ',';
+}
+
+function parseCsv(text) {
+  const sanitized = text.replace(/\r\n/g, '\n');
+  const delimiter = detectDelimiter(sanitized);
+  const rows = [];
+  let current = [];
+  let value = '';
+  let inQuotes = false;
+  for (let i = 0; i < sanitized.length; i += 1) {
+    const char = sanitized[i];
+    if (char === '"') {
+      if (inQuotes && sanitized[i + 1] === '"') {
+        value += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === delimiter && !inQuotes) {
+      current.push(value);
+      value = '';
+      continue;
+    }
+    if (char === '\n' && !inQuotes) {
+      current.push(value);
+      rows.push(current);
+      current = [];
+      value = '';
+      continue;
+    }
+    value += char;
+  }
+  if (value.length > 0 || current.length) {
+    current.push(value);
+    rows.push(current);
+  }
+  const filteredRows = rows.filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
+  return { rows: filteredRows, delimiter };
+}
+
+function parseDate(value) {
+  if (!value) {
+    return null;
+  }
+  const raw = String(value).trim();
+  if (!raw) {
+    return null;
+  }
+  const normalized = raw.replace(/\s+/g, ' ').trim();
+  let isoCandidate = normalized.includes('T') ? normalized : normalized.replace(' ', 'T');
+  isoCandidate = isoCandidate.replace(' T', 'T').replace(' +', '+').replace(' -', '-');
+  let parsed = new Date(isoCandidate);
+  if (!Number.isNaN(parsed?.getTime?.())) {
+    return parsed;
+  }
+  // Papildoma atrama formoms, kurios vietoje brūkšnių naudoja pasviruosius arba taškus.
+  const slashIso = normalized.match(/^(\d{4})[\/](\d{1,2})[\/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (slashIso) {
+    const [, year, month, day, hour = '0', minute = '0', second = '0'] = slashIso;
+    parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    );
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const dotIso = normalized.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (dotIso) {
+    const [, year, month, day, hour = '0', minute = '0', second = '0'] = dotIso;
+    parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    );
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const onlyDate = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (onlyDate) {
+    parsed = new Date(Number(onlyDate[1]), Number(onlyDate[2]) - 1, Number(onlyDate[3]));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const european = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (european) {
+    const [, day, month, year, hour = '0', minute = '0', second = '0'] = european;
+    parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    );
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  // Google Forms CSV dažnai išveda datą „dd/mm/yyyy“ formatu.
+  const slashEuropean = normalized.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (slashEuropean) {
+    const [, day, month, year, hour = '0', minute = '0', second = '0'] = slashEuropean;
+    parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    );
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
+function toDateKeyFromDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function dateKeyToUtc(dateKey) {
+  if (typeof dateKey !== 'string') {
+    return Number.NaN;
+  }
+  const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
+  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
+    return Number.NaN;
+  }
+  const [year, month, day] = parts;
+  return Date.UTC(year, month - 1, day);
+}
+
+function dateKeyToDate(dateKey) {
+  const utc = dateKeyToUtc(dateKey);
+  if (!Number.isFinite(utc)) {
+    return null;
+  }
+  return new Date(utc);
+}
+
+function isWeekendDateKey(dateKey) {
+  const date = dateKeyToDate(dateKey);
+  if (!(date instanceof Date)) {
+    return false;
+  }
+  const day = date.getUTCDay();
+  return day === 0 || day === 6;
+}
+
+
+/**
+ * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio) su demonstraciniu rezervu.
+ */
+async function loadCsvSource(config, workerOptions, { required = false, sourceId = 'primary', label = '' } = {}) {
+  const trimmedUrl = (config?.url ?? '').trim();
+  const allowFallback = Boolean(config?.useFallback);
+  const fallbackRaw = typeof config?.fallbackCsv === 'string' ? config.fallbackCsv : '';
+  const fallbackContent = allowFallback && fallbackRaw.trim().length ? fallbackRaw : '';
+  const missingMessage = config?.missingMessage || 'Nenurodytas duomenų URL.';
+  const result = {
+    records: [],
+    dailyStats: [],
+    meta: {
+      sourceId,
+      url: trimmedUrl,
+      label: label || sourceId,
+    },
+    usingFallback: false,
+    lastErrorMessage: '',
+    error: null,
+  };
+
+  const parseDataset = async (csvText) => {
+    const dataset = await runDataWorker(csvText, workerOptions);
+    return {
+      records: Array.isArray(dataset?.records) ? dataset.records : [],
+      dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
+    };
+  };
+
+  const assignDataset = (dataset, metaOverrides = {}) => {
+    result.records = dataset.records;
+    result.dailyStats = dataset.dailyStats;
+    result.meta = { ...result.meta, ...metaOverrides };
+  };
+
+  if (!trimmedUrl) {
+    if (fallbackContent) {
+      const dataset = await parseDataset(fallbackContent);
+      assignDataset(dataset, { fromFallback: true });
+      result.usingFallback = true;
+      result.lastErrorMessage = missingMessage;
+      result.error = missingMessage;
+      return result;
+    }
+    result.lastErrorMessage = missingMessage;
+    result.error = missingMessage;
+    if (required) {
+      const error = new Error(missingMessage);
+      error.diagnostic = { type: 'config', sourceId, reason: 'missing-url' };
+      throw error;
+    }
+    return result;
+  }
+
+  const cacheEntry = readDataCache(trimmedUrl);
+
+  try {
+    let download = await downloadCsv(trimmedUrl, cacheEntry);
+    if (download.status === 304) {
+      if (cacheEntry?.records && cacheEntry?.dailyStats) {
+        assignDataset({
+          records: cacheEntry.records,
+          dailyStats: cacheEntry.dailyStats,
+        }, {
+          etag: cacheEntry.etag,
+          lastModified: cacheEntry.lastModified,
+          signature: cacheEntry.signature,
+          fromCache: true,
+        });
+        return result;
+      }
+      clearDataCache(trimmedUrl);
+      download = await downloadCsv(trimmedUrl, null);
+    }
+
+    const dataset = await parseDataset(download.text);
+    assignDataset(dataset, {
+      etag: download.etag,
+      lastModified: download.lastModified,
+      signature: download.signature,
+      fromCache: false,
+    });
+    writeDataCache(trimmedUrl, {
+      etag: download.etag,
+      lastModified: download.lastModified,
+      signature: download.signature,
+      records: result.records,
+      dailyStats: result.dailyStats,
+    });
+    return result;
+  } catch (error) {
+    console.error(`Nepavyko atsisiųsti CSV duomenų (${sourceId}):`, error);
+    const friendly = describeError(error);
+    result.lastErrorMessage = friendly;
+    result.error = friendly;
+    if (cacheEntry?.records && cacheEntry?.dailyStats) {
+      console.warn(`Naudojami talpyklos duomenys dėl klaidos (${sourceId}).`);
+      assignDataset({
+        records: cacheEntry.records,
+        dailyStats: cacheEntry.dailyStats,
+      }, {
+        etag: cacheEntry.etag,
+        lastModified: cacheEntry.lastModified,
+        signature: cacheEntry.signature,
+        fromCache: true,
+        fallbackReason: friendly,
+      });
+      return result;
+    }
+    if (fallbackContent) {
+      try {
+        const fallbackDataset = await parseDataset(fallbackContent);
+        assignDataset(fallbackDataset, { fromFallback: true });
+        result.usingFallback = true;
+        return result;
+      } catch (fallbackError) {
+        console.error(`Klaida skaitant demonstracinius duomenis (${sourceId}):`, fallbackError);
+        const fallbackFriendly = describeError(fallbackError);
+        result.lastErrorMessage = fallbackFriendly;
+        result.error = fallbackFriendly;
+        if (required) {
+          throw fallbackError;
+        }
+        return result;
+      }
+    }
+    if (required) {
+      throw error;
+    }
+    return result;
+  }
+}
+
+async function fetchData() {
+  const workerOptions = {
+    csvSettings: settings.csv || {},
+    csvDefaults: DEFAULT_SETTINGS.csv || {},
+    calculations: settings.calculations || {},
+    calculationDefaults: DEFAULT_SETTINGS.calculations || {},
+  };
+
+  const mainConfig = {
+    url: settings?.dataSource?.url,
+    useFallback: settings?.dataSource?.useFallback,
+    fallbackCsv: settings?.dataSource?.fallbackCsv,
+    missingMessage: 'Nenurodytas duomenų URL.',
+  };
+
+  const primaryResult = await loadCsvSource(mainConfig, workerOptions, {
+    required: true,
+    sourceId: 'primary',
+    label: 'Pagrindinis CSV',
+  });
+
+  const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
+  const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
+  let combinedRecords = baseRecords.slice();
+  let combinedYearlyStats = computeYearlyStats(computeMonthlyStats(baseDaily.slice()));
+  let usingFallback = Boolean(primaryResult.usingFallback);
+  const fallbackMessages = [];
+  if (primaryResult.usingFallback) {
+    fallbackMessages.push(primaryResult.lastErrorMessage || 'Nenurodytas duomenų URL.');
+  }
+  const warnings = [];
+  const primaryUrl = (settings?.dataSource?.url ?? '').trim();
+  const sources = [
+    {
+      id: 'primary',
+      label: 'Pagrindinis CSV',
+      url: primaryResult.meta?.url || primaryUrl,
+      fromCache: Boolean(primaryResult.meta?.fromCache),
+      fromFallback: Boolean(primaryResult.meta?.fromFallback),
+      usingFallback: primaryResult.usingFallback,
+      lastErrorMessage: primaryResult.lastErrorMessage || '',
+      error: primaryResult.error || '',
+      used: baseRecords.length > 0,
+      enabled: true,
+    },
+  ];
+
+  if (primaryResult.error && !primaryResult.usingFallback && primaryResult.meta?.fromCache) {
+    warnings.push(`Pagrindinis CSV: ${primaryResult.error}`);
+  }
+
+  const historicalDefaults = DEFAULT_SETTINGS?.dataSource?.historical || {};
+  const historicalConfig = settings?.dataSource?.historical || historicalDefaults;
+  const historicalLabel = historicalConfig.label || historicalDefaults.label || 'Papildomas istorinis (5 metai)';
+  const historicalEnabled = historicalConfig.enabled !== false;
+  let historicalMeta = null;
+
+  if (historicalEnabled) {
+    const normalizedHistoricalConfig = {
+      url: historicalConfig.url,
+      useFallback: historicalConfig.useFallback,
+      fallbackCsv: historicalConfig.fallbackCsv,
+      missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
+    };
+    const shouldAttempt = (normalizedHistoricalConfig.url ?? '').trim().length > 0
+      || (normalizedHistoricalConfig.useFallback && (normalizedHistoricalConfig.fallbackCsv ?? '').trim().length > 0);
+
+    if (shouldAttempt) {
+      const historicalResult = await loadCsvSource(normalizedHistoricalConfig, workerOptions, {
+        required: false,
+        sourceId: 'historical',
+        label: historicalLabel,
+      });
+      historicalMeta = historicalResult.meta || null;
+      const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
+      if (historicalRecords.length) {
+        combinedRecords = combinedRecords.concat(historicalRecords);
+        const combinedDaily = computeDailyStats(combinedRecords);
+        const combinedMonthly = computeMonthlyStats(combinedDaily);
+        combinedYearlyStats = computeYearlyStats(combinedMonthly);
+      }
+      if (historicalResult.usingFallback) {
+        usingFallback = true;
+        const message = historicalResult.lastErrorMessage || 'Papildomas šaltinis pasiektas iš demonstracinių duomenų.';
+        fallbackMessages.push(`${historicalLabel}: ${message}`);
+      } else if (historicalResult.error) {
+        warnings.push(`${historicalLabel}: ${historicalResult.error}`);
+      }
+      sources.push({
+        id: 'historical',
+        label: historicalLabel,
+        url: historicalResult.meta?.url || (historicalConfig.url ?? ''),
+        fromCache: Boolean(historicalResult.meta?.fromCache),
+        fromFallback: Boolean(historicalResult.meta?.fromFallback),
+        usingFallback: historicalResult.usingFallback,
+        lastErrorMessage: historicalResult.lastErrorMessage || '',
+        error: historicalResult.error || '',
+        used: historicalRecords.length > 0,
+        enabled: true,
+      });
+    } else {
+      sources.push({
+        id: 'historical',
+        label: historicalLabel,
+        url: historicalConfig.url || '',
+        fromCache: false,
+        fromFallback: false,
+        usingFallback: false,
+        lastErrorMessage: '',
+        error: '',
+        used: false,
+        enabled: true,
+      });
+      warnings.push(`${historicalLabel}: Nenurodytas papildomo istorinio šaltinio URL.`);
+    }
+  } else {
+    sources.push({
+      id: 'historical',
+      label: historicalLabel,
+      url: historicalConfig.url || '',
+      fromCache: false,
+      fromFallback: false,
+      usingFallback: false,
+      lastErrorMessage: '',
+      error: '',
+      used: false,
+      enabled: false,
+    });
+  }
+
+  dashboardState.usingFallback = usingFallback;
+  dashboardState.lastErrorMessage = usingFallback ? fallbackMessages.join(' ').trim() : '';
+
+  const meta = {
+    primary: { ...(primaryResult.meta || {}), sourceId: 'primary' },
+    historical: historicalMeta ? { ...historicalMeta, sourceId: 'historical' } : null,
+    sources,
+    warnings,
+  };
+
+  return {
+    records: baseRecords,
+    dailyStats: baseDaily.slice(),
+    yearlyStats: combinedYearlyStats,
+    meta,
+  };
+}
+
+async function fetchEdData() {
+  const config = settings?.dataSource?.ed || DEFAULT_SETTINGS.dataSource.ed;
+  const url = (config?.url ?? '').trim();
+  const allowFallback = Boolean(config?.useFallback);
+  const fallbackCsv = typeof config?.fallbackCsv === 'string' && config.fallbackCsv.trim().length
+    ? config.fallbackCsv
+    : DEFAULT_ED_CSV;
+  const empty = {
+    records: [],
+    summary: createEmptyEdSummary(),
+    dispositions: [],
+    daily: [],
+    meta: { type: 'legacy' },
+    usingFallback: false,
+    lastErrorMessage: '',
+    error: null,
+    updatedAt: new Date(),
+  };
+
+  const finalize = (result, options = {}) => {
+    const payload = Array.isArray(result)
+      ? { records: result, meta: {} }
+      : (result && typeof result === 'object'
+        ? {
+          records: Array.isArray(result.records) ? result.records : [],
+          meta: result.meta && typeof result.meta === 'object' ? result.meta : {},
+        }
+        : { records: [], meta: {} });
+    const aggregates = summarizeEdRecords(payload.records, payload.meta);
+    return {
+      records: payload.records,
+      summary: aggregates.summary,
+      dispositions: aggregates.dispositions,
+      daily: aggregates.daily,
+      meta: { ...payload.meta, ...(aggregates.meta || {}) },
+      usingFallback: Boolean(options.usingFallback),
+      lastErrorMessage: options.lastErrorMessage || '',
+      error: options.error || null,
+      updatedAt: new Date(),
+    };
+  };
+
+  const useFallback = (reason) => {
+    if (!allowFallback || !fallbackCsv) {
+      return {
+        ...empty,
+        lastErrorMessage: reason || TEXT.ed.status.noUrl,
+        error: reason || TEXT.ed.status.noUrl,
+      };
+    }
+    try {
+      const result = transformEdCsv(fallbackCsv);
+      return finalize(result, { usingFallback: true, lastErrorMessage: reason || TEXT.ed.status.noUrl });
+    } catch (fallbackError) {
+      const friendly = describeError(fallbackError);
+      return {
+        ...empty,
+        usingFallback: true,
+        lastErrorMessage: friendly,
+        error: reason || friendly,
+      };
+    }
+  };
+
+  if (!url) {
+    return useFallback(TEXT.ed.status.noUrl);
+  }
+
+  try {
+    const download = await downloadCsv(url);
+    const result = transformEdCsv(download.text);
+    return finalize(result);
+  } catch (error) {
+    const friendly = describeError(error);
+    if (allowFallback && fallbackCsv) {
+      try {
+        const result = transformEdCsv(fallbackCsv);
+        return finalize(result, { usingFallback: true, lastErrorMessage: friendly });
+      } catch (fallbackError) {
+        const fallbackFriendly = describeError(fallbackError);
+        return {
+          ...empty,
+          usingFallback: true,
+          lastErrorMessage: fallbackFriendly,
+          error: friendly,
+        };
+      }
+    }
+    return {
+      ...empty,
+      lastErrorMessage: friendly,
+      error: friendly,
+    };
+  }
+}
+
+const FEEDBACK_HEADER_CANDIDATES = {
+  date: 'timestamp,gauta,data,received,created,submitted,laikas,pildymo data,pildymo laikas,pildymo data ir laikas,užpildymo data,užpildymo laikas,forma pateikta,data pateikta,atsakymo data,atsakymo laikas,įrašo data,įrašo laikas',
+  respondent: 'kas pildo formą?,kas pildo formą,kas pildo forma,respondentas,role,dalyvis,tipas',
+  overall: 'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
+  doctors: 'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
+  nurses: 'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
+  aidesContact: 'ar bendravote su slaugytojų padėjėjais?,ar bendravote su slaugytojų padėjėjais,ar bendravote su slaugytoju padejejais,ar bendravote su padėjėjais,contact with aides',
+  aides: 'kaip vertinate slaugytojų padėjėjų darbą,*padėjėjų darb*,slaugytoju padejeju darba,padėjėjų vertinimas,aide rating',
+  waiting: 'kaip vertinate laukimo laiką skyriuje?,*laukimo laik*,wait time,laukimo vertinimas',
+};
+
+const FEEDBACK_CONTACT_YES = 'taip,yes,yeah,1,true';
+const FEEDBACK_CONTACT_NO = 'ne,no,0,false';
+
+function resolveFeedbackColumn(headerNormalized, candidateList) {
+  const candidates = parseCandidateList(candidateList, candidateList);
+  for (const candidate of candidates) {
+    const trimmed = candidate.trim();
+    if (!trimmed || trimmed.includes('*')) {
+      continue;
+    }
+    const match = headerNormalized.find((column) => column.original === trimmed);
+    if (match) {
+      return match.index;
+    }
+  }
+
+  for (const candidate of candidates) {
+    const trimmed = candidate.trim().toLowerCase();
+    if (!trimmed || candidate.includes('*')) {
+      continue;
+    }
+    const match = headerNormalized.find((column) => column.normalized === trimmed);
+    if (match) {
+      return match.index;
+    }
+  }
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = candidate.trim().toLowerCase();
+    if (!normalizedCandidate) {
+      continue;
+    }
+    const match = headerNormalized.find((column) => matchesWildcard(column.normalized, normalizedCandidate));
+    if (match) {
+      return match.index;
+    }
+  }
+
+  return -1;
+}
+
+function normalizeFeedbackRating(value) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  if (value >= FEEDBACK_RATING_MIN && value <= FEEDBACK_RATING_MAX) {
+    return value;
+  }
+  if (value > FEEDBACK_RATING_MAX && value <= FEEDBACK_LEGACY_MAX) {
+    const scaled = (value / FEEDBACK_LEGACY_MAX) * FEEDBACK_RATING_MAX;
+    const clamped = Math.min(FEEDBACK_RATING_MAX, Math.max(FEEDBACK_RATING_MIN, scaled));
+    return clamped;
+  }
+  return null;
+}
+
+function parseFeedbackRatingCell(value) {
+  if (value == null) {
+    return null;
+  }
+  const text = String(value).trim();
+  if (!text) {
+    return null;
+  }
+  const normalized = text.replace(',', '.');
+  const direct = Number.parseFloat(normalized);
+  if (Number.isFinite(direct)) {
+    return normalizeFeedbackRating(direct);
+  }
+  const match = normalized.match(/(-?\d+(?:\.\d+)?)/);
+  if (match) {
+    const fallback = Number.parseFloat(match[1]);
+    return normalizeFeedbackRating(fallback);
+  }
+  return null;
+}
+
+function parseFeedbackContactValue(value, yesCandidates, noCandidates) {
+  if (value == null) {
+    return null;
+  }
+  const text = String(value).trim();
+  if (!text) {
+    return null;
+  }
+  const normalized = text.toLowerCase();
+  if (yesCandidates.some((candidate) => matchesWildcard(normalized, candidate))) {
+    return true;
+  }
+  if (noCandidates.some((candidate) => matchesWildcard(normalized, candidate))) {
+    return false;
+  }
+  return null;
+}
+
+function transformFeedbackCsv(text) {
+  if (typeof text !== 'string' || !text.trim()) {
+    return [];
+  }
+  const { rows } = parseCsv(text);
+  if (!rows.length) {
+    return [];
+  }
+  const header = rows[0].map((cell) => String(cell ?? '').trim());
+  const headerNormalized = header.map((column, index) => ({
+    original: column,
+    normalized: column.toLowerCase(),
+    index,
+  }));
+
+  const indices = {
+    date: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.date),
+    respondent: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.respondent),
+    overall: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.overall),
+    doctors: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.doctors),
+    nurses: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.nurses),
+    aidesContact: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aidesContact),
+    aides: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aides),
+    waiting: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.waiting),
+  };
+
+  const yesCandidates = parseCandidateList(FEEDBACK_CONTACT_YES, FEEDBACK_CONTACT_YES)
+    .map((token) => token.toLowerCase());
+  const noCandidates = parseCandidateList(FEEDBACK_CONTACT_NO, FEEDBACK_CONTACT_NO)
+    .map((token) => token.toLowerCase());
+
+  const rowsWithoutHeader = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
+  return rowsWithoutHeader
+    .map((columns) => {
+      const rawDate = indices.date >= 0 ? columns[indices.date] : '';
+      const parsedDate = parseDate(rawDate);
+      const dateValue = parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
+
+      const respondent = indices.respondent >= 0
+        ? String(columns[indices.respondent] ?? '').trim()
+        : '';
+
+      const overallRating = indices.overall >= 0
+        ? parseFeedbackRatingCell(columns[indices.overall])
+        : null;
+      const doctorsRating = indices.doctors >= 0
+        ? parseFeedbackRatingCell(columns[indices.doctors])
+        : null;
+      const nursesRating = indices.nurses >= 0
+        ? parseFeedbackRatingCell(columns[indices.nurses])
+        : null;
+      const aidesContact = indices.aidesContact >= 0
+        ? parseFeedbackContactValue(columns[indices.aidesContact], yesCandidates, noCandidates)
+        : null;
+      const aidesRating = indices.aides >= 0
+        ? parseFeedbackRatingCell(columns[indices.aides])
+        : null;
+      const waitingRating = indices.waiting >= 0
+        ? parseFeedbackRatingCell(columns[indices.waiting])
+        : null;
+
+      const hasRating = [overallRating, doctorsRating, nursesRating, aidesRating, waitingRating]
+        .some((value) => Number.isFinite(value));
+      const hasContact = aidesContact === true || aidesContact === false;
+      const hasRespondent = respondent.length > 0;
+
+      if (!dateValue && !hasRating && !hasRespondent && !hasContact) {
+        return null;
+      }
+
+      return {
+        receivedAt: dateValue,
+        respondent,
+        overallRating: Number.isFinite(overallRating) ? overallRating : null,
+        doctorsRating: Number.isFinite(doctorsRating) ? doctorsRating : null,
+        nursesRating: Number.isFinite(nursesRating) ? nursesRating : null,
+        aidesContact: hasContact ? aidesContact : null,
+        aidesRating: Number.isFinite(aidesRating) ? aidesRating : null,
+        waitingRating: Number.isFinite(waitingRating) ? waitingRating : null,
+      };
+    })
+    .filter(Boolean);
+}
+
+async function fetchFeedbackData() {
+  const config = settings?.dataSource?.feedback || DEFAULT_SETTINGS.dataSource.feedback;
+  const url = (config?.url ?? '').trim();
+  const useFallback = Boolean(config?.useFallback);
+  const fallbackCsv = typeof config?.fallbackCsv === 'string'
+    ? config.fallbackCsv
+    : DEFAULT_SETTINGS.dataSource.feedback.fallbackCsv;
+  const fallbackContent = useFallback ? fallbackCsv : '';
+
+  if (!url) {
+    if (fallbackContent) {
+      try {
+        const dataset = transformFeedbackCsv(fallbackContent);
+        dashboardState.feedback.usingFallback = true;
+        dashboardState.feedback.lastErrorMessage = TEXT.feedback.status.missingUrl;
+        return dataset;
+      } catch (error) {
+        console.error('Klaida skaitant demonstracinius atsiliepimus:', error);
+        dashboardState.feedback.usingFallback = false;
+        dashboardState.feedback.lastErrorMessage = describeError(error);
+        return [];
+      }
+    }
+    dashboardState.feedback.usingFallback = false;
+    dashboardState.feedback.lastErrorMessage = '';
+    return [];
+  }
+
+  try {
+    const download = await downloadCsv(url);
+    const dataset = transformFeedbackCsv(download.text);
+    dashboardState.feedback.usingFallback = false;
+    dashboardState.feedback.lastErrorMessage = '';
+    return dataset;
+  } catch (error) {
+    console.error('Nepavyko atsisiųsti atsiliepimų CSV:', error);
+    const friendly = describeError(error);
+    dashboardState.feedback.lastErrorMessage = friendly;
+    if (fallbackContent) {
+      try {
+        const dataset = transformFeedbackCsv(fallbackContent);
+        dashboardState.feedback.usingFallback = true;
+        return dataset;
+      } catch (fallbackError) {
+        console.error('Klaida skaitant demonstracinius atsiliepimų duomenis:', fallbackError);
+        dashboardState.feedback.usingFallback = false;
+        dashboardState.feedback.lastErrorMessage = describeError(fallbackError);
+        return [];
+      }
+    }
+    dashboardState.feedback.usingFallback = false;
+    return [];
+  }
+}
+
+/**
+ * Grąžina tik paskutines N dienų įrašus (pagal vėliausią turimą datą).
+ * @param {Array<{date: string}>} dailyStats
+ * @param {number} days
+ */
+function filterDailyStatsByWindow(dailyStats, days) {
+  if (!Array.isArray(dailyStats)) {
+    return [];
+  }
+  if (!Number.isFinite(days) || days <= 0) {
+    return [...dailyStats];
+  }
+  const decorated = dailyStats
+    .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
+    .filter((item) => Number.isFinite(item.utc));
+  if (!decorated.length) {
+    return [];
+  }
+  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+  const startUtc = endUtc - (days - 1) * 86400000;
+  return decorated
+    .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
+    .map((item) => item.entry);
+}
+
+function filterRecordsByWindow(records, days) {
+  if (!Array.isArray(records)) {
+    return [];
+  }
+  if (!Number.isFinite(days) || days <= 0) {
+    return records.slice();
+  }
+  const decorated = records
+    .map((entry) => {
+      let reference = null;
+      if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
+        reference = entry.arrival;
+      } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
+        reference = entry.discharge;
+      }
+      if (!reference) {
+        return null;
+      }
+      const utc = Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate());
+      if (!Number.isFinite(utc)) {
+        return null;
+      }
+      return { entry, utc };
+    })
+    .filter(Boolean);
+  if (!decorated.length) {
+    return [];
+  }
+  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+  const startUtc = endUtc - (days - 1) * 86400000;
+  return decorated
+    .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
+    .map((item) => item.entry);
+}
+
+function filterDailyStatsByYear(dailyStats, year) {
+  if (!Number.isFinite(year)) {
+    return Array.isArray(dailyStats) ? dailyStats.slice() : [];
+  }
+  const targetYear = Number(year);
+  return (Array.isArray(dailyStats) ? dailyStats : []).filter((entry) => {
+    if (!entry || typeof entry.date !== 'string') {
+      return false;
+    }
+    const date = dateKeyToDate(entry.date);
+    return date instanceof Date
+      && !Number.isNaN(date.getTime())
+      && date.getUTCFullYear() === targetYear;
+  });
+}
+
+function filterRecordsByYear(records, year) {
+  if (!Number.isFinite(year)) {
+    return Array.isArray(records) ? records.slice() : [];
+  }
+  const targetYear = Number(year);
+  return (Array.isArray(records) ? records : []).filter((entry) => {
+    const arrivalYear = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())
+      ? entry.arrival.getFullYear()
+      : null;
+    const dischargeYear = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())
+      ? entry.discharge.getFullYear()
+      : null;
+    const referenceYear = Number.isFinite(arrivalYear) ? arrivalYear : dischargeYear;
+    return Number.isFinite(referenceYear) && referenceYear === targetYear;
+  });
+}
+
+function parseDurationMinutes(value) {
+  if (value == null) {
+    return null;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  const text = String(value).trim();
+  if (!text) {
+    return null;
+  }
+  const numeric = Number.parseFloat(text.replace(',', '.'));
+  if (Number.isFinite(numeric)) {
+    if (/\b(h|val)\b/i.test(text) && !/\bmin/i.test(text)) {
+      return numeric * 60;
+    }
+    if (/\b(sec|s)\b/i.test(text) && !/\bmin|h|val/i.test(text)) {
+      return numeric / 60;
+    }
+    return numeric;
+  }
+  const parts = text.split(':');
+  if (parts.length >= 2 && parts.length <= 3) {
+    const hours = Number.parseFloat(parts[0].replace(',', '.'));
+    const minutes = Number.parseFloat(parts[1].replace(',', '.'));
+    const seconds = parts.length === 3 ? Number.parseFloat(parts[2].replace(',', '.')) : 0;
+    if ([hours, minutes].every((component) => Number.isFinite(component))) {
+      const secValue = Number.isFinite(seconds) ? seconds : 0;
+      return hours * 60 + minutes + secValue / 60;
+    }
+  }
+  let totalMinutes = 0;
+  let matched = false;
+  const hoursMatch = text.match(/([0-9]+(?:[\.,][0-9]+)?)\s*(h|val)/i);
+  if (hoursMatch) {
+    totalMinutes += Number.parseFloat(hoursMatch[1].replace(',', '.')) * 60;
+    matched = true;
+  }
+  const minutesMatch = text.match(/([0-9]+(?:[\.,][0-9]+)?)\s*(min|minutes|mins)/i);
+  if (minutesMatch) {
+    totalMinutes += Number.parseFloat(minutesMatch[1].replace(',', '.'));
+    matched = true;
+  }
+  const secondsMatch = text.match(/([0-9]+(?:[\.,][0-9]+)?)\s*(sec|s)/i);
+  if (secondsMatch) {
+    totalMinutes += Number.parseFloat(secondsMatch[1].replace(',', '.')) / 60;
+    matched = true;
+  }
+  if (matched && Number.isFinite(totalMinutes) && totalMinutes >= 0) {
+    return totalMinutes;
+  }
+  return null;
+}
+
+function parseNumericCell(value) {
+  if (value == null) {
+    return null;
+  }
+  const text = String(value).trim();
+  if (!text) {
+    return null;
+  }
+  const normalized = text.replace(',', '.');
+  const direct = Number.parseFloat(normalized);
+  if (Number.isFinite(direct)) {
+    return direct;
+  }
+  const match = normalized.match(/(-?\d+(?:\.\d+)?)/);
+  if (match) {
+    const fallback = Number.parseFloat(match[1]);
+    return Number.isFinite(fallback) ? fallback : null;
+  }
+  return null;
+}
+
+function normalizeRatioValue(value) {
+  if (value == null) {
+    return { ratio: null, text: '' };
+  }
+  const text = String(value).trim();
+  if (!text) {
+    return { ratio: null, text: '' };
+  }
+  const normalized = text.replace(',', '.');
+  const match = normalized.match(/(\d+(?:\.\d+)?)\s*[:\/\-]\s*(\d+(?:\.\d+)?)/);
+  if (match) {
+    const a = Number.parseFloat(match[1]);
+    const b = Number.parseFloat(match[2]);
+    if (Number.isFinite(a) && Number.isFinite(b) && a > 0) {
+      return { ratio: b / a, text };
+    }
+  }
+  const numeric = Number.parseFloat(normalized);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return { ratio: numeric, text };
+  }
+  return { ratio: null, text };
+}
+
+function normalizeDispositionValue(value) {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) {
+    return { label: 'Nežinoma', category: 'unknown' };
+  }
+  const lower = raw.toLowerCase();
+  if (/(hospital|stacion|admit|ward|perkel|stacionar|stac\.|priimtuvas)/i.test(lower)) {
+    return { label: raw, category: 'hospitalized' };
+  }
+  if (/(discharg|nam|ambulator|released|outpatient|home|išle)/i.test(lower)) {
+    return { label: raw, category: 'discharged' };
+  }
+  if (/(transfer|perkeltas|perkelta|pervež|perkėlimo)/i.test(lower)) {
+    return { label: raw, category: 'transfer' };
+  }
+  if (/(left|atsisak|neatvyko|nedalyv|amoa|dnw|did not wait|lwbs|lwt|pabėg|walked)/i.test(lower)) {
+    return { label: raw, category: 'left' };
+  }
+  return { label: raw, category: 'other' };
+}
+
+function createEmptyEdSummary(mode = 'legacy') {
+  return {
+    mode,
+    totalPatients: 0,
+    uniqueDates: 0,
+    avgDailyPatients: null,
+    avgLosMinutes: null,
+    avgLosHospitalizedMinutes: null,
+    avgLosMonthMinutes: null,
+    avgLosYearMinutes: null,
+    avgDoorToProviderMinutes: null,
+    avgDecisionToLeaveMinutes: null,
+    hospitalizedShare: null,
+    hospitalizedMonthShare: null,
+    hospitalizedYearShare: null,
+    entryCount: 0,
+    currentPatients: null,
+    occupiedBeds: null,
+    nursePatientsPerStaff: null,
+    doctorPatientsPerStaff: null,
+    latestSnapshotLabel: '',
+    latestSnapshotAt: null,
+    generatedAt: new Date(),
+  };
+}
+
+function transformEdCsv(text) {
+  if (!text) {
+    throw new Error('ED CSV turinys tuščias.');
+  }
+  const { rows } = parseCsv(text);
+  if (!rows.length) {
+    throw new Error('ED CSV neturi jokių eilučių.');
+  }
+  const header = rows[0].map((cell) => String(cell ?? '').trim());
+  const headerNormalized = header.map((column, index) => ({
+    original: column,
+    normalized: column.toLowerCase(),
+    index,
+  }));
+  const legacyCandidates = {
+    date: ['date', 'data', 'service date', 'diena', 'atvykimo data'],
+    arrival: ['arrival', 'arrival time', 'atvykimo laikas', 'atvykimo data', 'registered'],
+    departure: ['departure', 'departure time', 'discharge', 'išrašymo data', 'išvykimo laikas', 'completion'],
+    disposition: ['disposition', 'outcome', 'sprendimas', 'status', 'būsena', 'dispo'],
+    los: ['length of stay (min)', 'los (min)', 'stay (min)', 'trukmė (min)', 'los minutes', 'los_min'],
+    door: ['door to provider (min)', 'door to doctor (min)', 'door to doc (min)', 'door to physician (min)', 'laukimo laikas (min)', 'durys iki gydytojo (min)'],
+    decision: ['decision to depart (min)', 'boarding (min)', 'decision to leave (min)', 'disposition to depart (min)', 'sprendimo laukimas (min)'],
+  };
+  const legacyIndices = {
+    date: resolveColumnIndex(headerNormalized, legacyCandidates.date),
+    arrival: resolveColumnIndex(headerNormalized, legacyCandidates.arrival),
+    departure: resolveColumnIndex(headerNormalized, legacyCandidates.departure),
+    disposition: resolveColumnIndex(headerNormalized, legacyCandidates.disposition),
+    los: resolveColumnIndex(headerNormalized, legacyCandidates.los),
+    door: resolveColumnIndex(headerNormalized, legacyCandidates.door),
+    decision: resolveColumnIndex(headerNormalized, legacyCandidates.decision),
+  };
+  const snapshotCandidates = {
+    timestamp: ['timestamp', 'datetime', 'laikas', 'įrašyta', 'atnaujinta', 'data', 'created', 'updated'],
+    currentPatients: ['šiuo metu pacientų', 'current patients', 'patients now', 'patients in ed'],
+    occupiedBeds: ['užimta lovų', 'occupied beds', 'beds occupied'],
+    nurseRatio: ['slaugytojų - pacientų santykis', 'nurse - patient ratio', 'nurse to patient ratio', 'nurse ratio'],
+    doctorRatio: ['gydytojų - pacientų santykis', 'doctor - patient ratio', 'doctor to patient ratio', 'physician ratio'],
+    category1: ['1 kategorijos pacientų', 'category 1 patients', 'patients category 1', 'c1'],
+    category2: ['2 kategorijos pacientų', 'category 2 patients', 'patients category 2', 'c2'],
+    category3: ['3 kategorijos pacientų', 'category 3 patients', 'patients category 3', 'c3'],
+    category4: ['4 kategorijos pacientų', 'category 4 patients', 'patients category 4', 'c4'],
+    category5: ['5 kategorijos pacientų', 'category 5 patients', 'patients category 5', 'c5'],
+  };
+  const snapshotIndices = {
+    timestamp: resolveColumnIndex(headerNormalized, snapshotCandidates.timestamp),
+    currentPatients: resolveColumnIndex(headerNormalized, snapshotCandidates.currentPatients),
+    occupiedBeds: resolveColumnIndex(headerNormalized, snapshotCandidates.occupiedBeds),
+    nurseRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.nurseRatio),
+    doctorRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.doctorRatio),
+    category1: resolveColumnIndex(headerNormalized, snapshotCandidates.category1),
+    category2: resolveColumnIndex(headerNormalized, snapshotCandidates.category2),
+    category3: resolveColumnIndex(headerNormalized, snapshotCandidates.category3),
+    category4: resolveColumnIndex(headerNormalized, snapshotCandidates.category4),
+    category5: resolveColumnIndex(headerNormalized, snapshotCandidates.category5),
+  };
+  const hasSnapshot = snapshotIndices.currentPatients >= 0
+    || snapshotIndices.occupiedBeds >= 0
+    || snapshotIndices.nurseRatio >= 0
+    || snapshotIndices.doctorRatio >= 0
+    || snapshotIndices.category1 >= 0
+    || snapshotIndices.category2 >= 0
+    || snapshotIndices.category3 >= 0
+    || snapshotIndices.category4 >= 0
+    || snapshotIndices.category5 >= 0;
+  const hasLegacy = Object.values(legacyIndices).some((index) => index >= 0);
+  const datasetType = hasSnapshot && hasLegacy ? 'hybrid' : (hasSnapshot ? 'snapshot' : 'legacy');
+
+  const records = [];
+  let syntheticCounter = 0;
+  for (let i = 1; i < rows.length; i += 1) {
+    const row = rows[i];
+    if (!row || !row.length) {
+      continue;
+    }
+    const normalizedRow = header.map((_, index) => {
+      const cell = row[index];
+      return cell != null ? String(cell).trim() : '';
+    });
+
+    const timestampRaw = snapshotIndices.timestamp >= 0 ? normalizedRow[snapshotIndices.timestamp] : '';
+    const timestamp = timestampRaw ? parseDate(timestampRaw) : null;
+    const arrivalValue = legacyIndices.arrival >= 0 ? normalizedRow[legacyIndices.arrival] : '';
+    const departureValue = legacyIndices.departure >= 0 ? normalizedRow[legacyIndices.departure] : '';
+    const dateValue = legacyIndices.date >= 0 ? normalizedRow[legacyIndices.date] : '';
+    const arrivalDate = arrivalValue ? parseDate(arrivalValue) : null;
+    const departureDate = departureValue ? parseDate(departureValue) : null;
+    let recordDate = dateValue ? parseDate(dateValue) : null;
+    if (!(recordDate instanceof Date) || Number.isNaN(recordDate.getTime())) {
+      recordDate = arrivalDate || departureDate || (timestamp instanceof Date && !Number.isNaN(timestamp.getTime()) ? timestamp : null);
+    }
+    let dateKey = recordDate instanceof Date && !Number.isNaN(recordDate.getTime())
+      ? toDateKeyFromDate(recordDate)
+      : '';
+
+    const dispositionValue = legacyIndices.disposition >= 0 ? normalizedRow[legacyIndices.disposition] : '';
+    let losMinutes = legacyIndices.los >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.los]) : null;
+    if (!Number.isFinite(losMinutes) && arrivalDate instanceof Date && departureDate instanceof Date) {
+      const diffMinutes = (departureDate.getTime() - arrivalDate.getTime()) / 60000;
+      if (Number.isFinite(diffMinutes) && diffMinutes >= 0) {
+        losMinutes = diffMinutes;
+      }
+    }
+    const doorMinutes = legacyIndices.door >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.door]) : null;
+    const decisionMinutes = legacyIndices.decision >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.decision]) : null;
+    const dispositionInfo = normalizeDispositionValue(dispositionValue);
+
+    const currentPatients = snapshotIndices.currentPatients >= 0
+      ? parseNumericCell(normalizedRow[snapshotIndices.currentPatients])
+      : null;
+    const occupiedBeds = snapshotIndices.occupiedBeds >= 0
+      ? parseNumericCell(normalizedRow[snapshotIndices.occupiedBeds])
+      : null;
+    const nurseRatioInfo = snapshotIndices.nurseRatio >= 0
+      ? normalizeRatioValue(normalizedRow[snapshotIndices.nurseRatio])
+      : { ratio: null, text: '' };
+    const doctorRatioInfo = snapshotIndices.doctorRatio >= 0
+      ? normalizeRatioValue(normalizedRow[snapshotIndices.doctorRatio])
+      : { ratio: null, text: '' };
+    const categories = {};
+    let hasCategoryData = false;
+    ['1', '2', '3', '4', '5'].forEach((key) => {
+      const prop = `category${key}`;
+      const index = snapshotIndices[prop];
+      const value = index >= 0 ? parseNumericCell(normalizedRow[index]) : null;
+      if (Number.isFinite(value) && value >= 0) {
+        categories[key] = value;
+        hasCategoryData = true;
+      } else {
+        categories[key] = null;
+      }
+    });
+    const hasSnapshotData = Number.isFinite(currentPatients)
+      || Number.isFinite(occupiedBeds)
+      || Number.isFinite(nurseRatioInfo.ratio)
+      || Number.isFinite(doctorRatioInfo.ratio)
+      || hasCategoryData;
+
+    if (!hasSnapshotData && datasetType === 'snapshot') {
+      continue;
+    }
+
+    if (!dateKey) {
+      if (datasetType === 'legacy' && !hasSnapshotData) {
+        continue;
+      }
+      syntheticCounter += 1;
+      dateKey = `snapshot-${String(syntheticCounter).padStart(3, '0')}`;
+    }
+
+    records.push({
+      dateKey,
+      timestamp: timestamp instanceof Date && !Number.isNaN(timestamp.getTime()) ? timestamp : null,
+      rawTimestamp: timestampRaw,
+      disposition: dispositionInfo.label,
+      dispositionCategory: dispositionInfo.category,
+      losMinutes: Number.isFinite(losMinutes) && losMinutes >= 0 ? losMinutes : null,
+      doorToProviderMinutes: Number.isFinite(doorMinutes) && doorMinutes >= 0 ? doorMinutes : null,
+      decisionToLeaveMinutes: Number.isFinite(decisionMinutes) && decisionMinutes >= 0 ? decisionMinutes : null,
+      currentPatients: Number.isFinite(currentPatients) && currentPatients >= 0 ? currentPatients : null,
+      occupiedBeds: Number.isFinite(occupiedBeds) && occupiedBeds >= 0 ? occupiedBeds : null,
+      nurseRatio: Number.isFinite(nurseRatioInfo.ratio) && nurseRatioInfo.ratio > 0 ? nurseRatioInfo.ratio : null,
+      nurseRatioText: nurseRatioInfo.text,
+      doctorRatio: Number.isFinite(doctorRatioInfo.ratio) && doctorRatioInfo.ratio > 0 ? doctorRatioInfo.ratio : null,
+      doctorRatioText: doctorRatioInfo.text,
+      categories,
+    });
+  }
+
+  return { records, meta: { type: datasetType } };
+}
+
+function summarizeLegacyRecords(records) {
+  const summary = createEmptyEdSummary('legacy');
+  const dispositions = new Map();
+  const categoryTotals = { hospitalized: 0, discharged: 0, left: 0, transfer: 0, other: 0 };
+  const dailyBuckets = new Map();
+  const monthBuckets = new Map();
+  const validRecords = Array.isArray(records)
+    ? records.filter((record) => record && typeof record.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.dateKey))
+    : [];
+  if (!validRecords.length) {
+    return { summary, dispositions: [], daily: [] };
+  }
+
+  let losSum = 0;
+  let losCount = 0;
+  let hospitalizedLosSum = 0;
+  let hospitalizedLosCount = 0;
+  let doorSum = 0;
+  let doorCount = 0;
+  let decisionSum = 0;
+  let decisionCount = 0;
+
+  summary.totalPatients = validRecords.length;
+  validRecords.forEach((record) => {
+    const { dateKey, disposition, dispositionCategory, losMinutes, doorToProviderMinutes, decisionToLeaveMinutes } = record;
+    const key = disposition && disposition.trim().length ? disposition : 'Nežinoma';
+    if (!dispositions.has(key)) {
+      dispositions.set(key, { label: key, count: 0, category: dispositionCategory || 'other' });
+    }
+    const dispositionEntry = dispositions.get(key);
+    dispositionEntry.count += 1;
+    const categoryKey = dispositionCategory && categoryTotals[dispositionCategory] != null ? dispositionCategory : 'other';
+    categoryTotals[categoryKey] += 1;
+
+    const bucket = dailyBuckets.get(dateKey) || {
+      dateKey,
+      patients: 0,
+      losSum: 0,
+      losCount: 0,
+      doorSum: 0,
+      doorCount: 0,
+    };
+    bucket.patients += 1;
+    if (Number.isFinite(losMinutes)) {
+      bucket.losSum += losMinutes;
+      bucket.losCount += 1;
+      losSum += losMinutes;
+      losCount += 1;
+      if (dispositionCategory === 'hospitalized') {
+        hospitalizedLosSum += losMinutes;
+        hospitalizedLosCount += 1;
+      }
+    }
+    if (Number.isFinite(doorToProviderMinutes)) {
+      bucket.doorSum += doorToProviderMinutes;
+      bucket.doorCount += 1;
+      doorSum += doorToProviderMinutes;
+      doorCount += 1;
+    }
+    if (Number.isFinite(decisionToLeaveMinutes)) {
+      decisionSum += decisionToLeaveMinutes;
+      decisionCount += 1;
+    }
+    dailyBuckets.set(dateKey, bucket);
+
+    const monthKey = typeof dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
+      ? dateKey.slice(0, 7)
+      : '';
+    if (monthKey) {
+      const monthBucket = monthBuckets.get(monthKey) || {
+        count: 0,
+        hospitalized: 0,
+        losSum: 0,
+        losCount: 0,
+        hospitalizedLosSum: 0,
+        hospitalizedLosCount: 0,
+      };
+      monthBucket.count += 1;
+      if (dispositionCategory === 'hospitalized') {
+        monthBucket.hospitalized += 1;
+      }
+      if (Number.isFinite(losMinutes)) {
+        monthBucket.losSum += losMinutes;
+        monthBucket.losCount += 1;
+        if (dispositionCategory === 'hospitalized') {
+          monthBucket.hospitalizedLosSum += losMinutes;
+          monthBucket.hospitalizedLosCount += 1;
+        }
+      }
+      monthBuckets.set(monthKey, monthBucket);
+    }
+  });
+
+  summary.uniqueDates = dailyBuckets.size;
+  if (summary.uniqueDates > 0) {
+    summary.avgDailyPatients = summary.totalPatients / summary.uniqueDates;
+  }
+  if (losCount > 0) {
+    summary.avgLosMinutes = losSum / losCount;
+  }
+  if (hospitalizedLosCount > 0) {
+    summary.avgLosHospitalizedMinutes = hospitalizedLosSum / hospitalizedLosCount;
+  }
+  if (doorCount > 0) {
+    summary.avgDoorToProviderMinutes = doorSum / doorCount;
+  }
+  if (decisionCount > 0) {
+    summary.avgDecisionToLeaveMinutes = decisionSum / decisionCount;
+  }
+  if (summary.totalPatients > 0) {
+    summary.hospitalizedShare = categoryTotals.hospitalized / summary.totalPatients;
+  }
+  summary.generatedAt = new Date();
+
+  if (monthBuckets.size > 0) {
+    const sortedMonthKeys = Array.from(monthBuckets.keys()).sort();
+    const latestMonthKey = sortedMonthKeys[sortedMonthKeys.length - 1];
+    const currentMonth = monthBuckets.get(latestMonthKey);
+    if (currentMonth) {
+      summary.avgLosMonthMinutes = currentMonth.losCount > 0
+        ? currentMonth.losSum / currentMonth.losCount
+        : null;
+      summary.hospitalizedMonthShare = currentMonth.count > 0
+        ? currentMonth.hospitalized / currentMonth.count
+        : null;
+      const currentYear = typeof latestMonthKey === 'string' ? latestMonthKey.slice(0, 4) : '';
+      if (currentYear) {
+        const yearTotals = { count: 0, hospitalized: 0, losSum: 0, losCount: 0, hospitalizedLosSum: 0, hospitalizedLosCount: 0 };
+        monthBuckets.forEach((bucket, key) => {
+          if (typeof key === 'string' && key.startsWith(currentYear)) {
+            yearTotals.count += bucket.count;
+            yearTotals.hospitalized += bucket.hospitalized;
+            yearTotals.losSum += bucket.losSum;
+            yearTotals.losCount += bucket.losCount;
+            yearTotals.hospitalizedLosSum += bucket.hospitalizedLosSum;
+            yearTotals.hospitalizedLosCount += bucket.hospitalizedLosCount;
+          }
+        });
+        summary.avgLosYearMinutes = yearTotals.losCount > 0
+          ? yearTotals.losSum / yearTotals.losCount
+          : null;
+        summary.hospitalizedYearShare = yearTotals.count > 0
+          ? yearTotals.hospitalized / yearTotals.count
+          : null;
+        if (yearTotals.hospitalizedLosCount > 0) {
+          summary.avgLosHospitalizedMinutes = yearTotals.hospitalizedLosSum / yearTotals.hospitalizedLosCount;
+        }
+      }
+    }
+  }
+
+  const dispositionsList = Array.from(dispositions.values())
+    .map((entry) => ({
+      label: entry.label,
+      count: entry.count,
+      category: entry.category,
+      share: summary.totalPatients > 0 ? entry.count / summary.totalPatients : null,
+    }))
+    .sort((a, b) => {
+      if (b.count !== a.count) {
+        return b.count - a.count;
+      }
+      return a.label.localeCompare(b.label);
+    });
+
+  const daily = Array.from(dailyBuckets.values())
+    .map((bucket) => ({
+      dateKey: bucket.dateKey,
+      patients: bucket.patients,
+      avgLosMinutes: bucket.losCount > 0 ? bucket.losSum / bucket.losCount : null,
+      avgDoorMinutes: bucket.doorCount > 0 ? bucket.doorSum / bucket.doorCount : null,
+    }))
+    .sort((a, b) => (a.dateKey === b.dateKey ? 0 : (a.dateKey > b.dateKey ? -1 : 1)));
+
+  return { summary, dispositions: dispositionsList, daily };
+}
+
+function summarizeSnapshotRecords(records) {
+  const result = {
+    entryCount: 0,
+    currentPatients: null,
+    occupiedBeds: null,
+    nursePatientsPerStaff: null,
+    doctorPatientsPerStaff: null,
+    latestSnapshotLabel: '',
+    latestSnapshotAt: null,
+    generatedAt: null,
+    dispositions: [],
+    daily: [],
+  };
+  const wrapped = Array.isArray(records)
+    ? records.map((record, index) => ({ record, index })).filter((item) => {
+      if (!item.record) {
+        return false;
+      }
+      const r = item.record;
+      const hasValue = Number.isFinite(r.currentPatients)
+        || Number.isFinite(r.occupiedBeds)
+        || Number.isFinite(r.nurseRatio)
+        || Number.isFinite(r.doctorRatio)
+        || (r.categories && Object.values(r.categories).some((value) => Number.isFinite(value)));
+      return hasValue;
+    })
+    : [];
+  if (!wrapped.length) {
+    return result;
+  }
+
+  result.entryCount = wrapped.length;
+
+  const sortedByTime = [...wrapped].sort((a, b) => {
+    const timeA = a.record.timestamp instanceof Date && !Number.isNaN(a.record.timestamp.getTime())
+      ? a.record.timestamp.getTime()
+      : Number.NEGATIVE_INFINITY;
+    const timeB = b.record.timestamp instanceof Date && !Number.isNaN(b.record.timestamp.getTime())
+      ? b.record.timestamp.getTime()
+      : Number.NEGATIVE_INFINITY;
+    if (timeA !== timeB) {
+      return timeB - timeA;
+    }
+    return b.index - a.index;
+  });
+
+  const latest = sortedByTime[0]?.record || null;
+  if (latest) {
+    result.latestSnapshotAt = latest.timestamp instanceof Date && !Number.isNaN(latest.timestamp.getTime())
+      ? latest.timestamp
+      : null;
+    if (result.latestSnapshotAt) {
+      result.latestSnapshotLabel = result.latestSnapshotAt.toISOString();
+    } else if (latest.rawTimestamp && latest.rawTimestamp.length) {
+      result.latestSnapshotLabel = latest.rawTimestamp;
+    } else {
+      result.latestSnapshotLabel = '';
+    }
+    if (Number.isFinite(latest.currentPatients)) {
+      result.currentPatients = latest.currentPatients;
+    }
+    if (Number.isFinite(latest.occupiedBeds)) {
+      result.occupiedBeds = latest.occupiedBeds;
+    }
+    if (Number.isFinite(latest.nurseRatio)) {
+      result.nursePatientsPerStaff = latest.nurseRatio;
+    }
+    if (Number.isFinite(latest.doctorRatio)) {
+      result.doctorPatientsPerStaff = latest.doctorRatio;
+    }
+    if (latest.categories && typeof latest.categories === 'object') {
+      const categoryEntries = [];
+      let total = 0;
+      ['1', '2', '3', '4', '5'].forEach((key) => {
+        const value = latest.categories[key];
+        if (Number.isFinite(value) && value >= 0) {
+          const label = TEXT?.ed?.triage?.[`category${key}`] || `${key} kategorija`;
+          categoryEntries.push({ label, count: value, key });
+          total += value;
+        }
+      });
+      result.dispositions = categoryEntries.map((entry) => ({
+        label: entry.label,
+        count: entry.count,
+        share: total > 0 ? entry.count / total : null,
+        categoryKey: entry.key,
+      }));
+    }
+  }
+  result.generatedAt = result.latestSnapshotAt || new Date();
+
+  return result;
+}
+
+function summarizeEdRecords(records, meta = {}) {
+  const hasSnapshot = Array.isArray(records)
+    && records.some((record) => record
+      && (Number.isFinite(record.currentPatients)
+        || Number.isFinite(record.occupiedBeds)
+        || Number.isFinite(record.nurseRatio)
+        || Number.isFinite(record.doctorRatio)
+        || (record.categories && Object.values(record.categories).some((value) => Number.isFinite(value)))));
+  const hasLegacy = Array.isArray(records)
+    && records.some((record) => record
+      && (Number.isFinite(record.losMinutes)
+        || Number.isFinite(record.doorToProviderMinutes)
+        || Number.isFinite(record.decisionToLeaveMinutes)
+        || (typeof record.dispositionCategory === 'string' && record.dispositionCategory !== 'unknown')));
+
+  let mode = meta?.type;
+  if (!mode) {
+    if (hasSnapshot && hasLegacy) {
+      mode = 'hybrid';
+    } else if (hasSnapshot) {
+      mode = 'snapshot';
+    } else {
+      mode = 'legacy';
+    }
+  }
+
+  const summary = createEmptyEdSummary(mode);
+  if (!Array.isArray(records) || !records.length) {
+    return { summary, dispositions: [], daily: [], meta: { type: mode } };
+  }
+
+  let legacy = { summary: createEmptyEdSummary('legacy'), dispositions: [], daily: [] };
+  if (hasLegacy) {
+    legacy = summarizeLegacyRecords(records);
+    summary.totalPatients = legacy.summary.totalPatients;
+    summary.uniqueDates = legacy.summary.uniqueDates;
+    summary.avgDailyPatients = legacy.summary.avgDailyPatients;
+    summary.avgLosMinutes = legacy.summary.avgLosMinutes;
+    summary.avgLosHospitalizedMinutes = legacy.summary.avgLosHospitalizedMinutes;
+    summary.avgLosMonthMinutes = legacy.summary.avgLosMonthMinutes;
+    summary.avgLosYearMinutes = legacy.summary.avgLosYearMinutes;
+    summary.avgDoorToProviderMinutes = legacy.summary.avgDoorToProviderMinutes;
+    summary.avgDecisionToLeaveMinutes = legacy.summary.avgDecisionToLeaveMinutes;
+    summary.hospitalizedShare = legacy.summary.hospitalizedShare;
+    summary.hospitalizedMonthShare = legacy.summary.hospitalizedMonthShare;
+    summary.hospitalizedYearShare = legacy.summary.hospitalizedYearShare;
+    summary.generatedAt = legacy.summary.generatedAt;
+  }
+
+  let snapshot = {
+    entryCount: 0,
+    currentPatients: null,
+    occupiedBeds: null,
+    nursePatientsPerStaff: null,
+    doctorPatientsPerStaff: null,
+    latestSnapshotLabel: '',
+    latestSnapshotAt: null,
+    generatedAt: null,
+    dispositions: [],
+    daily: [],
+  };
+  if (hasSnapshot) {
+    snapshot = summarizeSnapshotRecords(records);
+    summary.entryCount = snapshot.entryCount;
+    summary.currentPatients = snapshot.currentPatients;
+    summary.occupiedBeds = snapshot.occupiedBeds;
+    summary.nursePatientsPerStaff = snapshot.nursePatientsPerStaff;
+    summary.doctorPatientsPerStaff = snapshot.doctorPatientsPerStaff;
+    summary.latestSnapshotLabel = snapshot.latestSnapshotLabel;
+    summary.latestSnapshotAt = snapshot.latestSnapshotAt;
+    if (snapshot.generatedAt) {
+      summary.generatedAt = snapshot.generatedAt;
+    }
+  }
+
+  let dispositions = [];
+  let daily = [];
+  if (mode === 'snapshot') {
+    dispositions = snapshot.dispositions;
+    daily = snapshot.daily;
+  } else if (mode === 'hybrid') {
+    dispositions = snapshot.dispositions.length ? snapshot.dispositions : legacy.dispositions;
+    daily = snapshot.daily.length ? snapshot.daily : legacy.daily;
+  } else {
+    dispositions = legacy.dispositions;
+    daily = legacy.daily;
+  }
+
+  return { summary, dispositions, daily, meta: { type: mode } };
+}
+
+function getAvailableYearsFromDaily(dailyStats) {
+  const years = new Set();
+  (Array.isArray(dailyStats) ? dailyStats : []).forEach((entry) => {
+    if (!entry || typeof entry.date !== 'string') {
+      return;
+    }
+    const date = dateKeyToDate(entry.date);
+    if (date instanceof Date && !Number.isNaN(date.getTime())) {
+      years.add(date.getUTCFullYear());
+    }
+  });
+  return Array.from(years).sort((a, b) => b - a);
+}
+
+function populateChartYearOptions(dailyStats) {
+  if (!selectors.chartYearSelect) {
+    return;
+  }
+  const years = getAvailableYearsFromDaily(dailyStats);
+  selectors.chartYearSelect.replaceChildren();
+  const defaultOption = document.createElement('option');
+  defaultOption.value = 'all';
+  defaultOption.textContent = TEXT.charts.yearFilterAll;
+  selectors.chartYearSelect.appendChild(defaultOption);
+  years.forEach((year) => {
+    const option = document.createElement('option');
+    option.value = String(year);
+    option.textContent = `${year} m.`;
+    selectors.chartYearSelect.appendChild(option);
+  });
+  const currentYear = Number.isFinite(dashboardState.chartYear) ? dashboardState.chartYear : null;
+  const hasCurrent = Number.isFinite(currentYear) && years.includes(currentYear);
+  if (hasCurrent) {
+    selectors.chartYearSelect.value = String(currentYear);
+  } else {
+    selectors.chartYearSelect.value = 'all';
+    dashboardState.chartYear = null;
+  }
+  syncChartYearControl();
+}
+
+function syncChartYearControl() {
+  if (!selectors.chartYearSelect) {
+    return;
+  }
+  const value = Number.isFinite(dashboardState.chartYear) ? String(dashboardState.chartYear) : 'all';
+  if (selectors.chartYearSelect.value !== value) {
+    selectors.chartYearSelect.value = value;
+  }
+}
+
+function prepareChartDataForPeriod(period) {
+  const normalized = Number.isFinite(Number(period)) && Number(period) > 0
+    ? Number(period)
+    : 30;
+  const baseDaily = Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
+    ? dashboardState.chartData.baseDaily
+    : dashboardState.dailyStats;
+  const baseRecords = Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+    ? dashboardState.chartData.baseRecords
+    : dashboardState.rawRecords;
+  const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+  const yearScopedDaily = filterDailyStatsByYear(baseDaily, selectedYear);
+  const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
+  const scopedDaily = filterDailyStatsByWindow(yearScopedDaily, normalized);
+  const scopedRecords = filterRecordsByWindow(yearScopedRecords, normalized);
+  const funnelData = computeFunnelStats(scopedDaily, selectedYear, yearScopedDaily);
+  const heatmapData = computeArrivalHeatmap(scopedRecords);
+
+  dashboardState.chartData.dailyWindow = scopedDaily;
+  dashboardState.chartData.funnel = funnelData;
+  dashboardState.chartData.heatmap = heatmapData;
+
+  return { daily: scopedDaily, funnel: funnelData, heatmap: heatmapData };
+}
+
+function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
+  const primaryEntries = Array.isArray(dailyStats) ? dailyStats : [];
+  const fallbackEntries = Array.isArray(fallbackDailyStats) ? fallbackDailyStats : [];
+  const entries = primaryEntries.length ? primaryEntries : fallbackEntries;
+  const withYear = entries
+    .map((entry) => {
+      const date = typeof entry?.date === 'string' ? dateKeyToDate(entry.date) : null;
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return null;
+      }
+      return { entry, year: date.getUTCFullYear() };
+    })
+    .filter(Boolean);
+
+  if (!withYear.length) {
+    const totals = entries.reduce(
+      (acc, entry) => ({
+        arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
+        hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
+        discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
+      }),
+      { arrived: 0, hospitalized: 0, discharged: 0 }
+    );
+    const normalizedYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
+    return { ...totals, year: normalizedYear };
+  }
+
+  let effectiveYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
+  if (!Number.isFinite(effectiveYear)) {
+    const uniqueYears = withYear.reduce((acc, item) => {
+      if (!acc.includes(item.year)) {
+        acc.push(item.year);
+      }
+      return acc;
+    }, []);
+    if (uniqueYears.length === 1) {
+      effectiveYear = uniqueYears[0];
+    } else if (!primaryEntries.length && uniqueYears.length) {
+      effectiveYear = uniqueYears.reduce((latest, year) => (year > latest ? year : latest), uniqueYears[0]);
+    }
+  }
+
+  let scoped = withYear;
+  if (Number.isFinite(effectiveYear)) {
+    scoped = withYear.filter((item) => item.year === effectiveYear);
+    if (!scoped.length) {
+      scoped = withYear;
+    }
+  }
+
+  const aggregated = scoped.reduce(
+    (acc, item) => ({
+      arrived: acc.arrived + (Number.isFinite(item.entry?.count) ? item.entry.count : 0),
+      hospitalized: acc.hospitalized + (Number.isFinite(item.entry?.hospitalized) ? item.entry.hospitalized : 0),
+      discharged: acc.discharged + (Number.isFinite(item.entry?.discharged) ? item.entry.discharged : 0),
+    }),
+    { arrived: 0, hospitalized: 0, discharged: 0 }
+  );
+
+  return { ...aggregated, year: Number.isFinite(effectiveYear) ? effectiveYear : null };
+}
+
+const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Treč', 'Ketv', 'Penkt', 'Šešt', 'Sekm'];
+const HEATMAP_WEEKDAY_FULL = [
+  'Pirmadienis',
+  'Antradienis',
+  'Trečiadienis',
+  'Ketvirtadienis',
+  'Penktadienis',
+  'Šeštadienis',
+  'Sekmadienis',
+];
+const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
+
+function computeArrivalHeatmap(records) {
+  const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
+  const weekdayDays = Array.from({ length: 7 }, () => new Set());
+  (Array.isArray(records) ? records : []).forEach((entry) => {
+    if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
+      return;
+    }
+    const rawDay = entry.arrival.getDay();
+    const dayIndex = (rawDay + 6) % 7; // perkeliam, kad pirmadienis būtų pirmas
+    const hour = entry.arrival.getHours();
+    if (hour < 0 || hour > 23) {
+      return;
+    }
+    matrix[dayIndex][hour] += 1;
+    const dateKey = formatLocalDateKey(entry.arrival);
+    if (dateKey) {
+      weekdayDays[dayIndex].add(dateKey);
+    }
+  });
+  let max = 0;
+  const averaged = matrix.map((row, dayIndex) => {
+    const divisor = weekdayDays[dayIndex].size || 1;
+    return row.map((value) => {
+      const average = divisor ? value / divisor : 0;
+      if (average > max) {
+        max = average;
+      }
+      return average;
+    });
+  });
+  return { matrix: averaged, max };
+}
+
+function computeHeatmapColor(accentColor, intensity) {
+  const alpha = Math.min(0.85, Math.max(0.08, 0.08 + intensity * 0.75));
+  const hexMatch = /^#?([a-f\d]{6})$/i.exec(accentColor.trim());
+  if (hexMatch) {
+    const numeric = Number.parseInt(hexMatch[1], 16);
+    const r = (numeric >> 16) & 255;
+    const g = (numeric >> 8) & 255;
+    const b = numeric & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+  }
+  const rgbMatch = accentColor.trim().match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbMatch) {
+    const [, r, g, b] = rgbMatch;
+    return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+  }
+  return `rgba(37, 99, 235, ${alpha.toFixed(3)})`;
+}
+
+function renderArrivalHeatmap(container, heatmapData, accentColor) {
+  if (!container) {
+    return;
+  }
+  container.replaceChildren();
+  const { matrix = [], max = 0 } = heatmapData || {};
+  if (!matrix.length || max <= 0) {
+    const empty = document.createElement('p');
+    empty.className = 'heatmap-empty';
+    empty.textContent = TEXT.charts.heatmapEmpty;
+    container.appendChild(empty);
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'heatmap-table';
+
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  const corner = document.createElement('th');
+  corner.setAttribute('scope', 'col');
+  corner.textContent = '';
+  headerRow.appendChild(corner);
+  HEATMAP_HOURS.forEach((label) => {
+    const th = document.createElement('th');
+    th.setAttribute('scope', 'col');
+    th.textContent = label;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  matrix.forEach((rowValues, dayIndex) => {
+    const row = document.createElement('tr');
+    const rowHeader = document.createElement('th');
+    rowHeader.setAttribute('scope', 'row');
+    rowHeader.textContent = HEATMAP_WEEKDAY_SHORT[dayIndex] || '';
+    row.appendChild(rowHeader);
+    rowValues.forEach((value, hourIndex) => {
+      const cell = document.createElement('td');
+      const intensity = max > 0 ? value / max : 0;
+      const badge = document.createElement('span');
+      badge.className = 'heatmap-cell';
+      const color = intensity > 0 ? computeHeatmapColor(accentColor, intensity) : 'var(--color-surface-alt)';
+      badge.style.backgroundColor = color;
+      badge.style.color = intensity > 0.55 ? '#fff' : intensity > 0 ? 'var(--color-text)' : 'var(--color-text-muted)';
+      badge.textContent = value > 0 ? oneDecimalFormatter.format(value) : '';
+      badge.tabIndex = value > 0 ? 0 : -1;
+      const label = `${HEATMAP_WEEKDAY_FULL[dayIndex] || ''}, ${HEATMAP_HOURS[hourIndex]} – ${oneDecimalFormatter.format(value)} pacientų (vidutiniškai per dieną)`;
+      cell.setAttribute('aria-label', label);
+      badge.setAttribute('title', label);
+      cell.appendChild(badge);
+      row.appendChild(cell);
+    });
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+
+  container.appendChild(table);
+  const legend = document.createElement('p');
+  legend.className = 'heatmap-legend';
+  legend.textContent = TEXT.charts.heatmapLegend;
+  container.appendChild(legend);
+}
+
+function formatLocalDateKey(date) {
+  if (!(date instanceof Date)) {
+    return '';
+  }
+  const time = date.getTime();
+  if (Number.isNaN(time)) {
+    return '';
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function resolveShiftStartHour(calculationSettings) {
+  const fallback = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
+    ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
+    : 7;
+  if (Number.isFinite(Number(calculationSettings?.shiftStartHour))) {
+    return Number(calculationSettings.shiftStartHour);
+  }
+  if (Number.isFinite(Number(calculationSettings?.nightEndHour))) {
+    return Number(calculationSettings.nightEndHour);
+  }
+  return fallback;
+}
+
+function computeShiftDateKey(referenceDate, shiftStartHour) {
+  if (!(referenceDate instanceof Date) || Number.isNaN(referenceDate.getTime())) {
+    return '';
+  }
+  const dayMinutes = 24 * 60;
+  const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
+  const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
+  const arrivalMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
+  const shiftAnchor = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  if (arrivalMinutes < startMinutes) {
+    shiftAnchor.setDate(shiftAnchor.getDate() - 1);
+  }
+  return formatLocalDateKey(shiftAnchor);
+}
+
+function computeDailyStats(data) {
+  const shiftStartHour = resolveShiftStartHour(settings?.calculations);
+  const dailyMap = new Map();
+  data.forEach((record) => {
+    const reference = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+      ? record.arrival
+      : record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+        ? record.discharge
+        : null;
+    const dateKey = computeShiftDateKey(reference, shiftStartHour);
+    if (!dateKey) {
+      return;
+    }
+
+    if (!dailyMap.has(dateKey)) {
+      dailyMap.set(dateKey, {
+        date: dateKey,
+        count: 0,
+        night: 0,
+        ems: 0,
+        discharged: 0,
+        hospitalized: 0,
+        totalTime: 0,
+        durations: 0,
+        hospitalizedTime: 0,
+        hospitalizedDurations: 0,
+      });
+    }
+    const summary = dailyMap.get(dateKey);
+    summary.count += 1;
+    summary.night += record.night ? 1 : 0;
+    summary.ems += record.ems ? 1 : 0;
+    if (record.hospitalized) {
+      summary.hospitalized += 1;
+    } else {
+      summary.discharged += 1;
+    }
+    if (record.arrival instanceof Date && record.discharge instanceof Date) {
+      const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
+      if (Number.isFinite(duration) && duration >= 0 && duration <= 24) { // ignoruojame >24 val. buvimo laikus
+        summary.totalTime += duration;
+        summary.durations += 1;
+        if (record.hospitalized) {
+          summary.hospitalizedTime += duration;
+          summary.hospitalizedDurations += 1;
+        }
+      }
+    }
+  });
+
+  return Array.from(dailyMap.values()).sort((a, b) => (a.date > b.date ? 1 : -1)).map((item) => ({
+    ...item,
+    avgTime: item.durations ? item.totalTime / item.durations : 0,
+    avgHospitalizedTime: item.hospitalizedDurations ? item.hospitalizedTime / item.hospitalizedDurations : 0,
+  }));
+}
+
+function computeMonthlyStats(daily) {
+  const monthlyMap = new Map();
+  daily.forEach((entry) => {
+    if (!entry?.date) {
+      return;
+    }
+    const monthKey = entry.date.slice(0, 7);
+    if (!monthlyMap.has(monthKey)) {
+      monthlyMap.set(monthKey, {
+        month: monthKey,
+        count: 0,
+        night: 0,
+        ems: 0,
+        discharged: 0,
+        hospitalized: 0,
+        totalTime: 0,
+        durations: 0,
+        hospitalizedTime: 0,
+        hospitalizedDurations: 0,
+        dayCount: 0,
+      });
+    }
+    const summary = monthlyMap.get(monthKey);
+    summary.count += entry.count;
+    summary.night += entry.night;
+    summary.ems += entry.ems;
+    summary.discharged += entry.discharged;
+    summary.hospitalized += entry.hospitalized;
+    summary.totalTime += entry.totalTime;
+    summary.durations += entry.durations;
+    summary.hospitalizedTime += entry.hospitalizedTime;
+    summary.hospitalizedDurations += entry.hospitalizedDurations;
+    summary.dayCount += 1;
+  });
+
+  return Array.from(monthlyMap.values()).sort((a, b) => (a.month > b.month ? 1 : -1));
+}
+
+function computeYearlyStats(monthlyStats) {
+  const yearlyMap = new Map();
+  monthlyStats.forEach((entry) => {
+    if (!entry?.month) {
+      return;
+    }
+    const yearKey = entry.month.slice(0, 4);
+    if (!yearKey) {
+      return;
+    }
+    if (!yearlyMap.has(yearKey)) {
+      yearlyMap.set(yearKey, {
+        year: yearKey,
+        count: 0,
+        night: 0,
+        ems: 0,
+        discharged: 0,
+        hospitalized: 0,
+        totalTime: 0,
+        durations: 0,
+        hospitalizedTime: 0,
+        hospitalizedDurations: 0,
+        dayCount: 0,
+        monthCount: 0,
+      });
+    }
+    const bucket = yearlyMap.get(yearKey);
+    bucket.count += Number.isFinite(entry.count) ? entry.count : 0;
+    bucket.night += Number.isFinite(entry.night) ? entry.night : 0;
+    bucket.ems += Number.isFinite(entry.ems) ? entry.ems : 0;
+    bucket.discharged += Number.isFinite(entry.discharged) ? entry.discharged : 0;
+    bucket.hospitalized += Number.isFinite(entry.hospitalized) ? entry.hospitalized : 0;
+    bucket.totalTime += Number.isFinite(entry.totalTime) ? entry.totalTime : 0;
+    bucket.durations += Number.isFinite(entry.durations) ? entry.durations : 0;
+    bucket.hospitalizedTime += Number.isFinite(entry.hospitalizedTime) ? entry.hospitalizedTime : 0;
+    bucket.hospitalizedDurations += Number.isFinite(entry.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
+    bucket.dayCount += Number.isFinite(entry.dayCount) ? entry.dayCount : 0;
+    bucket.monthCount += 1;
+  });
+
+  return Array.from(yearlyMap.values()).sort((a, b) => (a.year > b.year ? 1 : -1));
+}
+
+function computeFeedbackStats(records) {
+  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  const sorted = list
+    .slice()
+    .sort((a, b) => {
+      const aTime = a?.receivedAt instanceof Date ? a.receivedAt.getTime() : -Infinity;
+      const bTime = b?.receivedAt instanceof Date ? b.receivedAt.getTime() : -Infinity;
+      return bTime - aTime;
+    });
+
+  const totalResponses = sorted.length;
+  const collectValues = (key, predicate = null) => sorted
+    .filter((entry) => (typeof predicate === 'function' ? predicate(entry) : true))
+    .map((entry) => {
+      const value = entry?.[key];
+      return Number.isFinite(value) ? Number(value) : null;
+    })
+    .filter((value) => Number.isFinite(value)
+      && value >= FEEDBACK_RATING_MIN
+      && value <= FEEDBACK_RATING_MAX);
+
+  const overallRatings = collectValues('overallRating');
+  const doctorsRatings = collectValues('doctorsRating');
+  const nursesRatings = collectValues('nursesRating');
+  const aidesRatings = collectValues('aidesRating', (entry) => entry?.aidesContact === true);
+  const waitingRatings = collectValues('waitingRating');
+
+  const average = (values) => (values.length
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : null);
+
+  const contactResponses = sorted
+    .filter((entry) => entry?.aidesContact === true || entry?.aidesContact === false)
+    .length;
+  const contactYes = sorted.filter((entry) => entry?.aidesContact === true).length;
+  const contactShare = contactResponses > 0 ? contactYes / contactResponses : null;
+
+  const monthlyMap = new Map();
+  sorted.forEach((entry) => {
+    if (!(entry?.receivedAt instanceof Date) || Number.isNaN(entry.receivedAt.getTime())) {
+      return;
+    }
+    const dateKey = formatLocalDateKey(entry.receivedAt);
+    if (!dateKey) {
+      return;
+    }
+    const monthKey = dateKey.slice(0, 7);
+    if (!monthKey) {
+      return;
+    }
+    if (!monthlyMap.has(monthKey)) {
+      monthlyMap.set(monthKey, {
+        month: monthKey,
+        responses: 0,
+        overallSum: 0,
+        overallCount: 0,
+        doctorsSum: 0,
+        doctorsCount: 0,
+        nursesSum: 0,
+        nursesCount: 0,
+        aidesSum: 0,
+        aidesCount: 0,
+        waitingSum: 0,
+        waitingCount: 0,
+        contactResponses: 0,
+        contactYes: 0,
+      });
+    }
+
+    const bucket = monthlyMap.get(monthKey);
+    bucket.responses += 1;
+
+    if (Number.isFinite(entry?.overallRating)
+      && entry.overallRating >= FEEDBACK_RATING_MIN
+      && entry.overallRating <= FEEDBACK_RATING_MAX) {
+      bucket.overallSum += Number(entry.overallRating);
+      bucket.overallCount += 1;
+    }
+    if (Number.isFinite(entry?.doctorsRating)
+      && entry.doctorsRating >= FEEDBACK_RATING_MIN
+      && entry.doctorsRating <= FEEDBACK_RATING_MAX) {
+      bucket.doctorsSum += Number(entry.doctorsRating);
+      bucket.doctorsCount += 1;
+    }
+    if (Number.isFinite(entry?.nursesRating)
+      && entry.nursesRating >= FEEDBACK_RATING_MIN
+      && entry.nursesRating <= FEEDBACK_RATING_MAX) {
+      bucket.nursesSum += Number(entry.nursesRating);
+      bucket.nursesCount += 1;
+    }
+    if (entry?.aidesContact === true
+      && Number.isFinite(entry?.aidesRating)
+      && entry.aidesRating >= FEEDBACK_RATING_MIN
+      && entry.aidesRating <= FEEDBACK_RATING_MAX) {
+      bucket.aidesSum += Number(entry.aidesRating);
+      bucket.aidesCount += 1;
+    }
+    if (Number.isFinite(entry?.waitingRating)
+      && entry.waitingRating >= FEEDBACK_RATING_MIN
+      && entry.waitingRating <= FEEDBACK_RATING_MAX) {
+      bucket.waitingSum += Number(entry.waitingRating);
+      bucket.waitingCount += 1;
+    }
+    if (entry?.aidesContact === true) {
+      bucket.contactResponses += 1;
+      bucket.contactYes += 1;
+    } else if (entry?.aidesContact === false) {
+      bucket.contactResponses += 1;
+    }
+  });
+
+  const monthly = Array.from(monthlyMap.values()).map((bucket) => ({
+    month: bucket.month,
+    responses: bucket.responses,
+    overallAverage: bucket.overallCount > 0 ? bucket.overallSum / bucket.overallCount : null,
+    doctorsAverage: bucket.doctorsCount > 0 ? bucket.doctorsSum / bucket.doctorsCount : null,
+    nursesAverage: bucket.nursesCount > 0 ? bucket.nursesSum / bucket.nursesCount : null,
+    aidesAverage: bucket.aidesCount > 0 ? bucket.aidesSum / bucket.aidesCount : null,
+    waitingAverage: bucket.waitingCount > 0 ? bucket.waitingSum / bucket.waitingCount : null,
+    contactResponses: bucket.contactResponses,
+    contactShare: bucket.contactResponses > 0 ? bucket.contactYes / bucket.contactResponses : null,
+  }));
+
+  return {
+    summary: {
+      totalResponses,
+      overallAverage: average(overallRatings),
+      doctorsAverage: average(doctorsRatings),
+      nursesAverage: average(nursesRatings),
+      aidesAverage: average(aidesRatings),
+      waitingAverage: average(waitingRatings),
+      overallCount: overallRatings.length,
+      doctorsCount: doctorsRatings.length,
+      nursesCount: nursesRatings.length,
+      aidesResponses: aidesRatings.length,
+      waitingCount: waitingRatings.length,
+      contactResponses,
+      contactYes,
+      contactShare,
+    },
+    monthly,
+  };
+}
+
+function aggregatePeriodSummary(entries) {
+  if (!Array.isArray(entries)) {
+    return {
+      days: 0,
+      totalCount: 0,
+      totalHospitalized: 0,
+      totalDischarged: 0,
+      totalTime: 0,
+      durationCount: 0,
+      totalHospitalizedTime: 0,
+      hospitalizedDurationCount: 0,
+    };
+  }
+  return entries.reduce((acc, entry) => {
+    acc.days += 1;
+    const count = Number.isFinite(entry?.count) ? entry.count : 0;
+    const hospitalized = Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+    const discharged = Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+    const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
+    const durations = Number.isFinite(entry?.durations) ? entry.durations : 0;
+    const hospitalizedTime = Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
+    const hospitalizedDurations = Number.isFinite(entry?.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
+    acc.totalCount += count;
+    acc.totalHospitalized += hospitalized;
+    acc.totalDischarged += discharged;
+    acc.totalTime += totalTime;
+    acc.durationCount += durations;
+    acc.totalHospitalizedTime += hospitalizedTime;
+    acc.hospitalizedDurationCount += hospitalizedDurations;
+    return acc;
+  }, {
+    days: 0,
+    totalCount: 0,
+    totalHospitalized: 0,
+    totalDischarged: 0,
+    totalTime: 0,
+    durationCount: 0,
+    totalHospitalizedTime: 0,
+    hospitalizedDurationCount: 0,
+  });
+}
+
+function derivePeriodMetrics(summary) {
+  const days = Number.isFinite(summary?.days) ? summary.days : 0;
+  const totalCount = Number.isFinite(summary?.totalCount) ? summary.totalCount : 0;
+  const totalHospitalized = Number.isFinite(summary?.totalHospitalized) ? summary.totalHospitalized : 0;
+  const totalDischarged = Number.isFinite(summary?.totalDischarged) ? summary.totalDischarged : 0;
+  const totalTime = Number.isFinite(summary?.totalTime) ? summary.totalTime : 0;
+  const durationCount = Number.isFinite(summary?.durationCount) ? summary.durationCount : 0;
+  const totalHospitalizedTime = Number.isFinite(summary?.totalHospitalizedTime) ? summary.totalHospitalizedTime : 0;
+  const hospitalizedDurationCount = Number.isFinite(summary?.hospitalizedDurationCount)
+    ? summary.hospitalizedDurationCount
+    : 0;
+  return {
+    days,
+    totalCount,
+    patientsPerDay: days > 0 ? totalCount / days : null,
+    avgTime: durationCount > 0 ? totalTime / durationCount : null,
+    avgHospitalizedTime: hospitalizedDurationCount > 0 ? totalHospitalizedTime / hospitalizedDurationCount : null,
+    hospitalizedPerDay: days > 0 ? totalHospitalized / days : null,
+    hospitalizedShare: totalCount > 0 ? totalHospitalized / totalCount : null,
+    dischargedPerDay: days > 0 ? totalDischarged / days : null,
+    dischargedShare: totalCount > 0 ? totalDischarged / totalCount : null,
+  };
+}
+
+function describePeriodLabel({ windowDays, startDateKey, endDateKey }) {
+  const startDate = dateKeyToDate(startDateKey);
+  const endDate = dateKeyToDate(endDateKey);
+  let baseLabel = '';
+  if (Number.isFinite(windowDays) && windowDays > 0) {
+    if (startDate && endDate) {
+      const startYear = startDate.getUTCFullYear();
+      const endYear = endDate.getUTCFullYear();
+      if (windowDays >= 360 && startYear === endYear) {
+        baseLabel = `${startYear} m.`;
+      }
+    }
+    if (!baseLabel) {
+      baseLabel = windowDays === 1 ? 'Paskutinė diena' : `Paskutinės ${windowDays} d.`;
+    }
+  } else if (startDate && endDate) {
+    const startYear = startDate.getUTCFullYear();
+    const endYear = endDate.getUTCFullYear();
+    baseLabel = startYear === endYear ? `${startYear} m.` : `${startYear}–${endYear} m.`;
+  }
+  if (!baseLabel) {
+    baseLabel = TEXT.kpis.windowAllLabel;
+  }
+  let rangeLabel = '';
+  if (startDate && endDate) {
+    const start = shortDateFormatter.format(startDate);
+    const end = shortDateFormatter.format(endDate);
+    rangeLabel = start === end ? start : `${start} – ${end}`;
+  }
+  const metaLabel = rangeLabel ? `${baseLabel} (${rangeLabel})` : baseLabel;
+  const referenceLabel = baseLabel || TEXT.kpis.yearAverageReference;
+  return { metaLabel, referenceLabel };
+}
+
+function buildYearMonthMetrics(dailyStats, windowDays) {
+  if (!Array.isArray(dailyStats) || dailyStats.length === 0) {
+    return null;
+  }
+  const decorated = dailyStats
+    .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date ?? '') }))
+    .filter((item) => Number.isFinite(item.utc))
+    .sort((a, b) => a.utc - b.utc);
+  if (!decorated.length) {
+    return null;
+  }
+  const earliest = decorated[0].entry;
+  const latest = decorated[decorated.length - 1].entry;
+  const [yearStr = '', monthStr = ''] = (latest?.date ?? '').split('-');
+  const year = Number.parseInt(yearStr, 10);
+  const monthKey = monthStr ? `${yearStr}-${monthStr}` : null;
+  const monthEntries = monthKey
+    ? dailyStats.filter((entry) => typeof entry?.date === 'string' && entry.date.startsWith(monthKey))
+    : [];
+  const periodEntries = decorated.map((item) => item.entry);
+  const yearSummary = derivePeriodMetrics(aggregatePeriodSummary(periodEntries));
+  const monthSummary = derivePeriodMetrics(aggregatePeriodSummary(monthEntries));
+  const monthNumeric = Number.parseInt(monthStr, 10);
+  const monthLabel = Number.isFinite(monthNumeric) && Number.isFinite(year)
+    ? monthFormatter.format(new Date(year, Math.max(0, monthNumeric - 1), 1))
+    : '';
+  const periodLabels = describePeriodLabel({
+    windowDays,
+    startDateKey: earliest?.date,
+    endDateKey: latest?.date,
+  });
+  return {
+    yearLabel: periodLabels.metaLabel,
+    referenceLabel: periodLabels.referenceLabel,
+    monthLabel,
+    yearMetrics: yearSummary,
+    monthMetrics: monthSummary,
+  };
+}
+
+function refreshKpiWindowOptions() {
+  const select = selectors.kpiWindow;
+  if (!select) {
+    return;
+  }
+  const configuredWindowRaw = Number.isFinite(Number(settings?.calculations?.windowDays))
+    ? Number(settings.calculations.windowDays)
+    : DEFAULT_SETTINGS.calculations.windowDays;
+  const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
+    ? configuredWindowRaw
+    : DEFAULT_KPI_WINDOW_DAYS;
+  const currentWindowRaw = Number.isFinite(Number(dashboardState.kpi?.filters?.window))
+    ? Number(dashboardState.kpi.filters.window)
+    : configuredWindow;
+  const currentWindow = Number.isFinite(currentWindowRaw) && currentWindowRaw > 0
+    ? currentWindowRaw
+    : configuredWindow;
+  const uniqueValues = [...new Set([...KPI_WINDOW_OPTION_BASE, configuredWindow, currentWindow])]
+    .filter((value) => Number.isFinite(value) && value >= 0)
+    .sort((a, b) => {
+      if (a === 0) return 1;
+      if (b === 0) return -1;
+      return a - b;
+    });
+  const options = uniqueValues.map((value) => {
+    const option = document.createElement('option');
+    option.value = String(value);
+    if (value === 0) {
+      option.textContent = TEXT.kpis.windowAllLabel;
+    } else if (value === 365) {
+      option.textContent = `${value} d. (${TEXT.kpis.windowYearSuffix})`;
+    } else {
+      option.textContent = `${value} d.`;
+    }
+    return option;
+  });
+  select.replaceChildren(...options);
+}
+
+function syncKpiFilterControls() {
+  const filters = dashboardState.kpi.filters;
+  if (selectors.kpiWindow && Number.isFinite(filters.window)) {
+    const windowValue = String(filters.window);
+    const existing = Array.from(selectors.kpiWindow.options).some((option) => option.value === windowValue);
+    if (!existing) {
+      const option = document.createElement('option');
+      option.value = windowValue;
+      option.textContent = `${filters.window} d.`;
+      selectors.kpiWindow.appendChild(option);
+    }
+    selectors.kpiWindow.value = windowValue;
+  }
+  if (selectors.kpiShift) {
+    selectors.kpiShift.value = filters.shift;
+  }
+  if (selectors.kpiArrival) {
+    selectors.kpiArrival.value = filters.arrival;
+  }
+  if (selectors.kpiDisposition) {
+    selectors.kpiDisposition.value = filters.disposition;
+  }
+}
+
+function recordMatchesKpiFilters(record, filters) {
+  if (!record) {
+    return false;
+  }
+  if (filters.shift === 'day' && record.night) {
+    return false;
+  }
+  if (filters.shift === 'night' && !record.night) {
+    return false;
+  }
+  if (filters.arrival === 'ems' && !record.ems) {
+    return false;
+  }
+  if (filters.arrival === 'self' && record.ems) {
+    return false;
+  }
+  if (filters.disposition === 'hospitalized' && !record.hospitalized) {
+    return false;
+  }
+  if (filters.disposition === 'discharged' && record.hospitalized) {
+    return false;
+  }
+  return true;
+}
+
+function toSentenceCase(label) {
+  if (typeof label !== 'string' || !label.length) {
+    return '';
+  }
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function updateKpiSummary({ records, dailyStats, windowDays }) {
+  if (!selectors.kpiActiveInfo) {
+    return;
+  }
+  const filters = dashboardState.kpi.filters;
+  const defaultFilters = getDefaultKpiFilters();
+  const totalRecords = Array.isArray(records) ? records.length : 0;
+  const hasAggregatedData = Array.isArray(dailyStats)
+    ? dailyStats.some((entry) => Number.isFinite(entry?.count) && entry.count > 0)
+    : false;
+  const hasData = totalRecords > 0 || hasAggregatedData;
+  const summaryParts = [];
+  const isWindowDefault = Number.isFinite(windowDays)
+    ? windowDays === defaultFilters.window
+    : false;
+  const isShiftDefault = filters.shift === defaultFilters.shift;
+  const isArrivalDefault = filters.arrival === defaultFilters.arrival;
+  const isDispositionDefault = filters.disposition === defaultFilters.disposition;
+
+  if (Number.isFinite(windowDays) && windowDays > 0 && !isWindowDefault) {
+    summaryParts.push(`${windowDays} d.`);
+  }
+  if (!isShiftDefault) {
+    summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.shift[filters.shift]));
+  }
+  if (!isArrivalDefault) {
+    summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.arrival[filters.arrival]));
+  }
+  if (!isDispositionDefault) {
+    summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.disposition[filters.disposition]));
+  }
+  let text = summaryParts.join(' • ');
+  if (!hasData) {
+    text = text ? `Įrašų nerasta • ${text}` : 'Įrašų nerasta';
+  }
+  if (!text) {
+    selectors.kpiActiveInfo.textContent = 'Numatytieji filtrai';
+    selectors.kpiActiveInfo.dataset.default = 'true';
+    return;
+  }
+  selectors.kpiActiveInfo.textContent = text;
+  selectors.kpiActiveInfo.dataset.default = 'false';
+}
+
+function applyKpiFiltersLocally(filters) {
+  const normalizedFilters = sanitizeKpiFilters(filters);
+  const windowDays = Number.isFinite(normalizedFilters.window)
+    ? normalizedFilters.window
+    : DEFAULT_SETTINGS.calculations.windowDays;
+  const hasRawRecords = Array.isArray(dashboardState.rawRecords) && dashboardState.rawRecords.length > 0;
+  let filteredRecords = [];
+  let filteredDailyStats = [];
+
+  if (hasRawRecords) {
+    const scopedRecords = filterRecordsByWindow(dashboardState.rawRecords, windowDays);
+    filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, normalizedFilters));
+    filteredDailyStats = computeDailyStats(filteredRecords);
+  } else {
+    const scopedDaily = filterDailyStatsByWindow(dashboardState.dailyStats, windowDays);
+    filteredDailyStats = scopedDaily.slice();
+  }
+
+  return {
+    filters: normalizedFilters,
+    records: filteredRecords,
+    dailyStats: filteredDailyStats,
+    windowDays,
+  };
+}
+
+async function applyKpiFiltersAndRender() {
+  const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters);
+  dashboardState.kpi.filters = { ...normalizedFilters };
+  const defaultFilters = getDefaultKpiFilters();
+  const windowDays = normalizedFilters.window;
+  const workerPayload = {
+    filters: normalizedFilters,
+    defaultFilters,
+    windowDays,
+    records: Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : [],
+    dailyStats: Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : [],
+    calculations: settings?.calculations || {},
+    calculationDefaults: DEFAULT_SETTINGS.calculations,
+  };
+  const jobToken = ++kpiWorkerJobToken;
+
+  try {
+    const result = await runKpiWorkerJob(workerPayload);
+    if (jobToken !== kpiWorkerJobToken) {
+      return;
+    }
+    const filteredRecords = Array.isArray(result?.records) ? result.records : [];
+    const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
+    const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
+    dashboardState.kpi.records = filteredRecords;
+    dashboardState.kpi.daily = filteredDailyStats;
+    renderKpis(filteredDailyStats);
+    updateKpiSummary({
+      records: filteredRecords,
+      dailyStats: filteredDailyStats,
+      windowDays: effectiveWindow,
+    });
+  } catch (error) {
+    console.error('Nepavyko pritaikyti KPI filtrų worker\'yje:', error);
+    if (jobToken !== kpiWorkerJobToken) {
+      return;
+    }
+    const fallback = applyKpiFiltersLocally(normalizedFilters);
+    dashboardState.kpi.records = fallback.records;
+    dashboardState.kpi.daily = fallback.dailyStats;
+    renderKpis(fallback.dailyStats);
+    updateKpiSummary({
+      records: fallback.records,
+      dailyStats: fallback.dailyStats,
+      windowDays: fallback.windowDays,
+    });
+  }
+}
+
+function handleKpiFilterInput(event) {
+  const target = event.target;
+  if (!target || !('name' in target)) {
+    return;
+  }
+  const { name, value } = target;
+  const filters = dashboardState.kpi.filters;
+  if (name === 'window') {
+    const numeric = Number.parseInt(value, 10);
+    if (Number.isFinite(numeric) && numeric >= 0) {
+      filters.window = numeric;
+    }
+  } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
+    filters.shift = value;
+  } else if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
+    filters.arrival = value;
+  } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
+    filters.disposition = value;
+  }
+  void applyKpiFiltersAndRender();
+}
+
+function resetKpiFilters({ fromKeyboard } = {}) {
+  dashboardState.kpi.filters = getDefaultKpiFilters();
+  refreshKpiWindowOptions();
+  syncKpiFilterControls();
+  void applyKpiFiltersAndRender();
+  if (fromKeyboard && selectors.kpiFiltersReset) {
+    selectors.kpiFiltersReset.focus();
+  }
+}
+
+function initializeKpiFilters() {
+  if (!selectors.kpiFiltersForm) {
+    return;
+  }
+  refreshKpiWindowOptions();
+  syncKpiFilterControls();
+  selectors.kpiFiltersForm.addEventListener('change', handleKpiFilterInput);
+  selectors.kpiFiltersForm.addEventListener('submit', (event) => event.preventDefault());
+  if (selectors.kpiFiltersReset) {
+    selectors.kpiFiltersReset.addEventListener('click', (event) => {
+      event.preventDefault();
+      resetKpiFilters();
+    });
+  }
+  if (selectors.kpiFiltersToggle && selectors.kpiControls) {
+    const toggleButton = selectors.kpiFiltersToggle;
+    const controlsWrapper = selectors.kpiControls;
+
+    const setExpandedState = (expanded) => {
+      const label = expanded ? KPI_FILTER_TOGGLE_LABELS.hide : KPI_FILTER_TOGGLE_LABELS.show;
+      controlsWrapper.dataset.expanded = expanded ? 'true' : 'false';
+      toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      toggleButton.textContent = label;
+      toggleButton.setAttribute('aria-label', label);
+      toggleButton.setAttribute('title', label);
+      controlsWrapper.hidden = !expanded;
+      controlsWrapper.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+    };
+
+    toggleButton.addEventListener('click', () => {
+      const expanded = controlsWrapper.dataset.expanded !== 'false';
+      const nextState = !expanded;
+      setExpandedState(nextState);
+      if (nextState && selectors.kpiFiltersForm) {
+        const firstField = selectors.kpiFiltersForm.querySelector('select, button, [tabindex]');
+        if (firstField && typeof firstField.focus === 'function') {
+          window.requestAnimationFrame(() => {
+            try {
+              firstField.focus({ preventScroll: true });
+            } catch (error) {
+              firstField.focus();
+            }
+          });
+        }
+      }
+      if (!nextState) {
+        toggleButton.focus();
+      }
+    });
+
+    setExpandedState(controlsWrapper.dataset.expanded !== 'false');
+  }
+  if ((dashboardState.kpi.records && dashboardState.kpi.records.length) || (dashboardState.kpi.daily && dashboardState.kpi.daily.length)) {
+    updateKpiSummary({
+      records: dashboardState.kpi.records,
+      dailyStats: dashboardState.kpi.daily,
+      windowDays: dashboardState.kpi.filters.window,
+    });
+  }
+}
+
+function formatKpiValue(value, format) {
+  if (value == null || Number.isNaN(value)) {
+    return '–';
+  }
+  if (format === 'decimal') {
+    return decimalFormatter.format(value);
+  }
+  if (format === 'integer') {
+    return numberFormatter.format(Math.round(value));
+  }
+  return oneDecimalFormatter.format(value);
+}
+
+function formatPercentCompact(value) {
+  const formatted = percentFormatter.format(value);
+  return formatted.replace(/\s?%/, '%');
+}
+
+function computeDeltaDescriptor(deltaType, yearValue, monthValue, unit, format, referenceLabel) {
+  if (monthValue == null || !Number.isFinite(monthValue)) {
+    return null;
+  }
+  const isWholePeriod = referenceLabel === TEXT.kpis.windowAllLabel;
+  const normalizedReference = isWholePeriod
+    ? 'Viso laikotarpio'
+    : referenceLabel;
+  const referenceText = normalizedReference ? `${normalizedReference} vidurkis` : TEXT.kpis.yearAverageReference;
+  const referenceShort = isWholePeriod
+    ? TEXT.kpis.windowAllShortLabel
+    : (referenceLabel || TEXT.kpis.yearAverageReferenceShort);
+  if (deltaType === 'percent') {
+    if (yearValue == null || !Number.isFinite(yearValue) || Math.abs(yearValue) < Number.EPSILON) {
+      return null;
+    }
+    const diffRatio = (monthValue - yearValue) / yearValue;
+    if (!Number.isFinite(diffRatio)) {
+      return null;
+    }
+    if (Math.abs(diffRatio) < 0.0005) {
+      return {
+        direction: 'neutral',
+        shortText: '≈',
+        context: referenceShort,
+        ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
+      };
+    }
+    const direction = diffRatio > 0 ? '↑' : '↓';
+    const shortText = `${diffRatio > 0 ? '+' : '−'}${formatPercentCompact(Math.abs(diffRatio))}`;
+    const ariaLabel = diffRatio > 0
+      ? `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} didesnis nei ${referenceText}.`
+      : `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} mažesnis nei ${referenceText}.`;
+    return {
+      direction: diffRatio > 0 ? 'up' : 'down',
+      icon: direction,
+      shortText,
+      context: `vs ${referenceShort}`,
+      ariaLabel,
+    };
+  }
+  if (deltaType === 'absolute') {
+    if (yearValue == null || !Number.isFinite(yearValue)) {
+      return null;
+    }
+    const diff = monthValue - yearValue;
+    if (!Number.isFinite(diff)) {
+      return null;
+    }
+    if (Math.abs(diff) < 0.005) {
+      return {
+        direction: 'neutral',
+        shortText: '≈',
+        context: referenceShort,
+        ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
+      };
+    }
+    const sign = diff > 0 ? '+' : '−';
+    const formattedDiff = formatKpiValue(Math.abs(diff), format);
+    const unitSuffix = unit ? ` ${unit}` : '';
+    const ariaLabel = diff > 0
+      ? `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} ilgesnis nei ${referenceText}.`
+      : `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} trumpesnis nei ${referenceText}.`;
+    return {
+      direction: diff > 0 ? 'up' : 'down',
+      icon: diff > 0 ? '↑' : '↓',
+      shortText: `${sign}${formattedDiff}${unitSuffix}`,
+      context: `vs ${referenceShort}`,
+      ariaLabel,
+    };
+  }
+  return null;
+}
+
+function buildKpiDetails({
+  item,
+  monthLabel,
+  monthMetrics,
+  yearValue,
+  monthValue,
+  yearShare,
+  monthShare,
+  referenceLabel,
+}) {
+  const monthDescriptor = TEXT.kpis.monthPrefixShort;
+  const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+  const details = [];
+  const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
+    const aria = ariaLabel ? ` aria-label="${ariaLabel}"` : '';
+    const extra = extraClass ? ` ${extraClass}` : '';
+    return `<div class="kpi-detail${extra}" role="listitem"${aria}><span class="kpi-detail__label">${label}</span><span class="kpi-detail__value">${valueHtml}</span></div>`;
+  };
+
+  if (monthHasData && monthValue != null && Number.isFinite(monthValue)) {
+    const unitSuffix = item.unit ? `<span class="kpi-detail__context">${item.unit}</span>` : '';
+    details.push(detailWrapper(
+      monthDescriptor,
+      `<strong>${formatKpiValue(monthValue, item.valueFormat)}</strong>${unitSuffix}`,
+    ));
+  } else {
+    details.push(detailWrapper(
+      monthDescriptor,
+      `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
+      'kpi-detail--muted',
+    ));
+  }
+
+  const deltaDescriptor = computeDeltaDescriptor(
+    item.deltaType,
+    yearValue,
+    monthValue,
+    item.unit,
+    item.valueFormat,
+    referenceLabel,
+  );
+
+  if (deltaDescriptor) {
+    const { direction, shortText, context, ariaLabel, icon } = deltaDescriptor;
+    const directionClass = direction ? `kpi-detail--delta-${direction}` : 'kpi-detail--muted';
+    const iconHtml = icon ? `<span class="kpi-detail__icon" aria-hidden="true">${icon}</span>` : '';
+    const contextHtml = context ? `<span class="kpi-detail__context">${context}</span>` : '';
+    const valueHtml = `${iconHtml}<strong>${shortText}</strong>${contextHtml}`;
+    details.push(detailWrapper(TEXT.kpis.deltaLabel, valueHtml, directionClass, ariaLabel));
+  } else {
+    details.push(detailWrapper(
+      TEXT.kpis.deltaLabel,
+      `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
+      'kpi-detail--muted',
+    ));
+  }
+
+  if (item.shareKey) {
+    const referenceShort = referenceLabel === TEXT.kpis.windowAllLabel
+      ? TEXT.kpis.windowAllShortLabel
+      : (referenceLabel || TEXT.kpis.shareShortLabel);
+
+    if (yearShare != null && Number.isFinite(yearShare)) {
+      details.push(detailWrapper(
+        item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
+        `<strong>${formatPercentCompact(yearShare)}</strong><span class="kpi-detail__context">${referenceShort}</span>`,
+      ));
+    } else {
+      details.push(detailWrapper(
+        item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
+        `<span class="kpi-empty">${TEXT.kpis.shareNoData}</span>`,
+        'kpi-detail--muted',
+      ));
+    }
+
+    if (monthHasData && monthShare != null && Number.isFinite(monthShare)) {
+      const monthContext = TEXT.kpis.monthPrefixShort;
+      details.push(detailWrapper(
+        TEXT.kpis.shareMonthDetail,
+        `<strong>${formatPercentCompact(monthShare)}</strong><span class="kpi-detail__context">${monthContext}</span>`,
+      ));
+    } else {
+      details.push(detailWrapper(
+        TEXT.kpis.shareMonthDetail,
+        `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
+        'kpi-detail--muted',
+      ));
+    }
+  }
+
+  return details.join('');
+}
+
+function renderKpiPeriodSummary(periodMetrics) {
+  const summaryEl = selectors.kpiSummary;
+  if (!summaryEl) {
+    return;
+  }
+  if (!periodMetrics) {
+    summaryEl.innerHTML = `<p class="kpi-summary__empty">${TEXT.kpis.noYearData}</p>`;
+    summaryEl.hidden = false;
+    return;
+  }
+  const { yearLabel, referenceLabel, monthLabel, monthMetrics } = periodMetrics;
+  const hasMonthData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+  const monthContent = hasMonthData && monthLabel
+    ? monthLabel
+    : `<span class="kpi-summary__muted">${TEXT.kpis.summary.noMonth}</span>`;
+  const periodText = yearLabel || TEXT.kpis.summary.unknownPeriod;
+  const referenceText = referenceLabel || TEXT.kpis.yearAverageReference;
+  summaryEl.innerHTML = `
+    <p class="kpi-summary__title">${TEXT.kpis.summary.title}</p>
+    <dl class="kpi-summary__list">
+      <div class="kpi-summary__item">
+        <dt>${TEXT.kpis.summary.period}</dt>
+        <dd>${periodText}</dd>
+      </div>
+      <div class="kpi-summary__item">
+        <dt>${TEXT.kpis.summary.reference}</dt>
+        <dd>${referenceText}</dd>
+      </div>
+      <div class="kpi-summary__item">
+        <dt>${TEXT.kpis.summary.month}</dt>
+        <dd>${monthContent}</dd>
+      </div>
+    </dl>
+  `;
+  summaryEl.hidden = false;
+}
+
+function renderKpis(dailyStats) {
+  selectors.kpiGrid.replaceChildren();
+  const periodMetrics = buildYearMonthMetrics(dailyStats, dashboardState.kpi?.filters?.window);
+  renderKpiPeriodSummary(periodMetrics);
+  if (!periodMetrics) {
+    const card = document.createElement('article');
+    card.className = 'kpi-card';
+    card.setAttribute('role', 'listitem');
+    card.innerHTML = `
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Rodiklių nepakanka</h3>
+      </header>
+      <p class="kpi-mainline">
+        <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
+        <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
+      </p>
+      <div class="kpi-card__details" role="list">
+        <div class="kpi-detail kpi-detail--muted" role="listitem">
+          <span class="kpi-detail__label">${TEXT.kpis.monthPrefixShort}</span>
+          <span class="kpi-detail__value"><span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span></span>
+        </div>
+      </div>
+    `;
+    selectors.kpiGrid.appendChild(card);
+    return;
+  }
+
+  const { yearMetrics, monthMetrics, yearLabel, monthLabel, referenceLabel } = periodMetrics;
+
+  Object.entries(TEXT.kpis.items).forEach(([key, item]) => {
+    const card = document.createElement('article');
+    card.className = 'kpi-card';
+    card.setAttribute('role', 'listitem');
+
+    let yearValue = null;
+    let monthValue = null;
+    let yearShare = null;
+    let monthShare = null;
+
+    switch (key) {
+      case 'patientsPerDay':
+        yearValue = yearMetrics.patientsPerDay;
+        monthValue = monthMetrics.patientsPerDay;
+        break;
+      case 'avgTime':
+        yearValue = yearMetrics.avgTime;
+        monthValue = monthMetrics.avgTime;
+        break;
+      case 'hospitalized':
+        yearValue = yearMetrics.hospitalizedPerDay;
+        monthValue = monthMetrics.hospitalizedPerDay;
+        yearShare = yearMetrics.hospitalizedShare;
+        monthShare = monthMetrics.hospitalizedShare;
+        break;
+      case 'discharged':
+        yearValue = yearMetrics.dischargedPerDay;
+        monthValue = monthMetrics.dischargedPerDay;
+        yearShare = yearMetrics.dischargedShare;
+        monthShare = monthMetrics.dischargedShare;
+        break;
+      default:
+        break;
+    }
+
+    const hasYearValue = yearValue != null && Number.isFinite(yearValue);
+    const unitHtml = item.unit && hasYearValue ? `<span class="kpi-unit">${item.unit}</span>` : '';
+    const mainValueHtml = hasYearValue
+      ? `<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>${unitHtml}`
+      : `<span class="kpi-empty">${TEXT.kpis.noYearData}</span>`;
+
+    const detailHtml = buildKpiDetails({
+      item,
+      monthLabel,
+      monthMetrics,
+      yearValue,
+      monthValue,
+      yearShare,
+      monthShare,
+      referenceLabel,
+    });
+
+    card.innerHTML = `
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">${item.label}</h3>
+      </header>
+      <p class="kpi-mainline">
+        <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
+        <span class="kpi-mainline__value">${mainValueHtml}</span>
+      </p>
+      <div class="kpi-card__details" role="list">${detailHtml}</div>
+    `;
+    selectors.kpiGrid.appendChild(card);
+  });
+}
+
+function getThemeStyleTarget() {
+  return document.body || document.documentElement;
+}
+
+function getThemePalette() {
+  const styleTarget = getThemeStyleTarget();
+  const rootStyles = getComputedStyle(styleTarget);
+  return {
+    accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
+    accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
+    weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
+    weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
+    success: rootStyles.getPropertyValue('--color-success').trim() || '#16a34a',
+    textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
+    textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
+    gridColor: rootStyles.getPropertyValue('--chart-grid').trim() || 'rgba(15, 23, 42, 0.12)',
+  };
+}
+
+function syncChartPeriodButtons(period) {
+  if (!selectors.chartPeriodButtons || !selectors.chartPeriodButtons.length) {
+    return;
+  }
+  selectors.chartPeriodButtons.forEach((button) => {
+    const buttonPeriod = Number.parseInt(button.dataset.chartPeriod, 10);
+    const isActive = Number.isFinite(buttonPeriod) && buttonPeriod === period;
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+}
+
+function getActiveFeedbackTrendWindow() {
+  const raw = dashboardState.feedback?.trendWindow;
+  if (Number.isFinite(raw) && raw > 0) {
+    return Math.max(1, Math.round(raw));
+  }
+  return null;
+}
+
+function updateFeedbackTrendSubtitle() {
+  if (!selectors.feedbackTrendSubtitle) {
+    return;
+  }
+  const builder = TEXT.feedback?.trend?.subtitle;
+  const activeWindow = getActiveFeedbackTrendWindow();
+  if (typeof builder === 'function') {
+    selectors.feedbackTrendSubtitle.textContent = builder(activeWindow);
+  } else if (typeof builder === 'string') {
+    selectors.feedbackTrendSubtitle.textContent = builder;
+  } else if (Number.isFinite(activeWindow) && activeWindow > 0) {
+    selectors.feedbackTrendSubtitle.textContent = `Paskutinių ${activeWindow} mėnesių dinamika`;
+  } else {
+    selectors.feedbackTrendSubtitle.textContent = 'Visų prieinamų mėnesių dinamika';
+  }
+}
+
+function syncFeedbackTrendControls() {
+  if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
+    return;
+  }
+  const activeWindow = getActiveFeedbackTrendWindow();
+  selectors.feedbackTrendButtons.forEach((button) => {
+    const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+    const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
+    button.setAttribute('aria-pressed', String(Boolean(isActive)));
+    button.dataset.active = String(Boolean(isActive));
+  });
+}
+
+function formatDailyCaption(period) {
+  const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientų srautai';
+  if (!Number.isFinite(period) || period <= 0) {
+    return base;
+  }
+  const normalized = Math.max(1, Math.round(period));
+  const formattedDays = numberFormatter.format(normalized);
+  const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
+  const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+  const yearFragment = Number.isFinite(selectedYear) ? `, ${selectedYear} m.` : '';
+  const combinedSuffix = `${suffix}${yearFragment}`;
+  if (base.includes('(')) {
+    return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
+  }
+  return `${base} (${combinedSuffix})`;
+}
+
+function renderDailyChart(dailyStats, period, ChartLib, palette) {
+  const Chart = ChartLib;
+  const themePalette = palette || getThemePalette();
+  const normalizedPeriod = Number.isFinite(Number(period)) && Number(period) > 0 ? Number(period) : 30;
+  dashboardState.chartPeriod = normalizedPeriod;
+  syncChartPeriodButtons(normalizedPeriod);
+  if (selectors.dailyCaption) {
+    selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
+  }
+  const scopedData = Array.isArray(dailyStats) ? dailyStats.slice(-normalizedPeriod) : [];
+  if (selectors.dailyCaptionContext) {
+    const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
+    const dateValue = lastEntry?.date ? dateKeyToDate(lastEntry.date) : null;
+    const formatted = dateValue ? shortDateFormatter.format(dateValue) : lastEntry?.date || '';
+    selectors.dailyCaptionContext.textContent = TEXT.charts.dailyContext(formatted);
+  }
+
+  const canvas = document.getElementById('dailyChart');
+  if (!canvas || !canvas.getContext) {
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return;
+  }
+
+  if (!Chart) {
+    return;
+  }
+
+  const styleTarget = getThemeStyleTarget();
+  Chart.defaults.color = themePalette.textColor;
+  Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+  Chart.defaults.borderColor = themePalette.gridColor;
+
+  if (dashboardState.charts.daily) {
+    dashboardState.charts.daily.destroy();
+  }
+
+  if (!scopedData.length) {
+    dashboardState.charts.daily = null;
+    return;
+  }
+
+  const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
+  // Užtikrina, kad X ašies etiketės nepersidengtų – rodome iki 8 reikšmių.
+  const tickEvery = Math.max(1, Math.ceil(scopedData.length / 8));
+  dashboardState.charts.daily = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: scopedData.map((entry) => entry.date),
+      datasets: [
+        {
+          label: 'Pacientai',
+          data: scopedData.map((entry) => entry.count),
+          backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent)),
+          borderRadius: 12,
+        },
+        {
+          label: 'Naktiniai pacientai',
+          data: scopedData.map((entry) => entry.night),
+          backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft)),
+          borderRadius: 12,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            color: themePalette.textColor,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              return `${context.dataset.label}: ${numberFormatter.format(context.parsed.y)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0,
+            padding: 10,
+            color: (ctxTick) => (weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
+            callback(value, index) {
+              if (index % tickEvery !== 0) {
+                return '';
+              }
+              const rawLabel = this.getLabelForValue(value);
+              if (!rawLabel) {
+                return '';
+              }
+              const dateObj = dateKeyToDate(rawLabel);
+              if (dateObj instanceof Date && !Number.isNaN(dateObj.getTime())) {
+                return monthDayFormatter.format(dateObj);
+              }
+              return rawLabel.slice(5);
+            },
+          },
+          grid: {
+            color: themePalette.gridColor,
+            drawBorder: false,
+          },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            padding: 6,
+            color: themePalette.textColor,
+            callback(value) {
+              return numberFormatter.format(value);
+            },
+          },
+          grid: {
+            color: themePalette.gridColor,
+            drawBorder: false,
+          },
+        },
+      },
+    },
+  });
+}
+
+function formatFeedbackCardValue(value, format) {
+  let numericValue = null;
+  if (Number.isFinite(value)) {
+    numericValue = value;
+  } else if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value.replace(',', '.'));
+    if (Number.isFinite(parsed)) {
+      numericValue = parsed;
+    }
+  }
+
+  if (numericValue == null) {
+    return null;
+  }
+
+  switch (format) {
+    case 'decimal':
+      return decimalFormatter.format(numericValue);
+    case 'integer':
+      return numberFormatter.format(Math.round(numericValue));
+    case 'percent':
+      return percentFormatter.format(numericValue);
+    default:
+      return decimalFormatter.format(numericValue);
+  }
+}
+
+function renderFeedbackCards(summary) {
+  if (!selectors.feedbackCards) {
+    return;
+  }
+
+  const cardsConfig = Array.isArray(TEXT.feedback?.cards)
+    ? TEXT.feedback.cards
+    : [];
+
+  selectors.feedbackCards.replaceChildren();
+
+  if (!cardsConfig.length) {
+    const empty = document.createElement('p');
+    empty.className = 'feedback-empty';
+    empty.textContent = TEXT.feedback?.empty || 'Kol kas nėra apibendrintų atsiliepimų.';
+    selectors.feedbackCards.appendChild(empty);
+    return;
+  }
+
+  const summaryData = summary && typeof summary === 'object' ? summary : {};
+  const hasValues = cardsConfig.some((card) => {
+    if (!card || typeof card !== 'object') {
+      return false;
+    }
+    const raw = summaryData[card.key];
+    const formatted = formatFeedbackCardValue(raw, card.format);
+    if (formatted != null) {
+      return true;
+    }
+    if (Number.isFinite(raw)) {
+      return true;
+    }
+    return false;
+  });
+
+  if (!hasValues) {
+    const empty = document.createElement('p');
+    empty.className = 'feedback-empty';
+    empty.textContent = TEXT.feedback?.empty || 'Kol kas nėra apibendrintų atsiliepimų.';
+    selectors.feedbackCards.appendChild(empty);
+    return;
+  }
+
+  const responsesLabel = TEXT.feedback?.table?.headers?.responses || 'Atsakymai';
+
+  cardsConfig.forEach((card) => {
+    if (!card || typeof card !== 'object') {
+      return;
+    }
+
+    const cardElement = document.createElement('article');
+    cardElement.className = 'feedback-card';
+    cardElement.setAttribute('role', 'listitem');
+
+    const title = document.createElement('p');
+    title.className = 'feedback-card__title';
+    title.textContent = card.title || '';
+
+    const valueElement = document.createElement('p');
+    valueElement.className = 'feedback-card__value';
+    const rawValue = summaryData[card.key];
+    const formattedValue = formatFeedbackCardValue(rawValue, card.format);
+    const fallbackText = card.empty || TEXT.feedback?.empty || '—';
+    valueElement.textContent = formattedValue != null ? formattedValue : fallbackText;
+
+    const metaElement = document.createElement('p');
+    metaElement.className = 'feedback-card__meta';
+    const metaParts = [];
+    if (card.description) {
+      metaParts.push(card.description);
+    }
+    if (card.countKey) {
+      const rawCount = summaryData[card.countKey];
+      let numericCount = null;
+      if (Number.isFinite(rawCount)) {
+        numericCount = rawCount;
+      } else if (typeof rawCount === 'string') {
+        const parsedCount = Number.parseFloat(rawCount.replace(',', '.'));
+        if (Number.isFinite(parsedCount)) {
+          numericCount = parsedCount;
+        }
+      }
+      if (Number.isFinite(numericCount)) {
+        metaParts.push(`${responsesLabel}: ${numberFormatter.format(Math.round(numericCount))}`);
+      }
+    }
+    const nodes = [title, valueElement];
+    if (metaParts.length) {
+      metaElement.textContent = metaParts.join(' • ');
+      nodes.push(metaElement);
+    }
+    nodes.forEach((node) => {
+      cardElement.appendChild(node);
+    });
+    selectors.feedbackCards.appendChild(cardElement);
+  });
+}
+
+function renderFeedbackTable(monthlyStats) {
+  if (!selectors.feedbackTable) {
+    return;
+  }
+
+  selectors.feedbackTable.replaceChildren();
+
+  const placeholder = TEXT.feedback?.table?.placeholder || '—';
+
+  if (!Array.isArray(monthlyStats) || !monthlyStats.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 8;
+    cell.textContent = TEXT.feedback?.table?.empty || TEXT.feedback?.empty || 'Kol kas nėra apibendrintų atsiliepimų.';
+    row.appendChild(cell);
+    selectors.feedbackTable.appendChild(row);
+    return;
+  }
+
+  const formatRating = (value) => {
+    if (Number.isFinite(value)) {
+      return decimalFormatter.format(value);
+    }
+    return placeholder;
+  };
+
+  monthlyStats
+    .slice()
+    .sort((a, b) => b.month.localeCompare(a.month))
+    .forEach((entry) => {
+      const row = document.createElement('tr');
+      const monthLabel = formatMonthLabel(entry?.month || '');
+      const displayMonth = monthLabel || entry?.month || placeholder;
+      const responsesValue = Number.isFinite(entry?.responses) ? entry.responses : null;
+      const contactResponses = Number.isFinite(entry?.contactResponses) ? entry.contactResponses : null;
+      const contactShare = Number.isFinite(entry?.contactShare) ? entry.contactShare : null;
+      let contactText = placeholder;
+      if (contactResponses != null && contactShare != null) {
+        contactText = `${numberFormatter.format(Math.round(contactResponses))} (${percentFormatter.format(contactShare)})`;
+      } else if (contactResponses != null) {
+        contactText = numberFormatter.format(Math.round(contactResponses));
+      } else if (contactShare != null) {
+        contactText = percentFormatter.format(contactShare);
+      }
+
+      row.innerHTML = `
+        <td>${displayMonth}</td>
+        <td>${responsesValue != null ? numberFormatter.format(Math.round(responsesValue)) : placeholder}</td>
+        <td>${formatRating(entry.overallAverage)}</td>
+        <td>${formatRating(entry.doctorsAverage)}</td>
+        <td>${formatRating(entry.nursesAverage)}</td>
+        <td>${formatRating(entry.aidesAverage)}</td>
+        <td>${formatRating(entry.waitingAverage)}</td>
+        <td>${contactText}</td>
+      `;
+
+      selectors.feedbackTable.appendChild(row);
+    });
+}
+
+function renderFeedbackSection(feedbackStats) {
+  const summary = feedbackStats && typeof feedbackStats.summary === 'object'
+    ? feedbackStats.summary
+    : null;
+  const monthly = Array.isArray(feedbackStats?.monthly)
+    ? feedbackStats.monthly
+    : [];
+
+  renderFeedbackCards(summary);
+  renderFeedbackTable(monthly);
+
+  renderFeedbackTrendChart(monthly).catch((error) => {
+    console.error('Nepavyko atvaizduoti atsiliepimų trendo:', error);
+  });
+}
+
+async function renderFeedbackTrendChart(monthlyStats) {
+  const canvas = selectors.feedbackTrendChart || document.getElementById('feedbackTrendChart');
+  const messageElement = selectors.feedbackTrendMessage || document.getElementById('feedbackTrendMessage');
+  const summaryElement = selectors.feedbackTrendSummary || document.getElementById('feedbackTrendSummary');
+
+  const updateSummary = (text) => {
+    if (!summaryElement) {
+      return;
+    }
+    if (text) {
+      summaryElement.textContent = text;
+      summaryElement.hidden = false;
+    } else {
+      summaryElement.textContent = '';
+      summaryElement.hidden = true;
+    }
+  };
+
+  const setTrendMessage = (text) => {
+    if (messageElement) {
+      if (text) {
+        messageElement.textContent = text;
+        messageElement.hidden = false;
+      } else {
+        messageElement.textContent = '';
+        messageElement.hidden = true;
+      }
+    }
+    if (canvas) {
+      if (text) {
+        canvas.setAttribute('aria-hidden', 'true');
+        canvas.hidden = true;
+      } else {
+        canvas.removeAttribute('aria-hidden');
+        canvas.hidden = false;
+      }
+    }
+    if (text) {
+      updateSummary('');
+    }
+  };
+
+  syncFeedbackTrendControls();
+  updateFeedbackTrendSubtitle();
+
+  if (!canvas || typeof canvas.getContext !== 'function') {
+    const fallbackText = TEXT.feedback?.trend?.unavailable
+      || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
+    setTrendMessage(fallbackText);
+    return;
+  }
+
+  const monthlyArray = Array.isArray(monthlyStats)
+    ? monthlyStats.filter((entry) => entry && typeof entry === 'object')
+    : [];
+
+  const normalized = monthlyArray
+    .map((entry) => {
+      const rawMonth = typeof entry.month === 'string' ? entry.month.trim() : '';
+      if (!rawMonth) {
+        return null;
+      }
+      const monthLabel = formatMonthLabel(rawMonth) || rawMonth;
+
+      const rawAverage = entry?.overallAverage;
+      let overallAverage = null;
+      if (Number.isFinite(rawAverage)) {
+        overallAverage = Number(rawAverage);
+      } else if (typeof rawAverage === 'string') {
+        const parsed = Number.parseFloat(rawAverage.replace(',', '.'));
+        overallAverage = Number.isFinite(parsed) ? parsed : null;
+      } else if (rawAverage != null) {
+        const coerced = Number(rawAverage);
+        overallAverage = Number.isFinite(coerced) ? coerced : null;
+      }
+
+      if (!Number.isFinite(overallAverage)) {
+        return null;
+      }
+
+      let responses = null;
+      const rawResponses = entry?.responses;
+      if (Number.isFinite(rawResponses)) {
+        responses = Number(rawResponses);
+      } else if (typeof rawResponses === 'string') {
+        const parsedResponses = Number.parseFloat(rawResponses.replace(',', '.'));
+        responses = Number.isFinite(parsedResponses) ? parsedResponses : null;
+      } else if (rawResponses != null) {
+        const coercedResponses = Number(rawResponses);
+        responses = Number.isFinite(coercedResponses) ? coercedResponses : null;
+      }
+
+      return {
+        month: rawMonth,
+        label: monthLabel,
+        overallAverage,
+        responses,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  if (!normalized.length) {
+    if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+      dashboardState.charts.feedbackTrend.destroy();
+    }
+    dashboardState.charts.feedbackTrend = null;
+    const emptyText = TEXT.feedback?.trend?.empty
+      || 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.';
+    setTrendMessage(emptyText);
+    return;
+  }
+
+  const scoped = (() => {
+    const activeWindow = getActiveFeedbackTrendWindow();
+    if (Number.isFinite(activeWindow) && activeWindow > 0) {
+      const subset = normalized.slice(-Math.max(1, Math.round(activeWindow)));
+      return subset.length ? subset : normalized.slice();
+    }
+    return normalized.slice();
+  })();
+
+  const Chart = dashboardState.chartLib ?? await loadChartJs();
+  if (!Chart) {
+    const unavailableText = TEXT.feedback?.trend?.unavailable
+      || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
+    if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+      dashboardState.charts.feedbackTrend.destroy();
+    }
+    dashboardState.charts.feedbackTrend = null;
+    setTrendMessage(unavailableText);
+    return;
+  }
+  if (!dashboardState.chartLib) {
+    dashboardState.chartLib = Chart;
+  }
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    const unavailableText = TEXT.feedback?.trend?.unavailable
+      || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
+    if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+      dashboardState.charts.feedbackTrend.destroy();
+    }
+    dashboardState.charts.feedbackTrend = null;
+    setTrendMessage(unavailableText);
+    return;
+  }
+
+  if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
+    dashboardState.charts.feedbackTrend.destroy();
+  }
+
+  const palette = getThemePalette();
+  const styleTarget = getThemeStyleTarget();
+  Chart.defaults.color = palette.textColor;
+  Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+  Chart.defaults.borderColor = palette.gridColor;
+
+  const labels = scoped.map((entry) => entry.label);
+  const ratingValues = scoped.map((entry) => entry.overallAverage);
+  const numericRatings = ratingValues.filter((value) => Number.isFinite(value));
+  if (!numericRatings.length) {
+    updateSummary('');
+    const emptyText = TEXT.feedback?.trend?.empty
+      || 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.';
+    setTrendMessage(emptyText);
+    return;
+  }
+
+  const responsesValues = scoped.map((entry) => (Number.isFinite(entry.responses) ? entry.responses : null));
+  const numericResponses = responsesValues.filter((value) => Number.isFinite(value));
+  const hasResponses = numericResponses.length > 0;
+  const responsesLabel = TEXT.feedback?.trend?.responsesLabel || 'Atsakymų skaičius';
+  const datasetLabel = TEXT.feedback?.table?.headers?.overall || 'Bendra patirtis (vid. 1–5)';
+  const referenceLabel = TEXT.feedback?.trend?.averageLabel || 'Vidutinis įvertinimas';
+  const chartTitle = TEXT.feedback?.trend?.title || 'Bendro vertinimo dinamika';
+
+  let bestIndex = null;
+  let worstIndex = null;
+  ratingValues.forEach((value, index) => {
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    if (bestIndex == null || value > ratingValues[bestIndex]) {
+      bestIndex = index;
+    }
+    if (worstIndex == null || value < ratingValues[worstIndex]) {
+      worstIndex = index;
+    }
+  });
+
+  const averageValue = numericRatings.reduce((sum, value) => sum + value, 0) / numericRatings.length;
+  const responsesMin = hasResponses ? Math.min(...numericResponses) : null;
+  const responsesMax = hasResponses ? Math.max(...numericResponses) : null;
+
+  const summaryInfo = {
+    average: {
+      raw: averageValue,
+      formatted: oneDecimalFormatter.format(averageValue),
+    },
+    best: bestIndex != null
+      ? {
+          raw: ratingValues[bestIndex],
+          formatted: oneDecimalFormatter.format(ratingValues[bestIndex]),
+          label: labels[bestIndex] || '',
+        }
+      : null,
+    worst: worstIndex != null
+      ? {
+          raw: ratingValues[worstIndex],
+          formatted: oneDecimalFormatter.format(ratingValues[worstIndex]),
+          label: labels[worstIndex] || '',
+        }
+      : null,
+    responses: hasResponses
+      ? {
+          min: responsesMin,
+          max: responsesMax,
+          minFormatted: numberFormatter.format(Math.round(responsesMin)),
+          maxFormatted: numberFormatter.format(Math.round(responsesMax)),
+          label: responsesLabel,
+        }
+      : null,
+  };
+
+  const summaryBuilder = TEXT.feedback?.trend?.summary;
+  const summaryText = typeof summaryBuilder === 'function'
+    ? summaryBuilder(summaryInfo)
+    : (() => {
+        const parts = [`Vidurkis ${summaryInfo.average.formatted}`];
+        if (summaryInfo.best?.label && summaryInfo.best?.formatted) {
+          parts.push(`Geriausias ${summaryInfo.best.label} (${summaryInfo.best.formatted})`);
+        }
+        if (summaryInfo.worst?.label && summaryInfo.worst?.formatted) {
+          parts.push(`Silpniausias ${summaryInfo.worst.label} (${summaryInfo.worst.formatted})`);
+        }
+        if (summaryInfo.responses?.minFormatted && summaryInfo.responses?.maxFormatted) {
+          if (summaryInfo.responses.minFormatted === summaryInfo.responses.maxFormatted) {
+            parts.push(`${responsesLabel}: ${summaryInfo.responses.minFormatted}`);
+          } else {
+            parts.push(`${responsesLabel}: ${summaryInfo.responses.minFormatted}–${summaryInfo.responses.maxFormatted}`);
+          }
+        }
+        return parts.join(' • ');
+      })();
+
+  updateSummary(summaryText);
+  setTrendMessage('');
+
+  const ariaBuilder = TEXT.feedback?.trend?.aria;
+  const firstLabel = labels[0] || '';
+  const lastLabel = labels[labels.length - 1] || '';
+  if (typeof ariaBuilder === 'function') {
+    canvas.setAttribute('aria-label', ariaBuilder(chartTitle, firstLabel, lastLabel));
+  } else {
+    canvas.setAttribute('aria-label', `${chartTitle}: ${firstLabel}${lastLabel && firstLabel !== lastLabel ? ` – ${lastLabel}` : ''}`);
+  }
+
+  const ratingMin = Math.min(...numericRatings);
+  const ratingMax = Math.max(...numericRatings);
+  const ratingRange = ratingMax - ratingMin;
+  const padding = numericRatings.length > 1 ? Math.max(0.2, ratingRange * 0.25) : 0.2;
+  const yMin = Math.max(1, Math.floor((ratingMin - padding) * 10) / 10);
+  const yMax = Math.min(5, Math.ceil((ratingMax + padding) * 10) / 10);
+
+  const pointColors = ratingValues.map((_, index) => {
+    if (index === bestIndex && palette.success) {
+      return palette.success;
+    }
+    if (index === worstIndex) {
+      return palette.weekendAccent;
+    }
+    return palette.accent;
+  });
+  const pointRadii = ratingValues.map((_, index) => (index === bestIndex || index === worstIndex ? 6 : 4));
+  const pointHoverRadii = pointRadii.map((radius) => radius + 2);
+
+  const datasets = [];
+
+  if (hasResponses) {
+    datasets.push({
+      type: 'bar',
+      label: responsesLabel,
+      data: responsesValues,
+      backgroundColor: palette.accentSoft,
+      borderColor: 'transparent',
+      borderRadius: 10,
+      maxBarThickness: 36,
+      yAxisID: 'yResponses',
+      order: 0,
+    });
+  }
+
+  datasets.push({
+    type: 'line',
+    label: datasetLabel,
+    data: ratingValues,
+    yAxisID: 'yRatings',
+    borderColor: palette.accent,
+    backgroundColor: palette.accentSoft,
+    borderWidth: 2,
+    tension: 0.35,
+    spanGaps: true,
+    fill: false,
+    pointBackgroundColor: pointColors,
+    pointBorderColor: pointColors,
+    pointRadius: pointRadii,
+    pointHoverRadius: pointHoverRadii,
+    order: 2,
+  });
+
+  if (Number.isFinite(averageValue)) {
+    datasets.push({
+      type: 'line',
+      label: referenceLabel,
+      data: ratingValues.map(() => averageValue),
+      yAxisID: 'yRatings',
+      borderColor: palette.textMuted,
+      borderWidth: 1.5,
+      borderDash: [6, 6],
+      fill: false,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      order: 1,
+    });
+  }
+
+  const scales = {
+    x: {
+      ticks: {
+        color: palette.textMuted,
+      },
+      grid: {
+        color: palette.gridColor,
+        drawBorder: false,
+      },
+    },
+    yRatings: {
+      position: 'left',
+      min: yMin,
+      max: yMax,
+      ticks: {
+        color: palette.textColor,
+        callback(value) {
+          return oneDecimalFormatter.format(value);
+        },
+      },
+      grid: {
+        color: palette.gridColor,
+        drawBorder: false,
+      },
+    },
+  };
+
+  if (hasResponses) {
+    const suggestedMax = responsesMax ? responsesMax * 1.15 : undefined;
+    scales.yResponses = {
+      position: 'right',
+      beginAtZero: true,
+      suggestedMax,
+      grid: {
+        drawOnChartArea: false,
+        drawBorder: false,
+      },
+      ticks: {
+        color: palette.textMuted,
+        callback(value) {
+          return numberFormatter.format(Math.round(value));
+        },
+      },
+    };
+  }
+
+  dashboardState.charts.feedbackTrend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      plugins: {
+        title: {
+          display: false,
+        },
+        legend: {
+          display: datasets.length > 1,
+          position: 'bottom',
+          labels: {
+            color: palette.textMuted,
+            usePointStyle: true,
+            padding: 16,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const value = context.parsed?.y;
+              const label = context.dataset?.label || '';
+              if (context.dataset?.yAxisID === 'yResponses') {
+                if (Number.isFinite(value)) {
+                  return `${label}: ${numberFormatter.format(Math.round(value))}`;
+                }
+                return label;
+              }
+              if (Number.isFinite(value)) {
+                return `${label}: ${oneDecimalFormatter.format(value)}`;
+              }
+              return label;
+            },
+          },
+        },
+      },
+      scales,
+    },
+  });
+}
+
+function setFeedbackTrendWindow(months) {
+  const normalized = Number.isFinite(months) && months > 0
+    ? Math.max(1, Math.round(months))
+    : null;
+  if (dashboardState.feedback.trendWindow === normalized) {
+    return;
+  }
+  dashboardState.feedback.trendWindow = normalized;
+  syncFeedbackTrendControls();
+  updateFeedbackTrendSubtitle();
+  const monthly = Array.isArray(dashboardState.feedback.monthly)
+    ? dashboardState.feedback.monthly
+    : [];
+  renderFeedbackTrendChart(monthly).catch((error) => {
+    console.error('Nepavyko atnaujinti atsiliepimų trendo laikotarpio:', error);
+  });
+}
+
+function initializeFeedbackTrendControls() {
+  if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
+    return;
+  }
+  selectors.feedbackTrendButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+      if (Number.isFinite(months) && months > 0) {
+        setFeedbackTrendWindow(months);
+      } else {
+        setFeedbackTrendWindow(null);
+      }
+    });
+  });
+}
+
+function handleTabKeydown(event) {
+  if (!selectors.tabButtons || !selectors.tabButtons.length) {
+    return;
+  }
+  const controllableKeys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+  if (!controllableKeys.includes(event.key)) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const buttons = selectors.tabButtons.filter(Boolean);
+  if (!buttons.length) {
+    return;
+  }
+  const currentIndex = buttons.indexOf(target);
+  if (currentIndex === -1) {
+    return;
+  }
+  event.preventDefault();
+  let nextIndex = currentIndex;
+  if (event.key === 'ArrowRight') {
+    nextIndex = (currentIndex + 1) % buttons.length;
+  } else if (event.key === 'ArrowLeft') {
+    nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+  } else if (event.key === 'Home') {
+    nextIndex = 0;
+  } else if (event.key === 'End') {
+    nextIndex = buttons.length - 1;
+  }
+  const nextButton = buttons[nextIndex];
+  if (nextButton) {
+    setActiveTab(nextButton.dataset.tabTarget, { focusPanel: true });
+    if (typeof nextButton.focus === 'function') {
+      nextButton.focus();
+    }
+  }
+}
+
+function setActiveTab(tabId, { focusPanel = false, restoreFocus = false } = {}) {
+  const normalized = tabId === 'ed' ? 'ed' : 'overview';
+  dashboardState.activeTab = normalized;
+  if (selectors.tabButtons && selectors.tabButtons.length) {
+    selectors.tabButtons.forEach((button) => {
+      if (!button) {
+        return;
+      }
+      const isActive = button.dataset.tabTarget === normalized;
+      const allowFocus = isActive || (button.dataset.tabTarget === 'overview' && normalized === 'ed');
+      button.setAttribute('aria-selected', String(isActive));
+      button.setAttribute('tabindex', allowFocus ? '0' : '-1');
+      button.classList.toggle('is-active', isActive);
+    });
+  }
+  if (selectors.tabPanels && selectors.tabPanels.length) {
+    selectors.tabPanels.forEach((panel) => {
+      if (!panel) {
+        return;
+      }
+      const isActive = panel.dataset.tabPanel === normalized;
+      if (isActive) {
+        panel.removeAttribute('hidden');
+        panel.removeAttribute('aria-hidden');
+      } else {
+        panel.setAttribute('hidden', 'hidden');
+        panel.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+  if (selectors.sectionNav) {
+    if (normalized === 'overview') {
+      selectors.sectionNav.removeAttribute('hidden');
+      selectors.sectionNav.removeAttribute('aria-hidden');
+    } else {
+      selectors.sectionNav.setAttribute('hidden', 'hidden');
+      selectors.sectionNav.setAttribute('aria-hidden', 'true');
+    }
+  }
+  if (normalized !== 'ed' && dashboardState.tvMode) {
+    setTvMode(false, { silent: true });
+  }
+  if (selectors.edNavButton) {
+    const edActive = normalized === 'ed';
+    selectors.edNavButton.setAttribute('aria-pressed', edActive ? 'true' : 'false');
+    selectors.edNavButton.classList.toggle('is-active', edActive);
+    const panelLabel = selectors.edNavButton.dataset.panelLabel
+      || settings?.output?.tabEdLabel
+      || TEXT.tabs.ed;
+    const openLabel = selectors.edNavButton.dataset.openLabel
+      || (typeof TEXT.edToggle?.open === 'function'
+        ? TEXT.edToggle.open(panelLabel)
+        : `Atidaryti ${panelLabel}`);
+    const closeLabel = selectors.edNavButton.dataset.closeLabel
+      || (typeof TEXT.edToggle?.close === 'function'
+        ? TEXT.edToggle.close(panelLabel)
+        : `Uždaryti ${panelLabel}`);
+    const activeLabel = edActive ? closeLabel : openLabel;
+    selectors.edNavButton.setAttribute('aria-label', activeLabel);
+    selectors.edNavButton.title = activeLabel;
+  }
+  const fullscreenAvailable = normalized === 'ed';
+  if (fullscreenAvailable) {
+    // Atidarant ED skiltį automatiškai perjungiame į pilno ekrano režimą.
+    setFullscreenMode(true);
+  } else if (dashboardState.fullscreen) {
+    setFullscreenMode(false, { restoreFocus });
+  }
+  if (focusPanel) {
+    const targetPanel = normalized === 'ed' ? selectors.edPanel : selectors.overviewPanel;
+    if (targetPanel && typeof targetPanel.focus === 'function') {
+      if (!targetPanel.hasAttribute('tabindex')) {
+        targetPanel.setAttribute('tabindex', '-1');
+      }
+      targetPanel.focus({ preventScroll: false });
+    } else if (normalized === 'ed' && selectors.edHeading && typeof selectors.edHeading.scrollIntoView === 'function') {
+      selectors.edHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+  updateFullscreenControls();
+  scheduleLayoutRefresh();
+}
+
+function initializeTabSwitcher() {
+  if (!selectors.tabButtons || !selectors.tabButtons.length) {
+    setActiveTab(dashboardState.activeTab || 'overview');
+    return;
+  }
+  selectors.tabButtons.forEach((button) => {
+    if (!button) {
+      return;
+    }
+    button.addEventListener('click', () => {
+      setActiveTab(button.dataset.tabTarget, { focusPanel: true });
+    });
+    button.addEventListener('keydown', handleTabKeydown);
+  });
+  setActiveTab(dashboardState.activeTab || 'overview');
+}
+
+function initializeTvMode() {
+  if (!selectors.edTvPanel) {
+    dashboardState.tvMode = false;
+    document.body.removeAttribute('data-tv-mode');
+    stopTvClock();
+    return;
+  }
+  updateTvToggleControls();
+  if (selectors.edTvToggleBtn) {
+    selectors.edTvToggleBtn.addEventListener('click', () => {
+      const isActive = dashboardState.tvMode === true && dashboardState.activeTab === 'ed';
+      if (!isActive && dashboardState.activeTab !== 'ed') {
+        setActiveTab('ed', { focusPanel: true });
+        setTvMode(true, { force: true });
+      } else {
+        setTvMode(!isActive);
+      }
+    });
+  }
+  const params = new URLSearchParams(window.location.search);
+  const hash = (window.location.hash || '').toLowerCase();
+  const autoStart = params.has('tv') || hash === '#tv' || hash.includes('tv-mode');
+  if (autoStart) {
+    setActiveTab('ed', { focusPanel: false });
+    setTvMode(true, { force: true, silent: true });
+  }
+}
+
+function updateChartPeriod(period) {
+  const numeric = Number.parseInt(period, 10);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return;
+  }
+  dashboardState.chartPeriod = numeric;
+  syncChartPeriodButtons(numeric);
+  if (selectors.dailyCaption) {
+    selectors.dailyCaption.textContent = formatDailyCaption(numeric);
+  }
+  const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
+    || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+  if (!hasBaseData) {
+    updateDailyPeriodSummary([]);
+    if (selectors.dailyCaptionContext) {
+      selectors.dailyCaptionContext.textContent = '';
+    }
+    return;
+  }
+  const scoped = prepareChartDataForPeriod(numeric);
+  renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
+    .catch((error) => {
+      console.error('Nepavyko atnaujinti grafiko laikotarpio:', error);
+    });
+}
+
+function updateChartYear(year) {
+  const numeric = Number.isFinite(year) ? Math.trunc(year) : Number.parseInt(String(year), 10);
+  const normalized = Number.isFinite(numeric) ? numeric : null;
+  dashboardState.chartYear = normalized;
+  syncChartYearControl();
+  if (selectors.dailyCaption) {
+    selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
+  }
+  const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
+    || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+  if (!hasBaseData) {
+    updateDailyPeriodSummary([]);
+    if (selectors.dailyCaptionContext) {
+      selectors.dailyCaptionContext.textContent = '';
+    }
+    return;
+  }
+  const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
+  renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
+    .catch((error) => {
+      console.error('Nepavyko atnaujinti grafiko metų filtro:', error);
+    });
+}
+
+async function renderCharts(dailyStats, funnelTotals, heatmapData) {
+  const Chart = await loadChartJs();
+  if (!Chart) {
+    throw new Error('Chart.js biblioteka nepasiekiama');
+  }
+  const palette = getThemePalette();
+  const styleTarget = getThemeStyleTarget();
+  Chart.defaults.color = palette.textColor;
+  Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+  Chart.defaults.borderColor = palette.gridColor;
+
+  if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod <= 0) {
+    dashboardState.chartPeriod = 30;
+  }
+
+  dashboardState.chartLib = Chart;
+  const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
+  dashboardState.chartData.dailyWindow = scopedDaily;
+
+  const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+  const baseDailyForFallback = Array.isArray(dashboardState.chartData.baseDaily)
+    && dashboardState.chartData.baseDaily.length
+    ? dashboardState.chartData.baseDaily
+    : dashboardState.dailyStats;
+  const fallbackDaily = filterDailyStatsByYear(baseDailyForFallback, selectedYear);
+  const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
+  dashboardState.chartData.funnel = funnelSource;
+
+  let heatmapSource = heatmapData ?? null;
+  if (!heatmapSource || !heatmapSource.matrix) {
+    const fallbackRecords = Array.isArray(dashboardState.chartData.baseRecords)
+      && dashboardState.chartData.baseRecords.length
+      ? dashboardState.chartData.baseRecords
+      : dashboardState.rawRecords;
+    const yearScopedRecords = filterRecordsByYear(fallbackRecords, selectedYear);
+    const scopedRecords = filterRecordsByWindow(yearScopedRecords, dashboardState.chartPeriod);
+    heatmapSource = computeArrivalHeatmap(scopedRecords);
+  }
+  dashboardState.chartData.heatmap = heatmapSource;
+
+  renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
+
+  const dowCounts = Array(7).fill(0);
+  const dowTotals = Array(7).fill(0);
+  scopedDaily.forEach((entry) => {
+    const dayIndex = (new Date(entry.date).getDay() + 6) % 7;
+    dowCounts[dayIndex] += entry.count;
+    dowTotals[dayIndex] += 1;
+  });
+  const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
+  const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
+  const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
+  const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
+  const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
+
+  const ctxDowCanvas = document.getElementById('dowChart');
+  if (ctxDowCanvas && ctxDowCanvas.getContext) {
+    const ctxDow = ctxDowCanvas.getContext('2d');
+    if (dashboardState.charts.dow) {
+      dashboardState.charts.dow.destroy();
+    }
+    const isWeekendIndex = (index) => index >= 5;
+    dashboardState.charts.dow = new Chart(ctxDow, {
+      type: 'line',
+      data: {
+        labels: dowLabels,
+        datasets: [
+          {
+            label: 'Vidutinis pacientų skaičius',
+            data: dowAverages,
+            fill: true,
+            tension: 0.35,
+            borderColor: palette.accent,
+            backgroundColor: palette.accentSoft,
+            pointBackgroundColor: dowPointColors,
+            pointBorderColor: dowPointColors,
+            pointRadius: dowPointRadii,
+            pointHoverRadius: dowHoverRadii,
+            segment: {
+              borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccent : palette.accent),
+              backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccentSoft : palette.accentSoft),
+            },
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label(context) {
+                return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
+            },
+            grid: {
+              color: palette.gridColor,
+              drawBorder: false,
+            },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: palette.textColor,
+              callback(value) {
+                return decimalFormatter.format(value);
+              },
+            },
+            grid: {
+              color: palette.gridColor,
+              drawBorder: false,
+            },
+          },
+        },
+      },
+    });
+  }
+
+  if (selectors.funnelCaption) {
+    const funnelYear = dashboardState.chartData.funnel?.year ?? null;
+    const captionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
+      ? TEXT.charts.funnelCaptionWithYear(funnelYear)
+      : TEXT.charts.funnelCaption;
+    selectors.funnelCaption.textContent = captionText;
+  }
+
+  const funnelCanvas = document.getElementById('funnelChart');
+  if (funnelCanvas) {
+    if (dashboardState.charts.funnel && typeof dashboardState.charts.funnel.destroy === 'function') {
+      dashboardState.charts.funnel.destroy();
+    }
+    dashboardState.charts.funnel = null;
+    renderFunnelShape(funnelCanvas, dashboardState.chartData.funnel, palette.accent, palette.textColor);
+  }
+
+  renderArrivalHeatmap(selectors.heatmapContainer, dashboardState.chartData.heatmap, palette.accent);
+}
+
+function rerenderChartsForTheme() {
+  const feedbackMonthly = Array.isArray(dashboardState.feedback?.monthly)
+    ? dashboardState.feedback.monthly
+    : [];
+  renderFeedbackTrendChart(feedbackMonthly).catch((error) => {
+    console.error('Nepavyko perpiešti atsiliepimų trendo grafiko pakeitus temą:', error);
+  });
+  const edData = dashboardState.ed || {};
+  const edSummary = edData.summary || createEmptyEdSummary(edData.meta?.type);
+  const edMode = typeof edSummary?.mode === 'string' ? edSummary.mode : (edData.meta?.type || 'legacy');
+  const edHasSnapshot = Number.isFinite(edSummary?.currentPatients)
+    || Number.isFinite(edSummary?.occupiedBeds)
+    || Number.isFinite(edSummary?.nursePatientsPerStaff)
+    || Number.isFinite(edSummary?.doctorPatientsPerStaff);
+  const edVariant = edMode === 'snapshot'
+    || (edMode === 'hybrid' && edHasSnapshot)
+    ? 'snapshot'
+    : 'legacy';
+  const edDispositionsText = TEXT.ed.dispositions?.[edVariant] || TEXT.ed.dispositions?.legacy || {};
+  renderEdDispositionsChart(
+    Array.isArray(edData.dispositions) ? edData.dispositions : [],
+    edDispositionsText,
+    edVariant,
+  ).catch((error) => {
+    console.error('Nepavyko perpiešti pacientų kategorijų grafiko pakeitus temą:', error);
+  });
+  const hasAnyData = (dashboardState.chartData.dailyWindow && dashboardState.chartData.dailyWindow.length)
+    || dashboardState.chartData.funnel
+    || (dashboardState.chartData.heatmap && Object.keys(dashboardState.chartData.heatmap).length);
+  if (!hasAnyData) {
+    checkKpiContrast();
+    return;
+  }
+  renderCharts(dashboardState.chartData.dailyWindow, dashboardState.chartData.funnel, dashboardState.chartData.heatmap)
+    .catch((error) => {
+      console.error('Nepavyko perpiešti grafikų pakeitus temą:', error);
+    });
+}
+
+/**
+ * Sugeneruoja paskutinių 7 dienų lentelę (naujausi įrašai viršuje).
+ * @param {ReturnType<typeof computeDailyStats>} recentDailyStats
+ */
+function formatValueWithShare(value, total) {
+  const count = Number.isFinite(value) ? value : 0;
+  const base = Number.isFinite(total) && total > 0 ? total : 0;
+  const share = base > 0 ? count / base : 0;
+  const shareText = percentFormatter.format(share);
+  return `${numberFormatter.format(count)} <span class="table-percent">(${shareText})</span>`;
+}
+
+function formatSignedNumber(value) {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+  if (value === 0) {
+    return numberFormatter.format(0);
+  }
+  const formatted = numberFormatter.format(Math.abs(value));
+  return `${value > 0 ? '+' : '−'}${formatted}`;
+}
+
+function formatSignedPercent(value) {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+  if (value === 0) {
+    return percentFormatter.format(0);
+  }
+  const formatted = percentFormatter.format(Math.abs(value));
+  return `${value > 0 ? '+' : '−'}${formatted}`;
+}
+
+function createTrendChangeCell(diff, percentChange, maxAbsDiff, canCompare = true, variant = 'yearly') {
+  const prefix = variant === 'monthly' ? 'monthly' : 'yearly';
+  if (!canCompare || !Number.isFinite(diff)) {
+    const unavailableText = (variant === 'monthly'
+      ? TEXT.monthly?.comparisonUnavailable
+      : TEXT.yearly?.comparisonUnavailable)
+      || TEXT.yearly?.comparisonUnavailable
+      || 'Nepakanka duomenų palyginimui.';
+    return `
+      <span class="${prefix}-trend__placeholder" aria-hidden="true">—</span>
+      <span class="sr-only">${unavailableText}</span>
+    `;
+  }
+  const direction = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral';
+  const absDiff = Math.abs(diff);
+  const normalized = maxAbsDiff > 0 ? (absDiff / maxAbsDiff) * 100 : 0;
+  const width = direction === 'neutral'
+    ? 0
+    : Math.min(100, Math.max(8, Math.round(normalized)));
+  const diffText = formatSignedNumber(diff);
+  const percentText = Number.isFinite(percentChange) ? formatSignedPercent(percentChange) : '—';
+  const ariaLabel = direction === 'neutral'
+    ? 'Pokytis nepakito (0 pacientų).'
+    : `Pokytis ${direction === 'up' ? 'padidėjo' : 'sumažėjo'} ${numberFormatter.format(absDiff)} pacientais${Number.isFinite(percentChange) ? ` (${percentText})` : ''}.`;
+  return `
+    <div class="${prefix}-trend" role="img" aria-label="${ariaLabel}">
+      <div class="${prefix}-trend__bar-wrapper" aria-hidden="true">
+        <div class="${prefix}-trend__bar ${prefix}-trend__bar--${direction}" style="width: ${width}%;"></div>
+      </div>
+      <div class="${prefix}-trend__values">
+        <span class="${prefix}-trend__diff ${prefix}-trend__diff--${direction}">${diffText}</span>
+        <span class="${prefix}-trend__percent">${percentText}</span>
+      </div>
+    </div>
+  `;
+}
+
+function createYearlyChangeCell(diff, percentChange, maxAbsDiff, canCompare = true) {
+  return createTrendChangeCell(diff, percentChange, maxAbsDiff, canCompare, 'yearly');
+}
+
+function createMonthlyChangeCell(diff, percentChange, maxAbsDiff, canCompare = true) {
+  return createTrendChangeCell(diff, percentChange, maxAbsDiff, canCompare, 'monthly');
+}
+
+function extractCompareMetricsFromRow(row) {
+  if (!row || !row.dataset || !row.dataset.compareId) {
+    return null;
+  }
+  const id = row.dataset.compareId;
+  const label = row.dataset.compareLabel || row.cells?.[0]?.textContent?.trim() || id;
+  const sortKey = row.dataset.compareSort || label;
+  const total = Number.parseFloat(row.dataset.total || '0');
+  const avgStay = Number.parseFloat(row.dataset.avgStay || '0');
+  const emsShare = Number.parseFloat(row.dataset.emsShare || '0');
+  const hospShare = Number.parseFloat(row.dataset.hospShare || '0');
+  return {
+    id,
+    group: row.dataset.compareGroup || 'unknown',
+    label,
+    sortKey,
+    total: Number.isFinite(total) ? total : 0,
+    avgStay: Number.isFinite(avgStay) ? avgStay : 0,
+    emsShare: Number.isFinite(emsShare) ? emsShare : 0,
+    hospShare: Number.isFinite(hospShare) ? hospShare : 0,
+  };
+}
+
+function updateCompareSummary() {
+  if (!selectors.compareSummary) {
+    return;
+  }
+  if (!dashboardState.compare.active) {
+    selectors.compareSummary.textContent = TEXT.compare.prompt;
+    return;
+  }
+  const selections = dashboardState.compare.selections;
+  if (!selections.length) {
+    selectors.compareSummary.textContent = TEXT.compare.prompt;
+    return;
+  }
+  if (selections.length === 1) {
+    selectors.compareSummary.textContent = TEXT.compare.insufficient;
+    return;
+  }
+  const sorted = [...selections].sort((a, b) => (a.sortKey > b.sortKey ? 1 : -1));
+  const older = sorted[0];
+  const newer = sorted[sorted.length - 1];
+  const totalDiff = newer.total - older.total;
+  const avgStayDiff = newer.avgStay - older.avgStay;
+  const emsShareDiff = (newer.emsShare - older.emsShare) * 100;
+  const hospShareDiff = (newer.hospShare - older.hospShare) * 100;
+  const diffToText = (value, formatter, unit = '') => {
+    if (Math.abs(value) < 0.0001) {
+      return 'pokyčių nėra';
+    }
+    const sign = value > 0 ? '+' : '−';
+    return `${sign}${formatter(Math.abs(value))}${unit}`;
+  };
+  const totalDiffText = diffToText(totalDiff, (val) => numberFormatter.format(Math.round(val)));
+  const avgDiffText = diffToText(avgStayDiff, (val) => decimalFormatter.format(val), ' val.');
+  const emsDiffText = diffToText(emsShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.');
+  const hospDiffText = diffToText(hospShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.');
+  const summaryTitle = TEXT.compare.summaryTitle(newer.label, older.label);
+  selectors.compareSummary.innerHTML = `
+    <strong>${summaryTitle}</strong>
+    <ul>
+      <li><strong>${TEXT.compare.metrics.total}:</strong> ${numberFormatter.format(newer.total)} vs ${numberFormatter.format(older.total)} (Δ ${totalDiffText})</li>
+      <li><strong>${TEXT.compare.metrics.avgStay}:</strong> ${decimalFormatter.format(newer.avgStay)} vs ${decimalFormatter.format(older.avgStay)} (Δ ${avgDiffText})</li>
+      <li><strong>${TEXT.compare.metrics.emsShare}:</strong> ${percentFormatter.format(newer.emsShare)} vs ${percentFormatter.format(older.emsShare)} (Δ ${emsDiffText})</li>
+      <li><strong>${TEXT.compare.metrics.hospShare}:</strong> ${percentFormatter.format(newer.hospShare)} vs ${percentFormatter.format(older.hospShare)} (Δ ${hospDiffText})</li>
+    </ul>
+  `;
+}
+
+function syncCompareActivation() {
+  const active = dashboardState.compare.active;
+  const rows = [];
+  if (selectors.recentTable) {
+    rows.push(...selectors.recentTable.querySelectorAll('tr[data-compare-id]'));
+  }
+  if (selectors.monthlyTable) {
+    rows.push(...selectors.monthlyTable.querySelectorAll('tr[data-compare-id]'));
+  }
+  if (selectors.yearlyTable) {
+    rows.push(...selectors.yearlyTable.querySelectorAll('tr[data-compare-id]'));
+  }
+  rows.forEach((row) => {
+    if (!active) {
+      row.classList.remove('table-row--selectable', 'table-row--selected');
+      row.removeAttribute('tabindex');
+      row.removeAttribute('role');
+      row.removeAttribute('aria-pressed');
+      return;
+    }
+    row.classList.add('table-row--selectable');
+    row.setAttribute('role', 'button');
+    row.setAttribute('tabindex', '0');
+    const metrics = extractCompareMetricsFromRow(row);
+    const isSelected = metrics && dashboardState.compare.selections.some((item) => item.id === metrics.id);
+    row.classList.toggle('table-row--selected', Boolean(isSelected));
+    row.setAttribute('aria-pressed', String(Boolean(isSelected)));
+  });
+  updateCompareSummary();
+}
+
+function clearCompareSelection() {
+  dashboardState.compare.selections = [];
+  syncCompareActivation();
+}
+
+function handleCompareRowSelection(row) {
+  if (!dashboardState.compare.active) {
+    return;
+  }
+  const metrics = extractCompareMetricsFromRow(row);
+  if (!metrics) {
+    return;
+  }
+  const existingIndex = dashboardState.compare.selections.findIndex((item) => item.id === metrics.id);
+  if (existingIndex >= 0) {
+    dashboardState.compare.selections.splice(existingIndex, 1);
+  } else {
+    if (dashboardState.compare.selections.length >= 2) {
+      dashboardState.compare.selections.shift();
+    }
+    dashboardState.compare.selections.push(metrics);
+  }
+  syncCompareActivation();
+}
+
+function setCompareMode(active) {
+  const normalized = Boolean(active);
+  dashboardState.compare.active = normalized;
+  if (selectors.compareToggle) {
+    selectors.compareToggle.textContent = normalized ? TEXT.compare.active : TEXT.compare.toggle;
+    selectors.compareToggle.setAttribute('aria-pressed', String(normalized));
+  }
+  if (selectors.compareCard) {
+    if (normalized) {
+      selectors.compareCard.removeAttribute('hidden');
+    } else {
+      selectors.compareCard.setAttribute('hidden', 'hidden');
+    }
+  }
+  if (!normalized) {
+    clearCompareSelection();
+  } else {
+    syncCompareActivation();
+  }
+}
+
+function renderRecentTable(recentDailyStats) {
+  selectors.recentTable.replaceChildren();
+  if (!recentDailyStats.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 7;
+    cell.textContent = TEXT.recent.empty;
+    row.appendChild(cell);
+    selectors.recentTable.appendChild(row);
+    syncCompareActivation();
+    return;
+  }
+
+  [...recentDailyStats]
+    .sort((a, b) => (a.date > b.date ? -1 : 1))
+    .forEach((entry) => {
+      const row = document.createElement('tr');
+      const dateValue = dateKeyToDate(entry.date);
+      const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
+      const total = Number.isFinite(entry.count) ? entry.count : 0;
+      row.innerHTML = `
+        <td>${displayDate}</td>
+        <td>${numberFormatter.format(total)}</td>
+        <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
+        <td>${formatValueWithShare(entry.night, total)}</td>
+        <td>${formatValueWithShare(entry.ems, total)}</td>
+        <td>${formatValueWithShare(entry.hospitalized, total)}</td>
+        <td>${formatValueWithShare(entry.discharged, total)}</td>
+      `;
+      const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+      const emsShare = total > 0 ? entry.ems / total : 0;
+      const hospShare = total > 0 ? entry.hospitalized / total : 0;
+      row.dataset.compareId = `recent-${entry.date}`;
+      row.dataset.compareGroup = 'recent';
+      row.dataset.compareLabel = displayDate;
+      row.dataset.compareSort = entry.date;
+      row.dataset.total = String(total);
+      row.dataset.avgStay = String(avgStay);
+      row.dataset.emsShare = String(emsShare);
+      row.dataset.hospShare = String(hospShare);
+      selectors.recentTable.appendChild(row);
+    });
+  syncCompareActivation();
+}
+
+function formatMonthLabel(monthKey) {
+  if (typeof monthKey !== 'string') {
+    return '';
+  }
+  const [yearStr, monthStr] = monthKey.split('-');
+  const year = Number.parseInt(yearStr, 10);
+  const monthIndex = Number.parseInt(monthStr, 10) - 1;
+  if (!Number.isFinite(year) || !Number.isFinite(monthIndex)) {
+    return monthKey;
+  }
+  return monthFormatter.format(new Date(Date.UTC(year, Math.max(0, monthIndex), 1)));
+}
+
+function formatYearLabel(yearKey) {
+  if (typeof yearKey !== 'string') {
+    return '';
+  }
+  const year = Number.parseInt(yearKey, 10);
+  if (!Number.isFinite(year)) {
+    return yearKey;
+  }
+  return `${year} m.`;
+}
+
+function renderMonthlyTable(monthlyStats) {
+  selectors.monthlyTable.replaceChildren();
+  if (!monthlyStats.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 9;
+    cell.textContent = TEXT.monthly.empty;
+    row.appendChild(cell);
+    selectors.monthlyTable.appendChild(row);
+    syncCompareActivation();
+    return;
+  }
+
+  const totals = monthlyStats.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
+  const completeness = monthlyStats.map((entry) => isCompleteMonthEntry(entry));
+  const diffValues = totals.map((total, index) => {
+    if (index === 0) {
+      return Number.NaN;
+    }
+    if (!completeness[index] || !completeness[index - 1]) {
+      return Number.NaN;
+    }
+    const previousTotal = totals[index - 1];
+    if (!Number.isFinite(previousTotal)) {
+      return Number.NaN;
+    }
+    return total - previousTotal;
+  });
+  const maxAbsDiff = diffValues.reduce((acc, value) => (Number.isFinite(value)
+    ? Math.max(acc, Math.abs(value))
+    : acc), 0);
+
+  monthlyStats.forEach((entry, index) => {
+    const row = document.createElement('tr');
+    const avgPerDay = entry.dayCount > 0 ? entry.count / entry.dayCount : 0;
+    const total = Number.isFinite(entry.count) ? entry.count : 0;
+    const previousTotal = index > 0 ? totals[index - 1] : Number.NaN;
+    const isComplete = completeness[index];
+    const previousComplete = index > 0 ? completeness[index - 1] : false;
+    const canCompare = isComplete && previousComplete && Number.isFinite(previousTotal);
+    const diff = canCompare ? total - previousTotal : Number.NaN;
+    const percentChange = canCompare && previousTotal !== 0
+      ? diff / previousTotal
+      : Number.NaN;
+    row.innerHTML = `
+      <td>${formatMonthLabel(entry.month)}</td>
+      <td>${numberFormatter.format(total)}</td>
+      <td>${oneDecimalFormatter.format(avgPerDay)}</td>
+      <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
+      <td>${formatValueWithShare(entry.night, total)}</td>
+      <td>${formatValueWithShare(entry.ems, total)}</td>
+      <td>${formatValueWithShare(entry.hospitalized, total)}</td>
+      <td>${formatValueWithShare(entry.discharged, total)}</td>
+      <td>${createMonthlyChangeCell(diff, percentChange, maxAbsDiff, canCompare)}</td>
+    `;
+    const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+    const emsShare = total > 0 ? entry.ems / total : 0;
+    const hospShare = total > 0 ? entry.hospitalized / total : 0;
+    row.dataset.compareId = `monthly-${entry.month}`;
+    row.dataset.compareGroup = 'monthly';
+    row.dataset.compareLabel = formatMonthLabel(entry.month);
+    row.dataset.compareSort = entry.month;
+    row.dataset.total = String(total);
+    row.dataset.avgStay = String(avgStay);
+    row.dataset.emsShare = String(emsShare);
+    row.dataset.hospShare = String(hospShare);
+    row.dataset.change = Number.isFinite(diff) ? String(diff) : '';
+    row.dataset.changePercent = Number.isFinite(percentChange) ? String(percentChange) : '';
+    selectors.monthlyTable.appendChild(row);
+  });
+  syncCompareActivation();
+}
+
+function isCompleteMonthEntry(entry) {
+  if (!entry) {
+    return false;
+  }
+  const dayCount = Number.isFinite(entry?.dayCount) ? entry.dayCount : 0;
+  if (!entry?.month) {
+    return dayCount >= 28;
+  }
+  const [yearStr, monthStr] = entry.month.split('-');
+  const year = Number.parseInt(yearStr, 10);
+  const monthIndex = Number.parseInt(monthStr, 10) - 1;
+  if (!Number.isFinite(year) || !Number.isFinite(monthIndex)) {
+    return dayCount >= 28;
+  }
+  const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0));
+  const daysInMonth = Number.isFinite(lastDay.getUTCDate()) ? lastDay.getUTCDate() : 30;
+  const threshold = Math.max(1, Math.round(daysInMonth * 0.9));
+  return dayCount >= threshold;
+}
+
+function isCompleteYearEntry(entry) {
+  if (!entry) {
+    return false;
+  }
+  const monthCount = Number.isFinite(entry?.monthCount) ? entry.monthCount : 0;
+  const dayCount = Number.isFinite(entry?.dayCount) ? entry.dayCount : 0;
+  return monthCount >= 12 || dayCount >= 360;
+}
+
+function renderYearlyTable(yearlyStats) {
+  if (!selectors.yearlyTable) {
+    return;
+  }
+  selectors.yearlyTable.replaceChildren();
+  if (!Array.isArray(yearlyStats) || !yearlyStats.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 9;
+    cell.textContent = TEXT.yearly.empty;
+    row.appendChild(cell);
+    selectors.yearlyTable.appendChild(row);
+    syncCompareActivation();
+    return;
+  }
+
+  const completeEntries = yearlyStats.filter((entry) => isCompleteYearEntry(entry));
+
+  if (!completeEntries.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 9;
+    cell.textContent = TEXT.yearly.noCompleteYears || TEXT.yearly.empty;
+    row.appendChild(cell);
+    selectors.yearlyTable.appendChild(row);
+    syncCompareActivation();
+    return;
+  }
+
+  const displayLimit = 5;
+  const entriesToRender = Number.isFinite(displayLimit) && displayLimit > 0
+    ? completeEntries.slice(-displayLimit)
+    : completeEntries;
+
+  const totals = entriesToRender.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
+  const completeness = entriesToRender.map((entry) => isCompleteYearEntry(entry));
+  const diffValues = totals.map((total, index) => {
+    if (index === 0) {
+      return Number.NaN;
+    }
+    if (!completeness[index] || !completeness[index - 1]) {
+      return Number.NaN;
+    }
+    const previousTotal = totals[index - 1];
+    if (!Number.isFinite(previousTotal)) {
+      return Number.NaN;
+    }
+    return total - previousTotal;
+  });
+  const maxAbsDiff = diffValues.reduce((acc, value) => (Number.isFinite(value)
+    ? Math.max(acc, Math.abs(value))
+    : acc), 0);
+
+  entriesToRender.forEach((entry, index) => {
+    const row = document.createElement('tr');
+    const total = Number.isFinite(entry.count) ? entry.count : 0;
+    const avgPerDay = entry.dayCount > 0 ? total / entry.dayCount : 0;
+    const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+    const previousTotal = index > 0 ? totals[index - 1] : Number.NaN;
+    const isComplete = completeness[index];
+    const previousComplete = index > 0 ? completeness[index - 1] : false;
+    const canCompare = isComplete && previousComplete && Number.isFinite(previousTotal);
+    const diff = canCompare ? total - previousTotal : Number.NaN;
+    const percentChange = canCompare && previousTotal !== 0
+      ? diff / previousTotal
+      : Number.NaN;
+    row.innerHTML = `
+      <td>${formatYearLabel(entry.year)}</td>
+      <td>${numberFormatter.format(total)}</td>
+      <td>${oneDecimalFormatter.format(avgPerDay)}</td>
+      <td>${decimalFormatter.format(avgStay)}</td>
+      <td>${formatValueWithShare(entry.night, total)}</td>
+      <td>${formatValueWithShare(entry.ems, total)}</td>
+      <td>${formatValueWithShare(entry.hospitalized, total)}</td>
+      <td>${formatValueWithShare(entry.discharged, total)}</td>
+      <td>${createYearlyChangeCell(diff, percentChange, maxAbsDiff, canCompare)}</td>
+    `;
+    const emsShare = total > 0 ? entry.ems / total : 0;
+    const hospShare = total > 0 ? entry.hospitalized / total : 0;
+    row.dataset.compareId = `yearly-${entry.year}`;
+    row.dataset.compareGroup = 'yearly';
+    row.dataset.compareLabel = formatYearLabel(entry.year);
+    row.dataset.compareSort = entry.year;
+    row.dataset.total = String(total);
+    row.dataset.avgStay = String(avgStay);
+    row.dataset.emsShare = String(emsShare);
+    row.dataset.hospShare = String(hospShare);
+    row.dataset.change = Number.isFinite(diff) ? String(diff) : '';
+    row.dataset.changePercent = Number.isFinite(percentChange) ? String(percentChange) : '';
+    selectors.yearlyTable.appendChild(row);
+  });
+  syncCompareActivation();
+}
+
+function formatEdCardValue(rawValue, format) {
+  switch (format) {
+    case 'hours':
+      if (!Number.isFinite(rawValue)) {
+        return null;
+      }
+      return oneDecimalFormatter.format(rawValue / 60);
+    case 'minutes':
+      if (!Number.isFinite(rawValue)) {
+        return null;
+      }
+      return numberFormatter.format(Math.round(rawValue));
+    case 'percent':
+      if (!Number.isFinite(rawValue)) {
+        return null;
+      }
+      return percentFormatter.format(rawValue);
+    case 'oneDecimal':
+      if (!Number.isFinite(rawValue)) {
+        return null;
+      }
+      return oneDecimalFormatter.format(rawValue);
+    case 'ratio':
+      if (!Number.isFinite(rawValue) || rawValue <= 0) {
+        return null;
+      }
+      return `1:${oneDecimalFormatter.format(rawValue)}`;
+    case 'beds':
+      if (!Number.isFinite(rawValue)) {
+        return null;
+      }
+      {
+        const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? ED_TOTAL_BEDS : 0;
+        const occupied = Math.max(0, Math.round(rawValue));
+        if (totalBeds > 0) {
+          const share = occupied / totalBeds;
+          const percentText = percentFormatter.format(share);
+          return `${numberFormatter.format(occupied)}/${numberFormatter.format(totalBeds)} (${percentText})`;
+        }
+        return numberFormatter.format(occupied);
+      }
+    default:
+      if (!Number.isFinite(rawValue)) {
+        return null;
+      }
+      return numberFormatter.format(rawValue);
+  }
+}
+
+function renderTvMetrics(listElement, metrics) {
+  if (!listElement) {
+    return;
+  }
+  listElement.replaceChildren();
+  const entries = Array.isArray(metrics)
+    ? metrics.map((item) => ({
+      label: typeof item?.label === 'string' ? item.label : '',
+      value: item?.value != null && item.value !== '' ? String(item.value) : '—',
+      meta: item?.meta,
+    }))
+    : [];
+  if (!entries.length) {
+    return;
+  }
+  entries.forEach((entry) => {
+    const item = document.createElement('li');
+    item.className = 'ed-tv__metric';
+    const labelEl = document.createElement('p');
+    labelEl.className = 'ed-tv__metric-label';
+    labelEl.textContent = entry.label;
+    const valueEl = document.createElement('p');
+    valueEl.className = 'ed-tv__metric-value';
+    valueEl.textContent = entry.value;
+    item.append(labelEl, valueEl);
+    const metaLines = Array.isArray(entry.meta)
+      ? entry.meta
+      : (entry.meta != null && entry.meta !== '' ? [entry.meta] : []);
+    const filteredMeta = metaLines
+      .map((line) => (line != null ? String(line) : ''))
+      .map((line) => line.trim())
+      .filter((line) => line.length);
+    if (filteredMeta.length) {
+      const metaEl = document.createElement('p');
+      metaEl.className = 'ed-tv__metric-meta';
+      metaEl.textContent = filteredMeta.join('\n');
+      item.appendChild(metaEl);
+    }
+    listElement.appendChild(item);
+  });
+}
+
+function updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo) {
+  if (!selectors.edTvPanel) {
+    return;
+  }
+  const tvTexts = TEXT.edTv || {};
+  if (selectors.edTvTitle && tvTexts.title) {
+    selectors.edTvTitle.textContent = tvTexts.title;
+  }
+  if (selectors.edTvSubtitle) {
+    selectors.edTvSubtitle.textContent = tvTexts.subtitle || '';
+  }
+  const toneValue = dataset?.error
+    ? 'error'
+    : (dataset?.usingFallback ? 'warning' : (statusInfo?.tone || 'info'));
+  selectors.edTvPanel.dataset.tone = toneValue;
+  if (selectors.edTvStatusText) {
+    selectors.edTvStatusText.textContent = statusInfo?.message || TEXT.ed.status.loading;
+  }
+  if (selectors.edTvUpdated) {
+    const timestampText = statusInfo?.timestamp;
+    const updatedText = timestampText
+      ? (typeof tvTexts.updated === 'function'
+        ? tvTexts.updated(timestampText)
+        : `Atnaujinta ${timestampText}`)
+      : (tvTexts.updatedUnknown || TEXT.status.loading);
+    selectors.edTvUpdated.textContent = updatedText;
+  }
+  if (selectors.edTvNotice) {
+    let noticeText = '';
+    let noticeTone = '';
+    if (dataset?.error) {
+      noticeText = tvTexts.notices?.error || '';
+      noticeTone = 'error';
+    } else if (dataset?.usingFallback) {
+      noticeText = tvTexts.notices?.fallback || '';
+      noticeTone = 'warning';
+    } else if (!statusInfo?.hasEntries) {
+      noticeText = tvTexts.notices?.empty || '';
+      noticeTone = 'warning';
+    }
+    if (noticeText) {
+      selectors.edTvNotice.textContent = noticeText;
+      selectors.edTvNotice.dataset.tone = noticeTone || 'info';
+      selectors.edTvNotice.hidden = false;
+    } else {
+      selectors.edTvNotice.hidden = true;
+      selectors.edTvNotice.textContent = '';
+      selectors.edTvNotice.removeAttribute('data-tone');
+    }
+  }
+  const groupTexts = tvTexts.groups?.[displayVariant] || tvTexts.groups?.snapshot || {};
+  if (selectors.edTvPrimaryTitle && groupTexts.now) {
+    selectors.edTvPrimaryTitle.textContent = groupTexts.now;
+  }
+  if (selectors.edTvStaffTitle && groupTexts.staff) {
+    selectors.edTvStaffTitle.textContent = groupTexts.staff;
+  }
+  if (selectors.edTvFlowTitle && groupTexts.flow) {
+    selectors.edTvFlowTitle.textContent = groupTexts.flow;
+  }
+  if (selectors.edTvTriageTitle && groupTexts.triage) {
+    selectors.edTvTriageTitle.textContent = groupTexts.triage;
+  }
+
+  const metricTexts = tvTexts.metrics || {};
+  const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? ED_TOTAL_BEDS : null;
+  const currentPatients = Number.isFinite(summary.currentPatients) ? summary.currentPatients : null;
+  const occupiedBeds = Number.isFinite(summary.occupiedBeds) ? summary.occupiedBeds : null;
+  const freeBeds = totalBeds != null && occupiedBeds != null
+    ? Math.max(totalBeds - occupiedBeds, 0)
+    : null;
+  const occupancyShare = totalBeds && occupiedBeds != null ? occupiedBeds / totalBeds : null;
+
+  let primaryMetrics = [];
+  let staffMetrics = [];
+  let flowMetrics = [];
+
+  if (displayVariant === 'snapshot') {
+    const occupancyPercentText = occupancyShare != null ? percentFormatter.format(occupancyShare) : null;
+    const freeShare = totalBeds && freeBeds != null && totalBeds > 0 ? freeBeds / totalBeds : null;
+    const bedStatusLines = [];
+    if (occupiedBeds != null) {
+      const occupiedParts = [];
+      if (totalBeds != null) {
+        occupiedParts.push(`${numberFormatter.format(occupiedBeds)} / ${numberFormatter.format(totalBeds)} lov.`);
+      } else {
+        occupiedParts.push(`${numberFormatter.format(occupiedBeds)} lov.`);
+      }
+      if (occupancyShare != null) {
+        occupiedParts.push(`(${percentFormatter.format(occupancyShare)})`);
+      }
+      const occupiedLabel = metricTexts.bedOccupied || metricTexts.occupiedBeds || 'Užimta';
+      bedStatusLines.push(`${occupiedLabel}: ${occupiedParts.join(' ')}`.trim());
+    }
+    if (freeBeds != null) {
+      const freeParts = [`${numberFormatter.format(freeBeds)} lov.`];
+      if (freeShare != null) {
+        freeParts.push(`(${percentFormatter.format(freeShare)})`);
+      }
+      const freeLabel = metricTexts.bedFree || metricTexts.freeBeds || 'Laisvos';
+      bedStatusLines.push(`${freeLabel}: ${freeParts.join(' ')}`.trim());
+    }
+    const occupancyValue = occupancyPercentText
+      || (occupiedBeds != null && totalBeds != null
+        ? `${numberFormatter.format(occupiedBeds)} / ${numberFormatter.format(totalBeds)} lov.`
+        : (occupiedBeds != null ? `${numberFormatter.format(occupiedBeds)} lov.` : '—'));
+
+    primaryMetrics = [
+      {
+        label: metricTexts.currentPatients || 'Šiuo metu pacientų',
+        value: currentPatients != null ? numberFormatter.format(currentPatients) : '—',
+      },
+      {
+        label: metricTexts.bedStatus || metricTexts.occupancy || 'Lovų būklė',
+        value: occupancyValue,
+        meta: bedStatusLines,
+      },
+    ];
+
+    const nurseRatioValue = Number.isFinite(summary.nursePatientsPerStaff)
+      ? summary.nursePatientsPerStaff
+      : null;
+    const nurseRatioText = formatEdCardValue(nurseRatioValue, 'ratio');
+    const nurseStaff = currentPatients != null && nurseRatioValue && nurseRatioValue > 0
+      ? currentPatients / nurseRatioValue
+      : null;
+    const doctorRatioValue = Number.isFinite(summary.doctorPatientsPerStaff)
+      ? summary.doctorPatientsPerStaff
+      : null;
+    const doctorRatioText = formatEdCardValue(doctorRatioValue, 'ratio');
+    const doctorStaff = currentPatients != null && doctorRatioValue && doctorRatioValue > 0
+      ? currentPatients / doctorRatioValue
+      : null;
+
+    const staffValueParts = [];
+    const staffMetaLines = [];
+    if (nurseRatioText) {
+      const shortLabel = metricTexts.nurseRatioShort || 'Sl.';
+      staffValueParts.push(`${shortLabel} ${nurseRatioText}`);
+      const nurseMeta = [`${metricTexts.nurseRatio || 'Slaugytojai'}: ${nurseRatioText}`];
+      if (nurseStaff != null) {
+        nurseMeta.push(`(~${oneDecimalFormatter.format(nurseStaff)} slaugyt.)`);
+      }
+      staffMetaLines.push(nurseMeta.join(' '));
+    }
+    if (doctorRatioText) {
+      const shortLabel = metricTexts.doctorRatioShort || 'Gyd.';
+      staffValueParts.push(`${shortLabel} ${doctorRatioText}`);
+      const doctorMeta = [`${metricTexts.doctorRatio || 'Gydytojai'}: ${doctorRatioText}`];
+      if (doctorStaff != null) {
+        doctorMeta.push(`(~${oneDecimalFormatter.format(doctorStaff)} gyd.)`);
+      }
+      staffMetaLines.push(doctorMeta.join(' '));
+    }
+
+    const staffCardLabel = metricTexts.staffCombined || metricTexts.nurseRatio || 'Santykiai';
+    const staffCardValue = staffValueParts.length ? staffValueParts.join(' · ') : '—';
+    staffMetrics = [
+      {
+        label: staffCardLabel,
+        value: staffCardValue,
+        meta: staffMetaLines,
+      },
+    ];
+
+    const avgLos = formatEdCardValue(summary.avgLosMinutes, 'hours');
+    if (avgLos != null) {
+      flowMetrics.push({
+        label: metricTexts.avgLos || 'Vid. buvimas',
+        value: `${avgLos} val.`,
+      });
+    }
+    const doorMinutes = formatEdCardValue(summary.avgDoorToProviderMinutes, 'minutes');
+    if (doorMinutes != null) {
+      flowMetrics.push({
+        label: metricTexts.door || 'Durys → gyd.',
+        value: `${doorMinutes} min.`,
+      });
+    }
+    const decisionMinutes = formatEdCardValue(summary.avgDecisionToLeaveMinutes, 'minutes');
+    if (decisionMinutes != null) {
+      flowMetrics.push({
+        label: metricTexts.decision || 'Sprendimas → išvykimas',
+        value: `${decisionMinutes} min.`,
+      });
+    }
+    const hospShare = formatEdCardValue(summary.hospitalizedShare, 'percent');
+    if (hospShare != null) {
+      flowMetrics.push({
+        label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
+        value: hospShare,
+      });
+    }
+  } else {
+    const avgDaily = Number.isFinite(summary.avgDailyPatients)
+      ? oneDecimalFormatter.format(summary.avgDailyPatients)
+      : null;
+    const totalPatients = Number.isFinite(summary.totalPatients)
+      ? numberFormatter.format(summary.totalPatients)
+      : null;
+    const avgLos = formatEdCardValue(summary.avgLosMinutes, 'hours');
+    const hospShare = formatEdCardValue(summary.hospitalizedShare, 'percent');
+    primaryMetrics = [
+      {
+        label: metricTexts.avgDaily || 'Vid. pacientų/d.',
+        value: avgDaily ?? '—',
+        meta: totalPatients ? `${totalPatients} pac. analizuota` : '',
+      },
+      {
+        label: metricTexts.avgLos || 'Vid. buvimas',
+        value: avgLos != null ? `${avgLos} val.` : '—',
+      },
+      {
+        label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
+        value: hospShare ?? '—',
+      },
+    ];
+
+    const doorMinutes = formatEdCardValue(summary.avgDoorToProviderMinutes, 'minutes');
+    const decisionMinutes = formatEdCardValue(summary.avgDecisionToLeaveMinutes, 'minutes');
+    staffMetrics = [
+      {
+        label: metricTexts.door || 'Durys → gyd.',
+        value: doorMinutes != null ? `${doorMinutes} min.` : '—',
+      },
+      {
+        label: metricTexts.decision || 'Sprendimas → išvykimas',
+        value: decisionMinutes != null ? `${decisionMinutes} min.` : '—',
+      },
+    ];
+
+    const monthAvg = formatEdCardValue(summary.avgLosMonthMinutes, 'hours');
+    const yearAvg = formatEdCardValue(summary.avgLosYearMinutes, 'hours');
+    if (monthAvg != null || yearAvg != null) {
+      flowMetrics.push({
+        label: metricTexts.avgLos || 'Vid. buvimas',
+        value: monthAvg != null ? `${monthAvg} val.` : '—',
+        meta: yearAvg != null ? `Metai: ${yearAvg} val.` : '',
+      });
+    }
+    const monthShare = formatEdCardValue(summary.hospitalizedMonthShare, 'percent');
+    const yearShare = formatEdCardValue(summary.hospitalizedYearShare, 'percent');
+    if (monthShare != null || yearShare != null) {
+      flowMetrics.push({
+        label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
+        value: monthShare ?? '—',
+        meta: yearShare != null ? `Metai: ${yearShare}` : '',
+      });
+    }
+  }
+
+  renderTvMetrics(selectors.edTvPrimaryMetrics, primaryMetrics);
+  renderTvMetrics(selectors.edTvStaffMetrics, staffMetrics);
+  renderTvMetrics(selectors.edTvFlowMetrics, flowMetrics);
+
+  if (selectors.edTvTriageList) {
+    selectors.edTvTriageList.replaceChildren();
+    const list = Array.isArray(dispositions) ? dispositions : [];
+    const total = list.reduce((acc, entry) => acc + (Number.isFinite(entry?.count) ? entry.count : 0), 0);
+    if (!list.length || total <= 0) {
+      const emptyItem = document.createElement('li');
+      emptyItem.className = 'ed-tv__triage-item';
+      const label = document.createElement('p');
+      label.className = 'ed-tv__triage-label';
+      label.textContent = tvTexts.triageEmpty || 'Pasiskirstymo duomenų nėra.';
+      emptyItem.appendChild(label);
+      selectors.edTvTriageList.appendChild(emptyItem);
+      if (selectors.edTvTriageMeta) {
+        selectors.edTvTriageMeta.textContent = '';
+      }
+    } else {
+      list.forEach((entry) => {
+        if (!entry) {
+          return;
+        }
+        const item = document.createElement('li');
+        item.className = 'ed-tv__triage-item';
+        if (entry.categoryKey) {
+          item.classList.add(`ed-tv__triage-item--c${entry.categoryKey}`);
+        } else {
+          item.classList.add('ed-tv__triage-item--other');
+        }
+        const label = document.createElement('p');
+        label.className = 'ed-tv__triage-label';
+        label.textContent = entry.label || '';
+        const meta = document.createElement('div');
+        meta.className = 'ed-tv__triage-meta';
+        const countSpan = document.createElement('span');
+        countSpan.textContent = Number.isFinite(entry.count)
+          ? numberFormatter.format(entry.count)
+          : '—';
+        const shareValue = Number.isFinite(entry.share)
+          ? entry.share
+          : (total > 0 && Number.isFinite(entry.count) ? entry.count / total : null);
+        const shareSpan = document.createElement('span');
+        shareSpan.textContent = shareValue != null ? percentFormatter.format(shareValue) : '—';
+        meta.append(countSpan, shareSpan);
+        const bar = document.createElement('div');
+        bar.className = 'ed-tv__triage-bar';
+        const fill = document.createElement('div');
+        fill.className = 'ed-tv__triage-bar-fill';
+        if (shareValue != null) {
+          const width = Math.max(0, Math.min(100, shareValue * 100));
+          fill.style.width = `${width}%`;
+        } else {
+          fill.style.width = '0%';
+        }
+        bar.appendChild(fill);
+        item.append(label, meta, bar);
+        selectors.edTvTriageList.appendChild(item);
+      });
+      if (selectors.edTvTriageMeta) {
+        const totalText = numberFormatter.format(total);
+        selectors.edTvTriageMeta.textContent = typeof tvTexts.triageTotal === 'function'
+          ? tvTexts.triageTotal(totalText)
+          : `Iš viso: ${totalText}`;
+      }
+    }
+  }
+}
+
+function buildEdStatus(summary, dataset, displayVariant) {
+  const updatedAt = dataset?.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime())
+    ? dataset.updatedAt
+    : null;
+  const snapshotDate = summary?.latestSnapshotAt instanceof Date && !Number.isNaN(summary.latestSnapshotAt.getTime())
+    ? summary.latestSnapshotAt
+    : null;
+  const statusDate = snapshotDate || updatedAt || null;
+  const timestampText = statusDate ? statusTimeFormatter.format(statusDate) : null;
+  const hasEntries = displayVariant === 'snapshot'
+    ? Number.isFinite(summary?.entryCount) && summary.entryCount > 0
+    : Number.isFinite(summary?.totalPatients) && summary.totalPatients > 0;
+  let tone = 'info';
+  let message = '';
+  if (dataset?.error) {
+    message = TEXT.ed.status.error(dataset.error);
+    tone = 'error';
+  } else if (dataset?.usingFallback) {
+    const reason = dataset.lastErrorMessage || TEXT.ed.status.noUrl;
+    message = TEXT.ed.status.fallback(reason, timestampText);
+    tone = 'warning';
+  } else if (!hasEntries) {
+    message = TEXT.ed.status.empty;
+    tone = 'warning';
+  } else {
+    const successTimestamp = timestampText || statusTimeFormatter.format(new Date());
+    message = TEXT.ed.status.success(successTimestamp);
+    tone = 'success';
+  }
+  return {
+    message,
+    tone,
+    timestamp: timestampText,
+    statusDate,
+    updatedAt,
+    hasEntries,
+  };
+}
+
+async function renderEdDashboard(edData) {
+  if (!selectors.edPanel) {
+    return;
+  }
+  const dataset = edData || {};
+  const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
+  const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
+  const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
+  const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
+    || Number.isFinite(summary?.occupiedBeds)
+    || Number.isFinite(summary?.nursePatientsPerStaff)
+    || Number.isFinite(summary?.doctorPatientsPerStaff);
+  const displayVariant = summaryMode === 'snapshot'
+    || (summaryMode === 'hybrid' && hasSnapshotMetrics)
+    ? 'snapshot'
+    : 'legacy';
+
+  const overviewDailyStats = Array.isArray(dashboardState?.kpi?.daily) && dashboardState.kpi.daily.length
+    ? dashboardState.kpi.daily
+    : (Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : []);
+  const configuredWindowRaw = Number.isFinite(Number(dashboardState?.kpi?.filters?.window))
+    ? Number(dashboardState.kpi.filters.window)
+    : (Number.isFinite(Number(settings?.calculations?.windowDays))
+      ? Number(settings.calculations.windowDays)
+      : DEFAULT_KPI_WINDOW_DAYS);
+  const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
+    ? configuredWindowRaw
+    : DEFAULT_KPI_WINDOW_DAYS;
+  if (overviewDailyStats.length) {
+    const overviewMetrics = buildYearMonthMetrics(overviewDailyStats, configuredWindow);
+    if (overviewMetrics) {
+      const { yearMetrics, monthMetrics } = overviewMetrics;
+      const yearAvgMinutes = Number.isFinite(yearMetrics?.avgTime) ? yearMetrics.avgTime * 60 : null;
+      const yearHospLosMinutes = Number.isFinite(yearMetrics?.avgHospitalizedTime)
+        ? yearMetrics.avgHospitalizedTime * 60
+        : null;
+      const monthAvgMinutes = Number.isFinite(monthMetrics?.avgTime) ? monthMetrics.avgTime * 60 : null;
+      const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare) ? yearMetrics.hospitalizedShare : null;
+      const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare) ? monthMetrics.hospitalizedShare : null;
+
+      summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
+      summary.avgLosHospitalizedMinutes = yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
+      summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : null;
+      summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : null;
+      summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
+      summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : null;
+      summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : null;
+    }
+  }
+  const cardsConfigSource = TEXT.ed.cards || {};
+  const cardConfigs = Array.isArray(cardsConfigSource[displayVariant]) ? cardsConfigSource[displayVariant] : [];
+  const dispositionsText = TEXT.ed.dispositions?.[displayVariant] || TEXT.ed.dispositions?.legacy || {};
+  const updatedAt = summary.generatedAt instanceof Date && !Number.isNaN(summary.generatedAt.getTime())
+    ? summary.generatedAt
+    : (dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime()) ? dataset.updatedAt : null);
+
+  if (selectors.edCards) {
+    selectors.edCards.replaceChildren();
+    cardConfigs.forEach((config) => {
+      if (!config || typeof config !== 'object') {
+        return;
+      }
+      const card = document.createElement('article');
+      card.className = 'ed-dashboard__card';
+      card.setAttribute('role', 'listitem');
+
+      const title = document.createElement('p');
+      title.className = 'ed-dashboard__card-title';
+      title.textContent = config.title;
+
+      const value = document.createElement('p');
+      value.className = 'ed-dashboard__card-value';
+      let hasValue = false;
+      if (config.secondaryKey) {
+        const primaryRaw = summary?.[config.key];
+        const secondaryRaw = summary?.[config.secondaryKey];
+        const primaryFormatted = formatEdCardValue(primaryRaw, config.format);
+        const secondaryFormatted = formatEdCardValue(secondaryRaw, config.format);
+        const suffix = config.format === 'hours'
+          ? ' val.'
+          : (config.format === 'minutes' ? ' min.' : '');
+        const primaryText = primaryFormatted != null
+          ? `${primaryFormatted}${suffix}`
+          : '—';
+        const secondaryText = secondaryFormatted != null
+          ? `${secondaryFormatted}${suffix}`
+          : '—';
+        if (primaryFormatted != null || secondaryFormatted != null) {
+          value.textContent = `${primaryText} / ${secondaryText}`;
+          hasValue = true;
+        }
+      } else {
+        const rawValue = summary?.[config.key];
+        const formatted = formatEdCardValue(rawValue, config.format);
+        if (formatted != null) {
+          if (config.format === 'hours') {
+            value.textContent = `${formatted} val.`;
+          } else if (config.format === 'minutes') {
+            value.textContent = `${formatted} min.`;
+          } else {
+            value.textContent = formatted;
+          }
+          hasValue = true;
+        }
+      }
+      if (!hasValue) {
+        value.textContent = config.empty ?? '—';
+      }
+
+      const meta = document.createElement('p');
+      meta.className = 'ed-dashboard__card-meta';
+      meta.textContent = config.description || '';
+
+      card.append(title, value, meta);
+      selectors.edCards.appendChild(card);
+    });
+  }
+
+  if (selectors.edDispositionsTitle) {
+    selectors.edDispositionsTitle.textContent = dispositionsText.title || '';
+  }
+  if (selectors.edDispositionsCaption) {
+    selectors.edDispositionsCaption.textContent = dispositionsText.caption || '';
+  }
+  if (selectors.edDispositionsMessage) {
+    selectors.edDispositionsMessage.hidden = true;
+    selectors.edDispositionsMessage.textContent = '';
+  }
+
+  try {
+    await renderEdDispositionsChart(dispositions, dispositionsText, displayVariant);
+  } catch (error) {
+    console.error('Nepavyko atvaizduoti pacientų kategorijų grafiko:', error);
+    if (selectors.edDispositionsChart) {
+      selectors.edDispositionsChart.hidden = true;
+      selectors.edDispositionsChart.setAttribute('aria-hidden', 'true');
+    }
+    if (selectors.edDispositionsMessage) {
+      selectors.edDispositionsMessage.textContent = dispositionsText.empty || 'Nepavyko atvaizduoti grafiko.';
+      selectors.edDispositionsMessage.hidden = false;
+    }
+  }
+
+  const statusInfo = buildEdStatus(summary, dataset, displayVariant);
+  if (selectors.edStatus) {
+    selectors.edStatus.textContent = statusInfo.message;
+    selectors.edStatus.dataset.tone = statusInfo.tone;
+  }
+  if (selectors.edStatusTimestamp) {
+    if (statusInfo.timestamp) {
+      selectors.edStatusTimestamp.textContent = `Atnaujinta ${statusInfo.timestamp}`;
+      selectors.edStatusTimestamp.hidden = false;
+    } else {
+      selectors.edStatusTimestamp.textContent = '';
+      selectors.edStatusTimestamp.hidden = true;
+    }
+  }
+  updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
+}
+
+async function renderEdDispositionsChart(dispositions, text, displayVariant) {
+  const canvas = selectors.edDispositionsChart;
+  const messageEl = selectors.edDispositionsMessage || null;
+
+  if (!canvas) {
+    if (messageEl) {
+      messageEl.textContent = '';
+      messageEl.hidden = true;
+    }
+    return;
+  }
+
+  if (messageEl) {
+    messageEl.textContent = '';
+    messageEl.hidden = true;
+  }
+
+  if (dashboardState.charts.edDispositions && typeof dashboardState.charts.edDispositions.destroy === 'function') {
+    dashboardState.charts.edDispositions.destroy();
+  }
+  dashboardState.charts.edDispositions = null;
+
+  const validEntries = Array.isArray(dispositions)
+    ? dispositions
+      .filter((entry) => Number.isFinite(entry?.count) && entry.count >= 0)
+      .map((entry, index) => ({
+        ...entry,
+        categoryKey: entry?.categoryKey != null ? String(entry.categoryKey) : null,
+        label: entry?.label || `Kategorija ${entry?.categoryKey ?? index + 1}`,
+      }))
+    : [];
+
+  if (!validEntries.length) {
+    canvas.hidden = true;
+    canvas.setAttribute('aria-hidden', 'true');
+    if (messageEl) {
+      messageEl.textContent = text?.empty || 'Nėra duomenų grafiko sudarymui.';
+      messageEl.hidden = false;
+    }
+    return;
+  }
+
+  const Chart = await loadChartJs();
+  if (!Chart) {
+    throw new Error('Chart.js biblioteka nepasiekiama');
+  }
+  if (!dashboardState.chartLib) {
+    dashboardState.chartLib = Chart;
+  }
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Nepavyko gauti grafiko konteksto');
+  }
+
+  canvas.hidden = false;
+  canvas.removeAttribute('aria-hidden');
+
+  const palette = getThemePalette();
+  const styleTarget = getThemeStyleTarget();
+  const computedStyles = getComputedStyle(styleTarget);
+  const borderBaseColor = computedStyles.getPropertyValue('--color-border').trim() || 'rgba(37, 99, 235, 0.15)';
+  const theme = styleTarget?.dataset?.theme || 'light';
+  const tooltipBackground = theme === 'dark' ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.96)';
+  const tooltipBorder = theme === 'dark' ? 'rgba(148, 163, 184, 0.35)' : borderBaseColor;
+
+  const CATEGORY_COLORS = {
+    '1': '#8da4ff',
+    '2': '#f9a8d4',
+    '3': '#fde68a',
+    '4': '#a5f3fc',
+    '5': '#c4b5fd',
+  };
+  const fallbackSequence = ['#8da4ff', '#f9a8d4', '#fde68a', '#a5f3fc', '#c4b5fd'];
+
+  const backgroundColors = validEntries.map((entry, index) => {
+    const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
+    if (key && CATEGORY_COLORS[key]) {
+      return CATEGORY_COLORS[key];
+    }
+    return fallbackSequence[index % fallbackSequence.length];
+  });
+
+  const values = validEntries.map((entry) => Number(entry.count) || 0);
+  const total = values.reduce((sum, value) => (Number.isFinite(value) ? sum + value : sum), 0);
+
+  const chartEntries = validEntries.map((entry, index) => {
+    const count = Number(values[index]) || 0;
+    const percent = total > 0 ? count / total : 0;
+    return {
+      ...entry,
+      count,
+      percent,
+      color: backgroundColors[index] || palette.accent,
+    };
+  });
+
+  const formatValue = (value) => {
+    if (!Number.isFinite(value)) {
+      return '—';
+    }
+    if (displayVariant === 'snapshot') {
+      return numberFormatter.format(Math.round(value));
+    }
+    if (Math.abs(value) >= 1) {
+      return oneDecimalFormatter.format(value);
+    }
+    return decimalFormatter.format(value);
+  };
+
+  const datasetLabel = text?.title || 'Pacientų kategorijos';
+  const totalLabel = text?.centerLabel || 'Viso pacientų';
+
+  const labels = chartEntries.map((entry) => entry.label);
+  const ariaSummary = chartEntries
+    .map((entry) => {
+      const value = formatValue(entry.count);
+      const percent = percentFormatter.format(entry.percent);
+      return `${entry.label}: ${value} (${percent})`;
+    })
+    .filter(Boolean)
+    .join('; ');
+  if (ariaSummary) {
+    canvas.setAttribute('aria-label', `${datasetLabel} – ${ariaSummary}. ${totalLabel}: ${formatValue(total)}.`);
+  } else {
+    canvas.setAttribute('aria-label', datasetLabel);
+  }
+
+  const tooltipLabel = (context) => {
+    const entry = chartEntries[context.dataIndex];
+    if (!entry) {
+      return '';
+    }
+    return `${entry.label}: ${formatValue(entry.count)} pac.`;
+  };
+
+  const tooltipAfterLabel = (context) => {
+    const entry = chartEntries[context.dataIndex];
+    if (!entry) {
+      return '';
+    }
+    return `Dalis: ${percentFormatter.format(entry.percent)}`;
+  };
+
+  const tooltipFooter = () => `${totalLabel}: ${formatValue(total)} pac.`;
+
+  const chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: datasetLabel,
+          data: chartEntries.map((entry) => entry.count),
+          backgroundColor: chartEntries.map((entry) => entry.color),
+          borderColor: chartEntries.map(() => 'rgba(15, 23, 42, 0.12)'),
+          borderWidth: 1,
+          borderSkipped: false,
+          borderRadius: 8,
+          maxBarThickness: 44,
+          barPercentage: 0.55,
+          categoryPercentage: 0.6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          top: 8,
+          right: 12,
+          bottom: 8,
+          left: 12,
+        },
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false,
+            drawBorder: false,
+          },
+          ticks: {
+            color: palette.textMuted,
+            font: {
+              size: 12,
+              weight: '600',
+            },
+          },
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: palette.gridColor,
+            drawBorder: false,
+          },
+          ticks: {
+            color: palette.textMuted,
+            font: {
+              size: 12,
+            },
+          },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: tooltipBackground,
+          borderColor: tooltipBorder,
+          borderWidth: 1,
+          displayColors: false,
+          padding: 10,
+          bodySpacing: 6,
+          titleColor: palette.textColor,
+          bodyColor: palette.textColor,
+          titleFont: {
+            size: 13,
+            weight: '700',
+          },
+          bodyFont: {
+            size: 13,
+            weight: '500',
+          },
+          callbacks: {
+            title(tooltipItems) {
+              return tooltipItems.length ? tooltipItems[0].label : datasetLabel;
+            },
+            label: tooltipLabel,
+            afterLabel: tooltipAfterLabel,
+            footer: tooltipFooter,
+          },
+        },
+      },
+      elements: {
+        bar: {
+          borderRadius: 8,
+          borderSkipped: false,
+        },
+      },
+      animation: false,
+      transitions: {
+        active: { animation: { duration: 0 } },
+        show: { animation: { duration: 0 } },
+        hide: { animation: { duration: 0 } },
+      },
+    },
+  });
+
+  dashboardState.charts.edDispositions = chartInstance;
+}
+function clampColorChannel(value) {
+  return Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
+}
+
+function parseColorToRgb(color) {
+  if (typeof color !== 'string') {
+    return null;
+  }
+  const trimmed = color.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith('#')) {
+    let hex = trimmed.slice(1);
+    if (hex.length === 3 || hex.length === 4) {
+      hex = hex
+        .split('')
+        .map((char) => char + char)
+        .join('');
+    }
+    if (hex.length === 6 || hex.length === 8) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      if ([r, g, b].every((channel) => Number.isFinite(channel))) {
+        return { r, g, b };
+      }
+    }
+    return null;
+  }
+  const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+  if (rgbMatch) {
+    const parts = rgbMatch[1]
+      .split(',')
+      .map((part) => Number.parseFloat(part.trim()))
+      .filter((value, index) => index < 3 && Number.isFinite(value));
+    if (parts.length === 3) {
+      const [r, g, b] = parts;
+      return { r: clampColorChannel(r), g: clampColorChannel(g), b: clampColorChannel(b) };
+    }
+  }
+  return null;
+}
+
+function relativeLuminance({ r, g, b }) {
+  const normalize = (channel) => {
+    const ratio = channel / 255;
+    if (ratio <= 0.03928) {
+      return ratio / 12.92;
+    }
+    return ((ratio + 0.055) / 1.055) ** 2.4;
+  };
+  const linearR = normalize(clampColorChannel(r));
+  const linearG = normalize(clampColorChannel(g));
+  const linearB = normalize(clampColorChannel(b));
+  return 0.2126 * linearR + 0.7152 * linearG + 0.0722 * linearB;
+}
+
+function rgbToRgba(rgb, alpha) {
+  const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1;
+  const formattedAlpha = safeAlpha === 1 ? '1' : Number(safeAlpha.toFixed(3)).toString();
+  return `rgba(${clampColorChannel(rgb.r)}, ${clampColorChannel(rgb.g)}, ${clampColorChannel(rgb.b)}, ${formattedAlpha})`;
+}
+
+function buildFunnelTextPalette(baseColor) {
+  const fallbackRgb = { r: 15, g: 23, b: 42 };
+  const rgb = parseColorToRgb(baseColor) || fallbackRgb;
+  const luminance = relativeLuminance(rgb);
+  const isLightText = luminance > 0.55;
+  return {
+    value: rgbToRgba(rgb, isLightText ? 0.94 : 0.98),
+    label: rgbToRgba(rgb, isLightText ? 0.82 : 0.74),
+    percent: rgbToRgba(rgb, isLightText ? 0.72 : 0.66),
+    guide: rgbToRgba(rgb, isLightText ? 0.52 : 0.22),
+    outline: rgbToRgba(rgb, isLightText ? 0.36 : 0.2),
+    fallback: rgbToRgba(rgb, isLightText ? 0.9 : 0.92),
+    shadow: isLightText ? 'rgba(8, 12, 32, 0.45)' : 'rgba(255, 255, 255, 0.3)',
+    shadowBlur: isLightText ? 8 : 5,
+  };
+}
+
+function drawFunnelShape(canvas, steps, accentColor, textColor) {
+  if (!canvas) {
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return;
+  }
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (width === 0 || height === 0) {
+    return;
+  }
+  const dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(dpr, dpr);
+
+  const rawValues = steps.map((step) => step.value || 0);
+  const baselineValue = rawValues.length ? rawValues[0] : 0;
+  const maxValue = Math.max(baselineValue, ...rawValues);
+  const fontFamily = getComputedStyle(getThemeStyleTarget()).fontFamily;
+  const textPalette = buildFunnelTextPalette(textColor);
+
+  if (!Number.isFinite(maxValue) || maxValue <= 0) {
+    ctx.fillStyle = textPalette.fallback;
+    ctx.font = `500 14px ${fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(TEXT.charts.funnelEmpty || 'Piltuvėlio duomenų nėra.', width / 2, height / 2);
+    ctx.restore();
+    return;
+  }
+
+  const paddingX = Math.max(24, Math.min(56, width * 0.1));
+  const paddingTop = Math.max(24, height * 0.08);
+  const labelAreaHeight = Math.max(72, height * 0.22);
+  const paddingBottom = Math.max(32, height * 0.12);
+  const funnelHeight = Math.max(48, height - paddingTop - labelAreaHeight - paddingBottom);
+  const centerY = paddingTop + labelAreaHeight + funnelHeight / 2;
+  const stepsCount = steps.length;
+  const xSpacing = stepsCount > 1 ? (width - paddingX * 2) / (stepsCount - 1) : 0;
+  const xPositions = steps.map((_, index) => (stepsCount > 1 ? paddingX + index * xSpacing : width / 2));
+  const referenceValue = baselineValue > 0 ? baselineValue : maxValue;
+  const maxThickness = funnelHeight;
+  const minThickness = Math.max(18, maxThickness * 0.18);
+  const thicknesses = steps.map((step) => {
+    const value = Math.max(0, step.value || 0);
+    if (!Number.isFinite(value) || referenceValue <= 0) {
+      return minThickness;
+    }
+    const rawRatio = value / referenceValue;
+    const safeRatio = Math.min(1, Math.max(0, rawRatio));
+    return Math.max(minThickness, safeRatio * maxThickness);
+  });
+
+  const topPoints = xPositions.map((x, index) => ({ x, y: centerY - thicknesses[index] / 2 }));
+  const bottomPoints = xPositions.map((x, index) => ({ x, y: centerY + thicknesses[index] / 2 })).reverse();
+
+  const accentGradientColor = typeof accentColor === 'string' && accentColor.trim() ? accentColor : '#8b5cf6';
+  const gradient = ctx.createLinearGradient(paddingX, topPoints[0]?.y ?? centerY, width - paddingX, bottomPoints[0]?.y ?? centerY);
+  gradient.addColorStop(0, '#ffb56b');
+  gradient.addColorStop(0.45, '#ff6f91');
+  gradient.addColorStop(0.78, '#f472b6');
+  gradient.addColorStop(1, accentGradientColor);
+
+  ctx.beginPath();
+  if (topPoints.length) {
+    ctx.moveTo(topPoints[0].x, topPoints[0].y);
+    for (let i = 1; i < topPoints.length; i += 1) {
+      const prev = topPoints[i - 1];
+      const current = topPoints[i];
+      const midX = (prev.x + current.x) / 2;
+      ctx.bezierCurveTo(midX, prev.y, midX, current.y, current.x, current.y);
+    }
+  }
+  if (bottomPoints.length) {
+    ctx.lineTo(bottomPoints[0].x, bottomPoints[0].y);
+    for (let i = 1; i < bottomPoints.length; i += 1) {
+      const prev = bottomPoints[i - 1];
+      const current = bottomPoints[i];
+      const midX = (prev.x + current.x) / 2;
+      ctx.bezierCurveTo(midX, prev.y, midX, current.y, current.x, current.y);
+    }
+  }
+  ctx.closePath();
+
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.5)';
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetY = 24;
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = textPalette.outline;
+  ctx.stroke();
+
+  const funnelTop = topPoints.length ? Math.min(...topPoints.map((point) => point.y)) : paddingTop + labelAreaHeight;
+  const funnelBottom = bottomPoints.length ? Math.max(...bottomPoints.map((point) => point.y)) : centerY + maxThickness / 2;
+
+  const valueFontSize = Math.max(22, Math.min(34, width * 0.05));
+  const labelFontSize = Math.max(12, Math.min(16, valueFontSize * 0.45));
+  const percentFontSize = Math.max(11, Math.min(14, valueFontSize * 0.38));
+  const valueBaselineY = paddingTop + valueFontSize;
+  const labelBaselineY = valueBaselineY + labelFontSize + 6;
+  const percentBaselineY = labelBaselineY + percentFontSize + 6;
+  const labelAreaBottom = percentBaselineY + 6;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = textPalette.shadow;
+  ctx.shadowBlur = textPalette.shadowBlur;
+  ctx.shadowOffsetY = 1;
+
+  steps.forEach((step, index) => {
+    const x = xPositions[index];
+    const rawValue = Math.max(0, step.value || 0);
+    const ratio = referenceValue > 0 ? Math.max(0, rawValue / referenceValue) : 0;
+    ctx.fillStyle = textPalette.value;
+    ctx.font = `700 ${valueFontSize}px ${fontFamily}`;
+    ctx.fillText(numberFormatter.format(Math.round(rawValue)), x, valueBaselineY);
+    ctx.fillStyle = textPalette.label;
+    ctx.font = `500 ${labelFontSize}px ${fontFamily}`;
+    ctx.fillText(step.label, x, labelBaselineY);
+    ctx.fillStyle = textPalette.percent;
+    ctx.font = `600 ${percentFontSize}px ${fontFamily}`;
+    ctx.fillText(percentFormatter.format(ratio), x, percentBaselineY);
+  });
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  if (stepsCount > 0) {
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = textPalette.guide;
+    steps.forEach((_, index) => {
+      const x = xPositions[index];
+      const lineStartY = Math.min(funnelTop - 6, labelAreaBottom + 12);
+      ctx.beginPath();
+      ctx.moveTo(x, lineStartY);
+      ctx.lineTo(x, funnelBottom + 18);
+      ctx.stroke();
+    });
+  }
+
+  ctx.restore();
+}
+
+function renderFunnelShape(canvas, funnelData, accentColor, textColor) {
+  if (!canvas) {
+    return;
+  }
+
+  const stepsConfig = Array.isArray(TEXT.charts.funnelSteps) && TEXT.charts.funnelSteps.length
+    ? TEXT.charts.funnelSteps
+    : [
+        { key: 'arrived', label: 'Atvykę' },
+        { key: 'discharged', label: 'Išleisti' },
+        { key: 'hospitalized', label: 'Hospitalizuoti' },
+      ];
+
+  const steps = stepsConfig.map((step) => ({
+    label: step.label,
+    value: Number.isFinite(Number(funnelData?.[step.key])) ? Number(funnelData[step.key]) : 0,
+  }));
+
+  canvas.__funnelState = { steps, accentColor, textColor };
+
+  if (!canvas.__funnelObserver && typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(() => {
+      if (canvas.__funnelState) {
+        const { steps: currentSteps, accentColor: currentAccent, textColor: currentText } = canvas.__funnelState;
+        drawFunnelShape(canvas, currentSteps, currentAccent, currentText);
+      }
+    });
+    observer.observe(canvas);
+    canvas.__funnelObserver = observer;
+  }
+
+  drawFunnelShape(canvas, steps, accentColor, textColor);
+}
+
+async function loadDashboard() {
+  try {
+    setStatus('loading');
+    if (selectors.edStatus) {
+      selectors.edStatus.textContent = TEXT.ed.status.loading;
+      selectors.edStatus.dataset.tone = 'info';
+    }
+    if (selectors.edStatusTimestamp) {
+      selectors.edStatusTimestamp.textContent = '';
+      selectors.edStatusTimestamp.hidden = true;
+    }
+    const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
+      fetchData(),
+      fetchFeedbackData(),
+      fetchEdData(),
+    ]);
+
+    if (edResult.status === 'fulfilled') {
+      dashboardState.ed = edResult.value;
+    } else {
+      const reason = edResult.reason ? describeError(edResult.reason) : TEXT.ed.status.error(TEXT.status.error);
+      console.error('Nepavyko įkelti ED duomenų:', edResult.reason);
+      const fallbackSummary = createEmptyEdSummary();
+      dashboardState.ed = {
+        records: [],
+        summary: fallbackSummary,
+        dispositions: [],
+        daily: [],
+        usingFallback: false,
+        lastErrorMessage: reason,
+        error: reason,
+        updatedAt: new Date(),
+      };
+    }
+    await renderEdDashboard(dashboardState.ed);
+
+    if (dataResult.status !== 'fulfilled') {
+      throw dataResult.reason;
+    }
+
+    const dataset = dataResult.value || {};
+    const feedbackRecords = feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
+    if (feedbackResult.status === 'rejected') {
+      console.error('Nepavyko apdoroti atsiliepimų duomenų:', feedbackResult.reason);
+      if (!dashboardState.feedback.lastErrorMessage) {
+        dashboardState.feedback.lastErrorMessage = describeError(feedbackResult.reason);
+      }
+      dashboardState.feedback.usingFallback = false;
+    }
+
+    const rawRecords = Array.isArray(dataset.records) ? dataset.records : [];
+    const dailyStats = Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
+      ? dataset.dailyStats
+      : computeDailyStats(rawRecords);
+    dashboardState.rawRecords = rawRecords;
+    dashboardState.dailyStats = dailyStats;
+    dashboardState.dataMeta = dataset.meta || null;
+    populateChartYearOptions(dailyStats);
+    const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
+      ? Number(settings.calculations.windowDays)
+      : DEFAULT_SETTINGS.calculations.windowDays;
+    if (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0) {
+      dashboardState.kpi.filters.window = windowDays;
+      syncKpiFilterControls();
+    }
+    const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
+    const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
+      ? Number(settings.calculations.recentDays)
+      : DEFAULT_SETTINGS.calculations.recentDays;
+    const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
+    const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
+    dashboardState.chartData.baseDaily = dailyStats.slice();
+    dashboardState.chartData.baseRecords = rawRecords.slice();
+    const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
+    await applyKpiFiltersAndRender();
+    await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
+    renderRecentTable(recentDailyStats);
+    const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
+    // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
+    const monthsLimit = 12;
+    const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
+      ? monthlyStats.slice(-monthsLimit)
+      : monthlyStats;
+    renderMonthlyTable(limitedMonthlyStats);
+    const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
+    const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
+      ? datasetYearlyStats
+      : computeYearlyStats(monthlyStats);
+    renderYearlyTable(yearlyStats);
+    const feedbackStats = computeFeedbackStats(feedbackRecords);
+    dashboardState.feedback.summary = feedbackStats.summary;
+    dashboardState.feedback.monthly = feedbackStats.monthly;
+    renderFeedbackSection(feedbackStats);
+    setStatus('success');
+    applyFeedbackStatusNote();
+    await renderEdDashboard(dashboardState.ed);
+  } catch (error) {
+    console.error('Nepavyko apdoroti duomenų:', error);
+    dashboardState.usingFallback = false;
+    const friendlyMessage = describeError(error);
+    dashboardState.lastErrorMessage = friendlyMessage;
+    setStatus('error', friendlyMessage);
+    await renderEdDashboard(dashboardState.ed);
+  }
+}
+
+initializeTheme();
+applySettingsToText();
+applyTextContent();
+applyFooterSource();
+initializeSectionNavigation();
+initializeHeroCompactMode();
+initializeStickyTitleObserver();
+initializeScrollTopButton();
+applySectionVisibility();
+populateSettingsForm();
+
+initializeKpiFilters();
+initializeFeedbackTrendControls();
+initializeTabSwitcher();
+initializeTvMode();
+loadDashboard();
+
+if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
+  selectors.chartPeriodButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const period = Number.parseInt(button.dataset.chartPeriod || '', 10);
+      updateChartPeriod(period);
+    });
+  });
+}
+
+if (selectors.chartYearSelect) {
+  selectors.chartYearSelect.addEventListener('change', (event) => {
+    const { value } = event.target;
+    if (value === 'all') {
+      updateChartYear(null);
+    } else {
+      updateChartYear(value);
+    }
+  });
+}
+
+if (selectors.themeToggleBtn) {
+  selectors.themeToggleBtn.addEventListener('click', () => {
+    toggleTheme();
+  });
+}
+
+if (selectors.compareToggle) {
+  selectors.compareToggle.addEventListener('click', () => {
+    setCompareMode(!dashboardState.compare.active);
+  });
+  selectors.compareToggle.setAttribute('aria-pressed', 'false');
+}
+
+if (selectors.compareClear) {
+  selectors.compareClear.addEventListener('click', () => {
+    clearCompareSelection();
+    if (dashboardState.compare.active) {
+      updateCompareSummary();
+    }
+  });
+}
+
+const handleCompareClick = (event) => {
+  if (!dashboardState.compare.active) {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const row = target.closest('tr[data-compare-id]');
+  if (row) {
+    handleCompareRowSelection(row);
+  }
+};
+
+const handleCompareKeydown = (event) => {
+  if (!dashboardState.compare.active) {
+    return;
+  }
+  if (event.key !== 'Enter' && event.key !== ' ') {
+    return;
+  }
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const row = target.closest('tr[data-compare-id]');
+  if (row) {
+    event.preventDefault();
+    handleCompareRowSelection(row);
+  }
+};
+
+if (selectors.recentTable) {
+  selectors.recentTable.addEventListener('click', handleCompareClick);
+  selectors.recentTable.addEventListener('keydown', handleCompareKeydown);
+}
+
+if (selectors.monthlyTable) {
+  selectors.monthlyTable.addEventListener('click', handleCompareClick);
+  selectors.monthlyTable.addEventListener('keydown', handleCompareKeydown);
+}
+
+if (selectors.yearlyTable) {
+  selectors.yearlyTable.addEventListener('click', handleCompareClick);
+  selectors.yearlyTable.addEventListener('keydown', handleCompareKeydown);
+}
+
+if (selectors.edNavButton) {
+  selectors.edNavButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    const isActive = dashboardState.activeTab === 'ed';
+    setActiveTab(isActive ? 'overview' : 'ed', {
+      focusPanel: !isActive,
+      restoreFocus: isActive,
+    });
+  });
+}
+
+if (selectors.closeEdPanelBtn) {
+  selectors.closeEdPanelBtn.addEventListener('click', () => {
+    setActiveTab('overview', { restoreFocus: true });
+  });
+}
+
+const refreshButton = selectors.refreshBtn;
+if (refreshButton) {
+  refreshButton.addEventListener('click', () => {
+    loadDashboard();
+  });
+}
+
+if (selectors.openSettingsBtn) {
+  selectors.openSettingsBtn.addEventListener('click', () => {
+    openSettingsDialog();
+  });
+}
+
+if (selectors.settingsForm) {
+  selectors.settingsForm.addEventListener('submit', handleSettingsSubmit);
+}
+
+if (selectors.resetSettingsBtn) {
+  selectors.resetSettingsBtn.addEventListener('click', handleResetSettings);
+}
+
+if (selectors.cancelSettingsBtn) {
+  selectors.cancelSettingsBtn.addEventListener('click', () => {
+    closeSettingsDialog();
+  });
+}
+
+if (selectors.settingsDialog) {
+  selectors.settingsDialog.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    closeSettingsDialog();
+  });
+  selectors.settingsDialog.addEventListener('click', (event) => {
+    if (event.target === selectors.settingsDialog) {
+      closeSettingsDialog();
+    }
+  });
+}
+
+document.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === ',') {
+    event.preventDefault();
+    openSettingsDialog();
+  }
+  if (!event.ctrlKey && !event.metaKey && event.shiftKey && (event.key === 'R' || event.key === 'r')) {
+    const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
+    if (tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
+      return;
+    }
+    event.preventDefault();
+    resetKpiFilters({ fromKeyboard: true });
+  }
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'L' || event.key === 'l')) {
+    event.preventDefault();
+    toggleTheme();
+  }
+  if (!event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'A' || event.key === 'a')) {
+    const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
+    const isEditable = event.target && typeof event.target === 'object'
+      && 'isContentEditable' in event.target
+      && event.target.isContentEditable === true;
+    if (tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
+      return;
+    }
+    if (isEditable) {
+      return;
+    }
+    if (dashboardState.activeTab === 'ed') {
+      event.preventDefault();
+      setActiveTab('overview', { restoreFocus: true });
+    }
+  }
+  if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key === 'Escape' && dashboardState.fullscreen) {
+    event.preventDefault();
+    setActiveTab('overview', { restoreFocus: true });
+  }
+});
