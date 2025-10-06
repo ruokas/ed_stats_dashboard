@@ -7037,7 +7037,7 @@
       const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
       const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
       let combinedRecords = baseRecords.slice();
-      let combinedDailyStats = baseDaily.slice();
+      let combinedYearlyStats = computeYearlyStats(computeMonthlyStats(baseDaily.slice()));
       let usingFallback = Boolean(primaryResult.usingFallback);
       const fallbackMessages = [];
       if (primaryResult.usingFallback) {
@@ -7069,7 +7069,6 @@
       const historicalLabel = historicalConfig.label || historicalDefaults.label || 'Papildomas istorinis (5 metai)';
       const historicalEnabled = historicalConfig.enabled !== false;
       let historicalMeta = null;
-      let hasHistoricalRecords = false;
 
       if (historicalEnabled) {
         const normalizedHistoricalConfig = {
@@ -7091,7 +7090,9 @@
           const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
           if (historicalRecords.length) {
             combinedRecords = combinedRecords.concat(historicalRecords);
-            hasHistoricalRecords = true;
+            const combinedDaily = computeDailyStats(combinedRecords);
+            const combinedMonthly = computeMonthlyStats(combinedDaily);
+            combinedYearlyStats = computeYearlyStats(combinedMonthly);
           }
           if (historicalResult.usingFallback) {
             usingFallback = true;
@@ -7142,10 +7143,6 @@
         });
       }
 
-      combinedDailyStats = hasHistoricalRecords
-        ? computeDailyStats(combinedRecords)
-        : baseDaily.slice();
-
       dashboardState.usingFallback = usingFallback;
       dashboardState.lastErrorMessage = usingFallback ? fallbackMessages.join(' ').trim() : '';
 
@@ -7157,8 +7154,9 @@
       };
 
       return {
-        records: combinedRecords,
-        dailyStats: combinedDailyStats,
+        records: baseRecords,
+        dailyStats: baseDaily.slice(),
+        yearlyStats: combinedYearlyStats,
         meta,
       };
     }
@@ -12443,7 +12441,10 @@
           ? monthlyStats.slice(-monthsLimit)
           : monthlyStats;
         renderMonthlyTable(limitedMonthlyStats);
-        const yearlyStats = computeYearlyStats(monthlyStats);
+        const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
+        const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
+          ? datasetYearlyStats
+          : computeYearlyStats(monthlyStats);
         const yearsLimit = 5;
         const limitedYearlyStats = Number.isFinite(yearsLimit) && yearsLimit > 0
           ? yearlyStats.slice(-yearsLimit)
