@@ -1038,10 +1038,19 @@
 
     header.hero[data-compact="true"] .hero__actions {
       gap: 4px;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
     header.hero[data-compact="true"] .hero__buttons {
       gap: 6px;
+    }
+
+    header.hero[data-compact="true"] .status,
+    header.hero[data-compact="true"] .status-note {
+      display: none;
     }
 
     header.hero[data-compact="true"] button.icon-button {
