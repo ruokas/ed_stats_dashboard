@@ -4440,11 +4440,11 @@
       },
     };
 
-    const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
-    const THEME_STORAGE_KEY = 'edDashboardTheme';
     const DEFAULT_FOOTER_SOURCE = 'Duomenys: pagrindinis ir papildomas (istorinis) Google Sheets CSV (automat. nuskaitymas kaskart atnaujinant).';
     const DEFAULT_KPI_WINDOW_DAYS = 365;
     const DEFAULT_PAGE_TITLE = document.title || 'RŠL SMPS statistika';
+    const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
+    const THEME_STORAGE_KEY = 'edDashboardTheme';
 
     const DEFAULT_SETTINGS = {
       dataSource: {
@@ -5353,17 +5353,29 @@
     }
 
     function loadSettings() {
+      let storedSettings = {};
       try {
         const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        if (!raw) {
-          return normalizeSettings({});
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            storedSettings = parsed;
+          }
         }
-        const parsed = JSON.parse(raw);
-        return normalizeSettings(parsed);
       } catch (error) {
-        console.warn('Nepavyko įkelti nustatymų, naudojami numatytieji.', error);
-        return normalizeSettings({});
+        console.warn('Nepavyko įkelti nustatymų iš localStorage, naudojami numatytieji.', error);
+        storedSettings = {};
       }
+
+      const windowSettings = typeof window !== 'undefined' && window.ED_DASHBOARD_SETTINGS
+        ? window.ED_DASHBOARD_SETTINGS
+        : {};
+
+      const merged = deepMerge(
+        deepMerge({}, storedSettings && typeof storedSettings === 'object' ? storedSettings : {}),
+        windowSettings && typeof windowSettings === 'object' ? windowSettings : {},
+      );
+      return normalizeSettings(merged);
     }
 
     function saveSettings(currentSettings) {
@@ -5371,6 +5383,9 @@
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings));
       } catch (error) {
         console.warn('Nepavyko išsaugoti nustatymų.', error);
+      }
+      if (typeof window !== 'undefined') {
+        window.ED_DASHBOARD_SETTINGS = cloneSettings(currentSettings);
       }
     }
 
@@ -6385,6 +6400,9 @@
           console.warn('Nepavyko išsaugoti temos nustatymo:', error);
         }
       }
+      if (typeof window !== 'undefined') {
+        window.ED_DASHBOARD_THEME = normalized;
+      }
       checkKpiContrast();
     }
 
@@ -6395,12 +6413,15 @@
       } catch (error) {
         storedTheme = null;
       }
+      const windowTheme = typeof window !== 'undefined' ? window.ED_DASHBOARD_THEME : null;
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = storedTheme === 'dark' || storedTheme === 'light'
-        ? storedTheme
-        : prefersDark
-          ? 'dark'
-          : 'light';
+      const initialTheme = windowTheme === 'dark' || windowTheme === 'light'
+        ? windowTheme
+        : storedTheme === 'dark' || storedTheme === 'light'
+          ? storedTheme
+          : prefersDark
+            ? 'dark'
+            : 'light';
       applyTheme(initialTheme, { persist: false });
     }
 
@@ -6612,9 +6633,7 @@
 
     const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
     const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
-    const DATA_CACHE_VERSION = 1;
     const inMemoryDataCache = new Map();
-    let persistentDataCacheDisabled = false;
     let dataWorkerCounter = 0;
     let kpiWorkerJobToken = 0;
 
@@ -6623,37 +6642,6 @@
         return '';
       }
       return `${DATA_CACHE_PREFIX}${encodeURIComponent(url)}`;
-    }
-
-    function serializeRecordsForCache(records) {
-      if (!Array.isArray(records)) {
-        return [];
-      }
-      return records.map((record) => {
-        const entry = { ...record };
-        entry.arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-          ? record.arrival.toISOString()
-          : null;
-        entry.discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-          ? record.discharge.toISOString()
-          : null;
-        return entry;
-      });
-    }
-
-    function deserializeRecordsFromCache(records) {
-      if (!Array.isArray(records)) {
-        return [];
-      }
-      return records.map((record) => {
-        const entry = { ...record };
-        entry.arrival = parseDate(record.arrival);
-        entry.discharge = parseDate(record.discharge);
-        entry.night = Boolean(record.night);
-        entry.ems = Boolean(record.ems);
-        entry.hospitalized = Boolean(record.hospitalized);
-        return entry;
-      });
     }
 
     function cloneCacheRecords(records) {
@@ -6707,46 +6695,7 @@
       if (inMemoryDataCache.has(key)) {
         return cloneCacheEntry(inMemoryDataCache.get(key));
       }
-
-      if (typeof window === 'undefined' || !window.localStorage || persistentDataCacheDisabled) {
-        return null;
-      }
-
-      try {
-        const raw = window.localStorage.getItem(key);
-        if (!raw) {
-          return null;
-        }
-        const parsed = JSON.parse(raw);
-        if (!parsed || parsed.version !== DATA_CACHE_VERSION) {
-          return null;
-        }
-        const entry = {
-          etag: parsed.etag || '',
-          lastModified: parsed.lastModified || '',
-          signature: parsed.signature || '',
-          records: deserializeRecordsFromCache(parsed.records),
-          dailyStats: Array.isArray(parsed.dailyStats) ? parsed.dailyStats.map((item) => ({ ...item })) : [],
-          timestamp: typeof parsed.timestamp === 'number' ? parsed.timestamp : Date.now(),
-        };
-        rememberCacheEntry(key, entry);
-        return cloneCacheEntry(entry);
-      } catch (error) {
-        console.warn('Nepavyko nuskaityti duomenų iš talpyklos:', error);
-        return null;
-      }
-    }
-
-    function isQuotaExceededError(error) {
-      if (!error) {
-        return false;
-      }
-      const name = error.name || '';
-      return name === 'QuotaExceededError'
-        || name === 'NS_ERROR_DOM_QUOTA_REACHED'
-        || error.code === 22
-        || error.code === 1014
-        || /quota/i.test(String(error.message || ''));
+      return null;
     }
 
     function writeDataCache(url, payload) {
@@ -6757,35 +6706,6 @@
 
       const entry = cloneCacheEntry({ ...payload, timestamp: Date.now() });
       rememberCacheEntry(key, entry);
-
-      if (typeof window === 'undefined' || !window.localStorage || persistentDataCacheDisabled) {
-        return;
-      }
-
-      try {
-        const data = {
-          version: DATA_CACHE_VERSION,
-          etag: entry.etag,
-          lastModified: entry.lastModified,
-          signature: entry.signature,
-          timestamp: entry.timestamp,
-          records: serializeRecordsForCache(entry.records),
-          dailyStats: cloneCacheDailyStats(entry.dailyStats),
-        };
-        window.localStorage.setItem(key, JSON.stringify(data));
-      } catch (error) {
-        if (isQuotaExceededError(error)) {
-          persistentDataCacheDisabled = true;
-          try {
-            window.localStorage.removeItem(key);
-          } catch (removalError) {
-            console.warn('Nepavyko pašalinti talpyklos įrašo po kvotos klaidos:', removalError);
-          }
-          console.warn('Talpyklos limitas viršytas – duomenys bus saugomi tik šio seanso metu.', error);
-        } else {
-          console.warn('Nepavyko išsaugoti duomenų talpykloje:', error);
-        }
-      }
     }
 
     function clearDataCache(url) {
@@ -6795,15 +6715,6 @@
       }
 
       inMemoryDataCache.delete(key);
-
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return;
-      }
-      try {
-        window.localStorage.removeItem(key);
-      } catch (error) {
-        console.warn('Nepavyko išvalyti duomenų talpyklos įrašo:', error);
-      }
     }
 
     function runWorkerJob(message) {

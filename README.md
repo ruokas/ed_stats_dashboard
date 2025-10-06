@@ -12,7 +12,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
 - 📺 TV režimas su stambiais rodikliais (Ctrl+Shift+T) ir gyvu laikrodžiu greitam skydo rodymui monitoriuje ar televizoriuje.
 - 🛡️ Automatinis demonstracinių duomenų rezervas ir aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
-- ⚙️ Nustatymų dialogas (Ctrl+,) CSV laukų, skaičiavimo logikos ir išvesties tekstų pritaikymui be kodo keitimo (saugoma `localStorage`).
+- ⚙️ Nustatymų dialogas (Ctrl+,) CSV laukų, skaičiavimo logikos ir išvesties tekstų pritaikymui be kodo keitimo (pakeitimai išsaugomi naršyklės `localStorage`).
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
 
 ## Diegimas
@@ -36,7 +36,7 @@ Dialogas leidžia neredaguojant kodo keisti:
 3. **Skaičiavimo logiką** – analizuojamų dienų skaičių, „Paskutinių dienų“ lentelės ilgį, nakties pradžios ir pabaigos valandas.
 4. **Išvesties tekstus** – hero pavadinimą, sekcijų antraštes, apatinius prierašus ir lentelių rodymo jungiklius.
 
-Visi pakeitimai saugomi naršyklės `localStorage` ir gali būti atstatyti mygtuku **„Atstatyti numatytuosius“**.
+Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir išliks iki kol išvalysite naršyklės duomenis arba paspausite **„Atstatyti numatytuosius“**. CSV turinys nėra talpinamas – duomenys laikomi tik atmintyje, kad neviršytų naršyklės kvotų.
 
 ## Trikčių diagnostika
 - Statuso eilutė praneš „Rodomi demonstraciniai duomenys…“, jei nepavyko pasiekti nuotolinio CSV (HTTP 404/403, CORS, tinklo klaidos).
