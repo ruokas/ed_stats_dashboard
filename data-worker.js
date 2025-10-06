@@ -78,6 +78,9 @@ function transformCsvWithStats(text, options = {}) {
       if (key === 'department' && !csvRuntime.requireDepartment) {
         return false;
       }
+      if (key === 'dayNight') {
+        return false;
+      }
       return true;
     })
     .map(([key]) => csvRuntime.labels[key]);
