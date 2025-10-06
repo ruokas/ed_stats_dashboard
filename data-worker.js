@@ -284,7 +284,7 @@ function filterDailyStatsByWindow(dailyStats, days) {
 }
 
 function parseCsv(text) {
-  const sanitized = text.replace(/\r\n/g, '\n');
+  const sanitized = text.replace(/\r\n?/g, '\n');
   const delimiter = detectDelimiter(sanitized);
   const rows = [];
   let current = [];
