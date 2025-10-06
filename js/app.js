@@ -9,6 +9,9 @@ import {
   FEEDBACK_RATING_MAX,
   FEEDBACK_LEGACY_MAX,
   TEXT,
+  getDefaultKpiFilters,
+  sanitizeKpiFilters,
+  setConfigSettings,
 } from './config.js';
 
 preloadChartJs();
@@ -186,6 +189,12 @@ const heroCompactState = {
   enterOffset: 160,
   exitOffset: 100,
 };
+
+/**
+ * Aktyvūs nustatymai (užkraunami iš LocalStorage ir sinchronizuojami su config.js helperiais).
+ */
+let settings = loadSettings();
+setConfigSettings(settings);
 
 function computeVisibleRatio(rect) {
   if (!rect) {
@@ -1233,6 +1242,7 @@ function handleSettingsSubmit(event) {
   }
   const extracted = extractSettingsFromForm(selectors.settingsForm);
   settings = normalizeSettings(extracted);
+  setConfigSettings(settings);
   const previousFilters = dashboardState.kpi.filters;
   const defaultFilters = getDefaultKpiFilters();
   dashboardState.kpi.filters = {
@@ -1258,6 +1268,7 @@ function handleResetSettings() {
     return;
   }
   settings = normalizeSettings({});
+  setConfigSettings(settings);
   dashboardState.kpi.filters = getDefaultKpiFilters();
   refreshKpiWindowOptions();
   syncKpiFilterControls();

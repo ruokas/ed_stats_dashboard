@@ -546,7 +546,19 @@ export const DEFAULT_SETTINGS = {
       },
     };
 
-    let settings = loadSettings();
+let activeSettings = DEFAULT_SETTINGS;
+
+/**
+ * Įsimename aktyvius nustatymus, kad kiti pagalbiniai metodai galėtų naudoti naujausią reikšmę.
+ * @param {object} nextSettings - Normalizuotas nustatymų objektas iš app.js.
+ */
+export function setConfigSettings(nextSettings) {
+  if (nextSettings && typeof nextSettings === 'object') {
+    activeSettings = nextSettings;
+  } else {
+    activeSettings = DEFAULT_SETTINGS;
+  }
+}
 
 export const KPI_WINDOW_OPTION_BASE = [7, 14, 30, 60, 90, 180, 365];
 export const KPI_FILTER_LABELS = {
@@ -572,35 +584,43 @@ export const KPI_FILTER_TOGGLE_LABELS = {
       hide: 'Sutraukti filtrus',
     };
 
-    function getDefaultKpiFilters() {
-      const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
-        ? Number(settings.calculations.windowDays)
-        : DEFAULT_SETTINGS.calculations.windowDays;
-      const defaultWindow = Number.isFinite(configuredWindow) && configuredWindow > 0
-        ? configuredWindow
-        : DEFAULT_KPI_WINDOW_DAYS;
-      return {
-        window: defaultWindow,
-        shift: 'all',
-        arrival: 'all',
-        disposition: 'all',
-      };
-    }
+function resolveSettingsSnapshot(settingsOverride) {
+  if (settingsOverride && typeof settingsOverride === 'object') {
+    return settingsOverride;
+  }
+  return activeSettings || DEFAULT_SETTINGS;
+}
 
-    function sanitizeKpiFilters(filters) {
-      const defaults = getDefaultKpiFilters();
-      const normalized = { ...defaults, ...(filters || {}) };
-      if (!Number.isFinite(normalized.window) || normalized.window < 0) {
-        normalized.window = defaults.window;
-      }
-      if (!(normalized.shift in KPI_FILTER_LABELS.shift)) {
-        normalized.shift = defaults.shift;
-      }
-      if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
-        normalized.arrival = defaults.arrival;
-      }
-      if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
-        normalized.disposition = defaults.disposition;
-      }
-      return normalized;
-    }
+export function getDefaultKpiFilters(settingsOverride) {
+  const snapshot = resolveSettingsSnapshot(settingsOverride);
+  const configuredWindow = Number.isFinite(Number(snapshot?.calculations?.windowDays))
+    ? Number(snapshot.calculations.windowDays)
+    : DEFAULT_SETTINGS.calculations.windowDays;
+  const defaultWindow = Number.isFinite(configuredWindow) && configuredWindow > 0
+    ? configuredWindow
+    : DEFAULT_KPI_WINDOW_DAYS;
+  return {
+    window: defaultWindow,
+    shift: 'all',
+    arrival: 'all',
+    disposition: 'all',
+  };
+}
+
+export function sanitizeKpiFilters(filters, settingsOverride) {
+  const defaults = getDefaultKpiFilters(settingsOverride);
+  const normalized = { ...defaults, ...(filters || {}) };
+  if (!Number.isFinite(normalized.window) || normalized.window < 0) {
+    normalized.window = defaults.window;
+  }
+  if (!(normalized.shift in KPI_FILTER_LABELS.shift)) {
+    normalized.shift = defaults.shift;
+  }
+  if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
+    normalized.arrival = defaults.arrival;
+  }
+  if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
+    normalized.disposition = defaults.disposition;
+  }
+  return normalized;
+}
