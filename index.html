@@ -6613,6 +6613,8 @@
     const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
     const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
     const DATA_CACHE_VERSION = 1;
+    const inMemoryDataCache = new Map();
+    let persistentDataCacheDisabled = false;
     let dataWorkerCounter = 0;
     let kpiWorkerJobToken = 0;
 
@@ -6654,14 +6656,62 @@
       });
     }
 
-    function readDataCache(url) {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return null;
+    function cloneCacheRecords(records) {
+      if (!Array.isArray(records)) {
+        return [];
       }
+      return records.map((record) => {
+        const entry = { ...record };
+        if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
+          entry.arrival = new Date(entry.arrival.getTime());
+        }
+        if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
+          entry.discharge = new Date(entry.discharge.getTime());
+        }
+        return entry;
+      });
+    }
+
+    function cloneCacheDailyStats(dailyStats) {
+      if (!Array.isArray(dailyStats)) {
+        return [];
+      }
+      return dailyStats.map((item) => ({ ...item }));
+    }
+
+    function cloneCacheEntry(entry) {
+      const timestamp = typeof entry?.timestamp === 'number' ? entry.timestamp : Date.now();
+      return {
+        etag: entry?.etag || '',
+        lastModified: entry?.lastModified || '',
+        signature: entry?.signature || '',
+        timestamp,
+        records: cloneCacheRecords(entry?.records),
+        dailyStats: cloneCacheDailyStats(entry?.dailyStats),
+      };
+    }
+
+    function rememberCacheEntry(key, entry) {
+      if (!key) {
+        return;
+      }
+      inMemoryDataCache.set(key, cloneCacheEntry(entry));
+    }
+
+    function readDataCache(url) {
       const key = getDataCacheKey(url);
       if (!key) {
         return null;
       }
+
+      if (inMemoryDataCache.has(key)) {
+        return cloneCacheEntry(inMemoryDataCache.get(key));
+      }
+
+      if (typeof window === 'undefined' || !window.localStorage || persistentDataCacheDisabled) {
+        return null;
+      }
+
       try {
         const raw = window.localStorage.getItem(key);
         if (!raw) {
@@ -6671,50 +6721,82 @@
         if (!parsed || parsed.version !== DATA_CACHE_VERSION) {
           return null;
         }
-        return {
+        const entry = {
           etag: parsed.etag || '',
           lastModified: parsed.lastModified || '',
           signature: parsed.signature || '',
           records: deserializeRecordsFromCache(parsed.records),
-          dailyStats: Array.isArray(parsed.dailyStats) ? parsed.dailyStats : [],
-          timestamp: parsed.timestamp || 0,
+          dailyStats: Array.isArray(parsed.dailyStats) ? parsed.dailyStats.map((item) => ({ ...item })) : [],
+          timestamp: typeof parsed.timestamp === 'number' ? parsed.timestamp : Date.now(),
         };
+        rememberCacheEntry(key, entry);
+        return cloneCacheEntry(entry);
       } catch (error) {
         console.warn('Nepavyko nuskaityti duomenų iš talpyklos:', error);
         return null;
       }
     }
 
-    function writeDataCache(url, payload) {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return;
+    function isQuotaExceededError(error) {
+      if (!error) {
+        return false;
       }
+      const name = error.name || '';
+      return name === 'QuotaExceededError'
+        || name === 'NS_ERROR_DOM_QUOTA_REACHED'
+        || error.code === 22
+        || error.code === 1014
+        || /quota/i.test(String(error.message || ''));
+    }
+
+    function writeDataCache(url, payload) {
       const key = getDataCacheKey(url);
       if (!key) {
         return;
       }
+
+      const entry = cloneCacheEntry({ ...payload, timestamp: Date.now() });
+      rememberCacheEntry(key, entry);
+
+      if (typeof window === 'undefined' || !window.localStorage || persistentDataCacheDisabled) {
+        return;
+      }
+
       try {
         const data = {
           version: DATA_CACHE_VERSION,
-          etag: payload?.etag || '',
-          lastModified: payload?.lastModified || '',
-          signature: payload?.signature || '',
-          timestamp: Date.now(),
-          records: serializeRecordsForCache(payload?.records),
-          dailyStats: Array.isArray(payload?.dailyStats) ? payload.dailyStats : [],
+          etag: entry.etag,
+          lastModified: entry.lastModified,
+          signature: entry.signature,
+          timestamp: entry.timestamp,
+          records: serializeRecordsForCache(entry.records),
+          dailyStats: cloneCacheDailyStats(entry.dailyStats),
         };
         window.localStorage.setItem(key, JSON.stringify(data));
       } catch (error) {
-        console.warn('Nepavyko išsaugoti duomenų talpykloje:', error);
+        if (isQuotaExceededError(error)) {
+          persistentDataCacheDisabled = true;
+          try {
+            window.localStorage.removeItem(key);
+          } catch (removalError) {
+            console.warn('Nepavyko pašalinti talpyklos įrašo po kvotos klaidos:', removalError);
+          }
+          console.warn('Talpyklos limitas viršytas – duomenys bus saugomi tik šio seanso metu.', error);
+        } else {
+          console.warn('Nepavyko išsaugoti duomenų talpykloje:', error);
+        }
       }
     }
 
     function clearDataCache(url) {
-      if (typeof window === 'undefined' || !window.localStorage) {
-        return;
-      }
       const key = getDataCacheKey(url);
       if (!key) {
+        return;
+      }
+
+      inMemoryDataCache.delete(key);
+
+      if (typeof window === 'undefined' || !window.localStorage) {
         return;
       }
       try {
