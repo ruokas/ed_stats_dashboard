@@ -4277,6 +4277,8 @@
         subtitle: 'Kalendoriniai metai (paskutiniai 5 metai).',
         caption: 'Metinių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Metinių duomenų lentelė bus parodyta užkrovus failą.',
+        noCompleteYears: 'Šiuo metu nėra pilnų kalendorinių metų rodymui. Kai tik bus sukaupti visi mėnesiai, naujausi metai atsiras automatiškai.',
+        comparisonUnavailable: 'Laukiama pilnų metų duomenų palyginimui.',
       },
       feedback: {
         title: 'Pacientų atsiliepimai',
@@ -11012,9 +11014,13 @@
       return `${value > 0 ? '+' : '−'}${formatted}`;
     }
 
-    function createYearlyChangeCell(diff, percentChange, maxAbsDiff) {
-      if (!Number.isFinite(diff)) {
-        return '<span class="yearly-trend__placeholder">—</span>';
+    function createYearlyChangeCell(diff, percentChange, maxAbsDiff, canCompare = true) {
+      if (!canCompare || !Number.isFinite(diff)) {
+        const unavailableText = TEXT.yearly?.comparisonUnavailable || 'Nepakanka duomenų palyginimui.';
+        return `
+          <span class="yearly-trend__placeholder" aria-hidden="true">—</span>
+          <span class="sr-only">${unavailableText}</span>
+        `;
       }
       const direction = diff > 0 ? 'up' : diff < 0 ? 'down' : 'neutral';
       const absDiff = Math.abs(diff);
@@ -11299,6 +11305,15 @@
       syncCompareActivation();
     }
 
+    function isCompleteYearEntry(entry) {
+      if (!entry) {
+        return false;
+      }
+      const monthCount = Number.isFinite(entry?.monthCount) ? entry.monthCount : 0;
+      const dayCount = Number.isFinite(entry?.dayCount) ? entry.dayCount : 0;
+      return monthCount >= 12 || dayCount >= 360;
+    }
+
     function renderYearlyTable(yearlyStats) {
       if (!selectors.yearlyTable) {
         return;
@@ -11315,22 +11330,54 @@
         return;
       }
 
-      const totals = yearlyStats.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
-      const diffValues = totals.map((total, index) => (index > 0 ? total - totals[index - 1] : Number.NaN));
+      const completeEntries = yearlyStats.filter((entry) => isCompleteYearEntry(entry));
+
+      if (!completeEntries.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 9;
+        cell.textContent = TEXT.yearly.noCompleteYears || TEXT.yearly.empty;
+        row.appendChild(cell);
+        selectors.yearlyTable.appendChild(row);
+        syncCompareActivation();
+        return;
+      }
+
+      const displayLimit = 5;
+      const entriesToRender = Number.isFinite(displayLimit) && displayLimit > 0
+        ? completeEntries.slice(-displayLimit)
+        : completeEntries;
+
+      const totals = entriesToRender.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
+      const completeness = entriesToRender.map((entry) => isCompleteYearEntry(entry));
+      const diffValues = totals.map((total, index) => {
+        if (index === 0) {
+          return Number.NaN;
+        }
+        if (!completeness[index] || !completeness[index - 1]) {
+          return Number.NaN;
+        }
+        const previousTotal = totals[index - 1];
+        if (!Number.isFinite(previousTotal)) {
+          return Number.NaN;
+        }
+        return total - previousTotal;
+      });
       const maxAbsDiff = diffValues.reduce((acc, value) => (Number.isFinite(value)
         ? Math.max(acc, Math.abs(value))
         : acc), 0);
 
-      yearlyStats.forEach((entry, index) => {
+      entriesToRender.forEach((entry, index) => {
         const row = document.createElement('tr');
         const total = Number.isFinite(entry.count) ? entry.count : 0;
         const avgPerDay = entry.dayCount > 0 ? total / entry.dayCount : 0;
         const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
         const previousTotal = index > 0 ? totals[index - 1] : Number.NaN;
-        const diff = Number.isFinite(previousTotal) ? total - previousTotal : Number.NaN;
-        const percentChange = Number.isFinite(diff)
-          && Number.isFinite(previousTotal)
-          && previousTotal !== 0
+        const isComplete = completeness[index];
+        const previousComplete = index > 0 ? completeness[index - 1] : false;
+        const canCompare = isComplete && previousComplete && Number.isFinite(previousTotal);
+        const diff = canCompare ? total - previousTotal : Number.NaN;
+        const percentChange = canCompare && previousTotal !== 0
           ? diff / previousTotal
           : Number.NaN;
         row.innerHTML = `
@@ -11342,7 +11389,7 @@
           <td>${formatValueWithShare(entry.ems, total)}</td>
           <td>${formatValueWithShare(entry.hospitalized, total)}</td>
           <td>${formatValueWithShare(entry.discharged, total)}</td>
-          <td>${createYearlyChangeCell(diff, percentChange, maxAbsDiff)}</td>
+          <td>${createYearlyChangeCell(diff, percentChange, maxAbsDiff, canCompare)}</td>
         `;
         const emsShare = total > 0 ? entry.ems / total : 0;
         const hospShare = total > 0 ? entry.hospitalized / total : 0;
@@ -12579,11 +12626,7 @@
         const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
           ? datasetYearlyStats
           : computeYearlyStats(monthlyStats);
-        const yearsLimit = 5;
-        const limitedYearlyStats = Number.isFinite(yearsLimit) && yearsLimit > 0
-          ? yearlyStats.slice(-yearsLimit)
-          : yearlyStats;
-        renderYearlyTable(limitedYearlyStats);
+        renderYearlyTable(yearlyStats);
         const feedbackStats = computeFeedbackStats(feedbackRecords);
         dashboardState.feedback.summary = feedbackStats.summary;
         dashboardState.feedback.monthly = feedbackStats.monthly;
