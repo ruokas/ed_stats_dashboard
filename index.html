@@ -2784,14 +2784,16 @@
       font-size: 0.85rem;
     }
 
-    .yearly-trend {
+    .yearly-trend,
+    .monthly-trend {
       display: flex;
       align-items: center;
       gap: 12px;
       min-width: 180px;
     }
 
-    .yearly-trend__bar-wrapper {
+    .yearly-trend__bar-wrapper,
+    .monthly-trend__bar-wrapper {
       flex: 0 0 80px;
       height: 8px;
       background: var(--color-input-bg);
@@ -2800,25 +2802,30 @@
       position: relative;
     }
 
-    .yearly-trend__bar {
+    .yearly-trend__bar,
+    .monthly-trend__bar {
       height: 100%;
       border-radius: inherit;
       transition: width 0.3s ease;
     }
 
-    .yearly-trend__bar--up {
+    .yearly-trend__bar--up,
+    .monthly-trend__bar--up {
       background: var(--color-success);
     }
 
-    .yearly-trend__bar--down {
+    .yearly-trend__bar--down,
+    .monthly-trend__bar--down {
       background: var(--color-danger);
     }
 
-    .yearly-trend__bar--neutral {
+    .yearly-trend__bar--neutral,
+    .monthly-trend__bar--neutral {
       background: var(--color-text-muted);
     }
 
-    .yearly-trend__values {
+    .yearly-trend__values,
+    .monthly-trend__values {
       display: flex;
       flex-direction: column;
       font-size: 0.85rem;
@@ -2826,27 +2833,33 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .yearly-trend__diff {
+    .yearly-trend__diff,
+    .monthly-trend__diff {
       font-weight: 600;
     }
 
-    .yearly-trend__diff--up {
+    .yearly-trend__diff--up,
+    .monthly-trend__diff--up {
       color: var(--color-success);
     }
 
-    .yearly-trend__diff--down {
+    .yearly-trend__diff--down,
+    .monthly-trend__diff--down {
       color: var(--color-danger);
     }
 
-    .yearly-trend__diff--neutral {
+    .yearly-trend__diff--neutral,
+    .monthly-trend__diff--neutral {
       color: var(--color-text-muted);
     }
 
-    .yearly-trend__percent {
+    .yearly-trend__percent,
+    .monthly-trend__percent {
       color: var(--color-text-muted);
     }
 
-    .yearly-trend__placeholder {
+    .yearly-trend__placeholder,
+    .monthly-trend__placeholder {
       color: var(--color-text-muted);
       font-style: italic;
     }
@@ -3490,6 +3503,7 @@
               <th scope="col">GMP</th>
               <th scope="col">Hospitalizuoti</th>
               <th scope="col">Išleisti</th>
+              <th scope="col">Pokytis nuo ankstesnio mėnesio</th>
             </tr>
           </thead>
           <tbody id="monthlyTable"></tbody>
@@ -4271,6 +4285,7 @@
         subtitle: 'Kalendoriniai mėnesiai (paskutiniai 12 mėnesių).',
         caption: 'Mėnesių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
+        comparisonUnavailable: 'Laukiama pilno mėnesio duomenų palyginimui.',
       },
       yearly: {
         title: 'Metinė suvestinė',
@@ -11014,11 +11029,16 @@
       return `${value > 0 ? '+' : '−'}${formatted}`;
     }
 
-    function createYearlyChangeCell(diff, percentChange, maxAbsDiff, canCompare = true) {
+    function createTrendChangeCell(diff, percentChange, maxAbsDiff, canCompare = true, variant = 'yearly') {
+      const prefix = variant === 'monthly' ? 'monthly' : 'yearly';
       if (!canCompare || !Number.isFinite(diff)) {
-        const unavailableText = TEXT.yearly?.comparisonUnavailable || 'Nepakanka duomenų palyginimui.';
+        const unavailableText = (variant === 'monthly'
+          ? TEXT.monthly?.comparisonUnavailable
+          : TEXT.yearly?.comparisonUnavailable)
+          || TEXT.yearly?.comparisonUnavailable
+          || 'Nepakanka duomenų palyginimui.';
         return `
-          <span class="yearly-trend__placeholder" aria-hidden="true">—</span>
+          <span class="${prefix}-trend__placeholder" aria-hidden="true">—</span>
           <span class="sr-only">${unavailableText}</span>
         `;
       }
@@ -11034,16 +11054,24 @@
         ? 'Pokytis nepakito (0 pacientų).'
         : `Pokytis ${direction === 'up' ? 'padidėjo' : 'sumažėjo'} ${numberFormatter.format(absDiff)} pacientais${Number.isFinite(percentChange) ? ` (${percentText})` : ''}.`;
       return `
-        <div class="yearly-trend" role="img" aria-label="${ariaLabel}">
-          <div class="yearly-trend__bar-wrapper" aria-hidden="true">
-            <div class="yearly-trend__bar yearly-trend__bar--${direction}" style="width: ${width}%;"></div>
+        <div class="${prefix}-trend" role="img" aria-label="${ariaLabel}">
+          <div class="${prefix}-trend__bar-wrapper" aria-hidden="true">
+            <div class="${prefix}-trend__bar ${prefix}-trend__bar--${direction}" style="width: ${width}%;"></div>
           </div>
-          <div class="yearly-trend__values">
-            <span class="yearly-trend__diff yearly-trend__diff--${direction}">${diffText}</span>
-            <span class="yearly-trend__percent">${percentText}</span>
+          <div class="${prefix}-trend__values">
+            <span class="${prefix}-trend__diff ${prefix}-trend__diff--${direction}">${diffText}</span>
+            <span class="${prefix}-trend__percent">${percentText}</span>
           </div>
         </div>
       `;
+    }
+
+    function createYearlyChangeCell(diff, percentChange, maxAbsDiff, canCompare = true) {
+      return createTrendChangeCell(diff, percentChange, maxAbsDiff, canCompare, 'yearly');
+    }
+
+    function createMonthlyChangeCell(diff, percentChange, maxAbsDiff, canCompare = true) {
+      return createTrendChangeCell(diff, percentChange, maxAbsDiff, canCompare, 'monthly');
     }
 
     function extractCompareMetricsFromRow(row) {
@@ -11267,7 +11295,7 @@
       if (!monthlyStats.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 8;
+        cell.colSpan = 9;
         cell.textContent = TEXT.monthly.empty;
         row.appendChild(cell);
         selectors.monthlyTable.appendChild(row);
@@ -11275,10 +11303,37 @@
         return;
       }
 
-      monthlyStats.forEach((entry) => {
+      const totals = monthlyStats.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
+      const completeness = monthlyStats.map((entry) => isCompleteMonthEntry(entry));
+      const diffValues = totals.map((total, index) => {
+        if (index === 0) {
+          return Number.NaN;
+        }
+        if (!completeness[index] || !completeness[index - 1]) {
+          return Number.NaN;
+        }
+        const previousTotal = totals[index - 1];
+        if (!Number.isFinite(previousTotal)) {
+          return Number.NaN;
+        }
+        return total - previousTotal;
+      });
+      const maxAbsDiff = diffValues.reduce((acc, value) => (Number.isFinite(value)
+        ? Math.max(acc, Math.abs(value))
+        : acc), 0);
+
+      monthlyStats.forEach((entry, index) => {
         const row = document.createElement('tr');
         const avgPerDay = entry.dayCount > 0 ? entry.count / entry.dayCount : 0;
         const total = Number.isFinite(entry.count) ? entry.count : 0;
+        const previousTotal = index > 0 ? totals[index - 1] : Number.NaN;
+        const isComplete = completeness[index];
+        const previousComplete = index > 0 ? completeness[index - 1] : false;
+        const canCompare = isComplete && previousComplete && Number.isFinite(previousTotal);
+        const diff = canCompare ? total - previousTotal : Number.NaN;
+        const percentChange = canCompare && previousTotal !== 0
+          ? diff / previousTotal
+          : Number.NaN;
         row.innerHTML = `
           <td>${formatMonthLabel(entry.month)}</td>
           <td>${numberFormatter.format(total)}</td>
@@ -11288,6 +11343,7 @@
           <td>${formatValueWithShare(entry.ems, total)}</td>
           <td>${formatValueWithShare(entry.hospitalized, total)}</td>
           <td>${formatValueWithShare(entry.discharged, total)}</td>
+          <td>${createMonthlyChangeCell(diff, percentChange, maxAbsDiff, canCompare)}</td>
         `;
         const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
         const emsShare = total > 0 ? entry.ems / total : 0;
@@ -11300,9 +11356,31 @@
         row.dataset.avgStay = String(avgStay);
         row.dataset.emsShare = String(emsShare);
         row.dataset.hospShare = String(hospShare);
+        row.dataset.change = Number.isFinite(diff) ? String(diff) : '';
+        row.dataset.changePercent = Number.isFinite(percentChange) ? String(percentChange) : '';
         selectors.monthlyTable.appendChild(row);
       });
       syncCompareActivation();
+    }
+
+    function isCompleteMonthEntry(entry) {
+      if (!entry) {
+        return false;
+      }
+      const dayCount = Number.isFinite(entry?.dayCount) ? entry.dayCount : 0;
+      if (!entry?.month) {
+        return dayCount >= 28;
+      }
+      const [yearStr, monthStr] = entry.month.split('-');
+      const year = Number.parseInt(yearStr, 10);
+      const monthIndex = Number.parseInt(monthStr, 10) - 1;
+      if (!Number.isFinite(year) || !Number.isFinite(monthIndex)) {
+        return dayCount >= 28;
+      }
+      const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0));
+      const daysInMonth = Number.isFinite(lastDay.getUTCDate()) ? lastDay.getUTCDate() : 30;
+      const threshold = Math.max(1, Math.round(daysInMonth * 0.9));
+      return dayCount >= threshold;
     }
 
     function isCompleteYearEntry(entry) {
