@@ -231,58 +231,6 @@
       display: none;
     }
 
-    .section-nav__mobile-trigger {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: 1px solid var(--color-border);
-      background: rgba(37, 99, 235, 0.08);
-      color: var(--color-accent);
-      font-weight: 600;
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-    }
-
-    .section-nav__mobile-trigger svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .section-nav__mobile-trigger:hover,
-    .section-nav__mobile-trigger:focus-visible {
-      background: var(--color-accent-soft);
-      color: var(--color-accent);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-      transform: translateY(-1px);
-    }
-
-    .section-nav__mobile-trigger[aria-expanded="true"] {
-      background: var(--color-accent);
-      color: #fff;
-      box-shadow: 0 18px 32px -18px rgba(37, 99, 235, 0.65);
-    }
-
-    body[data-theme="dark"] .section-nav__mobile-trigger {
-      background: rgba(96, 165, 250, 0.18);
-      border-color: rgba(96, 165, 250, 0.28);
-      color: var(--color-accent);
-    }
-
-    body[data-theme="dark"] .section-nav__mobile-trigger:hover,
-    body[data-theme="dark"] .section-nav__mobile-trigger:focus-visible {
-      background: rgba(96, 165, 250, 0.24);
-      color: #fff;
-      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.28);
-    }
-
-    body[data-theme="dark"] .section-nav__mobile-trigger[aria-expanded="true"] {
-      box-shadow: 0 18px 32px -18px rgba(8, 12, 32, 0.9);
-    }
-
     .tab-switcher {
       display: inline-flex;
       align-items: center;
@@ -342,168 +290,6 @@
 
     .tab-panel[hidden] {
       display: none !important;
-    }
-
-    body[data-mobile-nav-open="true"] {
-      overflow: hidden;
-      touch-action: none;
-    }
-
-    .mobile-nav[hidden] {
-      display: none !important;
-    }
-
-    .mobile-nav {
-      position: fixed;
-      inset: 0;
-      z-index: 60;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 24px 16px;
-      pointer-events: none;
-    }
-
-    .mobile-nav[data-open="true"] {
-      pointer-events: auto;
-    }
-
-    .mobile-nav__backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(4px);
-    }
-
-    body[data-theme="dark"] .mobile-nav__backdrop {
-      background: rgba(2, 6, 23, 0.72);
-    }
-
-    .mobile-nav__sheet {
-      position: relative;
-      z-index: 1;
-      width: min(480px, 100%);
-      max-height: min(80vh, 480px);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding: 20px 20px 24px;
-      border-radius: 24px;
-      background: var(--color-surface);
-      border: 1px solid rgba(37, 99, 235, 0.2);
-      box-shadow: 0 32px 60px -32px rgba(15, 23, 42, 0.65);
-      overflow: hidden;
-    }
-
-    body[data-theme="dark"] .mobile-nav__sheet {
-      background: rgba(15, 23, 42, 0.95);
-      border-color: rgba(96, 165, 250, 0.28);
-      box-shadow: 0 36px 80px -36px rgba(8, 12, 32, 0.9);
-    }
-
-    .mobile-nav__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .mobile-nav__title {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-
-    .mobile-nav__close {
-      border: none;
-      background: transparent;
-      color: var(--color-text-muted);
-      padding: 6px;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    .mobile-nav__close:hover,
-    .mobile-nav__close:focus-visible {
-      background: var(--color-accent-soft);
-      color: var(--color-accent);
-      outline: none;
-    }
-
-    .mobile-nav__close svg {
-      width: 22px;
-      height: 22px;
-    }
-
-    .mobile-nav__body {
-      overflow-y: auto;
-      margin: 0 -8px;
-      padding: 0 8px;
-    }
-
-    .mobile-nav__list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .mobile-nav__link {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 16px;
-      text-decoration: none;
-      color: var(--color-text);
-      background: var(--color-surface-alt);
-      border: 1px solid transparent;
-      font-weight: 600;
-      transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .mobile-nav__link:hover,
-    .mobile-nav__link:focus-visible {
-      background: rgba(37, 99, 235, 0.12);
-      color: var(--color-accent);
-      box-shadow: 0 12px 28px -20px rgba(37, 99, 235, 0.55);
-      outline: none;
-      transform: translateY(-1px);
-    }
-
-    .mobile-nav__link.is-active {
-      background: rgba(37, 99, 235, 0.2);
-      color: var(--color-accent);
-      border-color: rgba(37, 99, 235, 0.28);
-      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24);
-    }
-
-    body[data-theme="dark"] .mobile-nav__link {
-      background: rgba(15, 23, 42, 0.65);
-      border-color: rgba(96, 165, 250, 0.16);
-    }
-
-    body[data-theme="dark"] .mobile-nav__link:hover,
-    body[data-theme="dark"] .mobile-nav__link:focus-visible {
-      background: rgba(96, 165, 250, 0.18);
-      color: #fff;
-      box-shadow: 0 16px 32px -20px rgba(8, 12, 32, 0.9);
-    }
-
-    body[data-theme="dark"] .mobile-nav__link.is-active {
-      background: rgba(96, 165, 250, 0.24);
-      border-color: rgba(96, 165, 250, 0.32);
-      color: #fff;
-    }
-
-    .mobile-nav__hint {
-      margin: 0;
-      font-size: 0.85rem;
-      color: var(--color-text-muted);
     }
 
     .ed-dashboard {
@@ -1633,31 +1419,10 @@
           justify-content: flex-start;
         }
 
-        .hero__nav .section-nav__bar {
-          width: 100%;
-          flex-wrap: wrap;
-          align-items: flex-start;
-          gap: 10px;
+        .hero__buttons button.icon-button {
+          width: 36px;
+          height: 36px;
         }
-
-        .section-nav__title {
-          display: none;
-        }
-
-        .section-nav__mobile-trigger {
-          display: inline-flex;
-        }
-
-        .hero__nav .section-nav__inner {
-          width: 100%;
-          padding-bottom: 4px;
-          margin-top: 2px;
-        }
-
-      .hero__buttons button.icon-button {
-        width: 36px;
-        height: 36px;
-      }
 
       .status {
         text-align: left;
@@ -3544,16 +3309,6 @@
       <nav class="section-nav hero__nav" aria-label="Pagrindinės sekcijos">
         <div class="section-nav__bar">
           <div class="section-nav__title" id="stickyTitle" aria-hidden="true">RŠL SMPS statistika</div>
-          <button type="button"
-                  id="mobileNavToggle"
-                  class="section-nav__mobile-trigger"
-                  aria-expanded="false"
-                  aria-controls="mobileNavPanel">
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
-            <span id="mobileNavToggleLabel">Sekcijos</span>
-          </button>
           <div class="section-nav__inner">
             <a class="section-nav__link" href="#kpiHeading">Rodikliai</a>
             <a class="section-nav__link" href="#chartHeading">Grafikai</a>
@@ -3563,27 +3318,6 @@
           </div>
         </div>
       </nav>
-      <div id="mobileNavPanel" class="mobile-nav" role="dialog" aria-modal="true" aria-labelledby="mobileNavTitle" hidden>
-        <div class="mobile-nav__backdrop" data-mobile-nav-close></div>
-        <div class="mobile-nav__sheet" role="document">
-          <div class="mobile-nav__header">
-            <h2 id="mobileNavTitle" class="mobile-nav__title">Greita navigacija</h2>
-            <button type="button"
-                    id="mobileNavCloseBtn"
-                    class="mobile-nav__close"
-                    data-mobile-nav-close
-                    aria-label="Uždaryti sekcijų sąrašą">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6m0 12L6 6" />
-              </svg>
-            </button>
-          </div>
-          <nav class="mobile-nav__body" aria-labelledby="mobileNavTitle">
-            <ul id="mobileNavList" class="mobile-nav__list"></ul>
-          </nav>
-          <p id="mobileNavHint" class="mobile-nav__hint">Palieskite sekciją, kad pereitumėte.</p>
-        </div>
-      </div>
       <div class="hero__actions">
         <div class="hero__buttons">
           <button id="edNavButton"
@@ -4306,12 +4040,6 @@
         overview: 'Bendras vaizdas',
         ed: 'RŠL SMPS skydelis',
       },
-      mobileNav: {
-        open: 'Sekcijos',
-        title: 'Greita navigacija',
-        close: 'Uždaryti sekcijų sąrašą',
-        hint: 'Palieskite sekciją, kad pereitumėte.',
-      },
       edToggle: {
         open: (label) => `Atidaryti ${label}`,
         close: (label) => `Uždaryti ${label}`,
@@ -4788,10 +4516,6 @@
         feedbackTrendTitle: TEXT.feedback.trend.title,
         footerSource: DEFAULT_FOOTER_SOURCE,
         scrollTopLabel: TEXT.scrollTop,
-        mobileNavTitle: TEXT.mobileNav.title,
-        mobileNavOpenLabel: TEXT.mobileNav.open,
-        mobileNavCloseLabel: TEXT.mobileNav.close,
-        mobileNavHint: TEXT.mobileNav.hint,
         tabOverviewLabel: TEXT.tabs.overview,
         tabEdLabel: TEXT.tabs.ed,
         edTitle: TEXT.ed.title,
@@ -5011,13 +4735,6 @@
       compareClear: document.getElementById('compareClear'),
       sectionNav: document.querySelector('.section-nav'),
       sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
-      mobileNavToggle: document.getElementById('mobileNavToggle'),
-      mobileNavToggleLabel: document.getElementById('mobileNavToggleLabel'),
-      mobileNavPanel: document.getElementById('mobileNavPanel'),
-      mobileNavCloseBtn: document.getElementById('mobileNavCloseBtn'),
-      mobileNavTitle: document.getElementById('mobileNavTitle'),
-      mobileNavHint: document.getElementById('mobileNavHint'),
-      mobileNavList: document.getElementById('mobileNavList'),
       scrollTopBtn: document.getElementById('scrollTopBtn'),
     };
 
@@ -5026,14 +4743,6 @@
       items: [],
       itemBySection: new Map(),
       activeHeadingId: '',
-    };
-
-    const mobileNavState = {
-      open: false,
-      links: [],
-      focusReturn: null,
-      focusables: [],
-      mediaQuery: null,
     };
 
     const sectionVisibility = new Map();
@@ -5244,7 +4953,6 @@
         }
         item.link.classList.toggle('is-active', isActive);
       });
-      updateMobileNavActiveState(headingId);
     }
 
     function evaluateActiveSection() {
@@ -5396,213 +5104,6 @@
       selectors.sectionNav.dataset.keyboard = 'bound';
     }
 
-    function isMobileNavViewport() {
-      if (mobileNavState.mediaQuery && typeof mobileNavState.mediaQuery.matches === 'boolean') {
-        return mobileNavState.mediaQuery.matches;
-      }
-      const width = window.innerWidth || document.documentElement.clientWidth || 0;
-      return width <= 640;
-    }
-
-    function collectMobileNavFocusables() {
-      if (!selectors.mobileNavPanel) {
-        return [];
-      }
-      const candidates = selectors.mobileNavPanel.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
-      return Array.from(candidates).filter((element) => {
-        if (!(element instanceof HTMLElement)) {
-          return false;
-        }
-        if (element.hasAttribute('hidden') || element.getAttribute('aria-hidden') === 'true') {
-          return false;
-        }
-        const rects = element.getClientRects();
-        return rects.length > 0;
-      });
-    }
-
-    function updateMobileNavActiveState(headingId) {
-      if (!mobileNavState.links || !mobileNavState.links.length) {
-        return;
-      }
-      mobileNavState.links.forEach((entry) => {
-        const isActive = Boolean(headingId) && entry.headingId === headingId;
-        entry.element.classList.toggle('is-active', isActive);
-        if (isActive) {
-          entry.element.setAttribute('aria-current', 'true');
-        } else {
-          entry.element.removeAttribute('aria-current');
-        }
-      });
-    }
-
-    function refreshMobileNavLinks() {
-      if (!selectors.mobileNavList) {
-        return;
-      }
-      selectors.mobileNavList.innerHTML = '';
-      mobileNavState.links = [];
-      const fragment = document.createDocumentFragment();
-      sectionNavState.items.forEach((item) => {
-        if (!item || item.link.hidden) {
-          return;
-        }
-        const listItem = document.createElement('li');
-        listItem.className = 'mobile-nav__item';
-        const anchor = item.link.cloneNode(true);
-        if (!(anchor instanceof HTMLAnchorElement)) {
-          return;
-        }
-        anchor.classList.remove('section-nav__link', 'is-active');
-        anchor.removeAttribute('aria-current');
-        anchor.classList.add('mobile-nav__link');
-        anchor.dataset.headingId = item.headingId;
-        anchor.addEventListener('click', () => {
-          closeMobileNavPanel({ restoreFocus: false });
-        });
-        listItem.appendChild(anchor);
-        fragment.appendChild(listItem);
-        mobileNavState.links.push({ headingId: item.headingId, element: anchor });
-      });
-      selectors.mobileNavList.appendChild(fragment);
-      updateMobileNavActiveState(sectionNavState.activeHeadingId);
-      if (mobileNavState.open) {
-        mobileNavState.focusables = collectMobileNavFocusables();
-      }
-    }
-
-    function closeMobileNavPanel(options = {}) {
-      const { restoreFocus = true } = options;
-      if (!selectors.mobileNavPanel || !mobileNavState.open) {
-        return;
-      }
-      selectors.mobileNavPanel.removeAttribute('data-open');
-      selectors.mobileNavPanel.hidden = true;
-      document.body.removeAttribute('data-mobile-nav-open');
-      if (selectors.mobileNavToggle) {
-        selectors.mobileNavToggle.setAttribute('aria-expanded', 'false');
-        const openLabel = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
-        selectors.mobileNavToggle.setAttribute('aria-label', openLabel);
-        selectors.mobileNavToggle.title = openLabel;
-      }
-      mobileNavState.open = false;
-      mobileNavState.focusables = [];
-      if (restoreFocus && mobileNavState.focusReturn && typeof mobileNavState.focusReturn.focus === 'function') {
-        mobileNavState.focusReturn.focus({ preventScroll: true });
-      }
-      mobileNavState.focusReturn = null;
-    }
-
-    function openMobileNavPanel() {
-      if (!selectors.mobileNavPanel || mobileNavState.open) {
-        return;
-      }
-      if (!isMobileNavViewport()) {
-        if (selectors.sectionNavLinks && selectors.sectionNavLinks.length) {
-          selectors.sectionNavLinks[0].focus({ preventScroll: true });
-        }
-        return;
-      }
-      refreshMobileNavLinks();
-      selectors.mobileNavPanel.hidden = false;
-      selectors.mobileNavPanel.setAttribute('data-open', 'true');
-      document.body.setAttribute('data-mobile-nav-open', 'true');
-      if (selectors.mobileNavToggle) {
-        selectors.mobileNavToggle.setAttribute('aria-expanded', 'true');
-        const closeLabel = settings.output.mobileNavCloseLabel || TEXT.mobileNav.close;
-        selectors.mobileNavToggle.setAttribute('aria-label', closeLabel);
-        selectors.mobileNavToggle.title = closeLabel;
-      }
-      mobileNavState.open = true;
-      mobileNavState.focusReturn = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      mobileNavState.focusables = collectMobileNavFocusables();
-      const initialFocus = mobileNavState.focusables[0]
-        || selectors.mobileNavCloseBtn
-        || selectors.mobileNavToggle;
-      if (initialFocus && typeof initialFocus.focus === 'function') {
-        initialFocus.focus({ preventScroll: true });
-      }
-    }
-
-    function toggleMobileNavPanel() {
-      if (mobileNavState.open) {
-        closeMobileNavPanel();
-      } else {
-        openMobileNavPanel();
-      }
-    }
-
-    function handleMobileNavKeydown(event) {
-      if (!mobileNavState.open) {
-        return;
-      }
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeMobileNavPanel();
-        return;
-      }
-      if (event.key === 'Tab') {
-        const focusables = mobileNavState.focusables;
-        if (!focusables.length) {
-          event.preventDefault();
-          return;
-        }
-        const currentIndex = focusables.indexOf(document.activeElement);
-        let nextIndex = currentIndex;
-        if (event.shiftKey) {
-          nextIndex = currentIndex <= 0 ? focusables.length - 1 : currentIndex - 1;
-        } else {
-          nextIndex = currentIndex === focusables.length - 1 ? 0 : currentIndex + 1;
-        }
-        event.preventDefault();
-        const next = focusables[nextIndex];
-        if (next && typeof next.focus === 'function') {
-          next.focus();
-        }
-      }
-    }
-
-    function handleMobileNavMediaChange(event) {
-      if (!event.matches && mobileNavState.open) {
-        closeMobileNavPanel({ restoreFocus: false });
-      }
-    }
-
-    function initializeMobileNav() {
-      if (!selectors.mobileNavToggle || !selectors.mobileNavPanel) {
-        return;
-      }
-      selectors.mobileNavPanel.hidden = true;
-      selectors.mobileNavPanel.removeAttribute('data-open');
-      selectors.mobileNavToggle.setAttribute('aria-expanded', 'false');
-      selectors.mobileNavPanel.addEventListener('keydown', handleMobileNavKeydown);
-      selectors.mobileNavToggle.addEventListener('click', (event) => {
-        event.preventDefault();
-        toggleMobileNavPanel();
-      });
-      selectors.mobileNavPanel.addEventListener('click', (event) => {
-        const target = event.target instanceof HTMLElement
-          ? event.target.closest('[data-mobile-nav-close]')
-          : null;
-        if (target) {
-          closeMobileNavPanel();
-        }
-      });
-      if (selectors.mobileNavCloseBtn) {
-        selectors.mobileNavCloseBtn.addEventListener('click', () => {
-          closeMobileNavPanel();
-        });
-      }
-      if (typeof window.matchMedia === 'function') {
-        mobileNavState.mediaQuery = window.matchMedia('(max-width: 640px)');
-        if (typeof mobileNavState.mediaQuery.addEventListener === 'function') {
-          mobileNavState.mediaQuery.addEventListener('change', handleMobileNavMediaChange);
-        } else if (typeof mobileNavState.mediaQuery.addListener === 'function') {
-          mobileNavState.mediaQuery.addListener(handleMobileNavMediaChange);
-        }
-      }
-    }
-
     function syncSectionNavVisibility() {
       if (!sectionNavState.initialized) {
         return;
@@ -5647,7 +5148,6 @@
         }
       }
 
-      refreshMobileNavLinks();
       evaluateActiveSection();
       scheduleLayoutRefresh();
     }
@@ -5691,7 +5191,6 @@
 
       sectionNavState.initialized = true;
       setupNavKeyboardNavigation();
-      refreshMobileNavLinks();
 
       if (typeof ResizeObserver === 'function') {
         if (layoutResizeObserver && typeof layoutResizeObserver.disconnect === 'function') {
@@ -5850,10 +5349,6 @@
       merged.output.feedbackDescription = merged.output.feedbackDescription != null ? String(merged.output.feedbackDescription) : DEFAULT_SETTINGS.output.feedbackDescription;
       merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
       merged.output.scrollTopLabel = merged.output.scrollTopLabel != null ? String(merged.output.scrollTopLabel) : DEFAULT_SETTINGS.output.scrollTopLabel;
-      merged.output.mobileNavTitle = merged.output.mobileNavTitle != null ? String(merged.output.mobileNavTitle) : DEFAULT_SETTINGS.output.mobileNavTitle;
-      merged.output.mobileNavOpenLabel = merged.output.mobileNavOpenLabel != null ? String(merged.output.mobileNavOpenLabel) : DEFAULT_SETTINGS.output.mobileNavOpenLabel;
-      merged.output.mobileNavCloseLabel = merged.output.mobileNavCloseLabel != null ? String(merged.output.mobileNavCloseLabel) : DEFAULT_SETTINGS.output.mobileNavCloseLabel;
-      merged.output.mobileNavHint = merged.output.mobileNavHint != null ? String(merged.output.mobileNavHint) : DEFAULT_SETTINGS.output.mobileNavHint;
       merged.output.tabOverviewLabel = merged.output.tabOverviewLabel != null ? String(merged.output.tabOverviewLabel) : DEFAULT_SETTINGS.output.tabOverviewLabel;
       merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
       merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
@@ -5925,10 +5420,6 @@
       TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
       TEXT.feedback.trend.title = settings.output.feedbackTrendTitle || DEFAULT_SETTINGS.output.feedbackTrendTitle;
       TEXT.scrollTop = settings.output.scrollTopLabel || DEFAULT_SETTINGS.output.scrollTopLabel;
-      TEXT.mobileNav.title = settings.output.mobileNavTitle || DEFAULT_SETTINGS.output.mobileNavTitle;
-      TEXT.mobileNav.open = settings.output.mobileNavOpenLabel || DEFAULT_SETTINGS.output.mobileNavOpenLabel;
-      TEXT.mobileNav.close = settings.output.mobileNavCloseLabel || DEFAULT_SETTINGS.output.mobileNavCloseLabel;
-      TEXT.mobileNav.hint = settings.output.mobileNavHint || DEFAULT_SETTINGS.output.mobileNavHint;
       const pageTitle = settings.output.pageTitle || TEXT.title || DEFAULT_SETTINGS.output.pageTitle;
       document.title = pageTitle;
     }
@@ -6629,28 +6120,6 @@
         } else {
           selectors.closeEdPanelBtn.textContent = closeLabel;
         }
-      }
-      if (selectors.mobileNavToggleLabel) {
-        selectors.mobileNavToggleLabel.textContent = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
-      }
-      if (selectors.mobileNavToggle) {
-        const openLabel = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
-        const closeLabel = settings.output.mobileNavCloseLabel || TEXT.mobileNav.close;
-        const activeLabel = mobileNavState.open ? closeLabel : openLabel;
-        selectors.mobileNavToggle.setAttribute('aria-expanded', mobileNavState.open ? 'true' : 'false');
-        selectors.mobileNavToggle.setAttribute('aria-label', activeLabel);
-        selectors.mobileNavToggle.title = activeLabel;
-      }
-      if (selectors.mobileNavTitle) {
-        selectors.mobileNavTitle.textContent = settings.output.mobileNavTitle || TEXT.mobileNav.title;
-      }
-      if (selectors.mobileNavHint) {
-        selectors.mobileNavHint.textContent = settings.output.mobileNavHint || TEXT.mobileNav.hint;
-      }
-      if (selectors.mobileNavCloseBtn) {
-        const closeLabel = settings.output.mobileNavCloseLabel || TEXT.mobileNav.close;
-        selectors.mobileNavCloseBtn.setAttribute('aria-label', closeLabel);
-        selectors.mobileNavCloseBtn.title = closeLabel;
       }
       if (selectors.edTvToggleBtn) {
         const toggleTexts = TEXT.edTv?.toggle || {};
@@ -13259,7 +12728,6 @@
     applySettingsToText();
     applyTextContent();
     applyFooterSource();
-    initializeMobileNav();
     initializeSectionNavigation();
     initializeHeroCompactMode();
     initializeStickyTitleObserver();
