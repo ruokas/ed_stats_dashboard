@@ -4134,7 +4134,7 @@
         status: {
           loading: 'Kraunami ED duomenys...',
           empty: 'ED duomenų nerasta.',
-          success: (timestamp) => `Duomenys atnaujinti ${timestamp}.`,
+          success: () => 'Duomenys sėkmingai įkelti.',
           fallback: (reason, timestamp) => `Rodomi ED demonstraciniai duomenys${timestamp ? ` (${timestamp})` : ''}. Priežastis: ${reason}`,
           error: (reason) => `Nepavyko įkelti ED duomenų: ${reason}`,
           noUrl: 'Nenurodytas ED duomenų URL. Rodomi demonstraciniai duomenys.',
