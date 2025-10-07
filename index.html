@@ -5423,41 +5423,6 @@
       });
     }
 
-    function reconcileMobileNavState() {
-      const panel = selectors.mobileNavPanel;
-      if (!panel) {
-        document.body.removeAttribute('data-mobile-nav-open');
-        mobileNavState.open = false;
-        mobileNavState.focusables = [];
-        mobileNavState.focusReturn = null;
-        return;
-      }
-
-      const panelHasOpenFlag = panel.getAttribute('data-open') === 'true';
-      const panelIsHidden = panel.hasAttribute('hidden') || panel.hidden === true;
-      const panelOpenInDom = panelHasOpenFlag && !panelIsHidden;
-      const bodyMarkedOpen = document.body.getAttribute('data-mobile-nav-open') === 'true';
-
-      if (!panelOpenInDom) {
-        if (bodyMarkedOpen) {
-          document.body.removeAttribute('data-mobile-nav-open');
-        }
-        if (mobileNavState.open) {
-          mobileNavState.open = false;
-          mobileNavState.focusables = [];
-          mobileNavState.focusReturn = null;
-          if (selectors.mobileNavToggle) {
-            const openLabel = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
-            selectors.mobileNavToggle.setAttribute('aria-expanded', 'false');
-            selectors.mobileNavToggle.setAttribute('aria-label', openLabel);
-            selectors.mobileNavToggle.title = openLabel;
-          }
-        }
-      } else if (!bodyMarkedOpen) {
-        document.body.setAttribute('data-mobile-nav-open', 'true');
-      }
-    }
-
     function updateMobileNavActiveState(headingId) {
       if (!mobileNavState.links || !mobileNavState.links.length) {
         return;
@@ -5506,7 +5471,6 @@
       if (mobileNavState.open) {
         mobileNavState.focusables = collectMobileNavFocusables();
       }
-      reconcileMobileNavState();
     }
 
     function closeMobileNavPanel(options = {}) {
@@ -5529,7 +5493,6 @@
         mobileNavState.focusReturn.focus({ preventScroll: true });
       }
       mobileNavState.focusReturn = null;
-      reconcileMobileNavState();
     }
 
     function openMobileNavPanel() {
@@ -5561,7 +5524,6 @@
       if (initialFocus && typeof initialFocus.focus === 'function') {
         initialFocus.focus({ preventScroll: true });
       }
-      reconcileMobileNavState();
     }
 
     function toggleMobileNavPanel() {
@@ -5641,7 +5603,6 @@
           mobileNavState.mediaQuery.addListener(handleMobileNavMediaChange);
         }
       }
-      reconcileMobileNavState();
     }
 
     function syncSectionNavVisibility() {
@@ -13293,8 +13254,6 @@
         dashboardState.lastErrorMessage = friendlyMessage;
         setStatus('error', friendlyMessage);
         await renderEdDashboard(dashboardState.ed);
-      } finally {
-        reconcileMobileNavState();
       }
     }
 
