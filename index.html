@@ -4059,28 +4059,6 @@
               <p class="settings-hint">Palikite tuščią, jei rezervinis istorinių duomenų šaltinis nereikalingas.</p>
             </div>
           </fieldset>
-
-          <fieldset class="settings-fieldset">
-            <legend>Metinių suvestinių šaltinis</legend>
-            <label class="settings-checkbox" for="settingsYearlyEnabled">
-              <input id="settingsYearlyEnabled" name="dataSource.yearly.enabled" type="checkbox">
-              <span>Naudoti iš anksto suskaičiuotą metinę lentelę vietoje skaičiavimo naršyklėje.</span>
-            </label>
-            <div class="settings-field">
-              <label for="settingsYearlyUrl"><span>CSV nuoroda (metinės suvestinės)</span></label>
-              <input id="settingsYearlyUrl" name="dataSource.yearly.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
-              <p class="settings-hint">Tikėtinos antraštės: „Metai, Pacientai, Vid. per dieną, Vid. buvimo laikas, Naktiniai, GMP, Hospitalizuoti, Išleisti“.</p>
-            </div>
-            <label class="settings-checkbox" for="settingsYearlyUseFallback">
-              <input id="settingsYearlyUseFallback" name="dataSource.yearly.useFallback" type="checkbox">
-              <span>Naudoti demonstracinį metinių duomenų CSV, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
-            </label>
-            <div class="settings-field">
-              <label for="settingsYearlyFallbackCsv"><span>Demonstracinis CSV (metinės suvestinės)</span></label>
-              <textarea id="settingsYearlyFallbackCsv" name="dataSource.yearly.fallbackCsv" spellcheck="false"></textarea>
-              <p class="settings-hint">Palikite tuščią, jei rezervinė metinė lentelė nereikalinga.</p>
-            </div>
-          </fieldset>
         </section>
 
         <section class="settings-section" aria-labelledby="settingsFeedbackDataTitle">
@@ -4933,13 +4911,6 @@
           useFallback: false,
           fallbackCsv: '',
         },
-        yearly: {
-          enabled: true,
-          label: 'Metinė suvestinė (agreguota)',
-          url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?output=csv',
-          useFallback: false,
-          fallbackCsv: '',
-        },
       },
       csv: {
         arrival: 'Atvykimo data',
@@ -5750,19 +5721,6 @@
         ? String(merged.dataSource.historical.label)
         : DEFAULT_SETTINGS.dataSource.historical.label;
 
-      if (!merged.dataSource.yearly || typeof merged.dataSource.yearly !== 'object') {
-        merged.dataSource.yearly = cloneSettings(DEFAULT_SETTINGS.dataSource.yearly);
-      }
-      merged.dataSource.yearly.enabled = merged.dataSource.yearly.enabled !== false;
-      merged.dataSource.yearly.url = (merged.dataSource.yearly.url ?? '').trim();
-      merged.dataSource.yearly.useFallback = Boolean(merged.dataSource.yearly.useFallback);
-      merged.dataSource.yearly.fallbackCsv = typeof merged.dataSource.yearly.fallbackCsv === 'string'
-        ? merged.dataSource.yearly.fallbackCsv
-        : DEFAULT_SETTINGS.dataSource.yearly.fallbackCsv;
-      merged.dataSource.yearly.label = merged.dataSource.yearly.label != null
-        ? String(merged.dataSource.yearly.label)
-        : DEFAULT_SETTINGS.dataSource.yearly.label;
-
       ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
         .forEach((key) => {
           merged.csv[key] = merged.csv[key] != null
@@ -6072,10 +6030,6 @@
       assign('dataSource.historical.url', settings.dataSource.historical?.url);
       assign('dataSource.historical.useFallback', settings.dataSource.historical?.useFallback);
       assign('dataSource.historical.fallbackCsv', settings.dataSource.historical?.fallbackCsv);
-      assign('dataSource.yearly.enabled', settings.dataSource.yearly?.enabled);
-      assign('dataSource.yearly.url', settings.dataSource.yearly?.url);
-      assign('dataSource.yearly.useFallback', settings.dataSource.yearly?.useFallback);
-      assign('dataSource.yearly.fallbackCsv', settings.dataSource.yearly?.fallbackCsv);
 
       assign('csv.arrival', settings.csv.arrival);
       assign('csv.discharge', settings.csv.discharge);
@@ -6136,12 +6090,6 @@
             fallbackCsv: '',
           },
           historical: {
-            enabled: false,
-            url: '',
-            useFallback: false,
-            fallbackCsv: '',
-          },
-          yearly: {
             enabled: false,
             url: '',
             useFallback: false,
@@ -6219,10 +6167,6 @@
       result.dataSource.historical.url = readText('dataSource.historical.url').trim();
       result.dataSource.historical.useFallback = readCheckbox('dataSource.historical.useFallback');
       result.dataSource.historical.fallbackCsv = readText('dataSource.historical.fallbackCsv').trim();
-      result.dataSource.yearly.enabled = readCheckbox('dataSource.yearly.enabled');
-      result.dataSource.yearly.url = readText('dataSource.yearly.url').trim();
-      result.dataSource.yearly.useFallback = readCheckbox('dataSource.yearly.useFallback');
-      result.dataSource.yearly.fallbackCsv = readText('dataSource.yearly.fallbackCsv').trim();
 
       result.csv.arrival = readText('csv.arrival').trim();
       result.csv.discharge = readText('csv.discharge').trim();
@@ -7642,222 +7586,6 @@
       }
     }
 
-    function normalizeYearlyHeaderValue(value) {
-      const raw = String(value ?? '').trim();
-      let normalized = raw;
-      if (typeof normalized.normalize === 'function') {
-        normalized = normalized.normalize('NFD');
-      }
-      return normalized
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .replace(/["']/g, '')
-        .trim();
-    }
-
-    function parseYearlyNumber(value) {
-      if (value == null) {
-        return Number.NaN;
-      }
-      const raw = String(value).trim();
-      if (!raw) {
-        return Number.NaN;
-      }
-      let sanitized = raw
-        .replace(/\u00A0/g, ' ')
-        .replace(/\s+/g, '')
-        .replace(/[^0-9,\.\-+]/g, '');
-      if (!sanitized) {
-        return Number.NaN;
-      }
-      const commaCount = (sanitized.match(/,/g) || []).length;
-      const dotCount = (sanitized.match(/\./g) || []).length;
-      if (commaCount && dotCount) {
-        sanitized = sanitized.replace(/\./g, '').replace(',', '.');
-      } else if (commaCount && !dotCount) {
-        sanitized = sanitized.replace(',', '.');
-      }
-      const parsed = Number.parseFloat(sanitized);
-      return Number.isFinite(parsed) ? parsed : Number.NaN;
-    }
-
-    function parseYearlyAggregatesCsv(text) {
-      if (!text) {
-        throw new Error('Metinių suvestinių CSV tuščias.');
-      }
-      const { rows } = parseCsv(text);
-      if (!rows.length) {
-        throw new Error('Metinių suvestinių CSV neturi duomenų.');
-      }
-      const header = rows[0];
-      const headerNormalized = header.map((cell, index) => ({
-        original: String(cell ?? '').trim(),
-        normalized: normalizeYearlyHeaderValue(cell),
-        index,
-      }));
-
-      const resolveColumn = (candidates, { required = false } = {}) => {
-        const candidateList = Array.isArray(candidates) ? candidates : [candidates];
-        const normalizedCandidates = candidateList
-          .map((item) => normalizeYearlyHeaderValue(item))
-          .filter((item) => item.length > 0);
-        const match = headerNormalized.find((column) => normalizedCandidates.includes(column.normalized));
-        if (!match) {
-          if (required) {
-            throw new Error(`Metinių suvestinių CSV nerastas stulpelis: ${candidateList.join(', ')}`);
-          }
-          return -1;
-        }
-        return match.index;
-      };
-
-      const yearIndex = resolveColumn(['metai', 'year'], { required: true });
-      const countIndex = resolveColumn(['pacientai', 'patients', 'total']);
-      if (countIndex < 0) {
-        throw new Error('Metinių suvestinių CSV nerastas stulpelis „Pacientai“.');
-      }
-      const avgPerDayIndex = resolveColumn(['vid. per diena', 'vid per diena', 'vid per diena (pacientai)', 'avg per day']);
-      const avgStayIndex = resolveColumn(['vid. buvimo laikas', 'vid buvimo laikas', 'vidutinis buvimo laikas', 'avg stay', 'avg los']);
-      const nightIndex = resolveColumn(['naktiniai', 'night']);
-      const emsIndex = resolveColumn(['gmp', 'ems']);
-      const hospitalizedIndex = resolveColumn(['hospitalizuoti', 'hospitalized']);
-      const dischargedIndex = resolveColumn(['isleisti', 'išleisti', 'discharged']);
-
-      const entries = [];
-      rows.slice(1).forEach((cols) => {
-        if (!cols || !cols.some((cell) => (cell ?? '').toString().trim().length > 0)) {
-          return;
-        }
-        const yearRaw = cols[yearIndex];
-        const yearNumber = Number.parseInt(String(yearRaw ?? '').trim(), 10);
-        if (!Number.isFinite(yearNumber)) {
-          return;
-        }
-        const countRaw = parseYearlyNumber(cols[countIndex]);
-        const count = Number.isFinite(countRaw) ? Math.max(0, Math.round(countRaw)) : 0;
-        const avgPerDay = avgPerDayIndex >= 0 ? parseYearlyNumber(cols[avgPerDayIndex]) : Number.NaN;
-        const avgStay = avgStayIndex >= 0 ? parseYearlyNumber(cols[avgStayIndex]) : Number.NaN;
-        const nightRaw = nightIndex >= 0 ? parseYearlyNumber(cols[nightIndex]) : Number.NaN;
-        const emsRaw = emsIndex >= 0 ? parseYearlyNumber(cols[emsIndex]) : Number.NaN;
-        const hospitalizedRaw = hospitalizedIndex >= 0 ? parseYearlyNumber(cols[hospitalizedIndex]) : Number.NaN;
-        const dischargedRaw = dischargedIndex >= 0 ? parseYearlyNumber(cols[dischargedIndex]) : Number.NaN;
-
-        if (!count) {
-          return;
-        }
-
-        let dayCount = Number.NaN;
-        if (Number.isFinite(avgPerDay) && avgPerDay > 0) {
-          dayCount = Math.round(count / avgPerDay);
-        }
-        if (!Number.isFinite(dayCount) || dayCount <= 0) {
-          dayCount = 365;
-        }
-        const monthCount = dayCount >= 360 ? 12 : Math.max(1, Math.round(dayCount / 30));
-        const durations = count;
-        const totalTime = Number.isFinite(avgStay) && avgStay > 0 ? avgStay * durations : 0;
-        const hospitalized = Number.isFinite(hospitalizedRaw) ? Math.max(0, Math.round(hospitalizedRaw)) : 0;
-        const discharged = Number.isFinite(dischargedRaw) ? Math.max(0, Math.round(dischargedRaw)) : 0;
-        const hospitalizedTime = Number.isFinite(avgStay) && hospitalized > 0 ? avgStay * hospitalized : 0;
-        const night = Number.isFinite(nightRaw) ? Math.max(0, Math.round(nightRaw)) : 0;
-        const ems = Number.isFinite(emsRaw) ? Math.max(0, Math.round(emsRaw)) : 0;
-
-        entries.push({
-          year: String(yearNumber),
-          count,
-          night,
-          ems,
-          discharged,
-          hospitalized,
-          totalTime,
-          durations,
-          hospitalizedTime,
-          hospitalizedDurations: hospitalized,
-          dayCount,
-          monthCount,
-        });
-      });
-
-      if (!entries.length) {
-        throw new Error('Metinių suvestinių CSV nerasta įrašų.');
-      }
-
-      return entries.sort((a, b) => (a.year > b.year ? 1 : -1));
-    }
-
-    async function loadYearlyAggregates(config, { sourceId = 'yearly', label = '' } = {}) {
-      const trimmedUrl = (config?.url ?? '').trim();
-      const allowFallback = Boolean(config?.useFallback);
-      const fallbackRaw = typeof config?.fallbackCsv === 'string' ? config.fallbackCsv : '';
-      const fallbackContent = allowFallback && fallbackRaw.trim().length ? fallbackRaw : '';
-      const missingMessage = config?.missingMessage || 'Nenurodytas metinių suvestinių URL.';
-      const result = {
-        entries: [],
-        meta: {
-          sourceId,
-          url: trimmedUrl,
-          label: label || sourceId,
-          fromCache: false,
-          fromFallback: false,
-        },
-        usingFallback: false,
-        lastErrorMessage: '',
-        error: null,
-      };
-
-      const assignEntries = (entries, metaOverrides = {}) => {
-        result.entries = entries;
-        result.meta = { ...result.meta, ...metaOverrides };
-      };
-
-      const parseDataset = (csvText) => parseYearlyAggregatesCsv(csvText);
-
-      if (!trimmedUrl) {
-        if (fallbackContent) {
-          const entries = parseDataset(fallbackContent);
-          assignEntries(entries, { fromFallback: true });
-          result.usingFallback = true;
-          result.lastErrorMessage = missingMessage;
-          result.error = missingMessage;
-          return result;
-        }
-        result.lastErrorMessage = missingMessage;
-        result.error = missingMessage;
-        return result;
-      }
-
-      try {
-        const download = await downloadCsv(trimmedUrl);
-        const entries = parseDataset(download.text);
-        assignEntries(entries, {
-          etag: download.etag,
-          lastModified: download.lastModified,
-          signature: download.signature,
-          fromCache: false,
-        });
-        return result;
-      } catch (error) {
-        console.error('Nepavyko atsisiųsti metinių suvestinių CSV:', error);
-        const friendly = describeError(error);
-        result.lastErrorMessage = friendly;
-        result.error = friendly;
-        if (fallbackContent) {
-          try {
-            const entries = parseDataset(fallbackContent);
-            assignEntries(entries, { fromFallback: true });
-            result.usingFallback = true;
-            return result;
-          } catch (fallbackError) {
-            console.error('Nepavyko įkelti metinių suvestinių iš demonstracinių duomenų:', fallbackError);
-            const fallbackFriendly = describeError(fallbackError);
-            result.lastErrorMessage = fallbackFriendly;
-          }
-        }
-        return result;
-      }
-    }
-
     async function fetchData() {
       const workerOptions = {
         csvSettings: settings.csv || {},
@@ -7988,87 +7716,12 @@
         });
       }
 
-      const yearlyDefaults = DEFAULT_SETTINGS?.dataSource?.yearly || {};
-      const yearlyConfig = settings?.dataSource?.yearly || yearlyDefaults;
-      const yearlyLabel = yearlyConfig.label || yearlyDefaults.label || 'Metinė suvestinė (agreguota)';
-      const yearlyEnabled = yearlyConfig.enabled !== false;
-      let yearlyMeta = null;
-
-      if (yearlyEnabled) {
-        const normalizedYearlyConfig = {
-          url: yearlyConfig.url,
-          useFallback: yearlyConfig.useFallback,
-          fallbackCsv: yearlyConfig.fallbackCsv,
-          missingMessage: 'Nenurodytas metinių suvestinių URL.',
-        };
-        const shouldAttemptYearly = (normalizedYearlyConfig.url ?? '').trim().length > 0
-          || (normalizedYearlyConfig.useFallback && (normalizedYearlyConfig.fallbackCsv ?? '').trim().length > 0);
-        if (shouldAttemptYearly) {
-          const yearlyResult = await loadYearlyAggregates(normalizedYearlyConfig, {
-            sourceId: 'yearly',
-            label: yearlyLabel,
-          });
-          yearlyMeta = yearlyResult.meta || null;
-          const yearlyEntries = Array.isArray(yearlyResult.entries) ? yearlyResult.entries : [];
-          if (yearlyEntries.length) {
-            combinedYearlyStats = yearlyEntries;
-          }
-          if (yearlyResult.usingFallback) {
-            usingFallback = true;
-            const message = yearlyResult.lastErrorMessage || 'Metinių suvestinių šaltinis pasiektas iš demonstracinių duomenų.';
-            fallbackMessages.push(`${yearlyLabel}: ${message}`);
-          } else if (yearlyResult.error) {
-            warnings.push(`${yearlyLabel}: ${yearlyResult.error}`);
-          }
-          sources.push({
-            id: 'yearly',
-            label: yearlyLabel,
-            url: yearlyResult.meta?.url || (yearlyConfig.url ?? ''),
-            fromCache: Boolean(yearlyResult.meta?.fromCache),
-            fromFallback: Boolean(yearlyResult.meta?.fromFallback),
-            usingFallback: yearlyResult.usingFallback,
-            lastErrorMessage: yearlyResult.lastErrorMessage || '',
-            error: yearlyResult.error || '',
-            used: yearlyEntries.length > 0,
-            enabled: true,
-          });
-        } else {
-          sources.push({
-            id: 'yearly',
-            label: yearlyLabel,
-            url: yearlyConfig.url || '',
-            fromCache: false,
-            fromFallback: false,
-            usingFallback: false,
-            lastErrorMessage: '',
-            error: '',
-            used: false,
-            enabled: true,
-          });
-          warnings.push(`${yearlyLabel}: Nenurodytas metinių suvestinių URL.`);
-        }
-      } else {
-        sources.push({
-          id: 'yearly',
-          label: yearlyLabel,
-          url: yearlyConfig.url || '',
-          fromCache: false,
-          fromFallback: false,
-          usingFallback: false,
-          lastErrorMessage: '',
-          error: '',
-          used: false,
-          enabled: false,
-        });
-      }
-
       dashboardState.usingFallback = usingFallback;
       dashboardState.lastErrorMessage = usingFallback ? fallbackMessages.join(' ').trim() : '';
 
       const meta = {
         primary: { ...(primaryResult.meta || {}), sourceId: 'primary' },
         historical: historicalMeta ? { ...historicalMeta, sourceId: 'historical' } : null,
-        yearly: yearlyMeta ? { ...yearlyMeta, sourceId: 'yearly' } : null,
         sources,
         warnings,
       };
