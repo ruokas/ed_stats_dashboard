@@ -1719,7 +1719,6 @@
     #chartHeading,
     #recentHeading,
     #monthlyHeading,
-    #yearlyHeading,
     #feedbackHeading {
       scroll-margin-top: calc(var(--hero-height, 0px) + 16px);
     }
@@ -3562,7 +3561,6 @@
             <a class="section-nav__link" href="#chartHeading">Grafikai</a>
             <a class="section-nav__link" href="#recentHeading">Paskutinės dienos</a>
             <a class="section-nav__link" href="#monthlyHeading">Mėnesiai</a>
-            <a class="section-nav__link" href="#yearlyHeading">Metinė suvestinė</a>
             <a class="section-nav__link" href="#feedbackHeading">Atsiliepimai</a>
           </div>
         </div>
@@ -5400,26 +5398,6 @@
       selectors.sectionNav.dataset.keyboard = 'bound';
     }
 
-    function getMobileNavLabels() {
-      const openLabel = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
-      const closeLabel = settings.output.mobileNavCloseLabel || TEXT.mobileNav.close;
-      return { openLabel, closeLabel };
-    }
-
-    function updateMobileNavToggleLabels(isOpen = mobileNavState.open) {
-      if (!selectors.mobileNavToggle) {
-        return;
-      }
-      const { openLabel, closeLabel } = getMobileNavLabels();
-      const activeLabel = isOpen ? closeLabel : openLabel;
-      selectors.mobileNavToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      selectors.mobileNavToggle.setAttribute('aria-label', activeLabel);
-      selectors.mobileNavToggle.title = activeLabel;
-      if (selectors.mobileNavToggleLabel) {
-        selectors.mobileNavToggleLabel.textContent = activeLabel;
-      }
-    }
-
     function isMobileNavViewport() {
       if (mobileNavState.mediaQuery && typeof mobileNavState.mediaQuery.matches === 'boolean') {
         return mobileNavState.mediaQuery.matches;
@@ -5468,13 +5446,15 @@
           mobileNavState.open = false;
           mobileNavState.focusables = [];
           mobileNavState.focusReturn = null;
-          updateMobileNavToggleLabels(false);
+          if (selectors.mobileNavToggle) {
+            const openLabel = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
+            selectors.mobileNavToggle.setAttribute('aria-expanded', 'false');
+            selectors.mobileNavToggle.setAttribute('aria-label', openLabel);
+            selectors.mobileNavToggle.title = openLabel;
+          }
         }
       } else if (!bodyMarkedOpen) {
         document.body.setAttribute('data-mobile-nav-open', 'true');
-      }
-      if (!panelOpenInDom) {
-        updateMobileNavToggleLabels(false);
       }
     }
 
@@ -5537,7 +5517,12 @@
       selectors.mobileNavPanel.removeAttribute('data-open');
       selectors.mobileNavPanel.hidden = true;
       document.body.removeAttribute('data-mobile-nav-open');
-      updateMobileNavToggleLabels(false);
+      if (selectors.mobileNavToggle) {
+        selectors.mobileNavToggle.setAttribute('aria-expanded', 'false');
+        const openLabel = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
+        selectors.mobileNavToggle.setAttribute('aria-label', openLabel);
+        selectors.mobileNavToggle.title = openLabel;
+      }
       mobileNavState.open = false;
       mobileNavState.focusables = [];
       if (restoreFocus && mobileNavState.focusReturn && typeof mobileNavState.focusReturn.focus === 'function') {
@@ -5561,7 +5546,12 @@
       selectors.mobileNavPanel.hidden = false;
       selectors.mobileNavPanel.setAttribute('data-open', 'true');
       document.body.setAttribute('data-mobile-nav-open', 'true');
-      updateMobileNavToggleLabels(true);
+      if (selectors.mobileNavToggle) {
+        selectors.mobileNavToggle.setAttribute('aria-expanded', 'true');
+        const closeLabel = settings.output.mobileNavCloseLabel || TEXT.mobileNav.close;
+        selectors.mobileNavToggle.setAttribute('aria-label', closeLabel);
+        selectors.mobileNavToggle.title = closeLabel;
+      }
       mobileNavState.open = true;
       mobileNavState.focusReturn = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       mobileNavState.focusables = collectMobileNavFocusables();
@@ -5624,6 +5614,7 @@
       }
       selectors.mobileNavPanel.hidden = true;
       selectors.mobileNavPanel.removeAttribute('data-open');
+      selectors.mobileNavToggle.setAttribute('aria-expanded', 'false');
       selectors.mobileNavPanel.addEventListener('keydown', handleMobileNavKeydown);
       selectors.mobileNavToggle.addEventListener('click', (event) => {
         event.preventDefault();
@@ -5651,7 +5642,6 @@
         }
       }
       reconcileMobileNavState();
-      updateMobileNavToggleLabels(false);
     }
 
     function syncSectionNavVisibility() {
@@ -5764,36 +5754,6 @@
 
       updateLayoutMetrics();
       syncSectionNavVisibility();
-    }
-
-    function syncNavLinkLabels() {
-      const navLinks = (selectors.sectionNavLinks && selectors.sectionNavLinks.length)
-        ? selectors.sectionNavLinks
-        : Array.from(document.querySelectorAll('.section-nav__link'));
-      if (!navLinks || !navLinks.length) {
-        return;
-      }
-      navLinks.forEach((link) => {
-        if (!(link instanceof HTMLAnchorElement)) {
-          return;
-        }
-        const href = link.getAttribute('href') || '';
-        if (!href.startsWith('#')) {
-          return;
-        }
-        const headingId = href.slice(1);
-        const headingEl = headingId ? document.getElementById(headingId) : null;
-        if (!headingEl) {
-          return;
-        }
-        const label = (headingEl.textContent || '').trim();
-        if (label.length > 0) {
-          link.textContent = label;
-        }
-      });
-      if (sectionNavState.initialized) {
-        refreshMobileNavLinks();
-      }
     }
 
     function cloneSettings(value) {
@@ -6711,7 +6671,17 @@
           selectors.closeEdPanelBtn.textContent = closeLabel;
         }
       }
-      updateMobileNavToggleLabels();
+      if (selectors.mobileNavToggleLabel) {
+        selectors.mobileNavToggleLabel.textContent = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
+      }
+      if (selectors.mobileNavToggle) {
+        const openLabel = settings.output.mobileNavOpenLabel || TEXT.mobileNav.open;
+        const closeLabel = settings.output.mobileNavCloseLabel || TEXT.mobileNav.close;
+        const activeLabel = mobileNavState.open ? closeLabel : openLabel;
+        selectors.mobileNavToggle.setAttribute('aria-expanded', mobileNavState.open ? 'true' : 'false');
+        selectors.mobileNavToggle.setAttribute('aria-label', activeLabel);
+        selectors.mobileNavToggle.title = activeLabel;
+      }
       if (selectors.mobileNavTitle) {
         selectors.mobileNavTitle.textContent = settings.output.mobileNavTitle || TEXT.mobileNav.title;
       }
@@ -6723,7 +6693,6 @@
         selectors.mobileNavCloseBtn.setAttribute('aria-label', closeLabel);
         selectors.mobileNavCloseBtn.title = closeLabel;
       }
-      syncNavLinkLabels();
       if (selectors.edTvToggleBtn) {
         const toggleTexts = TEXT.edTv?.toggle || {};
         const isActive = dashboardState.tvMode === true;
