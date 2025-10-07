@@ -4170,19 +4170,31 @@
             },
             {
               key: 'avgLosMonthMinutes',
-              secondaryKey: 'avgLosYearMinutes',
-              title: 'Vid. laikas skyriuje',
-              description: 'Šis mėnuo vs šie metai (val.).',
+              title: 'Vid. laikas skyriuje (šis mėn.)',
+              description: 'Šio mėnesio vidutinė buvimo trukmė (val.).',
               empty: '—',
               format: 'hours',
             },
             {
               key: 'hospitalizedMonthShare',
-              secondaryKey: 'hospitalizedYearShare',
-              title: 'Hospitalizacijų dalis (mėn./metai)',
-              description: 'Šio mėnesio ir metų palyginimas.',
+              title: 'Hospitalizacijų dalis (šis mėn.)',
+              description: 'Šio mėnesio hospitalizacijų dalis.',
               empty: '—',
               format: 'percent',
+            },
+            {
+              key: 'avgDaytimePatientsMonth',
+              title: 'Vid. pacientų dieną (šis mėn.)',
+              description: 'Pagal dienos pamainos momentinius įrašus.',
+              empty: '—',
+              format: 'oneDecimal',
+            },
+            {
+              key: 'avgLabMonthMinutes',
+              title: 'Vid. lab. tyrimų laikas',
+              description: 'Šio mėnesio laboratorinių tyrimų trukmė (min.).',
+              empty: '—',
+              format: 'minutes',
             },
           ],
           snapshot: [
@@ -4215,19 +4227,31 @@
             },
             {
               key: 'avgLosMonthMinutes',
-              secondaryKey: 'avgLosYearMinutes',
-              title: 'Vid. laikas skyriuje',
-              description: 'Šis mėnuo vs šie metai (val.).',
+              title: 'Vid. laikas skyriuje (šis mėn.)',
+              description: 'Šio mėnesio vidutinė buvimo trukmė (val.).',
               empty: '—',
               format: 'hours',
             },
             {
               key: 'hospitalizedMonthShare',
-              secondaryKey: 'hospitalizedYearShare',
-              title: 'Hospitalizacijų dalis',
-              description: 'Šis mėnuo vs šie metai.',
+              title: 'Hospitalizacijų dalis (šis mėn.)',
+              description: 'Šio mėnesio hospitalizacijų dalis.',
               empty: '—',
               format: 'percent',
+            },
+            {
+              key: 'avgDaytimePatientsMonth',
+              title: 'Vid. pacientų dieną (šis mėn.)',
+              description: 'Pagal dienos pamainos momentinius įrašus.',
+              empty: '—',
+              format: 'oneDecimal',
+            },
+            {
+              key: 'avgLabMonthMinutes',
+              title: 'Vid. lab. tyrimų laikas',
+              description: 'Šio mėnesio laboratorinių tyrimų trukmė (min.).',
+              empty: '—',
+              format: 'minutes',
             },
           ],
         },
@@ -7007,6 +7031,65 @@
       return `${year}-${month}-${day}`;
     }
 
+    function toMonthKeyFromDate(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+    }
+
+    function normalizeHourToMinutes(hour) {
+      const raw = Number(hour);
+      if (!Number.isFinite(raw)) {
+        return null;
+      }
+      const dayMinutes = 24 * 60;
+      const minutes = Math.round(raw * 60);
+      return ((minutes % dayMinutes) + dayMinutes) % dayMinutes;
+    }
+
+    function resolveNightBoundsMinutes(calculationSettings = {}) {
+      const defaultStart = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightStartHour))
+        ? Number(DEFAULT_SETTINGS.calculations.nightStartHour)
+        : 20;
+      const defaultEnd = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
+        ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
+        : 7;
+      const startMinutes = normalizeHourToMinutes(
+        Number.isFinite(Number(calculationSettings?.nightStartHour))
+          ? Number(calculationSettings.nightStartHour)
+          : defaultStart
+      );
+      const endMinutes = normalizeHourToMinutes(
+        Number.isFinite(Number(calculationSettings?.nightEndHour))
+          ? Number(calculationSettings.nightEndHour)
+          : defaultEnd
+      );
+      return {
+        startMinutes: Number.isFinite(startMinutes) ? startMinutes : normalizeHourToMinutes(defaultStart),
+        endMinutes: Number.isFinite(endMinutes) ? endMinutes : normalizeHourToMinutes(defaultEnd),
+      };
+    }
+
+    function isNightTimestamp(date, nightStartMinutes, nightEndMinutes) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return null;
+      }
+      const minutes = date.getHours() * 60 + date.getMinutes();
+      if (!Number.isFinite(nightStartMinutes) || !Number.isFinite(nightEndMinutes)) {
+        return null;
+      }
+      if (nightStartMinutes === nightEndMinutes) {
+        return false;
+      }
+      if (nightStartMinutes < nightEndMinutes) {
+        return minutes >= nightStartMinutes && minutes < nightEndMinutes;
+      }
+      return minutes >= nightStartMinutes || minutes < nightEndMinutes;
+    }
+
     function dateKeyToUtc(dateKey) {
       if (typeof dateKey !== 'string') {
         return Number.NaN;
@@ -7883,11 +7966,16 @@
         avgLosHospitalizedMinutes: null,
         avgLosMonthMinutes: null,
         avgLosYearMinutes: null,
+        avgLabMinutes: null,
+        avgLabMonthMinutes: null,
+        avgLabYearMinutes: null,
         avgDoorToProviderMinutes: null,
         avgDecisionToLeaveMinutes: null,
         hospitalizedShare: null,
         hospitalizedMonthShare: null,
         hospitalizedYearShare: null,
+        avgDaytimePatientsMonth: null,
+        currentMonthKey: '',
         entryCount: 0,
         currentPatients: null,
         occupiedBeds: null,
@@ -7921,6 +8009,7 @@
         los: ['length of stay (min)', 'los (min)', 'stay (min)', 'trukmė (min)', 'los minutes', 'los_min'],
         door: ['door to provider (min)', 'door to doctor (min)', 'door to doc (min)', 'door to physician (min)', 'laukimo laikas (min)', 'durys iki gydytojo (min)'],
         decision: ['decision to depart (min)', 'boarding (min)', 'decision to leave (min)', 'disposition to depart (min)', 'sprendimo laukimas (min)'],
+        lab: ['avg lab turnaround (min)', 'lab turnaround (min)', 'vid. lab. tyrimų laikas (min)', 'vid. lab. tyrimu laikas (min)', 'laboratorijos trukmė (min)'],
       };
       const legacyIndices = {
         date: resolveColumnIndex(headerNormalized, legacyCandidates.date),
@@ -7930,6 +8019,7 @@
         los: resolveColumnIndex(headerNormalized, legacyCandidates.los),
         door: resolveColumnIndex(headerNormalized, legacyCandidates.door),
         decision: resolveColumnIndex(headerNormalized, legacyCandidates.decision),
+        lab: resolveColumnIndex(headerNormalized, legacyCandidates.lab),
       };
       const snapshotCandidates = {
         timestamp: ['timestamp', 'datetime', 'laikas', 'įrašyta', 'atnaujinta', 'data', 'created', 'updated'],
@@ -8004,6 +8094,7 @@
         }
         const doorMinutes = legacyIndices.door >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.door]) : null;
         const decisionMinutes = legacyIndices.decision >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.decision]) : null;
+        const labMinutes = legacyIndices.lab >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.lab]) : null;
         const dispositionInfo = normalizeDispositionValue(dispositionValue);
 
         const currentPatients = snapshotIndices.currentPatients >= 0
@@ -8058,6 +8149,7 @@
           losMinutes: Number.isFinite(losMinutes) && losMinutes >= 0 ? losMinutes : null,
           doorToProviderMinutes: Number.isFinite(doorMinutes) && doorMinutes >= 0 ? doorMinutes : null,
           decisionToLeaveMinutes: Number.isFinite(decisionMinutes) && decisionMinutes >= 0 ? decisionMinutes : null,
+          labMinutes: Number.isFinite(labMinutes) && labMinutes >= 0 ? labMinutes : null,
           currentPatients: Number.isFinite(currentPatients) && currentPatients >= 0 ? currentPatients : null,
           occupiedBeds: Number.isFinite(occupiedBeds) && occupiedBeds >= 0 ? occupiedBeds : null,
           nurseRatio: Number.isFinite(nurseRatioInfo.ratio) && nurseRatioInfo.ratio > 0 ? nurseRatioInfo.ratio : null,
@@ -8092,10 +8184,20 @@
       let doorCount = 0;
       let decisionSum = 0;
       let decisionCount = 0;
+      let labSum = 0;
+      let labCount = 0;
 
       summary.totalPatients = validRecords.length;
       validRecords.forEach((record) => {
-        const { dateKey, disposition, dispositionCategory, losMinutes, doorToProviderMinutes, decisionToLeaveMinutes } = record;
+        const {
+          dateKey,
+          disposition,
+          dispositionCategory,
+          losMinutes,
+          doorToProviderMinutes,
+          decisionToLeaveMinutes,
+          labMinutes,
+        } = record;
         const key = disposition && disposition.trim().length ? disposition : 'Nežinoma';
         if (!dispositions.has(key)) {
           dispositions.set(key, { label: key, count: 0, category: dispositionCategory || 'other' });
@@ -8112,6 +8214,8 @@
           losCount: 0,
           doorSum: 0,
           doorCount: 0,
+          labSum: 0,
+          labCount: 0,
         };
         bucket.patients += 1;
         if (Number.isFinite(losMinutes)) {
@@ -8134,6 +8238,12 @@
           decisionSum += decisionToLeaveMinutes;
           decisionCount += 1;
         }
+        if (Number.isFinite(labMinutes)) {
+          bucket.labSum += labMinutes;
+          bucket.labCount += 1;
+          labSum += labMinutes;
+          labCount += 1;
+        }
         dailyBuckets.set(dateKey, bucket);
 
         const monthKey = typeof dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
@@ -8147,6 +8257,8 @@
             losCount: 0,
             hospitalizedLosSum: 0,
             hospitalizedLosCount: 0,
+            labSum: 0,
+            labCount: 0,
           };
           monthBucket.count += 1;
           if (dispositionCategory === 'hospitalized') {
@@ -8159,6 +8271,10 @@
               monthBucket.hospitalizedLosSum += losMinutes;
               monthBucket.hospitalizedLosCount += 1;
             }
+          }
+          if (Number.isFinite(labMinutes)) {
+            monthBucket.labSum += labMinutes;
+            monthBucket.labCount += 1;
           }
           monthBuckets.set(monthKey, monthBucket);
         }
@@ -8180,6 +8296,9 @@
       if (decisionCount > 0) {
         summary.avgDecisionToLeaveMinutes = decisionSum / decisionCount;
       }
+      if (labCount > 0) {
+        summary.avgLabMinutes = labSum / labCount;
+      }
       if (summary.totalPatients > 0) {
         summary.hospitalizedShare = categoryTotals.hospitalized / summary.totalPatients;
       }
@@ -8196,9 +8315,22 @@
           summary.hospitalizedMonthShare = currentMonth.count > 0
             ? currentMonth.hospitalized / currentMonth.count
             : null;
+          summary.avgLabMonthMinutes = currentMonth.labCount > 0
+            ? currentMonth.labSum / currentMonth.labCount
+            : null;
+          summary.currentMonthKey = latestMonthKey;
           const currentYear = typeof latestMonthKey === 'string' ? latestMonthKey.slice(0, 4) : '';
           if (currentYear) {
-            const yearTotals = { count: 0, hospitalized: 0, losSum: 0, losCount: 0, hospitalizedLosSum: 0, hospitalizedLosCount: 0 };
+            const yearTotals = {
+              count: 0,
+              hospitalized: 0,
+              losSum: 0,
+              losCount: 0,
+              hospitalizedLosSum: 0,
+              hospitalizedLosCount: 0,
+              labSum: 0,
+              labCount: 0,
+            };
             monthBuckets.forEach((bucket, key) => {
               if (typeof key === 'string' && key.startsWith(currentYear)) {
                 yearTotals.count += bucket.count;
@@ -8207,6 +8339,8 @@
                 yearTotals.losCount += bucket.losCount;
                 yearTotals.hospitalizedLosSum += bucket.hospitalizedLosSum;
                 yearTotals.hospitalizedLosCount += bucket.hospitalizedLosCount;
+                yearTotals.labSum += bucket.labSum;
+                yearTotals.labCount += bucket.labCount;
               }
             });
             summary.avgLosYearMinutes = yearTotals.losCount > 0
@@ -8218,6 +8352,9 @@
             if (yearTotals.hospitalizedLosCount > 0) {
               summary.avgLosHospitalizedMinutes = yearTotals.hospitalizedLosSum / yearTotals.hospitalizedLosCount;
             }
+            summary.avgLabYearMinutes = yearTotals.labCount > 0
+              ? yearTotals.labSum / yearTotals.labCount
+              : null;
           }
         }
       }
@@ -8368,6 +8505,36 @@
         }
       }
 
+      const { startMinutes: nightStartMinutes, endMinutes: nightEndMinutes } = resolveNightBoundsMinutes(settings?.calculations);
+      const daytimeSnapshotBuckets = new Map();
+      let latestSnapshotMonth = '';
+      (Array.isArray(records) ? records : []).forEach((record) => {
+        if (!record || !Number.isFinite(record.currentPatients)) {
+          return;
+        }
+        const timestamp = record.timestamp instanceof Date && !Number.isNaN(record.timestamp.getTime())
+          ? record.timestamp
+          : null;
+        if (!timestamp) {
+          return;
+        }
+        const monthKey = toMonthKeyFromDate(timestamp);
+        if (!monthKey) {
+          return;
+        }
+        const isNight = isNightTimestamp(timestamp, nightStartMinutes, nightEndMinutes);
+        if (isNight === true) {
+          return;
+        }
+        const bucket = daytimeSnapshotBuckets.get(monthKey) || { sum: 0, count: 0 };
+        bucket.sum += record.currentPatients;
+        bucket.count += 1;
+        daytimeSnapshotBuckets.set(monthKey, bucket);
+        if (!latestSnapshotMonth || monthKey > latestSnapshotMonth) {
+          latestSnapshotMonth = monthKey;
+        }
+      });
+
       const summary = createEmptyEdSummary(mode);
       if (!Array.isArray(records) || !records.length) {
         return { summary, dispositions: [], daily: [], meta: { type: mode } };
@@ -8388,6 +8555,10 @@
         summary.hospitalizedShare = legacy.summary.hospitalizedShare;
         summary.hospitalizedMonthShare = legacy.summary.hospitalizedMonthShare;
         summary.hospitalizedYearShare = legacy.summary.hospitalizedYearShare;
+        summary.avgLabMinutes = legacy.summary.avgLabMinutes;
+        summary.avgLabMonthMinutes = legacy.summary.avgLabMonthMinutes;
+        summary.avgLabYearMinutes = legacy.summary.avgLabYearMinutes;
+        summary.currentMonthKey = legacy.summary.currentMonthKey;
         summary.generatedAt = legacy.summary.generatedAt;
       }
 
@@ -8414,6 +8585,21 @@
         summary.latestSnapshotAt = snapshot.latestSnapshotAt;
         if (snapshot.generatedAt) {
           summary.generatedAt = snapshot.generatedAt;
+        }
+        if (!summary.currentMonthKey && snapshot.latestSnapshotAt instanceof Date && !Number.isNaN(snapshot.latestSnapshotAt.getTime())) {
+          summary.currentMonthKey = toMonthKeyFromDate(snapshot.latestSnapshotAt);
+        }
+      }
+
+      const targetMonth = summary.currentMonthKey || latestSnapshotMonth;
+      if (targetMonth && daytimeSnapshotBuckets.has(targetMonth)) {
+        const bucket = daytimeSnapshotBuckets.get(targetMonth);
+        summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
+      } else if (!summary.avgDaytimePatientsMonth && latestSnapshotMonth && daytimeSnapshotBuckets.has(latestSnapshotMonth)) {
+        const bucket = daytimeSnapshotBuckets.get(latestSnapshotMonth);
+        summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
+        if (!summary.currentMonthKey) {
+          summary.currentMonthKey = latestSnapshotMonth;
         }
       }
 
@@ -12075,21 +12261,19 @@
         ];
 
         const monthAvg = formatEdCardValue(summary.avgLosMonthMinutes, 'hours');
-        const yearAvg = formatEdCardValue(summary.avgLosYearMinutes, 'hours');
-        if (monthAvg != null || yearAvg != null) {
+        if (monthAvg != null) {
           flowMetrics.push({
             label: metricTexts.avgLos || 'Vid. buvimas',
-            value: monthAvg != null ? `${monthAvg} val.` : '—',
-            meta: yearAvg != null ? `Metai: ${yearAvg} val.` : '',
+            value: `${monthAvg} val.`,
+            meta: '',
           });
         }
         const monthShare = formatEdCardValue(summary.hospitalizedMonthShare, 'percent');
-        const yearShare = formatEdCardValue(summary.hospitalizedYearShare, 'percent');
-        if (monthShare != null || yearShare != null) {
+        if (monthShare != null) {
           flowMetrics.push({
             label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
-            value: monthShare ?? '—',
-            meta: yearShare != null ? `Metai: ${yearShare}` : '',
+            value: monthShare,
+            meta: '',
           });
         }
       }
