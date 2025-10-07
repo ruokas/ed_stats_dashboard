@@ -1592,18 +1592,18 @@
 
     /* Mobile header adjustments */
     @media (max-width: 640px) {
-      header.hero {
-        padding: 14px 0;
+        header.hero {
+          padding: 14px 0;
       }
 
-      .hero__content {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas:
-          "identity"
-          "actions"
-          "nav";
-        gap: 18px;
-      }
+        .hero__content {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-areas:
+            "identity"
+            "actions"
+            "nav";
+          gap: 18px;
+        }
 
       .hero__title {
         font-size: clamp(1.35rem, 1.2rem + 1vw, 1.8rem);
@@ -1614,47 +1614,45 @@
         max-width: none;
       }
 
-      .hero__actions {
-        width: 100%;
-        align-items: flex-start;
-        gap: 8px;
-        margin-top: 0;
-      }
+        .hero__actions {
+          width: 100%;
+          align-items: flex-start;
+          gap: 8px;
+          margin-top: 0;
+        }
 
-      .hero__buttons {
-        width: 100%;
-        justify-content: flex-start;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
+        .hero__buttons {
+          width: 100%;
+          justify-content: flex-start;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
 
-      .hero__nav .section-nav__bar,
-      .hero__nav .section-nav__inner {
-        justify-content: flex-start;
-      }
+        .hero__nav .section-nav__bar,
+        .hero__nav .section-nav__inner {
+          justify-content: flex-start;
+        }
 
-      .hero__nav .section-nav__bar {
-        width: 100%;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        gap: 10px;
-      }
+        .hero__nav .section-nav__bar {
+          width: 100%;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          gap: 10px;
+        }
 
-      .section-nav__title {
-        display: none;
-      }
+        .section-nav__title {
+          display: none;
+        }
 
-      .section-nav__mobile-trigger {
-        display: inline-flex;
-      }
+        .section-nav__mobile-trigger {
+          display: inline-flex;
+        }
 
-      .hero__nav .section-nav__inner {
-        width: 100%;
-        padding-bottom: 4px;
-        margin-top: 2px;
-        /* Slėpiame horizontalią navigaciją, kad mobiliajame rodinyje neliktų dublikatų */
-        display: none;
-      }
+        .hero__nav .section-nav__inner {
+          width: 100%;
+          padding-bottom: 4px;
+          margin-top: 2px;
+        }
 
       .hero__buttons button.icon-button {
         width: 36px;
