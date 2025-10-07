@@ -12349,14 +12349,34 @@
       }
     }
 
+    const MIN_STATUS_YEAR = 2000;
+    const MAX_STATUS_FUTURE_OFFSET_MS = 7 * 24 * 60 * 60 * 1000;
+
+    function normalizeStatusTimestamp(candidate, fallback) {
+      const fallbackDate = fallback instanceof Date && !Number.isNaN(fallback.getTime())
+        ? fallback
+        : null;
+      if (!(candidate instanceof Date) || Number.isNaN(candidate.getTime())) {
+        return fallbackDate;
+      }
+      const year = candidate.getFullYear();
+      const now = Date.now();
+      const candidateTime = candidate.getTime();
+      if (year < MIN_STATUS_YEAR || candidateTime > now + MAX_STATUS_FUTURE_OFFSET_MS) {
+        console.warn('Ignoruojamas neadekvatus ED momentinio vaizdo laiko žymuo:', candidate.toISOString());
+        return fallbackDate;
+      }
+      return candidate;
+    }
+
     function buildEdStatus(summary, dataset, displayVariant) {
       const updatedAt = dataset?.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime())
         ? dataset.updatedAt
         : null;
-      const snapshotDate = summary?.latestSnapshotAt instanceof Date && !Number.isNaN(summary.latestSnapshotAt.getTime())
+      const snapshotDateRaw = summary?.latestSnapshotAt instanceof Date && !Number.isNaN(summary.latestSnapshotAt.getTime())
         ? summary.latestSnapshotAt
         : null;
-      const statusDate = snapshotDate || updatedAt || null;
+      const statusDate = normalizeStatusTimestamp(snapshotDateRaw, updatedAt) || updatedAt || null;
       const timestampText = statusDate ? statusTimeFormatter.format(statusDate) : null;
       const hasEntries = displayVariant === 'snapshot'
         ? Number.isFinite(summary?.entryCount) && summary.entryCount > 0
