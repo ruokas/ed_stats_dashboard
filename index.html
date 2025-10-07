@@ -303,7 +303,7 @@
     }
 
     .tab-panel {
-      margin-bottom: 32px;
+      margin-bottom: 64px;
       width: 100%;
     }
 
@@ -314,7 +314,7 @@
     .ed-dashboard {
       position: relative;
       border-radius: 32px;
-      padding: clamp(20px, 3.5vw, 40px);
+      padding: clamp(24px, 4vw, 48px);
       background:
         linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0))
         , var(--color-surface);
@@ -322,7 +322,7 @@
       box-shadow: 0 40px 80px -48px rgba(15, 23, 42, 0.45);
       display: flex;
       flex-direction: column;
-      gap: clamp(16px, 2.5vw, 26px);
+      gap: clamp(20px, 3vw, 32px);
       overflow: hidden;
       isolation: isolate;
     }
@@ -351,32 +351,6 @@
       opacity: 1;
     }
 
-    body[data-theme="dark"] .ed-dashboard__section {
-      background: linear-gradient(150deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.78));
-      border-color: rgba(96, 165, 250, 0.2);
-      box-shadow: 0 34px 72px -36px rgba(8, 12, 32, 0.9);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__section-icon {
-      background: rgba(96, 165, 250, 0.2);
-      color: rgba(191, 219, 254, 0.95);
-      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.35);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__section-title {
-      text-shadow: 0 4px 16px rgba(8, 12, 32, 0.9);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__section-description {
-      color: rgba(226, 232, 240, 0.92);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__card-title,
-    body[data-theme="dark"] .ed-dashboard__card-value,
-    body[data-theme="dark"] .ed-dashboard__card-meta {
-      text-shadow: 0 4px 18px rgba(5, 8, 22, 0.85);
-    }
-
     .ed-dashboard__summary {
       display: flex;
       flex-wrap: wrap;
@@ -396,27 +370,25 @@
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 20px;
+      padding: 8px 16px;
       border-radius: 999px;
       background: rgba(37, 99, 235, 0.12);
       color: var(--color-accent);
-      font-weight: 700;
-      letter-spacing: 0.035em;
-      font-size: clamp(1rem, 1.5vw, 1.12rem);
+      font-weight: 600;
+      letter-spacing: 0.015em;
+      font-size: 0.85rem;
       line-height: 1.3;
       border: 1px solid rgba(37, 99, 235, 0.16);
       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-      text-transform: uppercase;
-      text-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
     }
 
     .ed-dashboard__status::before {
       content: '';
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: currentColor;
-      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.15);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
     }
 
     .ed-dashboard__status[data-tone="success"] {
@@ -473,16 +445,24 @@
 
     .ed-dashboard__status-meta {
       margin: 0;
-      font-size: clamp(0.95rem, 1.3vw, 1.05rem);
-      color: var(--color-text);
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      text-transform: uppercase;
-      text-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
     }
 
     .ed-dashboard__status-meta[hidden] {
       display: none;
+    }
+
+    .ed-dashboard__layout {
+      display: grid;
+      gap: clamp(20px, 3vw, 32px);
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .ed-dashboard__column {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 2vw, 24px);
     }
 
     .ed-dashboard__actions {
@@ -540,76 +520,8 @@
 
     .ed-dashboard__cards {
       display: grid;
-      gap: clamp(18px, 2.5vw, 26px);
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      align-content: start;
-    }
-
-    .ed-dashboard__section {
-      display: flex;
-      flex-direction: column;
-      gap: clamp(14px, 2vw, 20px);
-      padding: clamp(18px, 2.6vw, 26px);
-      border-radius: 24px;
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 255, 0.82));
-      border: 1px solid rgba(37, 99, 235, 0.14);
-      box-shadow: 0 24px 52px -34px rgba(15, 23, 42, 0.5);
-      min-height: 0;
-    }
-
-    .ed-dashboard__section-header {
-      display: flex;
-      align-items: center;
-      gap: clamp(16px, 2.5vw, 24px);
-    }
-
-    .ed-dashboard__section-header-text {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .ed-dashboard__section-icon {
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: clamp(52px, 6vw, 64px);
-      height: clamp(52px, 6vw, 64px);
-      border-radius: 18px;
-      background: var(--color-accent-soft);
-      color: var(--color-accent);
-      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.25);
-    }
-
-    .ed-dashboard__section-icon svg {
-      width: 70%;
-      height: 70%;
-    }
-
-    .ed-dashboard__section-title {
-      margin: 0;
-      font-size: clamp(1.4rem, 2.3vw, 1.7rem);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--color-text);
-      text-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
-    }
-
-    .ed-dashboard__section-description {
-      margin: 4px 0 0;
-      font-size: clamp(1rem, 1.6vw, 1.15rem);
-      color: var(--color-text);
-      opacity: 0.8;
-      max-width: 70ch;
-    }
-
-    .ed-dashboard__section-grid {
-      display: grid;
-      gap: clamp(14px, 2vw, 20px);
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      align-items: stretch;
+      gap: clamp(16px, 2vw, 24px);
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
 
     .ed-dashboard__card {
@@ -617,155 +529,53 @@
       overflow: hidden;
       border-radius: 20px;
       padding: clamp(18px, 2vw, 26px);
-      background: linear-gradient(150deg, rgba(255, 255, 255, 0.97), rgba(226, 232, 255, 0.88));
-      border: 1px solid rgba(37, 99, 235, 0.18);
-      box-shadow: 0 32px 60px -34px rgba(15, 23, 42, 0.6);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 255, 0.8));
+      border: 1px solid rgba(37, 99, 235, 0.08);
+      box-shadow: 0 24px 50px -32px rgba(15, 23, 42, 0.55);
       display: flex;
       flex-direction: column;
-      gap: clamp(10px, 1.6vw, 16px);
-      min-height: 140px;
+      gap: 8px;
+      min-height: 150px;
     }
 
     .ed-dashboard__card::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(165deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0));
-      opacity: 0.7;
+      background: linear-gradient(160deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0));
+      opacity: 0.65;
       pointer-events: none;
     }
 
-    .ed-dashboard__card--donut {
-      align-items: center;
-      text-align: center;
-      min-height: 220px;
-    }
-
-    .ed-dashboard__card--donut .ed-dashboard__card-title {
-      text-align: center;
-      width: 100%;
-    }
-
-    .ed-dashboard__card--donut .ed-dashboard__card-value {
-      font-size: clamp(1.8rem, 3vw, 2.4rem);
-    }
-
-    .ed-dashboard__card--donut .ed-dashboard__card-meta {
-      text-align: center;
-    }
-
-    .ed-dashboard__donut-chart {
-      position: relative;
-      width: 100%;
-      max-width: 220px;
-      aspect-ratio: 1 / 1;
-      margin: 0 auto;
-    }
-
-    .ed-dashboard__donut-chart canvas {
-      width: 100% !important;
-      height: 100% !important;
-      display: block;
-    }
-
-    .ed-dashboard__donut-legend {
-      list-style: none;
-      margin: 12px 0 0;
-      padding: 0;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 8px 16px;
-      width: 100%;
-    }
-
-    .ed-dashboard__donut-legend-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      background: rgba(37, 99, 235, 0.08);
-      color: var(--color-text);
-      font-size: clamp(0.85rem, 1.2vw, 1rem);
-      font-weight: 600;
-    }
-
-    .ed-dashboard__donut-legend-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .ed-dashboard__donut-legend-swatch {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.15);
-    }
-
-    .ed-dashboard__donut-legend-value {
-      font-variant-numeric: tabular-nums;
-      color: var(--color-text-muted);
-      font-weight: 500;
-    }
-
-    .ed-dashboard__card-hint {
-      margin: 4px 0 0;
-      font-size: clamp(0.85rem, 1.2vw, 1rem);
-      color: var(--color-text-muted);
-      text-align: center;
-      font-weight: 500;
-    }
-
     body[data-theme="dark"] .ed-dashboard__card {
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.78));
-      border-color: rgba(96, 165, 250, 0.18);
-      box-shadow: 0 34px 70px -36px rgba(8, 12, 32, 0.9);
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.75));
+      border-color: rgba(96, 165, 250, 0.12);
+      box-shadow: 0 26px 60px -32px rgba(8, 12, 32, 0.9);
     }
 
     body[data-theme="dark"] .ed-dashboard__card::after {
       background: linear-gradient(160deg, rgba(96, 165, 250, 0.12), rgba(96, 165, 250, 0));
-      opacity: 0.85;
-    }
-
-    body[data-theme="dark"] .ed-dashboard__card-hint {
-      color: rgba(226, 232, 240, 0.85);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__donut-legend-item {
-      background: rgba(96, 165, 250, 0.18);
-      color: rgba(226, 232, 240, 0.92);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__donut-legend-value {
-      color: rgba(226, 232, 240, 0.75);
+      opacity: 0.9;
     }
 
     .ed-dashboard__card-title {
       margin: 0;
-      font-size: clamp(1.05rem, 1.6vw, 1.25rem);
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      color: var(--color-text);
-      text-shadow: 0 3px 10px rgba(15, 23, 42, 0.25);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
     }
 
     .ed-dashboard__card-value {
       margin: 0;
-      font-size: clamp(2rem, 3.6vw, 2.8rem);
-      font-weight: 800;
+      font-size: clamp(1.6rem, 2.8vw, 2.1rem);
+      font-weight: 700;
       color: var(--color-text);
-      text-shadow: 0 6px 16px rgba(15, 23, 42, 0.3);
     }
 
     .ed-dashboard__card-meta {
       margin: 0;
-      font-size: clamp(0.95rem, 1.4vw, 1.08rem);
-      color: var(--color-text);
-      opacity: 0.85;
-      line-height: 1.4;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
     }
 
     .ed-dashboard__card-meta:empty {
@@ -844,11 +654,9 @@
     }
 
     .ed-dashboard__chart-message {
-      margin-top: 8px;
-      font-size: clamp(0.85rem, 1.2vw, 1rem);
+      margin-top: 12px;
+      font-size: 0.9rem;
       color: var(--color-text-muted);
-      text-align: center;
-      font-weight: 600;
     }
 
     .ed-dashboard__tables {
@@ -4064,7 +3872,25 @@
               <p id="edStatusTimestamp" class="ed-dashboard__status-meta" hidden></p>
             </div>
           </div>
-          <div id="edCards" class="ed-dashboard__cards" role="list"></div>
+          <div class="ed-dashboard__layout">
+            <div class="ed-dashboard__column ed-dashboard__column--metrics">
+              <div id="edCards" class="ed-dashboard__cards" role="list"></div>
+            </div>
+            <div class="ed-dashboard__column ed-dashboard__column--charts ed-dashboard__tables">
+              <section class="ed-dashboard__group" aria-labelledby="edDispositionsTitle">
+                <h3 id="edDispositionsTitle" class="section__subtitle">Pacientų pasiskirstymas pagal kategorijas</h3>
+                <figure class="chart-card chart-card--compact">
+                  <div class="chart-card__canvas-wrapper">
+                    <canvas id="edDispositionsChart"
+                            role="img"
+                            aria-labelledby="edDispositionsTitle edDispositionsCaption"></canvas>
+                  </div>
+                  <figcaption id="edDispositionsCaption" class="chart-card__caption">Pacientų pasiskirstymas pagal naujausią įrašą.</figcaption>
+                </figure>
+                <p id="edDispositionsMessage" class="ed-dashboard__chart-message" role="status" hidden></p>
+              </section>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -4483,34 +4309,12 @@
         subtitle: 'Naujausi duomenys',
         closeButton: (label) => `Grįžti į ${label}`,
         status: {
-          loading: 'Kraunama...',
+          loading: 'Kraunami ED duomenys...',
           empty: 'ED duomenų nerasta.',
-          success: () => 'Atnaujinta 2025-10-07 21:20',
+          success: () => 'Duomenys sėkmingai įkelti.',
           fallback: (reason, timestamp) => `Rodomi ED demonstraciniai duomenys${timestamp ? ` (${timestamp})` : ''}. Priežastis: ${reason}`,
           error: (reason) => `Nepavyko įkelti ED duomenų: ${reason}`,
           noUrl: 'Nenurodytas ED duomenų URL. Rodomi demonstraciniai duomenys.',
-        },
-        cardSections: {
-          default: {
-            title: 'Skydelio rodikliai',
-            description: 'Pagrindiniai ED rodikliai',
-            icon: 'flow',
-          },
-          flow: {
-            title: 'Pacientų srautas',
-            description: 'Paros apkrova, momentinė situacija ir hospitalizacijų dalys.',
-            icon: 'flow',
-          },
-          staffing: {
-            title: 'Komanda ir lovos',
-            description: 'Lovų užimtumas ir personalo apkrovos rodikliai.',
-            icon: 'staffing',
-          },
-          efficiency: {
-            title: 'Procesų trukmės',
-            description: 'Vidutiniai laukimo ir buvimo laiko rodikliai.',
-            icon: 'efficiency',
-          },
         },
         cards: {
           legacy: [
@@ -4520,39 +4324,6 @@
               description: 'Skaičiuojama pagal dienas, kuriose yra duomenų.',
               empty: '—',
               format: 'oneDecimal',
-              section: 'flow',
-            },
-            {
-              key: 'hospitalizedShare',
-              title: 'Hospitalizacijų dalis',
-              description: 'Pacientų dalis, kuriems prireikė stacionaro.',
-              empty: '—',
-              format: 'percent',
-              section: 'flow',
-            },
-            {
-              key: 'avgDaytimePatientsMonth',
-              title: 'Vid. pacientų dieną (šis mėn.)',
-              description: 'Pagal dienos pamainos momentinius įrašus.',
-              empty: '—',
-              format: 'oneDecimal',
-              section: 'flow',
-            },
-            {
-              key: 'hospitalizedMonthShare',
-              title: 'Hospitalizacijų dalis (šis mėn.)',
-              description: 'Šio mėnesio hospitalizacijų dalis.',
-              empty: '—',
-              format: 'percent',
-              section: 'flow',
-            },
-            {
-              key: 'dispositionsDonut',
-              title: 'Pacientų pasiskirstymas',
-              description: 'Naujausių duomenų dalys pagal kategoriją.',
-              empty: '—',
-              type: 'donut',
-              section: 'flow',
             },
             {
               key: 'avgLosMinutes',
@@ -4560,7 +4331,6 @@
               description: 'Vidutinė buvimo trukmė skyriuje (val.).',
               empty: '—',
               format: 'hours',
-              section: 'efficiency',
             },
             {
               key: 'avgDoorToProviderMinutes',
@@ -4568,7 +4338,13 @@
               description: 'Vidutinis „durys iki gydytojo“ laikas (min.).',
               empty: '—',
               format: 'minutes',
-              section: 'efficiency',
+            },
+            {
+              key: 'hospitalizedShare',
+              title: 'Hospitalizacijų dalis',
+              description: 'Pacientų dalis, kuriems prireikė stacionaro.',
+              empty: '—',
+              format: 'percent',
             },
             {
               key: 'avgLosMonthMinutes',
@@ -4576,7 +4352,20 @@
               description: 'Šio mėnesio vidutinė buvimo trukmė (val.).',
               empty: '—',
               format: 'hours',
-              section: 'efficiency',
+            },
+            {
+              key: 'hospitalizedMonthShare',
+              title: 'Hospitalizacijų dalis (šis mėn.)',
+              description: 'Šio mėnesio hospitalizacijų dalis.',
+              empty: '—',
+              format: 'percent',
+            },
+            {
+              key: 'avgDaytimePatientsMonth',
+              title: 'Vid. pacientų dieną (šis mėn.)',
+              description: 'Pagal dienos pamainos momentinius įrašus.',
+              empty: '—',
+              format: 'oneDecimal',
             },
             {
               key: 'avgLabMonthMinutes',
@@ -4584,7 +4373,6 @@
               description: 'Šio mėnesio laboratorinių tyrimų trukmė (min.).',
               empty: '—',
               format: 'minutes',
-              section: 'efficiency',
             },
           ],
           snapshot: [
@@ -4593,7 +4381,6 @@
               title: 'Pacientai skyriuje dabar',
               description: '',
               empty: '—',
-              section: 'flow',
             },
             {
               key: 'occupiedBeds',
@@ -4601,7 +4388,6 @@
               description: '',
               empty: '—',
               format: 'beds',
-              section: 'staffing',
             },
             {
               key: 'nursePatientsPerStaff',
@@ -4609,7 +4395,6 @@
               description: 'Pacientai vienai slaugytojai.',
               empty: '—',
               format: 'ratio',
-              section: 'staffing',
             },
             {
               key: 'doctorPatientsPerStaff',
@@ -4617,47 +4402,34 @@
               description: 'Pacientai vienam gydytojui.',
               empty: '—',
               format: 'ratio',
-              section: 'staffing',
             },
             {
               key: 'avgLosMonthMinutes',
-              title: 'Vidutinis laikas',
-              description: 'Vidutinė buvimo trukmė skyriuje (val.).',
+              title: 'Vid. laikas skyriuje (šis mėn.)',
+              description: 'Šio mėnesio vidutinė buvimo trukmė (val.).',
               empty: '—',
               format: 'hours',
-              section: 'efficiency',
             },
             {
               key: 'hospitalizedMonthShare',
               title: 'Hospitalizacijų dalis (šis mėn.)',
-              description: '',
+              description: 'Šio mėnesio hospitalizacijų dalis.',
               empty: '—',
               format: 'percent',
-              section: 'flow',
-            },
-            {
-              key: 'dispositionsDonut',
-              title: 'Pacientų pasiskirstymas',
-              description: 'Naujausių duomenų dalys pagal kategoriją.',
-              empty: '—',
-              type: 'donut',
-              section: 'flow',
             },
             {
               key: 'avgDaytimePatientsMonth',
               title: 'Vid. pacientų dieną (šis mėn.)',
-              description: '',
+              description: 'Pagal dienos pamainos momentinius įrašus.',
               empty: '—',
               format: 'oneDecimal',
-              section: 'flow',
             },
             {
               key: 'avgLabMonthMinutes',
               title: 'Vid. lab. tyrimų laikas',
-              description: 'Šių metų laboratorinių tyrimų trukmė (min.).',
+              description: 'Šio mėnesio laboratorinių tyrimų trukmė (min.).',
               empty: '—',
               format: 'minutes',
-              section: 'efficiency',
             },
           ],
         },
@@ -4677,10 +4449,12 @@
             title: 'Pacientų pasiskirstymas pagal kategorijas',
             caption: 'Pacientų pasiskirstymas pagal naujausią įrašą.',
             empty: 'Nėra kategorijų duomenų.',
-            legendTitle: 'Pacientų kategorijos',
-            legendHint: '',
-            legendAction: '',
+            centerLabel: 'Viso pacientų',
+            centerMetaDefault: 'Pasirinkite kategoriją, kad matytumėte jos dalį.',
             centerShareSuffix: 'viso pasiskirstymo',
+            legendTitle: 'Pacientų kategorijos',
+            legendHint: 'Užveskite ar spauskite kategoriją, kad išryškintumėte grafike.',
+            legendAction: 'Išryškinti kategoriją grafike',
           },
         },
         triage: {
@@ -5190,7 +4964,6 @@
       edDispositionsCaption: document.getElementById('edDispositionsCaption'),
       edDispositionsChart: document.getElementById('edDispositionsChart'),
       edDispositionsMessage: document.getElementById('edDispositionsMessage'),
-      edDispositionsLegend: document.getElementById('edDispositionsLegend'),
       edStandardSection: document.getElementById('edStandardSection'),
       edTvToggleBtn: document.getElementById('toggleTvBtn'),
       edTvPanel: document.getElementById('edTvPanel'),
@@ -12825,72 +12598,20 @@
         message = TEXT.ed.status.success(successTimestamp);
         tone = 'success';
       }
-    return {
-      message,
-      tone,
-      timestamp: timestampText,
-      statusDate,
-      updatedAt,
-      hasEntries,
-    };
-  }
-
-  const SVG_NS = 'http://www.w3.org/2000/svg';
-
-  const edSectionIconDefinitions = {
-    flow(svg) {
-      svg.appendChild(createSvgElement('path', { d: 'M3 9a9 9 0 0 1 14-4' }));
-      svg.appendChild(createSvgElement('polyline', { points: '13 3.5 17 3.5 17 7.5' }));
-      svg.appendChild(createSvgElement('path', { d: 'M21 15a9 9 0 0 1-14 4' }));
-      svg.appendChild(createSvgElement('polyline', { points: '11 20.5 7 20.5 7 16.5' }));
-    },
-    efficiency(svg) {
-      svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '9' }));
-      svg.appendChild(createSvgElement('polyline', { points: '12 7 12 12 15 15' }));
-    },
-    staffing(svg) {
-      svg.appendChild(createSvgElement('circle', { cx: '9', cy: '8', r: '3' }));
-      svg.appendChild(createSvgElement('circle', { cx: '17', cy: '8', r: '3' }));
-      svg.appendChild(createSvgElement('path', { d: 'M5.5 20v-1.5A3.5 3.5 0 0 1 9 15h0a3.5 3.5 0 0 1 3.5 3.5V20' }));
-      svg.appendChild(createSvgElement('path', { d: 'M13.5 20v-1.5A3.5 3.5 0 0 1 17 15h0a3.5 3.5 0 0 1 3.5 3.5V20' }));
-    },
-    default(svg) {
-      svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '9' }));
-      svg.appendChild(createSvgElement('path', { d: 'M12 7v10' }));
-      svg.appendChild(createSvgElement('path', { d: 'M7 12h10' }));
-    },
-  };
-
-  function createSvgElement(type, attributes = {}) {
-    const element = document.createElementNS(SVG_NS, type);
-    Object.entries(attributes).forEach(([key, value]) => {
-      element.setAttribute(key, String(value));
-    });
-    element.setAttribute('stroke-linecap', 'round');
-    element.setAttribute('stroke-linejoin', 'round');
-    return element;
-  }
-
-  function createEdSectionIcon(iconKey) {
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '1.8');
-    svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.setAttribute('focusable', 'false');
-    const iconName = iconKey && edSectionIconDefinitions[iconKey]
-      ? iconKey
-      : 'default';
-    edSectionIconDefinitions[iconName](svg);
-    return svg;
-  }
-
-  async function renderEdDashboard(edData) {
-    if (!selectors.edPanel) {
-      return;
+      return {
+        message,
+        tone,
+        timestamp: timestampText,
+        statusDate,
+        updatedAt,
+        hasEntries,
+      };
     }
+
+    async function renderEdDashboard(edData) {
+      if (!selectors.edPanel) {
+        return;
+      }
       const dataset = edData || {};
       const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
       const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
@@ -12945,216 +12666,77 @@
 
       if (selectors.edCards) {
         selectors.edCards.replaceChildren();
-        const sectionDefinitions = TEXT.ed.cardSections || {};
-        const sectionsMap = new Map();
-
         cardConfigs.forEach((config) => {
           if (!config || typeof config !== 'object') {
             return;
           }
-          const sectionKey = config.section || 'default';
-          if (!sectionsMap.has(sectionKey)) {
-            const sectionMeta = sectionDefinitions[sectionKey] || sectionDefinitions.default || {};
-            sectionsMap.set(sectionKey, {
-              key: sectionKey,
-              title: sectionMeta.title || '',
-              description: sectionMeta.description || '',
-              icon: sectionMeta.icon || '',
-              cards: [],
-            });
-          }
-          sectionsMap.get(sectionKey).cards.push(config);
-        });
+          const card = document.createElement('article');
+          card.className = 'ed-dashboard__card';
+          card.setAttribute('role', 'listitem');
 
-        const groupedSections = Array.from(sectionsMap.values());
-        if (!groupedSections.length && cardConfigs.length) {
-          groupedSections.push({
-            key: 'default',
-            title: sectionDefinitions?.default?.title || '',
-            description: sectionDefinitions?.default?.description || '',
-            icon: sectionDefinitions?.default?.icon || '',
-            cards: cardConfigs.filter((config) => config && typeof config === 'object'),
-          });
-        }
+          const title = document.createElement('p');
+          title.className = 'ed-dashboard__card-title';
+          title.textContent = config.title;
 
-        groupedSections.forEach((section, sectionIndex) => {
-          if (!Array.isArray(section.cards) || !section.cards.length) {
-            return;
-          }
-          const sectionEl = document.createElement('section');
-          sectionEl.className = 'ed-dashboard__section';
-          sectionEl.setAttribute('role', 'region');
-
-          const shouldRenderHeader = Boolean(section.title || section.description || groupedSections.length > 1);
-          let sectionLabelId = '';
-          if (shouldRenderHeader) {
-            const header = document.createElement('header');
-            header.className = 'ed-dashboard__section-header';
-
-            const iconWrapper = document.createElement('span');
-            iconWrapper.className = 'ed-dashboard__section-icon';
-            const iconKey = section.icon || (section.key !== 'default' ? section.key : 'default');
-            iconWrapper.appendChild(createEdSectionIcon(iconKey));
-            header.appendChild(iconWrapper);
-
-            const textWrapper = document.createElement('div');
-            textWrapper.className = 'ed-dashboard__section-header-text';
-            const titleEl = document.createElement('h3');
-            sectionLabelId = `edSectionTitle-${String(section.key || sectionIndex).replace(/[^a-z0-9_-]/gi, '') || sectionIndex}`;
-            titleEl.className = 'ed-dashboard__section-title';
-            titleEl.id = sectionLabelId;
-            titleEl.textContent = section.title || sectionDefinitions?.default?.title || TEXT.ed.title || 'RŠL SMPS skydelis';
-            textWrapper.appendChild(titleEl);
-
-            if (section.description || sectionDefinitions?.default?.description) {
-              const descriptionEl = document.createElement('p');
-              descriptionEl.className = 'ed-dashboard__section-description';
-              descriptionEl.textContent = section.description || sectionDefinitions?.default?.description || '';
-              textWrapper.appendChild(descriptionEl);
+          const value = document.createElement('p');
+          value.className = 'ed-dashboard__card-value';
+          const primaryRaw = summary?.[config.key];
+          const secondaryRaw = config.secondaryKey ? summary?.[config.secondaryKey] : undefined;
+          let hasValue = false;
+          if (config.secondaryKey) {
+            const primaryFormatted = formatEdCardValue(primaryRaw, config.format);
+            const secondaryFormatted = formatEdCardValue(secondaryRaw, config.format);
+            const suffix = config.format === 'hours'
+              ? ' val.'
+              : (config.format === 'minutes' ? ' min.' : '');
+            const primaryText = primaryFormatted != null
+              ? `${primaryFormatted}${suffix}`
+              : '—';
+            const secondaryText = secondaryFormatted != null
+              ? `${secondaryFormatted}${suffix}`
+              : '—';
+            if (primaryFormatted != null || secondaryFormatted != null) {
+              value.textContent = `${primaryText} / ${secondaryText}`;
+              hasValue = true;
             }
-
-            header.appendChild(textWrapper);
-            sectionEl.appendChild(header);
-            sectionEl.setAttribute('aria-labelledby', sectionLabelId);
-          }
-
-          const cardsWrapper = document.createElement('div');
-          cardsWrapper.className = 'ed-dashboard__section-grid';
-          cardsWrapper.setAttribute('role', 'list');
-          if (sectionLabelId) {
-            cardsWrapper.setAttribute('aria-labelledby', sectionLabelId);
-          }
-
-          section.cards.forEach((config) => {
-            if (!config || typeof config !== 'object') {
-              return;
-            }
-            const card = document.createElement('article');
-            card.className = 'ed-dashboard__card';
-            card.setAttribute('role', 'listitem');
-
-            const isDonutCard = config.type === 'donut';
-            if (isDonutCard) {
-              card.classList.add('ed-dashboard__card--donut');
-            }
-
-            const title = document.createElement('p');
-            title.className = 'ed-dashboard__card-title';
-            title.textContent = config.title;
-            if (isDonutCard) {
-              title.id = 'edDispositionsTitle';
-            }
-            card.appendChild(title);
-
-            if (isDonutCard) {
-              const chartWrapper = document.createElement('div');
-              chartWrapper.className = 'ed-dashboard__donut-chart';
-              const canvas = document.createElement('canvas');
-              canvas.id = 'edDispositionsChart';
-              canvas.setAttribute('role', 'img');
-              canvas.setAttribute('aria-labelledby', 'edDispositionsTitle edDispositionsCaption');
-              chartWrapper.appendChild(canvas);
-              card.appendChild(chartWrapper);
-
-              const legend = document.createElement('ul');
-              legend.className = 'ed-dashboard__donut-legend';
-              legend.id = 'edDispositionsLegend';
-              legend.setAttribute('role', 'list');
-              legend.hidden = true;
-              if (dispositionsText.legendTitle) {
-                legend.setAttribute('aria-label', dispositionsText.legendTitle);
+          } else {
+            const formatted = formatEdCardValue(primaryRaw, config.format);
+            if (formatted != null) {
+              if (config.format === 'hours') {
+                value.textContent = `${formatted} val.`;
+              } else if (config.format === 'minutes') {
+                value.textContent = `${formatted} min.`;
+              } else {
+                value.textContent = formatted;
               }
-              card.appendChild(legend);
-
-              const caption = document.createElement('p');
-              caption.className = 'ed-dashboard__card-meta';
-              caption.id = 'edDispositionsCaption';
-              caption.textContent = dispositionsText.caption || config.description || '';
-              card.appendChild(caption);
-
-              const message = document.createElement('p');
-              message.className = 'ed-dashboard__chart-message';
-              message.id = 'edDispositionsMessage';
-              message.setAttribute('role', 'status');
-              message.hidden = true;
-              card.appendChild(message);
-
-              cardsWrapper.appendChild(card);
-              return;
+              hasValue = true;
             }
+          }
+          if (!hasValue) {
+            value.textContent = config.empty ?? '—';
+          }
 
-            const value = document.createElement('p');
-            value.className = 'ed-dashboard__card-value';
-            const primaryRaw = summary?.[config.key];
-            const secondaryRaw = config.secondaryKey ? summary?.[config.secondaryKey] : undefined;
-            let hasValue = false;
-            if (config.secondaryKey) {
-              const primaryFormatted = formatEdCardValue(primaryRaw, config.format);
-              const secondaryFormatted = formatEdCardValue(secondaryRaw, config.format);
-              const suffix = config.format === 'hours'
-                ? ' val.'
-                : (config.format === 'minutes' ? ' min.' : '');
-              const primaryText = primaryFormatted != null
-                ? `${primaryFormatted}${suffix}`
-                : '—';
-              const secondaryText = secondaryFormatted != null
-                ? `${secondaryFormatted}${suffix}`
-                : '—';
-              if (primaryFormatted != null || secondaryFormatted != null) {
-                value.textContent = `${primaryText} / ${secondaryText}`;
-                hasValue = true;
-              }
-            } else {
-              const formatted = formatEdCardValue(primaryRaw, config.format);
-              if (formatted != null) {
-                if (config.format === 'hours') {
-                  value.textContent = `${formatted} val.`;
-                } else if (config.format === 'minutes') {
-                  value.textContent = `${formatted} min.`;
-                } else {
-                  value.textContent = formatted;
-                }
-                hasValue = true;
-              }
-            }
-            if (!hasValue) {
-              value.textContent = config.empty ?? '—';
-            }
+          const meta = document.createElement('p');
+          meta.className = 'ed-dashboard__card-meta';
+          meta.textContent = config.description || '';
 
-            const meta = document.createElement('p');
-            meta.className = 'ed-dashboard__card-meta';
-            meta.textContent = config.description || '';
+          card.append(title, value);
 
-            card.appendChild(value);
-
-            const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw);
-            visuals.forEach((node) => {
-              card.appendChild(node);
-            });
-
-            card.appendChild(meta);
-            cardsWrapper.appendChild(card);
+          const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw);
+          visuals.forEach((node) => {
+            card.appendChild(node);
           });
 
-          sectionEl.appendChild(cardsWrapper);
-          selectors.edCards.appendChild(sectionEl);
+          card.appendChild(meta);
+          selectors.edCards.appendChild(card);
         });
       }
-
-      selectors.edDispositionsTitle = document.getElementById('edDispositionsTitle');
-      selectors.edDispositionsCaption = document.getElementById('edDispositionsCaption');
-      selectors.edDispositionsChart = document.getElementById('edDispositionsChart');
-      selectors.edDispositionsMessage = document.getElementById('edDispositionsMessage');
-      selectors.edDispositionsLegend = document.getElementById('edDispositionsLegend');
 
       if (selectors.edDispositionsTitle) {
         selectors.edDispositionsTitle.textContent = dispositionsText.title || '';
       }
       if (selectors.edDispositionsCaption) {
         selectors.edDispositionsCaption.textContent = dispositionsText.caption || '';
-      }
-      if (selectors.edDispositionsLegend) {
-        selectors.edDispositionsLegend.innerHTML = '';
       }
       if (selectors.edDispositionsMessage) {
         selectors.edDispositionsMessage.hidden = true;
@@ -13195,16 +12777,11 @@
     async function renderEdDispositionsChart(dispositions, text, displayVariant) {
       const canvas = selectors.edDispositionsChart;
       const messageEl = selectors.edDispositionsMessage || null;
-      const legendEl = selectors.edDispositionsLegend || null;
 
       if (!canvas) {
         if (messageEl) {
           messageEl.textContent = '';
           messageEl.hidden = true;
-        }
-        if (legendEl) {
-          legendEl.innerHTML = '';
-          legendEl.hidden = true;
         }
         return;
       }
@@ -13212,10 +12789,6 @@
       if (messageEl) {
         messageEl.textContent = '';
         messageEl.hidden = true;
-      }
-      if (legendEl) {
-        legendEl.innerHTML = '';
-        legendEl.hidden = true;
       }
 
       if (dashboardState.charts.edDispositions && typeof dashboardState.charts.edDispositions.destroy === 'function') {
@@ -13239,10 +12812,6 @@
         if (messageEl) {
           messageEl.textContent = text?.empty || 'Nėra duomenų grafiko sudarymui.';
           messageEl.hidden = false;
-        }
-        if (legendEl) {
-          legendEl.innerHTML = '';
-          legendEl.hidden = true;
         }
         return;
       }
@@ -13268,6 +12837,8 @@
       const computedStyles = getComputedStyle(styleTarget);
       const borderBaseColor = computedStyles.getPropertyValue('--color-border').trim() || 'rgba(37, 99, 235, 0.15)';
       const theme = styleTarget?.dataset?.theme || 'light';
+      const tooltipBackground = theme === 'dark' ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.96)';
+      const tooltipBorder = theme === 'dark' ? 'rgba(148, 163, 184, 0.35)' : borderBaseColor;
 
       const CATEGORY_COLORS = {
         '1': '#8da4ff',
@@ -13294,6 +12865,13 @@
         const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
         const fillRgb = sequentialPalette[paletteIndex] || accentRgb;
         return rgbToRgba(fillRgb, Math.max(0.45, baseAlpha + alphaStep * paletteIndex));
+      });
+
+      const hoverColors = validEntries.map((_, index) => {
+        const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
+        const baseRgb = sequentialPalette[paletteIndex] || accentRgb;
+        const hoverRgb = mixRgbColors(baseRgb, surfaceRgb, theme === 'dark' ? 0.12 : 0.25);
+        return rgbToRgba(hoverRgb, theme === 'dark' ? 0.88 : 0.92);
       });
 
       const borderColors = validEntries.map((_, index) => {
@@ -13343,17 +12921,31 @@
         .filter(Boolean)
         .join('; ');
       if (ariaSummary) {
-        const ariaParts = [`${datasetLabel} – ${ariaSummary}`];
-        if (total > 0) {
-          ariaParts.push(`${totalLabel}: ${formatValue(total)}`);
-        }
-        canvas.setAttribute('aria-label', ariaParts.join('. '));
+        canvas.setAttribute('aria-label', `${datasetLabel} – ${ariaSummary}. ${totalLabel}: ${formatValue(total)}.`);
       } else {
         canvas.setAttribute('aria-label', datasetLabel);
       }
 
+      const tooltipLabel = (context) => {
+        const entry = chartEntries[context.dataIndex];
+        if (!entry) {
+          return '';
+        }
+        return `${entry.label}: ${formatValue(entry.count)} pac.`;
+      };
+
+      const tooltipAfterLabel = (context) => {
+        const entry = chartEntries[context.dataIndex];
+        if (!entry) {
+          return '';
+        }
+        return `Dalis: ${percentFormatter.format(entry.percent)}`;
+      };
+
+      const tooltipFooter = () => `${totalLabel}: ${formatValue(total)} pac.`;
+
       const chartInstance = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'bar',
         data: {
           labels,
           datasets: [
@@ -13361,62 +12953,100 @@
               label: datasetLabel,
               data: chartEntries.map((entry) => entry.count),
               backgroundColor: backgroundColors,
+              hoverBackgroundColor: hoverColors,
               borderColor: borderColors,
-              borderWidth: 2,
-              hoverOffset: 0,
+              hoverBorderColor: borderColors,
+              borderWidth: 1.2,
+              borderSkipped: false,
+              borderRadius: 10,
+              maxBarThickness: 48,
+              barPercentage: 0.55,
+              categoryPercentage: 0.6,
             },
           ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '62%',
-          radius: '90%',
-          animation: false,
-          events: [],
+          layout: {
+            padding: {
+              top: 12,
+              right: 16,
+              bottom: 16,
+              left: 16,
+            },
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false,
+                drawBorder: false,
+              },
+              ticks: {
+                color: palette.textMuted,
+                font: {
+                  size: 12,
+                  weight: '600',
+                },
+              },
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: palette.gridColor,
+                drawBorder: false,
+              },
+              ticks: {
+                color: palette.textMuted,
+                font: {
+                  size: 12,
+                },
+              },
+            },
+          },
           plugins: {
             legend: { display: false },
-            tooltip: { enabled: false },
+            tooltip: {
+              backgroundColor: tooltipBackground,
+              borderColor: tooltipBorder,
+              borderWidth: 1,
+              displayColors: false,
+              padding: 10,
+              bodySpacing: 6,
+              titleColor: palette.textColor,
+              bodyColor: palette.textColor,
+              titleFont: {
+                size: 13,
+                weight: '700',
+              },
+              bodyFont: {
+                size: 13,
+                weight: '500',
+              },
+              callbacks: {
+                title(tooltipItems) {
+                  return tooltipItems.length ? tooltipItems[0].label : datasetLabel;
+                },
+                label: tooltipLabel,
+                afterLabel: tooltipAfterLabel,
+                footer: tooltipFooter,
+              },
+            },
+          },
+          elements: {
+            bar: {
+              borderRadius: 10,
+              borderSkipped: false,
+            },
+          },
+          animation: false,
+          transitions: {
+            active: { animation: { duration: 0 } },
+            show: { animation: { duration: 0 } },
+            hide: { animation: { duration: 0 } },
           },
         },
       });
-
-      if (legendEl) {
-        const shareSuffix = text?.centerShareSuffix ? ` ${text.centerShareSuffix}` : '';
-        legendEl.innerHTML = '';
-        legendEl.hidden = false;
-        chartEntries.forEach((entry, index) => {
-          const item = document.createElement('li');
-          item.className = 'ed-dashboard__donut-legend-item';
-          item.setAttribute('role', 'listitem');
-
-          const labelWrap = document.createElement('span');
-          labelWrap.className = 'ed-dashboard__donut-legend-label';
-
-          const swatch = document.createElement('span');
-          swatch.className = 'ed-dashboard__donut-legend-swatch';
-          swatch.style.backgroundColor = entry.color;
-          swatch.style.borderColor = borderBaseColor;
-
-          labelWrap.appendChild(swatch);
-          labelWrap.append(entry.label);
-
-          const value = document.createElement('span');
-          value.className = 'ed-dashboard__donut-legend-value';
-          const valueText = formatValue(entry.count);
-          const percentText = percentFormatter.format(entry.percent);
-          const valueParts = [];
-          if (valueText !== '—') {
-            valueParts.push(`${valueText} pac.`);
-          }
-          valueParts.push(`${percentText}${shareSuffix}`.trim());
-          value.textContent = valueParts.join(' · ');
-
-          item.appendChild(labelWrap);
-          item.appendChild(value);
-          legendEl.appendChild(item);
-        });
-      }
 
       dashboardState.charts.edDispositions = chartInstance;
     }
