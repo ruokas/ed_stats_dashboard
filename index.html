@@ -4088,6 +4088,7 @@
 15,11,1:4.2,1:7.5,3,4,4,3,1
 17,13,1:4.8,1:8.2,3,5,5,3,1
 21,16,1:5.4,1:9.5,4,6,6,4,1`;
+    const DEFAULT_ED_SOURCE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv';
     const ED_TOTAL_BEDS = 29;
     const FEEDBACK_RATING_MIN = 1;
     const FEEDBACK_RATING_MAX = 5;
@@ -4562,7 +4563,7 @@
           fallbackCsv: DEFAULT_FEEDBACK_CSV,
         },
         ed: {
-          url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv',
+          url: DEFAULT_ED_SOURCE_URL,
           useFallback: true,
           fallbackCsv: DEFAULT_ED_CSV,
         },
