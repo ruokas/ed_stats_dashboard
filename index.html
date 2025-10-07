@@ -12647,14 +12647,38 @@
         '4': '#a5f3fc',
         '5': '#c4b5fd',
       };
-      const fallbackSequence = ['#8da4ff', '#f9a8d4', '#fde68a', '#a5f3fc', '#c4b5fd'];
+      const accentRgb = ensureRgb(palette.accent);
+      const accentSoftRgb = ensureRgb(palette.accentSoft, mixRgbColors(accentRgb, { r: 255, g: 255, b: 255 }, 0.65));
+      const surfaceColor = computedStyles.getPropertyValue('--color-surface').trim() || (theme === 'dark' ? '#0f172a' : '#ffffff');
+      const surfaceRgb = ensureRgb(surfaceColor, theme === 'dark' ? { r: 15, g: 23, b: 42 } : { r: 255, g: 255, b: 255 });
+
+      const sequentialPalette = createSequentialPalette(accentRgb, accentSoftRgb, surfaceRgb, validEntries.length, theme);
+      const baseAlpha = theme === 'dark' ? 0.78 : 0.86;
+      const alphaStep = theme === 'dark' ? -0.04 : -0.06;
 
       const backgroundColors = validEntries.map((entry, index) => {
         const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
         if (key && CATEGORY_COLORS[key]) {
-          return CATEGORY_COLORS[key];
+          const presetRgb = ensureRgb(CATEGORY_COLORS[key]);
+          return rgbToRgba(presetRgb, Math.max(0.45, baseAlpha + alphaStep * index));
         }
-        return fallbackSequence[index % fallbackSequence.length];
+        const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
+        const fillRgb = sequentialPalette[paletteIndex] || accentRgb;
+        return rgbToRgba(fillRgb, Math.max(0.45, baseAlpha + alphaStep * paletteIndex));
+      });
+
+      const hoverColors = validEntries.map((_, index) => {
+        const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
+        const baseRgb = sequentialPalette[paletteIndex] || accentRgb;
+        const hoverRgb = mixRgbColors(baseRgb, surfaceRgb, theme === 'dark' ? 0.12 : 0.25);
+        return rgbToRgba(hoverRgb, theme === 'dark' ? 0.88 : 0.92);
+      });
+
+      const borderColors = validEntries.map((_, index) => {
+        const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
+        const baseRgb = sequentialPalette[paletteIndex] || accentRgb;
+        const borderRgb = mixRgbColors(baseRgb, accentRgb, 0.4);
+        return rgbToRgba(borderRgb, theme === 'dark' ? 0.9 : 0.82);
       });
 
       const values = validEntries.map((entry) => Number(entry.count) || 0);
@@ -12728,12 +12752,14 @@
             {
               label: datasetLabel,
               data: chartEntries.map((entry) => entry.count),
-              backgroundColor: chartEntries.map((entry) => entry.color),
-              borderColor: chartEntries.map(() => 'rgba(15, 23, 42, 0.12)'),
-              borderWidth: 1,
+              backgroundColor: backgroundColors,
+              hoverBackgroundColor: hoverColors,
+              borderColor: borderColors,
+              hoverBorderColor: borderColors,
+              borderWidth: 1.2,
               borderSkipped: false,
-              borderRadius: 8,
-              maxBarThickness: 44,
+              borderRadius: 10,
+              maxBarThickness: 48,
               barPercentage: 0.55,
               categoryPercentage: 0.6,
             },
@@ -12744,10 +12770,10 @@
           maintainAspectRatio: false,
           layout: {
             padding: {
-              top: 8,
-              right: 12,
-              bottom: 8,
-              left: 12,
+              top: 12,
+              right: 16,
+              bottom: 16,
+              left: 16,
             },
           },
           scales: {
@@ -12809,7 +12835,7 @@
           },
           elements: {
             bar: {
-              borderRadius: 8,
+              borderRadius: 10,
               borderSkipped: false,
             },
           },
@@ -12886,6 +12912,66 @@
       const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1;
       const formattedAlpha = safeAlpha === 1 ? '1' : Number(safeAlpha.toFixed(3)).toString();
       return `rgba(${clampColorChannel(rgb.r)}, ${clampColorChannel(rgb.g)}, ${clampColorChannel(rgb.b)}, ${formattedAlpha})`;
+    }
+
+    function ensureRgb(color, fallback) {
+      const parsed = typeof color === 'string' ? parseColorToRgb(color) : null;
+      if (parsed) {
+        return parsed;
+      }
+      if (fallback && typeof fallback === 'object') {
+        const { r, g, b } = fallback;
+        if ([r, g, b].every((channel) => Number.isFinite(channel))) {
+          return {
+            r: clampColorChannel(r),
+            g: clampColorChannel(g),
+            b: clampColorChannel(b),
+          };
+        }
+      }
+      return { r: 37, g: 99, b: 235 };
+    }
+
+    function mixRgbColors(rgbA, rgbB, weight) {
+      const hasA = rgbA && [rgbA.r, rgbA.g, rgbA.b].every((channel) => Number.isFinite(channel));
+      const hasB = rgbB && [rgbB.r, rgbB.g, rgbB.b].every((channel) => Number.isFinite(channel));
+      if (!hasA && !hasB) {
+        return { r: 37, g: 99, b: 235 };
+      }
+      if (!hasA) {
+        return {
+          r: clampColorChannel(rgbB.r),
+          g: clampColorChannel(rgbB.g),
+          b: clampColorChannel(rgbB.b),
+        };
+      }
+      if (!hasB) {
+        return {
+          r: clampColorChannel(rgbA.r),
+          g: clampColorChannel(rgbA.g),
+          b: clampColorChannel(rgbA.b),
+        };
+      }
+      const ratio = Number.isFinite(weight) ? Math.max(0, Math.min(1, weight)) : 0;
+      const inverse = 1 - ratio;
+      return {
+        r: clampColorChannel(rgbA.r * inverse + rgbB.r * ratio),
+        g: clampColorChannel(rgbA.g * inverse + rgbB.g * ratio),
+        b: clampColorChannel(rgbA.b * inverse + rgbB.b * ratio),
+      };
+    }
+
+    function createSequentialPalette(baseRgb, softRgb, surfaceRgb, count, theme) {
+      const safeCount = Math.max(1, Math.floor(Number(count)) || 1);
+      const palette = [];
+      const softenTarget = mixRgbColors(softRgb, surfaceRgb, theme === 'dark' ? 0.25 : 0.5);
+      for (let index = 0; index < safeCount; index += 1) {
+        const progress = safeCount === 1 ? 0.5 : index / (safeCount - 1);
+        const softened = mixRgbColors(baseRgb, softRgb, 0.35 + progress * 0.25);
+        const tinted = mixRgbColors(softened, softenTarget, theme === 'dark' ? progress * 0.2 : progress * 0.45);
+        palette.push(tinted);
+      }
+      return palette;
     }
 
     function buildFunnelTextPalette(baseColor) {
