@@ -563,6 +563,77 @@
       display: none;
     }
 
+    .ed-dashboard__card-progress {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      background: var(--color-accent-soft);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .ed-dashboard__card-progress-fill {
+      position: absolute;
+      inset: 0;
+      width: var(--progress-width, 0%);
+      background: var(--color-accent);
+      border-radius: inherit;
+      transition: width 0.4s ease;
+    }
+
+    .ed-dashboard__card-progress-marker {
+      position: absolute;
+      top: 50%;
+      width: 2px;
+      height: 14px;
+      background: var(--color-text);
+      opacity: 0.7;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .ed-dashboard__card-delta {
+      margin: 4px 0 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--color-text-muted);
+    }
+
+    .ed-dashboard__card-delta[data-trend="up"] {
+      color: var(--color-success);
+    }
+
+    .ed-dashboard__card-delta[data-trend="down"] {
+      color: var(--color-danger);
+    }
+
+    .ed-dashboard__card-delta-arrow {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .ed-dashboard__card-delta-text {
+      font-weight: 600;
+    }
+
+    .ed-dashboard__card-delta-reference {
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    body[data-theme="dark"] .ed-dashboard__card-progress {
+      background: rgba(96, 165, 250, 0.18);
+    }
+
+    body[data-theme="dark"] .ed-dashboard__card-progress-marker {
+      background: var(--color-text);
+      opacity: 0.85;
+    }
+
     .ed-dashboard__chart-message {
       margin-top: 12px;
       font-size: 0.9rem;
@@ -11537,6 +11608,199 @@
       }
     }
 
+    function normalizePercentValue(rawValue) {
+      if (!Number.isFinite(rawValue)) {
+        return null;
+      }
+      if (rawValue < 0) {
+        return 0;
+      }
+      if (rawValue <= 1) {
+        return rawValue;
+      }
+      if (rawValue <= 100) {
+        return rawValue / 100;
+      }
+      return 1;
+    }
+
+    function getEdCardDeltaInfo(primaryRaw, secondaryRaw, format) {
+      if (!Number.isFinite(primaryRaw) || !Number.isFinite(secondaryRaw)) {
+        return null;
+      }
+      const diff = primaryRaw - secondaryRaw;
+      if (!Number.isFinite(diff)) {
+        return null;
+      }
+
+      let trend = 'neutral';
+      if (diff > 0) {
+        trend = 'up';
+      } else if (diff < 0) {
+        trend = 'down';
+      }
+
+      const reference = formatEdCardValue(secondaryRaw, format);
+      let valueText = '';
+      let ariaValue = '';
+
+      switch (format) {
+        case 'hours': {
+          const hours = Math.abs(diff) / 60;
+          const rounded = Math.round(hours * 10) / 10;
+          if (!rounded) {
+            trend = 'neutral';
+          }
+          valueText = `${oneDecimalFormatter.format(rounded)} val.`;
+          ariaValue = `${oneDecimalFormatter.format(rounded)} valandos`;
+          break;
+        }
+        case 'minutes': {
+          const minutes = Math.round(Math.abs(diff));
+          if (!minutes) {
+            trend = 'neutral';
+          }
+          valueText = `${numberFormatter.format(minutes)} min.`;
+          ariaValue = `${numberFormatter.format(minutes)} minutės`;
+          break;
+        }
+        case 'percent': {
+          const normalized = Math.abs(diff) <= 1 ? Math.abs(diff) * 100 : Math.abs(diff);
+          const rounded = Math.round(normalized * 10) / 10;
+          if (!rounded) {
+            trend = 'neutral';
+          }
+          valueText = `${oneDecimalFormatter.format(rounded)} p.p.`;
+          ariaValue = `${oneDecimalFormatter.format(rounded)} procentinio punkto`;
+          break;
+        }
+        case 'oneDecimal': {
+          const absolute = Math.abs(diff);
+          const rounded = Math.round(absolute * 10) / 10;
+          if (!rounded) {
+            trend = 'neutral';
+          }
+          valueText = oneDecimalFormatter.format(rounded);
+          ariaValue = `${oneDecimalFormatter.format(rounded)} vienetai`;
+          break;
+        }
+        case 'ratio':
+          return null;
+        default: {
+          const absolute = Math.abs(diff);
+          const rounded = Math.round(absolute);
+          if (!rounded) {
+            trend = 'neutral';
+          }
+          valueText = numberFormatter.format(rounded);
+          ariaValue = `${numberFormatter.format(rounded)} vienetai`;
+        }
+      }
+
+      if (trend === 'neutral') {
+        return {
+          trend: 'neutral',
+          arrow: '→',
+          text: 'Be pokyčio',
+          reference,
+          ariaLabel: reference
+            ? `Pokytis lyginant su ${reference}: be pokyčio`
+            : 'Pokytis: be pokyčio',
+        };
+      }
+
+      const arrow = trend === 'up' ? '↑' : '↓';
+      const sign = trend === 'up' ? '+' : '−';
+      return {
+        trend,
+        arrow,
+        text: `${sign}${valueText}`,
+        reference,
+        ariaLabel: reference
+          ? `Pokytis lyginant su ${reference}: ${sign}${ariaValue}`
+          : `Pokytis: ${sign}${ariaValue}`,
+      };
+    }
+
+    function buildEdCardVisuals(config, primaryRaw, secondaryRaw) {
+      const visuals = [];
+
+      if (config.format === 'percent' && Number.isFinite(primaryRaw)) {
+        const normalized = normalizePercentValue(primaryRaw);
+        if (normalized != null) {
+          const progress = document.createElement('div');
+          progress.className = 'ed-dashboard__card-progress';
+          progress.setAttribute('aria-hidden', 'true');
+          const fill = document.createElement('div');
+          fill.className = 'ed-dashboard__card-progress-fill';
+          fill.setAttribute('aria-hidden', 'true');
+          const width = `${Math.max(0, Math.min(100, normalized * 100))}%`;
+          fill.style.setProperty('--progress-width', width);
+          progress.appendChild(fill);
+
+          if (Number.isFinite(secondaryRaw)) {
+            const normalizedSecondary = normalizePercentValue(secondaryRaw);
+            if (normalizedSecondary != null) {
+              const marker = document.createElement('span');
+              marker.className = 'ed-dashboard__card-progress-marker';
+              marker.setAttribute('aria-hidden', 'true');
+              marker.style.left = `${Math.max(0, Math.min(100, normalizedSecondary * 100))}%`;
+              const secondaryText = formatEdCardValue(secondaryRaw, config.format);
+              if (secondaryText) {
+                marker.title = `Lyginamasis rodiklis: ${secondaryText}`;
+              }
+              progress.appendChild(marker);
+            }
+          }
+
+          visuals.push(progress);
+        }
+      } else if (config.format === 'beds' && Number.isFinite(primaryRaw)) {
+        const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? Math.max(ED_TOTAL_BEDS, 0) : 0;
+        if (totalBeds > 0) {
+          const occupancyShare = Math.max(0, Math.min(1, primaryRaw / totalBeds));
+          const progress = document.createElement('div');
+          progress.className = 'ed-dashboard__card-progress';
+          progress.setAttribute('aria-hidden', 'true');
+          const fill = document.createElement('div');
+          fill.className = 'ed-dashboard__card-progress-fill';
+          fill.setAttribute('aria-hidden', 'true');
+          const width = `${Math.round(occupancyShare * 1000) / 10}%`;
+          fill.style.setProperty('--progress-width', width);
+          const occupancyText = percentFormatter.format(occupancyShare);
+          progress.title = `Užimtumas: ${numberFormatter.format(Math.round(primaryRaw))}/${numberFormatter.format(totalBeds)} (${occupancyText})`;
+          progress.appendChild(fill);
+          visuals.push(progress);
+        }
+      }
+
+      if (config.secondaryKey) {
+        const deltaInfo = getEdCardDeltaInfo(primaryRaw, secondaryRaw, config.format);
+        if (deltaInfo) {
+          const delta = document.createElement('p');
+          delta.className = 'ed-dashboard__card-delta';
+          delta.dataset.trend = deltaInfo.trend;
+          delta.setAttribute('aria-label', deltaInfo.ariaLabel);
+          const arrowSpan = document.createElement('span');
+          arrowSpan.className = 'ed-dashboard__card-delta-arrow';
+          arrowSpan.textContent = deltaInfo.arrow;
+          const textSpan = document.createElement('span');
+          textSpan.className = 'ed-dashboard__card-delta-text';
+          textSpan.textContent = deltaInfo.text;
+          delta.append(arrowSpan, textSpan);
+          if (deltaInfo.reference) {
+            const referenceSpan = document.createElement('span');
+            referenceSpan.className = 'ed-dashboard__card-delta-reference';
+            referenceSpan.textContent = `vs ${deltaInfo.reference}`;
+            delta.appendChild(referenceSpan);
+          }
+          visuals.push(delta);
+        }
+      }
+
+      return visuals;
+    }
+
     function renderTvMetrics(listElement, metrics) {
       if (!listElement) {
         return;
@@ -12011,10 +12275,10 @@
 
           const value = document.createElement('p');
           value.className = 'ed-dashboard__card-value';
+          const primaryRaw = summary?.[config.key];
+          const secondaryRaw = config.secondaryKey ? summary?.[config.secondaryKey] : undefined;
           let hasValue = false;
           if (config.secondaryKey) {
-            const primaryRaw = summary?.[config.key];
-            const secondaryRaw = summary?.[config.secondaryKey];
             const primaryFormatted = formatEdCardValue(primaryRaw, config.format);
             const secondaryFormatted = formatEdCardValue(secondaryRaw, config.format);
             const suffix = config.format === 'hours'
@@ -12031,8 +12295,7 @@
               hasValue = true;
             }
           } else {
-            const rawValue = summary?.[config.key];
-            const formatted = formatEdCardValue(rawValue, config.format);
+            const formatted = formatEdCardValue(primaryRaw, config.format);
             if (formatted != null) {
               if (config.format === 'hours') {
                 value.textContent = `${formatted} val.`;
@@ -12052,7 +12315,14 @@
           meta.className = 'ed-dashboard__card-meta';
           meta.textContent = config.description || '';
 
-          card.append(title, value, meta);
+          card.append(title, value);
+
+          const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw);
+          visuals.forEach((node) => {
+            card.appendChild(node);
+          });
+
+          card.appendChild(meta);
           selectors.edCards.appendChild(card);
         });
       }
