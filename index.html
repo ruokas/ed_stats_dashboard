@@ -8305,6 +8305,21 @@
       }
       summary.generatedAt = new Date();
 
+      const monthlyDayTotals = new Map();
+      dailyBuckets.forEach((bucket) => {
+        if (!bucket || typeof bucket.dateKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(bucket.dateKey)) {
+          return;
+        }
+        const monthKey = bucket.dateKey.slice(0, 7);
+        if (!monthKey || !Number.isFinite(bucket.patients)) {
+          return;
+        }
+        const entry = monthlyDayTotals.get(monthKey) || { patientSum: 0, dayCount: 0 };
+        entry.patientSum += bucket.patients;
+        entry.dayCount += 1;
+        monthlyDayTotals.set(monthKey, entry);
+      });
+
       if (monthBuckets.size > 0) {
         const sortedMonthKeys = Array.from(monthBuckets.keys()).sort();
         const latestMonthKey = sortedMonthKeys[sortedMonthKeys.length - 1];
@@ -8320,6 +8335,10 @@
             ? currentMonth.labSum / currentMonth.labCount
             : null;
           summary.currentMonthKey = latestMonthKey;
+          const monthDayInfo = monthlyDayTotals.get(latestMonthKey);
+          if (monthDayInfo && monthDayInfo.dayCount > 0) {
+            summary.avgDaytimePatientsMonth = monthDayInfo.patientSum / monthDayInfo.dayCount;
+          }
           const currentYear = typeof latestMonthKey === 'string' ? latestMonthKey.slice(0, 4) : '';
           if (currentYear) {
             const yearTotals = {
@@ -8593,10 +8612,14 @@
       }
 
       const targetMonth = summary.currentMonthKey || latestSnapshotMonth;
-      if (targetMonth && daytimeSnapshotBuckets.has(targetMonth)) {
+      if (summary.avgDaytimePatientsMonth == null && targetMonth && daytimeSnapshotBuckets.has(targetMonth)) {
         const bucket = daytimeSnapshotBuckets.get(targetMonth);
         summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
-      } else if (!summary.avgDaytimePatientsMonth && latestSnapshotMonth && daytimeSnapshotBuckets.has(latestSnapshotMonth)) {
+      } else if (
+        summary.avgDaytimePatientsMonth == null
+        && latestSnapshotMonth
+        && daytimeSnapshotBuckets.has(latestSnapshotMonth)
+      ) {
         const bucket = daytimeSnapshotBuckets.get(latestSnapshotMonth);
         summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
         if (!summary.currentMonthKey) {
