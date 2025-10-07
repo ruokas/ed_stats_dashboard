@@ -380,20 +380,22 @@
     .ed-dashboard__header {
       display: flex;
       flex-wrap: wrap;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: clamp(12px, 2vw, 20px);
       margin-bottom: clamp(12px, 2.5vw, 24px);
     }
 
-    .ed-dashboard__header-text {
+    .ed-dashboard__header-main {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-width: 0;
     }
 
     .ed-dashboard__title-row {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 10px;
     }
@@ -442,6 +444,8 @@
       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
       text-transform: uppercase;
       text-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .ed-dashboard__status::before {
@@ -3995,7 +3999,7 @@
       <section id="edStandardSection" class="section" aria-labelledby="edHeading">
         <div class="ed-dashboard" role="region" aria-labelledby="edHeading">
           <div class="ed-dashboard__header">
-            <div class="ed-dashboard__header-text">
+            <div class="ed-dashboard__header-main">
               <div class="ed-dashboard__title-row">
                 <span class="section-title__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -4005,6 +4009,7 @@
                   </svg>
                 </span>
                 <h2 id="edHeading" class="ed-dashboard__title">RŠL SMPS skydelis</h2>
+                <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
               </div>
               <p id="edSubtitle" class="ed-dashboard__subtitle">Naujausi duomenys</p>
             </div>
@@ -4018,11 +4023,6 @@
               </svg>
               <span>Grįžti į Bendras vaizdas</span>
             </button>
-          </div>
-          <div class="ed-dashboard__summary">
-            <div class="ed-dashboard__status-wrapper">
-              <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
-            </div>
           </div>
           <div id="edCards" class="ed-dashboard__cards" role="list"></div>
         </div>
