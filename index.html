@@ -314,7 +314,7 @@
     .ed-dashboard {
       position: relative;
       border-radius: 32px;
-      padding: clamp(20px, 3.5vw, 40px);
+      padding: clamp(16px, 3vw, 32px);
       background:
         linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0))
         , var(--color-surface);
@@ -375,6 +375,40 @@
     body[data-theme="dark"] .ed-dashboard__card-value,
     body[data-theme="dark"] .ed-dashboard__card-meta {
       text-shadow: 0 4px 18px rgba(5, 8, 22, 0.85);
+    }
+
+    .ed-dashboard__header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: clamp(12px, 2vw, 20px);
+      margin-bottom: clamp(12px, 2.5vw, 24px);
+    }
+
+    .ed-dashboard__header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .ed-dashboard__title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ed-dashboard__title {
+      margin: 0;
+      font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .ed-dashboard__subtitle {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
     }
 
     .ed-dashboard__summary {
@@ -471,14 +505,6 @@
       color: rgba(248, 113, 113, 0.95);
     }
 
-    .ed-dashboard__actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-left: auto;
-    }
-
     .ed-panel-close-btn {
       display: inline-flex;
       align-items: center;
@@ -490,6 +516,7 @@
       color: var(--color-text);
       font-weight: 600;
       font-size: 0.92rem;
+      white-space: nowrap;
       cursor: pointer;
       transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
@@ -3966,33 +3993,32 @@
     </div>
     <div id="panelEd" class="tab-panel" data-tab-panel="ed" role="tabpanel" aria-labelledby="edHeading" hidden>
       <section id="edStandardSection" class="section" aria-labelledby="edHeading">
-        <div class="section__header">
-          <div>
-            <h2 id="edHeading" class="section__title">
-              <span class="section-title__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="16" rx="3" />
-                  <path d="M12 8v6" />
-                  <path d="M9 11h6" />
-                </svg>
-              </span>
-              <span class="section-title__text">RŠL SMPS skydelis</span>
-            </h2>
-          </div>
-          <div class="section__actions ed-dashboard__actions">
+        <div class="ed-dashboard" role="region" aria-labelledby="edHeading">
+          <div class="ed-dashboard__header">
+            <div class="ed-dashboard__header-text">
+              <div class="ed-dashboard__title-row">
+                <span class="section-title__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="3" />
+                    <path d="M12 8v6" />
+                    <path d="M9 11h6" />
+                  </svg>
+                </span>
+                <h2 id="edHeading" class="ed-dashboard__title">RŠL SMPS skydelis</h2>
+              </div>
+              <p id="edSubtitle" class="ed-dashboard__subtitle">Naujausi duomenys</p>
+            </div>
             <button type="button"
                     id="closeEdPanelBtn"
                     class="ed-panel-close-btn"
-                    aria-label="Grįžti į pagrindinį skydelį">
+                    aria-label="Grįžti į Bendras vaizdas">
               <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m11 7-5 5 5 5" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 12h12" />
               </svg>
-              <span>Grįžti į pagrindinį skydelį</span>
+              <span>Grįžti į Bendras vaizdas</span>
             </button>
           </div>
-        </div>
-        <div class="ed-dashboard" role="region" aria-labelledby="edHeading">
           <div class="ed-dashboard__summary">
             <div class="ed-dashboard__status-wrapper">
               <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
@@ -4608,7 +4634,7 @@
             legendAction: 'Išryškinti kategoriją grafike',
           },
           snapshot: {
-            title: 'Pacientų pasiskirstymas pagal kategorijas',
+            title: 'Pasiskirstymas pagal ESI',
             caption: 'Pacientų pasiskirstymas pagal naujausią įrašą.',
             empty: 'Nėra kategorijų duomenų.',
             legendTitle: 'Pacientų kategorijos',
