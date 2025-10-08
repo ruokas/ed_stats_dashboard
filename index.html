@@ -4404,6 +4404,8 @@
     const FEEDBACK_RATING_MIN = 1;
     const FEEDBACK_RATING_MAX = 5;
     const FEEDBACK_LEGACY_MAX = 10;
+    const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // Automatinio atnaujinimo intervalas (5 min). Keiskite čia, jei reikia kito dažnio.
+    let autoRefreshTimerId = null;
     /**
      * Konfigūracija tekstams ir greitiems pakeitimams (LT numatytasis, lengva išplėsti EN).
      */
@@ -5056,6 +5058,15 @@
         return '';
       }
       return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`;
+    }
+
+    function restartAutoRefreshTimer() {
+      if (autoRefreshTimerId) {
+        window.clearInterval(autoRefreshTimerId);
+      }
+      autoRefreshTimerId = window.setInterval(() => {
+        loadDashboard();
+      }, AUTO_REFRESH_INTERVAL_MS);
     }
 
     const selectors = {
@@ -6303,6 +6314,8 @@
      * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
      */
     const dashboardState = {
+      loading: false,
+      queuedReload: false,
       charts: {
         daily: null,
         dow: null,
@@ -13760,6 +13773,13 @@
     }
 
     async function loadDashboard() {
+      if (dashboardState.loading) {
+        dashboardState.queuedReload = true;
+        return;
+      }
+
+      dashboardState.loading = true;
+
       try {
         setStatus('loading');
         if (selectors.edStatus) {
@@ -13858,6 +13878,15 @@
         dashboardState.lastErrorMessage = friendlyMessage;
         setStatus('error', friendlyMessage);
         await renderEdDashboard(dashboardState.ed);
+      } finally {
+        dashboardState.loading = false;
+        restartAutoRefreshTimer();
+        if (dashboardState.queuedReload) {
+          dashboardState.queuedReload = false;
+          window.setTimeout(() => {
+            loadDashboard();
+          }, 0);
+        }
       }
     }
 

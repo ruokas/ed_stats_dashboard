@@ -4,6 +4,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ## Savybės
 - 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
+- ⏱️ Automatinis duomenų atnaujinimas kas 5 min., papildomai galima perkrauti rankiniu mygtuku.
 - 🔗 Galimybė kartu naudoti pagrindinį operatyvinį ir papildomą 5 metų istorinį CSV šaltinį.
 - 📊 KPI kortelės su aiškia „Metinis vidurkis“ eilute ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
@@ -26,6 +27,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - GMP laukas numatytai atpažįsta reikšmes „GMP“, „su GMP“ ir „GMP (su GMP)“, o tuščias hospitalizavimo stulpelis reiškia išrašytą pacientą.
 - Spalvų schema ir kampai – CSS kintamieji `:root` bloke (`index.html`).
 - Grafikai – Chart.js nustatymai `renderCharts()` funkcijoje (`index.html`).
+- Automatinio atnaujinimo intervalas – `AUTO_REFRESH_INTERVAL_MS` kintamasis `index.html` faile (numatyta 5 min.).
 
 ### Nustatymų meniu
 
