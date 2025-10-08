@@ -8394,6 +8394,13 @@
         occupiedBeds: ['užimta lovų', 'occupied beds', 'beds occupied'],
         nurseRatio: ['slaugytojų - pacientų santykis', 'nurse - patient ratio', 'nurse to patient ratio', 'nurse ratio'],
         doctorRatio: ['gydytojų - pacientų santykis', 'doctor - patient ratio', 'doctor to patient ratio', 'physician ratio'],
+        lab: [
+          'lab',
+          'avg lab turnaround (min)',
+          'lab turnaround (min)',
+          'vid. lab. tyrimų laikas (min)',
+          'vid. lab. tyrimų laikas',
+        ],
         category1: ['1 kategorijos pacientų', 'category 1 patients', 'patients category 1', 'c1'],
         category2: ['2 kategorijos pacientų', 'category 2 patients', 'patients category 2', 'c2'],
         category3: ['3 kategorijos pacientų', 'category 3 patients', 'patients category 3', 'c3'],
@@ -8406,6 +8413,7 @@
         occupiedBeds: resolveColumnIndex(headerNormalized, snapshotCandidates.occupiedBeds),
         nurseRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.nurseRatio),
         doctorRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.doctorRatio),
+        lab: resolveColumnIndex(headerNormalized, snapshotCandidates.lab),
         category1: resolveColumnIndex(headerNormalized, snapshotCandidates.category1),
         category2: resolveColumnIndex(headerNormalized, snapshotCandidates.category2),
         category3: resolveColumnIndex(headerNormalized, snapshotCandidates.category3),
@@ -8476,6 +8484,9 @@
         const doctorRatioInfo = snapshotIndices.doctorRatio >= 0
           ? normalizeRatioValue(normalizedRow[snapshotIndices.doctorRatio])
           : { ratio: null, text: '' };
+        const snapshotLabMinutes = snapshotIndices.lab >= 0
+          ? parseNumericCell(normalizedRow[snapshotIndices.lab])
+          : null;
         const categories = {};
         let hasCategoryData = false;
         ['1', '2', '3', '4', '5'].forEach((key) => {
@@ -8517,6 +8528,7 @@
           doorToProviderMinutes: Number.isFinite(doorMinutes) && doorMinutes >= 0 ? doorMinutes : null,
           decisionToLeaveMinutes: Number.isFinite(decisionMinutes) && decisionMinutes >= 0 ? decisionMinutes : null,
           labMinutes: Number.isFinite(labMinutes) && labMinutes >= 0 ? labMinutes : null,
+          snapshotLabMinutes: Number.isFinite(snapshotLabMinutes) && snapshotLabMinutes >= 0 ? snapshotLabMinutes : null,
           currentPatients: Number.isFinite(currentPatients) && currentPatients >= 0 ? currentPatients : null,
           occupiedBeds: Number.isFinite(occupiedBeds) && occupiedBeds >= 0 ? occupiedBeds : null,
           nurseRatio: Number.isFinite(nurseRatioInfo.ratio) && nurseRatioInfo.ratio > 0 ? nurseRatioInfo.ratio : null,
@@ -8778,6 +8790,7 @@
         occupiedBeds: null,
         nursePatientsPerStaff: null,
         doctorPatientsPerStaff: null,
+        labMinutes: null,
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
         generatedAt: null,
@@ -8840,6 +8853,9 @@
         }
         if (Number.isFinite(latest.doctorRatio)) {
           result.doctorPatientsPerStaff = latest.doctorRatio;
+        }
+        if (Number.isFinite(latest.snapshotLabMinutes)) {
+          result.labMinutes = latest.snapshotLabMinutes;
         }
         if (latest.categories && typeof latest.categories === 'object') {
           const categoryEntries = [];
@@ -8954,6 +8970,7 @@
         occupiedBeds: null,
         nursePatientsPerStaff: null,
         doctorPatientsPerStaff: null,
+        labMinutes: null,
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
         generatedAt: null,
@@ -8967,6 +8984,11 @@
         summary.occupiedBeds = snapshot.occupiedBeds;
         summary.nursePatientsPerStaff = snapshot.nursePatientsPerStaff;
         summary.doctorPatientsPerStaff = snapshot.doctorPatientsPerStaff;
+        if (Number.isFinite(snapshot.labMinutes)) {
+          summary.avgLabMinutes = snapshot.labMinutes;
+          summary.avgLabMonthMinutes = snapshot.labMinutes;
+          summary.avgLabYearMinutes = snapshot.labMinutes;
+        }
         summary.latestSnapshotLabel = snapshot.latestSnapshotLabel;
         summary.latestSnapshotAt = snapshot.latestSnapshotAt;
         if (snapshot.generatedAt) {
