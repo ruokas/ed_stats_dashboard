@@ -8367,7 +8367,16 @@
         los: ['length of stay (min)', 'los (min)', 'stay (min)', 'trukmė (min)', 'los minutes', 'los_min'],
         door: ['door to provider (min)', 'door to doctor (min)', 'door to doc (min)', 'door to physician (min)', 'laukimo laikas (min)', 'durys iki gydytojo (min)'],
         decision: ['decision to depart (min)', 'boarding (min)', 'decision to leave (min)', 'disposition to depart (min)', 'sprendimo laukimas (min)'],
-        lab: ['avg lab turnaround (min)', 'lab turnaround (min)', 'vid. lab. tyrimų laikas (min)', 'vid. lab. tyrimu laikas (min)', 'laboratorijos trukmė (min)'],
+        lab: [
+          'avg lab turnaround (min)',
+          'lab turnaround (min)',
+          'vid. lab. tyrimų laikas (min)',
+          'vid. lab. tyrimų laikas',
+          'vid. lab. tyrimu laikas (min)',
+          'vid. lab. tyrimu laikas',
+          'lab',
+          'laboratorijos trukmė (min)',
+        ],
       };
       const legacyIndices = {
         date: resolveColumnIndex(headerNormalized, legacyCandidates.date),
