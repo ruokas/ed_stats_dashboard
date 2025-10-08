@@ -3209,6 +3209,68 @@
       box-shadow: var(--shadow-elevated);
     }
 
+    .compare-monthly {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .compare-monthly__stats {
+      display: grid;
+      gap: 12px;
+    }
+
+    .compare-monthly__sparkline {
+      padding: 14px 18px;
+      border-radius: 16px;
+      border: 1px solid var(--color-border);
+      background: linear-gradient(180deg, var(--color-surface-alt) 0%, var(--color-surface) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      min-height: 140px;
+      text-align: center;
+    }
+
+    .compare-monthly__sparkline-title {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .compare-monthly__sparkline svg {
+      width: 100%;
+      max-width: 360px;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    .compare-monthly__empty {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+
+    body[data-theme="dark"] .compare-monthly__sparkline {
+      background: linear-gradient(180deg, rgba(96, 165, 250, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%);
+      border-color: rgba(96, 165, 250, 0.32);
+    }
+
+    @media (min-width: 960px) {
+      .compare-monthly {
+        flex-direction: row;
+        align-items: stretch;
+      }
+
+      .compare-monthly__stats,
+      .compare-monthly__sparkline {
+        flex: 1 1 0;
+      }
+    }
+
     .compare-card__header {
       display: flex;
       justify-content: space-between;
@@ -4885,6 +4947,9 @@
         prompt: 'Pasirinkite dvi eilutes lentelėje.',
         insufficient: 'Pasirinkite dar vieną datą palyginimui.',
         summaryTitle: (newer, older) => `${newer} vs ${older}`,
+        sparklineTitle: 'Grafiškas palyginimas',
+        sparklineFallback: 'Nepakanka duomenų grafiko atvaizdavimui.',
+        sparklineAria: (current, previous, diff) => `Pacientų palyginimas: ${current} ir ${previous}. ${diff}.`,
         metrics: {
           total: 'Pacientai',
           avgStay: 'Vid. buvimo trukmė (val.)',
@@ -11774,6 +11839,118 @@
       };
     }
 
+    function buildMonthlySparkline(series, highlights = []) {
+      const rawEntries = Array.isArray(series) ? series : [];
+      const normalized = rawEntries.map((entry) => {
+        if (!entry || typeof entry !== 'object') {
+          return null;
+        }
+        const keyCandidates = [
+          typeof entry.month === 'string' ? entry.month : '',
+          typeof entry.sortKey === 'string' ? entry.sortKey : '',
+          typeof entry.key === 'string' ? entry.key : '',
+          typeof entry.id === 'string' ? entry.id : '',
+        ];
+        const monthKey = keyCandidates
+          .map((candidate) => (typeof candidate === 'string' ? candidate.replace(/^monthly-/, '') : ''))
+          .find((candidate) => candidate);
+        const valueCandidates = [
+          Number.isFinite(entry.count) ? entry.count : Number.NaN,
+          Number.isFinite(entry.total) ? entry.total : Number.NaN,
+          Number.isFinite(entry.value) ? entry.value : Number.NaN,
+        ];
+        const rawValue = valueCandidates.find((candidate) => Number.isFinite(candidate));
+        if (!monthKey || !Number.isFinite(rawValue)) {
+          return null;
+        }
+        const label = typeof entry.label === 'string' && entry.label.trim()
+          ? entry.label.trim()
+          : formatMonthLabel(monthKey);
+        return {
+          month: monthKey,
+          value: Math.max(0, rawValue),
+          label,
+        };
+      }).filter(Boolean);
+      if (!normalized.length) {
+        return `<p class="compare-monthly__empty">${TEXT.compare.sparklineFallback}</p>`;
+      }
+      const seen = new Set();
+      const unique = [];
+      normalized.forEach((item) => {
+        if (seen.has(item.month)) {
+          return;
+        }
+        seen.add(item.month);
+        unique.push(item);
+      });
+      const highlightKeys = Array.isArray(highlights)
+        ? highlights
+          .map((key) => (typeof key === 'string' ? key.replace(/^monthly-/, '') : ''))
+          .filter(Boolean)
+        : [];
+      const compareEntries = highlightKeys
+        .map((key) => unique.find((item) => item.month === key))
+        .filter(Boolean)
+        .slice(0, 2);
+      if (compareEntries.length < 2) {
+        return `<p class="compare-monthly__empty">${TEXT.compare.sparklineFallback}</p>`;
+      }
+      const styleTarget = document.body || document.documentElement;
+      const computedStyles = getComputedStyle(styleTarget);
+      const baseColor = computedStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.2)';
+      const highlightColor = computedStyles.getPropertyValue('--color-accent').trim() || '#2563eb';
+      const axisColor = computedStyles.getPropertyValue('--color-text-muted').trim() || '#475569';
+      const height = 120;
+      const baseline = height - 36;
+      const barWidth = 56;
+      const gap = 32;
+      const width = compareEntries.length * barWidth + (compareEntries.length + 1) * gap;
+      const maxValue = compareEntries.reduce((max, entry) => Math.max(max, entry.value), 0);
+      if (!Number.isFinite(maxValue) || maxValue < 0) {
+        return `<p class="compare-monthly__empty">${TEXT.compare.sparklineFallback}</p>`;
+      }
+      const labelY = height - 12;
+      const bars = compareEntries.map((entry, index) => {
+        const ratio = maxValue > 0 ? entry.value / maxValue : 0;
+        const barHeight = maxValue > 0 ? Math.round(ratio * (height - 52)) : 0;
+        const x = gap + index * (barWidth + gap);
+        const y = baseline - barHeight;
+        const centerX = x + barWidth / 2;
+        const fillColor = index === compareEntries.length - 1 ? highlightColor : baseColor || highlightColor;
+        const titleValue = numberFormatter.format(Math.round(entry.value));
+        const valueY = barHeight > 18 ? y - 6 : baseline + 16;
+        const showValue = Number.isFinite(entry.value);
+        return `
+          <g aria-hidden="true">
+            <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="6" fill="${fillColor}" opacity="${index === compareEntries.length - 1 ? 1 : 0.85}">
+              <title>${entry.label}: ${titleValue}</title>
+            </rect>
+            ${showValue ? `<text x="${centerX}" y="${Math.max(20, valueY)}" text-anchor="middle" fill="${axisColor}" font-size="12" font-weight="600">${titleValue}</text>` : ''}
+            <text x="${centerX}" y="${labelY}" text-anchor="middle" fill="${axisColor}" font-size="12">${entry.label}</text>
+          </g>
+        `;
+      }).join('');
+      const previousEntry = compareEntries[0];
+      const currentEntry = compareEntries[compareEntries.length - 1];
+      const diffValue = currentEntry.value - previousEntry.value;
+      let diffDescription = 'Pokyčių nėra';
+      if (Math.abs(diffValue) >= 0.5) {
+        const sign = diffValue > 0 ? '+' : '−';
+        diffDescription = `Pokytis ${sign}${numberFormatter.format(Math.round(Math.abs(diffValue)))} pacientų`;
+      }
+      const ariaLabel = TEXT.compare.sparklineAria(currentEntry.label, previousEntry.label, diffDescription);
+      const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
+      return `
+        <svg class="compare-monthly__chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeAttr(ariaLabel)}" focusable="false">
+          <g aria-hidden="true">
+            <line x1="0" y1="${baseline}" x2="${width}" y2="${baseline}" stroke="${axisColor}" stroke-width="1" stroke-linecap="round" opacity="0.35"></line>
+            ${bars}
+          </g>
+        </svg>
+      `;
+    }
+
     function renderMonthlyComparison(newer, older) {
       const monthlyEntries = Array.isArray(dashboardState?.monthly?.all)
         ? dashboardState.monthly.all.filter((item) => item && typeof item === 'object')
@@ -11880,11 +12057,22 @@
           <span class="compare-summary__metric-diff">Δ ${metric.diffText}${metric.percentText ? ` (${metric.percentText})` : ''}</span>
         </div>
       `).join('');
+      const description = descriptionParts.join(' – ');
+      const highlightKeys = [older?.sortKey, newer?.sortKey].filter(Boolean);
+      const sparklineHtml = buildMonthlySparkline(dashboardState.monthly.window, highlightKeys);
       return `
         <div class="compare-summary__monthly">
-          <p class="compare-summary__description">${descriptionParts.join(' – ')}</p>
-          <div class="compare-summary__metrics">${metricsHtml}</div>
-          ${yoyBlock}
+          <div class="compare-monthly">
+            <div class="compare-monthly__stats">
+              <p class="compare-summary__description">${description}</p>
+              <div class="compare-summary__metrics">${metricsHtml}</div>
+              ${yoyBlock}
+            </div>
+            <div class="compare-monthly__sparkline">
+              <strong class="compare-monthly__sparkline-title">${TEXT.compare.sparklineTitle}</strong>
+              ${sparklineHtml}
+            </div>
+          </div>
         </div>
       `;
     }
