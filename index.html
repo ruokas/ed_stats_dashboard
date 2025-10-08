@@ -11774,6 +11774,121 @@
       };
     }
 
+    function renderMonthlyComparison(newer, older) {
+      const monthlyEntries = Array.isArray(dashboardState?.monthly?.all)
+        ? dashboardState.monthly.all.filter((item) => item && typeof item === 'object')
+        : [];
+      const parseSortKey = (item) => {
+        const sortKey = typeof item?.sortKey === 'string' ? item.sortKey : '';
+        const match = sortKey.match(/^(\d{4})-(\d{2})$/);
+        if (!match) {
+          return { key: sortKey, year: Number.NaN, month: Number.NaN };
+        }
+        return {
+          key: sortKey,
+          year: Number.parseInt(match[1], 10),
+          month: Number.parseInt(match[2], 10),
+        };
+      };
+      const createDiffText = (value, formatter, unit = '') => {
+        if (!Number.isFinite(value) || Math.abs(value) < 0.0001) {
+          return 'pokyčių nėra';
+        }
+        const sign = value > 0 ? '+' : '−';
+        return `${sign}${formatter(Math.abs(value))}${unit}`;
+      };
+      const formatPercentChange = (current, previous) => {
+        if (!Number.isFinite(current) || !Number.isFinite(previous) || Math.abs(previous) < 0.0001) {
+          return '';
+        }
+        const raw = ((current - previous) / Math.abs(previous)) * 100;
+        if (Math.abs(raw) < 0.0001) {
+          return '';
+        }
+        const sign = raw > 0 ? '+' : '−';
+        return `${sign}${oneDecimalFormatter.format(Math.abs(raw))}%`;
+      };
+      const newerMeta = parseSortKey(newer);
+      const olderMeta = parseSortKey(older);
+      const newerLabel = newer?.label || formatMonthLabel(newerMeta.key || '');
+      const olderLabel = older?.label || formatMonthLabel(olderMeta.key || '');
+      const descriptionParts = [`${newerLabel} palyginta su ${olderLabel}`];
+      if (Number.isFinite(newerMeta.year) && Number.isFinite(olderMeta.year) && newerMeta.year !== olderMeta.year) {
+        descriptionParts.push('tas pats mėnuo prieš metus');
+      }
+      const totalDiff = newer.total - older.total;
+      const avgStayDiff = newer.avgStay - older.avgStay;
+      const emsShareDiff = (newer.emsShare - older.emsShare) * 100;
+      const hospShareDiff = (newer.hospShare - older.hospShare) * 100;
+      const metrics = [
+        {
+          label: TEXT.compare.metrics.total,
+          newValue: numberFormatter.format(newer.total),
+          previousValue: numberFormatter.format(older.total),
+          diffText: createDiffText(totalDiff, (val) => numberFormatter.format(Math.round(val))),
+          percentText: formatPercentChange(newer.total, older.total),
+        },
+        {
+          label: TEXT.compare.metrics.avgStay,
+          newValue: `${decimalFormatter.format(newer.avgStay)} val.`,
+          previousValue: `${decimalFormatter.format(older.avgStay)} val.`,
+          diffText: createDiffText(avgStayDiff, (val) => decimalFormatter.format(val), ' val.'),
+          percentText: formatPercentChange(newer.avgStay, older.avgStay),
+        },
+        {
+          label: TEXT.compare.metrics.emsShare,
+          newValue: percentFormatter.format(newer.emsShare),
+          previousValue: percentFormatter.format(older.emsShare),
+          diffText: createDiffText(emsShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.'),
+          percentText: formatPercentChange(newer.emsShare, older.emsShare),
+        },
+        {
+          label: TEXT.compare.metrics.hospShare,
+          newValue: percentFormatter.format(newer.hospShare),
+          previousValue: percentFormatter.format(older.hospShare),
+          diffText: createDiffText(hospShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.'),
+          percentText: formatPercentChange(newer.hospShare, older.hospShare),
+        },
+      ];
+      let yoyBlock = '';
+      if (Number.isFinite(newerMeta.year) && Number.isFinite(newerMeta.month)) {
+        const previousYearKey = `${String(newerMeta.year - 1).padStart(4, '0')}-${String(newerMeta.month).padStart(2, '0')}`;
+        const contextEntry = monthlyEntries.find((entry) => entry?.month === previousYearKey);
+        if (contextEntry) {
+          const contextCount = Number.isFinite(contextEntry.count) ? contextEntry.count : 0;
+          const yoyDiff = newer.total - contextCount;
+          const yoyDiffText = createDiffText(yoyDiff, (val) => numberFormatter.format(Math.round(val)));
+          const yoyPercentText = formatPercentChange(newer.total, contextCount);
+          const monthLabel = formatMonthLabel(previousYearKey);
+          const details = [yoyDiffText];
+          if (yoyPercentText) {
+            details.push(`(${yoyPercentText})`);
+          }
+          yoyBlock = `
+            <p class="compare-summary__hint">
+              Metai-metams: ${details.join(' ')}
+              <span>vs ${monthLabel} – tas pats mėnuo prieš metus</span>
+            </p>
+          `;
+        }
+      }
+      const metricsHtml = metrics.map((metric) => `
+        <div class="compare-summary__metric">
+          <span class="compare-summary__metric-label">${metric.label}</span>
+          <strong class="compare-summary__metric-value">${metric.newValue}</strong>
+          <span class="compare-summary__metric-prev">vs ${metric.previousValue}</span>
+          <span class="compare-summary__metric-diff">Δ ${metric.diffText}${metric.percentText ? ` (${metric.percentText})` : ''}</span>
+        </div>
+      `).join('');
+      return `
+        <div class="compare-summary__monthly">
+          <p class="compare-summary__description">${descriptionParts.join(' – ')}</p>
+          <div class="compare-summary__metrics">${metricsHtml}</div>
+          ${yoyBlock}
+        </div>
+      `;
+    }
+
     function updateCompareSummary() {
       if (!selectors.compareSummary) {
         return;
@@ -11794,6 +11909,14 @@
       const sorted = [...selections].sort((a, b) => (a.sortKey > b.sortKey ? 1 : -1));
       const older = sorted[0];
       const newer = sorted[sorted.length - 1];
+      const summaryTitle = TEXT.compare.summaryTitle(newer.label, older.label);
+      if (selections.every((item) => item.group === 'monthly')) {
+        selectors.compareSummary.innerHTML = `
+          <strong>${summaryTitle}</strong>
+          ${renderMonthlyComparison(newer, older)}
+        `;
+        return;
+      }
       const totalDiff = newer.total - older.total;
       const avgStayDiff = newer.avgStay - older.avgStay;
       const emsShareDiff = (newer.emsShare - older.emsShare) * 100;
@@ -11809,7 +11932,6 @@
       const avgDiffText = diffToText(avgStayDiff, (val) => decimalFormatter.format(val), ' val.');
       const emsDiffText = diffToText(emsShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.');
       const hospDiffText = diffToText(hospShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.');
-      const summaryTitle = TEXT.compare.summaryTitle(newer.label, older.label);
       selectors.compareSummary.innerHTML = `
         <strong>${summaryTitle}</strong>
         <ul>
