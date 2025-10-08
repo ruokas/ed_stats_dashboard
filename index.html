@@ -6328,6 +6328,10 @@
       lastErrorMessage: '',
       rawRecords: [],
       dailyStats: [],
+      monthly: {
+        all: [],
+        window: [],
+      },
       dataMeta: null,
       chartPeriod: 30,
       chartYear: null,
@@ -6370,6 +6374,11 @@
         updatedAt: null,
       },
     };
+
+    function resetMonthlyState() {
+      dashboardState.monthly.all = [];
+      dashboardState.monthly.window = [];
+    }
 
     function setFullscreenMode(active, options = {}) {
       const previousState = dashboardState.fullscreen === true;
@@ -11959,8 +11968,10 @@
     }
 
     function renderMonthlyTable(monthlyStats) {
+      const scopedMonthly = Array.isArray(monthlyStats) ? monthlyStats : [];
+      dashboardState.monthly.window = scopedMonthly;
       selectors.monthlyTable.replaceChildren();
-      if (!monthlyStats.length) {
+      if (!scopedMonthly.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
         cell.colSpan = 9;
@@ -11971,8 +11982,8 @@
         return;
       }
 
-      const totals = monthlyStats.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
-      const completeness = monthlyStats.map((entry) => isCompleteMonthEntry(entry));
+      const totals = scopedMonthly.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
+      const completeness = scopedMonthly.map((entry) => isCompleteMonthEntry(entry));
       const diffValues = totals.map((total, index) => {
         if (index === 0) {
           return Number.NaN;
@@ -11990,7 +12001,7 @@
         ? Math.max(acc, Math.abs(value))
         : acc), 0);
 
-      monthlyStats.forEach((entry, index) => {
+      scopedMonthly.forEach((entry, index) => {
         const row = document.createElement('tr');
         const avgPerDay = entry.dayCount > 0 ? entry.count / entry.dayCount : 0;
         const total = Number.isFinite(entry.count) ? entry.count : 0;
@@ -13853,12 +13864,14 @@
         await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
         renderRecentTable(recentDailyStats);
         const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
+        dashboardState.monthly.all = monthlyStats;
         // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
         const monthsLimit = 12;
         const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
           ? monthlyStats.slice(-monthsLimit)
           : monthlyStats;
         renderMonthlyTable(limitedMonthlyStats);
+        dashboardState.monthly.window = limitedMonthlyStats;
         const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
         const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
           ? datasetYearlyStats
@@ -13906,6 +13919,15 @@
     initializeTabSwitcher();
     initializeTvMode();
     loadDashboard();
+
+    if (typeof window.clearDashboard === 'function') {
+      const originalClearDashboard = window.clearDashboard;
+      window.clearDashboard = (...args) => {
+        const result = originalClearDashboard(...args);
+        resetMonthlyState();
+        return result;
+      };
+    }
 
     if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
       selectors.chartPeriodButtons.forEach((button) => {
