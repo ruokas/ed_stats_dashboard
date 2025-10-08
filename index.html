@@ -1222,16 +1222,6 @@
       .ed-dashboard__card {
         min-height: 140px;
       }
-
-      .monthly-filters {
-        width: 100%;
-        justify-content: flex-start;
-        gap: 10px;
-      }
-
-      .monthly-filter {
-        flex: 1 1 140px;
-      }
     }
 
 
@@ -1776,57 +1766,6 @@
       margin: 0;
       font-size: 0.95rem;
       color: var(--color-text-muted);
-    }
-
-    .monthly-filters {
-      display: inline-flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: flex-end;
-      justify-content: flex-end;
-      min-width: 0;
-    }
-
-    .monthly-filter {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 160px;
-      flex: 1 1 160px;
-    }
-
-    .monthly-filter span {
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: var(--color-text-muted);
-    }
-
-    .monthly-filter select {
-      border-radius: 12px;
-      border: 1px solid var(--color-border);
-      background: var(--color-input-bg);
-      color: var(--color-text);
-      padding: 10px 12px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-      min-height: 0;
-    }
-
-    .monthly-filter select:hover,
-    .monthly-filter select:focus-visible {
-      background: var(--color-input-bg-hover);
-    }
-
-    .monthly-filter select:focus-visible {
-      outline: none;
-      border-color: var(--color-accent);
-      box-shadow: 0 0 0 3px var(--color-accent-soft);
-    }
-
-    .monthly-filter select:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
 
     .section__description {
@@ -3999,19 +3938,6 @@
           </h2>
           <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
         </div>
-        <div class="monthly-filters" id="monthlyFilters" role="group" aria-label="Mėnesių vaizdo filtrai">
-          <label class="monthly-filter" id="monthlyViewFilter" for="monthlyView">
-            <span id="monthlyViewFilterLabel">Rodinys</span>
-            <select id="monthlyView">
-              <option value="recent">Paskutiniai 12 mėn.</option>
-              <option value="month">Tas pats mėnuo pagal metus</option>
-            </select>
-          </label>
-          <label class="monthly-filter" id="monthlyMonthFilter" for="monthlyMonth" hidden>
-            <span id="monthlyMonthFilterLabel">Mėnuo</span>
-            <select id="monthlyMonth" disabled></select>
-          </label>
-        </div>
       </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="monthlyHeading">
         <table aria-describedby="monthlySubtitle">
@@ -4873,34 +4799,9 @@
       monthly: {
         title: 'Mėnesinė suvestinė',
         subtitle: 'Kalendoriniai mėnesiai (paskutiniai 12 mėnesių).',
-        subtitleMonth: (label) => {
-          const monthLabel = label || 'Pasirinktas';
-          return `${monthLabel} mėnuo pagal skirtingus metus.`;
-        },
         caption: 'Mėnesių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
         comparisonUnavailable: 'Laukiama pilno mėnesio duomenų palyginimui.',
-        filters: {
-          modeLabel: 'Rodinys',
-          modeRecent: 'Paskutiniai 12 mėn.',
-          modeMonth: 'Tas pats mėnuo pagal metus',
-          monthLabel: 'Mėnuo',
-          monthPlaceholder: 'Pasirinkite mėnesį',
-        },
-        months: [
-          { value: '01', label: 'Sausis' },
-          { value: '02', label: 'Vasaris' },
-          { value: '03', label: 'Kovas' },
-          { value: '04', label: 'Balandis' },
-          { value: '05', label: 'Gegužė' },
-          { value: '06', label: 'Birželis' },
-          { value: '07', label: 'Liepa' },
-          { value: '08', label: 'Rugpjūtis' },
-          { value: '09', label: 'Rugsėjis' },
-          { value: '10', label: 'Spalis' },
-          { value: '11', label: 'Lapkritis' },
-          { value: '12', label: 'Gruodis' },
-        ],
       },
       yearly: {
         title: 'Metinė suvestinė',
@@ -5201,7 +5102,6 @@
     const oneDecimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const percentFormatter = new Intl.NumberFormat('lt-LT', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
-    const MONTHLY_RECENT_LIMIT = 12;
     const shortDateFormatter = new Intl.DateTimeFormat('lt-LT', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const monthDayFormatter = new Intl.DateTimeFormat('lt-LT', { month: '2-digit', day: '2-digit' });
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
@@ -5275,13 +5175,6 @@
       monthlySubtitle: document.getElementById('monthlySubtitle'),
       monthlyCaption: document.getElementById('monthlyCaption'),
       monthlyTable: document.getElementById('monthlyTable'),
-      monthlyFilters: document.getElementById('monthlyFilters'),
-      monthlyViewFilter: document.getElementById('monthlyViewFilter'),
-      monthlyMonthFilter: document.getElementById('monthlyMonthFilter'),
-      monthlyViewSelect: document.getElementById('monthlyView'),
-      monthlyMonthSelect: document.getElementById('monthlyMonth'),
-      monthlyViewFilterLabel: document.getElementById('monthlyViewFilterLabel'),
-      monthlyMonthFilterLabel: document.getElementById('monthlyMonthFilterLabel'),
       yearlyHeading: document.getElementById('yearlyHeading'),
       yearlySubtitle: document.getElementById('yearlySubtitle'),
       yearlyCaption: document.getElementById('yearlyCaption'),
@@ -6503,10 +6396,6 @@
       monthly: {
         all: [],
         window: [],
-        filter: {
-          mode: 'recent',
-          month: null,
-        },
       },
       dataMeta: null,
       chartPeriod: 30,
@@ -6554,13 +6443,6 @@
     function resetMonthlyState() {
       dashboardState.monthly.all = [];
       dashboardState.monthly.window = [];
-      dashboardState.monthly.filter = {
-        mode: 'recent',
-        month: null,
-      };
-      populateMonthlyMonthOptions();
-      updateMonthlySubtitle();
-      syncMonthlyFilterControls();
     }
 
     function setFullscreenMode(active, options = {}) {
@@ -6826,26 +6708,8 @@
       selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
       selectors.recentCaption.textContent = TEXT.recent.caption;
       selectors.monthlyHeading.textContent = TEXT.monthly.title;
+      selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
       selectors.monthlyCaption.textContent = TEXT.monthly.caption;
-      updateMonthlySubtitle();
-      if (selectors.monthlyViewFilterLabel) {
-        selectors.monthlyViewFilterLabel.textContent = TEXT.monthly?.filters?.modeLabel || 'Rodinys';
-      }
-      if (selectors.monthlyMonthFilterLabel) {
-        selectors.monthlyMonthFilterLabel.textContent = TEXT.monthly?.filters?.monthLabel || 'Mėnuo';
-      }
-      if (selectors.monthlyViewSelect) {
-        const recentOption = selectors.monthlyViewSelect.querySelector('option[value="recent"]');
-        if (recentOption) {
-          recentOption.textContent = TEXT.monthly?.filters?.modeRecent || 'Paskutiniai 12 mėn.';
-        }
-        const monthOption = selectors.monthlyViewSelect.querySelector('option[value="month"]');
-        if (monthOption) {
-          monthOption.textContent = TEXT.monthly?.filters?.modeMonth || 'Tas pats mėnuo pagal metus';
-        }
-      }
-      populateMonthlyMonthOptions();
-      syncMonthlyFilterControls();
       if (selectors.yearlyHeading) {
         selectors.yearlyHeading.textContent = TEXT.yearly.title;
       }
@@ -12413,235 +12277,6 @@
       return `${year} m.`;
     }
 
-    function getMonthFilterConfig() {
-      const config = Array.isArray(TEXT.monthly?.months) ? TEXT.monthly.months : [];
-      return config.filter((item) => item && typeof item.value === 'string' && item.value);
-    }
-
-    function getMonthFilterLabel(value) {
-      if (typeof value !== 'string') {
-        return '';
-      }
-      const config = getMonthFilterConfig().find((item) => item.value === value);
-      return config?.label || '';
-    }
-
-    function getAvailableMonthFilterValues() {
-      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
-      if (!allMonthly.length) {
-        return [];
-      }
-      const monthSet = new Set();
-      allMonthly.forEach((entry) => {
-        if (entry?.month && typeof entry.month === 'string' && entry.month.length >= 7) {
-          monthSet.add(entry.month.slice(5, 7));
-        }
-      });
-      return getMonthFilterConfig().filter((item) => monthSet.has(item.value));
-    }
-
-    function getLatestMonthFilterValue() {
-      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
-      if (!allMonthly.length) {
-        return null;
-      }
-      const latestEntry = allMonthly[allMonthly.length - 1];
-      if (!latestEntry?.month || typeof latestEntry.month !== 'string' || latestEntry.month.length < 7) {
-        return null;
-      }
-      return latestEntry.month.slice(5, 7);
-    }
-
-    function ensureMonthlyMonthSelection() {
-      const available = getAvailableMonthFilterValues();
-      if (!available.length) {
-        dashboardState.monthly.filter.month = null;
-        return;
-      }
-      const current = dashboardState.monthly.filter.month;
-      if (available.some((item) => item.value === current)) {
-        return;
-      }
-      const latestValue = getLatestMonthFilterValue();
-      if (latestValue && available.some((item) => item.value === latestValue)) {
-        dashboardState.monthly.filter.month = latestValue;
-        return;
-      }
-      dashboardState.monthly.filter.month = available[available.length - 1].value;
-    }
-
-    function populateMonthlyMonthOptions() {
-      if (!selectors.monthlyMonthSelect) {
-        return;
-      }
-      const select = selectors.monthlyMonthSelect;
-      const placeholderText = TEXT.monthly?.filters?.monthPlaceholder || 'Pasirinkite mėnesį';
-      const available = getAvailableMonthFilterValues();
-      const currentValue = dashboardState.monthly?.filter?.month || '';
-      const previousValue = select.value;
-      select.replaceChildren();
-      const placeholderOption = document.createElement('option');
-      placeholderOption.value = '';
-      placeholderOption.textContent = placeholderText;
-      placeholderOption.disabled = true;
-      placeholderOption.hidden = true;
-      select.appendChild(placeholderOption);
-      available.forEach((item) => {
-        const option = document.createElement('option');
-        option.value = item.value;
-        option.textContent = item.label;
-        select.appendChild(option);
-      });
-      if (available.some((item) => item.value === currentValue)) {
-        select.value = currentValue;
-      } else if (available.some((item) => item.value === previousValue)) {
-        select.value = previousValue;
-      } else {
-        select.value = '';
-      }
-    }
-
-    function updateMonthlyFilterVisibility() {
-      const isMonthMode = dashboardState.monthly?.filter?.mode === 'month';
-      const hasOptions = getAvailableMonthFilterValues().length > 0;
-      if (selectors.monthlyMonthFilter) {
-        if (isMonthMode && hasOptions) {
-          selectors.monthlyMonthFilter.removeAttribute('hidden');
-        } else {
-          selectors.monthlyMonthFilter.setAttribute('hidden', '');
-        }
-      }
-      if (selectors.monthlyMonthSelect) {
-        selectors.monthlyMonthSelect.disabled = !isMonthMode || !hasOptions;
-      }
-    }
-
-    function syncMonthlyFilterControls() {
-      if (!dashboardState.monthly?.filter) {
-        return;
-      }
-      const mode = dashboardState.monthly.filter.mode === 'month' ? 'month' : 'recent';
-      if (selectors.monthlyViewSelect && selectors.monthlyViewSelect.value !== mode) {
-        selectors.monthlyViewSelect.value = mode;
-      }
-      if (selectors.monthlyMonthSelect) {
-        const monthValue = dashboardState.monthly.filter.month;
-        if (monthValue && selectors.monthlyMonthSelect.querySelector(`option[value="${monthValue}"]`)) {
-          selectors.monthlyMonthSelect.value = monthValue;
-        } else {
-          selectors.monthlyMonthSelect.value = '';
-        }
-      }
-      updateMonthlyFilterVisibility();
-    }
-
-    function getMonthlySubtitleText() {
-      if (dashboardState.monthly?.filter?.mode === 'month') {
-        const label = getMonthFilterLabel(dashboardState.monthly.filter.month);
-        if (typeof TEXT.monthly?.subtitleMonth === 'function') {
-          return TEXT.monthly.subtitleMonth(label);
-        }
-        if (TEXT.monthly?.subtitleMonth) {
-          return TEXT.monthly.subtitleMonth;
-        }
-      }
-      return TEXT.monthly?.subtitle || '';
-    }
-
-    function updateMonthlySubtitle() {
-      if (!selectors.monthlySubtitle) {
-        return;
-      }
-      selectors.monthlySubtitle.textContent = getMonthlySubtitleText();
-    }
-
-    function updateMonthlyView() {
-      ensureMonthlyMonthSelection();
-      populateMonthlyMonthOptions();
-      const mode = dashboardState.monthly?.filter?.mode === 'month' ? 'month' : 'recent';
-      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
-      let scopedMonthly;
-      if (mode === 'month') {
-        const monthValue = dashboardState.monthly.filter.month;
-        scopedMonthly = monthValue
-          ? allMonthly.filter((entry) => entry?.month && entry.month.slice(5, 7) === monthValue)
-          : [];
-      } else {
-        scopedMonthly = Number.isFinite(MONTHLY_RECENT_LIMIT) && MONTHLY_RECENT_LIMIT > 0
-          ? allMonthly.slice(-MONTHLY_RECENT_LIMIT)
-          : allMonthly.slice();
-      }
-      if (dashboardState.compare?.active && Array.isArray(dashboardState.compare.selections)) {
-        const allowedMonthlyIds = new Set(
-          scopedMonthly
-            .filter((entry) => entry?.month)
-            .map((entry) => `monthly-${entry.month}`),
-        );
-        const filtered = dashboardState.compare.selections.filter((item) => {
-          if (!item || typeof item !== 'object') {
-            return false;
-          }
-          if (item.group !== 'monthly') {
-            return true;
-          }
-          return allowedMonthlyIds.has(item.id);
-        });
-        if (filtered.length !== dashboardState.compare.selections.length) {
-          dashboardState.compare.selections = filtered;
-        }
-      }
-      renderMonthlyTable(scopedMonthly);
-      updateMonthlySubtitle();
-      syncMonthlyFilterControls();
-    }
-
-    function setMonthlyFilterMode(mode) {
-      const normalized = mode === 'month' ? 'month' : 'recent';
-      if (!dashboardState.monthly) {
-        dashboardState.monthly = { all: [], window: [], filter: { mode: normalized, month: null } };
-      }
-      dashboardState.monthly.filter.mode = normalized;
-      if (normalized === 'month') {
-        ensureMonthlyMonthSelection();
-      }
-      updateMonthlyView();
-    }
-
-    function setMonthlyFilterMonth(value) {
-      if (!dashboardState.monthly?.filter) {
-        return;
-      }
-      if (typeof value === 'string' && value) {
-        dashboardState.monthly.filter.month = value;
-      } else {
-        dashboardState.monthly.filter.month = null;
-      }
-      if (dashboardState.monthly.filter.mode === 'month') {
-        updateMonthlyView();
-      } else {
-        syncMonthlyFilterControls();
-      }
-    }
-
-    function initializeMonthlyFilters() {
-      if (selectors.monthlyViewSelect) {
-        selectors.monthlyViewSelect.addEventListener('change', (event) => {
-          const target = event.target;
-          const value = target instanceof HTMLSelectElement ? target.value : String(target?.value || '');
-          setMonthlyFilterMode(value);
-        });
-      }
-      if (selectors.monthlyMonthSelect) {
-        selectors.monthlyMonthSelect.addEventListener('change', (event) => {
-          const target = event.target;
-          const value = target instanceof HTMLSelectElement ? target.value : String(target?.value || '');
-          setMonthlyFilterMonth(value);
-        });
-      }
-      populateMonthlyMonthOptions();
-      syncMonthlyFilterControls();
-    }
-
     function renderMonthlyTable(monthlyStats) {
       const scopedMonthly = Array.isArray(monthlyStats) ? monthlyStats : [];
       dashboardState.monthly.window = scopedMonthly;
@@ -14540,7 +14175,13 @@
         renderRecentTable(recentDailyStats);
         const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
         dashboardState.monthly.all = monthlyStats;
-        updateMonthlyView();
+        // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
+        const monthsLimit = 12;
+        const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
+          ? monthlyStats.slice(-monthsLimit)
+          : monthlyStats;
+        renderMonthlyTable(limitedMonthlyStats);
+        dashboardState.monthly.window = limitedMonthlyStats;
         const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
         const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
           ? datasetYearlyStats
@@ -14585,7 +14226,6 @@
 
     initializeKpiFilters();
     initializeFeedbackTrendControls();
-    initializeMonthlyFilters();
     initializeTabSwitcher();
     initializeTvMode();
     loadDashboard();
