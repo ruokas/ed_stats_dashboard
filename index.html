@@ -13102,7 +13102,7 @@
 
       const baseSelection = createSelection(baseEntry);
       const compareSelection = createSelection(compareEntry);
-      const summaryHtml = renderMonthlyComparison(baseSelection, compareSelection);
+      const summaryHtml = renderMonthlyComparison(compareSelection, baseSelection);
       if (!summaryHtml) {
         setHint(TEXT.monthly?.compare?.noData || 'Pokyčio apskaičiuoti nepavyko.');
         clearContent();
