@@ -4499,14 +4499,6 @@
               section: 'flow',
             },
             {
-              key: 'avgDaytimePatientsPerHour',
-              title: 'Vid. pacientų per val. (dieną)',
-              description: 'Dienos pamainos vidurkis vienai valandai.',
-              empty: '—',
-              format: 'oneDecimal',
-              section: 'flow',
-            },
-            {
               key: 'hospitalizedMonthShare',
               title: 'Hospitalizacijų dalis (šis mėn.)',
               description: 'Šio mėnesio hospitalizacijų dalis.',
@@ -4615,14 +4607,6 @@
               key: 'avgDaytimePatientsMonth',
               title: 'Vid. pacientų dieną (šis mėn.)',
               description: '',
-              empty: '—',
-              format: 'oneDecimal',
-              section: 'flow',
-            },
-            {
-              key: 'avgDaytimePatientsPerHour',
-              title: 'Vid. pacientų per val. (dieną)',
-              description: 'Dienos pamainos vidurkis vienai valandai.',
               empty: '—',
               format: 'oneDecimal',
               section: 'flow',
@@ -7447,20 +7431,6 @@
       };
     }
 
-    function computeDayShiftMinutes(calculationSettings = {}) {
-      const dayMinutes = 24 * 60;
-      const { startMinutes, endMinutes } = resolveNightBoundsMinutes(calculationSettings);
-      if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes)) {
-        return dayMinutes;
-      }
-      let nightDuration = endMinutes - startMinutes;
-      if (nightDuration <= 0) {
-        nightDuration += dayMinutes;
-      }
-      const dayDuration = dayMinutes - nightDuration;
-      return dayDuration > 0 ? dayDuration : dayMinutes;
-    }
-
     function isNightTimestamp(date, nightStartMinutes, nightEndMinutes) {
       if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
         return null;
@@ -8350,7 +8320,6 @@
         totalPatients: 0,
         uniqueDates: 0,
         avgDailyPatients: null,
-        avgDaytimePatientsPerHour: null,
         avgLosMinutes: null,
         avgLosHospitalizedMinutes: null,
         avgLosMonthMinutes: null,
@@ -8999,65 +8968,20 @@
         }
       }
 
-      const dayShiftMinutes = computeDayShiftMinutes(settings?.calculations);
-      const dayShiftHours = dayShiftMinutes / 60;
-      let snapshotDaytimeAverage = null;
-
       const targetMonth = summary.currentMonthKey || latestSnapshotMonth;
-      if (targetMonth && daytimeSnapshotBuckets.has(targetMonth)) {
+      if (summary.avgDaytimePatientsMonth == null && targetMonth && daytimeSnapshotBuckets.has(targetMonth)) {
         const bucket = daytimeSnapshotBuckets.get(targetMonth);
-        const average = bucket.count > 0 ? bucket.sum / bucket.count : null;
-        snapshotDaytimeAverage = average;
-        if (summary.avgDaytimePatientsMonth == null) {
-          summary.avgDaytimePatientsMonth = average;
-        }
+        summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
       } else if (
         summary.avgDaytimePatientsMonth == null
         && latestSnapshotMonth
         && daytimeSnapshotBuckets.has(latestSnapshotMonth)
       ) {
         const bucket = daytimeSnapshotBuckets.get(latestSnapshotMonth);
-        const average = bucket.count > 0 ? bucket.sum / bucket.count : null;
-        snapshotDaytimeAverage = average;
-        summary.avgDaytimePatientsMonth = average;
+        summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
         if (!summary.currentMonthKey) {
           summary.currentMonthKey = latestSnapshotMonth;
         }
-      }
-
-      if (summary.avgDaytimePatientsMonth == null && Number.isFinite(summary.avgDailyPatients)) {
-        summary.avgDaytimePatientsMonth = summary.avgDailyPatients;
-      }
-
-      if (snapshotDaytimeAverage != null && Number.isFinite(dayShiftHours) && dayShiftHours > 0) {
-        summary.avgDaytimePatientsPerHour = snapshotDaytimeAverage;
-      } else if (
-        summary.avgDaytimePatientsPerHour == null
-        && Number.isFinite(summary.avgDailyPatients)
-        && Number.isFinite(dayShiftHours)
-        && dayShiftHours > 0
-      ) {
-        summary.avgDaytimePatientsPerHour = summary.avgDailyPatients / dayShiftHours;
-      } else if (
-        summary.avgDaytimePatientsPerHour == null
-        && Number.isFinite(summary.avgDaytimePatientsMonth)
-        && Number.isFinite(dayShiftHours)
-        && dayShiftHours > 0
-      ) {
-        summary.avgDaytimePatientsPerHour = summary.avgDaytimePatientsMonth / dayShiftHours;
-      }
-
-      if (
-        summary.avgLabMonthMinutes == null
-        && summary.avgLabYearMinutes != null
-      ) {
-        summary.avgLabMonthMinutes = summary.avgLabYearMinutes;
-      }
-      if (
-        summary.avgLabMonthMinutes == null
-        && summary.avgLabMinutes != null
-      ) {
-        summary.avgLabMonthMinutes = summary.avgLabMinutes;
       }
 
       let dispositions = [];
