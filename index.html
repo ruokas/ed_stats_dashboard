@@ -4091,7 +4091,7 @@
             <select id="feedbackRespondentFilter" name="respondent"></select>
           </div>
           <div class="feedback-filters__field">
-            <label id="feedbackLocationLabel" for="feedbackLocationFilter">Kur pildoma anketa</label>
+            <label id="feedbackLocationLabel" for="feedbackLocationFilter">Šaltinis</label>
             <select id="feedbackLocationFilter" name="location"></select>
           </div>
         </div>
@@ -4244,7 +4244,7 @@
           <div class="settings-field">
             <label for="settingsFeedbackFallbackCsv"><span>Demonstracinis CSV (atsiliepimai)</span></label>
             <textarea id="settingsFeedbackFallbackCsv" name="dataSource.feedback.fallbackCsv" spellcheck="false"></textarea>
-            <p class="settings-hint">CSV turi turėti stulpelius: data, įvertinimas, komentaro tekstas, kanalas ir (pasirinktinai) nuotaikos reikšmė.</p>
+            <p class="settings-hint">CSV turi turėti stulpelius: data, įvertinimas, komentaro tekstas, šaltinis ir (pasirinktinai) nuotaikos reikšmė.</p>
           </div>
         </section>
 
@@ -4525,12 +4525,12 @@
 2024-02-08T05:50:00+02:00,2024-02-08T09:15:00+02:00,Rytas,TAIP,
 2024-02-08T19:30:00+02:00,2024-02-08T23:05:00+02:00,Vakare,NE,
 2024-02-09T23:10:00+02:00,2024-02-10T02:20:00+02:00,Naktis,TAIP,Traumatologija`;
-    const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?
-2024-02-01T09:12:00+02:00,Pacientas,4,4,5,Taip,5,4
-2024-02-02T18:40:00+02:00,Artimasis,3,4,3,Ne,,3
-2024-02-03T12:05:00+02:00,Pacientas,5,5,5,Taip,5,5
-2024-02-04T22:20:00+02:00,Artimasis,2,3,2,Taip,3,2
-2024-02-05T08:55:00+02:00,Pacientas,4,5,4,Ne,,4`;
+    const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Šaltinis,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?
+2024-02-01T09:12:00+02:00,Pacientas,Registratūros QR kodas,4,4,5,Taip,5,4
+2024-02-02T18:40:00+02:00,Artimasis,SMS nuoroda,3,4,3,Ne,,3
+2024-02-03T12:05:00+02:00,Pacientas,Planšetė skyriuje,5,5,5,Taip,5,5
+2024-02-04T22:20:00+02:00,Artimasis,El. pašto kvietimas,2,3,2,Taip,3,2
+2024-02-05T08:55:00+02:00,Pacientas,Registratūros QR kodas,4,5,4,Ne,,4`;
     const DEFAULT_ED_CSV = `Šiuo metu pacientų,Užimta lovų,Slaugytojų - pacientų santykis,Gydytojų - pacientų santykis,1 kategorijos pacientų,2 kategorijos pacientų,3 kategorijos pacientų,4 kategorijos pacientų,5 kategorijos pacientų
 14,11,1:4,1:7,3,4,4,2,1
 18,13,1:5,1:8,4,5,5,3,1
@@ -4943,7 +4943,7 @@
             all: 'Visi dalyviai',
           },
           location: {
-            label: 'Kur pildoma anketa',
+            label: 'Šaltinis',
             all: 'Visos vietos',
           },
         },
@@ -6826,7 +6826,7 @@
         selectors.feedbackRespondentLabel.textContent = feedbackFiltersText.respondent?.label || 'Kas pildo anketą';
       }
       if (selectors.feedbackLocationLabel) {
-        selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Kur pildoma anketa';
+        selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Šaltinis';
       }
       populateFeedbackFilterControls();
       syncFeedbackFilterControls();
@@ -8037,7 +8037,7 @@
     const FEEDBACK_HEADER_CANDIDATES = {
       date: 'timestamp,gauta,data,received,created,submitted,laikas,pildymo data,pildymo laikas,pildymo data ir laikas,užpildymo data,užpildymo laikas,forma pateikta,data pateikta,atsakymo data,atsakymo laikas,įrašo data,įrašo laikas',
       respondent: 'kas pildo formą?,kas pildo formą,kas pildo forma,respondentas,role,dalyvis,tipas',
-      location: 'kur pildėte anketą?,kur pildėte anketą,kur pildėte anketa,kur pildėte forma,kur pildėte formą?,kur pildoma anketa,pildymo vieta,pildymo vieta?,apklausos vieta,location,kur pildoma forma',
+      location: 'kur pildėte anketą?,kur pildėte anketą,kur pildėte anketa,kur pildėte forma,kur pildėte formą?,kur pildoma anketa,pildymo vieta,pildymo vieta?,apklausos vieta,location,kur pildoma forma,šaltinis,saltinis',
       overall: 'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
       doctors: 'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
       nurses: 'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
