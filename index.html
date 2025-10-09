@@ -1775,6 +1775,73 @@
       max-width: 720px;
     }
 
+    .feedback-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 16px 0 24px;
+    }
+
+    .feedback-filters__summary {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border-radius: 999px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+    }
+
+    .feedback-filters__summary[data-default="true"] {
+      background: transparent;
+      padding-inline: 0;
+    }
+
+    .feedback-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px 16px;
+      align-items: end;
+    }
+
+    .feedback-filters__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 180px;
+    }
+
+    .feedback-filters__field label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-filters__field select {
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .feedback-filters__field select:hover,
+    .feedback-filters__field select:focus-visible {
+      background: var(--color-input-bg-hover);
+    }
+
+    .feedback-filters__field select:focus-visible {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-soft);
+    }
+
     .feedback-graphs {
       margin: 12px 0;
       padding: 16px;
@@ -4015,6 +4082,20 @@
           <p id="feedbackDescription" class="section__description">Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.</p>
         </div>
       </div>
+      <div class="feedback-controls" role="region" aria-labelledby="feedbackFiltersTitle">
+        <p id="feedbackFiltersSummary" class="feedback-filters__summary" aria-live="polite" data-default="true">Rodomi visi atsakymai</p>
+        <div id="feedbackFilters" class="feedback-filters" role="group" aria-labelledby="feedbackFiltersTitle">
+          <h3 id="feedbackFiltersTitle" class="sr-only">Atsiliepimų filtrai</h3>
+          <div class="feedback-filters__field">
+            <label id="feedbackRespondentLabel" for="feedbackRespondentFilter">Kas pildo anketą</label>
+            <select id="feedbackRespondentFilter" name="respondent"></select>
+          </div>
+          <div class="feedback-filters__field">
+            <label id="feedbackLocationLabel" for="feedbackLocationFilter">Kur pildoma anketa</label>
+            <select id="feedbackLocationFilter" name="location"></select>
+          </div>
+        </div>
+      </div>
       <div id="feedbackCards" class="feedback-cards" role="list"></div>
       <div class="feedback-graphs feedback-trend-card" role="presentation">
         <div class="feedback-trend-card__header">
@@ -4852,6 +4933,20 @@
             return parts.join(' • ');
           },
         },
+        filters: {
+          summaryLabel: 'Rodoma:',
+          summaryDefault: 'Rodomi visi atsakymai',
+          countLabel: 'Atsakymai',
+          missing: 'Nenurodyta',
+          respondent: {
+            label: 'Kas pildo anketą',
+            all: 'Visi dalyviai',
+          },
+          location: {
+            label: 'Kur pildoma anketa',
+            all: 'Visos vietos',
+          },
+        },
         cards: [
           {
             key: 'overallAverage',
@@ -5077,6 +5172,16 @@
       return normalized;
     }
 
+    const FEEDBACK_FILTER_ALL = 'all';
+    const FEEDBACK_FILTER_MISSING = '__missing__';
+
+    function getDefaultFeedbackFilters() {
+      return {
+        respondent: FEEDBACK_FILTER_ALL,
+        location: FEEDBACK_FILTER_ALL,
+      };
+    }
+
     // Formatai datoms ir skaičiams (LT locale).
     const numberFormatter = new Intl.NumberFormat('lt-LT');
     const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -5089,6 +5194,7 @@
     const tvTimeFormatter = new Intl.DateTimeFormat('lt-LT', { hour: '2-digit', minute: '2-digit' });
     const tvDateFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long', day: '2-digit', month: 'long' });
     const weekdayLongFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long' });
+    const textCollator = new Intl.Collator('lt-LT', { sensitivity: 'base', usage: 'sort' });
     const dailyDateFormatter = new Intl.DateTimeFormat('lt-LT', {
       weekday: 'short',
       year: 'numeric',
@@ -5164,6 +5270,11 @@
       feedbackHeading: document.getElementById('feedbackHeading'),
       feedbackSubtitle: document.getElementById('feedbackSubtitle'),
       feedbackDescription: document.getElementById('feedbackDescription'),
+      feedbackFiltersSummary: document.getElementById('feedbackFiltersSummary'),
+      feedbackRespondentFilter: document.getElementById('feedbackRespondentFilter'),
+      feedbackRespondentLabel: document.getElementById('feedbackRespondentLabel'),
+      feedbackLocationFilter: document.getElementById('feedbackLocationFilter'),
+      feedbackLocationLabel: document.getElementById('feedbackLocationLabel'),
       feedbackCaption: document.getElementById('feedbackCaption'),
       feedbackCards: document.getElementById('feedbackCards'),
       feedbackTrendTitle: document.getElementById('feedbackTrendTitle'),
@@ -6409,6 +6520,10 @@
         usingFallback: false,
         lastErrorMessage: '',
         trendWindow: 6,
+        records: [],
+        filteredRecords: [],
+        filters: getDefaultFeedbackFilters(),
+        filterOptions: { respondent: [], location: [] },
       },
       ed: {
         records: [],
@@ -6706,6 +6821,16 @@
       if (selectors.feedbackDescription) {
         selectors.feedbackDescription.textContent = TEXT.feedback.description;
       }
+      const feedbackFiltersText = TEXT.feedback?.filters || {};
+      if (selectors.feedbackRespondentLabel) {
+        selectors.feedbackRespondentLabel.textContent = feedbackFiltersText.respondent?.label || 'Kas pildo anketą';
+      }
+      if (selectors.feedbackLocationLabel) {
+        selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Kur pildoma anketa';
+      }
+      populateFeedbackFilterControls();
+      syncFeedbackFilterControls();
+      updateFeedbackFiltersSummary();
       if (selectors.feedbackTrendTitle) {
         selectors.feedbackTrendTitle.textContent = TEXT.feedback.trend.title;
       }
@@ -7912,6 +8037,7 @@
     const FEEDBACK_HEADER_CANDIDATES = {
       date: 'timestamp,gauta,data,received,created,submitted,laikas,pildymo data,pildymo laikas,pildymo data ir laikas,užpildymo data,užpildymo laikas,forma pateikta,data pateikta,atsakymo data,atsakymo laikas,įrašo data,įrašo laikas',
       respondent: 'kas pildo formą?,kas pildo formą,kas pildo forma,respondentas,role,dalyvis,tipas',
+      location: 'kur pildėte anketą?,kur pildėte anketą,kur pildėte anketa,kur pildėte forma,kur pildėte formą?,kur pildoma anketa,pildymo vieta,pildymo vieta?,apklausos vieta,location,kur pildoma forma',
       overall: 'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
       doctors: 'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
       nurses: 'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
@@ -8033,6 +8159,7 @@
       const indices = {
         date: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.date),
         respondent: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.respondent),
+        location: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.location),
         overall: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.overall),
         doctors: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.doctors),
         nurses: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.nurses),
@@ -8055,6 +8182,10 @@
 
           const respondent = indices.respondent >= 0
             ? String(columns[indices.respondent] ?? '').trim()
+            : '';
+
+          const location = indices.location >= 0
+            ? String(columns[indices.location] ?? '').trim()
             : '';
 
           const overallRating = indices.overall >= 0
@@ -8081,13 +8212,16 @@
           const hasContact = aidesContact === true || aidesContact === false;
           const hasRespondent = respondent.length > 0;
 
-          if (!dateValue && !hasRating && !hasRespondent && !hasContact) {
+          const hasLocation = location.length > 0;
+
+          if (!dateValue && !hasRating && !hasRespondent && !hasContact && !hasLocation) {
             return null;
           }
 
           return {
             receivedAt: dateValue,
             respondent,
+            location,
             overallRating: Number.isFinite(overallRating) ? overallRating : null,
             doctorsRating: Number.isFinite(doctorsRating) ? doctorsRating : null,
             nursesRating: Number.isFinite(nursesRating) ? nursesRating : null,
@@ -9673,6 +9807,290 @@
         },
         monthly,
       };
+    }
+
+    function sanitizeFeedbackFilters(filters, options = {}) {
+      const defaults = getDefaultFeedbackFilters();
+      const normalized = { ...defaults, ...(filters || {}) };
+      const respondentValues = new Set([FEEDBACK_FILTER_ALL]);
+      const locationValues = new Set([FEEDBACK_FILTER_ALL]);
+
+      const respondentOptions = Array.isArray(options.respondent) ? options.respondent : [];
+      respondentOptions.forEach((option) => {
+        if (option && typeof option.value === 'string') {
+          respondentValues.add(option.value);
+        }
+      });
+
+      const locationOptions = Array.isArray(options.location) ? options.location : [];
+      locationOptions.forEach((option) => {
+        if (option && typeof option.value === 'string') {
+          locationValues.add(option.value);
+        }
+      });
+
+      if (!respondentValues.has(normalized.respondent)) {
+        normalized.respondent = defaults.respondent;
+      }
+      if (!locationValues.has(normalized.location)) {
+        normalized.location = defaults.location;
+      }
+
+      return normalized;
+    }
+
+    function normalizeFeedbackFilterValue(value) {
+      if (typeof value !== 'string') {
+        return '';
+      }
+      return value.trim().toLowerCase();
+    }
+
+    function buildFeedbackFilterOptions(records) {
+      const filtersText = TEXT.feedback?.filters || {};
+      const missingLabel = filtersText.missing || 'Nenurodyta';
+      const respondentMap = new Map();
+      const locationMap = new Map();
+
+      const pushValue = (map, raw) => {
+        const trimmed = typeof raw === 'string' ? raw.trim() : '';
+        const key = trimmed ? trimmed.toLowerCase() : FEEDBACK_FILTER_MISSING;
+        const existing = map.get(key) || {
+          value: key,
+          label: trimmed ? capitalizeSentence(trimmed) : missingLabel,
+          count: 0,
+          original: trimmed,
+        };
+        existing.count += 1;
+        if (trimmed && !existing.original) {
+          existing.original = trimmed;
+          existing.label = capitalizeSentence(trimmed);
+        }
+        map.set(key, existing);
+      };
+
+      (Array.isArray(records) ? records : []).forEach((entry) => {
+        pushValue(respondentMap, entry?.respondent);
+        pushValue(locationMap, entry?.location);
+      });
+
+      const toOptions = (map) => Array.from(map.values())
+        .filter((item) => Number.isFinite(item.count) && item.count > 0 && typeof item.value === 'string')
+        .map((item) => ({
+          value: item.value,
+          label: item.label,
+          count: item.count,
+        }))
+        .sort((a, b) => textCollator.compare(a.label, b.label));
+
+      return {
+        respondent: toOptions(respondentMap),
+        location: toOptions(locationMap),
+      };
+    }
+
+    function formatFeedbackFilterOption(option) {
+      if (!option || typeof option !== 'object') {
+        return '';
+      }
+      const label = option.label || '';
+      const count = Number.isFinite(option.count) ? option.count : null;
+      if (count != null && count > 0) {
+        return `${label} (${numberFormatter.format(count)})`;
+      }
+      return label;
+    }
+
+    function populateFeedbackFilterControls(options = dashboardState.feedback.filterOptions) {
+      const config = options || { respondent: [], location: [] };
+      const filtersText = TEXT.feedback?.filters || {};
+      if (selectors.feedbackRespondentFilter) {
+        const select = selectors.feedbackRespondentFilter;
+        const items = [];
+        const allOption = document.createElement('option');
+        allOption.value = FEEDBACK_FILTER_ALL;
+        allOption.textContent = filtersText.respondent?.all || 'Visi dalyviai';
+        items.push(allOption);
+        (Array.isArray(config.respondent) ? config.respondent : []).forEach((option) => {
+          if (!option || typeof option.value !== 'string') {
+            return;
+          }
+          const opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = formatFeedbackFilterOption(option);
+          items.push(opt);
+        });
+        select.replaceChildren(...items);
+      }
+      if (selectors.feedbackLocationFilter) {
+        const select = selectors.feedbackLocationFilter;
+        const items = [];
+        const allOption = document.createElement('option');
+        allOption.value = FEEDBACK_FILTER_ALL;
+        allOption.textContent = filtersText.location?.all || 'Visos vietos';
+        items.push(allOption);
+        (Array.isArray(config.location) ? config.location : []).forEach((option) => {
+          if (!option || typeof option.value !== 'string') {
+            return;
+          }
+          const opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = formatFeedbackFilterOption(option);
+          items.push(opt);
+        });
+        select.replaceChildren(...items);
+      }
+    }
+
+    function syncFeedbackFilterControls() {
+      const filters = dashboardState.feedback.filters || getDefaultFeedbackFilters();
+      if (selectors.feedbackRespondentFilter) {
+        const select = selectors.feedbackRespondentFilter;
+        const value = typeof filters.respondent === 'string' ? filters.respondent : FEEDBACK_FILTER_ALL;
+        const hasOption = Array.from(select.options).some((option) => option.value === value);
+        select.value = hasOption ? value : FEEDBACK_FILTER_ALL;
+      }
+      if (selectors.feedbackLocationFilter) {
+        const select = selectors.feedbackLocationFilter;
+        const value = typeof filters.location === 'string' ? filters.location : FEEDBACK_FILTER_ALL;
+        const hasOption = Array.from(select.options).some((option) => option.value === value);
+        select.value = hasOption ? value : FEEDBACK_FILTER_ALL;
+      }
+    }
+
+    function getFeedbackFilterLabel(type, value) {
+      const filtersText = TEXT.feedback?.filters || {};
+      if (value === FEEDBACK_FILTER_ALL || !value) {
+        if (type === 'respondent') {
+          return filtersText.respondent?.all || 'Visi dalyviai';
+        }
+        if (type === 'location') {
+          return filtersText.location?.all || 'Visos vietos';
+        }
+        return '';
+      }
+      if (value === FEEDBACK_FILTER_MISSING) {
+        return filtersText.missing || 'Nenurodyta';
+      }
+      const options = dashboardState.feedback.filterOptions?.[type];
+      if (Array.isArray(options)) {
+        const match = options.find((option) => option?.value === value);
+        if (match) {
+          return match.label || match.value;
+        }
+      }
+      return value;
+    }
+
+    function updateFeedbackFiltersSummary(summary = dashboardState.feedback.summary) {
+      const summaryElement = selectors.feedbackFiltersSummary;
+      if (!summaryElement) {
+        return;
+      }
+      const filters = dashboardState.feedback.filters || getDefaultFeedbackFilters();
+      const filtersText = TEXT.feedback?.filters || {};
+      const respondentLabel = getFeedbackFilterLabel('respondent', filters.respondent);
+      const locationLabel = getFeedbackFilterLabel('location', filters.location);
+      const parts = [];
+      if (respondentLabel) {
+        parts.push(respondentLabel);
+      }
+      if (locationLabel) {
+        parts.push(locationLabel);
+      }
+      const baseText = parts.length
+        ? (filtersText.summaryLabel ? `${filtersText.summaryLabel} ${parts.join(' • ')}` : parts.join(' • '))
+        : filtersText.summaryDefault || '';
+      const totalResponses = Number.isFinite(summary?.totalResponses) ? summary.totalResponses : null;
+      const countLabel = filtersText.countLabel || TEXT.feedback?.table?.headers?.responses || 'Atsakymai';
+      const countText = Number.isFinite(totalResponses) ? `${countLabel}: ${numberFormatter.format(totalResponses)}` : '';
+      const finalText = baseText && countText ? `${baseText} • ${countText}` : (baseText || countText || filtersText.summaryDefault || '');
+      summaryElement.textContent = finalText;
+      const isDefault = filters.respondent === FEEDBACK_FILTER_ALL && filters.location === FEEDBACK_FILTER_ALL;
+      summaryElement.dataset.default = isDefault ? 'true' : 'false';
+    }
+
+    function filterFeedbackRecords(records, filters) {
+      const list = Array.isArray(records) ? records.filter(Boolean) : [];
+      if (!filters) {
+        return list;
+      }
+      return list.filter((entry) => {
+        if (!entry) {
+          return false;
+        }
+        const respondentValue = normalizeFeedbackFilterValue(entry.respondent);
+        const locationValue = normalizeFeedbackFilterValue(entry.location);
+        if (filters.respondent !== FEEDBACK_FILTER_ALL) {
+          if (filters.respondent === FEEDBACK_FILTER_MISSING) {
+            if (respondentValue) {
+              return false;
+            }
+          } else if (respondentValue !== filters.respondent) {
+            return false;
+          }
+        }
+        if (filters.location !== FEEDBACK_FILTER_ALL) {
+          if (filters.location === FEEDBACK_FILTER_MISSING) {
+            if (locationValue) {
+              return false;
+            }
+          } else if (locationValue !== filters.location) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    function applyFeedbackFiltersAndRender() {
+      const options = dashboardState.feedback.filterOptions || { respondent: [], location: [] };
+      const sanitized = sanitizeFeedbackFilters(dashboardState.feedback.filters, options);
+      dashboardState.feedback.filters = sanitized;
+      syncFeedbackFilterControls();
+      const filteredRecords = filterFeedbackRecords(dashboardState.feedback.records, sanitized);
+      dashboardState.feedback.filteredRecords = filteredRecords;
+      const feedbackStats = computeFeedbackStats(filteredRecords);
+      dashboardState.feedback.summary = feedbackStats.summary;
+      dashboardState.feedback.monthly = feedbackStats.monthly;
+      renderFeedbackSection(feedbackStats);
+      updateFeedbackFiltersSummary(feedbackStats.summary);
+      return feedbackStats;
+    }
+
+    function handleFeedbackFilterChange(event) {
+      const target = event?.target;
+      if (!target || target.tagName !== 'SELECT') {
+        return;
+      }
+      const { name, value } = target;
+      if (name === 'respondent' || name === 'location') {
+        dashboardState.feedback.filters = {
+          ...dashboardState.feedback.filters,
+          [name]: typeof value === 'string' ? value : FEEDBACK_FILTER_ALL,
+        };
+        applyFeedbackFiltersAndRender();
+      }
+    }
+
+    function updateFeedbackFilterOptions(records) {
+      const options = buildFeedbackFilterOptions(records);
+      dashboardState.feedback.filterOptions = options;
+      populateFeedbackFilterControls(options);
+      dashboardState.feedback.filters = sanitizeFeedbackFilters(dashboardState.feedback.filters, options);
+      syncFeedbackFilterControls();
+    }
+
+    function initializeFeedbackFilters() {
+      populateFeedbackFilterControls(dashboardState.feedback.filterOptions);
+      syncFeedbackFilterControls();
+      updateFeedbackFiltersSummary(dashboardState.feedback.summary);
+      if (selectors.feedbackRespondentFilter) {
+        selectors.feedbackRespondentFilter.addEventListener('change', handleFeedbackFilterChange);
+      }
+      if (selectors.feedbackLocationFilter) {
+        selectors.feedbackLocationFilter.addEventListener('change', handleFeedbackFilterChange);
+      }
     }
 
     function aggregatePeriodSummary(entries) {
@@ -14166,10 +14584,9 @@
           ? datasetYearlyStats
           : computeYearlyStats(monthlyStats);
         renderYearlyTable(yearlyStats);
-        const feedbackStats = computeFeedbackStats(feedbackRecords);
-        dashboardState.feedback.summary = feedbackStats.summary;
-        dashboardState.feedback.monthly = feedbackStats.monthly;
-        renderFeedbackSection(feedbackStats);
+        dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
+        updateFeedbackFilterOptions(dashboardState.feedback.records);
+        applyFeedbackFiltersAndRender();
         setStatus('success');
         applyFeedbackStatusNote();
         await renderEdDashboard(dashboardState.ed);
@@ -14204,6 +14621,7 @@
     populateSettingsForm();
 
     initializeKpiFilters();
+    initializeFeedbackFilters();
     initializeFeedbackTrendControls();
     initializeTabSwitcher();
     initializeTvMode();
