@@ -1222,6 +1222,16 @@
       .ed-dashboard__card {
         min-height: 140px;
       }
+
+      .monthly-filters {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 10px;
+      }
+
+      .monthly-filter {
+        flex: 1 1 140px;
+      }
     }
 
 
@@ -1766,6 +1776,86 @@
       margin: 0;
       font-size: 0.95rem;
       color: var(--color-text-muted);
+    }
+
+    .monthly-filters {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+
+    .monthly-filter {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 160px;
+      flex: 1 1 160px;
+    }
+
+    .monthly-filter span {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .monthly-filter select {
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      min-height: 0;
+    }
+
+    .monthly-filter select:hover,
+    .monthly-filter select:focus-visible {
+      background: var(--color-input-bg-hover);
+    }
+
+    .monthly-filter select:focus-visible {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-soft);
+    }
+
+    .monthly-filter select:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .monthly-compare {
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-elevated);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .monthly-compare__title {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .monthly-compare__hint {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+    }
+
+    .monthly-compare__content {
+      display: grid;
+      gap: 16px;
     }
 
     .section__description {
@@ -3938,6 +4028,32 @@
           </h2>
           <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
         </div>
+        <div class="monthly-filters" id="monthlyFilters" role="group" aria-label="Mėnesių vaizdo filtrai">
+          <label class="monthly-filter" id="monthlyViewFilter" for="monthlyView">
+            <span id="monthlyViewFilterLabel">Rodinys</span>
+            <select id="monthlyView">
+              <option value="recent">Paskutiniai 12 mėn.</option>
+              <option value="month">Tas pats mėnuo pagal metus</option>
+            </select>
+          </label>
+          <label class="monthly-filter" id="monthlyMonthFilter" for="monthlyMonth" hidden>
+            <span id="monthlyMonthFilterLabel">Mėnuo</span>
+            <select id="monthlyMonth" disabled></select>
+          </label>
+          <label class="monthly-filter" id="monthlyYearBaseFilter" for="monthlyYearBase" hidden>
+            <span id="monthlyYearBaseFilterLabel">Metai (bazė)</span>
+            <select id="monthlyYearBase" disabled></select>
+          </label>
+          <label class="monthly-filter" id="monthlyYearCompareFilter" for="monthlyYearCompare" hidden>
+            <span id="monthlyYearCompareFilterLabel">Metai (palyginimui)</span>
+            <select id="monthlyYearCompare" disabled></select>
+          </label>
+        </div>
+      </div>
+      <div id="monthlyCompare" class="monthly-compare" hidden aria-live="polite">
+        <p id="monthlyCompareTitle" class="monthly-compare__title"></p>
+        <p id="monthlyCompareHint" class="monthly-compare__hint" hidden></p>
+        <div id="monthlyCompareContent" class="monthly-compare__content" hidden></div>
       </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="monthlyHeading">
         <table aria-describedby="monthlySubtitle">
@@ -4799,9 +4915,57 @@
       monthly: {
         title: 'Mėnesinė suvestinė',
         subtitle: 'Kalendoriniai mėnesiai (paskutiniai 12 mėnesių).',
+        subtitleMonth: (label) => {
+          const monthLabel = label || 'Pasirinktas';
+          return `${monthLabel} mėnuo pagal skirtingus metus.`;
+        },
         caption: 'Mėnesių pacientų suvestinė: sumos ir vidurkiai.',
         empty: 'Duomenų lentelė bus parodyta užkrovus failą.',
         comparisonUnavailable: 'Laukiama pilno mėnesio duomenų palyginimui.',
+        filters: {
+          modeLabel: 'Rodinys',
+          modeRecent: 'Paskutiniai 12 mėn.',
+          modeMonth: 'Tas pats mėnuo pagal metus',
+          monthLabel: 'Mėnuo',
+          monthPlaceholder: 'Pasirinkite mėnesį',
+          yearBaseLabel: 'Metai (bazė)',
+          yearCompareLabel: 'Metai (palyginimui)',
+          yearPlaceholder: 'Pasirinkite metus',
+        },
+        months: [
+          { value: '01', label: 'Sausis' },
+          { value: '02', label: 'Vasaris' },
+          { value: '03', label: 'Kovas' },
+          { value: '04', label: 'Balandis' },
+          { value: '05', label: 'Gegužė' },
+          { value: '06', label: 'Birželis' },
+          { value: '07', label: 'Liepa' },
+          { value: '08', label: 'Rugpjūtis' },
+          { value: '09', label: 'Rugsėjis' },
+          { value: '10', label: 'Spalis' },
+          { value: '11', label: 'Lapkritis' },
+          { value: '12', label: 'Gruodis' },
+        ],
+        compare: {
+          title: (monthLabel, yearBase, yearCompare) => {
+            const label = monthLabel || 'Pasirinktas mėnuo';
+            const base = yearBase || '—';
+            const compare = yearCompare || '—';
+            return `${label}: ${base} vs ${compare}`;
+          },
+          hint: 'Rodomi pasirinkto mėnesio rodiklių skirtumai tarp pasirinktų metų.',
+          insufficientData: 'Šiam mėnesiui turime tik vienerių metų duomenis.',
+          sameYear: 'Pasirinkite du skirtingus metus palyginimui.',
+          noChange: 'pokyčio nėra',
+          noData: 'pokytis neapskaičiuotas.',
+          metrics: {
+            total: 'Pacientai (suma)',
+            perDay: 'Vid. per dieną',
+            avgStay: 'Vid. buvimo laikas (val.)',
+            hospShare: 'Hospitalizacijų dalis',
+          },
+          deltaLabel: 'Pokytis',
+        },
       },
       yearly: {
         title: 'Metinė suvestinė',
@@ -5102,6 +5266,7 @@
     const oneDecimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const percentFormatter = new Intl.NumberFormat('lt-LT', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
+    const MONTHLY_RECENT_LIMIT = 12;
     const shortDateFormatter = new Intl.DateTimeFormat('lt-LT', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const monthDayFormatter = new Intl.DateTimeFormat('lt-LT', { month: '2-digit', day: '2-digit' });
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
@@ -5175,6 +5340,23 @@
       monthlySubtitle: document.getElementById('monthlySubtitle'),
       monthlyCaption: document.getElementById('monthlyCaption'),
       monthlyTable: document.getElementById('monthlyTable'),
+      monthlyFilters: document.getElementById('monthlyFilters'),
+      monthlyViewFilter: document.getElementById('monthlyViewFilter'),
+      monthlyMonthFilter: document.getElementById('monthlyMonthFilter'),
+      monthlyYearBaseFilter: document.getElementById('monthlyYearBaseFilter'),
+      monthlyYearCompareFilter: document.getElementById('monthlyYearCompareFilter'),
+      monthlyViewSelect: document.getElementById('monthlyView'),
+      monthlyMonthSelect: document.getElementById('monthlyMonth'),
+      monthlyYearBaseSelect: document.getElementById('monthlyYearBase'),
+      monthlyYearCompareSelect: document.getElementById('monthlyYearCompare'),
+      monthlyViewFilterLabel: document.getElementById('monthlyViewFilterLabel'),
+      monthlyMonthFilterLabel: document.getElementById('monthlyMonthFilterLabel'),
+      monthlyYearBaseFilterLabel: document.getElementById('monthlyYearBaseFilterLabel'),
+      monthlyYearCompareFilterLabel: document.getElementById('monthlyYearCompareFilterLabel'),
+      monthlyCompare: document.getElementById('monthlyCompare'),
+      monthlyCompareTitle: document.getElementById('monthlyCompareTitle'),
+      monthlyCompareHint: document.getElementById('monthlyCompareHint'),
+      monthlyCompareContent: document.getElementById('monthlyCompareContent'),
       yearlyHeading: document.getElementById('yearlyHeading'),
       yearlySubtitle: document.getElementById('yearlySubtitle'),
       yearlyCaption: document.getElementById('yearlyCaption'),
@@ -6396,6 +6578,12 @@
       monthly: {
         all: [],
         window: [],
+        filter: {
+          mode: 'recent',
+          month: null,
+          yearBase: null,
+          yearCompare: null,
+        },
       },
       dataMeta: null,
       chartPeriod: 30,
@@ -6443,6 +6631,17 @@
     function resetMonthlyState() {
       dashboardState.monthly.all = [];
       dashboardState.monthly.window = [];
+      dashboardState.monthly.filter = {
+        mode: 'recent',
+        month: null,
+        yearBase: null,
+        yearCompare: null,
+      };
+      populateMonthlyMonthOptions();
+      populateMonthlyYearOptions(null);
+      updateMonthlySubtitle();
+      syncMonthlyFilterControls();
+      renderMonthlyComparisonSummary([]);
     }
 
     function setFullscreenMode(active, options = {}) {
@@ -6708,8 +6907,35 @@
       selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
       selectors.recentCaption.textContent = TEXT.recent.caption;
       selectors.monthlyHeading.textContent = TEXT.monthly.title;
-      selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
       selectors.monthlyCaption.textContent = TEXT.monthly.caption;
+      updateMonthlySubtitle();
+      if (selectors.monthlyViewFilterLabel) {
+        selectors.monthlyViewFilterLabel.textContent = TEXT.monthly?.filters?.modeLabel || 'Rodinys';
+      }
+      if (selectors.monthlyMonthFilterLabel) {
+        selectors.monthlyMonthFilterLabel.textContent = TEXT.monthly?.filters?.monthLabel || 'Mėnuo';
+      }
+      if (selectors.monthlyYearBaseFilterLabel) {
+        selectors.monthlyYearBaseFilterLabel.textContent = TEXT.monthly?.filters?.yearBaseLabel || 'Metai (bazė)';
+      }
+      if (selectors.monthlyYearCompareFilterLabel) {
+        selectors.monthlyYearCompareFilterLabel.textContent = TEXT.monthly?.filters?.yearCompareLabel || 'Metai (palyginimui)';
+      }
+      if (selectors.monthlyViewSelect) {
+        const recentOption = selectors.monthlyViewSelect.querySelector('option[value="recent"]');
+        if (recentOption) {
+          recentOption.textContent = TEXT.monthly?.filters?.modeRecent || 'Paskutiniai 12 mėn.';
+        }
+        const monthOption = selectors.monthlyViewSelect.querySelector('option[value="month"]');
+        if (monthOption) {
+          monthOption.textContent = TEXT.monthly?.filters?.modeMonth || 'Tas pats mėnuo pagal metus';
+        }
+      }
+      populateMonthlyMonthOptions();
+      syncMonthlyFilterControls();
+      if (selectors.monthlyCompareHint) {
+        selectors.monthlyCompareHint.textContent = TEXT.monthly?.compare?.hint || '';
+      }
       if (selectors.yearlyHeading) {
         selectors.yearlyHeading.textContent = TEXT.yearly.title;
       }
@@ -12277,6 +12503,416 @@
       return `${year} m.`;
     }
 
+    function getMonthFilterConfig() {
+      const config = Array.isArray(TEXT.monthly?.months) ? TEXT.monthly.months : [];
+      return config.filter((item) => item && typeof item.value === 'string' && item.value);
+    }
+
+    function getMonthFilterLabel(value) {
+      if (typeof value !== 'string') {
+        return '';
+      }
+      const config = getMonthFilterConfig().find((item) => item.value === value);
+      return config?.label || '';
+    }
+
+    function getAvailableMonthFilterValues() {
+      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
+      if (!allMonthly.length) {
+        return [];
+      }
+      const monthSet = new Set();
+      allMonthly.forEach((entry) => {
+        if (entry?.month && typeof entry.month === 'string' && entry.month.length >= 7) {
+          monthSet.add(entry.month.slice(5, 7));
+        }
+      });
+      return getMonthFilterConfig().filter((item) => monthSet.has(item.value));
+    }
+
+    function getAvailableYearsForMonth(monthValue) {
+      if (typeof monthValue !== 'string' || monthValue.length !== 2) {
+        return [];
+      }
+      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
+      if (!allMonthly.length) {
+        return [];
+      }
+      const yearSet = new Set();
+      allMonthly.forEach((entry) => {
+        if (!entry?.month || typeof entry.month !== 'string' || entry.month.length < 7) {
+          return;
+        }
+        if (entry.month.slice(5, 7) === monthValue) {
+          yearSet.add(entry.month.slice(0, 4));
+        }
+      });
+      return Array.from(yearSet)
+        .filter((year) => typeof year === 'string' && year.length === 4)
+        .sort((a, b) => Number.parseInt(b, 10) - Number.parseInt(a, 10));
+    }
+
+    function ensureMonthlyYearSelection(monthValue) {
+      if (!dashboardState.monthly?.filter) {
+        return;
+      }
+      const availableYears = getAvailableYearsForMonth(monthValue);
+      if (!availableYears.length) {
+        dashboardState.monthly.filter.yearBase = null;
+        dashboardState.monthly.filter.yearCompare = null;
+        return;
+      }
+      const { yearBase, yearCompare } = dashboardState.monthly.filter;
+      const normalizedBase = availableYears.includes(yearBase) ? yearBase : availableYears[0];
+      let normalizedCompare = availableYears.includes(yearCompare) && yearCompare !== normalizedBase
+        ? yearCompare
+        : null;
+      if (!normalizedCompare && availableYears.length > 1) {
+        normalizedCompare = availableYears.find((year) => year !== normalizedBase) || null;
+      }
+      dashboardState.monthly.filter.yearBase = normalizedBase;
+      dashboardState.monthly.filter.yearCompare = normalizedCompare;
+    }
+
+    function populateMonthlyYearOptions(monthValue) {
+      const placeholderText = TEXT.monthly?.filters?.yearPlaceholder || 'Pasirinkite metus';
+      const years = getAvailableYearsForMonth(monthValue);
+      const baseSelect = selectors.monthlyYearBaseSelect;
+      const compareSelect = selectors.monthlyYearCompareSelect;
+      const selects = [
+        { element: baseSelect, value: dashboardState.monthly?.filter?.yearBase || '' },
+        { element: compareSelect, value: dashboardState.monthly?.filter?.yearCompare || '' },
+      ];
+      selects.forEach(({ element, value }) => {
+        if (!element) {
+          return;
+        }
+        const previousValue = element.value;
+        element.replaceChildren();
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = placeholderText;
+        placeholderOption.disabled = true;
+        placeholderOption.hidden = true;
+        element.appendChild(placeholderOption);
+        years.forEach((year) => {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = formatYearLabel(year);
+          element.appendChild(option);
+        });
+        if (years.includes(value)) {
+          element.value = value;
+        } else if (years.includes(previousValue)) {
+          element.value = previousValue;
+        } else {
+          element.value = '';
+        }
+      });
+    }
+
+    function getLatestMonthFilterValue() {
+      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
+      if (!allMonthly.length) {
+        return null;
+      }
+      const latestEntry = allMonthly[allMonthly.length - 1];
+      if (!latestEntry?.month || typeof latestEntry.month !== 'string' || latestEntry.month.length < 7) {
+        return null;
+      }
+      return latestEntry.month.slice(5, 7);
+    }
+
+    function ensureMonthlyMonthSelection() {
+      const available = getAvailableMonthFilterValues();
+      if (!available.length) {
+        dashboardState.monthly.filter.month = null;
+        return;
+      }
+      const current = dashboardState.monthly.filter.month;
+      if (available.some((item) => item.value === current)) {
+        return;
+      }
+      const latestValue = getLatestMonthFilterValue();
+      if (latestValue && available.some((item) => item.value === latestValue)) {
+        dashboardState.monthly.filter.month = latestValue;
+        return;
+      }
+      dashboardState.monthly.filter.month = available[available.length - 1].value;
+    }
+
+    function populateMonthlyMonthOptions() {
+      if (!selectors.monthlyMonthSelect) {
+        return;
+      }
+      const select = selectors.monthlyMonthSelect;
+      const placeholderText = TEXT.monthly?.filters?.monthPlaceholder || 'Pasirinkite mėnesį';
+      const available = getAvailableMonthFilterValues();
+      const currentValue = dashboardState.monthly?.filter?.month || '';
+      const previousValue = select.value;
+      select.replaceChildren();
+      const placeholderOption = document.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.textContent = placeholderText;
+      placeholderOption.disabled = true;
+      placeholderOption.hidden = true;
+      select.appendChild(placeholderOption);
+      available.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = item.value;
+        option.textContent = item.label;
+        select.appendChild(option);
+      });
+      if (available.some((item) => item.value === currentValue)) {
+        select.value = currentValue;
+      } else if (available.some((item) => item.value === previousValue)) {
+        select.value = previousValue;
+      } else {
+        select.value = '';
+      }
+    }
+
+    function updateMonthlyFilterVisibility() {
+      const isMonthMode = dashboardState.monthly?.filter?.mode === 'month';
+      const hasOptions = getAvailableMonthFilterValues().length > 0;
+      const monthValue = dashboardState.monthly?.filter?.month || null;
+      const availableYears = getAvailableYearsForMonth(monthValue);
+      const hasYearBase = availableYears.length > 0;
+      const hasYearCompare = availableYears.length > 1;
+      if (selectors.monthlyMonthFilter) {
+        if (isMonthMode && hasOptions) {
+          selectors.monthlyMonthFilter.removeAttribute('hidden');
+        } else {
+          selectors.monthlyMonthFilter.setAttribute('hidden', '');
+        }
+      }
+      if (selectors.monthlyMonthSelect) {
+        selectors.monthlyMonthSelect.disabled = !isMonthMode || !hasOptions;
+      }
+      if (selectors.monthlyYearBaseFilter) {
+        if (isMonthMode && hasYearBase) {
+          selectors.monthlyYearBaseFilter.removeAttribute('hidden');
+        } else {
+          selectors.monthlyYearBaseFilter.setAttribute('hidden', '');
+        }
+      }
+      if (selectors.monthlyYearBaseSelect) {
+        selectors.monthlyYearBaseSelect.disabled = !isMonthMode || !hasYearBase;
+      }
+      if (selectors.monthlyYearCompareFilter) {
+        if (isMonthMode && hasYearCompare) {
+          selectors.monthlyYearCompareFilter.removeAttribute('hidden');
+        } else {
+          selectors.monthlyYearCompareFilter.setAttribute('hidden', '');
+        }
+      }
+      if (selectors.monthlyYearCompareSelect) {
+        selectors.monthlyYearCompareSelect.disabled = !isMonthMode || !hasYearCompare;
+      }
+    }
+
+    function syncMonthlyFilterControls() {
+      if (!dashboardState.monthly?.filter) {
+        return;
+      }
+      const mode = dashboardState.monthly.filter.mode === 'month' ? 'month' : 'recent';
+      if (selectors.monthlyViewSelect && selectors.monthlyViewSelect.value !== mode) {
+        selectors.monthlyViewSelect.value = mode;
+      }
+      if (selectors.monthlyMonthSelect) {
+        const monthValue = dashboardState.monthly.filter.month;
+        if (monthValue && selectors.monthlyMonthSelect.querySelector(`option[value="${monthValue}"]`)) {
+          selectors.monthlyMonthSelect.value = monthValue;
+        } else {
+          selectors.monthlyMonthSelect.value = '';
+        }
+      }
+      if (selectors.monthlyYearBaseSelect) {
+        const yearBase = dashboardState.monthly.filter.yearBase;
+        if (yearBase && selectors.monthlyYearBaseSelect.querySelector(`option[value="${yearBase}"]`)) {
+          selectors.monthlyYearBaseSelect.value = yearBase;
+        } else {
+          selectors.monthlyYearBaseSelect.value = '';
+        }
+      }
+      if (selectors.monthlyYearCompareSelect) {
+        const yearCompare = dashboardState.monthly.filter.yearCompare;
+        if (yearCompare && selectors.monthlyYearCompareSelect.querySelector(`option[value="${yearCompare}"]`)) {
+          selectors.monthlyYearCompareSelect.value = yearCompare;
+        } else {
+          selectors.monthlyYearCompareSelect.value = '';
+        }
+      }
+      updateMonthlyFilterVisibility();
+    }
+
+    function getMonthlySubtitleText() {
+      if (dashboardState.monthly?.filter?.mode === 'month') {
+        const label = getMonthFilterLabel(dashboardState.monthly.filter.month);
+        if (typeof TEXT.monthly?.subtitleMonth === 'function') {
+          return TEXT.monthly.subtitleMonth(label);
+        }
+        if (TEXT.monthly?.subtitleMonth) {
+          return TEXT.monthly.subtitleMonth;
+        }
+      }
+      return TEXT.monthly?.subtitle || '';
+    }
+
+    function updateMonthlySubtitle() {
+      if (!selectors.monthlySubtitle) {
+        return;
+      }
+      selectors.monthlySubtitle.textContent = getMonthlySubtitleText();
+    }
+
+    function updateMonthlyView() {
+      ensureMonthlyMonthSelection();
+      const mode = dashboardState.monthly?.filter?.mode === 'month' ? 'month' : 'recent';
+      const monthValue = dashboardState.monthly?.filter?.month || null;
+      if (mode === 'month') {
+        ensureMonthlyYearSelection(monthValue);
+      }
+      populateMonthlyMonthOptions();
+      populateMonthlyYearOptions(mode === 'month' ? monthValue : null);
+      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
+      let scopedMonthly;
+      if (mode === 'month') {
+        scopedMonthly = monthValue
+          ? allMonthly
+            .filter((entry) => entry?.month && entry.month.slice(5, 7) === monthValue)
+            .sort((a, b) => (a.month < b.month ? 1 : -1))
+          : [];
+      } else {
+        scopedMonthly = Number.isFinite(MONTHLY_RECENT_LIMIT) && MONTHLY_RECENT_LIMIT > 0
+          ? allMonthly.slice(-MONTHLY_RECENT_LIMIT)
+          : allMonthly.slice();
+      }
+      if (dashboardState.compare?.active && Array.isArray(dashboardState.compare.selections)) {
+        const allowedMonthlyIds = new Set(
+          scopedMonthly
+            .filter((entry) => entry?.month)
+            .map((entry) => `monthly-${entry.month}`),
+        );
+        const filtered = dashboardState.compare.selections.filter((item) => {
+          if (!item || typeof item !== 'object') {
+            return false;
+          }
+          if (item.group !== 'monthly') {
+            return true;
+          }
+          return allowedMonthlyIds.has(item.id);
+        });
+        if (filtered.length !== dashboardState.compare.selections.length) {
+          dashboardState.compare.selections = filtered;
+        }
+      }
+      renderMonthlyTable(scopedMonthly);
+      renderMonthlyComparisonSummary(mode === 'month' ? scopedMonthly : []);
+      updateMonthlySubtitle();
+      syncMonthlyFilterControls();
+    }
+
+    function setMonthlyFilterMode(mode) {
+      const normalized = mode === 'month' ? 'month' : 'recent';
+      if (!dashboardState.monthly) {
+        dashboardState.monthly = { all: [], window: [], filter: { mode: normalized, month: null } };
+      }
+      dashboardState.monthly.filter.mode = normalized;
+      if (normalized === 'month') {
+        ensureMonthlyMonthSelection();
+      }
+      updateMonthlyView();
+    }
+
+    function setMonthlyFilterMonth(value) {
+      if (!dashboardState.monthly?.filter) {
+        return;
+      }
+      if (typeof value === 'string' && value) {
+        dashboardState.monthly.filter.month = value;
+      } else {
+        dashboardState.monthly.filter.month = null;
+      }
+      if (dashboardState.monthly.filter.mode === 'month') {
+        updateMonthlyView();
+      } else {
+        syncMonthlyFilterControls();
+      }
+    }
+
+    function setMonthlyFilterYear(target, value) {
+      if (!dashboardState.monthly?.filter || (target !== 'yearBase' && target !== 'yearCompare')) {
+        return;
+      }
+      const monthValue = dashboardState.monthly.filter.month || null;
+      const availableYears = getAvailableYearsForMonth(monthValue);
+      if (!availableYears.length) {
+        dashboardState.monthly.filter[target] = null;
+        syncMonthlyFilterControls();
+        renderMonthlyComparisonSummary([]);
+        return;
+      }
+      const normalized = typeof value === 'string' && value ? value : null;
+      if (normalized && availableYears.includes(normalized)) {
+        dashboardState.monthly.filter[target] = normalized;
+      } else {
+        dashboardState.monthly.filter[target] = null;
+      }
+      const { yearBase, yearCompare } = dashboardState.monthly.filter;
+      if (yearBase && yearCompare && yearBase === yearCompare) {
+        const alternative = availableYears.find((year) => year !== (target === 'yearBase' ? yearBase : yearCompare)) || null;
+        if (target === 'yearBase') {
+          dashboardState.monthly.filter.yearCompare = alternative;
+        } else {
+          dashboardState.monthly.filter.yearBase = alternative || yearBase;
+          if (dashboardState.monthly.filter.yearBase === dashboardState.monthly.filter.yearCompare) {
+            dashboardState.monthly.filter.yearCompare = null;
+          }
+        }
+      }
+      if (dashboardState.monthly.filter.mode === 'month') {
+        updateMonthlyView();
+      } else {
+        syncMonthlyFilterControls();
+      }
+    }
+
+    function initializeMonthlyFilters() {
+      if (selectors.monthlyViewSelect) {
+        selectors.monthlyViewSelect.addEventListener('change', (event) => {
+          const target = event.target;
+          const value = target instanceof HTMLSelectElement ? target.value : String(target?.value || '');
+          setMonthlyFilterMode(value);
+        });
+      }
+      if (selectors.monthlyMonthSelect) {
+        selectors.monthlyMonthSelect.addEventListener('change', (event) => {
+          const target = event.target;
+          const value = target instanceof HTMLSelectElement ? target.value : String(target?.value || '');
+          setMonthlyFilterMonth(value);
+        });
+      }
+      if (selectors.monthlyYearBaseSelect) {
+        selectors.monthlyYearBaseSelect.addEventListener('change', (event) => {
+          const target = event.target;
+          const value = target instanceof HTMLSelectElement ? target.value : String(target?.value || '');
+          setMonthlyFilterYear('yearBase', value);
+        });
+      }
+      if (selectors.monthlyYearCompareSelect) {
+        selectors.monthlyYearCompareSelect.addEventListener('change', (event) => {
+          const target = event.target;
+          const value = target instanceof HTMLSelectElement ? target.value : String(target?.value || '');
+          setMonthlyFilterYear('yearCompare', value);
+        });
+      }
+      populateMonthlyMonthOptions();
+      const initialMonth = dashboardState.monthly?.filter?.month || null;
+      populateMonthlyYearOptions(initialMonth);
+      syncMonthlyFilterControls();
+    }
+
     function renderMonthlyTable(monthlyStats) {
       const scopedMonthly = Array.isArray(monthlyStats) ? monthlyStats : [];
       dashboardState.monthly.window = scopedMonthly;
@@ -12350,6 +12986,134 @@
         selectors.monthlyTable.appendChild(row);
       });
       syncCompareActivation();
+    }
+
+    function renderMonthlyComparisonSummary(scopedMonthly) {
+      if (!selectors.monthlyCompare || !selectors.monthlyCompareContent) {
+        return;
+      }
+      const container = selectors.monthlyCompare;
+      const contentElement = selectors.monthlyCompareContent;
+      const titleElement = selectors.monthlyCompareTitle;
+      const hintElement = selectors.monthlyCompareHint;
+      const defaultHint = TEXT.monthly?.compare?.hint || '';
+
+      const setHint = (message) => {
+        if (!hintElement) {
+          return;
+        }
+        if (message) {
+          hintElement.textContent = message;
+          hintElement.removeAttribute('hidden');
+        } else {
+          hintElement.textContent = '';
+          hintElement.setAttribute('hidden', '');
+        }
+      };
+
+      const clearContent = () => {
+        if (contentElement) {
+          contentElement.innerHTML = '';
+          contentElement.setAttribute('hidden', '');
+        }
+      };
+
+      const hideContainer = () => {
+        container.setAttribute('hidden', '');
+        if (titleElement) {
+          titleElement.textContent = '';
+        }
+        setHint('');
+        clearContent();
+      };
+
+      const isMonthMode = dashboardState.monthly?.filter?.mode === 'month';
+      const monthValue = dashboardState.monthly?.filter?.month || null;
+      if (!isMonthMode || !monthValue) {
+        hideContainer();
+        return;
+      }
+
+      const monthLabel = getMonthFilterLabel(monthValue) || '';
+      const yearBase = dashboardState.monthly?.filter?.yearBase || null;
+      const yearCompare = dashboardState.monthly?.filter?.yearCompare || null;
+      const availableYears = getAvailableYearsForMonth(monthValue);
+      if (titleElement) {
+        const baseTitleLabel = yearBase ? formatYearLabel(yearBase) : '—';
+        const compareTitleLabel = yearCompare ? formatYearLabel(yearCompare) : '—';
+        const titleText = typeof TEXT.monthly?.compare?.title === 'function'
+          ? TEXT.monthly.compare.title(monthLabel, baseTitleLabel, compareTitleLabel)
+          : `${monthLabel}: ${baseTitleLabel} vs ${compareTitleLabel}`;
+        titleElement.textContent = titleText;
+      }
+
+      if (!availableYears.length) {
+        hideContainer();
+        return;
+      }
+
+      container.removeAttribute('hidden');
+
+      if (availableYears.length < 2) {
+        setHint(TEXT.monthly?.compare?.insufficientData
+          || 'Šiam mėnesiui turime tik vienerių metų duomenis.');
+        clearContent();
+        return;
+      }
+
+      if (!yearBase || !yearCompare || yearBase === yearCompare) {
+        setHint(TEXT.monthly?.compare?.sameYear
+          || 'Pasirinkite du skirtingus metus palyginimui.');
+        clearContent();
+        return;
+      }
+
+      const entriesByYear = new Map();
+      const scoped = Array.isArray(scopedMonthly) ? scopedMonthly : [];
+      scoped.forEach((entry) => {
+        if (!entry?.month || typeof entry.month !== 'string' || entry.month.length < 7) {
+          return;
+        }
+        entriesByYear.set(entry.month.slice(0, 4), entry);
+      });
+
+      const baseEntry = entriesByYear.get(yearBase) || null;
+      const compareEntry = entriesByYear.get(yearCompare) || null;
+      if (!baseEntry || !compareEntry) {
+        setHint(TEXT.monthly?.compare?.noData || 'Pokyčio apskaičiuoti nepavyko.');
+        clearContent();
+        return;
+      }
+
+      const createSelection = (entry) => {
+        const total = Number.isFinite(entry.count) ? entry.count : 0;
+        const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
+        const emsShare = total > 0 ? entry.ems / total : 0;
+        const hospShare = total > 0 ? entry.hospitalized / total : 0;
+        return {
+          label: formatMonthLabel(entry.month),
+          sortKey: entry.month,
+          total,
+          avgStay,
+          emsShare,
+          hospShare,
+        };
+      };
+
+      const baseSelection = createSelection(baseEntry);
+      const compareSelection = createSelection(compareEntry);
+      const summaryHtml = renderMonthlyComparison(compareSelection, baseSelection);
+      if (!summaryHtml) {
+        setHint(TEXT.monthly?.compare?.noData || 'Pokyčio apskaičiuoti nepavyko.');
+        clearContent();
+        return;
+      }
+
+      setHint(defaultHint);
+      if (contentElement) {
+        contentElement.innerHTML = summaryHtml;
+        contentElement.removeAttribute('hidden');
+      }
     }
 
     function isCompleteMonthEntry(entry) {
@@ -14175,13 +14939,7 @@
         renderRecentTable(recentDailyStats);
         const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
         dashboardState.monthly.all = monthlyStats;
-        // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
-        const monthsLimit = 12;
-        const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
-          ? monthlyStats.slice(-monthsLimit)
-          : monthlyStats;
-        renderMonthlyTable(limitedMonthlyStats);
-        dashboardState.monthly.window = limitedMonthlyStats;
+        updateMonthlyView();
         const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
         const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
           ? datasetYearlyStats
@@ -14226,6 +14984,7 @@
 
     initializeKpiFilters();
     initializeFeedbackTrendControls();
+    initializeMonthlyFilters();
     initializeTabSwitcher();
     initializeTvMode();
     loadDashboard();
