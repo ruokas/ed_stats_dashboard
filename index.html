@@ -6543,6 +6543,8 @@
       lastErrorMessage: '',
       rawRecords: [],
       dailyStats: [],
+      primaryRecords: [],
+      primaryDaily: [],
       monthly: {
         all: [],
         window: [],
@@ -7871,7 +7873,6 @@
       const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
       const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
       let combinedRecords = baseRecords.slice();
-      let combinedYearlyStats = computeYearlyStats(computeMonthlyStats(baseDaily.slice()));
       let usingFallback = Boolean(primaryResult.usingFallback);
       const fallbackMessages = [];
       if (primaryResult.usingFallback) {
@@ -7924,9 +7925,6 @@
           const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
           if (historicalRecords.length) {
             combinedRecords = combinedRecords.concat(historicalRecords);
-            const combinedDaily = computeDailyStats(combinedRecords);
-            const combinedMonthly = computeMonthlyStats(combinedDaily);
-            combinedYearlyStats = computeYearlyStats(combinedMonthly);
           }
           if (historicalResult.usingFallback) {
             usingFallback = true;
@@ -7987,9 +7985,17 @@
         warnings,
       };
 
+      const hasBaseDaily = Array.isArray(baseDaily) && baseDaily.length > 0;
+      const combinedDaily = (combinedRecords.length === baseRecords.length && hasBaseDaily)
+        ? baseDaily.slice()
+        : computeDailyStats(combinedRecords);
+      const combinedYearlyStats = computeYearlyStats(computeMonthlyStats(combinedDaily.slice()));
+
       return {
-        records: baseRecords,
-        dailyStats: baseDaily.slice(),
+        records: combinedRecords,
+        primaryRecords: baseRecords,
+        dailyStats: combinedDaily,
+        primaryDaily: baseDaily.slice(),
         yearlyStats: combinedYearlyStats,
         meta,
       };
@@ -10454,16 +10460,20 @@
       const windowDays = Number.isFinite(normalizedFilters.window)
         ? normalizedFilters.window
         : DEFAULT_SETTINGS.calculations.windowDays;
-      const hasRawRecords = Array.isArray(dashboardState.rawRecords) && dashboardState.rawRecords.length > 0;
+      const hasPrimaryRecords = Array.isArray(dashboardState.primaryRecords)
+        && dashboardState.primaryRecords.length > 0;
+      const primaryDailyStats = Array.isArray(dashboardState.primaryDaily)
+        ? dashboardState.primaryDaily
+        : [];
       let filteredRecords = [];
       let filteredDailyStats = [];
 
-      if (hasRawRecords) {
-        const scopedRecords = filterRecordsByWindow(dashboardState.rawRecords, windowDays);
+      if (hasPrimaryRecords) {
+        const scopedRecords = filterRecordsByWindow(dashboardState.primaryRecords, windowDays);
         filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, normalizedFilters));
         filteredDailyStats = computeDailyStats(filteredRecords);
       } else {
-        const scopedDaily = filterDailyStatsByWindow(dashboardState.dailyStats, windowDays);
+        const scopedDaily = filterDailyStatsByWindow(primaryDailyStats, windowDays);
         filteredDailyStats = scopedDaily.slice();
       }
 
@@ -10484,8 +10494,8 @@
         filters: normalizedFilters,
         defaultFilters,
         windowDays,
-        records: Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : [],
-        dailyStats: Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : [],
+        records: Array.isArray(dashboardState.primaryRecords) ? dashboardState.primaryRecords : [],
+        dailyStats: Array.isArray(dashboardState.primaryDaily) ? dashboardState.primaryDaily : [],
         calculations: settings?.calculations || {},
         calculationDefaults: DEFAULT_SETTINGS.calculations,
       };
@@ -14853,12 +14863,20 @@
           dashboardState.feedback.usingFallback = false;
         }
 
-        const rawRecords = Array.isArray(dataset.records) ? dataset.records : [];
+        const combinedRecords = Array.isArray(dataset.records) ? dataset.records : [];
+        const primaryRecords = Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
+          ? dataset.primaryRecords
+          : combinedRecords;
         const dailyStats = Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
           ? dataset.dailyStats
-          : computeDailyStats(rawRecords);
-        dashboardState.rawRecords = rawRecords;
+          : computeDailyStats(combinedRecords);
+        const primaryDaily = Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
+          ? dataset.primaryDaily
+          : computeDailyStats(primaryRecords);
+        dashboardState.rawRecords = combinedRecords;
         dashboardState.dailyStats = dailyStats;
+        dashboardState.primaryRecords = primaryRecords.slice();
+        dashboardState.primaryDaily = primaryDaily.slice();
         dashboardState.dataMeta = dataset.meta || null;
         populateChartYearOptions(dailyStats);
         const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
@@ -14875,7 +14893,7 @@
         const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
         dashboardState.chartData.baseDaily = dailyStats.slice();
-        dashboardState.chartData.baseRecords = rawRecords.slice();
+        dashboardState.chartData.baseRecords = combinedRecords.slice();
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         await applyKpiFiltersAndRender();
         await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
