@@ -7,7 +7,6 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - ⏱️ Automatinis duomenų atnaujinimas kas 5 min., papildomai galima perkrauti rankiniu mygtuku.
 - 🔗 Galimybė kartu naudoti pagrindinį operatyvinį ir papildomą 5 metų istorinį CSV šaltinį.
 - 📊 KPI kortelės su aiškia „Metinis vidurkis“ eilute ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
-- 🔁 Mėnesių lentelėje galima perjungti tarp paskutinių 12 mėn. ir pasirinkto mėnesio palyginimo skirtingais metais; palyginimo rezultatai rodomi tokiu pačiu „Greito palyginimo“ formatu kaip ir mygtuku „Palyginti“ atidaromoje suvestinėje.
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
 - 🎯 Interaktyvūs KPI filtrai (laikotarpis, pamaina, GMP, išvykimo sprendimas) su aiškia santrauka ir sparčiuoju **Shift+R**.
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
