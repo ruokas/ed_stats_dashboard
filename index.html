@@ -8075,6 +8075,17 @@
 
       for (const candidate of candidates) {
         const normalizedCandidate = candidate.trim().toLowerCase();
+        if (!normalizedCandidate || candidate.includes('*')) {
+          continue;
+        }
+        const match = headerNormalized.find((column) => column.normalized.includes(normalizedCandidate));
+        if (match) {
+          return match.index;
+        }
+      }
+
+      for (const candidate of candidates) {
+        const normalizedCandidate = candidate.trim().toLowerCase();
         if (!normalizedCandidate) {
           continue;
         }
