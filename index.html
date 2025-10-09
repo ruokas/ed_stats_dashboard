@@ -1775,6 +1775,138 @@
       max-width: 720px;
     }
 
+    .feedback-filters {
+      margin-top: clamp(16px, 3vw, 24px);
+      background: var(--color-surface);
+      border-radius: 16px;
+      border: 1px solid var(--color-border);
+      padding: clamp(16px, 3vw, 24px);
+      box-shadow: 0 10px 30px -20px rgba(15, 23, 42, 0.25);
+    }
+
+    .feedback-filters__fieldset {
+      margin: 0;
+      padding: 0;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(12px, 2vw, 16px);
+    }
+
+    .feedback-filters__legend {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+
+    .feedback-filters__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: clamp(12px, 2vw, 24px);
+    }
+
+    .feedback-filter {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feedback-filter__title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--color-text);
+    }
+
+    .feedback-filter__hint {
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-filter__options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .feedback-filter__options--compact {
+      gap: 8px;
+    }
+
+    .feedback-filter__option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .feedback-filter__option input {
+      accent-color: var(--color-accent);
+    }
+
+    .feedback-filter__option:hover,
+    .feedback-filter__option:focus-within {
+      background: var(--color-input-bg-hover);
+      box-shadow: 0 0 0 1px var(--color-border);
+    }
+
+    .feedback-filter__empty {
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-filters__actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .feedback-filters__reset {
+      align-self: flex-end;
+      border: none;
+      background: transparent;
+      color: var(--color-accent);
+      font-weight: 600;
+      font-size: 0.8rem;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .feedback-filters__reset:disabled {
+      color: var(--color-text-muted);
+      cursor: not-allowed;
+    }
+
+    .feedback-filters__reset:not(:disabled):hover,
+    .feedback-filters__reset:not(:disabled):focus-visible {
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+      outline: none;
+    }
+
+    body[data-theme="dark"] .feedback-filters {
+      box-shadow: 0 12px 28px -20px rgba(8, 12, 32, 0.65);
+    }
+
+    body[data-theme="dark"] .feedback-filter__option {
+      background: rgba(96, 165, 250, 0.12);
+    }
+
+    body[data-theme="dark"] .feedback-filter__option:hover,
+    body[data-theme="dark"] .feedback-filter__option:focus-within {
+      background: rgba(96, 165, 250, 0.18);
+    }
+
     .feedback-graphs {
       margin: 12px 0;
       padding: 16px;
@@ -4015,6 +4147,45 @@
           <p id="feedbackDescription" class="section__description">Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.</p>
         </div>
       </div>
+      <form id="feedbackFiltersForm" class="feedback-filters" aria-labelledby="feedbackFiltersTitle">
+        <fieldset class="feedback-filters__fieldset">
+          <legend id="feedbackFiltersTitle" class="feedback-filters__legend">Filtrai</legend>
+          <div class="feedback-filters__grid">
+            <section class="feedback-filter" aria-labelledby="feedbackRespondentLabel">
+              <h3 id="feedbackRespondentLabel" class="feedback-filter__title">Kas pildė formą?</h3>
+              <p id="feedbackRespondentHint" class="feedback-filter__hint">Pagal nutylėjimą rodomi visi pildytojai.</p>
+              <div id="feedbackRespondentOptions" class="feedback-filter__options" role="group" aria-labelledby="feedbackRespondentLabel"></div>
+              <p id="feedbackRespondentEmpty" class="feedback-filter__empty" hidden>Šiuo metu nėra kitų pildytojų.</p>
+            </section>
+            <section class="feedback-filter" aria-labelledby="feedbackLocationLabel">
+              <h3 id="feedbackLocationLabel" class="feedback-filter__title">Vieta</h3>
+              <p id="feedbackLocationHint" class="feedback-filter__hint">Pagal nutylėjimą rodomos visos vietos.</p>
+              <div id="feedbackLocationOptions" class="feedback-filter__options" role="group" aria-labelledby="feedbackLocationLabel"></div>
+              <p id="feedbackLocationEmpty" class="feedback-filter__empty" hidden>Šiuo metu nėra kitų vietų.</p>
+            </section>
+            <section class="feedback-filter" aria-labelledby="feedbackContactLabel">
+              <h3 id="feedbackContactLabel" class="feedback-filter__title">Bendravo su padėjėjais</h3>
+              <div id="feedbackContactOptions" class="feedback-filter__options feedback-filter__options--compact" role="radiogroup" aria-labelledby="feedbackContactLabel">
+                <label class="feedback-filter__option">
+                  <input type="radio" name="feedbackContact" id="feedbackContactAll" value="all" checked>
+                  <span data-feedback-contact-option="all">Visi atsakymai</span>
+                </label>
+                <label class="feedback-filter__option">
+                  <input type="radio" name="feedbackContact" id="feedbackContactYes" value="yes">
+                  <span data-feedback-contact-option="yes">Taip</span>
+                </label>
+                <label class="feedback-filter__option">
+                  <input type="radio" name="feedbackContact" id="feedbackContactNo" value="no">
+                  <span data-feedback-contact-option="no">Ne</span>
+                </label>
+              </div>
+            </section>
+          </div>
+          <div class="feedback-filters__actions">
+            <button type="button" id="feedbackFiltersReset" class="feedback-filters__reset">Išvalyti filtrus</button>
+          </div>
+        </fieldset>
+      </form>
       <div id="feedbackCards" class="feedback-cards" role="list"></div>
       <div class="feedback-graphs feedback-trend-card" role="presentation">
         <div class="feedback-trend-card__header">
@@ -4796,6 +4967,28 @@
         title: 'Pacientų atsiliepimai',
         subtitle: 'Apibendrinti apklausos rezultatai.',
         description: 'Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.',
+        filters: {
+          title: 'Filtrai',
+          respondents: {
+            label: 'Kas pildė formą?',
+            hint: 'Pagal nutylėjimą rodomi visi pildytojai.',
+            empty: 'Šiuo metu nėra kitų pildytojų.',
+          },
+          locations: {
+            label: 'Vieta',
+            hint: 'Pagal nutylėjimą rodomos visos vietos.',
+            empty: 'Šiuo metu nėra kitų vietų.',
+          },
+          contact: {
+            label: 'Bendravo su padėjėjais',
+            options: {
+              all: 'Visi atsakymai',
+              yes: 'Taip',
+              no: 'Ne',
+            },
+          },
+          reset: 'Išvalyti filtrus',
+        },
         empty: 'Kol kas nėra apibendrintų atsiliepimų.',
         trend: {
           title: 'Bendro vertinimo dinamika',
@@ -5095,6 +5288,7 @@
       month: '2-digit',
       day: '2-digit',
     });
+    const feedbackOptionCollator = new Intl.Collator('lt-LT', { sensitivity: 'base' });
 
     function capitalizeSentence(text) {
       if (typeof text !== 'string') {
@@ -5166,6 +5360,19 @@
       feedbackDescription: document.getElementById('feedbackDescription'),
       feedbackCaption: document.getElementById('feedbackCaption'),
       feedbackCards: document.getElementById('feedbackCards'),
+      feedbackFiltersForm: document.getElementById('feedbackFiltersForm'),
+      feedbackFiltersLegend: document.getElementById('feedbackFiltersTitle'),
+      feedbackRespondentLabel: document.getElementById('feedbackRespondentLabel'),
+      feedbackRespondentHint: document.getElementById('feedbackRespondentHint'),
+      feedbackRespondentOptions: document.getElementById('feedbackRespondentOptions'),
+      feedbackRespondentEmpty: document.getElementById('feedbackRespondentEmpty'),
+      feedbackLocationLabel: document.getElementById('feedbackLocationLabel'),
+      feedbackLocationHint: document.getElementById('feedbackLocationHint'),
+      feedbackLocationOptions: document.getElementById('feedbackLocationOptions'),
+      feedbackLocationEmpty: document.getElementById('feedbackLocationEmpty'),
+      feedbackContactLabel: document.getElementById('feedbackContactLabel'),
+      feedbackContactOptions: document.getElementById('feedbackContactOptions'),
+      feedbackFiltersReset: document.getElementById('feedbackFiltersReset'),
       feedbackTrendTitle: document.getElementById('feedbackTrendTitle'),
       feedbackTrendSubtitle: document.getElementById('feedbackTrendSubtitle'),
       feedbackTrendControls: document.getElementById('feedbackTrendControls'),
@@ -6404,6 +6611,11 @@
         daily: [],
       },
       feedback: {
+        records: [],
+        filteredRecords: [],
+        availableRespondents: [],
+        availableLocations: [],
+        filters: { ...DEFAULT_FEEDBACK_FILTERS },
         summary: null,
         monthly: [],
         usingFallback: false,
@@ -6705,6 +6917,44 @@
       selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
       if (selectors.feedbackDescription) {
         selectors.feedbackDescription.textContent = TEXT.feedback.description;
+      }
+      const feedbackFilterTexts = TEXT.feedback?.filters || {};
+      if (selectors.feedbackFiltersLegend && feedbackFilterTexts.title) {
+        selectors.feedbackFiltersLegend.textContent = feedbackFilterTexts.title;
+      }
+      if (selectors.feedbackRespondentLabel && feedbackFilterTexts.respondents?.label) {
+        selectors.feedbackRespondentLabel.textContent = feedbackFilterTexts.respondents.label;
+      }
+      if (selectors.feedbackRespondentHint && feedbackFilterTexts.respondents?.hint) {
+        selectors.feedbackRespondentHint.textContent = feedbackFilterTexts.respondents.hint;
+      }
+      if (selectors.feedbackRespondentEmpty && feedbackFilterTexts.respondents?.empty) {
+        selectors.feedbackRespondentEmpty.textContent = feedbackFilterTexts.respondents.empty;
+      }
+      if (selectors.feedbackLocationLabel && feedbackFilterTexts.locations?.label) {
+        selectors.feedbackLocationLabel.textContent = feedbackFilterTexts.locations.label;
+      }
+      if (selectors.feedbackLocationHint && feedbackFilterTexts.locations?.hint) {
+        selectors.feedbackLocationHint.textContent = feedbackFilterTexts.locations.hint;
+      }
+      if (selectors.feedbackLocationEmpty && feedbackFilterTexts.locations?.empty) {
+        selectors.feedbackLocationEmpty.textContent = feedbackFilterTexts.locations.empty;
+      }
+      if (selectors.feedbackContactLabel && feedbackFilterTexts.contact?.label) {
+        selectors.feedbackContactLabel.textContent = feedbackFilterTexts.contact.label;
+      }
+      if (selectors.feedbackContactOptions) {
+        const contactOptions = selectors.feedbackContactOptions.querySelectorAll('[data-feedback-contact-option]');
+        contactOptions.forEach((option) => {
+          const key = option.getAttribute('data-feedback-contact-option');
+          const text = key && feedbackFilterTexts.contact?.options?.[key];
+          if (text) {
+            option.textContent = text;
+          }
+        });
+      }
+      if (selectors.feedbackFiltersReset && feedbackFilterTexts.reset) {
+        selectors.feedbackFiltersReset.textContent = feedbackFilterTexts.reset;
       }
       if (selectors.feedbackTrendTitle) {
         selectors.feedbackTrendTitle.textContent = TEXT.feedback.trend.title;
@@ -7912,6 +8162,7 @@
     const FEEDBACK_HEADER_CANDIDATES = {
       date: 'timestamp,gauta,data,received,created,submitted,laikas,pildymo data,pildymo laikas,pildymo data ir laikas,užpildymo data,užpildymo laikas,forma pateikta,data pateikta,atsakymo data,atsakymo laikas,įrašo data,įrašo laikas',
       respondent: 'kas pildo formą?,kas pildo formą,kas pildo forma,respondentas,role,dalyvis,tipas',
+      location: 'šaltinis,vieta,location,kur gauta,kur pildyta',
       overall: 'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
       doctors: 'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
       nurses: 'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
@@ -7922,6 +8173,12 @@
 
     const FEEDBACK_CONTACT_YES = 'taip,yes,yeah,1,true';
     const FEEDBACK_CONTACT_NO = 'ne,no,0,false';
+    const FEEDBACK_CONTACT_MODES = ['all', 'yes', 'no'];
+    const DEFAULT_FEEDBACK_FILTERS = Object.freeze({
+      selectedRespondents: [],
+      selectedLocations: [],
+      contactMode: 'all',
+    });
 
     function resolveFeedbackColumn(headerNormalized, candidateList) {
       const candidates = parseCandidateList(candidateList, candidateList);
@@ -8033,6 +8290,7 @@
       const indices = {
         date: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.date),
         respondent: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.respondent),
+        location: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.location),
         overall: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.overall),
         doctors: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.doctors),
         nurses: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.nurses),
@@ -8055,6 +8313,10 @@
 
           const respondent = indices.respondent >= 0
             ? String(columns[indices.respondent] ?? '').trim()
+            : '';
+
+          const location = indices.location >= 0
+            ? String(columns[indices.location] ?? '').trim()
             : '';
 
           const overallRating = indices.overall >= 0
@@ -8080,14 +8342,16 @@
             .some((value) => Number.isFinite(value));
           const hasContact = aidesContact === true || aidesContact === false;
           const hasRespondent = respondent.length > 0;
+          const hasLocation = location.length > 0;
 
-          if (!dateValue && !hasRating && !hasRespondent && !hasContact) {
+          if (!dateValue && !hasRating && !hasRespondent && !hasContact && !hasLocation) {
             return null;
           }
 
           return {
             receivedAt: dateValue,
             respondent,
+            location,
             overallRating: Number.isFinite(overallRating) ? overallRating : null,
             doctorsRating: Number.isFinite(doctorsRating) ? doctorsRating : null,
             nursesRating: Number.isFinite(nursesRating) ? nursesRating : null,
@@ -8097,6 +8361,267 @@
           };
         })
         .filter(Boolean);
+    }
+
+    function normalizeFeedbackFilterValue(value) {
+      if (typeof value !== 'string') {
+        return '';
+      }
+      return value.trim().toLowerCase();
+    }
+
+    function deriveFeedbackOptionList(records, key) {
+      const source = Array.isArray(records) ? records : [];
+      const seen = new Set();
+      const options = [];
+      source.forEach((entry) => {
+        if (!entry || typeof entry[key] !== 'string') {
+          return;
+        }
+        const raw = entry[key].trim();
+        if (!raw) {
+          return;
+        }
+        const normalized = normalizeFeedbackFilterValue(raw);
+        if (!normalized || seen.has(normalized)) {
+          return;
+        }
+        seen.add(normalized);
+        options.push({ label: raw, normalized });
+      });
+      if (options.length > 1) {
+        options.sort((a, b) => feedbackOptionCollator.compare(a.label, b.label));
+      }
+      return options;
+    }
+
+    function sanitizeFeedbackFilters(filters) {
+      const availableRespondents = Array.isArray(dashboardState.feedback?.availableRespondents)
+        ? dashboardState.feedback.availableRespondents
+        : [];
+      const availableLocations = Array.isArray(dashboardState.feedback?.availableLocations)
+        ? dashboardState.feedback.availableLocations
+        : [];
+      const validRespondents = new Set(availableRespondents.map((option) => option.normalized));
+      const validLocations = new Set(availableLocations.map((option) => option.normalized));
+      const selectedRespondents = Array.isArray(filters?.selectedRespondents)
+        ? filters.selectedRespondents
+        : [];
+      const selectedLocations = Array.isArray(filters?.selectedLocations)
+        ? filters.selectedLocations
+        : [];
+
+      const normalizedRespondents = [...new Set(selectedRespondents
+        .map(normalizeFeedbackFilterValue)
+        .filter((value) => value && validRespondents.has(value)))];
+
+      const normalizedLocations = [...new Set(selectedLocations
+        .map(normalizeFeedbackFilterValue)
+        .filter((value) => value && validLocations.has(value)))];
+
+      const requestedMode = typeof filters?.contactMode === 'string'
+        ? filters.contactMode
+        : DEFAULT_FEEDBACK_FILTERS.contactMode;
+      const contactMode = FEEDBACK_CONTACT_MODES.includes(requestedMode)
+        ? requestedMode
+        : DEFAULT_FEEDBACK_FILTERS.contactMode;
+
+      return {
+        selectedRespondents: normalizedRespondents,
+        selectedLocations: normalizedLocations,
+        contactMode,
+      };
+    }
+
+    function areFeedbackFiltersDefault(filters) {
+      return !filters.selectedRespondents?.length
+        && !filters.selectedLocations?.length
+        && filters.contactMode === DEFAULT_FEEDBACK_FILTERS.contactMode;
+    }
+
+    function refreshFeedbackFilterAvailability(records) {
+      const source = Array.isArray(records) ? records : [];
+      dashboardState.feedback.availableRespondents = deriveFeedbackOptionList(source, 'respondent');
+      dashboardState.feedback.availableLocations = deriveFeedbackOptionList(source, 'location');
+    }
+
+    function buildFeedbackFilterOptions(container, options, selectedSet, name, emptyElement) {
+      if (!container) {
+        return;
+      }
+      container.replaceChildren();
+      const list = Array.isArray(options) ? options : [];
+      if (!list.length) {
+        if (emptyElement) {
+          emptyElement.hidden = false;
+        }
+        return;
+      }
+      if (emptyElement) {
+        emptyElement.hidden = true;
+      }
+      const fragment = document.createDocumentFragment();
+      list.forEach((option) => {
+        const label = document.createElement('label');
+        label.className = 'feedback-filter__option';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = name;
+        input.value = option.label;
+        input.dataset.normalized = option.normalized;
+        input.checked = selectedSet.has(option.normalized);
+        label.appendChild(input);
+        const span = document.createElement('span');
+        span.textContent = option.label;
+        label.appendChild(span);
+        fragment.appendChild(label);
+      });
+      container.appendChild(fragment);
+    }
+
+    function updateFeedbackCheckboxStates(container, selectedSet, emptyElement, options) {
+      if (emptyElement) {
+        const hasOptions = Array.isArray(options) && options.length > 0;
+        emptyElement.hidden = hasOptions;
+      }
+      if (!container) {
+        return;
+      }
+      const inputs = container.querySelectorAll('input[type="checkbox"]');
+      inputs.forEach((input) => {
+        const normalized = normalizeFeedbackFilterValue(input.dataset.normalized || input.value);
+        input.checked = selectedSet.has(normalized);
+      });
+    }
+
+    function syncFeedbackFilterControls({ rebuild = false } = {}) {
+      const sanitized = sanitizeFeedbackFilters(dashboardState.feedback?.filters || DEFAULT_FEEDBACK_FILTERS);
+      dashboardState.feedback.filters = sanitized;
+      const respondentSet = new Set(sanitized.selectedRespondents);
+      const locationSet = new Set(sanitized.selectedLocations);
+      const respondents = Array.isArray(dashboardState.feedback.availableRespondents)
+        ? dashboardState.feedback.availableRespondents
+        : [];
+      const locations = Array.isArray(dashboardState.feedback.availableLocations)
+        ? dashboardState.feedback.availableLocations
+        : [];
+
+      if (rebuild) {
+        buildFeedbackFilterOptions(selectors.feedbackRespondentOptions, respondents, respondentSet, 'feedbackRespondents', selectors.feedbackRespondentEmpty);
+        buildFeedbackFilterOptions(selectors.feedbackLocationOptions, locations, locationSet, 'feedbackLocations', selectors.feedbackLocationEmpty);
+      } else {
+        updateFeedbackCheckboxStates(selectors.feedbackRespondentOptions, respondentSet, selectors.feedbackRespondentEmpty, respondents);
+        updateFeedbackCheckboxStates(selectors.feedbackLocationOptions, locationSet, selectors.feedbackLocationEmpty, locations);
+      }
+
+      if (selectors.feedbackContactOptions) {
+        const radios = selectors.feedbackContactOptions.querySelectorAll('input[name="feedbackContact"]');
+        radios.forEach((input) => {
+          input.checked = input.value === sanitized.contactMode;
+        });
+      }
+
+      if (selectors.feedbackFiltersReset) {
+        selectors.feedbackFiltersReset.disabled = areFeedbackFiltersDefault(sanitized);
+      }
+    }
+
+    function applyFeedbackFiltersAndRender(options = {}) {
+      const { skipSync = false } = options;
+      const sanitized = sanitizeFeedbackFilters(dashboardState.feedback?.filters || DEFAULT_FEEDBACK_FILTERS);
+      dashboardState.feedback.filters = sanitized;
+      if (!skipSync) {
+        syncFeedbackFilterControls();
+      } else if (selectors.feedbackFiltersReset) {
+        selectors.feedbackFiltersReset.disabled = areFeedbackFiltersDefault(sanitized);
+      }
+      const records = Array.isArray(dashboardState.feedback?.records)
+        ? dashboardState.feedback.records
+        : [];
+      const respondentSet = new Set(sanitized.selectedRespondents);
+      const locationSet = new Set(sanitized.selectedLocations);
+      const contactMode = sanitized.contactMode;
+      const filteredRecords = records.filter((entry) => {
+        if (!entry) {
+          return false;
+        }
+        if (respondentSet.size > 0) {
+          const normalizedRespondent = normalizeFeedbackFilterValue(entry.respondent || '');
+          if (!respondentSet.has(normalizedRespondent)) {
+            return false;
+          }
+        }
+        if (locationSet.size > 0) {
+          const normalizedLocation = normalizeFeedbackFilterValue(entry.location || '');
+          if (!locationSet.has(normalizedLocation)) {
+            return false;
+          }
+        }
+        if (contactMode === 'yes' && entry.aidesContact !== true) {
+          return false;
+        }
+        if (contactMode === 'no' && entry.aidesContact !== false) {
+          return false;
+        }
+        return true;
+      });
+      dashboardState.feedback.filteredRecords = filteredRecords;
+      const feedbackStats = computeFeedbackStats(filteredRecords);
+      dashboardState.feedback.summary = feedbackStats.summary;
+      dashboardState.feedback.monthly = feedbackStats.monthly;
+      renderFeedbackSection(feedbackStats);
+      return feedbackStats;
+    }
+
+    function initializeFeedbackFilters() {
+      if (selectors.feedbackFiltersForm) {
+        selectors.feedbackFiltersForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+        });
+      }
+      if (selectors.feedbackRespondentOptions) {
+        selectors.feedbackRespondentOptions.addEventListener('change', () => {
+          const inputs = selectors.feedbackRespondentOptions.querySelectorAll('input[type="checkbox"]');
+          const selected = Array.from(inputs)
+            .filter((input) => input.checked)
+            .map((input) => normalizeFeedbackFilterValue(input.dataset.normalized || input.value))
+            .filter(Boolean);
+          dashboardState.feedback.filters.selectedRespondents = selected;
+          applyFeedbackFiltersAndRender();
+        });
+      }
+      if (selectors.feedbackLocationOptions) {
+        selectors.feedbackLocationOptions.addEventListener('change', () => {
+          const inputs = selectors.feedbackLocationOptions.querySelectorAll('input[type="checkbox"]');
+          const selected = Array.from(inputs)
+            .filter((input) => input.checked)
+            .map((input) => normalizeFeedbackFilterValue(input.dataset.normalized || input.value))
+            .filter(Boolean);
+          dashboardState.feedback.filters.selectedLocations = selected;
+          applyFeedbackFiltersAndRender();
+        });
+      }
+      if (selectors.feedbackContactOptions) {
+        selectors.feedbackContactOptions.addEventListener('change', (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement) || target.name !== 'feedbackContact') {
+            return;
+          }
+          const mode = FEEDBACK_CONTACT_MODES.includes(target.value) ? target.value : DEFAULT_FEEDBACK_FILTERS.contactMode;
+          if (dashboardState.feedback.filters.contactMode === mode) {
+            return;
+          }
+          dashboardState.feedback.filters.contactMode = mode;
+          applyFeedbackFiltersAndRender();
+        });
+      }
+      if (selectors.feedbackFiltersReset) {
+        selectors.feedbackFiltersReset.addEventListener('click', () => {
+          dashboardState.feedback.filters = { ...DEFAULT_FEEDBACK_FILTERS };
+          syncFeedbackFilterControls({ rebuild: false });
+          applyFeedbackFiltersAndRender({ skipSync: true });
+        });
+      }
     }
 
     async function fetchFeedbackData() {
@@ -14166,10 +14691,10 @@
           ? datasetYearlyStats
           : computeYearlyStats(monthlyStats);
         renderYearlyTable(yearlyStats);
-        const feedbackStats = computeFeedbackStats(feedbackRecords);
-        dashboardState.feedback.summary = feedbackStats.summary;
-        dashboardState.feedback.monthly = feedbackStats.monthly;
-        renderFeedbackSection(feedbackStats);
+        dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
+        refreshFeedbackFilterAvailability(dashboardState.feedback.records);
+        syncFeedbackFilterControls({ rebuild: true });
+        applyFeedbackFiltersAndRender({ skipSync: true });
         setStatus('success');
         applyFeedbackStatusNote();
         await renderEdDashboard(dashboardState.ed);
@@ -14205,6 +14730,7 @@
 
     initializeKpiFilters();
     initializeFeedbackTrendControls();
+    initializeFeedbackFilters();
     initializeTabSwitcher();
     initializeTvMode();
     loadDashboard();
