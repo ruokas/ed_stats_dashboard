@@ -121,7 +121,7 @@ function applyKpiFiltersInWorker(data = {}) {
   let filteredDailyStats = [];
 
   if (hasRawRecords) {
-    const scopedRecords = filterRecordsByWindow(records, windowDays);
+    const scopedRecords = filterRecordsByWindow(records, windowDays, calculations, calculationDefaults);
     filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, requestedFilters));
     filteredDailyStats = computeDailyStats(filteredRecords, calculations, calculationDefaults);
   } else if (dailyStats.length) {
@@ -216,25 +216,27 @@ function recordMatchesKpiFilters(record, filters) {
   return true;
 }
 
-function filterRecordsByWindow(records, days) {
+function filterRecordsByWindow(records, days, calculations = {}, calculationDefaults = {}) {
   if (!Array.isArray(records)) {
     return [];
   }
   if (!Number.isFinite(days) || days <= 0) {
     return records.slice();
   }
+  const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
   const decorated = records
     .map((entry) => {
-      let reference = null;
-      if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
-        reference = entry.arrival;
-      } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
-        reference = entry.discharge;
-      }
+      const hasArrival = entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime());
+      const hasDischarge = entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime());
+      const reference = hasArrival ? entry.arrival : (hasDischarge ? entry.discharge : null);
       if (!reference) {
         return null;
       }
-      const utc = Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate());
+      const dateKey = computeShiftDateKey(reference, shiftStartHour);
+      if (!dateKey) {
+        return null;
+      }
+      const utc = dateKeyToUtc(dateKey);
       if (!Number.isFinite(utc)) {
         return null;
       }
