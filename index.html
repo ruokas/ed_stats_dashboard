@@ -1962,6 +1962,28 @@
       gap: 18px;
     }
 
+    .kpi-group {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 4px 4px 0;
+    }
+
+    .kpi-group-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .kpi-group__description {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
     .kpi-controls {
       margin-bottom: 18px;
       padding: 12px 14px;
@@ -2281,6 +2303,23 @@
       font-weight: 600;
       color: var(--color-text);
       text-align: right;
+    }
+
+    .kpi-detail--stacked {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .kpi-detail--stacked .kpi-detail__value {
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+      gap: 4px;
+    }
+
+    .kpi-detail__meta-line {
+      font-weight: 500;
+      color: var(--color-text-muted);
     }
 
     .kpi-detail__value strong {
@@ -4515,10 +4554,15 @@
           noUrl: 'Nenurodytas ED duomenų URL. Rodomi demonstraciniai duomenys.',
         },
         cardSections: {
-          default: {
-            title: 'Skydelio rodikliai',
-            description: 'Pagrindiniai ED rodikliai',
-            icon: 'flow',
+          lastShift: {
+            title: 'Paskutinė pamaina',
+            description: 'Naujausios pamainos rodikliai ir palyginimas su metiniu vidurkiu.',
+            icon: 'default',
+          },
+          month: {
+            title: 'Šis mėnuo',
+            description: 'Einamojo mėnesio sumos lyginamos su metiniu vidurkiu.',
+            icon: 'default',
           },
           flow: {
             title: 'Pacientų srautas',
@@ -4535,9 +4579,86 @@
             description: 'Vidutiniai laukimo ir buvimo laiko rodikliai.',
             icon: 'efficiency',
           },
+          default: {
+            title: 'Skydelio rodikliai',
+            description: 'Pagrindiniai ED rodikliai',
+            icon: 'flow',
+          },
         },
         cards: {
           legacy: [
+            {
+              key: 'lastShiftTotal',
+              secondaryKey: 'lastShiftTotalAvgWeekday',
+              title: 'Pacientai (pask. pamaina)',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftTotalMeta',
+            },
+            {
+              key: 'lastShiftNight',
+              secondaryKey: 'lastShiftNightAvgWeekday',
+              title: 'Naktiniai pacientai',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftNightMeta',
+            },
+            {
+              key: 'lastShiftHospitalized',
+              secondaryKey: 'lastShiftHospitalizedAvgWeekday',
+              title: 'Hospitalizuoti (pamaina)',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftHospitalizedMeta',
+            },
+            {
+              key: 'lastShiftDischarged',
+              secondaryKey: 'lastShiftDischargedAvgWeekday',
+              title: 'Išleisti (pamaina)',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftDischargedMeta',
+            },
+            {
+              key: 'monthTotal',
+              secondaryKey: 'monthTotalExpected',
+              title: 'Pacientai (šis mėnuo)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthTotalMeta',
+            },
+            {
+              key: 'monthNight',
+              secondaryKey: 'monthNightExpected',
+              title: 'Naktiniai (šis mėnuo)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthNightMeta',
+            },
+            {
+              key: 'monthHospitalized',
+              secondaryKey: 'monthHospitalizedExpected',
+              title: 'Hospitalizuoti (mėn.)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthHospitalizedMeta',
+            },
+            {
+              key: 'monthDischarged',
+              secondaryKey: 'monthDischargedExpected',
+              title: 'Išleisti (mėn.)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthDischargedMeta',
+            },
             {
               key: 'avgDailyPatients',
               title: 'Vid. pacientų per dieną',
@@ -4604,6 +4725,78 @@
             },
           ],
           snapshot: [
+            {
+              key: 'lastShiftTotal',
+              secondaryKey: 'lastShiftTotalAvgWeekday',
+              title: 'Pacientai (pask. pamaina)',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftTotalMeta',
+            },
+            {
+              key: 'lastShiftNight',
+              secondaryKey: 'lastShiftNightAvgWeekday',
+              title: 'Naktiniai pacientai',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftNightMeta',
+            },
+            {
+              key: 'lastShiftHospitalized',
+              secondaryKey: 'lastShiftHospitalizedAvgWeekday',
+              title: 'Hospitalizuoti (pamaina)',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftHospitalizedMeta',
+            },
+            {
+              key: 'lastShiftDischarged',
+              secondaryKey: 'lastShiftDischargedAvgWeekday',
+              title: 'Išleisti (pamaina)',
+              description: '',
+              empty: '—',
+              section: 'lastShift',
+              metaKey: 'lastShiftDischargedMeta',
+            },
+            {
+              key: 'monthTotal',
+              secondaryKey: 'monthTotalExpected',
+              title: 'Pacientai (šis mėnuo)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthTotalMeta',
+            },
+            {
+              key: 'monthNight',
+              secondaryKey: 'monthNightExpected',
+              title: 'Naktiniai (šis mėnuo)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthNightMeta',
+            },
+            {
+              key: 'monthHospitalized',
+              secondaryKey: 'monthHospitalizedExpected',
+              title: 'Hospitalizuoti (mėn.)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthHospitalizedMeta',
+            },
+            {
+              key: 'monthDischarged',
+              secondaryKey: 'monthDischargedExpected',
+              title: 'Išleisti (mėn.)',
+              description: '',
+              empty: '—',
+              section: 'month',
+              metaKey: 'monthDischargedMeta',
+            },
             {
               key: 'currentPatients',
               title: 'Pacientai skyriuje dabar',
@@ -4705,8 +4898,8 @@
       },
       kpis: {
         title: 'Pagrindiniai rodikliai',
-        subtitle: 'Pasirinkto laikotarpio vidurkiai ir mėnesio palyginimas',
-        yearLabel: 'Pasirinkto laikotarpio vidurkis',
+        subtitle: 'Paskutinės pamainos ir šio mėnesio rezultatai su palyginimais.',
+        yearLabel: 'Rodiklis',
         yearAverageReference: 'pasirinkto laikotarpio vidurkis',
         yearAverageReferenceShort: 'vid.',
         monthPrefix: 'Šis mėnuo',
@@ -4726,47 +4919,123 @@
         deltaLabel: 'Pokytis vs metų vidurkis',
         deltaNoData: 'Nepavyko apskaičiuoti pokyčio.',
         summary: {
-          title: 'Laikotarpio santrauka',
-          period: 'Laikotarpis',
+          title: 'Pamainos santrauka',
+          period: 'Pamaina',
+          periodFallback: 'Pamainos data nenustatyta.',
           reference: 'Lyginama su',
+          referenceFallback: 'Metinis vidurkis',
+          weekdayReference: (weekday) => `Metinis vidurkis (${weekday})`,
           month: 'Šio mėnesio duomenys',
           noMonth: 'Šio mėnesio duomenų nėra.',
           unknownPeriod: 'Nenurodytas laikotarpis',
         },
-        items: {
-          patientsPerDay: {
-            label: 'Pacientų vidurkis per dieną',
-            hint: 'Pasirinkto laikotarpio vidurkis pagal naujausius duomenis.',
-            unit: 'pac./d.',
-            valueFormat: 'oneDecimal',
-            deltaType: 'percent',
+        defaultMainLabel: 'Reikšmė',
+        defaultSecondaryLabel: 'Palyginimas',
+        primaryNoData: 'Duomenų nepakanka.',
+        secondaryNoData: 'Nėra palyginimo.',
+        metaLabel: 'Pastabos',
+        cards: [
+          {
+            type: 'group',
+            key: 'lastShift',
+            title: 'Paskutinė pamaina',
+            description: 'Naujausios pamainos sumos ir palyginimas su to paties savaitės dienos metiniu vidurkiu.',
           },
-          avgTime: {
-            label: 'Vidutinė buvimo trukmė',
-            hint: 'Valandomis pagal įrašus su atvykimo ir išrašymo laiku.',
-            unit: 'val.',
-            valueFormat: 'decimal',
-            deltaType: 'absolute',
+          {
+            key: 'lastShiftTotal',
+            group: 'lastShift',
+            title: 'Pacientai',
+            mainLabel: 'Paskutinė pamaina',
+            valueKey: 'lastShiftTotal',
+            format: 'integer',
+            secondaryKey: 'lastShiftTotalAvgWeekday',
+            secondaryLabel: 'Metinis vidurkis (ta pati savaitės diena)',
+            metaKey: 'lastShiftTotalMeta',
           },
-          hospitalized: {
-            label: 'Hospitalizuoti pacientai',
-            hint: 'Pasirinkto laikotarpio hospitalizuojamų skaičius per dieną ir jų dalis nuo visų atvykimų.',
-            unit: 'pac./d.',
-            valueFormat: 'oneDecimal',
-            deltaType: 'percent',
-            shareKey: 'hospitalizedShare',
-            shareLabel: 'Hospitalizacijų dalis',
+          {
+            key: 'lastShiftNight',
+            group: 'lastShift',
+            title: 'Naktiniai pacientai',
+            mainLabel: 'Paskutinė pamaina',
+            valueKey: 'lastShiftNight',
+            format: 'integer',
+            secondaryKey: 'lastShiftNightAvgWeekday',
+            secondaryLabel: 'Metinis vidurkis (ta pati savaitės diena)',
+            metaKey: 'lastShiftNightMeta',
           },
-          discharged: {
-            label: 'Išleisti pacientai',
-            hint: 'Pasirinkto laikotarpio išleidžiamų skaičius per dieną ir jų dalis nuo visų atvykimų.',
-            unit: 'pac./d.',
-            valueFormat: 'oneDecimal',
-            deltaType: 'percent',
-            shareKey: 'dischargedShare',
-            shareLabel: 'Išleidimų dalis',
+          {
+            key: 'lastShiftHospitalized',
+            group: 'lastShift',
+            title: 'Hospitalizuoti',
+            mainLabel: 'Paskutinė pamaina',
+            valueKey: 'lastShiftHospitalized',
+            format: 'integer',
+            secondaryKey: 'lastShiftHospitalizedAvgWeekday',
+            secondaryLabel: 'Metinis vidurkis (ta pati savaitės diena)',
+            metaKey: 'lastShiftHospitalizedMeta',
           },
-        },
+          {
+            key: 'lastShiftDischarged',
+            group: 'lastShift',
+            title: 'Išleisti',
+            mainLabel: 'Paskutinė pamaina',
+            valueKey: 'lastShiftDischarged',
+            format: 'integer',
+            secondaryKey: 'lastShiftDischargedAvgWeekday',
+            secondaryLabel: 'Metinis vidurkis (ta pati savaitės diena)',
+            metaKey: 'lastShiftDischargedMeta',
+          },
+          {
+            type: 'group',
+            key: 'month',
+            title: 'Šis mėnuo',
+            description: 'Einamojo mėnesio sumos ir skirtumas nuo metinio dienų vidurkio.',
+          },
+          {
+            key: 'monthTotal',
+            group: 'month',
+            title: 'Pacientai',
+            mainLabel: 'Šio mėnesio suma',
+            valueKey: 'monthTotal',
+            format: 'integer',
+            secondaryKey: 'monthTotalExpected',
+            secondaryLabel: 'Tikėtina pagal metinį vidurkį',
+            metaKey: 'monthTotalMeta',
+          },
+          {
+            key: 'monthNight',
+            group: 'month',
+            title: 'Naktiniai pacientai',
+            mainLabel: 'Šio mėnesio suma',
+            valueKey: 'monthNight',
+            format: 'integer',
+            secondaryKey: 'monthNightExpected',
+            secondaryLabel: 'Tikėtina pagal metinį vidurkį',
+            metaKey: 'monthNightMeta',
+          },
+          {
+            key: 'monthHospitalized',
+            group: 'month',
+            title: 'Hospitalizuoti',
+            mainLabel: 'Šio mėnesio suma',
+            valueKey: 'monthHospitalized',
+            format: 'integer',
+            secondaryKey: 'monthHospitalizedExpected',
+            secondaryLabel: 'Tikėtina pagal metinį vidurkį',
+            metaKey: 'monthHospitalizedMeta',
+          },
+          {
+            key: 'monthDischarged',
+            group: 'month',
+            title: 'Išleisti',
+            mainLabel: 'Šio mėnesio suma',
+            valueKey: 'monthDischarged',
+            format: 'integer',
+            secondaryKey: 'monthDischargedExpected',
+            secondaryLabel: 'Tikėtina pagal metinį vidurkį',
+            metaKey: 'monthDischargedMeta',
+          },
+        ],
       },
       charts: {
         title: 'Pacientų srautai',
@@ -5104,6 +5373,7 @@
     const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
     const shortDateFormatter = new Intl.DateTimeFormat('lt-LT', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const monthDayFormatter = new Intl.DateTimeFormat('lt-LT', { month: '2-digit', day: '2-digit' });
+    const weekdayLongFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long' });
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
     const tvTimeFormatter = new Intl.DateTimeFormat('lt-LT', { hour: '2-digit', minute: '2-digit' });
     const tvDateFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long', day: '2-digit', month: 'long' });
@@ -8413,6 +8683,34 @@
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
         generatedAt: new Date(),
+        lastShiftLabel: '',
+        lastShiftTotal: null,
+        lastShiftWeekdayLabel: '',
+        lastShiftTotalAvgWeekday: null,
+        lastShiftTotalMeta: [],
+        lastShiftNight: null,
+        lastShiftNightAvgWeekday: null,
+        lastShiftNightMeta: [],
+        lastShiftHospitalized: null,
+        lastShiftHospitalizedAvgWeekday: null,
+        lastShiftHospitalizedMeta: [],
+        lastShiftDischarged: null,
+        lastShiftDischargedAvgWeekday: null,
+        lastShiftDischargedMeta: [],
+        monthLabel: '',
+        monthMeta: [],
+        monthTotal: null,
+        monthTotalExpected: null,
+        monthTotalMeta: [],
+        monthNight: null,
+        monthNightExpected: null,
+        monthNightMeta: [],
+        monthHospitalized: null,
+        monthHospitalizedExpected: null,
+        monthHospitalizedMeta: [],
+        monthDischarged: null,
+        monthDischargedExpected: null,
+        monthDischargedMeta: [],
       };
     }
 
@@ -9698,6 +9996,7 @@
         return {
           days: 0,
           totalCount: 0,
+          totalNight: 0,
           totalHospitalized: 0,
           totalDischarged: 0,
           totalTime: 0,
@@ -9709,6 +10008,7 @@
       return entries.reduce((acc, entry) => {
         acc.days += 1;
         const count = Number.isFinite(entry?.count) ? entry.count : 0;
+        const night = Number.isFinite(entry?.night) ? entry.night : 0;
         const hospitalized = Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
         const discharged = Number.isFinite(entry?.discharged) ? entry.discharged : 0;
         const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
@@ -9716,6 +10016,7 @@
         const hospitalizedTime = Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
         const hospitalizedDurations = Number.isFinite(entry?.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
         acc.totalCount += count;
+        acc.totalNight += night;
         acc.totalHospitalized += hospitalized;
         acc.totalDischarged += discharged;
         acc.totalTime += totalTime;
@@ -9726,6 +10027,7 @@
       }, {
         days: 0,
         totalCount: 0,
+        totalNight: 0,
         totalHospitalized: 0,
         totalDischarged: 0,
         totalTime: 0,
@@ -9738,6 +10040,7 @@
     function derivePeriodMetrics(summary) {
       const days = Number.isFinite(summary?.days) ? summary.days : 0;
       const totalCount = Number.isFinite(summary?.totalCount) ? summary.totalCount : 0;
+      const totalNight = Number.isFinite(summary?.totalNight) ? summary.totalNight : 0;
       const totalHospitalized = Number.isFinite(summary?.totalHospitalized) ? summary.totalHospitalized : 0;
       const totalDischarged = Number.isFinite(summary?.totalDischarged) ? summary.totalDischarged : 0;
       const totalTime = Number.isFinite(summary?.totalTime) ? summary.totalTime : 0;
@@ -9749,9 +10052,13 @@
       return {
         days,
         totalCount,
+        totalNight,
+        totalHospitalized,
+        totalDischarged,
         patientsPerDay: days > 0 ? totalCount / days : null,
         avgTime: durationCount > 0 ? totalTime / durationCount : null,
         avgHospitalizedTime: hospitalizedDurationCount > 0 ? totalHospitalizedTime / hospitalizedDurationCount : null,
+        nightPerDay: days > 0 ? totalNight / days : null,
         hospitalizedPerDay: days > 0 ? totalHospitalized / days : null,
         hospitalizedShare: totalCount > 0 ? totalHospitalized / totalCount : null,
         dischargedPerDay: days > 0 ? totalDischarged / days : null,
@@ -10153,208 +10460,81 @@
       return oneDecimalFormatter.format(value);
     }
 
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function formatPercentCompact(value) {
       const formatted = percentFormatter.format(value);
       return formatted.replace(/\s?%/, '%');
     }
 
-    function computeDeltaDescriptor(deltaType, yearValue, monthValue, unit, format, referenceLabel) {
-      if (monthValue == null || !Number.isFinite(monthValue)) {
-        return null;
-      }
-      const isWholePeriod = referenceLabel === TEXT.kpis.windowAllLabel;
-      const normalizedReference = isWholePeriod
-        ? 'Viso laikotarpio'
-        : referenceLabel;
-      const referenceText = normalizedReference ? `${normalizedReference} vidurkis` : TEXT.kpis.yearAverageReference;
-      const referenceShort = isWholePeriod
-        ? TEXT.kpis.windowAllShortLabel
-        : (referenceLabel || TEXT.kpis.yearAverageReferenceShort);
-      if (deltaType === 'percent') {
-        if (yearValue == null || !Number.isFinite(yearValue) || Math.abs(yearValue) < Number.EPSILON) {
-          return null;
-        }
-        const diffRatio = (monthValue - yearValue) / yearValue;
-        if (!Number.isFinite(diffRatio)) {
-          return null;
-        }
-        if (Math.abs(diffRatio) < 0.0005) {
-          return {
-            direction: 'neutral',
-            shortText: '≈',
-            context: referenceShort,
-            ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
-          };
-        }
-        const direction = diffRatio > 0 ? '↑' : '↓';
-        const shortText = `${diffRatio > 0 ? '+' : '−'}${formatPercentCompact(Math.abs(diffRatio))}`;
-        const ariaLabel = diffRatio > 0
-          ? `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} didesnis nei ${referenceText}.`
-          : `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} mažesnis nei ${referenceText}.`;
-        return {
-          direction: diffRatio > 0 ? 'up' : 'down',
-          icon: direction,
-          shortText,
-          context: `vs ${referenceShort}`,
-          ariaLabel,
-        };
-      }
-      if (deltaType === 'absolute') {
-        if (yearValue == null || !Number.isFinite(yearValue)) {
-          return null;
-        }
-        const diff = monthValue - yearValue;
-        if (!Number.isFinite(diff)) {
-          return null;
-        }
-        if (Math.abs(diff) < 0.005) {
-          return {
-            direction: 'neutral',
-            shortText: '≈',
-            context: referenceShort,
-            ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
-          };
-        }
-        const sign = diff > 0 ? '+' : '−';
-        const formattedDiff = formatKpiValue(Math.abs(diff), format);
-        const unitSuffix = unit ? ` ${unit}` : '';
-        const ariaLabel = diff > 0
-          ? `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} ilgesnis nei ${referenceText}.`
-          : `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} trumpesnis nei ${referenceText}.`;
-        return {
-          direction: diff > 0 ? 'up' : 'down',
-          icon: diff > 0 ? '↑' : '↓',
-          shortText: `${sign}${formattedDiff}${unitSuffix}`,
-          context: `vs ${referenceShort}`,
-          ariaLabel,
-        };
-      }
-      return null;
-    }
 
-    function buildKpiDetails({
-      item,
-      monthLabel,
-      monthMetrics,
-      yearValue,
-      monthValue,
-      yearShare,
-      monthShare,
-      referenceLabel,
-    }) {
-      const monthDescriptor = TEXT.kpis.monthPrefixShort;
-      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
-      const details = [];
-      const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
-        const aria = ariaLabel ? ` aria-label="${ariaLabel}"` : '';
-        const extra = extraClass ? ` ${extraClass}` : '';
-        return `<div class="kpi-detail${extra}" role="listitem"${aria}><span class="kpi-detail__label">${label}</span><span class="kpi-detail__value">${valueHtml}</span></div>`;
-      };
-
-      if (monthHasData && monthValue != null && Number.isFinite(monthValue)) {
-        const unitSuffix = item.unit ? `<span class="kpi-detail__context">${item.unit}</span>` : '';
-        details.push(detailWrapper(
-          monthDescriptor,
-          `<strong>${formatKpiValue(monthValue, item.valueFormat)}</strong>${unitSuffix}`,
-        ));
-      } else {
-        details.push(detailWrapper(
-          monthDescriptor,
-          `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
-          'kpi-detail--muted',
-        ));
-      }
-
-      const deltaDescriptor = computeDeltaDescriptor(
-        item.deltaType,
-        yearValue,
-        monthValue,
-        item.unit,
-        item.valueFormat,
-        referenceLabel,
-      );
-
-      if (deltaDescriptor) {
-        const { direction, shortText, context, ariaLabel, icon } = deltaDescriptor;
-        const directionClass = direction ? `kpi-detail--delta-${direction}` : 'kpi-detail--muted';
-        const iconHtml = icon ? `<span class="kpi-detail__icon" aria-hidden="true">${icon}</span>` : '';
-        const contextHtml = context ? `<span class="kpi-detail__context">${context}</span>` : '';
-        const valueHtml = `${iconHtml}<strong>${shortText}</strong>${contextHtml}`;
-        details.push(detailWrapper(TEXT.kpis.deltaLabel, valueHtml, directionClass, ariaLabel));
-      } else {
-        details.push(detailWrapper(
-          TEXT.kpis.deltaLabel,
-          `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
-          'kpi-detail--muted',
-        ));
-      }
-
-      if (item.shareKey) {
-        const referenceShort = referenceLabel === TEXT.kpis.windowAllLabel
-          ? TEXT.kpis.windowAllShortLabel
-          : (referenceLabel || TEXT.kpis.shareShortLabel);
-
-        if (yearShare != null && Number.isFinite(yearShare)) {
-          details.push(detailWrapper(
-            item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
-            `<strong>${formatPercentCompact(yearShare)}</strong><span class="kpi-detail__context">${referenceShort}</span>`,
-          ));
-        } else {
-          details.push(detailWrapper(
-            item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
-            `<span class="kpi-empty">${TEXT.kpis.shareNoData}</span>`,
-            'kpi-detail--muted',
-          ));
-        }
-
-        if (monthHasData && monthShare != null && Number.isFinite(monthShare)) {
-          const monthContext = TEXT.kpis.monthPrefixShort;
-          details.push(detailWrapper(
-            TEXT.kpis.shareMonthDetail,
-            `<strong>${formatPercentCompact(monthShare)}</strong><span class="kpi-detail__context">${monthContext}</span>`,
-          ));
-        } else {
-          details.push(detailWrapper(
-            TEXT.kpis.shareMonthDetail,
-            `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
-            'kpi-detail--muted',
-          ));
-        }
-      }
-
-      return details.join('');
-    }
-
-    function renderKpiPeriodSummary(periodMetrics) {
+    function renderKpiPeriodSummary(periodMetrics, highlightFields = {}) {
       const summaryEl = selectors.kpiSummary;
       if (!summaryEl) {
         return;
       }
-      if (!periodMetrics) {
+      const hasShiftLabel = typeof highlightFields?.lastShiftLabel === 'string'
+        && highlightFields.lastShiftLabel.trim().length > 0;
+      const weekdayLabel = typeof highlightFields?.lastShiftWeekdayLabel === 'string'
+        ? highlightFields.lastShiftWeekdayLabel.trim()
+        : '';
+      const hasMonthMeta = Array.isArray(highlightFields?.monthMeta)
+        && highlightFields.monthMeta.some((part) => typeof part === 'string' && part.trim().length);
+
+      if (!periodMetrics && !hasShiftLabel && !hasMonthMeta) {
         summaryEl.innerHTML = `<p class="kpi-summary__empty">${TEXT.kpis.noYearData}</p>`;
         summaryEl.hidden = false;
         return;
       }
-      const { yearLabel, referenceLabel, monthLabel, monthMetrics } = periodMetrics;
-      const hasMonthData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
-      const monthContent = hasMonthData && monthLabel
-        ? monthLabel
-        : `<span class="kpi-summary__muted">${TEXT.kpis.summary.noMonth}</span>`;
-      const periodText = yearLabel || TEXT.kpis.summary.unknownPeriod;
-      const referenceText = referenceLabel || TEXT.kpis.yearAverageReference;
+      const periodText = hasShiftLabel
+        ? `${escapeHtml(highlightFields.lastShiftLabel)}${weekdayLabel ? ` (${escapeHtml(weekdayLabel)})` : ''}`
+        : escapeHtml(TEXT.kpis.summary.periodFallback || TEXT.kpis.summary.unknownPeriod);
+
+      let referenceText = escapeHtml(TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference);
+      if (weekdayLabel) {
+        if (typeof TEXT.kpis.summary.weekdayReference === 'function') {
+          referenceText = escapeHtml(TEXT.kpis.summary.weekdayReference(weekdayLabel));
+        } else {
+          referenceText = `${escapeHtml(TEXT.kpis.summary.reference)} (${escapeHtml(weekdayLabel)})`;
+        }
+      }
+
+      let monthContent = '';
+      if (hasMonthMeta) {
+        const monthMetaLines = highlightFields.monthMeta
+          .filter((part) => typeof part === 'string' && part.trim().length)
+          .map((part) => escapeHtml(part));
+        monthContent = monthMetaLines.length ? monthMetaLines[0] : '';
+      }
+
+      if (!monthContent && periodMetrics?.monthLabel) {
+        monthContent = escapeHtml(periodMetrics.monthLabel);
+      }
+
+      if (!monthContent) {
+        monthContent = `<span class="kpi-summary__muted">${escapeHtml(TEXT.kpis.summary.noMonth)}</span>`;
+      }
+
       summaryEl.innerHTML = `
-        <p class="kpi-summary__title">${TEXT.kpis.summary.title}</p>
+        <p class="kpi-summary__title">${escapeHtml(TEXT.kpis.summary.title)}</p>
         <dl class="kpi-summary__list">
           <div class="kpi-summary__item">
-            <dt>${TEXT.kpis.summary.period}</dt>
+            <dt>${escapeHtml(TEXT.kpis.summary.period)}</dt>
             <dd>${periodText}</dd>
           </div>
           <div class="kpi-summary__item">
-            <dt>${TEXT.kpis.summary.reference}</dt>
+            <dt>${escapeHtml(TEXT.kpis.summary.reference)}</dt>
             <dd>${referenceText}</dd>
           </div>
           <div class="kpi-summary__item">
-            <dt>${TEXT.kpis.summary.month}</dt>
+            <dt>${escapeHtml(TEXT.kpis.summary.month)}</dt>
             <dd>${monthContent}</dd>
           </div>
         </dl>
@@ -10364,8 +10544,19 @@
 
     function renderKpis(dailyStats) {
       selectors.kpiGrid.replaceChildren();
-      const periodMetrics = buildYearMonthMetrics(dailyStats, dashboardState.kpi?.filters?.window);
-      renderKpiPeriodSummary(periodMetrics);
+      const defaultWindowRaw = Number.isFinite(Number(settings?.calculations?.windowDays))
+        ? Number(settings.calculations.windowDays)
+        : DEFAULT_SETTINGS.calculations.windowDays;
+      const defaultWindow = Number.isFinite(defaultWindowRaw) && defaultWindowRaw > 0
+        ? defaultWindowRaw
+        : DEFAULT_KPI_WINDOW_DAYS;
+      const windowRaw = Number.isFinite(Number(dashboardState?.kpi?.filters?.window))
+        ? Number(dashboardState.kpi.filters.window)
+        : defaultWindow;
+      const windowValue = Number.isFinite(windowRaw) ? windowRaw : defaultWindow;
+
+      const { fields: highlightFields, periodMetrics } = buildShiftMonthHighlights(dailyStats, windowValue);
+      renderKpiPeriodSummary(periodMetrics, highlightFields);
       if (!periodMetrics) {
         const card = document.createElement('article');
         card.className = 'kpi-card';
@@ -10375,13 +10566,13 @@
             <h3 class="kpi-card__title">Rodiklių nepakanka</h3>
           </header>
           <p class="kpi-mainline">
-            <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
+            <span class="kpi-mainline__label">${escapeHtml(TEXT.kpis.defaultMainLabel || TEXT.kpis.yearLabel)}</span>
             <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
           </p>
           <div class="kpi-card__details" role="list">
             <div class="kpi-detail kpi-detail--muted" role="listitem">
-              <span class="kpi-detail__label">${TEXT.kpis.monthPrefixShort}</span>
-              <span class="kpi-detail__value"><span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span></span>
+              <span class="kpi-detail__label">${escapeHtml(TEXT.kpis.metaLabel)}</span>
+              <span class="kpi-detail__value"><span class="kpi-empty">${TEXT.kpis.secondaryNoData}</span></span>
             </div>
           </div>
         `;
@@ -10389,72 +10580,128 @@
         return;
       }
 
-      const { yearMetrics, monthMetrics, yearLabel, monthLabel, referenceLabel } = periodMetrics;
-
-      Object.entries(TEXT.kpis.items).forEach(([key, item]) => {
+      const cardsConfig = Array.isArray(TEXT.kpis.cards) ? TEXT.kpis.cards : [];
+      if (!cardsConfig.length) {
         const card = document.createElement('article');
         card.className = 'kpi-card';
         card.setAttribute('role', 'listitem');
-
-        let yearValue = null;
-        let monthValue = null;
-        let yearShare = null;
-        let monthShare = null;
-
-        switch (key) {
-          case 'patientsPerDay':
-            yearValue = yearMetrics.patientsPerDay;
-            monthValue = monthMetrics.patientsPerDay;
-            break;
-          case 'avgTime':
-            yearValue = yearMetrics.avgTime;
-            monthValue = monthMetrics.avgTime;
-            break;
-          case 'hospitalized':
-            yearValue = yearMetrics.hospitalizedPerDay;
-            monthValue = monthMetrics.hospitalizedPerDay;
-            yearShare = yearMetrics.hospitalizedShare;
-            monthShare = monthMetrics.hospitalizedShare;
-            break;
-          case 'discharged':
-            yearValue = yearMetrics.dischargedPerDay;
-            monthValue = monthMetrics.dischargedPerDay;
-            yearShare = yearMetrics.dischargedShare;
-            monthShare = monthMetrics.dischargedShare;
-            break;
-          default:
-            break;
-        }
-
-        const hasYearValue = yearValue != null && Number.isFinite(yearValue);
-        const unitHtml = item.unit && hasYearValue ? `<span class="kpi-unit">${item.unit}</span>` : '';
-        const mainValueHtml = hasYearValue
-          ? `<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>${unitHtml}`
-          : `<span class="kpi-empty">${TEXT.kpis.noYearData}</span>`;
-
-        const detailHtml = buildKpiDetails({
-          item,
-          monthLabel,
-          monthMetrics,
-          yearValue,
-          monthValue,
-          yearShare,
-          monthShare,
-          referenceLabel,
-        });
-
         card.innerHTML = `
           <header class="kpi-card__header">
-            <h3 class="kpi-card__title">${item.label}</h3>
+            <h3 class="kpi-card__title">Rodiklių konfigūracija nerasta</h3>
           </header>
           <p class="kpi-mainline">
-            <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
+            <span class="kpi-mainline__label">${escapeHtml(TEXT.kpis.defaultMainLabel || TEXT.kpis.yearLabel)}</span>
+            <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
+          </p>
+        `;
+        selectors.kpiGrid.appendChild(card);
+        return;
+      }
+
+      const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
+        const aria = ariaLabel ? ` aria-label="${escapeHtml(ariaLabel)}"` : '';
+        const extra = extraClass ? ` ${extraClass}` : '';
+        return `<div class="kpi-detail${extra}" role="listitem"${aria}><span class="kpi-detail__label">${escapeHtml(label)}</span><span class="kpi-detail__value">${valueHtml}</span></div>`;
+      };
+
+      let renderedMetric = false;
+
+      cardsConfig.forEach((config) => {
+        if (!config || typeof config !== 'object') {
+          return;
+        }
+        if (config.type === 'group') {
+          const groupEl = document.createElement('div');
+          groupEl.className = 'kpi-group';
+          if (config.key) {
+            groupEl.dataset.groupKey = config.key;
+          }
+          const titleEl = document.createElement('h3');
+          titleEl.className = 'kpi-group-title';
+          titleEl.textContent = config.title || '';
+          groupEl.appendChild(titleEl);
+          if (config.description) {
+            const descriptionEl = document.createElement('p');
+            descriptionEl.className = 'kpi-group__description';
+            descriptionEl.textContent = config.description;
+            groupEl.appendChild(descriptionEl);
+          }
+          selectors.kpiGrid.appendChild(groupEl);
+          return;
+        }
+
+        if (!config.valueKey) {
+          return;
+        }
+
+        renderedMetric = true;
+        const rawValue = highlightFields[config.valueKey];
+        const hasValue = Number.isFinite(rawValue);
+        const valueFormat = config.format || 'integer';
+        const mainValueHtml = hasValue
+          ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>`
+          : `<span class="kpi-empty">${TEXT.kpis.primaryNoData}</span>`;
+        const mainLabel = config.mainLabel || TEXT.kpis.defaultMainLabel;
+        const titleText = config.title ? escapeHtml(config.title) : '';
+
+        const details = [];
+
+        if (config.secondaryKey) {
+          const secondaryRaw = highlightFields[config.secondaryKey];
+          const hasSecondary = Number.isFinite(secondaryRaw);
+          const secondaryFormat = config.secondaryFormat || valueFormat;
+          const secondaryLabel = config.secondaryLabel || TEXT.kpis.defaultSecondaryLabel;
+          const secondaryValueHtml = hasSecondary
+            ? `<strong>${formatKpiValue(secondaryRaw, secondaryFormat)}</strong>`
+            : `<span class="kpi-empty">${TEXT.kpis.secondaryNoData}</span>`;
+          const secondaryClass = hasSecondary ? '' : 'kpi-detail--muted';
+          details.push(detailWrapper(secondaryLabel, secondaryValueHtml, secondaryClass));
+        }
+
+        if (config.metaKey) {
+          const metaValues = Array.isArray(highlightFields[config.metaKey])
+            ? highlightFields[config.metaKey].filter((part) => typeof part === 'string' && part.trim().length)
+            : [];
+          if (metaValues.length) {
+            const metaLabel = config.metaLabel || TEXT.kpis.metaLabel;
+            const metaHtml = metaValues
+              .map((line) => `<span class="kpi-detail__meta-line">${escapeHtml(line)}</span>`)
+              .join('');
+            details.push(detailWrapper(metaLabel, metaHtml, 'kpi-detail--stacked'));
+          }
+        }
+
+        const card = document.createElement('article');
+        card.className = 'kpi-card';
+        card.setAttribute('role', 'listitem');
+        card.innerHTML = `
+          <header class="kpi-card__header">
+            <h3 class="kpi-card__title">${titleText}</h3>
+          </header>
+          <p class="kpi-mainline">
+            <span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>
             <span class="kpi-mainline__value">${mainValueHtml}</span>
           </p>
-          <div class="kpi-card__details" role="list">${detailHtml}</div>
+          <div class="kpi-card__details" role="list">${details.join('')}</div>
         `;
         selectors.kpiGrid.appendChild(card);
       });
+
+      if (!renderedMetric) {
+        const card = document.createElement('article');
+        card.className = 'kpi-card';
+        card.setAttribute('role', 'listitem');
+        card.innerHTML = `
+          <header class="kpi-card__header">
+            <h3 class="kpi-card__title">Rodiklių nepakanka</h3>
+          </header>
+          <p class="kpi-mainline">
+            <span class="kpi-mainline__label">${escapeHtml(TEXT.kpis.defaultMainLabel || TEXT.kpis.yearLabel)}</span>
+            <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
+          </p>
+        `;
+        selectors.kpiGrid.appendChild(card);
+      }
     }
 
     function getThemeStyleTarget() {
@@ -12524,6 +12771,224 @@
       }
     }
 
+    function buildNumericComparisonMeta(actual, reference, { prefix = '', unitLabel = 'vnt.' } = {}) {
+      const labelPart = prefix ? `${prefix}: ` : '';
+      if (!Number.isFinite(reference)) {
+        return labelPart ? `${labelPart}vidurkis neapskaičiuotas.` : 'Vidurkis neapskaičiuotas.';
+      }
+      const averageRounded = Math.round(reference);
+      const averageText = numberFormatter.format(averageRounded);
+      const unitPart = unitLabel ? ` ${unitLabel}` : '';
+      if (!Number.isFinite(actual)) {
+        return `${labelPart}vidurkis ${averageText}${unitPart}.`;
+      }
+      const diffRounded = Math.round(actual - reference);
+      if (diffRounded === 0) {
+        return `${labelPart}atitinka vidurkį (vid. ${averageText}${unitPart}).`;
+      }
+      const diffText = numberFormatter.format(Math.abs(diffRounded));
+      const sign = diffRounded > 0 ? '+' : '-';
+      return `${labelPart}${sign}${diffText}${unitPart} (vid. ${averageText}${unitPart}).`;
+    }
+
+    function buildShiftMonthHighlights(dailyStats, windowDays) {
+      const baseFields = {
+        lastShiftLabel: '',
+        lastShiftTotal: null,
+        lastShiftTotalAvgWeekday: null,
+        lastShiftTotalMeta: [],
+        lastShiftNight: null,
+        lastShiftNightAvgWeekday: null,
+        lastShiftNightMeta: [],
+        lastShiftHospitalized: null,
+        lastShiftHospitalizedAvgWeekday: null,
+        lastShiftHospitalizedMeta: [],
+        lastShiftDischarged: null,
+        lastShiftDischargedAvgWeekday: null,
+        lastShiftDischargedMeta: [],
+        monthLabel: '',
+        monthMeta: [],
+        monthTotal: null,
+        monthTotalExpected: null,
+        monthTotalMeta: [],
+        monthNight: null,
+        monthNightExpected: null,
+        monthNightMeta: [],
+        monthHospitalized: null,
+        monthHospitalizedExpected: null,
+        monthHospitalizedMeta: [],
+        monthDischarged: null,
+        monthDischargedExpected: null,
+        monthDischargedMeta: [],
+      };
+
+      if (!Array.isArray(dailyStats) || !dailyStats.length) {
+        return { fields: baseFields, periodMetrics: null };
+      }
+
+      const normalizedWindow = Number.isFinite(windowDays) ? windowDays : null;
+      const overviewMetrics = buildYearMonthMetrics(dailyStats, normalizedWindow);
+      if (!overviewMetrics) {
+        return { fields: baseFields, periodMetrics: null };
+      }
+
+      const fields = { ...baseFields };
+      const { yearMetrics, monthMetrics } = overviewMetrics;
+
+      const sortedDailyEntries = dailyStats
+        .filter((entry) => entry && typeof entry.date === 'string')
+        .slice()
+        .sort((a, b) => (a.date > b.date ? 1 : (a.date < b.date ? -1 : 0)));
+
+      if (sortedDailyEntries.length) {
+        const lastEntry = sortedDailyEntries[sortedDailyEntries.length - 1];
+        const lastDate = typeof lastEntry.date === 'string' ? dateKeyToDate(lastEntry.date) : null;
+        const hasValidDate = lastDate instanceof Date && !Number.isNaN(lastDate?.getTime());
+        const weekdayIndex = hasValidDate ? lastDate.getDay() : null;
+        const weekdayLabel = hasValidDate ? capitalizeSentence(weekdayLongFormatter.format(lastDate)) : '';
+        const weekdayEntries = sortedDailyEntries.filter((entry) => {
+          if (!hasValidDate || !entry || typeof entry.date !== 'string') {
+            return false;
+          }
+          const entryDate = dateKeyToDate(entry.date);
+          return entryDate instanceof Date && !Number.isNaN(entryDate.getTime())
+            ? entryDate.getDay() === weekdayIndex
+            : false;
+        });
+        const weekdayAggregate = weekdayEntries.reduce((acc, entry) => {
+          const count = Number.isFinite(entry?.count) ? entry.count : 0;
+          const night = Number.isFinite(entry?.night) ? entry.night : 0;
+          const hospitalized = Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+          const discharged = Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+          acc.count += count;
+          acc.night += night;
+          acc.hospitalized += hospitalized;
+          acc.discharged += discharged;
+          acc.days += 1;
+          return acc;
+        }, { count: 0, night: 0, hospitalized: 0, discharged: 0, days: 0 });
+        const avgCount = weekdayAggregate.days > 0 ? weekdayAggregate.count / weekdayAggregate.days : null;
+        const avgNight = weekdayAggregate.days > 0 ? weekdayAggregate.night / weekdayAggregate.days : null;
+        const avgHospitalized = weekdayAggregate.days > 0 ? weekdayAggregate.hospitalized / weekdayAggregate.days : null;
+        const avgDischarged = weekdayAggregate.days > 0 ? weekdayAggregate.discharged / weekdayAggregate.days : null;
+
+        fields.lastShiftLabel = hasValidDate
+          ? capitalizeSentence(dailyDateFormatter.format(lastDate))
+          : (typeof lastEntry.date === 'string' ? lastEntry.date : '');
+        fields.lastShiftTotal = Number.isFinite(lastEntry?.count) ? lastEntry.count : null;
+        fields.lastShiftNight = Number.isFinite(lastEntry?.night) ? lastEntry.night : null;
+        fields.lastShiftHospitalized = Number.isFinite(lastEntry?.hospitalized) ? lastEntry.hospitalized : null;
+        fields.lastShiftDischarged = Number.isFinite(lastEntry?.discharged) ? lastEntry.discharged : null;
+        fields.lastShiftWeekdayLabel = weekdayLabel || '';
+        fields.lastShiftTotalAvgWeekday = Number.isFinite(avgCount) ? Math.round(avgCount) : null;
+        fields.lastShiftNightAvgWeekday = Number.isFinite(avgNight) ? Math.round(avgNight) : null;
+        fields.lastShiftHospitalizedAvgWeekday = Number.isFinite(avgHospitalized) ? Math.round(avgHospitalized) : null;
+        fields.lastShiftDischargedAvgWeekday = Number.isFinite(avgDischarged) ? Math.round(avgDischarged) : null;
+        const shiftLabelText = fields.lastShiftLabel ? `Pamaina: ${fields.lastShiftLabel}.` : '';
+        const comparisonPrefixBase = weekdayLabel
+          ? `Palyginimas su metiniu vidurkiu (${weekdayLabel})`
+          : 'Palyginimas su metiniu vidurkiu';
+        fields.lastShiftTotalMeta = [
+          shiftLabelText,
+          buildNumericComparisonMeta(fields.lastShiftTotal, avgCount, {
+            prefix: comparisonPrefixBase,
+            unitLabel: 'pacientai',
+          }),
+        ].filter((part) => typeof part === 'string' && part);
+        fields.lastShiftNightMeta = [
+          shiftLabelText,
+          buildNumericComparisonMeta(fields.lastShiftNight, avgNight, {
+            prefix: comparisonPrefixBase,
+            unitLabel: 'pacientai naktį',
+          }),
+        ].filter((part) => typeof part === 'string' && part);
+        fields.lastShiftHospitalizedMeta = [
+          shiftLabelText,
+          buildNumericComparisonMeta(fields.lastShiftHospitalized, avgHospitalized, {
+            prefix: comparisonPrefixBase,
+            unitLabel: 'hospitalizuoti',
+          }),
+        ].filter((part) => typeof part === 'string' && part);
+        fields.lastShiftDischargedMeta = [
+          shiftLabelText,
+          buildNumericComparisonMeta(fields.lastShiftDischarged, avgDischarged, {
+            prefix: comparisonPrefixBase,
+            unitLabel: 'išleisti',
+          }),
+        ].filter((part) => typeof part === 'string' && part);
+      }
+
+      const monthLabelRaw = typeof overviewMetrics.monthLabel === 'string' ? overviewMetrics.monthLabel : '';
+      const monthLabel = monthLabelRaw ? capitalizeSentence(monthLabelRaw) : '';
+      const monthMetaBase = monthLabel ? `Mėnuo: ${monthLabel}.` : '';
+      fields.monthLabel = monthLabel;
+      fields.monthMeta = monthMetaBase ? [monthMetaBase] : [];
+
+      const monthTotal = Number.isFinite(monthMetrics?.totalCount) ? monthMetrics.totalCount : null;
+      const monthNight = Number.isFinite(monthMetrics?.totalNight) ? monthMetrics.totalNight : null;
+      const monthHospitalized = Number.isFinite(monthMetrics?.totalHospitalized) ? monthMetrics.totalHospitalized : null;
+      const monthDischarged = Number.isFinite(monthMetrics?.totalDischarged) ? monthMetrics.totalDischarged : null;
+      const monthDays = Number.isFinite(monthMetrics?.days) ? monthMetrics.days : null;
+      const yearPatientsPerDay = Number.isFinite(yearMetrics?.patientsPerDay) ? yearMetrics.patientsPerDay : null;
+      const yearNightPerDay = Number.isFinite(yearMetrics?.nightPerDay) ? yearMetrics.nightPerDay : null;
+      const yearHospitalizedPerDay = Number.isFinite(yearMetrics?.hospitalizedPerDay) ? yearMetrics.hospitalizedPerDay : null;
+      const yearDischargedPerDay = Number.isFinite(yearMetrics?.dischargedPerDay) ? yearMetrics.dischargedPerDay : null;
+
+      const expectedTotal = Number.isFinite(monthDays) && Number.isFinite(yearPatientsPerDay)
+        ? yearPatientsPerDay * monthDays
+        : null;
+      const expectedNight = Number.isFinite(monthDays) && Number.isFinite(yearNightPerDay)
+        ? yearNightPerDay * monthDays
+        : null;
+      const expectedHospitalized = Number.isFinite(monthDays) && Number.isFinite(yearHospitalizedPerDay)
+        ? yearHospitalizedPerDay * monthDays
+        : null;
+      const expectedDischarged = Number.isFinite(monthDays) && Number.isFinite(yearDischargedPerDay)
+        ? yearDischargedPerDay * monthDays
+        : null;
+
+      fields.monthTotal = monthTotal;
+      fields.monthNight = monthNight;
+      fields.monthHospitalized = monthHospitalized;
+      fields.monthDischarged = monthDischarged;
+      fields.monthTotalExpected = Number.isFinite(expectedTotal) ? Math.round(expectedTotal) : null;
+      fields.monthNightExpected = Number.isFinite(expectedNight) ? Math.round(expectedNight) : null;
+      fields.monthHospitalizedExpected = Number.isFinite(expectedHospitalized) ? Math.round(expectedHospitalized) : null;
+      fields.monthDischargedExpected = Number.isFinite(expectedDischarged) ? Math.round(expectedDischarged) : null;
+
+      const monthComparisonPrefix = 'Palyginimas su metiniu vidurkiu';
+      fields.monthTotalMeta = [
+        monthMetaBase,
+        buildNumericComparisonMeta(fields.monthTotal, expectedTotal, {
+          prefix: monthComparisonPrefix,
+          unitLabel: 'pacientai',
+        }),
+      ].filter((part) => typeof part === 'string' && part);
+      fields.monthNightMeta = [
+        monthMetaBase,
+        buildNumericComparisonMeta(fields.monthNight, expectedNight, {
+          prefix: monthComparisonPrefix,
+          unitLabel: 'pacientai naktį',
+        }),
+      ].filter((part) => typeof part === 'string' && part);
+      fields.monthHospitalizedMeta = [
+        monthMetaBase,
+        buildNumericComparisonMeta(fields.monthHospitalized, expectedHospitalized, {
+          prefix: monthComparisonPrefix,
+          unitLabel: 'hospitalizuoti',
+        }),
+      ].filter((part) => typeof part === 'string' && part);
+      fields.monthDischargedMeta = [
+        monthMetaBase,
+        buildNumericComparisonMeta(fields.monthDischarged, expectedDischarged, {
+          prefix: monthComparisonPrefix,
+          unitLabel: 'išleisti',
+        }),
+      ].filter((part) => typeof part === 'string' && part);
+
+      return { fields, periodMetrics: overviewMetrics };
+    }
+
     function normalizePercentValue(rawValue) {
       if (!Number.isFinite(rawValue)) {
         return null;
@@ -13232,27 +13697,32 @@
       const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
         ? configuredWindowRaw
         : DEFAULT_KPI_WINDOW_DAYS;
-      if (overviewDailyStats.length) {
-        const overviewMetrics = buildYearMonthMetrics(overviewDailyStats, configuredWindow);
-        if (overviewMetrics) {
-          const { yearMetrics, monthMetrics } = overviewMetrics;
-          const yearAvgMinutes = Number.isFinite(yearMetrics?.avgTime) ? yearMetrics.avgTime * 60 : null;
-          const yearHospLosMinutes = Number.isFinite(yearMetrics?.avgHospitalizedTime)
-            ? yearMetrics.avgHospitalizedTime * 60
-            : null;
-          const monthAvgMinutes = Number.isFinite(monthMetrics?.avgTime) ? monthMetrics.avgTime * 60 : null;
-          const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare) ? yearMetrics.hospitalizedShare : null;
-          const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare) ? monthMetrics.hospitalizedShare : null;
+      const { fields: highlightFields, periodMetrics: overviewMetrics } = buildShiftMonthHighlights(overviewDailyStats, configuredWindow);
+      if (overviewMetrics) {
+        const { yearMetrics, monthMetrics } = overviewMetrics;
+        const yearAvgMinutes = Number.isFinite(yearMetrics?.avgTime) ? yearMetrics.avgTime * 60 : null;
+        const yearHospLosMinutes = Number.isFinite(yearMetrics?.avgHospitalizedTime)
+          ? yearMetrics.avgHospitalizedTime * 60
+          : null;
+        const monthAvgMinutes = Number.isFinite(monthMetrics?.avgTime) ? monthMetrics.avgTime * 60 : null;
+        const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare) ? yearMetrics.hospitalizedShare : null;
+        const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare) ? monthMetrics.hospitalizedShare : null;
 
-          summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
-          summary.avgLosHospitalizedMinutes = yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
-          summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : null;
-          summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : null;
-          summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
-          summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : null;
-          summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : null;
-        }
+        summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
+        summary.avgLosHospitalizedMinutes = yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
+        summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : null;
+        summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : null;
+        summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
+        summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : null;
+        summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : null;
+      } else {
+        summary.avgLosYearMinutes = null;
+        summary.avgLosMonthMinutes = null;
+        summary.hospitalizedYearShare = null;
+        summary.hospitalizedMonthShare = null;
       }
+
+      Object.assign(summary, highlightFields);
       const cardsConfigSource = TEXT.ed.cards || {};
       const cardConfigs = Array.isArray(cardsConfigSource[displayVariant]) ? cardsConfigSource[displayVariant] : [];
       const dispositionsText = TEXT.ed.dispositions?.[displayVariant] || TEXT.ed.dispositions?.legacy || {};
@@ -13424,7 +13894,23 @@
 
             const meta = document.createElement('p');
             meta.className = 'ed-dashboard__card-meta';
-            meta.textContent = config.description || '';
+            const metaParts = [];
+            if (config.description) {
+              metaParts.push(config.description);
+            }
+            if (config.metaKey) {
+              const metaValue = summary?.[config.metaKey];
+              if (Array.isArray(metaValue)) {
+                metaValue.forEach((part) => {
+                  if (typeof part === 'string' && part.trim()) {
+                    metaParts.push(part.trim());
+                  }
+                });
+              } else if (typeof metaValue === 'string' && metaValue.trim()) {
+                metaParts.push(metaValue.trim());
+              }
+            }
+            meta.textContent = metaParts.join(' ');
 
             card.appendChild(value);
 
