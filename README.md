@@ -12,7 +12,6 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
 - 📺 TV režimas su stambiais rodikliais (Ctrl+Shift+T) ir gyvu laikrodžiu greitam skydo rodymui monitoriuje ar televizoriuje.
-- 📝 Pacientų atsiliepimų skiltyje – filtrai pagal pildytoją, vietą ir bendravimą su padėjėjais su aiškia aktyvių filtrų santrauka.
 - 🛡️ Automatinis demonstracinių duomenų rezervas ir aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
 - ⚙️ Nustatymų dialogas (Ctrl+,) CSV laukų, skaičiavimo logikos ir išvesties tekstų pritaikymui be kodo keitimo (pakeitimai išsaugomi naršyklės `localStorage`).
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
