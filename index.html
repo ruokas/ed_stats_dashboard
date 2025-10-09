@@ -8422,6 +8422,43 @@
         .map((item) => item.entry);
     }
 
+    function filterRecordsByShiftWindow(records, days) {
+      if (!Array.isArray(records)) {
+        return [];
+      }
+      if (!Number.isFinite(days) || days <= 0) {
+        return records.slice();
+      }
+      const shiftStartHour = resolveShiftStartHour(settings?.calculations);
+      const decorated = records
+        .map((entry) => {
+          const hasArrival = entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime());
+          const hasDischarge = entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime());
+          const reference = hasArrival ? entry.arrival : (hasDischarge ? entry.discharge : null);
+          if (!reference) {
+            return null;
+          }
+          const dateKey = computeShiftDateKey(reference, shiftStartHour);
+          if (!dateKey) {
+            return null;
+          }
+          const utc = dateKeyToUtc(dateKey);
+          if (!Number.isFinite(utc)) {
+            return null;
+          }
+          return { entry, utc };
+        })
+        .filter(Boolean);
+      if (!decorated.length) {
+        return [];
+      }
+      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+      const startUtc = endUtc - (days - 1) * 86400000;
+      return decorated
+        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
+        .map((item) => item.entry);
+    }
+
     function filterDailyStatsByYear(dailyStats, year) {
       if (!Number.isFinite(year)) {
         return Array.isArray(dailyStats) ? dailyStats.slice() : [];
@@ -10469,7 +10506,7 @@
       let filteredDailyStats = [];
 
       if (hasPrimaryRecords) {
-        const scopedRecords = filterRecordsByWindow(dashboardState.primaryRecords, windowDays);
+        const scopedRecords = filterRecordsByShiftWindow(dashboardState.primaryRecords, windowDays);
         filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, normalizedFilters));
         filteredDailyStats = computeDailyStats(filteredRecords);
       } else {
