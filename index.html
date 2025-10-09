@@ -2332,6 +2332,12 @@
       flex-wrap: wrap;
     }
 
+    .kpi-mainline__share {
+      font-size: clamp(0.85rem, 0.8rem + 0.4vw, 1rem);
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
     .kpi-main-value {
       font-size: clamp(1.8rem, 1.5rem + 1vw, 2.2rem);
       font-weight: 700;
@@ -2386,6 +2392,11 @@
 
     .kpi-detail__context {
       font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .kpi-detail__share {
+      font-weight: 600;
       color: var(--color-text-muted);
     }
 
@@ -4856,8 +4867,8 @@
           cards: [
             { metricKey: 'patientsPerDay', label: 'Pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
             { metricKey: 'nightPerDay', label: 'Naktiniai pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
-            { metricKey: 'dischargedPerDay', label: 'Išleisti / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
-            { metricKey: 'hospitalizedPerDay', label: 'Hospitalizuoti / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
+            { metricKey: 'dischargedPerDay', label: 'Išleisti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'dischargedShare' },
+            { metricKey: 'hospitalizedPerDay', label: 'Hospitalizuoti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'hospitalizedShare' },
           ],
         },
         detailLabels: {
@@ -10681,15 +10692,35 @@
 
       const valueFor = (key) => (Number.isFinite(lastEntry?.[key]) ? lastEntry[key] : null);
 
+      const totalValue = valueFor('count');
+      const totalAverage = averageFor('count');
+
+      const shareOf = (value, total) => {
+        if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
+          return null;
+        }
+        return value / total;
+      };
+
       return {
         dateLabel: capitalizeSentence(dailyDateFormatter.format(lastDate)),
         dateKey: lastEntry.date,
         weekdayLabel,
         metrics: {
-          total: { value: valueFor('count'), average: averageFor('count') },
+          total: { value: totalValue, average: totalAverage },
           night: { value: valueFor('night'), average: averageFor('night') },
-          hospitalized: { value: valueFor('hospitalized'), average: averageFor('hospitalized') },
-          discharged: { value: valueFor('discharged'), average: averageFor('discharged') },
+          hospitalized: {
+            value: valueFor('hospitalized'),
+            average: averageFor('hospitalized'),
+            share: shareOf(valueFor('hospitalized'), totalValue),
+            averageShare: shareOf(averageFor('hospitalized'), totalAverage),
+          },
+          discharged: {
+            value: valueFor('discharged'),
+            average: averageFor('discharged'),
+            share: shareOf(valueFor('discharged'), totalValue),
+            averageShare: shareOf(averageFor('discharged'), totalAverage),
+          },
         },
       };
     }
@@ -10825,6 +10856,9 @@
         const averageValue = Number.isFinite(metric.average) ? metric.average : null;
         const valueFormat = config.format || 'integer';
 
+        const shareValue = Number.isFinite(metric.share) ? metric.share : null;
+        const averageShareValue = Number.isFinite(metric.averageShare) ? metric.averageShare : null;
+
         const card = document.createElement('article');
         card.className = 'kpi-card';
         card.setAttribute('role', 'listitem');
@@ -10836,8 +10870,11 @@
         const mainLabelHtml = mainLabel
           ? `<span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>`
           : '';
+        const shareBadge = shareValue != null
+          ? `<span class="kpi-mainline__share">(${percentFormatter.format(shareValue)})</span>`
+          : '';
         const mainValueHtml = Number.isFinite(rawValue)
-          ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>`
+          ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>${shareBadge}`
           : `<span class="kpi-empty">${TEXT.kpis.primaryNoData || TEXT.kpis.noYearData}</span>`;
 
         const details = [];
@@ -10897,7 +10934,10 @@
           ? `<span class="kpi-detail__context">${escapeHtml(averageContextRaw)}</span>`
           : '';
         if (Number.isFinite(averageValue)) {
-          const averageValueHtml = `<strong>${formatKpiValue(averageValue, valueFormat)}</strong>${unitContext}${averageContextHtml}`;
+          const averageShareHtml = averageShareValue != null
+            ? `<span class="kpi-detail__share">(${percentFormatter.format(averageShareValue)})</span>`
+            : '';
+          const averageValueHtml = `<strong>${formatKpiValue(averageValue, valueFormat)}</strong>${unitContext}${averageContextHtml}${averageShareHtml}`;
           details.push(detailWrapper(averageLabel, averageValueHtml));
         } else {
           details.push(detailWrapper(
@@ -10987,6 +11027,13 @@
           const compareKey = config.compareKey || config.metricKey;
           const yearValueRaw = yearMetrics?.[compareKey];
           const yearValue = Number.isFinite(yearValueRaw) ? yearValueRaw : null;
+          const shareKey = typeof config.shareKey === 'string' ? config.shareKey : null;
+          const monthShareValue = shareKey && Number.isFinite(monthMetrics?.[shareKey])
+            ? monthMetrics[shareKey]
+            : null;
+          const yearShareValue = shareKey && Number.isFinite(yearMetrics?.[shareKey])
+            ? yearMetrics[shareKey]
+            : null;
           const card = document.createElement('article');
           card.className = 'kpi-card kpi-card--monthly';
           card.setAttribute('role', 'listitem');
@@ -11010,8 +11057,11 @@
             || TEXT.kpis.monthNoDataShort
             || TEXT.kpis.monthNoData
             || 'Nėra duomenų';
+          const mainShareHtml = monthShareValue != null
+            ? `<span class="kpi-mainline__share">(${percentFormatter.format(monthShareValue)})</span>`
+            : '';
           const mainValueHtml = Number.isFinite(monthValue)
-            ? `<strong class="kpi-main-value">${formatKpiValue(monthValue, valueFormat)}</strong>${mainUnitHtml}`
+            ? `<strong class="kpi-main-value">${formatKpiValue(monthValue, valueFormat)}</strong>${mainUnitHtml}${mainShareHtml}`
             : `<span class="kpi-empty">${escapeHtml(noDataText)}</span>`;
 
           const details = [];
@@ -11086,7 +11136,10 @@
             : '';
 
           if (Number.isFinite(yearValue)) {
-            const averageValueHtml = `<strong>${formatKpiValue(yearValue, valueFormat)}</strong>${unitContext}${averageContextHtml}`;
+            const averageShareHtml = yearShareValue != null
+              ? `<span class="kpi-detail__share">(${percentFormatter.format(yearShareValue)})</span>`
+              : '';
+            const averageValueHtml = `<strong>${formatKpiValue(yearValue, valueFormat)}</strong>${unitContext}${averageContextHtml}${averageShareHtml}`;
             details.push(detailWrapper(averageLabel, averageValueHtml));
           } else {
             details.push(detailWrapper(
