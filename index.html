@@ -4705,49 +4705,68 @@
       },
       kpis: {
         title: 'Pagrindiniai rodikliai',
-        subtitle: 'Paskutinė pamaina ir palyginimas su metiniu vidurkiu',
-        windowAllLabel: 'Visas laikotarpis',
-        windowAllShortLabel: 'viso laik.',
-        windowYearSuffix: 'metai',
+        subtitle: 'Pasirinkto laikotarpio vidurkiai ir mėnesio palyginimas',
+        yearLabel: 'Pasirinkto laikotarpio vidurkis',
+        yearAverageReference: 'pasirinkto laikotarpio vidurkis',
+        yearAverageReferenceShort: 'vid.',
         monthPrefix: 'Šis mėnuo',
         monthPrefixShort: 'Šis mėnuo',
         monthNoData: 'Šio mėnesio duomenų nėra.',
         monthNoDataShort: 'Šio mėn. duomenų nėra',
+        monthShareLabel: 'Mėn. dalis',
+        shareHeading: 'Pasirinkto laikotarpio dalis',
+        shareShortLabel: 'Laikotarpio dalis',
+        sharePeriodDetail: 'Laikotarpio dalis',
+        shareMonthDetail: 'Šio mėnesio dalis',
         shareNoData: 'Nepavyko apskaičiuoti dalies.',
+        windowAllLabel: 'Visas laikotarpis',
+        windowAllShortLabel: 'viso laik.',
+        windowYearSuffix: 'metai',
         noYearData: 'Pasirinktam laikotarpiui apskaičiuoti nepakanka duomenų.',
-        primaryNoData: '—',
+        deltaLabel: 'Pokytis vs metų vidurkis',
+        deltaNoData: 'Nepavyko apskaičiuoti pokyčio.',
         summary: {
-          title: 'Paskutinės pamainos santrauka',
-          period: 'Pamaina',
-          periodFallback: 'Pamainos data nenustatyta.',
+          title: 'Laikotarpio santrauka',
+          period: 'Laikotarpis',
           reference: 'Lyginama su',
-          referenceFallback: 'Metinis vidurkis',
-          weekdayReference: (weekday) => `Metinis vidurkis (${weekday})`,
           month: 'Šio mėnesio duomenys',
           noMonth: 'Šio mėnesio duomenų nėra.',
           unknownPeriod: 'Nenurodytas laikotarpis',
         },
-        cards: [
-          { metricKey: 'total', label: 'Pacientai', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'night', label: 'Naktiniai pacientai', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'hospitalized', label: 'Hospitalizuoti', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'discharged', label: 'Išleisti', format: 'integer', unitLabel: 'pac.' },
-        ],
-        detailLabels: {
-          delta: 'Δ',
-          average: 'Vidurkis',
-          averageContext: (weekday) => (weekday ? `(${weekday})` : ''),
+        items: {
+          patientsPerDay: {
+            label: 'Pacientų vidurkis per dieną',
+            hint: 'Pasirinkto laikotarpio vidurkis pagal naujausius duomenis.',
+            unit: 'pac./d.',
+            valueFormat: 'oneDecimal',
+            deltaType: 'percent',
+          },
+          avgTime: {
+            label: 'Vidutinė buvimo trukmė',
+            hint: 'Valandomis pagal įrašus su atvykimo ir išrašymo laiku.',
+            unit: 'val.',
+            valueFormat: 'decimal',
+            deltaType: 'absolute',
+          },
+          hospitalized: {
+            label: 'Hospitalizuoti pacientai',
+            hint: 'Pasirinkto laikotarpio hospitalizuojamų skaičius per dieną ir jų dalis nuo visų atvykimų.',
+            unit: 'pac./d.',
+            valueFormat: 'oneDecimal',
+            deltaType: 'percent',
+            shareKey: 'hospitalizedShare',
+            shareLabel: 'Hospitalizacijų dalis',
+          },
+          discharged: {
+            label: 'Išleisti pacientai',
+            hint: 'Pasirinkto laikotarpio išleidžiamų skaičius per dieną ir jų dalis nuo visų atvykimų.',
+            unit: 'pac./d.',
+            valueFormat: 'oneDecimal',
+            deltaType: 'percent',
+            shareKey: 'dischargedShare',
+            shareLabel: 'Išleidimų dalis',
+          },
         },
-        deltaNoData: 'Nėra duomenų palyginimui.',
-        averageNoData: 'Vidurkio nėra.',
-        deltaContext: (reference) => {
-          if (!reference) {
-            return '';
-          }
-          const normalized = reference.replace(/^Metinis vidurkis/i, 'vid.');
-          return `vs ${normalized}`;
-        },
-        mainValueLabel: '',
       },
       charts: {
         title: 'Pacientų srautai',
@@ -5088,7 +5107,6 @@
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
     const tvTimeFormatter = new Intl.DateTimeFormat('lt-LT', { hour: '2-digit', minute: '2-digit' });
     const tvDateFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long', day: '2-digit', month: 'long' });
-    const weekdayLongFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long' });
     const dailyDateFormatter = new Intl.DateTimeFormat('lt-LT', {
       weekday: 'short',
       year: 'numeric',
@@ -10135,130 +10153,210 @@
       return oneDecimalFormatter.format(value);
     }
 
-
-
-    function buildLastShiftSummary(dailyStats) {
-      const entries = Array.isArray(dailyStats) ? dailyStats.filter((entry) => entry && typeof entry.date === 'string') : [];
-      if (!entries.length) {
-        return null;
-      }
-      const decorated = entries
-        .map((entry) => {
-          const date = dateKeyToDate(entry.date);
-          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-            return null;
-          }
-          return { entry, date };
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.date - b.date);
-
-      if (!decorated.length) {
-        return null;
-      }
-
-      const last = decorated[decorated.length - 1];
-      const lastEntry = last.entry;
-      const lastDate = last.date;
-      const weekdayIndex = lastDate.getDay();
-      const weekdayLabel = capitalizeSentence(weekdayLongFormatter.format(lastDate));
-      const sameWeekdayEntries = decorated.filter((item) => item.date.getDay() === weekdayIndex).map((item) => item.entry);
-
-      const averageFor = (key) => {
-        if (!sameWeekdayEntries.length) {
-          return null;
-        }
-        const totals = sameWeekdayEntries.reduce((acc, item) => {
-          const value = Number.isFinite(item?.[key]) ? item[key] : null;
-          if (Number.isFinite(value)) {
-            acc.sum += value;
-            acc.count += 1;
-          }
-          return acc;
-        }, { sum: 0, count: 0 });
-        if (!totals.count) {
-          return null;
-        }
-        return totals.sum / totals.count;
-      };
-
-      const valueFor = (key) => (Number.isFinite(lastEntry?.[key]) ? lastEntry[key] : null);
-
-      return {
-        dateLabel: capitalizeSentence(dailyDateFormatter.format(lastDate)),
-        dateKey: lastEntry.date,
-        weekdayLabel,
-        metrics: {
-          total: { value: valueFor('count'), average: averageFor('count') },
-          night: { value: valueFor('night'), average: averageFor('night') },
-          hospitalized: { value: valueFor('hospitalized'), average: averageFor('hospitalized') },
-          discharged: { value: valueFor('discharged'), average: averageFor('discharged') },
-        },
-      };
+    function formatPercentCompact(value) {
+      const formatted = percentFormatter.format(value);
+      return formatted.replace(/\s?%/, '%');
     }
 
-    function renderKpiPeriodSummary(lastShiftSummary, periodMetrics) {
+    function computeDeltaDescriptor(deltaType, yearValue, monthValue, unit, format, referenceLabel) {
+      if (monthValue == null || !Number.isFinite(monthValue)) {
+        return null;
+      }
+      const isWholePeriod = referenceLabel === TEXT.kpis.windowAllLabel;
+      const normalizedReference = isWholePeriod
+        ? 'Viso laikotarpio'
+        : referenceLabel;
+      const referenceText = normalizedReference ? `${normalizedReference} vidurkis` : TEXT.kpis.yearAverageReference;
+      const referenceShort = isWholePeriod
+        ? TEXT.kpis.windowAllShortLabel
+        : (referenceLabel || TEXT.kpis.yearAverageReferenceShort);
+      if (deltaType === 'percent') {
+        if (yearValue == null || !Number.isFinite(yearValue) || Math.abs(yearValue) < Number.EPSILON) {
+          return null;
+        }
+        const diffRatio = (monthValue - yearValue) / yearValue;
+        if (!Number.isFinite(diffRatio)) {
+          return null;
+        }
+        if (Math.abs(diffRatio) < 0.0005) {
+          return {
+            direction: 'neutral',
+            shortText: '≈',
+            context: referenceShort,
+            ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
+          };
+        }
+        const direction = diffRatio > 0 ? '↑' : '↓';
+        const shortText = `${diffRatio > 0 ? '+' : '−'}${formatPercentCompact(Math.abs(diffRatio))}`;
+        const ariaLabel = diffRatio > 0
+          ? `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} didesnis nei ${referenceText}.`
+          : `Šio mėnesio rezultatas ${percentFormatter.format(Math.abs(diffRatio))} mažesnis nei ${referenceText}.`;
+        return {
+          direction: diffRatio > 0 ? 'up' : 'down',
+          icon: direction,
+          shortText,
+          context: `vs ${referenceShort}`,
+          ariaLabel,
+        };
+      }
+      if (deltaType === 'absolute') {
+        if (yearValue == null || !Number.isFinite(yearValue)) {
+          return null;
+        }
+        const diff = monthValue - yearValue;
+        if (!Number.isFinite(diff)) {
+          return null;
+        }
+        if (Math.abs(diff) < 0.005) {
+          return {
+            direction: 'neutral',
+            shortText: '≈',
+            context: referenceShort,
+            ariaLabel: `Šio mėnesio rezultatas praktiškai atitinka ${referenceText}.`,
+          };
+        }
+        const sign = diff > 0 ? '+' : '−';
+        const formattedDiff = formatKpiValue(Math.abs(diff), format);
+        const unitSuffix = unit ? ` ${unit}` : '';
+        const ariaLabel = diff > 0
+          ? `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} ilgesnis nei ${referenceText}.`
+          : `Šio mėnesio rezultatas ${formattedDiff}${unitSuffix} trumpesnis nei ${referenceText}.`;
+        return {
+          direction: diff > 0 ? 'up' : 'down',
+          icon: diff > 0 ? '↑' : '↓',
+          shortText: `${sign}${formattedDiff}${unitSuffix}`,
+          context: `vs ${referenceShort}`,
+          ariaLabel,
+        };
+      }
+      return null;
+    }
+
+    function buildKpiDetails({
+      item,
+      monthLabel,
+      monthMetrics,
+      yearValue,
+      monthValue,
+      yearShare,
+      monthShare,
+      referenceLabel,
+    }) {
+      const monthDescriptor = TEXT.kpis.monthPrefixShort;
+      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+      const details = [];
+      const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
+        const aria = ariaLabel ? ` aria-label="${ariaLabel}"` : '';
+        const extra = extraClass ? ` ${extraClass}` : '';
+        return `<div class="kpi-detail${extra}" role="listitem"${aria}><span class="kpi-detail__label">${label}</span><span class="kpi-detail__value">${valueHtml}</span></div>`;
+      };
+
+      if (monthHasData && monthValue != null && Number.isFinite(monthValue)) {
+        const unitSuffix = item.unit ? `<span class="kpi-detail__context">${item.unit}</span>` : '';
+        details.push(detailWrapper(
+          monthDescriptor,
+          `<strong>${formatKpiValue(monthValue, item.valueFormat)}</strong>${unitSuffix}`,
+        ));
+      } else {
+        details.push(detailWrapper(
+          monthDescriptor,
+          `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
+          'kpi-detail--muted',
+        ));
+      }
+
+      const deltaDescriptor = computeDeltaDescriptor(
+        item.deltaType,
+        yearValue,
+        monthValue,
+        item.unit,
+        item.valueFormat,
+        referenceLabel,
+      );
+
+      if (deltaDescriptor) {
+        const { direction, shortText, context, ariaLabel, icon } = deltaDescriptor;
+        const directionClass = direction ? `kpi-detail--delta-${direction}` : 'kpi-detail--muted';
+        const iconHtml = icon ? `<span class="kpi-detail__icon" aria-hidden="true">${icon}</span>` : '';
+        const contextHtml = context ? `<span class="kpi-detail__context">${context}</span>` : '';
+        const valueHtml = `${iconHtml}<strong>${shortText}</strong>${contextHtml}`;
+        details.push(detailWrapper(TEXT.kpis.deltaLabel, valueHtml, directionClass, ariaLabel));
+      } else {
+        details.push(detailWrapper(
+          TEXT.kpis.deltaLabel,
+          `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
+          'kpi-detail--muted',
+        ));
+      }
+
+      if (item.shareKey) {
+        const referenceShort = referenceLabel === TEXT.kpis.windowAllLabel
+          ? TEXT.kpis.windowAllShortLabel
+          : (referenceLabel || TEXT.kpis.shareShortLabel);
+
+        if (yearShare != null && Number.isFinite(yearShare)) {
+          details.push(detailWrapper(
+            item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
+            `<strong>${formatPercentCompact(yearShare)}</strong><span class="kpi-detail__context">${referenceShort}</span>`,
+          ));
+        } else {
+          details.push(detailWrapper(
+            item.shareLabel ?? TEXT.kpis.sharePeriodDetail,
+            `<span class="kpi-empty">${TEXT.kpis.shareNoData}</span>`,
+            'kpi-detail--muted',
+          ));
+        }
+
+        if (monthHasData && monthShare != null && Number.isFinite(monthShare)) {
+          const monthContext = TEXT.kpis.monthPrefixShort;
+          details.push(detailWrapper(
+            TEXT.kpis.shareMonthDetail,
+            `<strong>${formatPercentCompact(monthShare)}</strong><span class="kpi-detail__context">${monthContext}</span>`,
+          ));
+        } else {
+          details.push(detailWrapper(
+            TEXT.kpis.shareMonthDetail,
+            `<span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span>`,
+            'kpi-detail--muted',
+          ));
+        }
+      }
+
+      return details.join('');
+    }
+
+    function renderKpiPeriodSummary(periodMetrics) {
       const summaryEl = selectors.kpiSummary;
       if (!summaryEl) {
         return;
       }
-      if (!lastShiftSummary) {
+      if (!periodMetrics) {
         summaryEl.innerHTML = `<p class="kpi-summary__empty">${TEXT.kpis.noYearData}</p>`;
         summaryEl.hidden = false;
         return;
       }
-
-      const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string'
-        ? lastShiftSummary.weekdayLabel
-        : '';
-      const periodText = lastShiftSummary.dateLabel
-        || TEXT.kpis.summary.periodFallback
-        || TEXT.kpis.summary.unknownPeriod;
-      const referenceText = weekdayLabel
-        ? (typeof TEXT.kpis.summary.weekdayReference === 'function'
-          ? TEXT.kpis.summary.weekdayReference(weekdayLabel)
-          : `${TEXT.kpis.summary.reference} (${weekdayLabel})`)
-        : (TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference);
-
-      const summaryItems = [
-        {
-          label: TEXT.kpis.summary.period,
-          value: escapeHtml(periodText),
-        },
-        {
-          label: TEXT.kpis.summary.reference,
-          value: escapeHtml(referenceText),
-        },
-      ];
-
-      if (periodMetrics) {
-        const monthLabel = typeof periodMetrics.monthLabel === 'string'
-          ? periodMetrics.monthLabel
-          : '';
-        const hasMonthData = Number.isFinite(periodMetrics?.monthMetrics?.days)
-          && periodMetrics.monthMetrics.days > 0;
-        if (monthLabel || hasMonthData) {
-          const monthContent = monthLabel
-            ? escapeHtml(monthLabel)
-            : `<span class="kpi-summary__muted">${escapeHtml(TEXT.kpis.summary.noMonth)}</span>`;
-          summaryItems.push({
-            label: TEXT.kpis.summary.month,
-            value: monthContent,
-          });
-        }
-      }
-
-      const summaryRows = summaryItems.map((item) => `
-          <div class="kpi-summary__item">
-            <dt>${escapeHtml(item.label)}</dt>
-            <dd>${item.value}</dd>
-          </div>
-        `).join('');
-
+      const { yearLabel, referenceLabel, monthLabel, monthMetrics } = periodMetrics;
+      const hasMonthData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+      const monthContent = hasMonthData && monthLabel
+        ? monthLabel
+        : `<span class="kpi-summary__muted">${TEXT.kpis.summary.noMonth}</span>`;
+      const periodText = yearLabel || TEXT.kpis.summary.unknownPeriod;
+      const referenceText = referenceLabel || TEXT.kpis.yearAverageReference;
       summaryEl.innerHTML = `
         <p class="kpi-summary__title">${TEXT.kpis.summary.title}</p>
         <dl class="kpi-summary__list">
-          ${summaryRows}
+          <div class="kpi-summary__item">
+            <dt>${TEXT.kpis.summary.period}</dt>
+            <dd>${periodText}</dd>
+          </div>
+          <div class="kpi-summary__item">
+            <dt>${TEXT.kpis.summary.reference}</dt>
+            <dd>${referenceText}</dd>
+          </div>
+          <div class="kpi-summary__item">
+            <dt>${TEXT.kpis.summary.month}</dt>
+            <dd>${monthContent}</dd>
+          </div>
         </dl>
       `;
       summaryEl.hidden = false;
@@ -10266,12 +10364,9 @@
 
     function renderKpis(dailyStats) {
       selectors.kpiGrid.replaceChildren();
-      const windowDays = dashboardState.kpi?.filters?.window;
-      const periodMetrics = buildYearMonthMetrics(dailyStats, windowDays);
-      const lastShiftSummary = buildLastShiftSummary(dailyStats);
-      renderKpiPeriodSummary(lastShiftSummary, periodMetrics);
-
-      if (!lastShiftSummary) {
+      const periodMetrics = buildYearMonthMetrics(dailyStats, dashboardState.kpi?.filters?.window);
+      renderKpiPeriodSummary(periodMetrics);
+      if (!periodMetrics) {
         const card = document.createElement('article');
         card.className = 'kpi-card';
         card.setAttribute('role', 'listitem');
@@ -10280,149 +10375,88 @@
             <h3 class="kpi-card__title">Rodiklių nepakanka</h3>
           </header>
           <p class="kpi-mainline">
+            <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
             <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
           </p>
+          <div class="kpi-card__details" role="list">
+            <div class="kpi-detail kpi-detail--muted" role="listitem">
+              <span class="kpi-detail__label">${TEXT.kpis.monthPrefixShort}</span>
+              <span class="kpi-detail__value"><span class="kpi-empty">${TEXT.kpis.monthNoDataShort}</span></span>
+            </div>
+          </div>
         `;
         selectors.kpiGrid.appendChild(card);
         return;
       }
 
-      const cardsConfig = Array.isArray(TEXT.kpis.cards) ? TEXT.kpis.cards : [];
-      if (!cardsConfig.length) {
-        const card = document.createElement('article');
-        card.className = 'kpi-card';
-        card.setAttribute('role', 'listitem');
-        card.innerHTML = `
-          <header class="kpi-card__header">
-            <h3 class="kpi-card__title">Rodiklių konfigūracija nerasta</h3>
-          </header>
-          <p class="kpi-mainline">
-            <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
-          </p>
-        `;
-        selectors.kpiGrid.appendChild(card);
-        return;
-      }
+      const { yearMetrics, monthMetrics, yearLabel, monthLabel, referenceLabel } = periodMetrics;
 
-      const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string'
-        ? lastShiftSummary.weekdayLabel
-        : '';
-      const referenceText = weekdayLabel
-        ? (typeof TEXT.kpis.summary.weekdayReference === 'function'
-          ? TEXT.kpis.summary.weekdayReference(weekdayLabel)
-          : `${TEXT.kpis.summary.reference} (${weekdayLabel})`)
-        : (TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference);
-
-      const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
-        const aria = ariaLabel ? ` aria-label="${escapeHtml(ariaLabel)}"` : '';
-        const extra = extraClass ? ` ${extraClass}` : '';
-        return `<div class="kpi-detail${extra}" role="listitem"${aria}><span class="kpi-detail__label">${escapeHtml(label)}</span><span class="kpi-detail__value">${valueHtml}</span></div>`;
-      };
-
-      cardsConfig.forEach((config) => {
-        if (!config || typeof config !== 'object' || !config.metricKey) {
-          return;
-        }
-        const metric = lastShiftSummary.metrics?.[config.metricKey] || {};
-        const rawValue = Number.isFinite(metric.value) ? metric.value : null;
-        const averageValue = Number.isFinite(metric.average) ? metric.average : null;
-        const valueFormat = config.format || 'integer';
-
+      Object.entries(TEXT.kpis.items).forEach(([key, item]) => {
         const card = document.createElement('article');
         card.className = 'kpi-card';
         card.setAttribute('role', 'listitem');
 
-        const titleText = config.label ? escapeHtml(config.label) : '';
-        const mainLabel = typeof config.mainLabel === 'string'
-          ? config.mainLabel
-          : (typeof TEXT.kpis.mainValueLabel === 'string' ? TEXT.kpis.mainValueLabel : '');
-        const mainLabelHtml = mainLabel
-          ? `<span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>`
-          : '';
-        const mainValueHtml = Number.isFinite(rawValue)
-          ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>`
-          : `<span class="kpi-empty">${TEXT.kpis.primaryNoData || TEXT.kpis.noYearData}</span>`;
+        let yearValue = null;
+        let monthValue = null;
+        let yearShare = null;
+        let monthShare = null;
 
-        const details = [];
-        const unitContext = config.unitLabel
-          ? `<span class="kpi-detail__context">${escapeHtml(config.unitLabel)}</span>`
-          : '';
-
-        if (Number.isFinite(rawValue) && Number.isFinite(averageValue)) {
-          const diff = rawValue - averageValue;
-          let trend = 'neutral';
-          let arrow = '→';
-          if (diff > 0) {
-            trend = 'up';
-            arrow = '↑';
-          } else if (diff < 0) {
-            trend = 'down';
-            arrow = '↓';
-          }
-          const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
-          const formattedDiff = formatKpiValue(Math.abs(diff), valueFormat);
-          const deltaContext = typeof TEXT.kpis.deltaContext === 'function'
-            ? TEXT.kpis.deltaContext(referenceText, weekdayLabel)
-            : TEXT.kpis.deltaContext;
-          const contextHtml = deltaContext
-            ? `<span class="kpi-detail__context">${escapeHtml(deltaContext)}</span>`
-            : '';
-          const deltaAria = diff > 0
-            ? `Skirtumas lyginant su ${referenceText}: padidėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
-            : diff < 0
-              ? `Skirtumas lyginant su ${referenceText}: sumažėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
-              : `Skirtumo nėra lyginant su ${referenceText}.`;
-          const deltaValueHtml = `
-            <span class="kpi-detail__icon" aria-hidden="true">${arrow}</span>
-            <strong>${sign}${formattedDiff}</strong>${unitContext}${contextHtml}
-          `;
-          details.push(detailWrapper(
-            TEXT.kpis.detailLabels?.delta || 'Skirtumas',
-            deltaValueHtml,
-            `kpi-detail--delta-${trend}`,
-            deltaAria,
-          ));
-        } else {
-          details.push(detailWrapper(
-            TEXT.kpis.detailLabels?.delta || 'Skirtumas',
-            `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
-            'kpi-detail--muted',
-          ));
+        switch (key) {
+          case 'patientsPerDay':
+            yearValue = yearMetrics.patientsPerDay;
+            monthValue = monthMetrics.patientsPerDay;
+            break;
+          case 'avgTime':
+            yearValue = yearMetrics.avgTime;
+            monthValue = monthMetrics.avgTime;
+            break;
+          case 'hospitalized':
+            yearValue = yearMetrics.hospitalizedPerDay;
+            monthValue = monthMetrics.hospitalizedPerDay;
+            yearShare = yearMetrics.hospitalizedShare;
+            monthShare = monthMetrics.hospitalizedShare;
+            break;
+          case 'discharged':
+            yearValue = yearMetrics.dischargedPerDay;
+            monthValue = monthMetrics.dischargedPerDay;
+            yearShare = yearMetrics.dischargedShare;
+            monthShare = monthMetrics.dischargedShare;
+            break;
+          default:
+            break;
         }
 
-        const averageLabel = typeof TEXT.kpis.detailLabels?.average === 'function'
-          ? TEXT.kpis.detailLabels.average(weekdayLabel)
-          : (TEXT.kpis.detailLabels?.average || 'Vidurkis');
-        const averageContextRaw = typeof TEXT.kpis.detailLabels?.averageContext === 'function'
-          ? TEXT.kpis.detailLabels.averageContext(weekdayLabel)
-          : (TEXT.kpis.detailLabels?.averageContext || '');
-        const averageContextHtml = averageContextRaw
-          ? `<span class="kpi-detail__context">${escapeHtml(averageContextRaw)}</span>`
-          : '';
-        if (Number.isFinite(averageValue)) {
-          const averageValueHtml = `<strong>${formatKpiValue(averageValue, valueFormat)}</strong>${unitContext}${averageContextHtml}`;
-          details.push(detailWrapper(averageLabel, averageValueHtml));
-        } else {
-          details.push(detailWrapper(
-            averageLabel,
-            `<span class="kpi-empty">${TEXT.kpis.averageNoData}</span>`,
-            'kpi-detail--muted',
-          ));
-        }
+        const hasYearValue = yearValue != null && Number.isFinite(yearValue);
+        const unitHtml = item.unit && hasYearValue ? `<span class="kpi-unit">${item.unit}</span>` : '';
+        const mainValueHtml = hasYearValue
+          ? `<strong class="kpi-main-value">${formatKpiValue(yearValue, item.valueFormat)}</strong>${unitHtml}`
+          : `<span class="kpi-empty">${TEXT.kpis.noYearData}</span>`;
+
+        const detailHtml = buildKpiDetails({
+          item,
+          monthLabel,
+          monthMetrics,
+          yearValue,
+          monthValue,
+          yearShare,
+          monthShare,
+          referenceLabel,
+        });
 
         card.innerHTML = `
           <header class="kpi-card__header">
-            <h3 class="kpi-card__title">${titleText}</h3>
+            <h3 class="kpi-card__title">${item.label}</h3>
           </header>
           <p class="kpi-mainline">
-            ${mainLabelHtml}
+            <span class="kpi-mainline__label">${TEXT.kpis.yearLabel}</span>
             <span class="kpi-mainline__value">${mainValueHtml}</span>
           </p>
-          <div class="kpi-card__details" role="list">${details.join('')}</div>
+          <div class="kpi-card__details" role="list">${detailHtml}</div>
         `;
         selectors.kpiGrid.appendChild(card);
       });
     }
+
     function getThemeStyleTarget() {
       return document.body || document.documentElement;
     }
