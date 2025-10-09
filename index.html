@@ -2029,6 +2029,26 @@
       gap: 18px;
     }
 
+    .kpi-grid__section-label {
+      grid-column: 1 / -1;
+      margin: 0;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      font-weight: 700;
+    }
+
+    .kpi-grid__section-label span {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.75rem;
+      letter-spacing: 0;
+      text-transform: none;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
     .kpi-controls {
       margin-bottom: 18px;
       padding: 12px 14px;
@@ -2239,6 +2259,14 @@
       box-shadow: var(--shadow-elevated);
       position: relative;
       overflow: hidden;
+    }
+
+    .kpi-card--monthly {
+      background: var(--color-surface-alt);
+    }
+
+    .kpi-card--monthly::before {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), transparent 55%);
     }
 
     .kpi-card::before {
@@ -4814,6 +4842,24 @@
           { metricKey: 'hospitalized', label: 'Hospitalizuoti', format: 'integer', unitLabel: 'pac.' },
           { metricKey: 'discharged', label: 'Išleisti', format: 'integer', unitLabel: 'pac.' },
         ],
+        monthly: {
+          title: 'Šio mėnesio vidurkiai',
+          subtitle: 'Vidurkis per dieną lyginant su metiniu vidurkiu.',
+          mainLabel: 'Šio mėn. vid.',
+          referenceLabel: (referenceLabel) => referenceLabel || 'Metinis vidurkis',
+          averageLabel: 'Metinis vidurkis',
+          deltaLabel: 'Skirtumas',
+          deltaContext: (referenceLabel) => (referenceLabel ? `vs ${referenceLabel}` : ''),
+          emptyTitle: 'Šio mėnesio vidurkiai',
+          empty: 'Šio mėnesio duomenų nėra.',
+          primaryNoData: '—',
+          cards: [
+            { metricKey: 'patientsPerDay', label: 'Pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
+            { metricKey: 'nightPerDay', label: 'Naktiniai pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
+            { metricKey: 'dischargedPerDay', label: 'Išleisti / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
+            { metricKey: 'hospitalizedPerDay', label: 'Hospitalizuoti / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
+          ],
+        },
         detailLabels: {
           delta: 'Δ',
           average: 'Vidurkis',
@@ -10109,6 +10155,7 @@
         return {
           days: 0,
           totalCount: 0,
+          totalNight: 0,
           totalHospitalized: 0,
           totalDischarged: 0,
           totalTime: 0,
@@ -10122,11 +10169,13 @@
         const count = Number.isFinite(entry?.count) ? entry.count : 0;
         const hospitalized = Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
         const discharged = Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+        const night = Number.isFinite(entry?.night) ? entry.night : 0;
         const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
         const durations = Number.isFinite(entry?.durations) ? entry.durations : 0;
         const hospitalizedTime = Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
         const hospitalizedDurations = Number.isFinite(entry?.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
         acc.totalCount += count;
+        acc.totalNight += night;
         acc.totalHospitalized += hospitalized;
         acc.totalDischarged += discharged;
         acc.totalTime += totalTime;
@@ -10137,6 +10186,7 @@
       }, {
         days: 0,
         totalCount: 0,
+        totalNight: 0,
         totalHospitalized: 0,
         totalDischarged: 0,
         totalTime: 0,
@@ -10149,6 +10199,7 @@
     function derivePeriodMetrics(summary) {
       const days = Number.isFinite(summary?.days) ? summary.days : 0;
       const totalCount = Number.isFinite(summary?.totalCount) ? summary.totalCount : 0;
+      const totalNight = Number.isFinite(summary?.totalNight) ? summary.totalNight : 0;
       const totalHospitalized = Number.isFinite(summary?.totalHospitalized) ? summary.totalHospitalized : 0;
       const totalDischarged = Number.isFinite(summary?.totalDischarged) ? summary.totalDischarged : 0;
       const totalTime = Number.isFinite(summary?.totalTime) ? summary.totalTime : 0;
@@ -10160,7 +10211,11 @@
       return {
         days,
         totalCount,
+        totalNight,
+        totalHospitalized,
+        totalDischarged,
         patientsPerDay: days > 0 ? totalCount / days : null,
+        nightPerDay: days > 0 ? totalNight / days : null,
         avgTime: durationCount > 0 ? totalTime / durationCount : null,
         avgHospitalizedTime: hospitalizedDurationCount > 0 ? totalHospitalizedTime / hospitalizedDurationCount : null,
         hospitalizedPerDay: days > 0 ? totalHospitalized / days : null,
@@ -10864,6 +10919,197 @@
         `;
         selectors.kpiGrid.appendChild(card);
       });
+
+      const monthlySettings = TEXT.kpis.monthly || {};
+      const monthlyCardsConfig = Array.isArray(monthlySettings.cards) ? monthlySettings.cards : [];
+      const hasPeriodMetrics = periodMetrics && typeof periodMetrics === 'object';
+      const monthMetrics = hasPeriodMetrics ? periodMetrics.monthMetrics : null;
+      const yearMetrics = hasPeriodMetrics ? periodMetrics.yearMetrics : null;
+      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
+
+      if (monthlyCardsConfig.length) {
+        if (monthlySettings.title || monthlySettings.subtitle) {
+          const sectionLabel = document.createElement('p');
+          sectionLabel.className = 'kpi-grid__section-label';
+          sectionLabel.setAttribute('role', 'presentation');
+          sectionLabel.setAttribute('aria-hidden', 'true');
+          sectionLabel.textContent = monthlySettings.title || 'Šio mėnesio vidurkiai';
+          if (monthlySettings.subtitle) {
+            const subtitleEl = document.createElement('span');
+            subtitleEl.textContent = monthlySettings.subtitle;
+            sectionLabel.appendChild(subtitleEl);
+          }
+          selectors.kpiGrid.appendChild(sectionLabel);
+        }
+
+        if (!monthHasData || !monthMetrics) {
+          const emptyCard = document.createElement('article');
+          emptyCard.className = 'kpi-card kpi-card--monthly';
+          emptyCard.setAttribute('role', 'listitem');
+          const emptyTitle = monthlySettings.emptyTitle || monthlySettings.title || TEXT.kpis.monthPrefix || 'Šio mėnesio vidurkiai';
+          const emptyMessage = monthlySettings.empty || TEXT.kpis.monthNoData;
+          emptyCard.innerHTML = `
+            <header class="kpi-card__header">
+              <h3 class="kpi-card__title">${escapeHtml(emptyTitle)}</h3>
+            </header>
+            <p class="kpi-mainline">
+              <span class="kpi-mainline__value"><span class="kpi-empty">${escapeHtml(emptyMessage || '')}</span></span>
+            </p>
+          `;
+          selectors.kpiGrid.appendChild(emptyCard);
+          return;
+        }
+
+        const monthLabel = typeof periodMetrics?.monthLabel === 'string' ? periodMetrics.monthLabel : '';
+        const monthPrefixShort = TEXT.kpis.monthPrefixShort || TEXT.kpis.monthPrefix || '';
+        const monthMetaText = monthLabel
+          ? `${monthPrefixShort ? `${monthPrefixShort}: ` : ''}${monthLabel}`
+          : '';
+        const resolvedReferenceLabel = typeof monthlySettings.referenceLabel === 'function'
+          ? monthlySettings.referenceLabel(periodMetrics?.referenceLabel, periodMetrics?.yearLabel)
+          : (monthlySettings.referenceLabel
+            || periodMetrics?.referenceLabel
+            || TEXT.kpis.summary.referenceFallback
+            || TEXT.kpis.summary.reference
+            || 'Metinis vidurkis');
+        const accessibleReference = resolvedReferenceLabel
+          || TEXT.kpis.summary.referenceFallback
+          || TEXT.kpis.summary.reference
+          || 'Metinis vidurkis';
+
+        monthlyCardsConfig.forEach((config) => {
+          if (!config || typeof config !== 'object' || !config.metricKey) {
+            return;
+          }
+          const valueFormat = config.format || 'oneDecimal';
+          const monthValueRaw = monthMetrics?.[config.metricKey];
+          const monthValue = Number.isFinite(monthValueRaw) ? monthValueRaw : null;
+          const compareKey = config.compareKey || config.metricKey;
+          const yearValueRaw = yearMetrics?.[compareKey];
+          const yearValue = Number.isFinite(yearValueRaw) ? yearValueRaw : null;
+          const card = document.createElement('article');
+          card.className = 'kpi-card kpi-card--monthly';
+          card.setAttribute('role', 'listitem');
+
+          const titleText = config.label ? escapeHtml(config.label) : '';
+          const metaHtml = monthMetaText
+            ? `<span class="kpi-card__meta">${escapeHtml(monthMetaText)}</span>`
+            : '';
+          const mainLabel = typeof config.mainLabel === 'string'
+            ? config.mainLabel
+            : (typeof monthlySettings.mainLabel === 'string' ? monthlySettings.mainLabel : '');
+          const mainLabelHtml = mainLabel
+            ? `<span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>`
+            : '';
+          const unitLabel = config.unitLabel ? String(config.unitLabel) : '';
+          const mainUnitHtml = unitLabel
+            ? `<span class="kpi-unit">${escapeHtml(unitLabel)}</span>`
+            : '';
+          const noDataText = monthlySettings.primaryNoData
+            || TEXT.kpis.primaryNoData
+            || TEXT.kpis.monthNoDataShort
+            || TEXT.kpis.monthNoData
+            || 'Nėra duomenų';
+          const mainValueHtml = Number.isFinite(monthValue)
+            ? `<strong class="kpi-main-value">${formatKpiValue(monthValue, valueFormat)}</strong>${mainUnitHtml}`
+            : `<span class="kpi-empty">${escapeHtml(noDataText)}</span>`;
+
+          const details = [];
+          const unitContext = unitLabel
+            ? `<span class="kpi-detail__context">${escapeHtml(unitLabel)}</span>`
+            : '';
+
+          if (Number.isFinite(monthValue) && Number.isFinite(yearValue)) {
+            const diff = monthValue - yearValue;
+            let trend = 'neutral';
+            let arrow = '→';
+            if (diff > 0) {
+              trend = 'up';
+              arrow = '↑';
+            } else if (diff < 0) {
+              trend = 'down';
+              arrow = '↓';
+            }
+            const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
+            const formattedDiff = formatKpiValue(Math.abs(diff), valueFormat);
+            const deltaContextRaw = typeof config.deltaContext === 'function'
+              ? config.deltaContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
+              : (config.deltaContext
+                ?? (typeof monthlySettings.deltaContext === 'function'
+                  ? monthlySettings.deltaContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
+                  : monthlySettings.deltaContext));
+            const deltaContextHtml = deltaContextRaw
+              ? `<span class="kpi-detail__context">${escapeHtml(deltaContextRaw)}</span>`
+              : '';
+            const deltaAriaReference = accessibleReference || 'metiniu vidurkiu';
+            const deltaAria = diff > 0
+              ? `Skirtumas lyginant su ${deltaAriaReference}: padidėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}.`
+              : diff < 0
+                ? `Skirtumas lyginant su ${deltaAriaReference}: sumažėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}.`
+                : `Skirtumo nėra lyginant su ${deltaAriaReference}.`;
+            const deltaLabel = typeof config.deltaLabel === 'string'
+              ? config.deltaLabel
+              : (monthlySettings.deltaLabel || TEXT.kpis.detailLabels?.delta || 'Skirtumas');
+            const deltaValueHtml = `
+              <span class="kpi-detail__icon" aria-hidden="true">${arrow}</span>
+              <strong>${sign}${formattedDiff}</strong>${unitContext}${deltaContextHtml}
+            `;
+            details.push(detailWrapper(
+              deltaLabel,
+              deltaValueHtml,
+              `kpi-detail--delta-${trend}`,
+              deltaAria,
+            ));
+          } else {
+            const deltaLabel = typeof config.deltaLabel === 'string'
+              ? config.deltaLabel
+              : (monthlySettings.deltaLabel || TEXT.kpis.detailLabels?.delta || 'Skirtumas');
+            details.push(detailWrapper(
+              deltaLabel,
+              `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
+              'kpi-detail--muted',
+            ));
+          }
+
+          const averageLabel = typeof config.averageLabel === 'string'
+            ? config.averageLabel
+            : (typeof monthlySettings.averageLabel === 'function'
+              ? monthlySettings.averageLabel(resolvedReferenceLabel, periodMetrics?.yearLabel)
+              : (monthlySettings.averageLabel || TEXT.kpis.detailLabels?.average || 'Vidurkis'));
+          const averageContextRaw = typeof config.averageContext === 'function'
+            ? config.averageContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
+            : (config.averageContext ?? (typeof monthlySettings.averageContext === 'function'
+              ? monthlySettings.averageContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
+              : monthlySettings.averageContext));
+          const averageContextHtml = averageContextRaw
+            ? `<span class="kpi-detail__context">${escapeHtml(averageContextRaw)}</span>`
+            : '';
+
+          if (Number.isFinite(yearValue)) {
+            const averageValueHtml = `<strong>${formatKpiValue(yearValue, valueFormat)}</strong>${unitContext}${averageContextHtml}`;
+            details.push(detailWrapper(averageLabel, averageValueHtml));
+          } else {
+            details.push(detailWrapper(
+              averageLabel,
+              `<span class="kpi-empty">${TEXT.kpis.averageNoData}</span>`,
+              'kpi-detail--muted',
+            ));
+          }
+
+          card.innerHTML = `
+            <header class="kpi-card__header">
+              <h3 class="kpi-card__title">${titleText}</h3>
+              ${metaHtml}
+            </header>
+            <p class="kpi-mainline">
+              ${mainLabelHtml}
+              <span class="kpi-mainline__value">${mainValueHtml}</span>
+            </p>
+            <div class="kpi-card__details" role="list">${details.join('')}</div>
+          `;
+          selectors.kpiGrid.appendChild(card);
+        });
+      }
     }
     function getThemeStyleTarget() {
       return document.body || document.documentElement;
