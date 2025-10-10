@@ -23,6 +23,8 @@
       --color-weekend: #f97316;
       --color-weekend-soft: rgba(249, 115, 22, 0.2);
       --chart-grid: rgba(15, 23, 42, 0.12);
+      --skeleton-base: rgba(148, 163, 184, 0.2);
+      --skeleton-highlight: rgba(148, 163, 184, 0.35);
       --shadow-elevated: 0 20px 40px -24px rgba(15, 23, 42, 0.45);
       --hero-height: 0px;
       --section-nav-height: 0px;
@@ -47,6 +49,61 @@
       flex-direction: column;
     }
 
+    @keyframes skeletonShimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    .skeleton {
+      position: relative;
+      overflow: hidden;
+      display: block;
+      background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-highlight) 37%, var(--skeleton-base) 63%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.6s ease-in-out infinite;
+      border-radius: 12px;
+    }
+
+    .skeleton--title {
+      height: 18px;
+      max-width: 70%;
+    }
+
+    .skeleton--value {
+      height: 34px;
+      max-width: 60%;
+    }
+
+    .skeleton--detail {
+      height: 16px;
+      max-width: 100%;
+    }
+
+    .skeleton--chip {
+      height: 12px;
+      max-width: 45%;
+    }
+
+    .skeleton--chart-area {
+      flex: 1 1 auto;
+      height: clamp(200px, 28vh, 320px);
+      border-radius: 16px;
+    }
+
+    .skeleton--chart-area--heatmap {
+      height: clamp(240px, 34vh, 380px);
+    }
+
+    .skeleton--caption {
+      height: 14px;
+      max-width: 80%;
+    }
+
     body[data-theme="dark"] {
       --color-bg: #050816;
       --color-surface: #0f172a;
@@ -65,6 +122,8 @@
       --color-weekend: #fb923c;
       --color-weekend-soft: rgba(251, 146, 60, 0.3);
       --chart-grid: rgba(148, 163, 184, 0.25);
+      --skeleton-base: rgba(148, 163, 184, 0.18);
+      --skeleton-highlight: rgba(148, 163, 184, 0.32);
       --shadow-elevated: 0 16px 30px -18px rgba(15, 23, 42, 0.75);
     }
 
@@ -2285,6 +2344,54 @@
       overflow: hidden;
     }
 
+    #kpiGrid[aria-busy="true"] {
+      pointer-events: none;
+    }
+
+    .kpi-card--skeleton {
+      box-shadow: none;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: var(--color-surface);
+      opacity: 0.9;
+    }
+
+    body[data-theme="dark"] .kpi-card--skeleton {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .kpi-card--skeleton::before {
+      display: none;
+    }
+
+    .kpi-card--skeleton .kpi-mainline {
+      margin-bottom: 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .kpi-card--skeleton .kpi-card__details {
+      margin-top: 18px;
+      gap: 12px;
+    }
+
+    .kpi-card--skeleton .kpi-card__header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .kpi-card--skeleton .kpi-card__header,
+    .kpi-card--skeleton .kpi-mainline,
+    .kpi-card--skeleton .kpi-card__details {
+      pointer-events: none;
+    }
+
+    .kpi-card--skeleton .skeleton + .skeleton {
+      margin-top: 10px;
+    }
+
     .kpi-card--monthly {
       background: var(--color-surface-alt);
     }
@@ -2484,7 +2591,7 @@
       grid-auto-flow: row dense;
     }
 
-    .chart-card { 
+    .chart-card {
       background: var(--color-surface);
       border-radius: 14px;
       border: 1px solid var(--color-border);
@@ -2495,6 +2602,70 @@
       flex-direction: column;
       gap: 12px;
       grid-column: span 4;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card__skeleton {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px 18px;
+      background: var(--color-surface);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .chart-card__skeleton .skeleton--chart-area,
+    .chart-card__skeleton .skeleton--chart-area--heatmap {
+      width: 100%;
+    }
+
+    body[data-theme="dark"] .chart-card__skeleton {
+      background: rgba(15, 23, 42, 0.82);
+    }
+
+    .chart-card__skeleton[hidden] {
+      display: none !important;
+    }
+
+    .chart-card[data-loading="true"] .chart-card__skeleton {
+      display: flex;
+    }
+
+    .chart-card[data-loading="true"] > :not(.chart-card__skeleton) {
+      visibility: hidden;
+    }
+
+    .chart-card__message {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      background: rgba(148, 163, 184, 0.14);
+      color: var(--color-text-muted);
+      font-weight: 600;
+      line-height: 1.4;
+      border-radius: 14px;
+      z-index: 3;
+    }
+
+    body[data-theme="dark"] .chart-card__message {
+      background: rgba(30, 41, 59, 0.85);
+      color: var(--color-text);
+    }
+
+    .chart-card[data-error="true"] .chart-card__message {
+      display: flex;
+    }
+
+    .chart-card[data-error="true"] > :not(.chart-card__message) {
+      visibility: hidden;
     }
 
     .chart-card__toolbar {
@@ -3956,6 +4127,64 @@
       </div>
       <div id="kpiSummary" class="kpi-summary" role="status" aria-live="polite" hidden></div>
       <div id="kpiGrid" class="kpi-grid" role="list"></div>
+      <template id="kpiSkeleton">
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+      </template>
     </section>
 
     <section class="section" aria-labelledby="chartHeading" data-section="chart">
@@ -3991,6 +4220,11 @@
       </div>
       <div class="chart-grid">
         <figure class="chart-card chart-card--tall">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
           <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
           <figcaption id="dailyChartTitle">
             <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
@@ -3998,14 +4232,29 @@
           </figcaption>
         </figure>
         <figure class="chart-card chart-card--tall">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
           <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
         </figure>
         <figure class="chart-card chart-card--heatmap">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area skeleton--chart-area--heatmap"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
           <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
           <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
         </figure>
         <figure class="chart-card chart-card--funnel">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
           <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
           <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
         </figure>
@@ -4946,6 +5195,7 @@
         heatmapCaption: 'Vidutinis pacientų atvykimų skaičius per dieną pagal savaitės dieną ir valandą.',
         heatmapEmpty: 'Šiame laikotarpyje atvykimų duomenų nėra.',
         heatmapLegend: 'Tamsesnė spalva reiškia didesnį vidutinį atvykimų skaičių per dieną.',
+        errorLoading: 'Nepavyko atvaizduoti grafikų (Chart.js biblioteka nepasiekiama).',
       },
       recent: {
         title: 'Paskutinės 7 dienos',
@@ -5350,6 +5600,7 @@
       chartYearLabel: document.getElementById('chartYearLabel'),
       chartYearSelect: document.getElementById('chartYear'),
       chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
+      chartCards: Array.from(document.querySelectorAll('.chart-grid .chart-card')),
       recentHeading: document.getElementById('recentHeading'),
       recentSubtitle: document.getElementById('recentSubtitle'),
       recentCaption: document.getElementById('recentCaption'),
@@ -10576,6 +10827,7 @@
       };
       const jobToken = ++kpiWorkerJobToken;
 
+      showKpiSkeleton();
       try {
         const result = await runKpiWorkerJob(workerPayload);
         if (jobToken !== kpiWorkerJobToken) {
@@ -10877,7 +11129,36 @@
       summaryEl.hidden = false;
     }
 
+    function showKpiSkeleton() {
+      const grid = selectors.kpiGrid;
+      if (!grid || grid.dataset.skeleton === 'true') {
+        return;
+      }
+      const template = document.getElementById('kpiSkeleton');
+      grid.setAttribute('aria-busy', 'true');
+      grid.dataset.skeleton = 'true';
+      if (template instanceof HTMLTemplateElement) {
+        const skeletonFragment = template.content.cloneNode(true);
+        grid.replaceChildren(skeletonFragment);
+      } else {
+        grid.replaceChildren();
+      }
+    }
+
+    function hideKpiSkeleton() {
+      const grid = selectors.kpiGrid;
+      if (!grid) {
+        return;
+      }
+      grid.removeAttribute('aria-busy');
+      if (grid.dataset.skeleton === 'true') {
+        grid.replaceChildren();
+      }
+      delete grid.dataset.skeleton;
+    }
+
     function renderKpis(dailyStats) {
+      hideKpiSkeleton();
       selectors.kpiGrid.replaceChildren();
       const windowDays = dashboardState.kpi?.filters?.window;
       const periodMetrics = buildYearMonthMetrics(dailyStats, windowDays);
@@ -12317,6 +12598,7 @@
       renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
         .catch((error) => {
           console.error('Nepavyko atnaujinti grafiko laikotarpio:', error);
+          showChartError(TEXT.charts?.errorLoading);
         });
     }
 
@@ -12341,153 +12623,243 @@
       renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
         .catch((error) => {
           console.error('Nepavyko atnaujinti grafiko metų filtro:', error);
+          showChartError(TEXT.charts?.errorLoading);
         });
     }
 
+    function clearChartError() {
+      if (!Array.isArray(selectors.chartCards)) {
+        return;
+      }
+      selectors.chartCards.forEach((card) => {
+        if (!card) {
+          return;
+        }
+        card.removeAttribute('data-error');
+        const messageEl = card.querySelector('.chart-card__message');
+        if (messageEl) {
+          messageEl.remove();
+        }
+      });
+    }
+
+    function showChartSkeletons() {
+      if (!Array.isArray(selectors.chartCards)) {
+        return;
+      }
+      clearChartError();
+      selectors.chartCards.forEach((card) => {
+        if (!card) {
+          return;
+        }
+        card.dataset.loading = 'true';
+        const skeleton = card.querySelector('.chart-card__skeleton');
+        if (skeleton) {
+          skeleton.hidden = false;
+        }
+      });
+    }
+
+    function hideChartSkeletons() {
+      if (!Array.isArray(selectors.chartCards)) {
+        return;
+      }
+      selectors.chartCards.forEach((card) => {
+        if (!card) {
+          return;
+        }
+        delete card.dataset.loading;
+        const skeleton = card.querySelector('.chart-card__skeleton');
+        if (skeleton) {
+          skeleton.hidden = true;
+        }
+      });
+    }
+
+    function showChartError(message) {
+      if (!Array.isArray(selectors.chartCards)) {
+        return;
+      }
+      const fallbackMessage = (TEXT?.charts?.errorLoading)
+        || (TEXT?.status?.error)
+        || 'Nepavyko atvaizduoti grafikų.';
+      const resolvedMessage = message && String(message).trim().length
+        ? String(message)
+        : fallbackMessage;
+      hideChartSkeletons();
+      selectors.chartCards.forEach((card) => {
+        if (!card) {
+          return;
+        }
+        card.dataset.error = 'true';
+        let messageEl = card.querySelector('.chart-card__message');
+        if (!messageEl) {
+          messageEl = document.createElement('div');
+          messageEl.className = 'chart-card__message';
+          messageEl.setAttribute('role', 'status');
+          messageEl.setAttribute('aria-live', 'polite');
+          card.appendChild(messageEl);
+        }
+        messageEl.textContent = resolvedMessage;
+      });
+    }
+
     async function renderCharts(dailyStats, funnelTotals, heatmapData) {
+      showChartSkeletons();
       const Chart = await loadChartJs();
       if (!Chart) {
-        throw new Error('Chart.js biblioteka nepasiekiama');
-      }
-      const palette = getThemePalette();
-      const styleTarget = getThemeStyleTarget();
-      Chart.defaults.color = palette.textColor;
-      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
-      Chart.defaults.borderColor = palette.gridColor;
-
-      if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod <= 0) {
-        dashboardState.chartPeriod = 30;
+        console.error('Chart.js biblioteka nepasiekiama.');
+        showChartError(TEXT.charts?.errorLoading);
+        return;
       }
 
-      dashboardState.chartLib = Chart;
-      const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
-      dashboardState.chartData.dailyWindow = scopedDaily;
+      try {
+        clearChartError();
+        const palette = getThemePalette();
+        const styleTarget = getThemeStyleTarget();
+        Chart.defaults.color = palette.textColor;
+        Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+        Chart.defaults.borderColor = palette.gridColor;
 
-      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
-      const baseDailyForFallback = Array.isArray(dashboardState.chartData.baseDaily)
-        && dashboardState.chartData.baseDaily.length
-        ? dashboardState.chartData.baseDaily
-        : dashboardState.dailyStats;
-      const fallbackDaily = filterDailyStatsByYear(baseDailyForFallback, selectedYear);
-      const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
-      dashboardState.chartData.funnel = funnelSource;
-
-      let heatmapSource = heatmapData ?? null;
-      if (!heatmapSource || !heatmapSource.matrix) {
-        const fallbackRecords = Array.isArray(dashboardState.chartData.baseRecords)
-          && dashboardState.chartData.baseRecords.length
-          ? dashboardState.chartData.baseRecords
-          : dashboardState.rawRecords;
-        const yearScopedRecords = filterRecordsByYear(fallbackRecords, selectedYear);
-        const scopedRecords = filterRecordsByWindow(yearScopedRecords, dashboardState.chartPeriod);
-        heatmapSource = computeArrivalHeatmap(scopedRecords);
-      }
-      dashboardState.chartData.heatmap = heatmapSource;
-
-      renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
-
-      const dowCounts = Array(7).fill(0);
-      const dowTotals = Array(7).fill(0);
-      scopedDaily.forEach((entry) => {
-        const dayIndex = (new Date(entry.date).getDay() + 6) % 7;
-        dowCounts[dayIndex] += entry.count;
-        dowTotals[dayIndex] += 1;
-      });
-      const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-      const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
-      const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
-      const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
-      const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
-
-      const ctxDowCanvas = document.getElementById('dowChart');
-      if (ctxDowCanvas && ctxDowCanvas.getContext) {
-        const ctxDow = ctxDowCanvas.getContext('2d');
-        if (dashboardState.charts.dow) {
-          dashboardState.charts.dow.destroy();
+        if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod <= 0) {
+          dashboardState.chartPeriod = 30;
         }
-        const isWeekendIndex = (index) => index >= 5;
-        dashboardState.charts.dow = new Chart(ctxDow, {
-          type: 'line',
-          data: {
-            labels: dowLabels,
-            datasets: [
-              {
-                label: 'Vidutinis pacientų skaičius',
-                data: dowAverages,
-                fill: true,
-                tension: 0.35,
-                borderColor: palette.accent,
-                backgroundColor: palette.accentSoft,
-                pointBackgroundColor: dowPointColors,
-                pointBorderColor: dowPointColors,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-                segment: {
-                  borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccent : palette.accent),
-                  backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccentSoft : palette.accentSoft),
-                },
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label(context) {
-                    return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
-                  },
-                },
-              },
-            },
-            scales: {
-              x: {
-                ticks: {
-                  color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
-                },
-                grid: {
-                  color: palette.gridColor,
-                  drawBorder: false,
-                },
-              },
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  color: palette.textColor,
-                  callback(value) {
-                    return decimalFormatter.format(value);
-                  },
-                },
-                grid: {
-                  color: palette.gridColor,
-                  drawBorder: false,
-                },
-              },
-            },
-          },
+
+        dashboardState.chartLib = Chart;
+        const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
+        dashboardState.chartData.dailyWindow = scopedDaily;
+
+        const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+        const baseDailyForFallback = Array.isArray(dashboardState.chartData.baseDaily)
+          && dashboardState.chartData.baseDaily.length
+          ? dashboardState.chartData.baseDaily
+          : dashboardState.dailyStats;
+        const fallbackDaily = filterDailyStatsByYear(baseDailyForFallback, selectedYear);
+        const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
+        dashboardState.chartData.funnel = funnelSource;
+
+        let heatmapSource = heatmapData ?? null;
+        if (!heatmapSource || !heatmapSource.matrix) {
+          const fallbackRecords = Array.isArray(dashboardState.chartData.baseRecords)
+            && dashboardState.chartData.baseRecords.length
+            ? dashboardState.chartData.baseRecords
+            : dashboardState.rawRecords;
+          const yearScopedRecords = filterRecordsByYear(fallbackRecords, selectedYear);
+          const scopedRecords = filterRecordsByWindow(yearScopedRecords, dashboardState.chartPeriod);
+          heatmapSource = computeArrivalHeatmap(scopedRecords);
+        }
+        dashboardState.chartData.heatmap = heatmapSource;
+
+        hideChartSkeletons();
+        renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
+
+        const dowCounts = Array(7).fill(0);
+        const dowTotals = Array(7).fill(0);
+        scopedDaily.forEach((entry) => {
+          const dayIndex = (new Date(entry.date).getDay() + 6) % 7;
+          dowCounts[dayIndex] += entry.count;
+          dowTotals[dayIndex] += 1;
         });
-      }
+        const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
+        const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
+        const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
+        const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
+        const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
 
-      if (selectors.funnelCaption) {
-        const funnelYear = dashboardState.chartData.funnel?.year ?? null;
-        const captionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
-          ? TEXT.charts.funnelCaptionWithYear(funnelYear)
-          : TEXT.charts.funnelCaption;
-        selectors.funnelCaption.textContent = captionText;
-      }
-
-      const funnelCanvas = document.getElementById('funnelChart');
-      if (funnelCanvas) {
-        if (dashboardState.charts.funnel && typeof dashboardState.charts.funnel.destroy === 'function') {
-          dashboardState.charts.funnel.destroy();
+        const ctxDowCanvas = document.getElementById('dowChart');
+        if (ctxDowCanvas && ctxDowCanvas.getContext) {
+          const ctxDow = ctxDowCanvas.getContext('2d');
+          if (dashboardState.charts.dow) {
+            dashboardState.charts.dow.destroy();
+          }
+          const isWeekendIndex = (index) => index >= 5;
+          dashboardState.charts.dow = new Chart(ctxDow, {
+            type: 'line',
+            data: {
+              labels: dowLabels,
+              datasets: [
+                {
+                  label: 'Vidutinis pacientų skaičius',
+                  data: dowAverages,
+                  fill: true,
+                  tension: 0.35,
+                  borderColor: palette.accent,
+                  backgroundColor: palette.accentSoft,
+                  pointBackgroundColor: dowPointColors,
+                  pointBorderColor: dowPointColors,
+                  pointRadius: dowPointRadii,
+                  pointHoverRadius: dowHoverRadii,
+                  segment: {
+                    borderColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccent : palette.accent),
+                    backgroundColor: (ctx) => (isWeekendIndex(ctx.p1DataIndex) ? palette.weekendAccentSoft : palette.accentSoft),
+                  },
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label(context) {
+                      return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
+                  },
+                  grid: {
+                    color: palette.gridColor,
+                    drawBorder: false,
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    color: palette.textColor,
+                    callback(value) {
+                      return decimalFormatter.format(value);
+                    },
+                  },
+                  grid: {
+                    color: palette.gridColor,
+                    drawBorder: false,
+                  },
+                },
+              },
+            },
+          });
         }
-        dashboardState.charts.funnel = null;
-        renderFunnelShape(funnelCanvas, dashboardState.chartData.funnel, palette.accent, palette.textColor);
-      }
 
-      renderArrivalHeatmap(selectors.heatmapContainer, dashboardState.chartData.heatmap, palette.accent);
+        if (selectors.funnelCaption) {
+          const funnelYear = dashboardState.chartData.funnel?.year ?? null;
+          const captionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
+            ? TEXT.charts.funnelCaptionWithYear(funnelYear)
+            : TEXT.charts.funnelCaption;
+          selectors.funnelCaption.textContent = captionText;
+        }
+
+        const funnelCanvas = document.getElementById('funnelChart');
+        if (funnelCanvas) {
+          if (dashboardState.charts.funnel && typeof dashboardState.charts.funnel.destroy === 'function') {
+            dashboardState.charts.funnel.destroy();
+          }
+          dashboardState.charts.funnel = null;
+          renderFunnelShape(funnelCanvas, dashboardState.chartData.funnel, palette.accent, palette.textColor);
+        }
+
+        renderArrivalHeatmap(selectors.heatmapContainer, dashboardState.chartData.heatmap, palette.accent);
+    } catch (error) {
+      console.error('Nepavyko atvaizduoti grafikų:', error);
+      showChartError(TEXT.charts?.errorLoading);
+      throw error;
+    }
     }
 
     function rerenderChartsForTheme() {
@@ -12526,6 +12898,7 @@
       renderCharts(dashboardState.chartData.dailyWindow, dashboardState.chartData.funnel, dashboardState.chartData.heatmap)
         .catch((error) => {
           console.error('Nepavyko perpiešti grafikų pakeitus temą:', error);
+          showChartError(TEXT.charts?.errorLoading);
         });
     }
 
@@ -14892,6 +15265,15 @@
       }
 
       dashboardState.loading = true;
+      if (!selectors.kpiGrid || !selectors.kpiGrid.children.length) {
+        showKpiSkeleton();
+      }
+      const chartsInitialized = dashboardState.charts.daily
+        || dashboardState.charts.dow
+        || dashboardState.charts.funnel;
+      if (!chartsInitialized) {
+        showChartSkeletons();
+      }
 
       try {
         setStatus('loading');
