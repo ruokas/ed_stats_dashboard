@@ -161,6 +161,7 @@
       gap: 16px;
       padding: 0;
       justify-content: center;
+      position: relative;
     }
 
     .section-nav__title {
@@ -193,6 +194,126 @@
       gap: 12px;
       overflow-x: auto;
       scrollbar-width: thin;
+      padding: 4px 6px;
+      --section-nav-mask: linear-gradient(to right, transparent 0, rgba(0, 0, 0, 1) 32px, rgba(0, 0, 0, 1) calc(100% - 32px), transparent 100%);
+      -webkit-mask-image: var(--section-nav-mask);
+      mask-image: var(--section-nav-mask);
+    }
+
+    .section-nav[data-overflow-left="false"][data-overflow-right="false"] .section-nav__inner {
+      --section-nav-mask: linear-gradient(to right, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) 100%);
+    }
+
+    .section-nav[data-overflow-left="false"][data-overflow-right="true"] .section-nav__inner {
+      --section-nav-mask: linear-gradient(to right, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) calc(100% - 32px), transparent 100%);
+    }
+
+    .section-nav[data-overflow-left="true"][data-overflow-right="false"] .section-nav__inner {
+      --section-nav-mask: linear-gradient(to right, transparent 0, rgba(0, 0, 0, 1) 32px, rgba(0, 0, 0, 1) 100%);
+    }
+
+    .section-nav__scroll-btn {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      background: rgba(37, 99, 235, 0.12);
+      color: var(--color-accent);
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      padding: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .section-nav__scroll-btn:hover,
+    .section-nav__scroll-btn:focus-visible {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+      outline: none;
+    }
+
+    .section-nav__scroll-btn:focus-visible {
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22), 0 18px 32px -22px rgba(37, 99, 235, 0.45);
+    }
+
+    .section-nav__scroll-btn[disabled] {
+      opacity: 0;
+      pointer-events: none;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .section-nav[data-overflow-left="true"] .section-nav__scroll-btn--prev:not([disabled]) {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .section-nav[data-overflow-right="true"] .section-nav__scroll-btn--next:not([disabled]) {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .section-nav__scroll-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+    }
+
+    .section-nav__scroll-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .section-nav__select {
+      display: none;
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    .section-nav__select-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .section-nav__select-control {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font: inherit;
+      font-weight: 500;
+      padding: 10px 38px 10px 14px;
+      appearance: none;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      background-image: linear-gradient(45deg, transparent 50%, var(--color-text-muted) 50%), linear-gradient(135deg, var(--color-text-muted) 50%, transparent 50%);
+      background-position: calc(100% - 18px) center, calc(100% - 12px) center;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    .section-nav__select-control:focus-visible {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+
+    .section-nav__select-control:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
     }
 
     .section-nav__inner::-webkit-scrollbar {
@@ -1290,6 +1411,62 @@
 
     header.hero .section-nav__inner {
       justify-content: center;
+    }
+
+    header.hero .section-nav__scroll-btn {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.32);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    header.hero .section-nav__scroll-btn:hover,
+    header.hero .section-nav__scroll-btn:focus-visible {
+      background: rgba(255, 255, 255, 0.24);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.24);
+      color: #fff;
+    }
+
+    header.hero .section-nav__select-label {
+      color: rgba(255, 255, 255, 0.86);
+    }
+
+    header.hero .section-nav__select-control {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.38);
+      color: #fff;
+      background-image: linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.82) 50%), linear-gradient(135deg, rgba(255, 255, 255, 0.82) 50%, transparent 50%);
+    }
+
+    header.hero .section-nav__select-control:focus-visible {
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.24);
+    }
+
+    body[data-theme="dark"] header.hero .section-nav__scroll-btn {
+      background: rgba(15, 23, 42, 0.65);
+      border-color: rgba(96, 165, 250, 0.35);
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    body[data-theme="dark"] header.hero .section-nav__scroll-btn:hover,
+    body[data-theme="dark"] header.hero .section-nav__scroll-btn:focus-visible {
+      background: rgba(96, 165, 250, 0.35);
+      border-color: rgba(125, 211, 252, 0.6);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.35);
+    }
+
+    body[data-theme="dark"] header.hero .section-nav__select-control {
+      background: rgba(15, 23, 42, 0.75);
+      border-color: rgba(96, 165, 250, 0.38);
+      color: #fff;
+      background-image: linear-gradient(45deg, transparent 50%, rgba(148, 197, 255, 0.9) 50%), linear-gradient(135deg, rgba(148, 197, 255, 0.9) 50%, transparent 50%);
+    }
+
+    body[data-theme="dark"] header.hero .section-nav__select-control:focus-visible {
+      border-color: rgba(148, 197, 255, 0.75);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.4);
     }
 
     header.hero .section-nav__link,
@@ -3906,6 +4083,20 @@
       }
     }
 
+    @media (max-width: 640px) {
+      .section-nav__bar {
+        display: none;
+      }
+
+      .section-nav__select {
+        display: block;
+      }
+
+      .hero__nav {
+        width: 100%;
+      }
+    }
+
     @media (max-width: 600px) {
       dialog {
         width: 96vw;
@@ -3959,9 +4150,21 @@
         <h1 id="pageTitle" class="hero__title">RŠL SMPS statistika</h1>
         <p id="pageSubtitle" class="hero__subtitle">Greita statistikos apžvalga.</p>
       </div>
-      <nav class="section-nav hero__nav" aria-label="Pagrindinės sekcijos">
+      <nav class="section-nav hero__nav" aria-label="Pagrindinės sekcijos" data-overflow-left="false" data-overflow-right="false">
         <div class="section-nav__bar">
           <div class="section-nav__title" id="stickyTitle" aria-hidden="true">RŠL SMPS statistika</div>
+          <button type="button"
+                  class="section-nav__scroll-btn section-nav__scroll-btn--prev"
+                  data-scroll-direction="prev"
+                  aria-label="Slinkti kairėn"
+                  title="Slinkti kairėn"
+                  disabled>
+            <span class="section-nav__scroll-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m14 6-6 6 6 6" />
+              </svg>
+            </span>
+          </button>
           <div class="section-nav__inner">
             <a class="section-nav__link" href="#kpiHeading">
               <span class="section-nav__icon" aria-hidden="true">
@@ -4025,6 +4228,27 @@
               <span class="section-nav__label">Atsiliepimai</span>
             </a>
           </div>
+          <button type="button"
+                  class="section-nav__scroll-btn section-nav__scroll-btn--next"
+                  data-scroll-direction="next"
+                  aria-label="Slinkti dešinėn"
+                  title="Slinkti dešinėn"
+                  disabled>
+            <span class="section-nav__scroll-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m10 6 6 6-6 6" />
+              </svg>
+            </span>
+          </button>
+        </div>
+        <div class="section-nav__select">
+          <label class="section-nav__select-label" for="sectionNavSelect">Sekcijos</label>
+          <select id="sectionNavSelect"
+                  class="section-nav__select-control"
+                  data-placeholder="Pasirinkite sekciją"
+                  aria-label="Pasirinkite sekciją">
+            <option value="">Pasirinkite sekciją</option>
+          </select>
         </div>
       </nav>
       <div class="hero__actions">
@@ -5690,15 +5914,23 @@
       compareSummary: document.getElementById('compareSummary'),
       compareClear: document.getElementById('compareClear'),
       sectionNav: document.querySelector('.section-nav'),
+      sectionNavInner: document.querySelector('.section-nav__inner'),
+      sectionNavPrevBtn: document.querySelector('.section-nav__scroll-btn--prev'),
+      sectionNavNextBtn: document.querySelector('.section-nav__scroll-btn--next'),
+      sectionNavSelectWrapper: document.querySelector('.section-nav__select'),
+      sectionNavSelect: document.getElementById('sectionNavSelect'),
       sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
       scrollTopBtn: document.getElementById('scrollTopBtn'),
     };
+
+    const SECTION_NAV_SCROLL_STEP = 240;
 
     const sectionNavState = {
       initialized: false,
       items: [],
       itemBySection: new Map(),
       activeHeadingId: '',
+      selectOptions: new Map(),
     };
 
     const sectionVisibility = new Map();
@@ -5706,6 +5938,7 @@
     let sectionObserver = null;
     let layoutRefreshHandle = null;
     let layoutResizeObserver = null;
+    const sectionNavOverflowState = { rafHandle: null };
     const stickyTitleState = { heroVisible: true, observer: null };
     const scrollTopState = { visible: false, rafHandle: null };
     const tvState = { clockHandle: null };
@@ -5731,6 +5964,147 @@
       return Math.max(0, Math.min(1, visibleHeight / elementHeight));
     }
 
+    function getPreferredScrollBehavior() {
+      return typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth';
+    }
+
+    function scrollSectionNavBy(direction) {
+      const container = selectors.sectionNavInner;
+      if (!container) {
+        return;
+      }
+      if (direction === 'prev' && selectors.sectionNavPrevBtn && selectors.sectionNavPrevBtn.disabled) {
+        return;
+      }
+      if (direction === 'next' && selectors.sectionNavNextBtn && selectors.sectionNavNextBtn.disabled) {
+        return;
+      }
+      const delta = direction === 'next' ? SECTION_NAV_SCROLL_STEP : -SECTION_NAV_SCROLL_STEP;
+      const behavior = getPreferredScrollBehavior();
+      if (typeof container.scrollBy === 'function') {
+        try {
+          container.scrollBy({ left: delta, behavior });
+        } catch (error) {
+          container.scrollLeft += delta;
+        }
+      } else {
+        container.scrollLeft += delta;
+      }
+      scheduleSectionNavOverflowUpdate();
+    }
+
+    function updateSectionNavOverflow() {
+      const container = selectors.sectionNavInner;
+      const nav = selectors.sectionNav;
+      if (!container || !nav) {
+        return;
+      }
+      const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+      const leftOverflow = maxScrollLeft > 0 && container.scrollLeft > 1;
+      const rightOverflow = maxScrollLeft > 0 && container.scrollLeft < (maxScrollLeft - 1);
+      nav.dataset.overflowLeft = leftOverflow ? 'true' : 'false';
+      nav.dataset.overflowRight = rightOverflow ? 'true' : 'false';
+      const prevBtn = selectors.sectionNavPrevBtn;
+      const nextBtn = selectors.sectionNavNextBtn;
+      if (prevBtn) {
+        prevBtn.disabled = !leftOverflow;
+        prevBtn.setAttribute('aria-disabled', leftOverflow ? 'false' : 'true');
+      }
+      if (nextBtn) {
+        nextBtn.disabled = !rightOverflow;
+        nextBtn.setAttribute('aria-disabled', rightOverflow ? 'false' : 'true');
+      }
+    }
+
+    function scheduleSectionNavOverflowUpdate() {
+      if (sectionNavOverflowState.rafHandle) {
+        return;
+      }
+      const raf = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (cb) => window.setTimeout(cb, 16);
+      sectionNavOverflowState.rafHandle = raf(() => {
+        sectionNavOverflowState.rafHandle = null;
+        updateSectionNavOverflow();
+      });
+    }
+
+    function initializeSectionNavSelect() {
+      const selectEl = selectors.sectionNavSelect;
+      if (!selectEl) {
+        return;
+      }
+      const placeholder = selectEl.dataset.placeholder || 'Pasirinkite sekciją';
+      selectEl.innerHTML = '';
+      const placeholderOption = document.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.textContent = placeholder;
+      selectEl.appendChild(placeholderOption);
+      if (!sectionNavState.selectOptions) {
+        sectionNavState.selectOptions = new Map();
+      } else {
+        sectionNavState.selectOptions.clear();
+      }
+      sectionNavState.items.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = item.headingId;
+        const labelEl = item.link.querySelector('.section-nav__label');
+        const labelText = labelEl ? labelEl.textContent.trim() : (item.link.textContent || '').trim();
+        option.textContent = labelText || item.headingId;
+        selectEl.appendChild(option);
+        sectionNavState.selectOptions.set(item.headingId, option);
+      });
+      const hasItems = sectionNavState.items.length > 0;
+      selectEl.disabled = !hasItems;
+      selectEl.setAttribute('aria-disabled', hasItems ? 'false' : 'true');
+      selectEl.value = hasItems && sectionNavState.activeHeadingId
+        ? sectionNavState.activeHeadingId
+        : '';
+      if (selectEl.dataset.bound !== 'true') {
+        selectEl.addEventListener('change', handleSectionNavSelectChange);
+        selectEl.dataset.bound = 'true';
+      }
+    }
+
+    function syncSectionNavSelectValue(headingId) {
+      const selectEl = selectors.sectionNavSelect;
+      if (!selectEl || !sectionNavState.selectOptions) {
+        return;
+      }
+      if (!headingId) {
+        selectEl.value = '';
+        return;
+      }
+      const option = sectionNavState.selectOptions.get(headingId);
+      if (option && !option.disabled && !option.hidden) {
+        selectEl.value = headingId;
+      } else {
+        selectEl.value = '';
+      }
+    }
+
+    function handleSectionNavSelectChange(event) {
+      const selectEl = event.target;
+      if (!(selectEl instanceof HTMLSelectElement)) {
+        return;
+      }
+      const headingId = selectEl.value;
+      if (!headingId) {
+        return;
+      }
+      const headingEl = document.getElementById(headingId);
+      if (headingEl && typeof headingEl.scrollIntoView === 'function') {
+        headingEl.scrollIntoView({ behavior: getPreferredScrollBehavior(), block: 'start' });
+      } else if (typeof window !== 'undefined') {
+        window.location.hash = `#${headingId}`;
+      }
+      updateActiveNavLink(headingId);
+      selectEl.blur();
+    }
+
     function updateLayoutMetrics() {
       const heroElement = selectors.hero || document.querySelector('header.hero');
       const navElement = selectors.sectionNav;
@@ -5745,6 +6119,7 @@
       const enter = heroHeight > 0 ? heroHeight * 0.55 : 160;
       heroCompactState.enterOffset = Math.max(80, Math.round(enter));
       heroCompactState.exitOffset = Math.max(40, Math.round(heroCompactState.enterOffset * 0.6));
+      scheduleSectionNavOverflowUpdate();
     }
 
     function applyHeroCompactMode(shouldCompact) {
@@ -5909,6 +6284,7 @@
         }
         item.link.classList.toggle('is-active', isActive);
       });
+      syncSectionNavSelectValue(headingId);
     }
 
     function evaluateActiveSection() {
@@ -5981,6 +6357,7 @@
         refreshSectionObserver();
         updateScrollTopButtonVisibility();
         evaluateHeroCompactMode();
+        updateSectionNavOverflow();
         return;
       }
       if (layoutRefreshHandle) {
@@ -5992,6 +6369,7 @@
         refreshSectionObserver();
         updateScrollTopButtonVisibility();
         evaluateHeroCompactMode();
+        updateSectionNavOverflow();
       });
     }
 
@@ -6078,6 +6456,13 @@
             ratio: computeVisibleRatio(rect),
             top: rect.top,
           });
+          if (sectionNavState.selectOptions) {
+            const option = sectionNavState.selectOptions.get(item.headingId);
+            if (option) {
+              option.disabled = false;
+              option.hidden = false;
+            }
+          }
         } else {
           link.hidden = true;
           link.setAttribute('aria-hidden', 'true');
@@ -6085,6 +6470,13 @@
           sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
           if (sectionObserver && section) {
             sectionObserver.unobserve(section);
+          }
+          if (sectionNavState.selectOptions) {
+            const option = sectionNavState.selectOptions.get(item.headingId);
+            if (option) {
+              option.disabled = true;
+              option.hidden = true;
+            }
           }
         }
       });
@@ -6104,8 +6496,23 @@
         }
       }
 
+      const selectEl = selectors.sectionNavSelect;
+      if (selectEl) {
+        const hasEnabledOption = sectionNavState.selectOptions
+          ? Array.from(sectionNavState.selectOptions.values()).some((option) => option && !option.disabled && !option.hidden)
+          : false;
+        selectEl.disabled = !hasEnabledOption;
+        selectEl.setAttribute('aria-disabled', hasEnabledOption ? 'false' : 'true');
+        if (!hasEnabledOption) {
+          selectEl.value = '';
+        } else {
+          syncSectionNavSelectValue(sectionNavState.activeHeadingId);
+        }
+      }
+
       evaluateActiveSection();
       scheduleLayoutRefresh();
+      scheduleSectionNavOverflowUpdate();
     }
 
     function initializeSectionNavigation() {
@@ -6145,6 +6552,33 @@
 
       selectors.sectionNavLinks = sectionNavState.items.map((item) => item.link);
 
+      initializeSectionNavSelect();
+
+      const prevBtn = selectors.sectionNavPrevBtn;
+      if (prevBtn && prevBtn.dataset.bound !== 'true') {
+        prevBtn.addEventListener('click', () => {
+          scrollSectionNavBy('prev');
+        });
+        prevBtn.dataset.bound = 'true';
+      }
+      const nextBtn = selectors.sectionNavNextBtn;
+      if (nextBtn && nextBtn.dataset.bound !== 'true') {
+        nextBtn.addEventListener('click', () => {
+          scrollSectionNavBy('next');
+        });
+        nextBtn.dataset.bound = 'true';
+      }
+      const navInner = selectors.sectionNavInner;
+      if (navInner && navInner.dataset.scrollBound !== 'true') {
+        navInner.addEventListener('scroll', scheduleSectionNavOverflowUpdate, { passive: true });
+        navInner.dataset.scrollBound = 'true';
+      }
+
+      if (selectors.sectionNav) {
+        selectors.sectionNav.dataset.overflowLeft = selectors.sectionNav.dataset.overflowLeft || 'false';
+        selectors.sectionNav.dataset.overflowRight = selectors.sectionNav.dataset.overflowRight || 'false';
+      }
+
       sectionNavState.initialized = true;
       setupNavKeyboardNavigation();
 
@@ -6168,6 +6602,7 @@
 
       updateLayoutMetrics();
       syncSectionNavVisibility();
+      updateSectionNavOverflow();
     }
 
     function cloneSettings(value) {
