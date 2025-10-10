@@ -79,6 +79,12 @@
       max-width: 60%;
     }
 
+    .skeleton--icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+    }
+
     .skeleton--detail {
       height: 16px;
       max-width: 100%;
@@ -2417,6 +2423,39 @@
 
     .kpi-card__header {
       margin: 0 0 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .kpi-card__title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .kpi-card__icon {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.25);
+    }
+
+    body[data-theme="dark"] .kpi-card__icon {
+      box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.35);
+    }
+
+    .kpi-card__icon svg {
+      width: 22px;
+      height: 22px;
     }
 
     .kpi-card__title {
@@ -2439,6 +2478,7 @@
       line-height: 1.2;
       text-align: right;
       display: inline-block;
+      align-self: flex-end;
     }
 
     .kpi-mainline {
@@ -4130,8 +4170,10 @@
       <template id="kpiSkeleton">
         <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
           <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
+            <span class="skeleton skeleton--icon" aria-hidden="true"></span>
+            <div class="kpi-card__title-group">
+              <span class="skeleton skeleton--title"></span>
+            </div>
           </header>
           <p class="kpi-mainline">
             <span class="skeleton skeleton--value"></span>
@@ -4144,8 +4186,10 @@
         </article>
         <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
           <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
+            <span class="skeleton skeleton--icon" aria-hidden="true"></span>
+            <div class="kpi-card__title-group">
+              <span class="skeleton skeleton--title"></span>
+            </div>
           </header>
           <p class="kpi-mainline">
             <span class="skeleton skeleton--value"></span>
@@ -4158,8 +4202,10 @@
         </article>
         <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
           <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
+            <span class="skeleton skeleton--icon" aria-hidden="true"></span>
+            <div class="kpi-card__title-group">
+              <span class="skeleton skeleton--title"></span>
+            </div>
           </header>
           <p class="kpi-mainline">
             <span class="skeleton skeleton--value"></span>
@@ -4172,8 +4218,10 @@
         </article>
         <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
           <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
+            <span class="skeleton skeleton--icon" aria-hidden="true"></span>
+            <div class="kpi-card__title-group">
+              <span class="skeleton skeleton--title"></span>
+            </div>
           </header>
           <p class="kpi-mainline">
             <span class="skeleton skeleton--value"></span>
@@ -4271,8 +4319,8 @@
                 <path d="M8 2.5v3" />
                 <path d="M16 2.5v3" />
                 <path d="M3.5 9h17" />
-                <path d="M12 13v4" />
-                <path d="M12 13h3" />
+                <path d="M8 13h4" />
+                <path d="M8 17h8" />
               </svg>
             </span>
             <span class="section-title__text">Paskutinės 7 dienos</span>
@@ -5135,10 +5183,10 @@
           unknownPeriod: 'Nenurodytas laikotarpis',
         },
         cards: [
-          { metricKey: 'total', label: 'Pacientai', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'night', label: 'Naktiniai pacientai', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'hospitalized', label: 'Hospitalizuoti', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'discharged', label: 'Išleisti', format: 'integer', unitLabel: 'pac.' },
+          { metricKey: 'total', label: 'Pacientai', format: 'integer', unitLabel: 'pac.', icon: 'patients' },
+          { metricKey: 'night', label: 'Naktiniai pacientai', format: 'integer', unitLabel: 'pac.', icon: 'night' },
+          { metricKey: 'hospitalized', label: 'Hospitalizuoti', format: 'integer', unitLabel: 'pac.', icon: 'hospital' },
+          { metricKey: 'discharged', label: 'Išleisti', format: 'integer', unitLabel: 'pac.', icon: 'discharge' },
         ],
         monthly: {
           title: 'Šio mėnesio vidurkiai',
@@ -5152,10 +5200,10 @@
           empty: 'Šio mėnesio duomenų nėra.',
           primaryNoData: '—',
           cards: [
-            { metricKey: 'patientsPerDay', label: 'Pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
-            { metricKey: 'nightPerDay', label: 'Naktiniai pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
-            { metricKey: 'dischargedPerDay', label: 'Išleisti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'dischargedShare' },
-            { metricKey: 'hospitalizedPerDay', label: 'Hospitalizuoti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'hospitalizedShare' },
+            { metricKey: 'patientsPerDay', label: 'Pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.', icon: 'calendarPatients' },
+            { metricKey: 'nightPerDay', label: 'Naktiniai pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.', icon: 'calendarNight' },
+            { metricKey: 'dischargedPerDay', label: 'Išleisti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'dischargedShare', icon: 'calendarDischarge' },
+            { metricKey: 'hospitalizedPerDay', label: 'Hospitalizuoti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'hospitalizedShare', icon: 'calendarHospital' },
           ],
         },
         detailLabels: {
@@ -5483,6 +5531,89 @@
       show: 'Išskleisti filtrus',
       hide: 'Sutraukti filtrus',
     };
+
+    const KPI_ICON_LIBRARY = {
+      patients: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7.5 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+          <path d="M16.5 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+          <path d="M3 20v-.5a4.5 4.5 0 0 1 9 0V20" />
+          <path d="M12 20v-.5a4.5 4.5 0 0 1 9 0V20" />
+        </svg>
+      `,
+      night: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19.2 14.5A7.5 7.5 0 0 1 9.5 4.8 6 6 0 1 0 19.2 14.5Z" />
+          <path d="M4.5 16.8 4.95 17.87 6.02 18.32 4.95 18.77 4.5 19.84 4.05 18.77 2.98 18.32 4.05 17.87Z" />
+        </svg>
+      `,
+      hospital: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="3" />
+          <path d="M12 8v8" />
+          <path d="M8 12h8" />
+        </svg>
+      `,
+      discharge: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 4h8.5a2.5 2.5 0 0 1 2.5 2.5v11a2.5 2.5 0 0 1-2.5 2.5H5" />
+          <path d="M9 12h9" />
+          <path d="m17 8 4 4-4 4" />
+        </svg>
+      `,
+      calendarPatients: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="4" width="17" height="16" rx="2" />
+          <path d="M8 2.5v3" />
+          <path d="M16 2.5v3" />
+          <path d="M3.5 9h17" />
+          <path d="M8 13h3" />
+          <path d="M12.5 13h3" />
+          <path d="M8 17h3" />
+          <path d="M12.5 17h3" />
+        </svg>
+      `,
+      calendarNight: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="4" width="17" height="16" rx="2" />
+          <path d="M8 2.5v3" />
+          <path d="M16 2.5v3" />
+          <path d="M3.5 9h17" />
+          <path d="M16.5 16a3.2 3.2 0 0 1-4.2-4.2 3 3 0 1 0 4.2 4.2Z" />
+        </svg>
+      `,
+      calendarDischarge: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="4" width="17" height="16" rx="2" />
+          <path d="M8 2.5v3" />
+          <path d="M16 2.5v3" />
+          <path d="M3.5 9h17" />
+          <path d="M9 14h5" />
+          <path d="m12.5 12 3 2-3 2" />
+        </svg>
+      `,
+      calendarHospital: `
+        <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="4" width="17" height="16" rx="2" />
+          <path d="M8 2.5v3" />
+          <path d="M16 2.5v3" />
+          <path d="M3.5 9h17" />
+          <path d="M13.5 13v4" />
+          <path d="M11.5 15h4" />
+        </svg>
+      `,
+    };
+
+    function getKpiIconHtml(iconKey) {
+      if (typeof iconKey !== 'string') {
+        return '';
+      }
+      const normalizedKey = iconKey.trim();
+      if (!normalizedKey || !Object.prototype.hasOwnProperty.call(KPI_ICON_LIBRARY, normalizedKey)) {
+        return '';
+      }
+      return `<span class="kpi-card__icon" aria-hidden="true">${KPI_ICON_LIBRARY[normalizedKey]}</span>`;
+    }
 
     function getDefaultKpiFilters() {
       const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
@@ -11171,7 +11302,9 @@
         card.setAttribute('role', 'listitem');
         card.innerHTML = `
           <header class="kpi-card__header">
-            <h3 class="kpi-card__title">Rodiklių nepakanka</h3>
+            <div class="kpi-card__title-group">
+              <h3 class="kpi-card__title">Rodiklių nepakanka</h3>
+            </div>
           </header>
           <p class="kpi-mainline">
             <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
@@ -11188,7 +11321,9 @@
         card.setAttribute('role', 'listitem');
         card.innerHTML = `
           <header class="kpi-card__header">
-            <h3 class="kpi-card__title">Rodiklių konfigūracija nerasta</h3>
+            <div class="kpi-card__title-group">
+              <h3 class="kpi-card__title">Rodiklių konfigūracija nerasta</h3>
+            </div>
           </header>
           <p class="kpi-mainline">
             <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
@@ -11230,6 +11365,7 @@
         card.setAttribute('role', 'listitem');
 
         const titleText = config.label ? escapeHtml(config.label) : '';
+        const iconHtml = getKpiIconHtml(config.icon);
         const mainLabel = typeof config.mainLabel === 'string'
           ? config.mainLabel
           : (typeof TEXT.kpis.mainValueLabel === 'string' ? TEXT.kpis.mainValueLabel : '');
@@ -11315,7 +11451,10 @@
 
         card.innerHTML = `
           <header class="kpi-card__header">
-            <h3 class="kpi-card__title">${titleText}</h3>
+            ${iconHtml}
+            <div class="kpi-card__title-group">
+              <h3 class="kpi-card__title">${titleText}</h3>
+            </div>
           </header>
           <p class="kpi-mainline">
             ${mainLabelHtml}
@@ -11354,9 +11493,13 @@
           emptyCard.setAttribute('role', 'listitem');
           const emptyTitle = monthlySettings.emptyTitle || monthlySettings.title || TEXT.kpis.monthPrefix || 'Šio mėnesio vidurkiai';
           const emptyMessage = monthlySettings.empty || TEXT.kpis.monthNoData;
+          const emptyIconHtml = getKpiIconHtml(monthlySettings.emptyIcon || 'calendarPatients');
           emptyCard.innerHTML = `
             <header class="kpi-card__header">
-              <h3 class="kpi-card__title">${escapeHtml(emptyTitle)}</h3>
+              ${emptyIconHtml}
+              <div class="kpi-card__title-group">
+                <h3 class="kpi-card__title">${escapeHtml(emptyTitle)}</h3>
+              </div>
             </header>
             <p class="kpi-mainline">
               <span class="kpi-mainline__value"><span class="kpi-empty">${escapeHtml(emptyMessage || '')}</span></span>
@@ -11405,6 +11548,7 @@
           card.setAttribute('role', 'listitem');
 
           const titleText = config.label ? escapeHtml(config.label) : '';
+          const iconHtml = getKpiIconHtml(config.icon);
           const metaHtml = monthMetaText
             ? `<span class="kpi-card__meta">${escapeHtml(monthMetaText)}</span>`
             : '';
@@ -11517,8 +11661,11 @@
 
           card.innerHTML = `
             <header class="kpi-card__header">
-              <h3 class="kpi-card__title">${titleText}</h3>
-              ${metaHtml}
+              ${iconHtml}
+              <div class="kpi-card__title-group">
+                <h3 class="kpi-card__title">${titleText}</h3>
+                ${metaHtml}
+              </div>
             </header>
             <p class="kpi-mainline">
               ${mainLabelHtml}
