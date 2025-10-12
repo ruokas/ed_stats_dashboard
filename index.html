@@ -2681,6 +2681,107 @@
       visibility: hidden;
     }
 
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: clamp(12px, 2.8vw, 20px);
+      margin-top: 20px;
+    }
+
+    .insight-card {
+      list-style: none;
+      background: var(--color-surface);
+      border-radius: 16px;
+      border: 1px solid var(--color-border);
+      padding: 20px;
+      box-shadow: 0 12px 26px -20px rgba(15, 23, 42, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .insight-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(140deg, rgba(37, 99, 235, 0.08), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
+    }
+
+    .insight-card:hover::before,
+    .insight-card:focus-within::before {
+      opacity: 1;
+    }
+
+    body[data-theme="dark"] .insight-card {
+      box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.85);
+    }
+
+    .insight-card[data-tone="warning"] {
+      border-color: rgba(248, 113, 113, 0.6);
+      box-shadow: 0 18px 36px -26px rgba(248, 113, 113, 0.6);
+    }
+
+    .insight-card[data-tone="success"] {
+      border-color: rgba(34, 197, 94, 0.55);
+      box-shadow: 0 18px 36px -26px rgba(34, 197, 94, 0.55);
+    }
+
+    .insight-card__title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .insight-card__value {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--color-text);
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .insight-card__value-main {
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .insight-card__unit {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .insight-card__empty {
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+
+    .insight-card__meta {
+      margin: 0;
+      margin-top: auto;
+      font-size: 0.92rem;
+      color: var(--color-text-muted);
+      line-height: 1.45;
+    }
+
+    .insights-empty {
+      margin-top: 16px;
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+    }
+
     .chart-card__toolbar {
       display: flex;
       justify-content: flex-end;
@@ -4120,6 +4221,16 @@
               </span>
               <span class="section-nav__label">Grafikai</span>
             </a>
+            <a class="section-nav__link" href="#insightsHeading">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z" />
+                  <path d="M10 18h4" />
+                  <path d="M9 21h6" />
+                </svg>
+              </span>
+              <span class="section-nav__label" id="navInsightsLabel">Įžvalgos</span>
+            </a>
             <a class="section-nav__link" href="#recentHeading">
               <span class="section-nav__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -4450,6 +4561,26 @@
           <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
         </figure>
       </div>
+    </section>
+
+    <section class="section" aria-labelledby="insightsHeading" data-section="insights">
+      <div class="section__header">
+        <div>
+          <h2 id="insightsHeading" class="section__title">
+            <span class="section-title__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z" />
+                <path d="M10 18h4" />
+                <path d="M9 21h6" />
+              </svg>
+            </span>
+            <span class="section-title__text">Įžvalgos</span>
+          </h2>
+          <p id="insightsSubtitle" class="section__subtitle">„Boarding“ langai ir procesų apkrova</p>
+        </div>
+      </div>
+      <div id="insightsGrid" class="insights-grid" role="list"></div>
+      <p id="insightsEmpty" class="insights-empty" hidden>Įžvalgoms sugeneruoti kol kas trūksta duomenų.</p>
     </section>
 
     <section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
@@ -4902,6 +5033,16 @@
           </div>
           <div class="settings-inline">
             <div class="settings-field">
+              <label for="settingsInsightsTitle"><span>„Įžvalgų“ pavadinimas</span></label>
+              <input id="settingsInsightsTitle" name="output.insightsTitle" type="text">
+            </div>
+            <div class="settings-field">
+              <label for="settingsInsightsSubtitle"><span>„Įžvalgų“ paantraštė</span></label>
+              <input id="settingsInsightsSubtitle" name="output.insightsSubtitle" type="text">
+            </div>
+          </div>
+          <div class="settings-inline">
+            <div class="settings-field">
               <label for="settingsRecentTitle"><span>„Paskutinės dienos“ pavadinimas</span></label>
               <input id="settingsRecentTitle" name="output.recentTitle" type="text">
             </div>
@@ -4958,6 +5099,10 @@
             <label for="settingsFooterSource"><span>Apatinės eilutės tekstas</span></label>
             <input id="settingsFooterSource" name="output.footerSource" type="text" placeholder="Duomenys: ...">
           </div>
+          <label class="settings-checkbox" for="settingsShowInsights">
+            <input id="settingsShowInsights" name="output.showInsights" type="checkbox">
+            <span>Rodyti „Įžvalgų“ sekciją.</span>
+          </label>
           <label class="settings-checkbox" for="settingsShowRecent">
             <input id="settingsShowRecent" name="output.showRecent" type="checkbox">
             <span>Rodyti „Paskutinės dienos“ lentelę.</span>
@@ -5138,6 +5283,11 @@
             description: 'Vidutiniai laukimo ir buvimo laiko rodikliai.',
             icon: 'efficiency',
           },
+          insights: {
+            title: 'Įžvalgos',
+            description: 'Srautų disbalanso ir procesų apkrovos indikatoriai.',
+            icon: 'insights',
+          },
         },
         cards: {
           legacy: [
@@ -5204,6 +5354,51 @@
               empty: '—',
               format: 'minutes',
               section: 'efficiency',
+            },
+            {
+              key: 'peakWindowText',
+              title: 'Piko langai',
+              description: 'Top 3 atvykimo ir išvykimo valandos.',
+              empty: 'Nėra pakankamai duomenų.',
+              format: 'text',
+              metaKey: 'peakWindowRiskNote',
+              section: 'insights',
+            },
+            {
+              key: 'losVariabilityIndex',
+              title: 'LOS variacijos indeksas',
+              description: 'P90/P50 buvimo trukmės santykis.',
+              empty: '—',
+              format: 'multiplier',
+              metaKey: 'losPercentilesText',
+              section: 'insights',
+            },
+            {
+              key: 'taktTimeMinutes',
+              title: 'Taktinis laikas',
+              description: 'Min. vienam pacientui pagal srautą.',
+              empty: '—',
+              format: 'minutes',
+              metaKey: 'taktTimeMeta',
+              section: 'insights',
+            },
+            {
+              key: 'littlesLawEstimate',
+              title: 'Įvertintas ED užimtumas',
+              description: 'Littleʼs Law aproksimacija pagal P50 LOS.',
+              empty: '—',
+              format: 'oneDecimal',
+              metaKey: 'littlesLawMeta',
+              section: 'insights',
+            },
+            {
+              key: 'fastSlowSplitValue',
+              title: '„Fast lane“ vs „Slow lane“',
+              description: 'LOS < 2 val. ir > 8 val. pasiskirstymas.',
+              empty: 'Nėra pakankamai duomenų.',
+              format: 'text',
+              metaKey: 'fastSlowTrendText',
+              section: 'insights',
             },
           ],
           snapshot: [
@@ -5416,6 +5611,55 @@
           avgDuration: 'vidutinė buvimo trukmė (val.)',
         },
         errorLoading: 'Nepavyko atvaizduoti grafikų (Chart.js biblioteka nepasiekiama).',
+      },
+      insights: {
+        title: 'Įžvalgos',
+        subtitle: '„Boarding“ langai ir procesų apkrovos indikatoriai.',
+        empty: 'Įžvalgoms sugeneruoti kol kas trūksta duomenų.',
+        cards: [
+          {
+            key: 'peakWindowText',
+            title: 'Piko langai',
+            description: 'Top 3 atvykimų ir išvykimų valandos.',
+            format: 'text',
+            metaKey: 'peakWindowRiskNote',
+            empty: 'Nėra pakankamai duomenų.',
+          },
+          {
+            key: 'losVariabilityIndex',
+            title: 'LOS variacijos indeksas',
+            description: 'P90/P50 buvimo trukmės santykis.',
+            format: 'multiplier',
+            metaKey: 'losPercentilesText',
+            empty: '—',
+          },
+          {
+            key: 'taktTimeMinutes',
+            title: 'Taktinis laikas',
+            description: 'Minutės vienam pacientui pagal srautą.',
+            format: 'minutes',
+            unit: 'min.',
+            metaKey: 'taktTimeMeta',
+            empty: '—',
+          },
+          {
+            key: 'littlesLawEstimate',
+            title: 'Įvertintas ED užimtumas',
+            description: 'Littleʼs Law aproksimacija (avg atvykimai × median LOS).',
+            format: 'oneDecimal',
+            unit: 'pac.',
+            metaKey: 'littlesLawMeta',
+            empty: '—',
+          },
+          {
+            key: 'fastSlowSplitValue',
+            title: '„Fast lane“ vs „Slow lane“',
+            description: 'LOS < 2 val. ir > 8 val. dalys.',
+            format: 'text',
+            metaKey: 'fastSlowTrendText',
+            empty: 'Nėra pakankamai duomenų.',
+          },
+        ],
       },
       recent: {
         title: 'Paskutinės 7 dienos',
@@ -5656,6 +5900,8 @@
         kpiSubtitle: TEXT.kpis.subtitle,
         chartsTitle: TEXT.charts.title,
         chartsSubtitle: TEXT.charts.subtitle,
+        insightsTitle: TEXT.insights.title,
+        insightsSubtitle: TEXT.insights.subtitle,
         recentTitle: TEXT.recent.title,
         recentSubtitle: TEXT.recent.subtitle,
         monthlyTitle: TEXT.monthly.title,
@@ -5672,6 +5918,7 @@
         tabEdLabel: TEXT.tabs.ed,
         edTitle: TEXT.ed.title,
         edSubtitle: TEXT.ed.subtitle,
+        showInsights: true,
         showRecent: true,
         showMonthly: true,
         showYearly: true,
@@ -5845,6 +6092,12 @@
       kpiGrid: document.getElementById('kpiGrid'),
       chartHeading: document.getElementById('chartHeading'),
       chartSubtitle: document.getElementById('chartSubtitle'),
+      insightsSection: document.querySelector('[data-section="insights"]'),
+      insightsHeading: document.getElementById('insightsHeading'),
+      insightsSubtitle: document.getElementById('insightsSubtitle'),
+      insightsGrid: document.getElementById('insightsGrid'),
+      insightsEmpty: document.getElementById('insightsEmpty'),
+      navInsightsLabel: document.getElementById('navInsightsLabel'),
       dailyCaption: document.getElementById('dailyChartLabel'),
       dailyCaptionContext: document.getElementById('dailyChartContext'),
       dowCaption: document.getElementById('dowChartTitle'),
@@ -6472,7 +6725,35 @@
     }
 
     function normalizeSettings(rawSettings) {
-      const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), rawSettings ?? {});
+      const originalSettings = rawSettings && typeof rawSettings === 'object' ? rawSettings : {};
+      let sanitizedSettings = {};
+      if (originalSettings && typeof originalSettings === 'object') {
+        try {
+          sanitizedSettings = cloneSettings(originalSettings);
+        } catch (error) {
+          console.warn('Nepavyko nukopijuoti išsaugotų nustatymų, naudojami tik numatytieji.', error);
+          sanitizedSettings = {};
+        }
+      }
+
+      const legacyInsightsToggleOnly = Boolean(
+        originalSettings
+        && typeof originalSettings === 'object'
+        && originalSettings.output
+        && typeof originalSettings.output === 'object'
+        && originalSettings.output.showInsights === false
+        && !Object.prototype.hasOwnProperty.call(originalSettings.output, 'insightsTitle')
+        && !Object.prototype.hasOwnProperty.call(originalSettings.output, 'insightsSubtitle'),
+      );
+      if (legacyInsightsToggleOnly
+        && sanitizedSettings
+        && typeof sanitizedSettings === 'object'
+        && sanitizedSettings.output
+        && typeof sanitizedSettings.output === 'object') {
+        delete sanitizedSettings.output.showInsights;
+      }
+
+      const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), sanitizedSettings ?? {});
       merged.dataSource.url = (merged.dataSource.url ?? '').trim();
       merged.dataSource.useFallback = Boolean(merged.dataSource.useFallback);
       merged.dataSource.fallbackCsv = typeof merged.dataSource.fallbackCsv === 'string'
@@ -6548,6 +6829,8 @@
       merged.output.kpiSubtitle = merged.output.kpiSubtitle != null ? String(merged.output.kpiSubtitle) : DEFAULT_SETTINGS.output.kpiSubtitle;
       merged.output.chartsTitle = merged.output.chartsTitle != null ? String(merged.output.chartsTitle) : DEFAULT_SETTINGS.output.chartsTitle;
       merged.output.chartsSubtitle = merged.output.chartsSubtitle != null ? String(merged.output.chartsSubtitle) : DEFAULT_SETTINGS.output.chartsSubtitle;
+      merged.output.insightsTitle = merged.output.insightsTitle != null ? String(merged.output.insightsTitle) : DEFAULT_SETTINGS.output.insightsTitle;
+      merged.output.insightsSubtitle = merged.output.insightsSubtitle != null ? String(merged.output.insightsSubtitle) : DEFAULT_SETTINGS.output.insightsSubtitle;
       merged.output.recentTitle = merged.output.recentTitle != null ? String(merged.output.recentTitle) : DEFAULT_SETTINGS.output.recentTitle;
       merged.output.recentSubtitle = merged.output.recentSubtitle != null ? String(merged.output.recentSubtitle) : DEFAULT_SETTINGS.output.recentSubtitle;
       if (merged.output.monthlyTitle == null && merged.output.weeklyTitle != null) {
@@ -6572,6 +6855,16 @@
       merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
       merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
       merged.output.edSubtitle = merged.output.edSubtitle != null ? String(merged.output.edSubtitle) : DEFAULT_SETTINGS.output.edSubtitle;
+      const hasExplicitShowInsights = Boolean(
+        sanitizedSettings
+        && typeof sanitizedSettings === 'object'
+        && sanitizedSettings.output
+        && typeof sanitizedSettings.output === 'object'
+        && Object.prototype.hasOwnProperty.call(sanitizedSettings.output, 'showInsights'),
+      );
+      merged.output.showInsights = hasExplicitShowInsights
+        ? Boolean(merged.output.showInsights)
+        : DEFAULT_SETTINGS.output.showInsights;
       merged.output.showRecent = Boolean(merged.output.showRecent);
       merged.output.showMonthly = Boolean(merged.output.showMonthly);
       merged.output.showYearly = Boolean(merged.output.showYearly);
@@ -6628,6 +6921,8 @@
       TEXT.kpis.subtitle = settings.output.kpiSubtitle || DEFAULT_SETTINGS.output.kpiSubtitle;
       TEXT.charts.title = settings.output.chartsTitle || DEFAULT_SETTINGS.output.chartsTitle;
       TEXT.charts.subtitle = settings.output.chartsSubtitle || DEFAULT_SETTINGS.output.chartsSubtitle;
+      TEXT.insights.title = settings.output.insightsTitle || DEFAULT_SETTINGS.output.insightsTitle;
+      TEXT.insights.subtitle = settings.output.insightsSubtitle || DEFAULT_SETTINGS.output.insightsSubtitle;
       TEXT.recent.title = settings.output.recentTitle || DEFAULT_SETTINGS.output.recentTitle;
       TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
       TEXT.monthly.title = settings.output.monthlyTitle || DEFAULT_SETTINGS.output.monthlyTitle;
@@ -6663,6 +6958,7 @@
     }
 
     function applySectionVisibility() {
+      toggleSectionVisibility(selectors.insightsSection, settings.output.showInsights);
       toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
       toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
       toggleSectionVisibility(selectors.yearlySection, settings.output.showYearly);
@@ -6844,6 +7140,8 @@
       assign('output.kpiSubtitle', settings.output.kpiSubtitle);
       assign('output.chartsTitle', settings.output.chartsTitle);
       assign('output.chartsSubtitle', settings.output.chartsSubtitle);
+      assign('output.insightsTitle', settings.output.insightsTitle);
+      assign('output.insightsSubtitle', settings.output.insightsSubtitle);
       assign('output.recentTitle', settings.output.recentTitle);
       assign('output.recentSubtitle', settings.output.recentSubtitle);
       assign('output.monthlyTitle', settings.output.monthlyTitle);
@@ -6856,6 +7154,7 @@
       assign('output.edTitle', settings.output.edTitle);
       assign('output.edSubtitle', settings.output.edSubtitle);
       assign('output.footerSource', settings.output.footerSource);
+      assign('output.showInsights', settings.output.showInsights);
       assign('output.showRecent', settings.output.showRecent);
       assign('output.showMonthly', settings.output.showMonthly);
       assign('output.showYearly', settings.output.showYearly);
@@ -6911,6 +7210,8 @@
           kpiSubtitle: '',
           chartsTitle: '',
           chartsSubtitle: '',
+          insightsTitle: '',
+          insightsSubtitle: '',
           recentTitle: '',
           recentSubtitle: '',
           monthlyTitle: '',
@@ -6921,6 +7222,7 @@
           feedbackSubtitle: '',
           feedbackDescription: '',
           footerSource: '',
+          showInsights: false,
           showRecent: false,
           showMonthly: false,
           showYearly: false,
@@ -6983,6 +7285,8 @@
       result.output.kpiSubtitle = readText('output.kpiSubtitle').trim();
       result.output.chartsTitle = readText('output.chartsTitle').trim();
       result.output.chartsSubtitle = readText('output.chartsSubtitle').trim();
+      result.output.insightsTitle = readText('output.insightsTitle').trim();
+      result.output.insightsSubtitle = readText('output.insightsSubtitle').trim();
       result.output.recentTitle = readText('output.recentTitle').trim();
       result.output.recentSubtitle = readText('output.recentSubtitle').trim();
       result.output.monthlyTitle = readText('output.monthlyTitle').trim();
@@ -6995,6 +7299,7 @@
       result.output.edTitle = readText('output.edTitle').trim();
       result.output.edSubtitle = readText('output.edSubtitle').trim();
       result.output.footerSource = readText('output.footerSource').trim();
+      result.output.showInsights = readCheckbox('output.showInsights');
       result.output.showRecent = readCheckbox('output.showRecent');
       result.output.showMonthly = readCheckbox('output.showMonthly');
       result.output.showYearly = readCheckbox('output.showYearly');
@@ -7420,6 +7725,19 @@
       selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+      if (selectors.insightsHeading) {
+        const target = selectors.insightsHeading.querySelector('.section-title__text') || selectors.insightsHeading;
+        target.textContent = TEXT.insights.title;
+      }
+      if (selectors.navInsightsLabel) {
+        selectors.navInsightsLabel.textContent = TEXT.insights.title;
+      }
+      if (selectors.insightsSubtitle) {
+        selectors.insightsSubtitle.textContent = TEXT.insights.subtitle;
+      }
+      if (selectors.insightsEmpty) {
+        selectors.insightsEmpty.textContent = TEXT.insights.empty || selectors.insightsEmpty.textContent || '';
+      }
       if (selectors.chartYearLabel) {
         selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
       }
@@ -9240,6 +9558,23 @@
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
         generatedAt: new Date(),
+        peakWindowText: '',
+        peakWindowRiskNote: '',
+        losMedianMinutes: null,
+        losP90Minutes: null,
+        losVariabilityIndex: null,
+        losPercentilesText: '',
+        taktTimeMinutes: null,
+        taktTimeMeta: '',
+        littlesLawEstimate: null,
+        littlesLawMeta: '',
+        fastLaneShare: null,
+        slowLaneShare: null,
+        fastLaneDelta: null,
+        slowLaneDelta: null,
+        fastSlowSplitValue: '',
+        fastSlowTrendText: '',
+        fastSlowTrendWindowDays: 0,
       };
     }
 
@@ -9434,10 +9769,74 @@
           doctorRatio: Number.isFinite(doctorRatioInfo.ratio) && doctorRatioInfo.ratio > 0 ? doctorRatioInfo.ratio : null,
           doctorRatioText: doctorRatioInfo.text,
           categories,
+          arrivalHour: arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
+          departureHour: departureDate instanceof Date && !Number.isNaN(departureDate.getTime()) ? departureDate.getHours() : null,
         });
       }
 
       return { records, meta: { type: datasetType } };
+    }
+
+    function formatHourLabel(hour) {
+      if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+        return '';
+      }
+      return `${String(hour).padStart(2, '0')}:00`;
+    }
+
+    function pickTopHours(hourCounts, limit = 3) {
+      if (!Array.isArray(hourCounts) || !hourCounts.length) {
+        return [];
+      }
+      return hourCounts
+        .map((count, hour) => ({ hour, count }))
+        .filter((entry) => Number.isFinite(entry.count) && entry.count > 0)
+        .sort((a, b) => {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.hour - b.hour;
+        })
+        .slice(0, Math.max(0, limit));
+    }
+
+    function computePercentile(sortedValues, percentile) {
+      if (!Array.isArray(sortedValues) || !sortedValues.length) {
+        return null;
+      }
+      const clamped = Math.min(Math.max(percentile, 0), 1);
+      if (sortedValues.length === 1) {
+        return sortedValues[0];
+      }
+      const index = (sortedValues.length - 1) * clamped;
+      const lower = Math.floor(index);
+      const upper = Math.ceil(index);
+      const weight = index - lower;
+      if (upper >= sortedValues.length) {
+        return sortedValues[sortedValues.length - 1];
+      }
+      if (lower === upper) {
+        return sortedValues[lower];
+      }
+      const lowerValue = sortedValues[lower];
+      const upperValue = sortedValues[upper];
+      if (!Number.isFinite(lowerValue) || !Number.isFinite(upperValue)) {
+        return null;
+      }
+      return lowerValue + (upperValue - lowerValue) * weight;
+    }
+
+    function formatPercentPointDelta(delta) {
+      if (!Number.isFinite(delta)) {
+        return '';
+      }
+      const magnitude = Math.abs(delta) * 100;
+      const rounded = Math.round(magnitude * 10) / 10;
+      if (!rounded) {
+        return '±0 p.p.';
+      }
+      const sign = delta > 0 ? '+' : '−';
+      return `${sign}${oneDecimalFormatter.format(rounded)} p.p.`;
     }
 
     function summarizeLegacyRecords(records) {
@@ -9446,6 +9845,13 @@
       const categoryTotals = { hospitalized: 0, discharged: 0, left: 0, transfer: 0, other: 0 };
       const dailyBuckets = new Map();
       const monthBuckets = new Map();
+      const arrivalHourCounts = Array.from({ length: 24 }, () => 0);
+      const dischargeHourCounts = Array.from({ length: 24 }, () => 0);
+      let arrivalsWithHour = 0;
+      const losValues = [];
+      let losValidCount = 0;
+      let fastCount = 0;
+      let slowCount = 0;
       const validRecords = Array.isArray(records)
         ? records.filter((record) => record && typeof record.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.dateKey))
         : [];
@@ -9474,7 +9880,16 @@
           doorToProviderMinutes,
           decisionToLeaveMinutes,
           labMinutes,
+          arrivalHour,
+          departureHour,
         } = record;
+        if (Number.isInteger(arrivalHour) && arrivalHour >= 0 && arrivalHour <= 23) {
+          arrivalHourCounts[arrivalHour] += 1;
+          arrivalsWithHour += 1;
+        }
+        if (Number.isInteger(departureHour) && departureHour >= 0 && departureHour <= 23) {
+          dischargeHourCounts[departureHour] += 1;
+        }
         const key = disposition && disposition.trim().length ? disposition : 'Nežinoma';
         if (!dispositions.has(key)) {
           dispositions.set(key, { label: key, count: 0, category: dispositionCategory || 'other' });
@@ -9493,6 +9908,8 @@
           doorCount: 0,
           labSum: 0,
           labCount: 0,
+          fastCount: 0,
+          slowCount: 0,
         };
         bucket.patients += 1;
         if (Number.isFinite(losMinutes)) {
@@ -9500,6 +9917,16 @@
           bucket.losCount += 1;
           losSum += losMinutes;
           losCount += 1;
+          losValues.push(losMinutes);
+          losValidCount += 1;
+          if (losMinutes < 120) {
+            bucket.fastCount += 1;
+            fastCount += 1;
+          }
+          if (losMinutes > 480) {
+            bucket.slowCount += 1;
+            slowCount += 1;
+          }
           if (dispositionCategory === 'hospitalized') {
             hospitalizedLosSum += losMinutes;
             hospitalizedLosCount += 1;
@@ -9655,6 +10082,68 @@
         }
       }
 
+      const topArrivalHours = pickTopHours(arrivalHourCounts, 3);
+      const topDepartureHours = pickTopHours(dischargeHourCounts, 3);
+      if (topArrivalHours.length || topDepartureHours.length) {
+        const arrivalText = topArrivalHours.length
+          ? topArrivalHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+          : '—';
+        const departureText = topDepartureHours.length
+          ? topDepartureHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+          : '—';
+        summary.peakWindowText = `Atvykimai: ${arrivalText} / Išvykimai: ${departureText}`;
+        if (topArrivalHours.length && topDepartureHours.length) {
+          const mismatch = topArrivalHours.filter((item) => !topDepartureHours.some((candidate) => candidate.hour === item.hour));
+          if (mismatch.length) {
+            const labels = mismatch.map((item) => formatHourLabel(item.hour)).filter(Boolean);
+            summary.peakWindowRiskNote = labels.length
+              ? `Galima „boarding“ rizika: ${labels.join(', ')}`
+              : 'Galima neatitiktis tarp atvykimų ir išvykimų.';
+          } else {
+            summary.peakWindowRiskNote = 'Pagrindiniai srautai sutampa.';
+          }
+        } else if (topArrivalHours.length) {
+          summary.peakWindowRiskNote = 'Trūksta išvykimų valandų duomenų.';
+        } else {
+          summary.peakWindowRiskNote = 'Trūksta atvykimų valandų duomenų.';
+        }
+      }
+
+      if (summary.uniqueDates > 0 && arrivalsWithHour > 0) {
+        const arrivalsPerHour = arrivalsWithHour / (summary.uniqueDates * 24);
+        if (Number.isFinite(arrivalsPerHour) && arrivalsPerHour > 0) {
+          summary.taktTimeMinutes = 60 / arrivalsPerHour;
+          summary.taktTimeMeta = `~${oneDecimalFormatter.format(arrivalsPerHour)} atv./val.`;
+        }
+      }
+
+      if (losValues.length) {
+        const sortedLos = [...losValues].sort((a, b) => a - b);
+        const losMedian = computePercentile(sortedLos, 0.5);
+        const losP90 = computePercentile(sortedLos, 0.9);
+        if (Number.isFinite(losMedian)) {
+          summary.losMedianMinutes = losMedian;
+        }
+        if (Number.isFinite(losP90)) {
+          summary.losP90Minutes = losP90;
+        }
+        if (Number.isFinite(losMedian) && Number.isFinite(losP90) && losMedian > 0) {
+          summary.losVariabilityIndex = losP90 / losMedian;
+        }
+        const medianHours = Number.isFinite(losMedian) ? losMedian / 60 : null;
+        const p90Hours = Number.isFinite(losP90) ? losP90 / 60 : null;
+        if (Number.isFinite(medianHours) && Number.isFinite(p90Hours)) {
+          summary.losPercentilesText = `P50: ${oneDecimalFormatter.format(medianHours)} val. • P90: ${oneDecimalFormatter.format(p90Hours)} val.`;
+        }
+        const medianLosDays = Number.isFinite(losMedian) ? losMedian / (60 * 24) : null;
+        if (Number.isFinite(summary.avgDailyPatients) && Number.isFinite(medianLosDays)) {
+          summary.littlesLawEstimate = summary.avgDailyPatients * medianLosDays;
+          if (Number.isFinite(medianHours)) {
+            summary.littlesLawMeta = `Vid. ${oneDecimalFormatter.format(summary.avgDailyPatients)} atv./d. × median ${oneDecimalFormatter.format(medianHours)} val.`;
+          }
+        }
+      }
+
       const dispositionsList = Array.from(dispositions.values())
         .map((entry) => ({
           label: entry.label,
@@ -9675,8 +10164,60 @@
           patients: bucket.patients,
           avgLosMinutes: bucket.losCount > 0 ? bucket.losSum / bucket.losCount : null,
           avgDoorMinutes: bucket.doorCount > 0 ? bucket.doorSum / bucket.doorCount : null,
+          fastCount: bucket.fastCount || 0,
+          slowCount: bucket.slowCount || 0,
+          losCount: bucket.losCount || 0,
+          fastShare: bucket.losCount > 0 ? bucket.fastCount / bucket.losCount : null,
+          slowShare: bucket.losCount > 0 ? bucket.slowCount / bucket.losCount : null,
         }))
         .sort((a, b) => (a.dateKey === b.dateKey ? 0 : (a.dateKey > b.dateKey ? -1 : 1)));
+
+      const dailyAsc = [...daily].sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
+      const trendWindowSize = Math.min(30, dailyAsc.length);
+      const recentWindow = trendWindowSize > 0 ? dailyAsc.slice(-trendWindowSize) : [];
+      const previousWindow = trendWindowSize > 0 ? dailyAsc.slice(Math.max(0, dailyAsc.length - trendWindowSize * 2), dailyAsc.length - trendWindowSize) : [];
+      const reduceWindow = (list) => list.reduce((acc, item) => {
+        acc.fast += Number.isFinite(item.fastCount) ? item.fastCount : 0;
+        acc.slow += Number.isFinite(item.slowCount) ? item.slowCount : 0;
+        acc.totalLos += Number.isFinite(item.losCount) ? item.losCount : 0;
+        return acc;
+      }, { fast: 0, slow: 0, totalLos: 0 });
+      const recentAgg = reduceWindow(recentWindow);
+      const previousAgg = reduceWindow(previousWindow);
+      const recentFastShare = recentAgg.totalLos > 0 ? recentAgg.fast / recentAgg.totalLos : (losValidCount > 0 ? fastCount / losValidCount : null);
+      const recentSlowShare = recentAgg.totalLos > 0 ? recentAgg.slow / recentAgg.totalLos : (losValidCount > 0 ? slowCount / losValidCount : null);
+      summary.fastLaneShare = Number.isFinite(recentFastShare) ? recentFastShare : null;
+      summary.slowLaneShare = Number.isFinite(recentSlowShare) ? recentSlowShare : null;
+      if (summary.fastLaneShare != null && summary.slowLaneShare != null) {
+        summary.fastSlowSplitValue = `Greitieji: ${percentFormatter.format(summary.fastLaneShare)} • Lėtieji: ${percentFormatter.format(summary.slowLaneShare)}`;
+      }
+      let fastDelta = null;
+      let slowDelta = null;
+      if (previousAgg.totalLos > 0 && recentAgg.totalLos > 0) {
+        const previousFastShare = previousAgg.fast / previousAgg.totalLos;
+        const previousSlowShare = previousAgg.slow / previousAgg.totalLos;
+        fastDelta = Number.isFinite(previousFastShare) && Number.isFinite(recentFastShare)
+          ? recentFastShare - previousFastShare
+          : null;
+        slowDelta = Number.isFinite(previousSlowShare) && Number.isFinite(recentSlowShare)
+          ? recentSlowShare - previousSlowShare
+          : null;
+      }
+      summary.fastLaneDelta = Number.isFinite(fastDelta) ? fastDelta : null;
+      summary.slowLaneDelta = Number.isFinite(slowDelta) ? slowDelta : null;
+      summary.fastSlowTrendWindowDays = trendWindowSize;
+      if (trendWindowSize > 0) {
+        if (Number.isFinite(fastDelta) || Number.isFinite(slowDelta)) {
+          const fastDeltaText = Number.isFinite(fastDelta) ? formatPercentPointDelta(fastDelta) : '—';
+          const slowDeltaText = Number.isFinite(slowDelta) ? formatPercentPointDelta(slowDelta) : '—';
+          summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Pokytis vs ankst. ${trendWindowSize} d.: ${fastDeltaText} / ${slowDeltaText}`;
+        } else {
+          summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Ankstesnių duomenų palyginimui nepakanka.`;
+        }
+      } else if (losValidCount > 0) {
+        summary.fastSlowSplitValue = summary.fastSlowSplitValue || `Greitieji: ${percentFormatter.format(fastCount / losValidCount)} • Lėtieji: ${percentFormatter.format(slowCount / losValidCount)}`;
+        summary.fastSlowTrendText = 'Langas: visi turimi duomenys • Pokyčiams apskaičiuoti reikia bent 2 langų.';
+      }
 
       return { summary, dispositions: dispositionsList, daily };
     }
@@ -9860,6 +10401,23 @@
         summary.avgLabYearMinutes = legacy.summary.avgLabYearMinutes;
         summary.currentMonthKey = legacy.summary.currentMonthKey;
         summary.generatedAt = legacy.summary.generatedAt;
+        summary.peakWindowText = legacy.summary.peakWindowText;
+        summary.peakWindowRiskNote = legacy.summary.peakWindowRiskNote;
+        summary.losMedianMinutes = legacy.summary.losMedianMinutes;
+        summary.losP90Minutes = legacy.summary.losP90Minutes;
+        summary.losVariabilityIndex = legacy.summary.losVariabilityIndex;
+        summary.losPercentilesText = legacy.summary.losPercentilesText;
+        summary.taktTimeMinutes = legacy.summary.taktTimeMinutes;
+        summary.taktTimeMeta = legacy.summary.taktTimeMeta;
+        summary.littlesLawEstimate = legacy.summary.littlesLawEstimate;
+        summary.littlesLawMeta = legacy.summary.littlesLawMeta;
+        summary.fastLaneShare = legacy.summary.fastLaneShare;
+        summary.slowLaneShare = legacy.summary.slowLaneShare;
+        summary.fastLaneDelta = legacy.summary.fastLaneDelta;
+        summary.slowLaneDelta = legacy.summary.slowLaneDelta;
+        summary.fastSlowSplitValue = legacy.summary.fastSlowSplitValue;
+        summary.fastSlowTrendText = legacy.summary.fastSlowTrendText;
+        summary.fastSlowTrendWindowDays = legacy.summary.fastSlowTrendWindowDays;
       }
 
       let snapshot = {
@@ -14415,6 +14973,12 @@
 
     function formatEdCardValue(rawValue, format) {
       switch (format) {
+        case 'text':
+          if (typeof rawValue === 'string') {
+            const trimmed = rawValue.trim();
+            return trimmed.length ? trimmed : null;
+          }
+          return null;
         case 'hours':
           if (!Number.isFinite(rawValue)) {
             return null;
@@ -14440,6 +15004,11 @@
             return null;
           }
           return `1:${oneDecimalFormatter.format(rawValue)}`;
+        case 'multiplier':
+          if (!Number.isFinite(rawValue)) {
+            return null;
+          }
+          return `${oneDecimalFormatter.format(rawValue)}×`;
         case 'beds':
           if (!Number.isFinite(rawValue)) {
             return null;
@@ -15109,6 +15678,11 @@
       svg.appendChild(createSvgElement('path', { d: 'M4.5 20v-1.6A4.5 4.5 0 0 1 9 13.8h0A4.5 4.5 0 0 1 13.5 18.3V20' }));
       svg.appendChild(createSvgElement('path', { d: 'M11 20v-1.2a4.5 4.5 0 0 1 4.5-4.5h0a4.5 4.5 0 0 1 4.5 4.5V20' }));
     },
+    insights(svg) {
+      svg.appendChild(createSvgElement('path', { d: 'M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z' }));
+      svg.appendChild(createSvgElement('path', { d: 'M10 18h4' }));
+      svg.appendChild(createSvgElement('path', { d: 'M9 21h6' }));
+    },
     default(svg) {
       svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '9' }));
       svg.appendChild(createSvgElement('path', { d: 'M12 7v10' }));
@@ -15124,6 +15698,129 @@
     element.setAttribute('stroke-linecap', 'round');
     element.setAttribute('stroke-linejoin', 'round');
     return element;
+  }
+
+  function determineInsightTone(key, summary, metaText) {
+    if (!key) {
+      return '';
+    }
+    const normalizedNote = typeof metaText === 'string' ? metaText.toLowerCase() : '';
+    switch (key) {
+      case 'peakWindowText':
+        if (normalizedNote.includes('rizika') || normalizedNote.includes('trūksta')) {
+          return 'warning';
+        }
+        if (normalizedNote.includes('sutampa') || normalizedNote.includes('balansas')) {
+          return 'success';
+        }
+        break;
+      case 'fastSlowSplitValue': {
+        const fastDelta = Number(summary?.fastLaneDelta);
+        const slowDelta = Number(summary?.slowLaneDelta);
+        if (Number.isFinite(slowDelta) && slowDelta > 0) {
+          return 'warning';
+        }
+        if (Number.isFinite(fastDelta) && fastDelta > 0 && (!Number.isFinite(slowDelta) || slowDelta <= 0)) {
+          return 'success';
+        }
+        break;
+      }
+      default:
+        break;
+    }
+    return '';
+  }
+
+  function renderInsightsSection(summary) {
+    const section = selectors.insightsSection;
+    const grid = selectors.insightsGrid;
+    const emptyMessage = selectors.insightsEmpty;
+    if (!grid || !section) {
+      return;
+    }
+
+    const config = TEXT.insights || {};
+    const cardsConfig = Array.isArray(config.cards) ? config.cards : [];
+    grid.replaceChildren();
+
+    if (!cardsConfig.length) {
+      if (emptyMessage) {
+        emptyMessage.hidden = false;
+        emptyMessage.textContent = config.empty || emptyMessage.textContent || '';
+      }
+      return;
+    }
+
+    const data = summary && typeof summary === 'object' ? summary : createEmptyEdSummary();
+    let hasValue = false;
+
+    cardsConfig.forEach((cardConfig) => {
+      if (!cardConfig || typeof cardConfig !== 'object' || !cardConfig.key) {
+        return;
+      }
+
+      const card = document.createElement('article');
+      card.className = 'insight-card';
+      card.setAttribute('role', 'listitem');
+
+      const titleEl = document.createElement('h3');
+      titleEl.className = 'insight-card__title';
+      titleEl.textContent = cardConfig.title || cardConfig.key;
+      card.appendChild(titleEl);
+
+      const valueEl = document.createElement('p');
+      valueEl.className = 'insight-card__value';
+      const rawValue = data?.[cardConfig.key];
+      const formatted = formatEdCardValue(rawValue, cardConfig.format || 'text');
+
+      if (formatted != null) {
+        const mainSpan = document.createElement('span');
+        mainSpan.className = 'insight-card__value-main';
+        mainSpan.textContent = formatted;
+        valueEl.appendChild(mainSpan);
+        if (cardConfig.unit) {
+          const unitSpan = document.createElement('span');
+          unitSpan.className = 'insight-card__unit';
+          unitSpan.textContent = cardConfig.unit;
+          valueEl.appendChild(unitSpan);
+        }
+        hasValue = true;
+      } else {
+        const emptySpan = document.createElement('span');
+        emptySpan.className = 'insight-card__empty';
+        emptySpan.textContent = cardConfig.empty || config.empty || '—';
+        valueEl.appendChild(emptySpan);
+      }
+      card.appendChild(valueEl);
+
+      const metaEl = document.createElement('p');
+      metaEl.className = 'insight-card__meta';
+      const metaRaw = cardConfig.metaKey ? data?.[cardConfig.metaKey] : null;
+      let metaText = typeof metaRaw === 'string' ? metaRaw.trim() : '';
+      if (!metaText && cardConfig.description) {
+        metaText = cardConfig.description;
+      }
+      metaEl.textContent = metaText;
+      card.appendChild(metaEl);
+
+      const tone = determineInsightTone(cardConfig.key, data, metaText);
+      if (tone) {
+        card.dataset.tone = tone;
+      } else {
+        delete card.dataset.tone;
+      }
+
+      grid.appendChild(card);
+    });
+
+    if (emptyMessage) {
+      if (hasValue) {
+        emptyMessage.hidden = true;
+      } else {
+        emptyMessage.hidden = false;
+        emptyMessage.textContent = config.empty || emptyMessage.textContent || '';
+      }
+    }
   }
 
   function createEdSectionIcon(iconKey) {
@@ -15362,7 +16059,11 @@
 
             const meta = document.createElement('p');
             meta.className = 'ed-dashboard__card-meta';
-            meta.textContent = config.description || '';
+            const metaRaw = config.metaKey ? summary?.[config.metaKey] : null;
+            const metaText = typeof metaRaw === 'string'
+              ? metaRaw.trim()
+              : (metaRaw != null ? String(metaRaw).trim() : '');
+            meta.textContent = metaText.length ? metaText : (config.description || '');
 
             card.appendChild(value);
 
@@ -15405,6 +16106,8 @@
           selectors.edDispositionsMessage.hidden = false;
         }
       }
+
+      renderInsightsSection(summary);
 
       const statusInfo = buildEdStatus(summary, dataset, displayVariant);
       if (selectors.edStatus) {
