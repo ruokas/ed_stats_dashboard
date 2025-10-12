@@ -3579,6 +3579,11 @@
       max-height: 480px;
     }
 
+    .table-wrapper--full-height {
+      max-height: none;
+      overflow: visible;
+    }
+
     .table-wrapper--feedback {
       max-height: none;
       overflow: visible;
@@ -4654,7 +4659,7 @@
           <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
         </div>
       </div>
-      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="monthlyHeading">
+      <div class="table-wrapper table-wrapper--full-height" role="region" aria-live="polite" aria-labelledby="monthlyHeading">
         <table aria-describedby="monthlySubtitle">
           <caption id="monthlyCaption" class="sr-only">Mėnesių pacientų suvestinė: sumos ir vidurkiai</caption>
           <thead>
