@@ -4361,15 +4361,6 @@
           <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
           <figcaption id="dowStayChartTitle">Vidutinė buvimo trukmė pagal savaitės dieną</figcaption>
         </figure>
-        <figure class="chart-card chart-card--compact">
-          <div class="chart-card__skeleton" aria-hidden="true" hidden>
-            <span class="skeleton skeleton--title"></span>
-            <span class="skeleton skeleton--chart-area"></span>
-            <span class="skeleton skeleton--caption"></span>
-          </div>
-          <canvas id="daypartChart" aria-labelledby="daypartChartTitle"></canvas>
-          <figcaption id="daypartChartTitle">Vidutinė buvimo trukmė pagal paros metą</figcaption>
-        </figure>
         <figure class="chart-card chart-card--heatmap">
           <div class="chart-card__skeleton" aria-hidden="true" hidden>
             <span class="skeleton skeleton--title"></span>
@@ -5317,14 +5308,6 @@
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         dowStayCaption: 'Vidutinė buvimo trukmė pagal savaitės dieną.',
         dowStayLabel: 'Vidutinė trukmė (val.)',
-        daypartCaption: 'Vidutinė buvimo trukmė pagal paros metą (pagal atvykimo laiką).',
-        daypartLabel: 'Vidutinė trukmė (val.)',
-        daypartSegments: [
-          { key: 'night', label: 'Naktis', start: '23:00', end: '07:00' },
-          { key: 'morning', label: 'Rytas', start: '07:00', end: '11:00' },
-          { key: 'day', label: 'Diena', start: '11:00', end: '17:00' },
-          { key: 'evening', label: 'Vakaras', start: '17:00', end: '23:00' },
-        ],
         funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
         funnelCaptionWithYear: (year) => (year
           ? `Pacientų srautas pagal sprendimą – ${year} m. (atvykę → sprendimas).`
@@ -5775,7 +5758,6 @@
       dailyCaptionContext: document.getElementById('dailyChartContext'),
       dowCaption: document.getElementById('dowChartTitle'),
       dowStayCaption: document.getElementById('dowStayChartTitle'),
-      daypartCaption: document.getElementById('daypartChartTitle'),
       funnelCaption: document.getElementById('funnelChartTitle'),
       heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
       heatmapContainer: document.getElementById('arrivalHeatmap'),
@@ -7019,7 +7001,6 @@
         daily: null,
         dow: null,
         dowStay: null,
-        daypart: null,
         funnel: null,
         feedbackTrend: null,
         edDispositions: null,
@@ -7347,9 +7328,6 @@
       selectors.dowCaption.textContent = TEXT.charts.dowCaption;
       if (selectors.dowStayCaption) {
         selectors.dowStayCaption.textContent = TEXT.charts.dowStayCaption;
-      }
-      if (selectors.daypartCaption) {
-        selectors.daypartCaption.textContent = TEXT.charts.daypartCaption;
       }
       const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
         ? TEXT.charts.funnelCaptionWithYear(null)
@@ -8217,92 +8195,6 @@
       }
       const weekday = date.getUTCDay();
       return (weekday + 6) % 7;
-    }
-
-    function formatMinutesToTime(minutes) {
-      if (!Number.isFinite(minutes)) {
-        return '';
-      }
-      const normalized = ((Math.round(minutes) % (24 * 60)) + (24 * 60)) % (24 * 60);
-      const hours = Math.floor(normalized / 60);
-      const mins = normalized % 60;
-      return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-    }
-
-    function parseTimeToMinutes(value) {
-      if (typeof value !== 'string') {
-        return Number.NaN;
-      }
-      const trimmed = value.trim();
-      const match = trimmed.match(/^(\d{1,2})(?::(\d{1,2}))?$/);
-      if (!match) {
-        return Number.NaN;
-      }
-      const hours = Number.parseInt(match[1], 10);
-      const mins = Number.parseInt(match[2] ?? '0', 10);
-      if (Number.isNaN(hours) || Number.isNaN(mins) || hours < 0 || hours > 23 || mins < 0 || mins > 59) {
-        return Number.NaN;
-      }
-      return hours * 60 + mins;
-    }
-
-    function formatSegmentLabel(label, startMinutes, endMinutes) {
-      const range = `${formatMinutesToTime(startMinutes)}–${formatMinutesToTime(endMinutes)}`;
-      if (label && label.trim().length) {
-        return `${label.trim()} (${range})`;
-      }
-      return range;
-    }
-
-    function isMinutesWithinSegment(valueMinutes, startMinutes, endMinutes) {
-      if (!Number.isFinite(valueMinutes) || !Number.isFinite(startMinutes) || !Number.isFinite(endMinutes)) {
-        return false;
-      }
-      if (startMinutes === endMinutes) {
-        return false;
-      }
-      if (startMinutes < endMinutes) {
-        return valueMinutes >= startMinutes && valueMinutes < endMinutes;
-      }
-      return valueMinutes >= startMinutes || valueMinutes < endMinutes;
-    }
-
-    function getConfiguredDaypartSegments() {
-      const fallback = [
-        { key: 'night', label: 'Naktis', startMinutes: 23 * 60, endMinutes: 7 * 60 },
-        { key: 'morning', label: 'Rytas', startMinutes: 7 * 60, endMinutes: 11 * 60 },
-        { key: 'day', label: 'Diena', startMinutes: 11 * 60, endMinutes: 17 * 60 },
-        { key: 'evening', label: 'Vakaras', startMinutes: 17 * 60, endMinutes: 23 * 60 },
-      ].map((segment) => ({
-        ...segment,
-        displayLabel: formatSegmentLabel(segment.label, segment.startMinutes, segment.endMinutes),
-      }));
-      const configured = Array.isArray(TEXT.charts?.daypartSegments)
-        ? TEXT.charts.daypartSegments
-        : [];
-      const normalized = configured
-        .map((segment, index) => {
-          const startMinutes = parseTimeToMinutes(segment?.start);
-          const endMinutes = parseTimeToMinutes(segment?.end);
-          if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes)) {
-            return null;
-          }
-          const key = segment?.key && String(segment.key).trim().length
-            ? String(segment.key).trim()
-            : `segment-${index}`;
-          const label = typeof segment?.label === 'string'
-            ? segment.label
-            : '';
-          return {
-            key,
-            label,
-            startMinutes,
-            endMinutes,
-            displayLabel: formatSegmentLabel(label, startMinutes, endMinutes),
-          };
-        })
-        .filter(Boolean);
-      return normalized.length ? normalized : fallback;
     }
 
 
@@ -13390,121 +13282,6 @@
           }
         }
 
-        const daypartCanvas = document.getElementById('daypartChart');
-        if (daypartCanvas && daypartCanvas.getContext) {
-          if (dashboardState.charts.daypart) {
-            dashboardState.charts.daypart.destroy();
-          }
-          const segments = getConfiguredDaypartSegments();
-          const stats = segments.map((segment) => ({ ...segment, sum: 0, count: 0 }));
-          let windowRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
-            ? dashboardState.chartData.filteredWindowRecords
-            : [];
-          if (!windowRecords.length) {
-            let fallbackRecords = Array.isArray(dashboardState.chartData.filteredRecords)
-              ? dashboardState.chartData.filteredRecords
-              : [];
-            if (!fallbackRecords.length) {
-              const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-                && dashboardState.chartData.baseRecords.length
-                ? dashboardState.chartData.baseRecords
-                : dashboardState.rawRecords;
-              const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-              fallbackRecords = filterRecordsByChartFilters(yearScopedRecords, dashboardState.chartFilters || {});
-            }
-            windowRecords = filterRecordsByWindow(fallbackRecords, dashboardState.chartPeriod);
-          }
-          windowRecords.forEach((record) => {
-            const arrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-              ? record.arrival
-              : null;
-            const discharge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-              ? record.discharge
-              : null;
-            if (!arrival || !discharge) {
-              return;
-            }
-            const duration = (discharge.getTime() - arrival.getTime()) / 3600000;
-            if (!Number.isFinite(duration) || duration <= 0 || duration > 24) {
-              return;
-            }
-            const arrivalMinutes = arrival.getHours() * 60 + arrival.getMinutes();
-            stats.forEach((segment) => {
-              if (isMinutesWithinSegment(arrivalMinutes, segment.startMinutes, segment.endMinutes)) {
-                segment.sum += duration;
-                segment.count += 1;
-              }
-            });
-          });
-          const hasDaypartData = stats.some((segment) => segment.count > 0);
-          if (!hasDaypartData) {
-            setChartCardMessage(daypartCanvas, TEXT.charts?.empty);
-            dashboardState.charts.daypart = null;
-          } else {
-            setChartCardMessage(daypartCanvas, null);
-            const ctxDaypart = daypartCanvas.getContext('2d');
-            const labels = stats.map((segment) => segment.displayLabel);
-            const averages = stats.map((segment) => (segment.count ? segment.sum / segment.count : 0));
-            const colors = stats.map((segment) => {
-              if (/night/i.test(segment.key)) {
-                return palette.weekendAccent;
-              }
-              if (/evening/i.test(segment.key)) {
-                return palette.weekendAccentSoft;
-              }
-              if (/morning/i.test(segment.key)) {
-                return palette.accentSoft;
-              }
-              return palette.accent;
-            });
-            dashboardState.charts.daypart = new Chart(ctxDaypart, {
-              type: 'bar',
-              data: {
-                labels,
-                datasets: [
-                  {
-                    label: TEXT.charts?.daypartLabel || 'Vidutinė trukmė (val.)',
-                    data: averages,
-                    backgroundColor: colors,
-                    borderRadius: 12,
-                  },
-                ],
-              },
-              options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label(context) {
-                        return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.x)}`;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    beginAtZero: true,
-                    ticks: {
-                      color: palette.textColor,
-                      callback(value) {
-                        return decimalFormatter.format(value);
-                      },
-                    },
-                    grid: { color: palette.gridColor, drawBorder: false },
-                  },
-                  y: {
-                    ticks: { color: palette.textColor },
-                    grid: { display: false, drawBorder: false },
-                  },
-                },
-              },
-            });
-          }
-        }
-
         if (selectors.funnelCaption) {
           const funnelYear = dashboardState.chartData.funnel?.year ?? null;
           const captionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
@@ -15939,7 +15716,6 @@
       const chartsInitialized = dashboardState.charts.daily
         || dashboardState.charts.dow
         || dashboardState.charts.dowStay
-        || dashboardState.charts.daypart
         || dashboardState.charts.funnel;
       if (!chartsInitialized) {
         showChartSkeletons();
