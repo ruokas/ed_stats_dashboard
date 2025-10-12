@@ -9849,6 +9849,7 @@
       const dischargeHourCounts = Array.from({ length: 24 }, () => 0);
       let arrivalsWithHour = 0;
       const losValues = [];
+      const losPositiveValues = [];
       let losValidCount = 0;
       let fastCount = 0;
       let slowCount = 0;
@@ -9918,6 +9919,9 @@
           losSum += losMinutes;
           losCount += 1;
           losValues.push(losMinutes);
+          if (losMinutes > 0) {
+            losPositiveValues.push(losMinutes);
+          }
           losValidCount += 1;
           if (losMinutes < 120) {
             bucket.fastCount += 1;
@@ -10117,8 +10121,9 @@
         }
       }
 
-      if (losValues.length) {
-        const sortedLos = [...losValues].sort((a, b) => a - b);
+      const percentileValues = losPositiveValues.length ? losPositiveValues : losValues;
+      if (percentileValues.length) {
+        const sortedLos = [...percentileValues].sort((a, b) => a - b);
         const losMedian = computePercentile(sortedLos, 0.5);
         const losP90 = computePercentile(sortedLos, 0.9);
         if (Number.isFinite(losMedian)) {
