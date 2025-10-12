@@ -3246,6 +3246,68 @@
       height: clamp(340px, 36vh, 480px) !important;
     }
 
+    .heatmap-toolbar {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .heatmap-toolbar__field {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      padding: 6px 10px;
+    }
+
+    .heatmap-toolbar__label {
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .heatmap-toolbar select {
+      appearance: none;
+      background: var(--color-input-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 6px 28px 6px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--color-text);
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .heatmap-toolbar select:hover,
+    .heatmap-toolbar select:focus-visible {
+      background: var(--color-input-bg-hover);
+      border-color: rgba(37, 99, 235, 0.35);
+      outline: none;
+    }
+
+    body[data-theme="dark"] .heatmap-toolbar__field {
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    body[data-theme="dark"] .heatmap-toolbar select {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(96, 165, 250, 0.25);
+      color: var(--color-text);
+    }
+
+    body[data-theme="dark"] .heatmap-toolbar select:hover,
+    body[data-theme="dark"] .heatmap-toolbar select:focus-visible {
+      background: rgba(37, 99, 235, 0.25);
+      border-color: rgba(96, 165, 250, 0.5);
+    }
+
     .heatmap-scroll {
       width: 100%;
       overflow-x: auto;
@@ -4367,6 +4429,14 @@
             <span class="skeleton skeleton--chart-area skeleton--chart-area--heatmap"></span>
             <span class="skeleton skeleton--caption"></span>
           </div>
+          <div class="chart-card__toolbar heatmap-toolbar" role="group" aria-label="Pasirinkti rodiklį">
+            <label class="heatmap-toolbar__field" for="heatmapMetric">
+              <span id="heatmapMetricLabel" class="heatmap-toolbar__label">Rodiklis</span>
+              <select id="heatmapMetric" name="heatmapMetric">
+                <option value="arrivals">Atvykimų skaičius / d.</option>
+              </select>
+            </label>
+          </div>
           <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
           <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
         </figure>
@@ -5321,9 +5391,30 @@
           { key: 'hospitalized', label: 'Hospitalizuoti' },
         ],
         funnelEmpty: 'Piltuvėlio sugeneruoti nepavyko – šiuo metu nėra atvykimų duomenų.',
-        heatmapCaption: 'Vidutinis pacientų atvykimų skaičius per dieną pagal savaitės dieną ir valandą.',
-        heatmapEmpty: 'Šiame laikotarpyje atvykimų duomenų nėra.',
-        heatmapLegend: 'Tamsesnė spalva reiškia didesnį vidutinį atvykimų skaičių per dieną.',
+        heatmapCaption: (metricLabel) => (metricLabel
+          ? `Pasirinkto rodiklio („${metricLabel}“) reikšmės pagal savaitės dieną ir valandą.`
+          : 'Rodikliai pagal savaitės dieną ir valandą.'),
+        heatmapEmpty: 'Šiame laikotarpyje nėra duomenų pasirinktai kombinacijai.',
+        heatmapLegend: 'Tamsesnė spalva reiškia didesnę pasirinktą reikšmę.',
+        heatmapMetricLabel: 'Rodiklis',
+        heatmapMetricOptions: {
+          arrivals: 'Atvykimų skaičius / d.',
+          discharges: 'Išleidimų skaičius / d.',
+          hospitalized: 'Hospitalizacijų skaičius / d.',
+          avgDuration: 'Vidutinė buvimo trukmė (val.)',
+        },
+        heatmapMetricUnits: {
+          arrivals: 'pac./d.',
+          discharges: 'pac./d.',
+          hospitalized: 'pac./d.',
+          avgDuration: 'val.',
+        },
+        heatmapMetricDescriptions: {
+          arrivals: 'atvykimų (vid. per dieną)',
+          discharges: 'išleidimų (vid. per dieną)',
+          hospitalized: 'hospitalizacijų (vid. per dieną)',
+          avgDuration: 'vidutinė buvimo trukmė (val.)',
+        },
         errorLoading: 'Nepavyko atvaizduoti grafikų (Chart.js biblioteka nepasiekiama).',
       },
       recent: {
@@ -5761,6 +5852,8 @@
       funnelCaption: document.getElementById('funnelChartTitle'),
       heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
       heatmapContainer: document.getElementById('arrivalHeatmap'),
+      heatmapMetricSelect: document.getElementById('heatmapMetric'),
+      heatmapMetricLabel: document.getElementById('heatmapMetricLabel'),
       chartYearLabel: document.getElementById('chartYearLabel'),
       chartYearSelect: document.getElementById('chartYear'),
       chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
@@ -6994,6 +7087,20 @@
     /**
      * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
      */
+    const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Treč', 'Ketv', 'Penkt', 'Šešt', 'Sekm'];
+    const HEATMAP_WEEKDAY_FULL = [
+      'Pirmadienis',
+      'Antradienis',
+      'Trečiadienis',
+      'Ketvirtadienis',
+      'Penktadienis',
+      'Šeštadienis',
+      'Sekmadienis',
+    ];
+    const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
+    const HEATMAP_METRIC_KEYS = ['arrivals', 'discharges', 'hospitalized', 'avgDuration'];
+    const DEFAULT_HEATMAP_METRIC = HEATMAP_METRIC_KEYS[0];
+
     const dashboardState = {
       loading: false,
       queuedReload: false,
@@ -7019,6 +7126,7 @@
       dataMeta: null,
       chartPeriod: 30,
       chartYear: null,
+      heatmapMetric: DEFAULT_HEATMAP_METRIC,
       chartData: {
         baseDaily: [],
         baseRecords: [],
@@ -7333,7 +7441,16 @@
         ? TEXT.charts.funnelCaptionWithYear(null)
         : TEXT.charts.funnelCaption;
       selectors.funnelCaption.textContent = funnelCaptionText;
-      selectors.heatmapCaption.textContent = TEXT.charts.heatmapCaption;
+      if (selectors.heatmapMetricLabel) {
+        const heatmapLabelText = TEXT.charts?.heatmapMetricLabel || 'Rodiklis';
+        selectors.heatmapMetricLabel.textContent = heatmapLabelText;
+        if (selectors.heatmapMetricSelect) {
+          selectors.heatmapMetricSelect.setAttribute('aria-label', heatmapLabelText);
+          selectors.heatmapMetricSelect.title = `${heatmapLabelText} (Ctrl+Shift+H)`;
+        }
+      }
+      populateHeatmapMetricOptions();
+      updateHeatmapCaption(dashboardState.heatmapMetric);
       selectors.recentHeading.textContent = TEXT.recent.title;
       selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
       selectors.recentCaption.textContent = TEXT.recent.caption;
@@ -9960,20 +10077,14 @@
       return { ...aggregated, year: Number.isFinite(effectiveYear) ? effectiveYear : null };
     }
 
-    const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Treč', 'Ketv', 'Penkt', 'Šešt', 'Sekm'];
-    const HEATMAP_WEEKDAY_FULL = [
-      'Pirmadienis',
-      'Antradienis',
-      'Trečiadienis',
-      'Ketvirtadienis',
-      'Penktadienis',
-      'Šeštadienis',
-      'Sekmadienis',
-    ];
-    const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
-
     function computeArrivalHeatmap(records) {
-      const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
+      const aggregates = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({
+        arrivals: 0,
+        discharges: 0,
+        hospitalized: 0,
+        durationSum: 0,
+        durationCount: 0,
+      })));
       const weekdayDays = Array.from({ length: 7 }, () => new Set());
       (Array.isArray(records) ? records : []).forEach((entry) => {
         if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
@@ -9985,24 +10096,183 @@
         if (hour < 0 || hour > 23) {
           return;
         }
-        matrix[dayIndex][hour] += 1;
+        const cell = aggregates[dayIndex][hour];
+        cell.arrivals += 1;
+        if (entry.hospitalized) {
+          cell.hospitalized += 1;
+        } else {
+          cell.discharges += 1;
+        }
+        if (entry.arrival instanceof Date && entry.discharge instanceof Date) {
+          const duration = (entry.discharge.getTime() - entry.arrival.getTime()) / 3600000;
+          if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
+            cell.durationSum += duration;
+            cell.durationCount += 1;
+          }
+        }
         const dateKey = formatLocalDateKey(entry.arrival);
         if (dateKey) {
           weekdayDays[dayIndex].add(dateKey);
         }
       });
-      let max = 0;
-      const averaged = matrix.map((row, dayIndex) => {
+
+      const createMatrix = () => Array.from({ length: 7 }, () => Array(24).fill(0));
+      const metrics = {
+        arrivals: { matrix: createMatrix(), max: 0, hasData: false },
+        discharges: { matrix: createMatrix(), max: 0, hasData: false },
+        hospitalized: { matrix: createMatrix(), max: 0, hasData: false },
+        avgDuration: {
+          matrix: createMatrix(),
+          counts: createMatrix(),
+          max: 0,
+          hasData: false,
+          samples: 0,
+        },
+      };
+
+      aggregates.forEach((row, dayIndex) => {
         const divisor = weekdayDays[dayIndex].size || 1;
-        return row.map((value) => {
-          const average = divisor ? value / divisor : 0;
-          if (average > max) {
-            max = average;
+        row.forEach((cell, hourIndex) => {
+          if (cell.arrivals > 0) {
+            metrics.arrivals.hasData = true;
           }
-          return average;
+          if (cell.discharges > 0) {
+            metrics.discharges.hasData = true;
+          }
+          if (cell.hospitalized > 0) {
+            metrics.hospitalized.hasData = true;
+          }
+          if (cell.durationCount > 0) {
+            metrics.avgDuration.hasData = true;
+            metrics.avgDuration.samples += cell.durationCount;
+          }
+
+          const arrivalsAvg = divisor ? cell.arrivals / divisor : 0;
+          const dischargesAvg = divisor ? cell.discharges / divisor : 0;
+          const hospitalizedAvg = divisor ? cell.hospitalized / divisor : 0;
+          const averageDuration = cell.durationCount > 0 ? cell.durationSum / cell.durationCount : 0;
+
+          metrics.arrivals.matrix[dayIndex][hourIndex] = arrivalsAvg;
+          metrics.discharges.matrix[dayIndex][hourIndex] = dischargesAvg;
+          metrics.hospitalized.matrix[dayIndex][hourIndex] = hospitalizedAvg;
+          metrics.avgDuration.matrix[dayIndex][hourIndex] = averageDuration;
+          metrics.avgDuration.counts[dayIndex][hourIndex] = cell.durationCount;
+
+          if (arrivalsAvg > metrics.arrivals.max) {
+            metrics.arrivals.max = arrivalsAvg;
+          }
+          if (dischargesAvg > metrics.discharges.max) {
+            metrics.discharges.max = dischargesAvg;
+          }
+          if (hospitalizedAvg > metrics.hospitalized.max) {
+            metrics.hospitalized.max = hospitalizedAvg;
+          }
+          if (averageDuration > metrics.avgDuration.max) {
+            metrics.avgDuration.max = averageDuration;
+          }
         });
       });
-      return { matrix: averaged, max };
+
+      return { metrics };
+    }
+
+    function getHeatmapMetricLabel(metricKey) {
+      const options = TEXT.charts?.heatmapMetricOptions || {};
+      if (typeof options[metricKey] === 'string' && options[metricKey].trim()) {
+        return options[metricKey];
+      }
+      if (typeof metricKey === 'string' && metricKey.trim()) {
+        return metricKey.trim();
+      }
+      const fallbackKey = DEFAULT_HEATMAP_METRIC;
+      return typeof options[fallbackKey] === 'string' ? options[fallbackKey] : 'Rodiklis';
+    }
+
+    function getHeatmapMetricUnit(metricKey) {
+      const units = TEXT.charts?.heatmapMetricUnits || {};
+      return typeof units[metricKey] === 'string' ? units[metricKey] : '';
+    }
+
+    function getHeatmapMetricDescription(metricKey) {
+      const descriptions = TEXT.charts?.heatmapMetricDescriptions || {};
+      return typeof descriptions[metricKey] === 'string' ? descriptions[metricKey] : '';
+    }
+
+    function hasHeatmapMetricData(metric) {
+      if (!metric || typeof metric !== 'object') {
+        return false;
+      }
+      if (metric.hasData) {
+        return true;
+      }
+      const matrix = Array.isArray(metric.matrix) ? metric.matrix : [];
+      return matrix.some((row) => Array.isArray(row) && row.some((value) => Number.isFinite(value) && value > 0));
+    }
+
+    function isValidHeatmapData(heatmapData) {
+      if (!heatmapData || typeof heatmapData !== 'object') {
+        return false;
+      }
+      const metrics = heatmapData.metrics;
+      if (!metrics || typeof metrics !== 'object') {
+        return false;
+      }
+      return HEATMAP_METRIC_KEYS.some((key) => Array.isArray(metrics[key]?.matrix));
+    }
+
+    function normalizeHeatmapMetricKey(metricKey, metrics = {}) {
+      const hasMetrics = metrics && typeof metrics === 'object' && Object.keys(metrics).length > 0;
+      if (typeof metricKey === 'string' && HEATMAP_METRIC_KEYS.includes(metricKey)) {
+        if (!hasMetrics || metrics[metricKey]) {
+          return metricKey;
+        }
+      }
+      if (hasMetrics) {
+        const available = HEATMAP_METRIC_KEYS.find((key) => metrics[key]);
+        if (available) {
+          return available;
+        }
+      }
+      if (typeof metricKey === 'string' && HEATMAP_METRIC_KEYS.includes(metricKey)) {
+        return metricKey;
+      }
+      return DEFAULT_HEATMAP_METRIC;
+    }
+
+    function formatHeatmapMetricValue(value) {
+      if (!Number.isFinite(value)) {
+        return '0,0';
+      }
+      return oneDecimalFormatter.format(value);
+    }
+
+    function updateHeatmapCaption(metricKey) {
+      if (!selectors.heatmapCaption) {
+        return;
+      }
+      const label = getHeatmapMetricLabel(metricKey);
+      const captionText = typeof TEXT.charts?.heatmapCaption === 'function'
+        ? TEXT.charts.heatmapCaption(label)
+        : (TEXT.charts?.heatmapCaption || 'Rodikliai pagal savaitės dieną ir valandą.');
+      selectors.heatmapCaption.textContent = captionText;
+    }
+
+    function populateHeatmapMetricOptions() {
+      if (!selectors.heatmapMetricSelect) {
+        return;
+      }
+      const select = selectors.heatmapMetricSelect;
+      select.innerHTML = '';
+      HEATMAP_METRIC_KEYS.forEach((key) => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = getHeatmapMetricLabel(key);
+        select.appendChild(option);
+      });
+      const current = typeof dashboardState?.heatmapMetric === 'string'
+        ? dashboardState.heatmapMetric
+        : DEFAULT_HEATMAP_METRIC;
+      select.value = normalizeHeatmapMetricKey(current);
     }
 
     function computeHeatmapColor(accentColor, intensity) {
@@ -10023,16 +10293,40 @@
       return `rgba(37, 99, 235, ${alpha.toFixed(3)})`;
     }
 
-    function renderArrivalHeatmap(container, heatmapData, accentColor) {
+    function renderArrivalHeatmap(container, heatmapData, accentColor, metricKey = DEFAULT_HEATMAP_METRIC) {
       if (!container) {
         return;
       }
       container.replaceChildren();
-      const { matrix = [], max = 0 } = heatmapData || {};
-      if (!matrix.length || max <= 0) {
+      const metrics = heatmapData && typeof heatmapData === 'object' ? heatmapData.metrics || {} : {};
+      let selectedMetric = normalizeHeatmapMetricKey(metricKey, metrics);
+      if (!metrics[selectedMetric]) {
+        selectedMetric = normalizeHeatmapMetricKey(DEFAULT_HEATMAP_METRIC, metrics);
+      }
+
+      if (selectors.heatmapMetricSelect) {
+        selectors.heatmapMetricSelect.value = selectedMetric;
+      }
+      updateHeatmapCaption(selectedMetric);
+
+      const metric = metrics[selectedMetric] || {};
+      const matrix = Array.isArray(metric.matrix) ? metric.matrix : [];
+      const countsMatrix = Array.isArray(metric.counts) ? metric.counts : [];
+      const hasData = hasHeatmapMetricData(metric);
+
+      const captionText = selectors.heatmapCaption?.textContent || '';
+      const metricLabel = getHeatmapMetricLabel(selectedMetric);
+      if (metricLabel && captionText) {
+        container.setAttribute('aria-label', `${metricLabel}. ${captionText}`);
+      } else {
+        container.removeAttribute('aria-label');
+      }
+      container.dataset.metric = selectedMetric;
+
+      if (!hasData) {
         const empty = document.createElement('p');
         empty.className = 'heatmap-empty';
-        empty.textContent = TEXT.charts.heatmapEmpty;
+        empty.textContent = TEXT.charts?.heatmapEmpty || 'Šiuo metu nėra duomenų.';
         container.appendChild(empty);
         return;
       }
@@ -10063,18 +10357,26 @@
         rowHeader.textContent = HEATMAP_WEEKDAY_SHORT[dayIndex] || '';
         row.appendChild(rowHeader);
         rowValues.forEach((value, hourIndex) => {
+          const numericValue = Number.isFinite(value) ? value : 0;
           const cell = document.createElement('td');
-          const intensity = max > 0 ? value / max : 0;
+          const intensity = metric.max > 0 ? numericValue / metric.max : 0;
           const badge = document.createElement('span');
           badge.className = 'heatmap-cell';
           const color = intensity > 0 ? computeHeatmapColor(accentColor, intensity) : 'var(--color-surface-alt)';
           badge.style.backgroundColor = color;
           badge.style.color = intensity > 0.55 ? '#fff' : intensity > 0 ? 'var(--color-text)' : 'var(--color-text-muted)';
-          badge.textContent = value > 0 ? oneDecimalFormatter.format(value) : '';
-          badge.tabIndex = value > 0 ? 0 : -1;
-          const label = `${HEATMAP_WEEKDAY_FULL[dayIndex] || ''}, ${HEATMAP_HOURS[hourIndex]} – ${oneDecimalFormatter.format(value)} pacientų (vidutiniškai per dieną)`;
-          cell.setAttribute('aria-label', label);
-          badge.setAttribute('title', label);
+          const durationSamples = Array.isArray(countsMatrix?.[dayIndex]) ? countsMatrix[dayIndex][hourIndex] : 0;
+          const hasCellData = selectedMetric === 'avgDuration'
+            ? Number.isFinite(durationSamples) && durationSamples > 0
+            : numericValue > 0;
+          const formattedValue = formatHeatmapMetricValue(numericValue);
+          badge.textContent = hasCellData ? formattedValue : '';
+          badge.tabIndex = hasCellData ? 0 : -1;
+          const descriptor = getHeatmapMetricDescription(selectedMetric);
+          const tooltipValue = hasCellData ? formattedValue : formatHeatmapMetricValue(0);
+          const tooltip = `${HEATMAP_WEEKDAY_FULL[dayIndex] || ''}, ${HEATMAP_HOURS[hourIndex]} – ${tooltipValue}${descriptor ? ` ${descriptor}` : ''}`;
+          cell.setAttribute('aria-label', tooltip);
+          badge.setAttribute('title', tooltip);
           cell.appendChild(badge);
           row.appendChild(cell);
         });
@@ -10085,7 +10387,11 @@
       container.appendChild(table);
       const legend = document.createElement('p');
       legend.className = 'heatmap-legend';
-      legend.textContent = TEXT.charts.heatmapLegend;
+      const unit = getHeatmapMetricUnit(selectedMetric);
+      const legendLabel = TEXT.charts?.heatmapMetricLabel || 'Rodiklis';
+      const legendBase = TEXT.charts?.heatmapLegend || '';
+      const metricInfo = `${legendLabel}: ${metricLabel}${unit ? ` (${unit})` : ''}.`;
+      legend.textContent = legendBase ? `${metricInfo} ${legendBase}` : metricInfo;
       container.appendChild(legend);
     }
 
@@ -13100,7 +13406,7 @@
         dashboardState.chartData.funnel = funnelSource;
 
         let heatmapSource = heatmapData ?? null;
-        if (!heatmapSource || !heatmapSource.matrix) {
+        if (!isValidHeatmapData(heatmapSource)) {
           let fallbackRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
             && dashboardState.chartData.filteredWindowRecords.length
             ? dashboardState.chartData.filteredWindowRecords
@@ -13117,6 +13423,9 @@
           heatmapSource = computeArrivalHeatmap(fallbackRecords);
         }
         dashboardState.chartData.heatmap = heatmapSource;
+        if (!HEATMAP_METRIC_KEYS.includes(dashboardState.heatmapMetric)) {
+          dashboardState.heatmapMetric = DEFAULT_HEATMAP_METRIC;
+        }
 
         hideChartSkeletons();
         renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
@@ -13299,12 +13608,31 @@
           renderFunnelShape(funnelCanvas, dashboardState.chartData.funnel, palette.accent, palette.textColor);
         }
 
-        renderArrivalHeatmap(selectors.heatmapContainer, dashboardState.chartData.heatmap, palette.accent);
+        renderArrivalHeatmap(
+          selectors.heatmapContainer,
+          dashboardState.chartData.heatmap,
+          palette.accent,
+          dashboardState.heatmapMetric,
+        );
     } catch (error) {
       console.error('Nepavyko atvaizduoti grafikų:', error);
       showChartError(TEXT.charts?.errorLoading);
       throw error;
     }
+    }
+
+    function handleHeatmapMetricChange(event) {
+      const candidate = event?.target?.value;
+      const metrics = dashboardState.chartData?.heatmap?.metrics || {};
+      const normalized = normalizeHeatmapMetricKey(candidate, metrics);
+      dashboardState.heatmapMetric = normalized;
+      const palette = getThemePalette();
+      renderArrivalHeatmap(
+        selectors.heatmapContainer,
+        dashboardState.chartData.heatmap,
+        palette.accent,
+        dashboardState.heatmapMetric,
+      );
     }
 
     function rerenderChartsForTheme() {
@@ -15889,6 +16217,10 @@
       });
     }
 
+    if (selectors.heatmapMetricSelect) {
+      selectors.heatmapMetricSelect.addEventListener('change', handleHeatmapMetricChange);
+    }
+
     if (selectors.chartFiltersForm) {
       selectors.chartFiltersForm.addEventListener('change', handleChartFilterChange);
       selectors.chartFiltersForm.addEventListener('submit', (event) => event.preventDefault());
@@ -16035,6 +16367,12 @@
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'L' || event.key === 'l')) {
         event.preventDefault();
         toggleTheme();
+      }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'H' || event.key === 'h')) {
+        event.preventDefault();
+        if (selectors.heatmapMetricSelect) {
+          selectors.heatmapMetricSelect.focus();
+        }
       }
       if (!event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'A' || event.key === 'a')) {
         const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
