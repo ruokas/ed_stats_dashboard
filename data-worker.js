@@ -41,6 +41,7 @@ function serializeError(error) {
 const KPI_SHIFT_VALUES = ['all', 'day', 'night'];
 const KPI_ARRIVAL_VALUES = ['all', 'ems', 'self'];
 const KPI_DISPOSITION_VALUES = ['all', 'hospitalized', 'discharged'];
+const KPI_CARD_TYPE_VALUES = ['all', 't', 'tr', 'ch'];
 
 function transformCsvWithStats(text, options = {}) {
   if (!text) {
@@ -69,6 +70,7 @@ function transformCsvWithStats(text, options = {}) {
     dayNight: resolveColumnIndex(headerNormalized, csvRuntime.dayNightHeaders),
     gmp: resolveColumnIndex(headerNormalized, csvRuntime.gmpHeaders),
     department: resolveColumnIndex(headerNormalized, csvRuntime.departmentHeaders),
+    cardNumber: resolveColumnIndex(headerNormalized, csvRuntime.cardNumberHeaders),
   };
   const missing = Object.entries(columnIndices)
     .filter(([key, index]) => {
@@ -79,6 +81,9 @@ function transformCsvWithStats(text, options = {}) {
         return false;
       }
       if (key === 'dayNight') {
+        return false;
+      }
+      if (key === 'cardNumber') {
         return false;
       }
       return true;
@@ -179,6 +184,7 @@ function normalizeKpiFilters(raw, fallback = {}) {
     shift: KPI_SHIFT_VALUES.includes(fallback.shift) ? fallback.shift : 'all',
     arrival: KPI_ARRIVAL_VALUES.includes(fallback.arrival) ? fallback.arrival : 'all',
     disposition: KPI_DISPOSITION_VALUES.includes(fallback.disposition) ? fallback.disposition : 'all',
+    cardType: KPI_CARD_TYPE_VALUES.includes(fallback.cardType) ? fallback.cardType : 'all',
   };
   const normalizedWindow = Number.isFinite(Number(raw?.window)) && Number(raw.window) >= 0
     ? Number(raw.window)
@@ -188,7 +194,39 @@ function normalizeKpiFilters(raw, fallback = {}) {
     shift: KPI_SHIFT_VALUES.includes(raw?.shift) ? raw.shift : defaults.shift,
     arrival: KPI_ARRIVAL_VALUES.includes(raw?.arrival) ? raw.arrival : defaults.arrival,
     disposition: KPI_DISPOSITION_VALUES.includes(raw?.disposition) ? raw.disposition : defaults.disposition,
+    cardType: KPI_CARD_TYPE_VALUES.includes(raw?.cardType) ? raw.cardType : defaults.cardType,
   };
+}
+
+function matchesSharedPatientFilters(record, filters = {}) {
+  const arrivalFilter = filters.arrival;
+  if (arrivalFilter === 'ems' && !record.ems) {
+    return false;
+  }
+  if (arrivalFilter === 'self' && record.ems) {
+    return false;
+  }
+
+  const dispositionFilter = filters.disposition;
+  if (dispositionFilter === 'hospitalized' && !record.hospitalized) {
+    return false;
+  }
+  if (dispositionFilter === 'discharged' && record.hospitalized) {
+    return false;
+  }
+
+  const cardTypeFilter = filters.cardType;
+  if (cardTypeFilter === 't' && record.cardType !== 't') {
+    return false;
+  }
+  if (cardTypeFilter === 'tr' && record.cardType !== 'tr') {
+    return false;
+  }
+  if (cardTypeFilter === 'ch' && record.cardType !== 'ch') {
+    return false;
+  }
+
+  return true;
 }
 
 function recordMatchesKpiFilters(record, filters) {
@@ -201,19 +239,7 @@ function recordMatchesKpiFilters(record, filters) {
   if (filters.shift === 'night' && !record.night) {
     return false;
   }
-  if (filters.arrival === 'ems' && !record.ems) {
-    return false;
-  }
-  if (filters.arrival === 'self' && record.ems) {
-    return false;
-  }
-  if (filters.disposition === 'hospitalized' && !record.hospitalized) {
-    return false;
-  }
-  if (filters.disposition === 'discharged' && record.hospitalized) {
-    return false;
-  }
-  return true;
+  return matchesSharedPatientFilters(record, filters);
 }
 
 function filterRecordsByWindow(records, days, calculations = {}, calculationDefaults = {}) {
@@ -345,15 +371,20 @@ function toNormalizedList(value, fallback) {
 function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
   const fallback = csvDefaults || {};
   const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
+  const cardNumberHasValue = csvSettings.number && csvSettings.number.trim().length > 0;
   const departmentHeaders = departmentHasValue
     ? toHeaderCandidates(csvSettings.department, '')
     : [];
+  const cardNumberHeaders = cardNumberHasValue
+    ? toHeaderCandidates(csvSettings.number, '')
+    : toHeaderCandidates('', fallback.number);
   const runtime = {
     arrivalHeaders: toHeaderCandidates(csvSettings.arrival, fallback.arrival),
     dischargeHeaders: toHeaderCandidates(csvSettings.discharge, fallback.discharge),
     dayNightHeaders: toHeaderCandidates(csvSettings.dayNight, fallback.dayNight),
     gmpHeaders: toHeaderCandidates(csvSettings.gmp, fallback.gmp),
     departmentHeaders,
+    cardNumberHeaders,
     trueValues: toNormalizedList(csvSettings.trueValues, fallback.trueValues),
     fallbackTrueValues: toNormalizedList(fallback.trueValues, fallback.trueValues),
     hospitalizedValues: toNormalizedList(csvSettings.hospitalizedValues, fallback.hospitalizedValues),
@@ -365,6 +396,7 @@ function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
       dayNight: csvSettings.dayNight || fallback.dayNight || 'Paros metas',
       gmp: csvSettings.gmp || fallback.gmp || 'GMP',
       department: departmentHasValue ? csvSettings.department : (fallback.department || 'Skyrius'),
+      cardNumber: cardNumberHasValue ? csvSettings.number : (fallback.number || 'Numeris'),
     },
   };
   runtime.hasHospitalizedValues = runtime.hospitalizedValues.length > 0;
@@ -441,6 +473,31 @@ function parseBoolean(value, trueValues, fallbackTrueValues) {
     ? trueValues
     : Array.isArray(fallbackTrueValues) ? fallbackTrueValues : [];
   return candidates.some((candidate) => matchesWildcard(normalized, candidate));
+}
+
+function detectCardTypeFromNumber(value) {
+  if (value == null) {
+    return 'other';
+  }
+  const raw = String(value).trim();
+  if (!raw) {
+    return 'other';
+  }
+  const ascii = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const letters = ascii.toUpperCase().replace(/[^A-Z]/g, '');
+  if (!letters) {
+    return 'other';
+  }
+  if (letters.endsWith('TR')) {
+    return 'tr';
+  }
+  if (letters.endsWith('CH')) {
+    return 'ch';
+  }
+  if (letters.endsWith('T')) {
+    return 't';
+  }
+  return 'other';
 }
 
 function isNightByArrival(arrivalDate, calculations, defaults) {
@@ -564,11 +621,13 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   const dayNightRaw = normalized[indices.dayNight] ?? '';
   const gmpRaw = normalized[indices.gmp] ?? '';
   const departmentRaw = normalized[indices.department] ?? '';
+  const cardNumberRaw = indices.cardNumber >= 0 ? normalized[indices.cardNumber] ?? '' : '';
   entry.arrival = parseDate(arrivalRaw);
   entry.discharge = parseDate(dischargeRaw);
   entry.night = detectNight(dayNightRaw, entry.arrival, csvRuntime, calculations, calculationDefaults);
   entry.ems = parseBoolean(gmpRaw, csvRuntime.trueValues, csvRuntime.fallbackTrueValues);
   entry.hospitalized = detectHospitalized(departmentRaw, csvRuntime);
+  entry.cardType = detectCardTypeFromNumber(cardNumberRaw);
   return entry;
 }
 

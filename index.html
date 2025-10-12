@@ -1750,6 +1750,19 @@
       .chart-year-filter span {
         display: none;
       }
+
+      .chart-filters {
+        margin-left: 0;
+        flex: 1 1 100%;
+      }
+
+      .chart-filter {
+        flex: 1 1 140px;
+      }
+
+      .chart-filters__summary {
+        order: 5;
+      }
     }
 
     main {
@@ -2682,6 +2695,68 @@
       gap: 8px;
       flex-wrap: wrap;
       width: 100%;
+    }
+
+    .chart-filters__summary {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border-radius: 999px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1 1 100%;
+      order: 3;
+    }
+
+    .chart-filters__summary[data-default="true"] {
+      background: transparent;
+      padding-inline: 0;
+    }
+
+    .chart-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-end;
+      margin-left: auto;
+      flex: 1 1 360px;
+      min-width: 0;
+      order: 4;
+    }
+
+    .chart-filter {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 160px;
+      flex: 1 1 160px;
+    }
+
+    .chart-filter span {
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+    }
+
+    .chart-filter select {
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .chart-filter select:hover,
+    .chart-filter select:focus-visible {
+      background: var(--color-input-bg-hover);
+      border-color: rgba(37, 99, 235, 0.35);
+      outline: none;
     }
 
     .chart-period {
@@ -4122,6 +4197,15 @@
               <option value="discharged">Išleisti</option>
             </select>
           </label>
+          <label class="kpi-filter" for="kpiCardType">
+            <span>Kortelės tipas</span>
+            <select id="kpiCardType" name="cardType" aria-label="Filtruoti pagal kortelės tipą">
+              <option value="all">Visos kortelės</option>
+              <option value="t">T kortelės</option>
+              <option value="tr">TR kortelės</option>
+              <option value="ch">CH kortelės</option>
+            </select>
+          </label>
           <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small kpi-controls__reset" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
         </form>
       </div>
@@ -4216,6 +4300,34 @@
               <option value="all">Visi metai</option>
             </select>
           </label>
+          <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
+          <form id="chartFiltersForm" class="chart-filters" aria-label="Filtruoti grafikus">
+            <label class="chart-filter" for="chartArrival">
+              <span>Atvykimo tipas</span>
+              <select id="chartArrival" name="arrival" aria-label="Filtruoti grafikus pagal atvykimo tipą">
+                <option value="all">Visi</option>
+                <option value="ems">Tik GMP</option>
+                <option value="self">Be GMP</option>
+              </select>
+            </label>
+            <label class="chart-filter" for="chartDisposition">
+              <span>Būsena išvykstant</span>
+              <select id="chartDisposition" name="disposition" aria-label="Filtruoti grafikus pagal išvykimo sprendimą">
+                <option value="all">Visi</option>
+                <option value="hospitalized">Hospitalizuoti</option>
+                <option value="discharged">Išleisti</option>
+              </select>
+            </label>
+            <label class="chart-filter" for="chartCardType">
+              <span>Kortelės tipas</span>
+              <select id="chartCardType" name="cardType" aria-label="Filtruoti grafikus pagal kortelės tipą">
+                <option value="all">Visos kortelės</option>
+                <option value="t">T kortelės</option>
+                <option value="tr">TR kortelės</option>
+                <option value="ch">CH kortelės</option>
+              </select>
+            </label>
+          </form>
         </div>
       </div>
       <div class="chart-grid">
@@ -4615,6 +4727,11 @@
             <label for="settingsDepartment"><span>Hospitalizavimo stulpelis</span></label>
             <input id="settingsDepartment" name="csv.department" type="text" placeholder="Nukreiptas į padalinį">
             <p class="settings-hint">Jei paliksite tuščią, bus naudojamas numatytasis pavadinimas.</p>
+          </div>
+          <div class="settings-field">
+            <label for="settingsNumber"><span>Kortelės numerio stulpelis</span></label>
+            <input id="settingsNumber" name="csv.number" type="text" placeholder="Numeris">
+            <p class="settings-hint">Naudojama kortelės tipui (T, TR, CH) nustatyti. Jei paliksite tuščią, bus naudojamas numatytasis pavadinimas.</p>
           </div>
           <div class="settings-field">
             <label for="settingsTrueValues"><span>Reikšmės, laikomos „taip“</span></label>
@@ -5416,6 +5533,7 @@
         dayNight: 'Diena/naktis',
         gmp: 'GMP',
         department: 'Nukreiptas į padalinį',
+        number: 'Numeris',
         trueValues: '1,true,taip,t,yes,y,GMP,su GMP,GMP (su GMP)',
         hospitalizedValues: '',
         nightKeywords: 'nakt,night',
@@ -5477,6 +5595,12 @@
         hospitalized: 'hospitalizuoti',
         discharged: 'išleisti',
       },
+      cardType: {
+        all: 'visos kortelės',
+        t: 'T kortelės',
+        tr: 'TR kortelės',
+        ch: 'CH kortelės',
+      },
     };
 
     const KPI_FILTER_TOGGLE_LABELS = {
@@ -5496,6 +5620,15 @@
         shift: 'all',
         arrival: 'all',
         disposition: 'all',
+        cardType: 'all',
+      };
+    }
+
+    function getDefaultChartFilters() {
+      return {
+        arrival: 'all',
+        disposition: 'all',
+        cardType: 'all',
       };
     }
 
@@ -5513,6 +5646,24 @@
       }
       if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
         normalized.disposition = defaults.disposition;
+      }
+      if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
+        normalized.cardType = defaults.cardType;
+      }
+      return normalized;
+    }
+
+    function sanitizeChartFilters(filters) {
+      const defaults = getDefaultChartFilters();
+      const normalized = { ...defaults, ...(filters || {}) };
+      if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
+        normalized.arrival = defaults.arrival;
+      }
+      if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
+        normalized.disposition = defaults.disposition;
+      }
+      if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
+        normalized.cardType = defaults.cardType;
       }
       return normalized;
     }
@@ -5600,6 +5751,11 @@
       chartYearLabel: document.getElementById('chartYearLabel'),
       chartYearSelect: document.getElementById('chartYear'),
       chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
+      chartFiltersSummary: document.getElementById('chartFiltersSummary'),
+      chartFiltersForm: document.getElementById('chartFiltersForm'),
+      chartFilterArrival: document.getElementById('chartArrival'),
+      chartFilterDisposition: document.getElementById('chartDisposition'),
+      chartFilterCardType: document.getElementById('chartCardType'),
       chartCards: Array.from(document.querySelectorAll('.chart-grid .chart-card')),
       recentHeading: document.getElementById('recentHeading'),
       recentSubtitle: document.getElementById('recentSubtitle'),
@@ -5682,6 +5838,7 @@
       kpiShift: document.getElementById('kpiShift'),
       kpiArrival: document.getElementById('kpiArrival'),
       kpiDisposition: document.getElementById('kpiDisposition'),
+      kpiCardType: document.getElementById('kpiCardType'),
       kpiFiltersReset: document.getElementById('kpiFiltersReset'),
       kpiFiltersToggle: document.getElementById('kpiFiltersToggle'),
       kpiActiveInfo: document.getElementById('kpiActiveFilters'),
@@ -6246,7 +6403,7 @@
         ? String(merged.dataSource.historical.label)
         : DEFAULT_SETTINGS.dataSource.historical.label;
 
-      ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
+      ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'number', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
         .forEach((key) => {
           merged.csv[key] = merged.csv[key] != null
             ? String(merged.csv[key])
@@ -6561,6 +6718,7 @@
       assign('csv.dayNight', settings.csv.dayNight);
       assign('csv.gmp', settings.csv.gmp);
       assign('csv.department', settings.csv.department);
+      assign('csv.number', settings.csv.number);
       assign('csv.trueValues', settings.csv.trueValues);
       assign('csv.hospitalizedValues', settings.csv.hospitalizedValues);
       assign('csv.nightKeywords', settings.csv.nightKeywords);
@@ -6627,6 +6785,7 @@
           dayNight: '',
           gmp: '',
           department: '',
+          number: '',
           trueValues: '',
           hospitalizedValues: '',
           nightKeywords: '',
@@ -6698,6 +6857,7 @@
       result.csv.dayNight = readText('csv.dayNight').trim();
       result.csv.gmp = readText('csv.gmp').trim();
       result.csv.department = readText('csv.department').trim();
+      result.csv.number = readText('csv.number').trim();
       result.csv.trueValues = readText('csv.trueValues').trim();
       result.csv.hospitalizedValues = readText('csv.hospitalizedValues').trim();
       result.csv.nightKeywords = readText('csv.nightKeywords').trim();
@@ -6784,6 +6944,7 @@
         shift: previousFilters.shift,
         arrival: previousFilters.arrival,
         disposition: previousFilters.disposition,
+        cardType: previousFilters.cardType,
       };
       refreshKpiWindowOptions();
       syncKpiFilterControls();
@@ -6803,8 +6964,11 @@
       }
       settings = normalizeSettings({});
       dashboardState.kpi.filters = getDefaultKpiFilters();
+      dashboardState.chartFilters = getDefaultChartFilters();
       refreshKpiWindowOptions();
       syncKpiFilterControls();
+      syncChartFilterControls();
+      updateChartFiltersSummary({ records: [], daily: [] });
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
@@ -6847,6 +7011,9 @@
         dailyWindow: [],
         funnel: null,
         heatmap: null,
+        filteredDaily: [],
+        filteredRecords: [],
+        filteredWindowRecords: [],
       },
       theme: 'light',
       fullscreen: false,
@@ -6857,6 +7024,7 @@
         selections: [],
       },
       contrastWarning: false,
+      chartFilters: getDefaultChartFilters(),
       kpi: {
         filters: getDefaultKpiFilters(),
         records: [],
@@ -9680,16 +9848,26 @@
         ? dashboardState.chartData.baseRecords
         : dashboardState.rawRecords;
       const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
-      const yearScopedDaily = filterDailyStatsByYear(baseDaily, selectedYear);
       const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-      const scopedDaily = filterDailyStatsByWindow(yearScopedDaily, normalized);
-      const scopedRecords = filterRecordsByWindow(yearScopedRecords, normalized);
-      const funnelData = computeFunnelStats(scopedDaily, selectedYear, yearScopedDaily);
+      const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters);
+      dashboardState.chartFilters = { ...sanitizedFilters };
+      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, sanitizedFilters);
+      const filteredDaily = computeDailyStats(filteredRecords);
+      const scopedDaily = filterDailyStatsByWindow(filteredDaily, normalized);
+      const scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
+      const fallbackDaily = filteredDaily.length
+        ? filteredDaily
+        : filterDailyStatsByYear(baseDaily, selectedYear);
+      const funnelData = computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
       const heatmapData = computeArrivalHeatmap(scopedRecords);
 
+      dashboardState.chartData.filteredRecords = filteredRecords;
+      dashboardState.chartData.filteredDaily = filteredDaily;
+      dashboardState.chartData.filteredWindowRecords = scopedRecords;
       dashboardState.chartData.dailyWindow = scopedDaily;
       dashboardState.chartData.funnel = funnelData;
       dashboardState.chartData.heatmap = heatmapData;
+      updateChartFiltersSummary({ records: filteredRecords, daily: filteredDaily });
 
       return { daily: scopedDaily, funnel: funnelData, heatmap: heatmapData };
     }
@@ -10703,6 +10881,88 @@
       if (selectors.kpiDisposition) {
         selectors.kpiDisposition.value = filters.disposition;
       }
+      if (selectors.kpiCardType) {
+        selectors.kpiCardType.value = filters.cardType;
+      }
+    }
+
+    function syncChartFilterControls() {
+      const filters = sanitizeChartFilters(dashboardState.chartFilters);
+      dashboardState.chartFilters = { ...filters };
+      if (selectors.chartFilterArrival) {
+        selectors.chartFilterArrival.value = filters.arrival;
+      }
+      if (selectors.chartFilterDisposition) {
+        selectors.chartFilterDisposition.value = filters.disposition;
+      }
+      if (selectors.chartFilterCardType) {
+        selectors.chartFilterCardType.value = filters.cardType;
+      }
+    }
+
+    function updateChartFiltersSummary({ records, daily } = {}) {
+      if (!selectors.chartFiltersSummary) {
+        return;
+      }
+      const filters = sanitizeChartFilters(dashboardState.chartFilters);
+      const defaults = getDefaultChartFilters();
+      const summaryParts = [];
+      if (filters.arrival !== defaults.arrival) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.arrival[filters.arrival]));
+      }
+      if (filters.disposition !== defaults.disposition) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.disposition[filters.disposition]));
+      }
+      if (filters.cardType !== defaults.cardType) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.cardType[filters.cardType]));
+      }
+      const hasRecords = Array.isArray(records) ? records.length > 0 : false;
+      const hasDaily = Array.isArray(daily)
+        ? daily.some((entry) => Number.isFinite(entry?.count) && entry.count > 0)
+        : false;
+      const hasData = hasRecords || hasDaily;
+      let text = summaryParts.join(' • ');
+      if (!hasData) {
+        text = text ? `Įrašų nerasta • ${text}` : 'Įrašų nerasta';
+      }
+      if (!text) {
+        selectors.chartFiltersSummary.textContent = 'Numatytieji filtrai';
+        selectors.chartFiltersSummary.dataset.default = 'true';
+        return;
+      }
+      selectors.chartFiltersSummary.textContent = text;
+      selectors.chartFiltersSummary.dataset.default = 'false';
+    }
+
+    function matchesSharedPatientFilters(record, filters = {}) {
+      const arrivalFilter = filters.arrival;
+      if (arrivalFilter === 'ems' && !record.ems) {
+        return false;
+      }
+      if (arrivalFilter === 'self' && record.ems) {
+        return false;
+      }
+
+      const dispositionFilter = filters.disposition;
+      if (dispositionFilter === 'hospitalized' && !record.hospitalized) {
+        return false;
+      }
+      if (dispositionFilter === 'discharged' && record.hospitalized) {
+        return false;
+      }
+
+      const cardTypeFilter = filters.cardType;
+      if (cardTypeFilter === 't' && record.cardType !== 't') {
+        return false;
+      }
+      if (cardTypeFilter === 'tr' && record.cardType !== 'tr') {
+        return false;
+      }
+      if (cardTypeFilter === 'ch' && record.cardType !== 'ch') {
+        return false;
+      }
+
+      return true;
     }
 
     function recordMatchesKpiFilters(record, filters) {
@@ -10715,19 +10975,19 @@
       if (filters.shift === 'night' && !record.night) {
         return false;
       }
-      if (filters.arrival === 'ems' && !record.ems) {
+      return matchesSharedPatientFilters(record, filters);
+    }
+
+    function recordMatchesChartFilters(record, filters) {
+      if (!record) {
         return false;
       }
-      if (filters.arrival === 'self' && record.ems) {
-        return false;
-      }
-      if (filters.disposition === 'hospitalized' && !record.hospitalized) {
-        return false;
-      }
-      if (filters.disposition === 'discharged' && record.hospitalized) {
-        return false;
-      }
-      return true;
+      return matchesSharedPatientFilters(record, filters);
+    }
+
+    function filterRecordsByChartFilters(records, filters) {
+      const normalized = sanitizeChartFilters(filters);
+      return (Array.isArray(records) ? records : []).filter((record) => recordMatchesChartFilters(record, normalized));
     }
 
     function toSentenceCase(label) {
@@ -10755,6 +11015,7 @@
       const isShiftDefault = filters.shift === defaultFilters.shift;
       const isArrivalDefault = filters.arrival === defaultFilters.arrival;
       const isDispositionDefault = filters.disposition === defaultFilters.disposition;
+      const isCardTypeDefault = filters.cardType === defaultFilters.cardType;
 
       if (Number.isFinite(windowDays) && windowDays > 0 && !isWindowDefault) {
         summaryParts.push(`${windowDays} d.`);
@@ -10767,6 +11028,9 @@
       }
       if (!isDispositionDefault) {
         summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.disposition[filters.disposition]));
+      }
+      if (!isCardTypeDefault) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.cardType[filters.cardType]));
       }
       let text = summaryParts.join(' • ');
       if (!hasData) {
@@ -10879,8 +11143,49 @@
         filters.arrival = value;
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
         filters.disposition = value;
+      } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
+        filters.cardType = value;
       }
       void applyKpiFiltersAndRender();
+    }
+
+    function handleChartFilterChange(event) {
+      const target = event.target;
+      if (!target || !('name' in target)) {
+        return;
+      }
+      const { name, value } = target;
+      const filters = { ...dashboardState.chartFilters };
+      if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
+        filters.arrival = value;
+      } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
+        filters.disposition = value;
+      } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
+        filters.cardType = value;
+      }
+      dashboardState.chartFilters = filters;
+      void applyChartFilters();
+    }
+
+    function applyChartFilters() {
+      const sanitized = sanitizeChartFilters(dashboardState.chartFilters);
+      dashboardState.chartFilters = { ...sanitized };
+      syncChartFilterControls();
+      const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
+        || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+      if (!hasBaseData) {
+        updateChartFiltersSummary({ records: [], daily: [] });
+        if (selectors.dailyCaptionContext) {
+          selectors.dailyCaptionContext.textContent = '';
+        }
+        return Promise.resolve();
+      }
+      const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
+      return renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
+        .catch((error) => {
+          console.error('Nepavyko pritaikyti grafiko filtrų:', error);
+          showChartError(TEXT.charts?.errorLoading);
+        });
     }
 
     function resetKpiFilters({ fromKeyboard } = {}) {
@@ -12592,6 +12897,7 @@
         if (selectors.dailyCaptionContext) {
           selectors.dailyCaptionContext.textContent = '';
         }
+        updateChartFiltersSummary({ records: [], daily: [] });
         return;
       }
       const scoped = prepareChartDataForPeriod(numeric);
@@ -12617,6 +12923,7 @@
         if (selectors.dailyCaptionContext) {
           selectors.dailyCaptionContext.textContent = '';
         }
+        updateChartFiltersSummary({ records: [], daily: [] });
         return;
       }
       const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
@@ -12735,18 +13042,28 @@
           ? dashboardState.chartData.baseDaily
           : dashboardState.dailyStats;
         const fallbackDaily = filterDailyStatsByYear(baseDailyForFallback, selectedYear);
-        const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
+        const filteredDaily = Array.isArray(dashboardState.chartData.filteredDaily)
+          ? dashboardState.chartData.filteredDaily
+          : fallbackDaily;
+        const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily, selectedYear, filteredDaily);
         dashboardState.chartData.funnel = funnelSource;
 
         let heatmapSource = heatmapData ?? null;
         if (!heatmapSource || !heatmapSource.matrix) {
-          const fallbackRecords = Array.isArray(dashboardState.chartData.baseRecords)
-            && dashboardState.chartData.baseRecords.length
-            ? dashboardState.chartData.baseRecords
-            : dashboardState.rawRecords;
-          const yearScopedRecords = filterRecordsByYear(fallbackRecords, selectedYear);
-          const scopedRecords = filterRecordsByWindow(yearScopedRecords, dashboardState.chartPeriod);
-          heatmapSource = computeArrivalHeatmap(scopedRecords);
+          let fallbackRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
+            && dashboardState.chartData.filteredWindowRecords.length
+            ? dashboardState.chartData.filteredWindowRecords
+            : null;
+          if (!fallbackRecords || !fallbackRecords.length) {
+            const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
+              && dashboardState.chartData.baseRecords.length
+              ? dashboardState.chartData.baseRecords
+              : dashboardState.rawRecords;
+            const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
+            const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, dashboardState.chartFilters || {});
+            fallbackRecords = filterRecordsByWindow(filteredRecords, dashboardState.chartPeriod);
+          }
+          heatmapSource = computeArrivalHeatmap(fallbackRecords);
         }
         dashboardState.chartData.heatmap = heatmapSource;
 
@@ -15351,6 +15668,8 @@
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
         dashboardState.chartData.baseDaily = dailyStats.slice();
         dashboardState.chartData.baseRecords = combinedRecords.slice();
+        dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters);
+        syncChartFilterControls();
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         await applyKpiFiltersAndRender();
         await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
@@ -15439,6 +15758,11 @@
           updateChartYear(value);
         }
       });
+    }
+
+    if (selectors.chartFiltersForm) {
+      selectors.chartFiltersForm.addEventListener('change', handleChartFilterChange);
+      selectors.chartFiltersForm.addEventListener('submit', (event) => event.preventDefault());
     }
 
     if (selectors.themeToggleBtn) {
