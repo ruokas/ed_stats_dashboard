@@ -10487,6 +10487,242 @@
       return { summary, dispositions, daily, meta: { type: mode } };
     }
 
+    function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDailyStats, options = {}) {
+      if (!summary || typeof summary !== 'object') {
+        return summary;
+      }
+      const records = Array.isArray(overviewRecords)
+        ? overviewRecords.filter((record) => record && (record.arrival instanceof Date || record.discharge instanceof Date))
+        : [];
+      if (!records.length) {
+        return summary;
+      }
+
+      const arrivalHourCounts = Array.from({ length: 24 }, () => 0);
+      const dischargeHourCounts = Array.from({ length: 24 }, () => 0);
+      const losValues = [];
+      const losDailyBuckets = new Map();
+      const uniqueDateKeys = new Set();
+      let arrivalsWithHour = 0;
+      let fastCount = 0;
+      let slowCount = 0;
+      let losValidCount = 0;
+
+      records.forEach((record) => {
+        const arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+        const discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
+        if (!arrival && !discharge) {
+          return;
+        }
+        const reference = arrival || discharge;
+        const dateKey = reference ? formatLocalDateKey(reference) : '';
+        if (dateKey) {
+          uniqueDateKeys.add(dateKey);
+        }
+        if (arrival) {
+          const hour = arrival.getHours();
+          if (Number.isInteger(hour) && hour >= 0 && hour <= 23) {
+            arrivalHourCounts[hour] += 1;
+            arrivalsWithHour += 1;
+          }
+        }
+        if (discharge) {
+          const hour = discharge.getHours();
+          if (Number.isInteger(hour) && hour >= 0 && hour <= 23) {
+            dischargeHourCounts[hour] += 1;
+          }
+        }
+        if (arrival && discharge) {
+          const diffMinutes = (discharge.getTime() - arrival.getTime()) / 60000;
+          if (Number.isFinite(diffMinutes) && diffMinutes >= 0) {
+            losValues.push(diffMinutes);
+            losValidCount += 1;
+            if (diffMinutes < 120) {
+              fastCount += 1;
+            }
+            if (diffMinutes > 480) {
+              slowCount += 1;
+            }
+            if (dateKey) {
+              const bucket = losDailyBuckets.get(dateKey) || { dateKey, fastCount: 0, slowCount: 0, losCount: 0 };
+              bucket.losCount += 1;
+              if (diffMinutes < 120) {
+                bucket.fastCount += 1;
+              }
+              if (diffMinutes > 480) {
+                bucket.slowCount += 1;
+              }
+              losDailyBuckets.set(dateKey, bucket);
+            }
+          }
+        }
+      });
+
+      const hasPeakWindow = typeof summary.peakWindowText === 'string' && summary.peakWindowText.trim().length;
+      if (!hasPeakWindow) {
+        const topArrivalHours = pickTopHours(arrivalHourCounts, 3);
+        const topDepartureHours = pickTopHours(dischargeHourCounts, 3);
+        if (topArrivalHours.length || topDepartureHours.length) {
+          const arrivalText = topArrivalHours.length
+            ? topArrivalHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+            : '—';
+          const departureText = topDepartureHours.length
+            ? topDepartureHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+            : '—';
+          summary.peakWindowText = `Atvykimai: ${arrivalText} / Išvykimai: ${departureText}`;
+          const hasRiskNote = typeof summary.peakWindowRiskNote === 'string' && summary.peakWindowRiskNote.trim().length;
+          if (topArrivalHours.length && topDepartureHours.length) {
+            const mismatch = topArrivalHours.filter((item) => !topDepartureHours.some((candidate) => candidate.hour === item.hour));
+            if (mismatch.length) {
+              const labels = mismatch.map((item) => formatHourLabel(item.hour)).filter(Boolean);
+              summary.peakWindowRiskNote = labels.length
+                ? `Galima „boarding“ rizika: ${labels.join(', ')}`
+                : 'Galima neatitiktis tarp atvykimų ir išvykimų.';
+            } else if (!hasRiskNote) {
+              summary.peakWindowRiskNote = 'Pagrindiniai srautai sutampa.';
+            }
+          } else if (!hasRiskNote) {
+            summary.peakWindowRiskNote = topArrivalHours.length
+              ? 'Trūksta išvykimų valandų duomenų.'
+              : 'Trūksta atvykimų valandų duomenų.';
+          }
+        }
+      }
+
+      if (!Number.isFinite(summary.taktTimeMinutes) && uniqueDateKeys.size > 0 && arrivalsWithHour > 0) {
+        const arrivalsPerHour = arrivalsWithHour / (uniqueDateKeys.size * 24);
+        if (Number.isFinite(arrivalsPerHour) && arrivalsPerHour > 0) {
+          summary.taktTimeMinutes = 60 / arrivalsPerHour;
+          summary.taktTimeMeta = `~${oneDecimalFormatter.format(arrivalsPerHour)} atv./val.`;
+        }
+      }
+
+      if (losValues.length) {
+        const sortedLos = losValues.slice().sort((a, b) => a - b);
+        const losMedian = computePercentile(sortedLos, 0.5);
+        const losP90 = computePercentile(sortedLos, 0.9);
+        if (!Number.isFinite(summary.losMedianMinutes) && Number.isFinite(losMedian)) {
+          summary.losMedianMinutes = losMedian;
+        }
+        if (!Number.isFinite(summary.losP90Minutes) && Number.isFinite(losP90)) {
+          summary.losP90Minutes = losP90;
+        }
+        const medianHours = Number.isFinite(losMedian) ? losMedian / 60 : null;
+        const p90Hours = Number.isFinite(losP90) ? losP90 / 60 : null;
+        if ((!summary.losPercentilesText || !summary.losPercentilesText.trim())
+          && Number.isFinite(medianHours)
+          && Number.isFinite(p90Hours)) {
+          summary.losPercentilesText = `P50: ${oneDecimalFormatter.format(medianHours)} val. • P90: ${oneDecimalFormatter.format(p90Hours)} val.`;
+        }
+        const medianLosDays = Number.isFinite(losMedian) ? losMedian / (60 * 24) : null;
+        let avgDaily = Number.isFinite(summary.avgDailyPatients) ? summary.avgDailyPatients : null;
+        const dailySource = Array.isArray(overviewDailyStats) ? overviewDailyStats : [];
+        if (!Number.isFinite(avgDaily) && dailySource.length) {
+          const windowDays = Number.isFinite(Number(options.windowDays)) && Number(options.windowDays) > 0
+            ? Number(options.windowDays)
+            : 30;
+          const scopedDaily = filterDailyStatsByWindow(dailySource, windowDays);
+          const effectiveDaily = scopedDaily.length ? scopedDaily : dailySource;
+          const totals = effectiveDaily.reduce((acc, entry) => {
+            if (Number.isFinite(entry?.count)) {
+              acc.sum += Number(entry.count);
+              acc.days += 1;
+            }
+            return acc;
+          }, { sum: 0, days: 0 });
+          if (totals.days > 0) {
+            avgDaily = totals.sum / totals.days;
+            if (!Number.isFinite(summary.avgDailyPatients)) {
+              summary.avgDailyPatients = avgDaily;
+            }
+          }
+        }
+        if (!Number.isFinite(summary.littlesLawEstimate)
+          && Number.isFinite(avgDaily)
+          && Number.isFinite(medianLosDays)) {
+          summary.littlesLawEstimate = avgDaily * medianLosDays;
+          if ((!summary.littlesLawMeta || !summary.littlesLawMeta.trim()) && Number.isFinite(medianHours)) {
+            summary.littlesLawMeta = `Vid. ${oneDecimalFormatter.format(avgDaily)} atv./d. × median ${oneDecimalFormatter.format(medianHours)} val.`;
+          }
+        }
+      }
+
+      const needsFastSlow = (!Number.isFinite(summary.fastLaneShare)
+        || !Number.isFinite(summary.slowLaneShare)
+        || !summary.fastSlowSplitValue
+        || !summary.fastSlowSplitValue.trim()
+        || !summary.fastSlowTrendText
+        || !summary.fastSlowTrendText.trim());
+      if (needsFastSlow && (losValidCount > 0 || losDailyBuckets.size > 0)) {
+        const daily = Array.from(losDailyBuckets.values()).sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
+        const trendWindowSize = Math.min(30, daily.length);
+        const recentWindow = trendWindowSize > 0 ? daily.slice(-trendWindowSize) : [];
+        const previousWindow = trendWindowSize > 0
+          ? daily.slice(Math.max(0, daily.length - trendWindowSize * 2), daily.length - trendWindowSize)
+          : [];
+        const reduceWindow = (list) => list.reduce((acc, item) => {
+          acc.fast += Number.isFinite(item.fastCount) ? item.fastCount : 0;
+          acc.slow += Number.isFinite(item.slowCount) ? item.slowCount : 0;
+          acc.totalLos += Number.isFinite(item.losCount) ? item.losCount : 0;
+          return acc;
+        }, { fast: 0, slow: 0, totalLos: 0 });
+        const recentAgg = reduceWindow(recentWindow);
+        const previousAgg = reduceWindow(previousWindow);
+        const recentFastShare = recentAgg.totalLos > 0
+          ? recentAgg.fast / recentAgg.totalLos
+          : (losValidCount > 0 ? fastCount / losValidCount : null);
+        const recentSlowShare = recentAgg.totalLos > 0
+          ? recentAgg.slow / recentAgg.totalLos
+          : (losValidCount > 0 ? slowCount / losValidCount : null);
+        if (!Number.isFinite(summary.fastLaneShare) && Number.isFinite(recentFastShare)) {
+          summary.fastLaneShare = recentFastShare;
+        }
+        if (!Number.isFinite(summary.slowLaneShare) && Number.isFinite(recentSlowShare)) {
+          summary.slowLaneShare = recentSlowShare;
+        }
+        if ((!summary.fastSlowSplitValue || !summary.fastSlowSplitValue.trim())
+          && Number.isFinite(summary.fastLaneShare)
+          && Number.isFinite(summary.slowLaneShare)) {
+          summary.fastSlowSplitValue = `Greitieji: ${percentFormatter.format(summary.fastLaneShare)} • Lėtieji: ${percentFormatter.format(summary.slowLaneShare)}`;
+        }
+        let fastDelta = null;
+        let slowDelta = null;
+        if (previousAgg.totalLos > 0 && recentAgg.totalLos > 0) {
+          const previousFastShare = previousAgg.fast / previousAgg.totalLos;
+          const previousSlowShare = previousAgg.slow / previousAgg.totalLos;
+          fastDelta = Number.isFinite(previousFastShare) && Number.isFinite(recentFastShare)
+            ? recentFastShare - previousFastShare
+            : null;
+          slowDelta = Number.isFinite(previousSlowShare) && Number.isFinite(recentSlowShare)
+            ? recentSlowShare - previousSlowShare
+            : null;
+        }
+        if (!Number.isFinite(summary.fastLaneDelta) && Number.isFinite(fastDelta)) {
+          summary.fastLaneDelta = fastDelta;
+        }
+        if (!Number.isFinite(summary.slowLaneDelta) && Number.isFinite(slowDelta)) {
+          summary.slowLaneDelta = slowDelta;
+        }
+        if (!Number.isFinite(summary.fastSlowTrendWindowDays) && trendWindowSize > 0) {
+          summary.fastSlowTrendWindowDays = trendWindowSize;
+        }
+        if ((!summary.fastSlowTrendText || !summary.fastSlowTrendText.trim()) && trendWindowSize > 0) {
+          if (Number.isFinite(fastDelta) || Number.isFinite(slowDelta)) {
+            const fastDeltaText = Number.isFinite(fastDelta) ? formatPercentPointDelta(fastDelta) : '—';
+            const slowDeltaText = Number.isFinite(slowDelta) ? formatPercentPointDelta(slowDelta) : '—';
+            summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Pokytis vs ankst. ${trendWindowSize} d.: ${fastDeltaText} / ${slowDeltaText}`;
+          } else {
+            summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Ankstesnių duomenų palyginimui nepakanka.`;
+          }
+        }
+        if ((!summary.fastSlowTrendText || !summary.fastSlowTrendText.trim()) && losValidCount > 0) {
+          summary.fastSlowTrendText = 'Langas: visi turimi duomenys • Pokyčiams apskaičiuoti reikia bent 2 langų.';
+        }
+      }
+
+      return summary;
+    }
+
     function getAvailableYearsFromDaily(dailyStats) {
       const years = new Set();
       (Array.isArray(dailyStats) ? dailyStats : []).forEach((entry) => {
@@ -15888,6 +16124,10 @@
           summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : null;
         }
       }
+      const overviewRecords = Array.isArray(dashboardState?.primaryRecords) && dashboardState.primaryRecords.length
+        ? dashboardState.primaryRecords
+        : (Array.isArray(dashboardState?.rawRecords) ? dashboardState.rawRecords : []);
+      enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDailyStats, { windowDays: configuredWindow });
       const cardsConfigSource = TEXT.ed.cards || {};
       const cardConfigs = Array.isArray(cardsConfigSource[displayVariant]) ? cardsConfigSource[displayVariant] : [];
       const dispositionsText = TEXT.ed.dispositions?.[displayVariant] || TEXT.ed.dispositions?.legacy || {};
