@@ -133,70 +133,6 @@
       color: var(--color-text);
     }
 
-    .site-links-wrapper {
-      padding: clamp(16px, 3vw, 28px) clamp(20px, 5vw, 64px) 12px;
-    }
-
-    .site-links {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .site-links__group {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--color-surface);
-      border-radius: 999px;
-      padding: 4px;
-      box-shadow: var(--shadow-elevated);
-    }
-
-    .site-links__link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      color: var(--color-text-muted);
-      font-size: 14px;
-      line-height: 1.4;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    .site-links__link[aria-current="page"] {
-      background: var(--color-accent-soft);
-      color: var(--color-accent);
-      font-weight: 600;
-    }
-
-    .site-links__link:hover,
-    .site-links__link:focus-visible {
-      background: var(--color-accent-soft);
-      color: var(--color-accent);
-      outline: none;
-    }
-
-    .site-links__actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .site-links__actions .shortcut-hint {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--color-text-muted);
-      background: var(--color-surface-alt);
-      padding: 6px 10px;
-      border-radius: 999px;
-    }
-
     .container {
       width: 100%;
       max-width: 100%;
@@ -4016,27 +3952,7 @@
     }
   </style>
 </head>
-  <body>
-    <div class="site-links-wrapper">
-      <nav class="site-links" aria-label="Puslapiai">
-        <div class="site-links__group" role="list">
-          <a class="site-links__link" href="index.html" role="listitem" aria-current="page">Apžvalga</a>
-          <a class="site-links__link" href="prognozes.html" role="listitem">Prognozės</a>
-        </div>
-        <div class="site-links__actions">
-          <span class="shortcut-hint" aria-hidden="true">Ctrl + Shift + L</span>
-          <button id="siteLinksThemeBtn" class="icon-button theme-toggle" type="button" aria-label="Perjungti šviesią/tamsią temą" aria-pressed="false">
-            <svg class="theme-icon icon--sun" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-              <circle cx="12" cy="12" r="4" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m0 13.5V21m9-9h-2.25M5.25 12H3m15.364 6.364-1.59-1.59M7.227 7.227 5.636 5.636m12.728 0-1.59 1.59M7.227 16.773l-1.59 1.59" />
-            </svg>
-            <svg class="theme-icon icon--moon" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 0 1 11.21 3 7.5 7.5 0 1 0 21 12.79Z" />
-            </svg>
-          </button>
-        </div>
-      </nav>
-    </div>
+<body>
   <header class="hero" role="banner" data-compact="false">
     <div class="container hero__content">
       <div class="hero__identity">
@@ -5752,7 +5668,6 @@
       edTvTriageList: document.getElementById('edTvTriageList'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
-      siteLinksThemeBtn: document.getElementById('siteLinksThemeBtn'),
       settingsDialog: document.getElementById('settingsDialog'),
       settingsForm: document.getElementById('settingsForm'),
       resetSettingsBtn: document.getElementById('resetSettingsBtn'),
@@ -7362,21 +7277,13 @@
     }
 
     function updateThemeToggleState(theme) {
-      if (!selectors.themeToggleBtn && !selectors.siteLinksThemeBtn) {
+      if (!selectors.themeToggleBtn) {
         return;
       }
       const isDark = theme === 'dark';
-      if (selectors.themeToggleBtn) {
-        selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
-        selectors.themeToggleBtn.dataset.theme = theme;
-        selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
-      }
-      if (selectors.siteLinksThemeBtn) {
-        selectors.siteLinksThemeBtn.setAttribute('aria-pressed', String(isDark));
-        selectors.siteLinksThemeBtn.dataset.theme = theme;
-        selectors.siteLinksThemeBtn.setAttribute('aria-label', TEXT.theme.toggle);
-        selectors.siteLinksThemeBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
-      }
+      selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
+      selectors.themeToggleBtn.dataset.theme = theme;
+      selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
     }
 
     function parseColorValue(value) {
@@ -15536,12 +15443,6 @@
 
     if (selectors.themeToggleBtn) {
       selectors.themeToggleBtn.addEventListener('click', () => {
-        toggleTheme();
-      });
-    }
-
-    if (selectors.siteLinksThemeBtn) {
-      selectors.siteLinksThemeBtn.addEventListener('click', () => {
         toggleTheme();
       });
     }

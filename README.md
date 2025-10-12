@@ -16,14 +16,11 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🛡️ Automatinis demonstracinių duomenų rezervas ir aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
 - ⚙️ Nustatymų dialogas (Ctrl+,) CSV laukų, skaičiavimo logikos ir išvesties tekstų pritaikymui be kodo keitimo (pakeitimai išsaugomi naršyklės `localStorage`).
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
-- 🔮 Atskirame puslapyje `prognozes.html` – interaktyvus prognozių skydelis 4 savaičių, 6 ir 12 mėn. horizontams su scenarijų korekcijomis, pasitikėjimo juostomis, pamainų planu ir rizikos indikatoriais.
-- 🛏️ Lovų užimtumo analizė su mėnesine dinamika ir 10 metų poreikio scenarijumi, apskaičiuotu pagal atvykimų/išvykimų datas ir pasirinktą rezervą.
 
 ## Diegimas
 1. Atsisiųskite saugomą saugyklą arba jos ZIP: `git clone https://example.com/ed_stats_dashboard.git`.
 2. Atidarykite `index.html` pasirinktoje naršyklėje (Chrome, Edge, Firefox).
-3. Prognozėms naudokite `prognozes.html` – nuoroda taip pat rodoma puslapio viršuje.
-4. Greiti pakeitimai atliekami per nustatymų dialogą (mygtukas „Nustatymai“ viršuje dešinėje arba trumpinys **Ctrl+,**). Čia galite įklijuoti naują CSV nuorodą, perjungti demonstracinius duomenis ar pakeisti stulpelių pavadinimus.
+3. Greiti pakeitimai atliekami per nustatymų dialogą (mygtukas „Nustatymai“ viršuje dešinėje arba trumpinys **Ctrl+,**). Čia galite įklijuoti naują CSV nuorodą, perjungti demonstracinius duomenis ar pakeisti stulpelių pavadinimus.
 
 ## Konfigūracija
 - Tekstai (LT, su kabliuku EN) – `TEXT` objektas `index.html` viršuje arba nustatymų dialoge nurodyti pavadinimai/paantraštės.
@@ -32,7 +29,6 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - Spalvų schema ir kampai – CSS kintamieji `:root` bloke (`index.html`).
 - Grafikai – Chart.js nustatymai `renderCharts()` funkcijoje (`index.html`).
 - Automatinio atnaujinimo intervalas – `AUTO_REFRESH_INTERVAL_MS` kintamasis `index.html` faile (numatyta 5 min.).
-- Prognozių duomenys ir planavimo logika – `FORECAST_DATA`, `SCENARIOS`, `SHIFT_PLANNING`, `RISK_THRESHOLDS`, `BED_FLOW_DATA`, `BED_MODEL` konstantos `prognozes.html` faile (pridėti savo CSV/API skaitytuvą, atvykimų/išvykimų istoriją ar pakeisti bazines kapas pagal skyriaus realybę).
 
 ### Nustatymų meniu
 
@@ -61,9 +57,6 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 7. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
 8. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 7 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
 9. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
-10. Atidarykite `prognozes.html`, perjunkite 4 savaičių, 6 ir 12 mėn. horizontus, koreguokite scenarijų ir apkrovos slankiklį – grafikas, lentelės, pamainų planas ir rizikos indikatoriai turi persiskaičiuoti be klaidų.
-11. Patikrinkite, kad scenarijaus aprašas, pasitikėjimo juosta ir „Paskutinė sinchronizacija“ ženklelis atsinaujina pagal pasirinktą scenarijų ir horizontą.
-12. Peržvelkite lovų užimtumo grafiką ir 10 metų scenarijų – metinės reikšmės turi atsispindėti lentelėje, o kortelės santrauka parodyti augimo procentą ir rekomenduojamą lovų skaičių.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
