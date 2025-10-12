@@ -484,19 +484,34 @@ function detectCardTypeFromNumber(value) {
     return 'other';
   }
   const ascii = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const letters = ascii.toUpperCase().replace(/[^A-Z]/g, '');
-  if (!letters) {
+  const upper = ascii.toUpperCase();
+  const letterSequence = upper.replace(/[^A-Z]/g, '');
+  if (!letterSequence) {
     return 'other';
   }
-  if (letters.endsWith('TR')) {
-    return 'tr';
+
+  // Tikslinės sekos leidžia identifikuoti kortelės tipą net jei raidžių seka
+  // turi tarpus, papildomus simbolius ar priedus prieš/po tipo žymos.
+  const sequences = new Set([
+    letterSequence,
+    ...upper.split(/[^A-Z]+/).filter((token) => token.length > 0),
+  ]);
+
+  for (const token of sequences) {
+    if (!token) {
+      continue;
+    }
+    if (token.endsWith('TR')) {
+      return 'tr';
+    }
+    if (token.endsWith('CH')) {
+      return 'ch';
+    }
+    if (token.endsWith('T')) {
+      return 't';
+    }
   }
-  if (letters.endsWith('CH')) {
-    return 'ch';
-  }
-  if (letters.endsWith('T')) {
-    return 't';
-  }
+
   return 'other';
 }
 
