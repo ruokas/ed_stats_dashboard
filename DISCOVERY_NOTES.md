@@ -1,11 +1,16 @@
 # Stage 0 - Discovery Alignment Notes
 
-## Primary User Journeys (Draft)
-- **Command Center Lead**: needs up-to-the-minute KPIs, incident callouts, TV-mode parity; success = fast scan (<30s) and filter presets.
-- **Data Analyst**: investigates multi-week trends, compares cohorts (arrival type, disposition), exports tables; success = reusable filters, annotated context.
-- **Patient Experience Coordinator**: monitors sentiment trends and recent comments, validates staffing impact; success = quick feedback summary, source filters, actionable alerts.
+## Primary User Journey
+- **Persona**: ED Manager overseeing shift operations and performance across the emergency department.
+- **Key tasks**:
+  - Check live KPIs (arrivals, LOS, boarding, staffing mix) at shift start and throughout the day.
+  - Drill into spikes by shift, arrival mode, or disposition and coordinate staffing responses.
+  - Review recent performance vs targets and prepare talking points for leadership huddles/TV mode briefings.
+  - Monitor sentiment and feedback sources to catch emerging service issues.
+  - Capture/export snapshots for compliance or staffing requests.
+- **Success signals**: actionable overview within 30 seconds, single filter context switch for focus (e.g., night shift), alerts when thresholds break, frictionless handoff to TV mode.
 
-_Next step_: validate these personas/flows with product owner and ED stakeholders.
+_Secondary stakeholders_: data analysts (deep-dive trends, cohort comparisons) and patient experience coordinators (sentiment tracking) should still accomplish core tasks but are no longer primary drivers of layout decisions.
 
 ## Metric & Filter Inventory
 - **Shared filters**: window (7-365 days), shift, arrival mode (GMP vs self), disposition (hospitalized vs discharged), card type (T/TR/CH).
