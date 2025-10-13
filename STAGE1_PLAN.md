@@ -45,12 +45,7 @@
 - Remove staffing/surge/inpatient/diagnostics widgets due to missing data.
 - TV mode treated as shared floor display (not manager-only tool).
 
-- Overall layout looks good
-- Would like to see actual numbers for overview cards, not just percentages
-- Alerts and insights would only be about long term performance, because currently the data is only updated once a day
-- The page would not evaluate staffing, because I could not feed that data
-- We dont have surge protocol, and dont have uptodate info about inpatient beds or diagnostics turnaround
-- TV mode is used as a dashboard for all workers inside ED
-
-
-
+## After review notes
+- Admissions, EMS arrivals and discharges under 4h should also show percentages next to actual numbers
+- Operational checklist shows no useful info for me
+- would like to see actual charts in patient flow tab, performance tab, operations tab.
