@@ -38,3 +38,11 @@
 - Interaction notes answer mobile/desktop behavior questions for developers.
 - Validation checklist signed off, feeding Stage 2 backlog (global filter controller, tab shell, top bar refactor).
 
+## Review notes
+- Overall layout looks good
+- Would like to see actual numbers for overview cards, not just percentages
+- Alerts and insights would only be about long term performance, because currently the data is only updated once a day
+- The page would not evaluate staffing, because I could not feed that data
+- We dont have surge protocol, and dont have uptodate info about inpatient beds or diagnostics turnaround
+- TV mode is used as a dashboard for all workers inside ED
+
