@@ -5144,6 +5144,10 @@
   </footer>
 
   <script type="module">
+    const FEATURE_LAYOUT_V2 = true;
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.dataset.layout = FEATURE_LAYOUT_V2 ? 'v2' : 'v1';
+    });
     /**
      * Įkelia Chart.js iš CDN naudojant klasikinį <script>, kad išvengtume CORS/MIME klaidų.
      * Jei biblioteka jau užkrauta (pvz., iš ankstesnio seanso), panaudojamas esamas egzempliorius.
@@ -5984,6 +5988,47 @@
         arrival: 'all',
         disposition: 'all',
         cardType: 'all',
+      };
+    }
+
+    function getDefaultGlobalFilters() {
+      return { ...getDefaultKpiFilters() };
+    }
+
+    function createGlobalFilterController(initialState = getDefaultGlobalFilters()) {
+      const state = { ...initialState };
+      const listeners = new Set();
+
+      return {
+        getState() {
+          return { ...state };
+        },
+        subscribe(listener) {
+          if (typeof listener === 'function') {
+            listeners.add(listener);
+            listener({ ...state });
+          }
+          return () => listeners.delete(listener);
+        },
+        apply(partial = {}) {
+          let changed = false;
+          Object.entries(partial).forEach(([key, value]) => {
+            if (value !== undefined && state[key] !== value) {
+              state[key] = value;
+              changed = true;
+            }
+          });
+          if (changed) {
+            listeners.forEach((listener) => listener({ ...state }));
+          }
+        },
+        reset() {
+          const defaults = getDefaultGlobalFilters();
+          Object.keys(defaults).forEach((key) => {
+            state[key] = defaults[key];
+          });
+          listeners.forEach((listener) => listener({ ...state }));
+        },
       };
     }
 
@@ -7362,6 +7407,7 @@
         disposition: previousFilters.disposition,
         cardType: previousFilters.cardType,
       };
+      syncGlobalFiltersFromKpi();
       refreshKpiWindowOptions();
       syncKpiFilterControls();
       saveSettings(settings);
@@ -7380,6 +7426,7 @@
       }
       settings = normalizeSettings({});
       dashboardState.kpi.filters = getDefaultKpiFilters();
+      syncGlobalFiltersFromKpi();
       dashboardState.chartFilters = getDefaultChartFilters();
       refreshKpiWindowOptions();
       syncKpiFilterControls();
@@ -7423,6 +7470,7 @@
         edDispositions: null,
       },
       chartLib: null,
+      filters: getDefaultGlobalFilters(),
       usingFallback: false,
       lastErrorMessage: '',
       rawRecords: [],
@@ -7484,6 +7532,17 @@
         updatedAt: null,
       },
     };
+    const globalFilterController = createGlobalFilterController(dashboardState.filters);
+
+    globalFilterController.subscribe((filters) => {
+      dashboardState.filters = { ...filters };
+    });
+
+    function syncGlobalFiltersFromKpi() {
+      globalFilterController.apply({ ...dashboardState.kpi.filters });
+    }
+
+    syncGlobalFiltersFromKpi();
 
     function resetMonthlyState() {
       dashboardState.monthly.all = [];
@@ -12214,6 +12273,7 @@
     async function applyKpiFiltersAndRender() {
       const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters);
       dashboardState.kpi.filters = { ...normalizedFilters };
+      syncGlobalFiltersFromKpi();
       const defaultFilters = getDefaultKpiFilters();
       const windowDays = normalizedFilters.window;
       const workerPayload = {
@@ -12326,6 +12386,7 @@
 
     function resetKpiFilters({ fromKeyboard } = {}) {
       dashboardState.kpi.filters = getDefaultKpiFilters();
+      syncGlobalFiltersFromKpi();
       refreshKpiWindowOptions();
       syncKpiFilterControls();
       void applyKpiFiltersAndRender();
@@ -17068,6 +17129,7 @@
           : DEFAULT_SETTINGS.calculations.windowDays;
         if (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0) {
           dashboardState.kpi.filters.window = windowDays;
+          syncGlobalFiltersFromKpi();
           syncKpiFilterControls();
         }
         const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
@@ -17352,3 +17414,6 @@
   </script>
 </body>
 </html>
+
+
+
