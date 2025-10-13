@@ -10617,6 +10617,12 @@
         if (!Number.isFinite(summary.losP90Minutes) && Number.isFinite(losP90)) {
           summary.losP90Minutes = losP90;
         }
+        if (!Number.isFinite(summary.losVariabilityIndex)
+          && Number.isFinite(losMedian)
+          && Number.isFinite(losP90)
+          && losMedian > 0) {
+          summary.losVariabilityIndex = losP90 / losMedian;
+        }
         const medianHours = Number.isFinite(losMedian) ? losMedian / 60 : null;
         const p90Hours = Number.isFinite(losP90) ? losP90 / 60 : null;
         if ((!summary.losPercentilesText || !summary.losPercentilesText.trim())
