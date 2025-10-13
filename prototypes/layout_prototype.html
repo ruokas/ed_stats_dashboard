@@ -228,6 +228,7 @@
     .chart-stack {
       display: grid;
       gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
 
     .chart-placeholder {
@@ -367,6 +368,55 @@
     .overlay[data-visible="true"] {
       opacity: 1;
       pointer-events: auto;
+    }
+
+    .chart-preview {
+      background: rgba(226, 232, 240, 0.04);
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .chart-preview header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: var(--color-muted);
+    }
+
+    .chart-preview__metric {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .chart-preview__viz {
+      height: 180px;
+      border-radius: 12px;
+      background: linear-gradient(120deg, rgba(56, 189, 248, 0.12), rgba(37, 99, 235, 0.05));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-preview__viz[data-type="line"]::before,
+    .chart-preview__viz[data-type="bar"]::before,
+    .chart-preview__viz[data-type="combo"]::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border-radius: 8px;
+      border: 1px dashed rgba(148, 163, 184, 0.25);
+    }
+
+    .chart-preview__viz[data-type="heatmap"]::before,
+    .chart-preview__viz[data-type="funnel"]::before {
+      content: '';
+      position: absolute;
+      inset: 16px;
+      border-radius: 10px;
+      background: repeating-linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(56, 189, 248, 0.08) 12px, rgba(37, 99, 235, 0.05) 12px, rgba(37, 99, 235, 0.05) 24px);
+      opacity: 0.7;
     }
 
     @media (max-width: 900px) {
@@ -512,17 +562,17 @@
           <div class="kpi-tile">
             <span class="kpi-tile__label">Admissions (24h)</span>
             <span class="kpi-tile__value">44</span>
-            <span class="kpi-tile__trend">of 128 arrivals</span>
+            <span class="kpi-tile__trend">of 128 arrivals (34%)</span>
           </div>
           <div class="kpi-tile">
             <span class="kpi-tile__label">EMS arrivals (24h)</span>
             <span class="kpi-tile__value">58</span>
-            <span class="kpi-tile__trend">of 128 arrivals</span>
+            <span class="kpi-tile__trend">of 128 arrivals (45%)</span>
           </div>
           <div class="kpi-tile">
             <span class="kpi-tile__label">Discharges under 4h</span>
             <span class="kpi-tile__value">74</span>
-            <span class="kpi-tile__trend">of 120 total discharges</span>
+            <span class="kpi-tile__trend">of 120 discharges (62%)</span>
           </div>
         </div>
       </article>
@@ -535,7 +585,7 @@
         <div class="insights-list">
           <div class="insight-item">Boarding patients averaged 9 per day last week, above the monthly baseline. Coordinate with inpatient units during daytime huddles.</div>
           <div class="insight-item">Median LOS sits 0.4h above the 6-week baseline; review observation unit workflow in the next daily briefing.</div>
-          <div class="insight-item">EMS arrivals increased by 11 cases week-over-week, concentrated on Mondays—share trend in the daily update.</div>
+          <div class="insight-item">EMS arrivals increased by 11 cases week-over-week, concentrated on Mondaysùshare trend in the daily update.</div>
         </div>
       </article>
 
@@ -575,10 +625,10 @@
           </div>
         </div>
         <div class="chart-stack">
-          <div class="chart-placeholder">Daily arrivals trend</div>
-          <div class="chart-placeholder">Day-of-week pattern</div>
-          <div class="chart-placeholder">Hourly heatmap</div>
-          <div class="chart-placeholder">Arrival funnel</div>
+          <div class="chart-preview"><header><span>Daily arrivals trend (30d)</span><span class="chart-preview__metric">Today: 128</span></header><div class="chart-preview__viz" data-type="line"></div></div>
+          <div class="chart-preview"><header><span>Day-of-week arrivals</span><span class="chart-preview__metric">Peak: Mon</span></header><div class="chart-preview__viz" data-type="bar"></div></div>
+          <div class="chart-preview"><header><span>Hourly heatmap</span><span class="chart-preview__metric">Peak: 20:00</span></header><div class="chart-preview__viz" data-type="heatmap"></div></div>
+          <div class="chart-preview"><header><span>Arrival to disposition</span><span class="chart-preview__metric">Discharged: 120</span></header><div class="chart-preview__viz" data-type="funnel"></div></div>
         </div>
       </article>
       <article class="section-card">
@@ -603,7 +653,7 @@
             <button type="button" aria-pressed="false">Yearly</button>
           </div>
         </div>
-        <div class="chart-placeholder" style="min-height: 260px;">Trend / table hybrid</div>
+        <div class="chart-preview"><header><span>Monthly performance</span><span class="chart-preview__metric">Median LOS: 3.4h</span></header><div class="chart-preview__viz" data-type="combo"></div></div>
       </article>
       <article class="section-card">
         <div class="section-card__header">
@@ -655,10 +705,10 @@
           <button class="btn" type="button">Download report</button>
         </div>
         <div class="chart-stack">
-          <div class="chart-placeholder" style="min-height: 200px;">Trend line</div>
+          <div class="chart-preview"><header><span>Sentiment trend</span><span class="chart-preview__metric">4.3 ?</span></header><div class="chart-preview__viz" data-type="line"></div></div>
           <div class="comment-list">
             <div class="comment-item">"Triage nurse explained everything clearly and kept us updated."</div>
-            <div class="comment-item">"Wait time felt long in the evening—more seating needed."</div>
+            <div class="comment-item">"Wait time felt long in the eveningùmore seating needed."</div>
             <div class="comment-item">"Appreciated quick follow-up the next day."</div>
           </div>
         </div>
@@ -671,7 +721,7 @@
           <h2 class="section-card__title">TV mode preview</h2>
           <button class="btn" type="button">Open shared display</button>
         </div>
-        <div class="chart-placeholder" style="min-height: 220px;">Daily snapshot shown on ED floor screens</div>
+        <div class="chart-preview"><header><span>TV rotation summary</span><span class="chart-preview__metric">Next refresh 06:00</span></header><div class="chart-preview__viz" data-type="line"></div></div>
       </article>
       <article class="section-card">
         <div class="section-card__header">
@@ -747,4 +797,3 @@
   </script>
 </body>
 </html>
-
