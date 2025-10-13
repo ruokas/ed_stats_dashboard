@@ -412,7 +412,7 @@
         <p class="top-bar__meta">RSL SMPS</p>
         <h1 class="top-bar__title">Emergency Operations Overview</h1>
       </div>
-      <span class="chip" title="Last data sync">Updated 6 min ago</span>
+      <span class="chip" title="Last data sync">Updated today 06:02</span>
     </div>
     <div class="top-bar__actions">
       <button class="btn" type="button">Refresh</button>
@@ -491,13 +491,13 @@
       <article class="section-card">
         <div class="section-card__header">
           <h2 class="section-card__title">Shift Snapshot</h2>
-          <span class="chip">Goal coverage: 94%</span>
+          <span class="chip">Daily target: 120 patients</span>
         </div>
         <div class="kpi-grid">
           <div class="kpi-tile">
             <span class="kpi-tile__label">Arrivals (24h)</span>
             <span class="kpi-tile__value">128</span>
-            <span class="kpi-tile__trend">+8% vs avg</span>
+            <span class="kpi-tile__trend">7-day avg 114</span>
           </div>
           <div class="kpi-tile">
             <span class="kpi-tile__label">Median LOS</span>
@@ -510,19 +510,19 @@
             <span class="kpi-tile__trend" style="color: var(--color-danger);">Alert: exceeds baseline</span>
           </div>
           <div class="kpi-tile">
-            <span class="kpi-tile__label">Night shift coverage</span>
-            <span class="kpi-tile__value">92%</span>
-            <span class="kpi-tile__trend">+4% vs last week</span>
+            <span class="kpi-tile__label">Admissions (24h)</span>
+            <span class="kpi-tile__value">44</span>
+            <span class="kpi-tile__trend">of 128 arrivals</span>
           </div>
           <div class="kpi-tile">
-            <span class="kpi-tile__label">EMS arrivals</span>
-            <span class="kpi-tile__value">47%</span>
-            <span class="kpi-tile__trend">Stable</span>
+            <span class="kpi-tile__label">EMS arrivals (24h)</span>
+            <span class="kpi-tile__value">58</span>
+            <span class="kpi-tile__trend">of 128 arrivals</span>
           </div>
           <div class="kpi-tile">
-            <span class="kpi-tile__label">Discharge within 4h</span>
-            <span class="kpi-tile__value">63%</span>
-            <span class="kpi-tile__trend" style="color: var(--color-warning);">-6% vs goal</span>
+            <span class="kpi-tile__label">Discharges under 4h</span>
+            <span class="kpi-tile__value">74</span>
+            <span class="kpi-tile__trend">of 120 total discharges</span>
           </div>
         </div>
       </article>
@@ -533,32 +533,32 @@
           <button class="btn" type="button">View history</button>
         </div>
         <div class="insights-list">
-          <div class="insight-item">Boarding patients exceeded alert threshold for the last 3 hours. Consider surge protocol for inpatient transfers.</div>
-          <div class="insight-item">Night shift LOS improved 12% after staffing change—monitor over the next 2 nights.</div>
-          <div class="insight-item">EMS arrivals trending higher on Mondays; prep staff briefing with ambulance coordinators.</div>
+          <div class="insight-item">Boarding patients averaged 9 per day last week, above the monthly baseline. Coordinate with inpatient units during daytime huddles.</div>
+          <div class="insight-item">Median LOS sits 0.4h above the 6-week baseline; review observation unit workflow in the next daily briefing.</div>
+          <div class="insight-item">EMS arrivals increased by 11 cases week-over-week, concentrated on Mondays—share trend in the daily update.</div>
         </div>
       </article>
 
       <article class="section-card">
         <div class="section-card__header">
-          <h2 class="section-card__title">Shift Comparison</h2>
-          <span class="chip">Comparing Last Night vs Tonight</span>
+          <h2 class="section-card__title">Daily vs weekly baseline</h2>
+          <span class="chip">Updated with last daily load</span>
         </div>
         <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
           <div class="kpi-tile">
-            <span class="kpi-tile__label">Arrivals</span>
-            <span class="kpi-tile__value">+14</span>
-            <span class="kpi-tile__trend">More than last night</span>
+            <span class="kpi-tile__label">Arrivals today</span>
+            <span class="kpi-tile__value">128</span>
+            <span class="kpi-tile__trend">7-day avg 114</span>
           </div>
           <div class="kpi-tile">
-            <span class="kpi-tile__label">LOS delta</span>
-            <span class="kpi-tile__value">+0.6h</span>
-            <span class="kpi-tile__trend" style="color: var(--color-warning);">Expected boarders at 02:00</span>
+            <span class="kpi-tile__label">Discharges today</span>
+            <span class="kpi-tile__value">120</span>
+            <span class="kpi-tile__trend">7-day avg 118</span>
           </div>
           <div class="kpi-tile">
-            <span class="kpi-tile__label">Staffing impact</span>
-            <span class="kpi-tile__value">2 RN short</span>
-            <span class="kpi-tile__trend" style="color: var(--color-danger);">Escalate to supervisor</span>
+            <span class="kpi-tile__label">Boarders >8h</span>
+            <span class="kpi-tile__value">11</span>
+            <span class="kpi-tile__trend">7-day avg 6</span>
           </div>
         </div>
       </article>
@@ -587,8 +587,8 @@
           <button class="btn" type="button">Add note</button>
         </div>
         <div class="insights-list">
-          <div class="insight-item">Consider flexing surge bays between 18:00-22:00; historical data shows patient peak during this window.</div>
-          <div class="insight-item">Triage staffing steady—no action required.</div>
+          <div class="insight-item">Past 30-day arrivals peak between 18:00-22:00; include reminder in the daily briefing.</div>
+          <div class="insight-item">LOS variance lowest on Wednesdays; highlight in the weekly ops summary.</div>
         </div>
       </article>
     </section>
@@ -668,10 +668,10 @@
     <section class="tab-panel" data-panel="ops" role="tabpanel">
       <article class="section-card">
         <div class="section-card__header">
-          <h2 class="section-card__title">TV Mode Preview</h2>
-          <button class="btn" type="button">Launch TV Mode</button>
+          <h2 class="section-card__title">TV mode preview</h2>
+          <button class="btn" type="button">Open shared display</button>
         </div>
-        <div class="chart-placeholder" style="min-height: 220px;">TV snapshot placeholder</div>
+        <div class="chart-placeholder" style="min-height: 220px;">Daily snapshot shown on ED floor screens</div>
       </article>
       <article class="section-card">
         <div class="section-card__header">
@@ -680,19 +680,19 @@
         </div>
         <div class="operations-grid">
           <div class="kpi-tile">
-            <span class="kpi-tile__label">Surge protocol</span>
-            <span class="kpi-tile__value">Ready</span>
-            <span class="kpi-tile__trend">Reviewed 09:15</span>
+            <span class="kpi-tile__label">Data refresh</span>
+            <span class="kpi-tile__value">Daily 06:00</span>
+            <span class="kpi-tile__trend">Last import 13 Oct</span>
           </div>
           <div class="kpi-tile">
-            <span class="kpi-tile__label">Inpatient beds</span>
-            <span class="kpi-tile__value">12 available</span>
-            <span class="kpi-tile__trend">Update pending</span>
+            <span class="kpi-tile__label">CSV sources</span>
+            <span class="kpi-tile__value">Primary + 5-year history</span>
+            <span class="kpi-tile__trend">Manage in settings</span>
           </div>
           <div class="kpi-tile">
-            <span class="kpi-tile__label">Diagnostics turnaround</span>
-            <span class="kpi-tile__value">38 min</span>
-            <span class="kpi-tile__trend">Stable</span>
+            <span class="kpi-tile__label">TV screens</span>
+            <span class="kpi-tile__value">4 active</span>
+            <span class="kpi-tile__trend">ED floor rotation</span>
           </div>
         </div>
       </article>
@@ -747,3 +747,4 @@
   </script>
 </body>
 </html>
+

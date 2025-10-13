@@ -14,7 +14,7 @@
    - Operations top bar/global filter drawer.
 2. **Interaction notes** covering tab transitions, filter application flow, and TV-mode handoff.
 3. **Validation checklist** for internal review + ED manager walkthrough.
-4. **Static prototype**: interactive layout mock at `prototypes/layout_prototype.html`.
+4. **Static prototype**: interactive layout mock at `prototypes/layout_prototype.html` (v2 pending data-scope adjustments).
 
 ## Layout Blueprint
 - **Top bar**: fixed at 64px, hosts identity, refresh, status pill, TV toggle, settings, and filter drawer button. Shrinks to 56px on <768px.
@@ -39,10 +39,18 @@
 - Validation checklist signed off, feeding Stage 2 backlog (global filter controller, tab shell, top bar refactor).
 
 ## Review notes
+### Prototype adjust summary
+- Swap overview cards to show daily totals/real values.
+- Limit alerts to daily-refresh insights (no real-time staffing evaluation).
+- Remove staffing/surge/inpatient/diagnostics widgets due to missing data.
+- TV mode treated as shared floor display (not manager-only tool).
+
 - Overall layout looks good
 - Would like to see actual numbers for overview cards, not just percentages
 - Alerts and insights would only be about long term performance, because currently the data is only updated once a day
 - The page would not evaluate staffing, because I could not feed that data
 - We dont have surge protocol, and dont have uptodate info about inpatient beds or diagnostics turnaround
 - TV mode is used as a dashboard for all workers inside ED
+
+
 
