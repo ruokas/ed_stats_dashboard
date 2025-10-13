@@ -46,6 +46,9 @@
 - TV mode treated as shared floor display (not manager-only tool).
 
 ## After review notes
+- Add percentage context next to admissions/EMS/discharge counts in prototype.
+- Replace operations checklist with more meaningful data (e.g., data refresh, CSV status, TV rotation).
+- Introduce representative chart placeholders or simplified previews in flow/trends/ops tabs.
 - Admissions, EMS arrivals and discharges under 4h should also show percentages next to actual numbers
 - Operational checklist shows no useful info for me
 - would like to see actual charts in patient flow tab, performance tab, operations tab.
