@@ -14,6 +14,7 @@
    - Operations top bar/global filter drawer.
 2. **Interaction notes** covering tab transitions, filter application flow, and TV-mode handoff.
 3. **Validation checklist** for internal review + ED manager walkthrough.
+4. **Static prototype**: interactive layout mock at `prototypes/layout_prototype.html`.
 
 ## Layout Blueprint
 - **Top bar**: fixed at 64px, hosts identity, refresh, status pill, TV toggle, settings, and filter drawer button. Shrinks to 56px on <768px.
@@ -21,11 +22,11 @@
 - **Tabs**: sticky horizontal bar on desktop; collapses into segmented control on mobile. Anchors: `overview`, `flow`, `trends`, `experience`, `ops` (optional).
 - **Section priorities**:
   - Overview: KPIs (2x3 grid), alert/insights stack, shift comparison banner, quick actions.
-  - Flow: stacked charts ordered by “now ? pattern ? breakdown”, with shared toolbar pinned atop charts.
+  - Flow: stacked charts ordered by “now -> pattern -> breakdown”, with shared toolbar pinned atop charts.
   - Trends: toggle (recent/monthly/yearly), inline change indicators, export button.
   - Experience: sentiment cards row, trend chart, latest comments list with filters inline.
   - Operations (optional tab or modal): TV mode preview + core diagnostics.
-- **Responsive rules**: break at 1200px (three-column ? two), 900px (single column), 640px (full width cards, sticky filters repositioned).
+- **Responsive rules**: break at 1200px (three-column -> two), 900px (single column), 640px (full width cards, sticky filters repositioned).
 
 ## Validation & Research
 - **Design reviews**: async feedback with product + engineering (Figma comments) followed by live critique.
@@ -36,3 +37,4 @@
 - Wireframes approved by product, ED manager, and engineering.
 - Interaction notes answer mobile/desktop behavior questions for developers.
 - Validation checklist signed off, feeding Stage 2 backlog (global filter controller, tab shell, top bar refactor).
+
