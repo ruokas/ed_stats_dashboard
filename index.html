@@ -4193,6 +4193,129 @@
         scroll-behavior: auto !important;
       }
     }
+      body[data-layout="v2"] .hero,
+    body[data-layout="v2"] .section-nav {
+      display: none;
+    }
+
+    .layout-v2-topbar {
+      display: none;
+    }
+
+    body[data-layout="v2"] .layout-v2-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 24;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 16px 32px;
+      background: var(--color-surface);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .layout-v2-topbar__identity {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .layout-v2-topbar__title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .layout-v2-topbar__subtitle {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .layout-v2-topbar__status {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .layout-v2-filter-summary {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .layout-v2-topbar__actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .layout-v2-topbar__actions .icon-button,
+    .layout-v2-topbar__actions .btn,
+    .layout-v2-topbar__actions button {
+      margin: 0;
+    }
+
+    .layout-v2-tabs {
+      display: none;
+    }
+
+    body[data-layout="v2"] .layout-v2-tabs {
+      position: sticky;
+      top: 72px;
+      z-index: 23;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 32px 12px;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      backdrop-filter: blur(14px);
+    }
+
+    .layout-v2-tab {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      background: var(--color-surface-alt);
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .layout-v2-tab:hover,
+    .layout-v2-tab:focus-visible {
+      outline: none;
+      background: var(--color-accent-soft);
+      color: var(--color-text);
+    }
+
+    .layout-v2-tab.is-active,
+    .layout-v2-tab[aria-selected="true"] {
+      background: var(--color-accent);
+      color: #fff;
+    }
+
+    @media (max-width: 900px) {
+      body[data-layout="v2"] .layout-v2-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      body[data-layout="v2"] .layout-v2-tabs {
+        top: 120px;
+        padding-inline: 16px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -6032,6 +6155,184 @@
       };
     }
 
+    let layoutV2TabButtons = [];
+    let layoutV2TabObserver = null;
+
+    function setActiveLayoutV2Tab(tabId) {
+      if (!FEATURE_LAYOUT_V2 || !layoutV2TabButtons.length) {
+        return;
+      }
+      layoutV2TabButtons.forEach((button) => {
+        const isActive = button.dataset.tabId === tabId;
+        button.setAttribute('aria-selected', String(isActive));
+        button.classList.toggle('is-active', isActive);
+      });
+    }
+
+    function initializeLayoutV2Shell() {
+      if (!FEATURE_LAYOUT_V2) {
+        return;
+      }
+      const hero = document.querySelector('.hero');
+      const main = document.querySelector('main.container');
+      if (!main) {
+        return;
+      }
+
+      let topBar = document.getElementById('layoutV2Topbar');
+      if (!topBar) {
+        topBar = buildLayoutV2Topbar();
+        const parent = hero && hero.parentNode ? hero.parentNode : document.body;
+        parent.insertBefore(topBar, hero || main);
+      }
+
+      let tabsNav = document.getElementById('layoutV2Tabs');
+      if (!tabsNav) {
+        tabsNav = buildLayoutV2Tabs();
+        topBar.insertAdjacentElement('afterend', tabsNav);
+      }
+    }
+
+        function buildLayoutV2Topbar() {
+      const topBar = document.createElement('header');
+      topBar.className = 'layout-v2-topbar';
+      topBar.id = 'layoutV2Topbar';
+
+      const identity = document.createElement('div');
+      identity.className = 'layout-v2-topbar__identity';
+
+      const title = document.createElement('h1');
+      title.className = 'layout-v2-topbar__title';
+      title.textContent = settings?.output?.title || TEXT.title || document.title || 'ED Dashboard';
+
+      const subtitle = document.createElement('p');
+      subtitle.className = 'layout-v2-topbar__subtitle';
+      subtitle.textContent = settings?.output?.subtitle || TEXT.subtitle || '';
+
+      identity.appendChild(title);
+      if (subtitle.textContent) {
+        identity.appendChild(subtitle);
+      }
+
+      const status = selectors.status;
+      if (status) {
+        status.classList.add('layout-v2-topbar__status');
+        identity.appendChild(status);
+      }
+
+      topBar.appendChild(identity);
+
+      const actions = document.createElement('div');
+      actions.className = 'layout-v2-topbar__actions';
+      const actionElements = [
+        selectors.refreshBtn,
+        selectors.kpiFiltersToggle,
+        selectors.openSettingsBtn,
+        selectors.edTvToggleBtn,
+      ];
+      actionElements.forEach((element) => {
+        if (element && element.parentElement !== actions) {
+          actions.appendChild(element);
+        }
+      });
+      if (actions.childElementCount) {
+        topBar.appendChild(actions);
+      }
+
+      const filterSummary = selectors.kpiActiveFilters;
+      if (filterSummary) {
+        filterSummary.classList.add('layout-v2-filter-summary');
+        topBar.appendChild(filterSummary);
+      }
+
+      selectors.layoutTopBar = topBar;
+
+      return topBar;
+    }
+
+        function buildLayoutV2Tabs() {
+      const nav = document.createElement('nav');
+      nav.className = 'layout-v2-tabs';
+      nav.id = 'layoutV2Tabs';
+      nav.setAttribute('role', 'tablist');
+
+      const tabConfig = [
+        { id: 'overview', label: settings?.output?.tabOverviewLabel || TEXT.tabs?.overview || 'Bendras vaizdas', target: 'section[data-section="kpi"]' },
+        { id: 'flow', label: TEXT.charts?.navLabel || TEXT.charts?.title || 'Pacientu srautai', target: 'section[data-section="chart"]' },
+        { id: 'trends', label: TEXT.monthly?.navLabel || TEXT.monthly?.title || 'Rezultatai', target: 'section[data-section="recent"]' },
+        { id: 'experience', label: TEXT.feedback?.navLabel || TEXT.feedback?.title || 'Atsiliepimai', target: 'section[data-section="feedback"]' },
+        { id: 'ops', label: settings?.output?.tabEdLabel || TEXT.tabs?.ed || 'ED skydelis', target: '#edStandardSection' },
+      ];
+
+      layoutV2TabButtons = [];
+      if (layoutV2TabObserver) {
+        layoutV2TabObserver.disconnect();
+      }
+
+      const observedTargets = [];
+
+      tabConfig.forEach((config, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'layout-v2-tab';
+        button.textContent = config.label;
+        button.dataset.tabId = config.id;
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+        button.classList.toggle('is-active', index === 0);
+
+        button.addEventListener('click', () => {
+          if (config.id === 'ops') {
+            setActiveTab('ed', { focusPanel: true });
+            setActiveLayoutV2Tab('ops');
+            return;
+          }
+          if (dashboardState.activeTab === 'ed') {
+            setActiveTab('overview', { restoreFocus: false });
+          }
+          setActiveLayoutV2Tab(config.id);
+          const target = document.querySelector(config.target);
+          if (target && typeof target.scrollIntoView === 'function') {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+
+        nav.appendChild(button);
+        layoutV2TabButtons.push(button);
+
+        if (config.id !== 'ops') {
+          const section = document.querySelector(config.target);
+          if (section) {
+            section.setAttribute('data-layout-tab-id', config.id);
+            observedTargets.push(section);
+          }
+        }
+      });
+
+      selectors.layoutTabButtons = layoutV2TabButtons;
+
+      setActiveLayoutV2Tab(layoutV2TabButtons.length ? layoutV2TabButtons[0].dataset.tabId : 'overview');
+
+      if (observedTargets.length) {
+        layoutV2TabObserver = new IntersectionObserver((entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          if (visible.length) {
+            const tabId = visible[0].target.getAttribute('data-layout-tab-id');
+            if (tabId) {
+              setActiveLayoutV2Tab(tabId);
+            }
+          }
+        }, { rootMargin: '-140px 0px -60% 0px', threshold: [0.25, 0.4, 0.6] });
+        observedTargets.forEach((section) => layoutV2TabObserver.observe(section));
+      }
+
+      selectors.layoutTabsNav = nav;
+
+      return nav;
+    }
+
     function sanitizeKpiFilters(filters) {
       const defaults = getDefaultKpiFilters();
       const normalized = { ...defaults, ...(filters || {}) };
@@ -7414,6 +7715,7 @@
       applySettingsToText();
       applyTextContent();
       applyFooterSource();
+    initializeLayoutV2Shell();
       applySectionVisibility();
       closeSettingsDialog();
       loadDashboard();
@@ -7436,6 +7738,7 @@
       applySettingsToText();
       applyTextContent();
       applyFooterSource();
+    initializeLayoutV2Shell();
       applySectionVisibility();
       populateSettingsForm();
       loadDashboard();
@@ -13951,6 +14254,9 @@
 
     function setActiveTab(tabId, { focusPanel = false, restoreFocus = false } = {}) {
       const normalized = tabId === 'ed' ? 'ed' : 'overview';
+      if (FEATURE_LAYOUT_V2 && typeof setActiveLayoutV2Tab === 'function' && normalized === 'ed') {
+        setActiveLayoutV2Tab('ops');
+      }
       dashboardState.activeTab = normalized;
       if (selectors.tabButtons && selectors.tabButtons.length) {
         selectors.tabButtons.forEach((button) => {
@@ -17189,6 +17495,7 @@
     applySettingsToText();
     applyTextContent();
     applyFooterSource();
+    initializeLayoutV2Shell();
     initializeSectionNavigation();
     initializeHeroCompactMode();
     initializeStickyTitleObserver();
@@ -17414,6 +17721,4 @@
   </script>
 </body>
 </html>
-
-
 
