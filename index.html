@@ -6157,6 +6157,7 @@
 
     let layoutV2TabButtons = [];
     let layoutV2TabObserver = null;
+    let layoutV2ActiveTabId = 'overview';
 
     function setActiveLayoutV2Tab(tabId) {
       if (!FEATURE_LAYOUT_V2 || !layoutV2TabButtons.length) {
@@ -6167,6 +6168,17 @@
         button.setAttribute('aria-selected', String(isActive));
         button.classList.toggle('is-active', isActive);
       });
+      layoutV2ActiveTabId = tabId;
+    }
+
+    function getLayoutV2TabConfig() {
+      return [
+        { id: 'overview', label: settings?.output?.tabOverviewLabel || TEXT.tabs?.overview || 'Bendras vaizdas', target: 'section[data-section="kpi"]' },
+        { id: 'flow', label: TEXT.charts?.navLabel || TEXT.charts?.title || 'Pacientu srautai', target: 'section[data-section="chart"]' },
+        { id: 'trends', label: TEXT.monthly?.navLabel || TEXT.monthly?.title || 'Rezultatai', target: 'section[data-section="recent"]' },
+        { id: 'experience', label: TEXT.feedback?.navLabel || TEXT.feedback?.title || 'Atsiliepimai', target: 'section[data-section="feedback"]' },
+        { id: 'ops', label: settings?.output?.tabEdLabel || TEXT.tabs?.ed || 'ED skydelis', target: '#edStandardSection' },
+      ];
     }
 
     function initializeLayoutV2Shell() {
@@ -6179,18 +6191,32 @@
         return;
       }
 
-      let topBar = document.getElementById('layoutV2Topbar');
-      if (!topBar) {
-        topBar = buildLayoutV2Topbar();
-        const parent = hero && hero.parentNode ? hero.parentNode : document.body;
-        parent.insertBefore(topBar, hero || main);
+      const previousActiveId = layoutV2ActiveTabId;
+
+      if (layoutV2TabObserver && typeof layoutV2TabObserver.disconnect === 'function') {
+        layoutV2TabObserver.disconnect();
+        layoutV2TabObserver = null;
       }
 
-      let tabsNav = document.getElementById('layoutV2Tabs');
-      if (!tabsNav) {
-        tabsNav = buildLayoutV2Tabs();
-        topBar.insertAdjacentElement('afterend', tabsNav);
+      let existingTabs = document.getElementById('layoutV2Tabs');
+      if (existingTabs && existingTabs.parentNode) {
+        existingTabs.parentNode.removeChild(existingTabs);
       }
+
+      let topBar = document.getElementById('layoutV2Topbar');
+      const parent = hero && hero.parentNode ? hero.parentNode : document.body;
+      if (topBar && topBar.parentNode) {
+        topBar.parentNode.removeChild(topBar);
+        topBar = null;
+      }
+      topBar = buildLayoutV2Topbar();
+      parent.insertBefore(topBar, hero || main);
+
+      const tabsNav = buildLayoutV2Tabs();
+      topBar.insertAdjacentElement('afterend', tabsNav);
+
+      const desiredActive = previousActiveId || 'overview';
+      setActiveLayoutV2Tab(desiredActive);
     }
 
         function buildLayoutV2Topbar() {
@@ -6256,13 +6282,7 @@
       nav.id = 'layoutV2Tabs';
       nav.setAttribute('role', 'tablist');
 
-      const tabConfig = [
-        { id: 'overview', label: settings?.output?.tabOverviewLabel || TEXT.tabs?.overview || 'Bendras vaizdas', target: 'section[data-section="kpi"]' },
-        { id: 'flow', label: TEXT.charts?.navLabel || TEXT.charts?.title || 'Pacientu srautai', target: 'section[data-section="chart"]' },
-        { id: 'trends', label: TEXT.monthly?.navLabel || TEXT.monthly?.title || 'Rezultatai', target: 'section[data-section="recent"]' },
-        { id: 'experience', label: TEXT.feedback?.navLabel || TEXT.feedback?.title || 'Atsiliepimai', target: 'section[data-section="feedback"]' },
-        { id: 'ops', label: settings?.output?.tabEdLabel || TEXT.tabs?.ed || 'ED skydelis', target: '#edStandardSection' },
-      ];
+      const tabConfig = getLayoutV2TabConfig();
 
       layoutV2TabButtons = [];
       if (layoutV2TabObserver) {
