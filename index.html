@@ -6107,20 +6107,64 @@
     }
 
     function getDefaultChartFilters() {
-      return {
-        arrival: 'all',
-        disposition: 'all',
-        cardType: 'all',
-      };
+      const { arrival, disposition, cardType } = getDefaultGlobalFilters();
+      return { arrival, disposition, cardType };
     }
 
     function getDefaultGlobalFilters() {
       return { ...getDefaultKpiFilters() };
     }
 
+    function sanitizeGlobalFilters(filters) {
+      const defaults = getDefaultGlobalFilters();
+      const normalized = { ...defaults, ...(filters || {}) };
+      const numericWindow = Number.isFinite(Number(normalized.window))
+        ? Number(normalized.window)
+        : defaults.window;
+      normalized.window = numericWindow >= 0 ? numericWindow : defaults.window;
+      if (!(normalized.shift in KPI_FILTER_LABELS.shift)) {
+        normalized.shift = defaults.shift;
+      }
+      if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
+        normalized.arrival = defaults.arrival;
+      }
+      if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
+        normalized.disposition = defaults.disposition;
+      }
+      if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
+        normalized.cardType = defaults.cardType;
+      }
+      return normalized;
+    }
+
+    function sanitizeKpiFilters(filters) {
+      return sanitizeGlobalFilters(filters);
+    }
+
+    function sanitizeChartFilters(filters) {
+      const normalized = sanitizeGlobalFilters(filters);
+      return {
+        arrival: normalized.arrival,
+        disposition: normalized.disposition,
+        cardType: normalized.cardType,
+      };
+    }
+
+    function filtersAreEqual(a, b) {
+      if (!a || !b) {
+        return false;
+      }
+      const keys = ['window', 'shift', 'arrival', 'disposition', 'cardType'];
+      return keys.every((key) => a[key] === b[key]);
+    }
+
     function createGlobalFilterController(initialState = getDefaultGlobalFilters()) {
-      const state = { ...initialState };
+      let state = sanitizeGlobalFilters(initialState);
       const listeners = new Set();
+
+      const emit = () => {
+        listeners.forEach((listener) => listener({ ...state }));
+      };
 
       return {
         getState() {
@@ -6134,23 +6178,16 @@
           return () => listeners.delete(listener);
         },
         apply(partial = {}) {
-          let changed = false;
-          Object.entries(partial).forEach(([key, value]) => {
-            if (value !== undefined && state[key] !== value) {
-              state[key] = value;
-              changed = true;
-            }
-          });
-          if (changed) {
-            listeners.forEach((listener) => listener({ ...state }));
+          const nextState = sanitizeGlobalFilters({ ...state, ...(partial || {}) });
+          if (filtersAreEqual(state, nextState)) {
+            return;
           }
+          state = nextState;
+          emit();
         },
         reset() {
-          const defaults = getDefaultGlobalFilters();
-          Object.keys(defaults).forEach((key) => {
-            state[key] = defaults[key];
-          });
-          listeners.forEach((listener) => listener({ ...state }));
+          state = sanitizeGlobalFilters(getDefaultGlobalFilters());
+          emit();
         },
       };
     }
@@ -7719,23 +7756,21 @@
       }
       const extracted = extractSettingsFromForm(selectors.settingsForm);
       settings = normalizeSettings(extracted);
-      const previousFilters = dashboardState.kpi.filters;
-      const defaultFilters = getDefaultKpiFilters();
-      dashboardState.kpi.filters = {
+      const previousFilters = { ...dashboardState.filters };
+      const defaultFilters = getDefaultGlobalFilters();
+      const nextFilters = {
         ...defaultFilters,
         shift: previousFilters.shift,
         arrival: previousFilters.arrival,
         disposition: previousFilters.disposition,
         cardType: previousFilters.cardType,
       };
-      syncGlobalFiltersFromKpi();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
+      globalFilterController.apply(nextFilters);
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
       applyFooterSource();
-    initializeLayoutV2Shell();
+      initializeLayoutV2Shell();
       applySectionVisibility();
       closeSettingsDialog();
       loadDashboard();
@@ -7747,18 +7782,12 @@
         return;
       }
       settings = normalizeSettings({});
-      dashboardState.kpi.filters = getDefaultKpiFilters();
-      syncGlobalFiltersFromKpi();
-      dashboardState.chartFilters = getDefaultChartFilters();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      syncChartFilterControls();
-      updateChartFiltersSummary({ records: [], daily: [] });
+      globalFilterController.reset();
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
       applyFooterSource();
-    initializeLayoutV2Shell();
+      initializeLayoutV2Shell();
       applySectionVisibility();
       populateSettingsForm();
       loadDashboard();
@@ -7827,9 +7856,7 @@
         selections: [],
       },
       contrastWarning: false,
-      chartFilters: getDefaultChartFilters(),
       kpi: {
-        filters: getDefaultKpiFilters(),
         records: [],
         daily: [],
       },
@@ -7857,15 +7884,43 @@
     };
     const globalFilterController = createGlobalFilterController(dashboardState.filters);
 
-    globalFilterController.subscribe((filters) => {
-      dashboardState.filters = { ...filters };
-    });
-
-    function syncGlobalFiltersFromKpi() {
-      globalFilterController.apply({ ...dashboardState.kpi.filters });
+    function applyFiltersToState(filters) {
+      const sanitized = sanitizeGlobalFilters(filters);
+      const keys = ['window', 'shift', 'arrival', 'disposition', 'cardType'];
+      let windowChanged = false;
+      keys.forEach((key) => {
+        if (dashboardState.filters[key] !== sanitized[key]) {
+          if (key === 'window') {
+            windowChanged = true;
+          }
+          dashboardState.filters[key] = sanitized[key];
+        }
+      });
+      return windowChanged;
     }
 
-    syncGlobalFiltersFromKpi();
+    globalFilterController.subscribe((filters) => {
+      const windowChanged = applyFiltersToState(filters);
+      if (windowChanged) {
+        refreshKpiWindowOptions();
+      }
+      syncKpiFilterControls();
+      syncChartFilterControls();
+      updateChartFiltersSummary({
+        records: dashboardState.chartData.filteredRecords,
+        daily: dashboardState.chartData.filteredDaily,
+      });
+      const hasPrimaryData = Array.isArray(dashboardState.primaryRecords)
+        ? dashboardState.primaryRecords.length > 0
+        : false;
+      const hasDailyData = Array.isArray(dashboardState.dailyStats)
+        ? dashboardState.dailyStats.length > 0
+        : false;
+      if (hasPrimaryData || hasDailyData) {
+        void applyKpiFiltersAndRender();
+        void applyChartFilters();
+      }
+    });
 
     function resetMonthlyState() {
       dashboardState.monthly.all = [];
@@ -11178,9 +11233,9 @@
         : dashboardState.rawRecords;
       const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
       const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-      const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters);
-      dashboardState.chartFilters = { ...sanitizedFilters };
-      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, sanitizedFilters);
+      const activeFilters = sanitizeGlobalFilters(dashboardState.filters);
+      Object.assign(dashboardState.filters, activeFilters);
+      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, activeFilters);
       const filteredDaily = computeDailyStats(filteredRecords);
       const scopedDaily = filterDailyStatsByWindow(filteredDaily, normalized);
       const scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
@@ -12349,8 +12404,8 @@
       const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
         ? configuredWindowRaw
         : DEFAULT_KPI_WINDOW_DAYS;
-      const currentWindowRaw = Number.isFinite(Number(dashboardState.kpi?.filters?.window))
-        ? Number(dashboardState.kpi.filters.window)
+      const currentWindowRaw = Number.isFinite(Number(dashboardState?.filters?.window))
+        ? Number(dashboardState.filters.window)
         : configuredWindow;
       const currentWindow = Number.isFinite(currentWindowRaw) && currentWindowRaw > 0
         ? currentWindowRaw
@@ -12378,7 +12433,7 @@
     }
 
     function syncKpiFilterControls() {
-      const filters = dashboardState.kpi.filters;
+      const filters = dashboardState.filters;
       if (selectors.kpiWindow && Number.isFinite(filters.window)) {
         const windowValue = String(filters.window);
         const existing = Array.from(selectors.kpiWindow.options).some((option) => option.value === windowValue);
@@ -12405,8 +12460,7 @@
     }
 
     function syncChartFilterControls() {
-      const filters = sanitizeChartFilters(dashboardState.chartFilters);
-      dashboardState.chartFilters = { ...filters };
+      const filters = sanitizeChartFilters(dashboardState.filters);
       if (selectors.chartFilterArrival) {
         selectors.chartFilterArrival.value = filters.arrival;
       }
@@ -12422,7 +12476,7 @@
       if (!selectors.chartFiltersSummary) {
         return;
       }
-      const filters = sanitizeChartFilters(dashboardState.chartFilters);
+      const filters = sanitizeChartFilters(dashboardState.filters);
       const defaults = getDefaultChartFilters();
       const summaryParts = [];
       if (filters.arrival !== defaults.arrival) {
@@ -12483,7 +12537,7 @@
       return true;
     }
 
-    function recordMatchesKpiFilters(record, filters) {
+    function recordMatchesGlobalFilters(record, filters = {}) {
       if (!record) {
         return false;
       }
@@ -12496,15 +12550,16 @@
       return matchesSharedPatientFilters(record, filters);
     }
 
+    function recordMatchesKpiFilters(record, filters) {
+      return recordMatchesGlobalFilters(record, filters);
+    }
+
     function recordMatchesChartFilters(record, filters) {
-      if (!record) {
-        return false;
-      }
-      return matchesSharedPatientFilters(record, filters);
+      return recordMatchesGlobalFilters(record, filters);
     }
 
     function filterRecordsByChartFilters(records, filters) {
-      const normalized = sanitizeChartFilters(filters);
+      const normalized = sanitizeGlobalFilters(filters);
       return (Array.isArray(records) ? records : []).filter((record) => recordMatchesChartFilters(record, normalized));
     }
 
@@ -12519,8 +12574,8 @@
       if (!selectors.kpiActiveInfo) {
         return;
       }
-      const filters = dashboardState.kpi.filters;
-      const defaultFilters = getDefaultKpiFilters();
+      const filters = dashboardState.filters;
+      const defaultFilters = getDefaultGlobalFilters();
       const totalRecords = Array.isArray(records) ? records.length : 0;
       const hasAggregatedData = Array.isArray(dailyStats)
         ? dailyStats.some((entry) => Number.isFinite(entry?.count) && entry.count > 0)
@@ -12594,10 +12649,9 @@
     }
 
     async function applyKpiFiltersAndRender() {
-      const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters);
-      dashboardState.kpi.filters = { ...normalizedFilters };
-      syncGlobalFiltersFromKpi();
-      const defaultFilters = getDefaultKpiFilters();
+      const normalizedFilters = sanitizeKpiFilters(dashboardState.filters);
+      Object.assign(dashboardState.filters, normalizedFilters);
+      const defaultFilters = getDefaultGlobalFilters();
       const windowDays = normalizedFilters.window;
       const workerPayload = {
         filters: normalizedFilters,
@@ -12650,22 +12704,20 @@
         return;
       }
       const { name, value } = target;
-      const filters = dashboardState.kpi.filters;
       if (name === 'window') {
         const numeric = Number.parseInt(value, 10);
         if (Number.isFinite(numeric) && numeric >= 0) {
-          filters.window = numeric;
+          globalFilterController.apply({ window: numeric });
         }
       } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
-        filters.shift = value;
+        globalFilterController.apply({ shift: value });
       } else if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
-        filters.arrival = value;
+        globalFilterController.apply({ arrival: value });
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
-        filters.disposition = value;
+        globalFilterController.apply({ disposition: value });
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
-        filters.cardType = value;
+        globalFilterController.apply({ cardType: value });
       }
-      void applyKpiFiltersAndRender();
     }
 
     function handleChartFilterChange(event) {
@@ -12674,21 +12726,18 @@
         return;
       }
       const { name, value } = target;
-      const filters = { ...dashboardState.chartFilters };
       if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
-        filters.arrival = value;
+        globalFilterController.apply({ arrival: value });
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
-        filters.disposition = value;
+        globalFilterController.apply({ disposition: value });
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
-        filters.cardType = value;
+        globalFilterController.apply({ cardType: value });
       }
-      dashboardState.chartFilters = filters;
-      void applyChartFilters();
     }
 
     function applyChartFilters() {
-      const sanitized = sanitizeChartFilters(dashboardState.chartFilters);
-      dashboardState.chartFilters = { ...sanitized };
+      const activeFilters = sanitizeGlobalFilters(dashboardState.filters);
+      Object.assign(dashboardState.filters, activeFilters);
       syncChartFilterControls();
       const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
         || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
@@ -12708,11 +12757,7 @@
     }
 
     function resetKpiFilters({ fromKeyboard } = {}) {
-      dashboardState.kpi.filters = getDefaultKpiFilters();
-      syncGlobalFiltersFromKpi();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      void applyKpiFiltersAndRender();
+      globalFilterController.reset();
       if (fromKeyboard && selectors.kpiFiltersReset) {
         selectors.kpiFiltersReset.focus();
       }
@@ -12774,7 +12819,7 @@
         updateKpiSummary({
           records: dashboardState.kpi.records,
           dailyStats: dashboardState.kpi.daily,
-          windowDays: dashboardState.kpi.filters.window,
+          windowDays: dashboardState.filters.window,
         });
       }
     }
@@ -14608,7 +14653,7 @@
               ? dashboardState.chartData.baseRecords
               : dashboardState.rawRecords;
             const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-            const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, dashboardState.chartFilters || {});
+            const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, dashboardState.filters || {});
             fallbackRecords = filterRecordsByWindow(filteredRecords, dashboardState.chartPeriod);
           }
           heatmapSource = computeArrivalHeatmap(fallbackRecords);
@@ -16492,8 +16537,8 @@
       const overviewDailyStats = Array.isArray(dashboardState?.kpi?.daily) && dashboardState.kpi.daily.length
         ? dashboardState.kpi.daily
         : (Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : []);
-      const configuredWindowRaw = Number.isFinite(Number(dashboardState?.kpi?.filters?.window))
-        ? Number(dashboardState.kpi.filters.window)
+      const configuredWindowRaw = Number.isFinite(Number(dashboardState?.filters?.window))
+        ? Number(dashboardState.filters.window)
         : (Number.isFinite(Number(settings?.calculations?.windowDays))
           ? Number(settings.calculations.windowDays)
           : DEFAULT_KPI_WINDOW_DAYS);
@@ -17453,9 +17498,10 @@
         const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
           ? Number(settings.calculations.windowDays)
           : DEFAULT_SETTINGS.calculations.windowDays;
-        if (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0) {
-          dashboardState.kpi.filters.window = windowDays;
-          syncGlobalFiltersFromKpi();
+        if (!Number.isFinite(dashboardState.filters.window) || dashboardState.filters.window <= 0) {
+          globalFilterController.apply({ window: windowDays });
+        } else {
+          Object.assign(dashboardState.filters, sanitizeGlobalFilters(dashboardState.filters));
           syncKpiFilterControls();
         }
         const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
@@ -17466,7 +17512,6 @@
         const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
         dashboardState.chartData.baseDaily = dailyStats.slice();
         dashboardState.chartData.baseRecords = combinedRecords.slice();
-        dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters);
         syncChartFilterControls();
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         await applyKpiFiltersAndRender();
