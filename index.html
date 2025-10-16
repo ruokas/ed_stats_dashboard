@@ -1881,6 +1881,11 @@
       gap: 20px;
     }
 
+    .performance-panel[hidden],
+    .performance-panel[aria-hidden="true"] {
+      display: none !important;
+    }
+
     .performance-interpretation {
       margin-top: 8px;
       border: 1px solid var(--color-border);
@@ -7943,16 +7948,18 @@
         const key = panel.dataset.performancePanel;
         const enabled = available.includes(key);
         if (!enabled) {
-          panel.setAttribute('hidden', 'hidden');
+          panel.classList.remove('is-active');
+          panel.hidden = true;
           panel.setAttribute('aria-hidden', 'true');
           return;
         }
         const isActive = key === normalized;
+        panel.classList.toggle('is-active', isActive);
         if (isActive) {
-          panel.removeAttribute('hidden');
-          panel.setAttribute('aria-hidden', 'false');
+          panel.hidden = false;
+          panel.removeAttribute('aria-hidden');
         } else {
-          panel.setAttribute('hidden', 'hidden');
+          panel.hidden = true;
           panel.setAttribute('aria-hidden', 'true');
         }
       });
