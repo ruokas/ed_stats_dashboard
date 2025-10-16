@@ -1,12 +1,14 @@
 # RŠL SMPS statistika
 
-Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus, paskutinės savaitės kasdienę ir savaitinę suvestines.
+Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus, konsoliduotą 7/30/12 laikotarpių rezultatų modulį bei pacientų atsiliepimus.
 
 ## Savybės
 - 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
 - ⏱️ Automatinis duomenų atnaujinimas kas 5 min., papildomai galima perkrauti rankiniu mygtuku.
 - 🔗 Galimybė kartu naudoti pagrindinį operatyvinį ir papildomą 5 metų istorinį CSV šaltinį.
-- 📊 KPI kortelės su aiškia „Metinis vidurkis“ eilute ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
+- 📊 KPI kortelės su aiškia „Metinis vidurkis“ eilute ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, 7/30/12 laikotarpių lentelės viename modulyje.
+- 📂 „Rezultatai ir trendai“ modulis leidžia perjungti 7 d., 30 d. ir 12 mėn. langus bei iš karto eksportuoti aktyvų laikotarpį į CSV (taip pat per **Ctrl+Shift+E**).
+- 🧾 Automatinės „Kas pagerėjo / kas blogėja“ interpretacijos pagal paskutinį laikotarpį (7 d., 30 d., 12 mėn.) su kontekstine pastaba.
 - 🧭 Pamainų palyginimo juosta (dabartinė vs praėjusi) su automatiniu pacientų skaičiaus ir procento pokyčiu.
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
 - 🎯 Interaktyvūs KPI filtrai (laikotarpis, pamaina, GMP, išvykimo sprendimas) su aiškia santrauka ir sparčiuoju **Shift+R**.
@@ -55,11 +57,14 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 4. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus.
 5. Patikrinkite „Pamainų palyginimas“ juostą – turi matytis dabartinės ir praėjusios pamainos datos, vertės bei skirtumo rodyklė. Pakeitus filtrus (pvz., pamainos tipą) juosta persiskaičiuoja.
 6. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės ir pamainų juosta persikrauna.
-7. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir lentelės (jei jos nepaslėptos nustatymuose) užsipildo.
-8. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
-9. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
-10. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 8 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
-11. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
+7. Patvirtinkite, kad „Rezultatai ir trendai“ modulis leidžia perjungti 7 d., 30 d. ir 12 mėn. vaizdus (mygtukais viršuje arba rodyklių klavišais), o lentelės persijungia be mirgėjimo.
+8. Paspauskite „Atsisiųsti CSV“ (arba **Ctrl+Shift+E**) pasirinkę bent vieną laikotarpį – naršyklė turi atsisiųsti CSV failą, o po sėkmės viršuje rodomas statusas „Eksportuota...“.
+9. Patikrinkite „Kas keičiasi“ bloką: perjunkite 7 d./30 d./12 mėn. laikotarpius ir įsitikinkite, kad interpretacijos tekstai atsinaujina pagal pasirinktą langą arba rodomas pranešimas apie duomenų trūkumą.
+10. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir rezultato lentelės (jei jos nepaslėptos nustatymuose) užsipildo.
+11. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
+12. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
+13. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 10 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
+14. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
