@@ -48,15 +48,16 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 - Rezervinį duomenų rinkinį galite išjungti nustatymų dialoge (nuimkite pažymėjimą „Naudoti demonstracinius duomenis“), jei norite matyti tik realią klaidos būseną.
 
 ## Greitas „smoke test“ sąrašas
-1. Atidarykite `index.html` ir patikrinkite, kad hero blokas rodo pavadinimą bei mygtuką „Perkrauti duomenis“.
-2. Paspauskite **Ctrl+,** (arba mygtuką „Nustatymai“), pakeiskite „Analizuojamų dienų skaičius“ reikšmę ir išsaugokite – KPI kortelės bei grafikai turi persiskaičiuoti.
-3. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus.
-4. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės persikrauna.
-5. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir lentelės (jei jos nepaslėptos nustatymuose) užsipildo.
-6. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
-7. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
-8. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 7 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
-9. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
+1. Atidarykite `index.html` ir patikrinkite, kad nauja viršutinė juosta rodo pavadinimą, būsenos juostą ir veiksmų mygtukus („Perkrauti duomenis“, filtrų suvestinę, nustatymus, TV režimą).
+2. Išbandykite naują tabų juostą: pele paspauskite kiekvieną skiltį ir patikrinkite, kad puslapis sklandžiai nuslysta į atitinkamą sekciją. Tuomet fokusuokite juostą (pvz., `Tab`) ir naudokite rodyklių klavišus (`←`/`→`, `Home`, `End`) – aktyvus tabas turi keistis ir išlaikyti fokusą.
+3. Paspauskite **Ctrl+,** (arba mygtuką „Nustatymai“), pakeiskite „Analizuojamų dienų skaičius“ reikšmę ir išsaugokite – KPI kortelės bei grafikai turi persiskaičiuoti.
+4. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus.
+5. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės persikrauna.
+6. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir lentelės (jei jos nepaslėptos nustatymuose) užsipildo.
+7. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
+8. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
+9. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 8 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
+10. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
