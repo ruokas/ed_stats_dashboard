@@ -6,7 +6,7 @@
 - Užtikrinti, kad kiekvienas tekstas turi LT ir EN versijas, todėl ateities praplėtimai nekels painiavos.
 
 ## 2. Priklausomybės ir įėjimo kriterijai
-- Stage 1–3 darbai užtikrina naują navigaciją ir turinio blokų struktūrą.
+- Stage 1–3 darbai užtikrina naują navigaciją ir turinio blokų struktūrą pagal `layout_prototype.html`.
 - Turime dabartinę nustatymų dialogo versiją `index.html` faile su visais aktyviais mygtukais.
 - `TEXT` objektas jau turi visus raktus, bet gali būti pasenusių reikšmių arba dublikatų.
 
@@ -15,6 +15,7 @@
 - Išskaidyti dialogą į 4 aiškias grupes: **Duomenų šaltiniai**, **Transformacijos**, **Etiketės**, **Funkcijų jungikliai**.
 - Kiekvienos grupės pavadinimas + trumpas paaiškinimas paprasta kalba; pašalinti nereikalingus tekstus.
 - Pridėti akordeono logiką (atidaryti/uždaryti), kad vartotojai matytų tik reikalingą informaciją.
+- Išsaugoti vizualinį stilių, kuris derinasi su prototipo kortomis (`.card` fonas, 16px tarpai).
 
 ### 3.2. Vertimų ir numatytųjų reikšmių auditavimas
 - Sudaryti raktų sąrašą iš `TEXT` objekto ir nustatymų dialogo.
@@ -29,15 +30,15 @@
 ## 4. Pakeistini failai
 | Failas | Kodėl keisime |
 | --- | --- |
-| `index.html` | Nustatymų dialogo markup'as, akordeono elgsena, nauji `TEXT` raktai. |
+| `index.html` | Nustatymų dialogo markup'as, akordeono elgsena, nauji `TEXT` raktai, vizualinis suderinimas su prototipo kortomis. |
 | `data-worker.js` | Jei nustatymų pervadinimai ar nauji jungikliai veikia worker logiką. |
 | `README.md` | Paprastas paaiškinimas, kaip naudotis naujomis nustatymų grupėmis ir kokie testai reikalingi. |
 | `AGENTS.md` | Atnaujintos gairės apie tekstų raktų struktūrą ir dokumentacijos sinchronizavimą. |
 
 ## 5. Eiga (Execution Roadmap)
-1. **Inventorizuoti turinį** – užsirašyti dabartines nustatymų parinktis ir jų tekstus.
-2. **Sukurti naują akordeono schemą** – nubraižyti popieriuje ar skaitmeniniu įrankiu, kad būtų aiški vartotojo kelionė.
-3. **Atnaujinti `index.html`** – perkelti esamus nustatymų elementus į naujas grupes, pridėti akordeono valdiklius.
+1. **Inventorizuoti turinį** – užsirašyti dabartines nustatymų parinktis ir jų tekstus, pažymėti ryšį su `TEXT` raktų sąrašu.
+2. **Sukurti naują akordeono schemą** – nubraižyti popieriuje ar skaitmeniniu įrankiu, kad būtų aiški vartotojo kelionė (pradeda nuo Duomenų šaltinių → baigia Funkcijų jungikliais).
+3. **Atnaujinti `index.html`** – perkelti esamus nustatymų elementus į naujas grupes, pridėti akordeono valdiklius ir prototipo stiliaus klases.
 4. **Suderinti `TEXT` ir `DEFAULT_SETTINGS`** – užpildyti vertimus ir numatytuosius, patikrinti, ar kodas nenaudoja senų raktų.
 5. **Pataisyti worker sąsajas** – jei kuri nors parinktis keičia duomenų skaičiavimą, atnaujinti `data-worker.js`.
 6. **Dokumentacija** – `README.md` ir `AGENTS.md` papildyti žingsniais ir patarimais.
@@ -53,6 +54,7 @@
 - **Per daug tekstų vienoje grupėje** → naudoti paprastus paaiškinimus, o išsamią informaciją perkelti į README.
 - **Pamesti senus raktus** → prieš tryniant palyginti `TEXT` objektą su ankstesne versija, naudoti paiešką `rg`.
 - **Akordeonas neveikia be JS** → numatyti, kad pagal nutylėjimą visos grupės būtų atviros, jei skriptas nepasileidžia.
+- **Vizualinis nesuderinamumas** → prieš commit palyginti su `layout_prototype.html` kortų stiliumi.
 
 ## 8. Ką pasiruošti iš anksto
 - Surinkti grįžtamąjį ryšį iš skyriaus vadovų, kurios nustatymų grupės jiems svarbiausios.
