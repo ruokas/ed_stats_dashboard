@@ -2384,150 +2384,6 @@
       padding: 24px 16px;
     }
 
-    .feedback-comments {
-      margin: 12px 0 24px;
-      border-radius: 18px;
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
-      box-shadow: var(--shadow-elevated);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .feedback-comments[data-collapsed="true"] .feedback-comments__list,
-    .feedback-comments[data-collapsed="true"] .feedback-comments__empty {
-      display: none;
-    }
-
-    .feedback-comments__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 18px 20px 12px;
-    }
-
-    .feedback-comments__titles {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .feedback-comments__title {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--color-text);
-    }
-
-    .feedback-comments__meta {
-      margin: 0;
-      font-size: 0.85rem;
-      color: var(--color-text-muted);
-    }
-
-    .feedback-comments__toggle {
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
-      color: var(--color-text);
-      border-radius: 999px;
-      padding: 6px 14px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-    }
-
-    .feedback-comments__toggle:hover,
-    .feedback-comments__toggle:focus-visible {
-      border-color: var(--color-accent);
-      box-shadow: 0 0 0 3px var(--color-accent-soft);
-      outline: none;
-    }
-
-    .feedback-comments__list {
-      display: flex;
-      flex-direction: column;
-      max-height: 420px;
-      overflow-y: auto;
-    }
-
-    .feedback-comment {
-      padding: 16px 20px;
-      border-top: 1px solid var(--color-border);
-      display: grid;
-      gap: 10px;
-    }
-
-    .feedback-comment:first-child {
-      border-top: none;
-    }
-
-    .feedback-comment__meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      color: var(--color-text-muted);
-    }
-
-    .feedback-comment__meta time {
-      color: var(--color-text-muted);
-    }
-
-    .feedback-comment__text {
-      margin: 0;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      color: var(--color-text);
-      white-space: pre-line;
-    }
-
-    .feedback-comment__badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .feedback-comment__badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border-radius: 999px;
-      background: var(--color-input-bg);
-      color: var(--color-text-muted);
-    }
-
-    .feedback-comment__badge--positive {
-      background: rgba(22, 163, 74, 0.12);
-      color: var(--color-success);
-    }
-
-    .feedback-comment__badge--negative {
-      background: rgba(220, 38, 38, 0.12);
-      color: var(--color-danger);
-    }
-
-    .feedback-comment__badge--neutral {
-      background: rgba(15, 23, 42, 0.08);
-      color: var(--color-text-muted);
-    }
-
-    .feedback-comment__empty-tag {
-      opacity: 0.75;
-    }
-
-    .feedback-comments__empty {
-      margin: 0;
-      padding: 16px 20px 20px;
-      font-size: 0.9rem;
-      color: var(--color-text-muted);
-    }
-
     .feedback-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -5636,12 +5492,12 @@
           </div>
           <div class="feedback-inline-controls">
             <label class="feedback-search" for="feedbackSearch">
-              <span id="feedbackSearchLabel">Paieška komentaruose</span>
+              <span id="feedbackSearchLabel">Paieška atsakymuose</span>
               <input id="feedbackSearch" type="search" inputmode="search" autocomplete="off" placeholder="Ieškoti pagal raktažodį" aria-describedby="feedbackFiltersSummary">
             </label>
             <label class="feedback-toggle" for="feedbackSensitiveToggle">
               <input id="feedbackSensitiveToggle" type="checkbox" name="hideSensitive" role="switch" aria-checked="true" checked>
-              <span id="feedbackSensitiveLabel">Paslėpti jautrius komentarus</span>
+              <span id="feedbackSensitiveLabel">Paslėpti jautrius atsakymus</span>
             </label>
           </div>
         </div>
@@ -5668,17 +5524,6 @@
           <p id="feedbackTrendMessage" class="feedback-trend-message" role="status" aria-live="polite" hidden></p>
         </div>
       </div>
-      <section id="feedbackCommentsSection" class="feedback-comments" aria-labelledby="feedbackCommentsTitle" data-collapsed="false">
-        <header class="feedback-comments__header">
-          <div class="feedback-comments__titles">
-            <h3 id="feedbackCommentsTitle" class="feedback-comments__title">Naujausi komentarai</h3>
-            <p id="feedbackCommentsMeta" class="feedback-comments__meta">—</p>
-          </div>
-          <button id="feedbackCommentsToggle" type="button" class="feedback-comments__toggle" aria-expanded="true" aria-controls="feedbackCommentsList">Suskleisti</button>
-        </header>
-        <div id="feedbackCommentsList" class="feedback-comments__list" role="list" aria-live="polite"></div>
-        <p id="feedbackCommentsEmpty" class="feedback-comments__empty">Pagal pasirinktus filtrus komentarų nerasta.</p>
-      </section>
       <div class="table-wrapper table-wrapper--feedback" role="region" aria-live="polite" aria-labelledby="feedbackHeading">
         <table aria-describedby="feedbackSubtitle feedbackDescription">
           <caption id="feedbackCaption" class="sr-only">Mėnesio atsiliepimų suvestinė pagal apklausos vertinimus.</caption>
@@ -6509,7 +6354,6 @@
             currentMeta: (dateLabel, weekdayLabel) => [dateLabel, weekdayLabel].filter(Boolean).join(' · '),
             previousMeta: (dateLabel, weekdayLabel) => [dateLabel, weekdayLabel].filter(Boolean).join(' · '),
           },
-        },
         cards: [
           { metricKey: 'total', label: 'Pacientai', format: 'integer', unitLabel: 'pac.' },
           { metricKey: 'night', label: 'Naktiniai pacientai', format: 'integer', unitLabel: 'pac.' },
@@ -6874,44 +6718,15 @@
             all: 'Visos vietos',
           },
           keyword: {
-            label: 'Paieška komentaruose',
+            label: 'Paieška atsakymuose',
             placeholder: 'Ieškoti pagal raktažodį',
             summary: (value) => (value ? `Paieška: „${value}“` : ''),
           },
           sensitive: {
-            label: 'Paslėpti jautrius komentarus',
-            summaryHidden: 'Jautrūs komentarai paslėpti',
-            summaryVisible: 'Rodomi ir jautrūs komentarai',
+            label: 'Paslėpti jautrius atsakymus',
+            summaryHidden: 'Jautrūs atsakymai paslėpti',
+            summaryVisible: 'Rodomi ir jautrūs atsakymai',
           },
-        },
-        comments: {
-          title: 'Naujausi komentarai',
-          empty: 'Pagal pasirinktus filtrus komentarų nerasta.',
-          limit: 8,
-          meta: (visible, total) => {
-            if (!total) {
-              return 'Komentarų kol kas nėra.';
-            }
-            if (visible >= total) {
-              return `Rodomi ${visible} komentarai.`;
-            }
-            return `Rodomi ${visible} iš ${total} komentarų.`;
-          },
-          toggle: {
-            collapse: 'Suskleisti komentarus',
-            expand: 'Išskleisti komentarus',
-          },
-          sentiment: {
-            positive: 'Teigiama nuotaika',
-            negative: 'Neigiama nuotaika',
-            neutral: 'Neutrali nuotaika',
-            unknown: 'Nuotaika nenustatyta',
-          },
-          categoryLabel: 'Tema',
-          sensitiveTag: 'Jautri informacija',
-          defaultAuthor: 'Anonimas',
-          defaultSource: 'Neįvardyta vieta',
-          timeLabel: (timestamp) => `Pateikta ${timestamp}`,
         },
         cards: [
           {
@@ -7681,11 +7496,6 @@
       feedbackSearchInput: document.getElementById('feedbackSearch'),
       feedbackSensitiveToggle: document.getElementById('feedbackSensitiveToggle'),
       feedbackSensitiveLabel: document.getElementById('feedbackSensitiveLabel'),
-      feedbackCommentsSection: document.getElementById('feedbackCommentsSection'),
-      feedbackCommentsList: document.getElementById('feedbackCommentsList'),
-      feedbackCommentsEmpty: document.getElementById('feedbackCommentsEmpty'),
-      feedbackCommentsToggle: document.getElementById('feedbackCommentsToggle'),
-      feedbackCommentsMeta: document.getElementById('feedbackCommentsMeta'),
       feedbackCaption: document.getElementById('feedbackCaption'),
       feedbackCards: document.getElementById('feedbackCards'),
       feedbackTrendTitle: document.getElementById('feedbackTrendTitle'),
@@ -9344,8 +9154,6 @@
         filteredRecords: [],
         filters: getDefaultFeedbackFilters(),
         filterOptions: { respondent: [], location: [] },
-        comments: { total: 0, items: [] },
-        commentsCollapsed: false,
         filtersExpanded: false,
       },
       ed: {
@@ -9742,7 +9550,7 @@
         selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Šaltinis';
       }
       if (selectors.feedbackSearchLabel) {
-        selectors.feedbackSearchLabel.textContent = feedbackFiltersText.keyword?.label || 'Paieška komentaruose';
+        selectors.feedbackSearchLabel.textContent = feedbackFiltersText.keyword?.label || 'Paieška atsakymuose';
       }
       if (selectors.feedbackSearchInput) {
         const placeholder = feedbackFiltersText.keyword?.placeholder || 'Ieškoti pagal raktažodį';
@@ -9750,7 +9558,7 @@
         selectors.feedbackSearchInput.setAttribute('aria-label', feedbackFiltersText.keyword?.label || placeholder);
       }
       if (selectors.feedbackSensitiveLabel) {
-        selectors.feedbackSensitiveLabel.textContent = feedbackFiltersText.sensitive?.label || 'Paslėpti jautrius komentarus';
+        selectors.feedbackSensitiveLabel.textContent = feedbackFiltersText.sensitive?.label || 'Paslėpti jautrius atsakymus';
       }
       populateFeedbackFilterControls();
       syncFeedbackFilterControls();
@@ -13452,9 +13260,6 @@
         });
 
       const totalResponses = sorted.length;
-      const commentRecords = sorted
-        .filter((entry) => typeof entry?.commentText === 'string' && entry.commentText.trim().length > 0);
-      const commentTotal = commentRecords.length;
       const collectValues = (key, predicate = null) => sorted
         .filter((entry) => (typeof predicate === 'function' ? predicate(entry) : true))
         .map((entry) => {
@@ -13583,13 +13388,8 @@
           contactResponses,
           contactYes,
           contactShare,
-          commentCount: commentTotal,
         },
         monthly,
-        comments: {
-          total: commentTotal,
-          items: commentRecords,
-        },
       };
     }
 
@@ -13807,7 +13607,7 @@
       }
       const hideSensitive = filters.hideSensitive !== false;
       if (!hideSensitive) {
-        parts.push(filtersText.sensitive?.summaryVisible || 'Rodomi ir jautrūs komentarai');
+        parts.push(filtersText.sensitive?.summaryVisible || 'Rodomi ir jautrūs atsakymai');
       } else if (parts.length === 0) {
         const hiddenLabel = filtersText.sensitive?.summaryHidden;
         if (hiddenLabel) {
@@ -13922,7 +13722,6 @@
       const feedbackStats = computeFeedbackStats(filteredRecords);
       dashboardState.feedback.summary = feedbackStats.summary;
       dashboardState.feedback.monthly = feedbackStats.monthly;
-      dashboardState.feedback.comments = feedbackStats.comments || { total: 0, items: [] };
       renderFeedbackSection(feedbackStats);
       updateFeedbackFiltersSummary(feedbackStats.summary);
       return feedbackStats;
@@ -13985,12 +13784,6 @@
             hideSensitive: checked,
           };
           applyFeedbackFiltersAndRender();
-        });
-      }
-      if (selectors.feedbackCommentsToggle) {
-        selectors.feedbackCommentsToggle.addEventListener('click', () => {
-          const collapsed = dashboardState.feedback.commentsCollapsed === true;
-          setFeedbackCommentsCollapsed(!collapsed);
         });
       }
       if (selectors.feedbackFiltersToggle) {
@@ -15746,207 +15539,11 @@
         : [];
 
       renderFeedbackCards(summary);
-      renderFeedbackComments(feedbackStats?.comments, summary);
       renderFeedbackTable(monthly);
 
       renderFeedbackTrendChart(monthly).catch((error) => {
         console.error('Nepavyko atvaizduoti atsiliepimų trendo:', error);
       });
-    }
-
-    function describeFeedbackSentiment(entry) {
-      const config = TEXT.feedback?.comments?.sentiment || {};
-      const rawLabel = typeof entry?.sentimentLabel === 'string' ? entry.sentimentLabel.trim() : '';
-      const normalizedLabel = rawLabel ? capitalizeSentence(rawLabel) : '';
-      const score = Number.isFinite(entry?.sentimentScore) ? entry.sentimentScore : null;
-      const labelSource = normalizedLabel || '';
-      if (score != null) {
-        if (score > 0.25) {
-          return { type: 'positive', label: config.positive || labelSource || '' };
-        }
-        if (score < -0.25) {
-          return { type: 'negative', label: config.negative || labelSource || '' };
-        }
-        return { type: 'neutral', label: config.neutral || labelSource || '' };
-      }
-      if (labelSource) {
-        const lowered = labelSource.toLowerCase();
-        if (lowered.includes('teig')) {
-          return { type: 'positive', label: config.positive || labelSource };
-        }
-        if (lowered.includes('neig')) {
-          return { type: 'negative', label: config.negative || labelSource };
-        }
-        if (lowered.includes('neutral')) {
-          return { type: 'neutral', label: config.neutral || labelSource };
-        }
-        return { type: '', label: labelSource };
-      }
-      return { type: '', label: config.unknown || '' };
-    }
-
-    function updateFeedbackCommentsMeta(visible, total) {
-      if (!selectors.feedbackCommentsMeta) {
-        return;
-      }
-      const builder = TEXT.feedback?.comments?.meta;
-      const text = typeof builder === 'function'
-        ? builder(visible, total)
-        : (visible > 0
-          ? `Rodomi ${visible} komentarai${total && total > visible ? ` iš ${total}` : ''}.`
-          : 'Komentarų kol kas nėra.');
-      selectors.feedbackCommentsMeta.textContent = text;
-    }
-
-    function setFeedbackCommentsCollapsed(collapsed, options = {}) {
-      const persist = options.persist !== false;
-      const section = selectors.feedbackCommentsSection;
-      if (section) {
-        section.dataset.collapsed = collapsed ? 'true' : 'false';
-      }
-      if (selectors.feedbackCommentsToggle) {
-        const toggle = selectors.feedbackCommentsToggle;
-        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        const labels = TEXT.feedback?.comments?.toggle || {};
-        toggle.textContent = collapsed
-          ? labels.expand || 'Išskleisti komentarus'
-          : labels.collapse || 'Suskleisti komentarus';
-      }
-      if (persist) {
-        dashboardState.feedback.commentsCollapsed = Boolean(collapsed);
-      }
-    }
-
-    function renderFeedbackComments(commentsData, summary) {
-      const section = selectors.feedbackCommentsSection;
-      const list = selectors.feedbackCommentsList;
-      const empty = selectors.feedbackCommentsEmpty;
-      const toggle = selectors.feedbackCommentsToggle;
-      if (!section || !list || !empty) {
-        return;
-      }
-      const comments = Array.isArray(commentsData?.items)
-        ? commentsData.items.filter(Boolean)
-        : [];
-      const total = Number.isFinite(commentsData?.total) ? commentsData.total : comments.length;
-      const limitRaw = Number(TEXT.feedback?.comments?.limit);
-      const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : comments.length;
-      const visibleComments = comments.slice(0, limit);
-
-      list.replaceChildren();
-      list.hidden = visibleComments.length === 0;
-      list.dataset.count = String(visibleComments.length);
-      list.dataset.total = String(total);
-
-      const authorFallback = TEXT.feedback?.comments?.defaultAuthor || 'Anonimas';
-      const sourceFallback = TEXT.feedback?.comments?.defaultSource || 'Neįvardyta vieta';
-      const sensitiveLabel = TEXT.feedback?.comments?.sensitiveTag || 'Jautri informacija';
-      const categoryLabel = TEXT.feedback?.comments?.categoryLabel || 'Tema';
-
-      visibleComments.forEach((entry) => {
-        const item = document.createElement('article');
-        item.className = 'feedback-comment';
-        item.setAttribute('role', 'listitem');
-
-        const meta = document.createElement('div');
-        meta.className = 'feedback-comment__meta';
-        const author = entry?.respondent && String(entry.respondent).trim()
-          ? capitalizeSentence(String(entry.respondent).trim())
-          : authorFallback;
-        const authorSpan = document.createElement('span');
-        authorSpan.textContent = author;
-        meta.appendChild(authorSpan);
-
-        const location = entry?.location && String(entry.location).trim()
-          ? capitalizeSentence(String(entry.location).trim())
-          : sourceFallback;
-        if (location) {
-          const separator = document.createElement('span');
-          separator.textContent = '•';
-          meta.appendChild(separator);
-          const locationSpan = document.createElement('span');
-          locationSpan.textContent = location;
-          meta.appendChild(locationSpan);
-        }
-
-        if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
-          const separator = document.createElement('span');
-          separator.textContent = '•';
-          meta.appendChild(separator);
-          const time = document.createElement('time');
-          time.dateTime = entry.receivedAt.toISOString();
-          const formatted = statusTimeFormatter.format(entry.receivedAt);
-          const timeTextBuilder = TEXT.feedback?.comments?.timeLabel;
-          time.textContent = typeof timeTextBuilder === 'function'
-            ? timeTextBuilder(formatted)
-            : formatted;
-          meta.appendChild(time);
-        }
-
-        item.appendChild(meta);
-
-        const text = document.createElement('p');
-        text.className = 'feedback-comment__text';
-        text.textContent = entry?.commentText || '';
-        item.appendChild(text);
-
-        const badges = document.createElement('div');
-        badges.className = 'feedback-comment__badges';
-        let hasBadges = false;
-
-        const sentiment = describeFeedbackSentiment(entry);
-        if (sentiment.label) {
-          const badge = document.createElement('span');
-          badge.className = sentiment.type
-            ? `feedback-comment__badge feedback-comment__badge--${sentiment.type}`
-            : 'feedback-comment__badge';
-          badge.textContent = sentiment.label;
-          badges.appendChild(badge);
-          hasBadges = true;
-        }
-
-        if (entry?.commentCategory) {
-          const badge = document.createElement('span');
-          badge.className = 'feedback-comment__badge';
-          badge.textContent = `${categoryLabel}: ${capitalizeSentence(String(entry.commentCategory).trim())}`;
-          badges.appendChild(badge);
-          hasBadges = true;
-        }
-
-        if (entry?.isSensitive) {
-          const badge = document.createElement('span');
-          badge.className = 'feedback-comment__badge feedback-comment__badge--negative';
-          badge.textContent = sensitiveLabel;
-          badges.appendChild(badge);
-          hasBadges = true;
-        }
-
-        if (hasBadges) {
-          item.appendChild(badges);
-        }
-
-        list.appendChild(item);
-      });
-
-      if (visibleComments.length === 0) {
-        empty.textContent = TEXT.feedback?.comments?.empty || 'Pagal pasirinktus filtrus komentarų nerasta.';
-        empty.hidden = false;
-        if (toggle) {
-          toggle.disabled = true;
-          toggle.setAttribute('aria-disabled', 'true');
-        }
-        setFeedbackCommentsCollapsed(false, { persist: false });
-      } else {
-        empty.hidden = true;
-        if (toggle) {
-          toggle.disabled = false;
-          toggle.removeAttribute('aria-disabled');
-        }
-        setFeedbackCommentsCollapsed(dashboardState.feedback.commentsCollapsed === true);
-      }
-
-      const visibleCount = visibleComments.length;
-      updateFeedbackCommentsMeta(visibleCount, total || (summary?.commentCount ?? visibleCount));
     }
 
     async function renderFeedbackTrendChart(monthlyStats) {
