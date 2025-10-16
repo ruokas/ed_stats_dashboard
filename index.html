@@ -3107,6 +3107,48 @@
       width: 100%;
     }
 
+    .chart-help-button {
+      order: 2;
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      box-shadow: none;
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .chart-help-button svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .chart-help-button:hover,
+    .chart-help-button:focus-visible {
+      background: var(--color-input-bg-hover);
+      color: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+
+    body[data-theme="dark"] .chart-help-button {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.65);
+      color: var(--color-text);
+    }
+
+    body[data-theme="dark"] .chart-help-button:hover,
+    body[data-theme="dark"] .chart-help-button:focus-visible {
+      background: rgba(96, 165, 250, 0.16);
+      border-color: rgba(96, 165, 250, 0.65);
+      color: var(--color-accent);
+    }
+
     .chart-filters__summary {
       margin: 0;
       font-size: 0.82rem;
@@ -3834,6 +3876,10 @@
         gap: 10px;
       }
 
+      .chart-help-button {
+        align-self: flex-end;
+      }
+
       .chart-period {
         flex: 1 1 auto;
       }
@@ -4198,6 +4244,122 @@
     dialog::backdrop {
       background: rgba(15, 23, 42, 0.45);
       backdrop-filter: blur(4px);
+    }
+
+    #helpDialog {
+      width: min(520px, 92vw);
+    }
+
+    .help-dialog__panel {
+      display: flex;
+      flex-direction: column;
+      max-height: min(80vh, 600px);
+    }
+
+    .help-dialog__header {
+      padding: 24px 28px 16px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .help-dialog__header-main {
+      display: grid;
+      gap: 8px;
+      flex: 1 1 auto;
+    }
+
+    .help-dialog__title {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+
+    .help-dialog__intro {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+    }
+
+    .help-dialog__close {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--color-text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      box-shadow: none;
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .help-dialog__close svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .help-dialog__close:hover,
+    .help-dialog__close:focus-visible {
+      color: var(--color-accent);
+      background: var(--color-input-bg);
+      border-color: var(--color-border);
+    }
+
+    .help-dialog__content {
+      padding: 20px 28px 28px;
+      overflow-y: auto;
+      display: grid;
+      gap: 24px;
+      max-height: min(70vh, 520px);
+    }
+
+    .help-dialog__section {
+      display: grid;
+      gap: 12px;
+    }
+
+    .help-dialog__section-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .help-dialog__section-description {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .help-dialog__list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    .help-dialog__list-item {
+      display: grid;
+      gap: 4px;
+    }
+
+    .help-dialog__item-title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .help-dialog__item-text {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
     }
 
     .settings-form {
@@ -4895,6 +5057,22 @@
               <option value="all">Visi metai</option>
             </select>
           </label>
+          <button
+            id="patientFlowHelpBtn"
+            type="button"
+            class="chart-help-button"
+            aria-haspopup="dialog"
+            aria-controls="helpDialog"
+            aria-label="Grafikų pagalba"
+            title="Grafikų pagalba"
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 10v6" />
+              <path d="M12 7h.01" />
+            </svg>
+            <span class="sr-only">Grafikų pagalba</span>
+          </button>
           <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
           <form id="chartFiltersForm" class="chart-filters" aria-label="Filtruoti grafikus">
             <label class="chart-filter" for="chartArrival">
@@ -5563,6 +5741,23 @@
     </form>
   </dialog>
 
+  <dialog id="helpDialog" aria-labelledby="helpDialogTitle">
+    <div class="help-dialog__panel" role="document">
+      <div class="help-dialog__header">
+        <div class="help-dialog__header-main">
+          <h2 id="helpDialogTitle" class="help-dialog__title">Pagalba ir legendos</h2>
+          <p id="helpDialogIntro" class="help-dialog__intro">Trumpi paaiškinimai grafikams.</p>
+        </div>
+        <button id="helpDialogClose" type="button" class="help-dialog__close" aria-label="Uždaryti pagalbos langą">
+          <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div id="helpDialogContent" class="help-dialog__content"></div>
+    </div>
+  </dialog>
+
   <footer>
     <div class="container footer__meta">
       <span id="footerSource">Duomenys: Google Sheets CSV (automatinis nuskaitymas kaskart atnaujinant).</span>
@@ -6085,6 +6280,78 @@
           avgDuration: 'vidutinė buvimo trukmė (val.)',
         },
         errorLoading: 'Nepavyko atvaizduoti grafikų (Chart.js biblioteka nepasiekiama).',
+      },
+      help: {
+        title: 'Pagalba ir legendos',
+        intro: 'Trumpi paaiškinimai pacientų srautų grafikuose.',
+        openLabel: 'Grafikų pagalba',
+        openHint: 'Atidaryti grafikų pagalbos langą',
+        close: 'Uždaryti pagalbos langą',
+        sections: [
+          {
+            id: 'flowSummary',
+            title: 'Pacientų srautų grafikai',
+            description: 'Ką rodo kiekvienas grafikas ir kokias reikšmes verta stebėti.',
+            items: [
+              {
+                title: 'Kasdieniai pacientai',
+                description: 'Stulpelinė diagrama parodo atvykimus kiekvieną dieną; tamsesnė spalva žymi naktinius atvykimus.',
+              },
+              {
+                title: 'Vidurkis pagal savaitės dieną',
+                description: 'Lyginamos paskutinių savaičių vidutinės reikšmės, savaitgaliai išryškinami oranžine spalva.',
+              },
+              {
+                title: 'Vidutinė buvimo trukmė',
+                description: 'Parodo, kaip kinta vidutinis skyriuje praleistas laikas pagal savaitės dienas (valandomis).',
+              },
+              {
+                title: 'Pacientų srautas pagal sprendimą',
+                description: 'Piltuvėlis atspindi kiek pacientų išleista ar hospitalizuota; pasirenkami metai riboja duomenų langą.',
+              },
+              {
+                title: 'Atvykimų šilumos žemėlapis',
+                description: 'Valandų × savaitės dienų tinklelis parodo, kada atvyksta daugiausia pacientų. Išskleidžiamame meniu galima keisti rodiklį.',
+              },
+            ],
+          },
+        ],
+        en: {
+          title: 'Help & legends',
+          intro: 'Quick explanations for patient flow visuals.',
+          openLabel: 'Charts help',
+          openHint: 'Open the charts help dialog',
+          close: 'Close help dialog',
+          sections: [
+            {
+              id: 'flowSummary',
+              title: 'Patient flow visuals',
+              description: 'What each chart highlights and how to read it.',
+              items: [
+                {
+                  title: 'Daily patients',
+                  description: 'Columns show total arrivals per day; the lighter tint marks night arrivals.',
+                },
+                {
+                  title: 'Weekday averages',
+                  description: 'Compares recent weekly averages and highlights weekends in orange.',
+                },
+                {
+                  title: 'Average length of stay',
+                  description: 'Shows how the average time spent in the ED shifts by weekday (in hours).',
+                },
+                {
+                  title: 'Disposition funnel',
+                  description: 'Funnel bars display how many patients were discharged or hospitalised; the year filter limits the scope.',
+                },
+                {
+                  title: 'Arrivals heatmap',
+                  description: 'Hour-by-weekday grid that highlights peak arrival windows; choose other metrics from the dropdown.',
+                },
+              ],
+            },
+          ],
+        },
       },
       insights: {
         title: 'Įžvalgos',
@@ -7020,6 +7287,12 @@
       chartFilterDisposition: document.getElementById('chartDisposition'),
       chartFilterCardType: document.getElementById('chartCardType'),
       chartCards: Array.from(document.querySelectorAll('.chart-grid .chart-card')),
+      patientFlowHelpBtn: document.getElementById('patientFlowHelpBtn'),
+      helpDialog: document.getElementById('helpDialog'),
+      helpDialogTitle: document.getElementById('helpDialogTitle'),
+      helpDialogIntro: document.getElementById('helpDialogIntro'),
+      helpDialogContent: document.getElementById('helpDialogContent'),
+      helpDialogClose: document.getElementById('helpDialogClose'),
       recentHeading: document.getElementById('recentHeading'),
       recentSubtitle: document.getElementById('recentSubtitle'),
       recentCaption: document.getElementById('recentCaption'),
@@ -7866,6 +8139,157 @@
       }
     }
 
+    function renderHelpDialogSections() {
+      const config = TEXT.help || {};
+      if (selectors.helpDialogTitle) {
+        selectors.helpDialogTitle.textContent = config.title || 'Pagalba ir legendos';
+      }
+      if (selectors.helpDialogIntro) {
+        const introText = config.intro || '';
+        if (introText) {
+          selectors.helpDialogIntro.textContent = introText;
+          selectors.helpDialogIntro.hidden = false;
+        } else {
+          selectors.helpDialogIntro.textContent = '';
+          selectors.helpDialogIntro.hidden = true;
+        }
+      }
+      if (selectors.helpDialogClose) {
+        const closeLabel = config.close || 'Uždaryti pagalbos langą';
+        selectors.helpDialogClose.setAttribute('aria-label', closeLabel);
+        selectors.helpDialogClose.title = closeLabel;
+      }
+      const container = selectors.helpDialogContent;
+      if (!container) {
+        return;
+      }
+      container.replaceChildren();
+      const sections = Array.isArray(config.sections) ? config.sections : [];
+      sections.forEach((section) => {
+        if (!section) {
+          return;
+        }
+        const sectionEl = document.createElement('section');
+        sectionEl.className = 'help-dialog__section';
+        if (section.title) {
+          const heading = document.createElement('h3');
+          heading.className = 'help-dialog__section-title';
+          heading.textContent = section.title;
+          sectionEl.appendChild(heading);
+        }
+        if (section.description) {
+          const description = document.createElement('p');
+          description.className = 'help-dialog__section-description';
+          description.textContent = section.description;
+          sectionEl.appendChild(description);
+        }
+        if (Array.isArray(section.items) && section.items.length) {
+          const list = document.createElement('ul');
+          list.className = 'help-dialog__list';
+          section.items.forEach((item) => {
+            if (!item) {
+              return;
+            }
+            const li = document.createElement('li');
+            li.className = 'help-dialog__list-item';
+            if (item.title) {
+              const itemTitle = document.createElement('p');
+              itemTitle.className = 'help-dialog__item-title';
+              itemTitle.textContent = item.title;
+              li.appendChild(itemTitle);
+            }
+            if (item.description) {
+              const itemText = document.createElement('p');
+              itemText.className = 'help-dialog__item-text';
+              itemText.textContent = item.description;
+              li.appendChild(itemText);
+            }
+            if (li.childNodes.length) {
+              list.appendChild(li);
+            }
+          });
+          if (list.childNodes.length) {
+            sectionEl.appendChild(list);
+          }
+        }
+        if (sectionEl.childNodes.length) {
+          container.appendChild(sectionEl);
+        }
+      });
+    }
+
+    function openHelpDialog(options = {}) {
+      if (!selectors.helpDialog) {
+        return;
+      }
+      if (selectors.helpDialog.hasAttribute('open')) {
+        return;
+      }
+      if (!helpState.lastTrigger) {
+        const trigger = options.trigger || (typeof document !== 'undefined' ? document.activeElement : null);
+        if (trigger && trigger !== document.body) {
+          helpState.lastTrigger = trigger;
+        }
+      }
+      renderHelpDialogSections();
+      if (typeof selectors.helpDialog.showModal === 'function') {
+        selectors.helpDialog.showModal();
+      } else {
+        selectors.helpDialog.setAttribute('open', 'open');
+      }
+      const focusTarget = selectors.helpDialogClose
+        || selectors.helpDialog.querySelector('button, [href], select, textarea, input');
+      if (focusTarget && typeof focusTarget.focus === 'function') {
+        focusTarget.focus({ preventScroll: true });
+      }
+    }
+
+    function closeHelpDialog() {
+      if (!selectors.helpDialog) {
+        return;
+      }
+      if (typeof selectors.helpDialog.close === 'function') {
+        selectors.helpDialog.close();
+      } else {
+        selectors.helpDialog.removeAttribute('open');
+      }
+      const trigger = helpState.lastTrigger;
+      helpState.lastTrigger = null;
+      if (trigger && typeof trigger.focus === 'function') {
+        try {
+          trigger.focus({ preventScroll: true });
+        } catch (error) {
+          console.warn('Nepavyko grąžinti fokuso po pagalbos dialogo uždarymo.', error);
+        }
+      }
+    }
+
+    function initializeHelpDialog() {
+      renderHelpDialogSections();
+      if (selectors.patientFlowHelpBtn) {
+        selectors.patientFlowHelpBtn.addEventListener('click', () => {
+          helpState.lastTrigger = selectors.patientFlowHelpBtn;
+          openHelpDialog({ trigger: selectors.patientFlowHelpBtn });
+        });
+      }
+      if (selectors.helpDialogClose) {
+        selectors.helpDialogClose.addEventListener('click', () => {
+          closeHelpDialog();
+        });
+      }
+      if (selectors.helpDialog) {
+        selectors.helpDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeHelpDialog();
+        });
+        selectors.helpDialog.addEventListener('click', (event) => {
+          if (event.target === selectors.helpDialog) {
+            closeHelpDialog();
+          }
+        });
+      }
+    }
+
     function toggleSectionVisibility(element, isVisible) {
       if (!element) {
         return;
@@ -8559,6 +8983,9 @@
         updatedAt: null,
       },
     };
+    const helpState = {
+      lastTrigger: null,
+    };
     const globalFilterController = createGlobalFilterController(dashboardState.filters);
 
     globalFilterController.subscribe((filters) => {
@@ -8819,6 +9246,17 @@
       }
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+      if (selectors.patientFlowHelpBtn) {
+        const label = TEXT.help?.openLabel || 'Grafikų pagalba';
+        const hint = TEXT.help?.openHint || label;
+        selectors.patientFlowHelpBtn.setAttribute('aria-label', label);
+        selectors.patientFlowHelpBtn.title = hint;
+        const srLabel = selectors.patientFlowHelpBtn.querySelector('.sr-only');
+        if (srLabel) {
+          srLabel.textContent = label;
+        }
+      }
+      renderHelpDialogSections();
       if (selectors.insightsHeading) {
         const target = selectors.insightsHeading.querySelector('.section-title__text') || selectors.insightsHeading;
         target.textContent = TEXT.insights.title;
@@ -19017,6 +19455,7 @@
     initializeKpiFilters();
     initializeFeedbackFilters();
     initializeFeedbackTrendControls();
+    initializeHelpDialog();
     initializeTabSwitcher();
     initializeTvMode();
     loadDashboard();
