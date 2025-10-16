@@ -5364,7 +5364,11 @@
       },
       scrollTop: 'Grįžti į pradžią',
       tabs: {
+        navLabel: 'Skydelio sekcijos',
         overview: 'Bendras vaizdas',
+        flow: 'Pacientų srautai',
+        trends: 'Rezultatai',
+        experience: 'Pacientų patirtys',
         ed: 'RŠL SMPS skydelis',
       },
       edToggle: {
@@ -6047,6 +6051,10 @@
         footerSource: DEFAULT_FOOTER_SOURCE,
         scrollTopLabel: TEXT.scrollTop,
         tabOverviewLabel: TEXT.tabs.overview,
+        tabFlowLabel: TEXT.tabs.flow,
+        tabTrendsLabel: TEXT.tabs.trends,
+        tabExperienceLabel: TEXT.tabs.experience,
+        tabNavLabel: TEXT.tabs.navLabel,
         tabEdLabel: TEXT.tabs.ed,
         edTitle: TEXT.ed.title,
         edSubtitle: TEXT.ed.subtitle,
@@ -6167,17 +6175,95 @@
         const isActive = button.dataset.tabId === tabId;
         button.setAttribute('aria-selected', String(isActive));
         button.classList.toggle('is-active', isActive);
+        button.tabIndex = isActive ? 0 : -1;
       });
       layoutV2ActiveTabId = tabId;
     }
 
+    function focusLayoutV2TabByIndex(index) {
+      if (!FEATURE_LAYOUT_V2 || !layoutV2TabButtons.length) {
+        return;
+      }
+      const total = layoutV2TabButtons.length;
+      const normalizedIndex = ((index % total) + total) % total;
+      const target = layoutV2TabButtons[normalizedIndex];
+      if (target) {
+        if (typeof target.focus === 'function') {
+          target.focus({ preventScroll: true });
+        }
+        if (typeof target.click === 'function') {
+          target.click();
+        }
+      }
+    }
+
+    function handleLayoutV2TabsKeydown(event) {
+      if (!FEATURE_LAYOUT_V2 || !layoutV2TabButtons.length) {
+        return;
+      }
+      const { key } = event;
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(key)) {
+        return;
+      }
+      event.preventDefault();
+      const currentIndex = layoutV2TabButtons.findIndex((button) => button.dataset.tabId === layoutV2ActiveTabId);
+      const fallbackIndex = currentIndex >= 0 ? currentIndex : 0;
+      if (key === 'Home') {
+        focusLayoutV2TabByIndex(0);
+        return;
+      }
+      if (key === 'End') {
+        focusLayoutV2TabByIndex(layoutV2TabButtons.length - 1);
+        return;
+      }
+      if (key === 'ArrowRight') {
+        focusLayoutV2TabByIndex(fallbackIndex + 1);
+        return;
+      }
+      if (key === 'ArrowLeft') {
+        focusLayoutV2TabByIndex(fallbackIndex - 1);
+      }
+    }
+
     function getLayoutV2TabConfig() {
       return [
-        { id: 'overview', label: settings?.output?.tabOverviewLabel || TEXT.tabs?.overview || 'Bendras vaizdas', target: 'section[data-section="kpi"]' },
-        { id: 'flow', label: TEXT.charts?.navLabel || TEXT.charts?.title || 'Pacientu srautai', target: 'section[data-section="chart"]' },
-        { id: 'trends', label: TEXT.monthly?.navLabel || TEXT.monthly?.title || 'Rezultatai', target: 'section[data-section="recent"]' },
-        { id: 'experience', label: TEXT.feedback?.navLabel || TEXT.feedback?.title || 'Atsiliepimai', target: 'section[data-section="feedback"]' },
-        { id: 'ops', label: settings?.output?.tabEdLabel || TEXT.tabs?.ed || 'ED skydelis', target: '#edStandardSection' },
+        {
+          id: 'overview',
+          label: settings?.output?.tabOverviewLabel || TEXT.tabs?.overview || 'Bendras vaizdas',
+          target: 'section[data-section="kpi"]',
+        },
+        {
+          id: 'flow',
+          label: settings?.output?.tabFlowLabel
+            || TEXT.tabs?.flow
+            || TEXT.charts?.navLabel
+            || TEXT.charts?.title
+            || 'Pacientų srautai',
+          target: 'section[data-section="chart"]',
+        },
+        {
+          id: 'trends',
+          label: settings?.output?.tabTrendsLabel
+            || TEXT.tabs?.trends
+            || TEXT.monthly?.navLabel
+            || TEXT.monthly?.title
+            || 'Rezultatai',
+          target: 'section[data-section="recent"]',
+        },
+        {
+          id: 'experience',
+          label: settings?.output?.tabExperienceLabel
+            || TEXT.tabs?.experience
+            || TEXT.feedback?.navLabel
+            || TEXT.feedback?.title
+            || 'Atsiliepimai',
+          target: 'section[data-section="feedback"]',
+        },
+        {
+          id: 'ops',
+          label: settings?.output?.tabEdLabel || TEXT.tabs?.ed || 'ED skydelis',
+          target: '#edStandardSection',
+        },
       ];
     }
 
@@ -6281,6 +6367,11 @@
       nav.className = 'layout-v2-tabs';
       nav.id = 'layoutV2Tabs';
       nav.setAttribute('role', 'tablist');
+      const navLabel = settings?.output?.tabNavLabel
+        || TEXT.tabs?.navLabel
+        || TEXT.title
+        || 'Skydelio sekcijos';
+      nav.setAttribute('aria-label', navLabel);
 
       const tabConfig = getLayoutV2TabConfig();
 
@@ -6297,9 +6388,11 @@
         button.className = 'layout-v2-tab';
         button.textContent = config.label;
         button.dataset.tabId = config.id;
+        button.id = `layoutV2Tab-${config.id}`;
         button.setAttribute('role', 'tab');
         button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
         button.classList.toggle('is-active', index === 0);
+        button.tabIndex = index === 0 ? 0 : -1;
 
         button.addEventListener('click', () => {
           if (config.id === 'ops') {
@@ -6320,16 +6413,28 @@
         nav.appendChild(button);
         layoutV2TabButtons.push(button);
 
-        if (config.id !== 'ops') {
-          const section = document.querySelector(config.target);
-          if (section) {
-            section.setAttribute('data-layout-tab-id', config.id);
-            observedTargets.push(section);
+        const targetElement = document.querySelector(config.target);
+        if (targetElement) {
+          if (!targetElement.id) {
+            const baseId = `layoutV2Section-${config.id}`;
+            let candidateId = baseId;
+            let attempt = 1;
+            while (document.getElementById(candidateId)) {
+              attempt += 1;
+              candidateId = `${baseId}-${attempt}`;
+            }
+            targetElement.id = candidateId;
+          }
+          button.setAttribute('aria-controls', targetElement.id);
+          if (config.id !== 'ops') {
+            targetElement.setAttribute('data-layout-tab-id', config.id);
+            observedTargets.push(targetElement);
           }
         }
       });
 
       selectors.layoutTabButtons = layoutV2TabButtons;
+      nav.addEventListener('keydown', handleLayoutV2TabsKeydown);
 
       setActiveLayoutV2Tab(layoutV2TabButtons.length ? layoutV2TabButtons[0].dataset.tabId : 'overview');
 
@@ -7223,6 +7328,10 @@
       merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
       merged.output.scrollTopLabel = merged.output.scrollTopLabel != null ? String(merged.output.scrollTopLabel) : DEFAULT_SETTINGS.output.scrollTopLabel;
       merged.output.tabOverviewLabel = merged.output.tabOverviewLabel != null ? String(merged.output.tabOverviewLabel) : DEFAULT_SETTINGS.output.tabOverviewLabel;
+      merged.output.tabFlowLabel = merged.output.tabFlowLabel != null ? String(merged.output.tabFlowLabel) : DEFAULT_SETTINGS.output.tabFlowLabel;
+      merged.output.tabTrendsLabel = merged.output.tabTrendsLabel != null ? String(merged.output.tabTrendsLabel) : DEFAULT_SETTINGS.output.tabTrendsLabel;
+      merged.output.tabExperienceLabel = merged.output.tabExperienceLabel != null ? String(merged.output.tabExperienceLabel) : DEFAULT_SETTINGS.output.tabExperienceLabel;
+      merged.output.tabNavLabel = merged.output.tabNavLabel != null ? String(merged.output.tabNavLabel) : DEFAULT_SETTINGS.output.tabNavLabel;
       merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
       merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
       merged.output.edSubtitle = merged.output.edSubtitle != null ? String(merged.output.edSubtitle) : DEFAULT_SETTINGS.output.edSubtitle;
@@ -7285,6 +7394,10 @@
       TEXT.title = settings.output.title || DEFAULT_SETTINGS.output.title;
       TEXT.subtitle = settings.output.subtitle || DEFAULT_SETTINGS.output.subtitle;
       TEXT.tabs.overview = settings.output.tabOverviewLabel || DEFAULT_SETTINGS.output.tabOverviewLabel;
+      TEXT.tabs.flow = settings.output.tabFlowLabel || DEFAULT_SETTINGS.output.tabFlowLabel;
+      TEXT.tabs.trends = settings.output.tabTrendsLabel || DEFAULT_SETTINGS.output.tabTrendsLabel;
+      TEXT.tabs.experience = settings.output.tabExperienceLabel || DEFAULT_SETTINGS.output.tabExperienceLabel;
+      TEXT.tabs.navLabel = settings.output.tabNavLabel || DEFAULT_SETTINGS.output.tabNavLabel;
       TEXT.tabs.ed = settings.output.tabEdLabel || DEFAULT_SETTINGS.output.tabEdLabel;
       TEXT.ed.title = settings.output.edTitle || DEFAULT_SETTINGS.output.edTitle;
       TEXT.ed.subtitle = settings.output.edSubtitle || DEFAULT_SETTINGS.output.edSubtitle;
