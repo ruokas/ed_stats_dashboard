@@ -13,6 +13,8 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
 - 🎯 Interaktyvūs KPI filtrai (laikotarpis, pamaina, GMP, išvykimo sprendimas) su aiškia santrauka ir sparčiuoju **Shift+R**.
 - 🔍 Pacientų atsiliepimų filtras pagal tai, kas pildė anketą ir kur ji pildyta – kortelės, grafikas ir lentelė prisitaiko akimirksniu.
+- 🧰 Sutraukiama atsiliepimų filtrų juosta su „Išskleisti/Sutraukti“ mygtuku – santrauka visada matoma, o filtrai pasiekiami prireikus.
+- 🗣️ Naujausių komentarų srautas su raktažodžių paieška ir „Paslėpti jautrius komentarus“ jungikliu.
 - ❓ Pacientų srautų „Pagalbos“ dialogas su legendomis (mygtukas „Pagalba“).
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
@@ -67,6 +69,8 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 13. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 10 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
 14. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
 15. Paspauskite „Pagalba“ pacientų srautų skiltyje – turi atsiverti pagalbos dialogas su grafikų legendomis, užsidaro mygtuku „X“ arba „Escape“.
+16. Atsiliepimų skiltyje išbandykite filtrų juostos mygtuką – „Išskleisti filtrus“ turi parodyti pasirenkamus laukus, „Sutraukti filtrus“ juos paslėpti, tačiau santrauka lieka matoma.
+17. Įveskite raktažodį į paieškos lauką ir įsitikinkite, kad komentarų sąrašas filtruojasi, tuomet išjunkite jungiklį „Paslėpti jautrius komentarus“ – sąraše turi atsirasti jautriai pažymėti įrašai su atitinkama žyme.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
