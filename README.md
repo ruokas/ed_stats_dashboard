@@ -13,7 +13,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
 - 🎯 Interaktyvūs KPI filtrai (laikotarpis, pamaina, GMP, išvykimo sprendimas) su aiškia santrauka ir sparčiuoju **Shift+R**.
 - 🔍 Pacientų atsiliepimų filtras pagal tai, kas pildė anketą ir kur ji pildyta – kortelės, grafikas ir lentelė prisitaiko akimirksniu.
-- ❓ Pacientų srautų „Pagalbos“ dialogas su legendomis ir klaviatūros šauktiniais (mygtukas „Pagalba“ arba klavišas **?**).
+- ❓ Pacientų srautų „Pagalbos“ dialogas su legendomis (mygtukas „Pagalba“).
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
 - 📺 TV režimas su stambiais rodikliais (Ctrl+Shift+T) ir gyvu laikrodžiu greitam skydo rodymui monitoriuje ar televizoriuje.
@@ -66,7 +66,7 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 12. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
 13. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 10 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
 14. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
-15. Paspauskite „Pagalba“ pacientų srautų skiltyje arba klaviatūroje spauskite **?** – turi atsiverti pagalbos dialogas su grafikų legendomis ir šauktinių sąrašu, užsidaro mygtuku „X“ arba „Escape“.
+15. Paspauskite „Pagalba“ pacientų srautų skiltyje – turi atsiverti pagalbos dialogas su grafikų legendomis, užsidaro mygtuku „X“ arba „Escape“.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.

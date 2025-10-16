@@ -4362,48 +4362,6 @@
       line-height: 1.45;
     }
 
-    .help-dialog__shortcuts {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: grid;
-      gap: 10px;
-    }
-
-    .help-dialog__shortcut-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .help-dialog__shortcut-keys {
-      display: inline-flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .help-dialog__shortcut-keys kbd {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 34px;
-      padding: 4px 8px;
-      border-radius: 8px;
-      border: 1px solid var(--color-border);
-      background: var(--color-input-bg);
-      font-size: 0.85rem;
-      font-weight: 600;
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--color-text);
-    }
-
-    .help-dialog__shortcut-text {
-      margin: 0;
-      color: var(--color-text-muted);
-      font-size: 0.9rem;
-    }
-
     .settings-form {
       display: flex;
       flex-direction: column;
@@ -5787,7 +5745,7 @@
       <div class="help-dialog__header">
         <div class="help-dialog__header-main">
           <h2 id="helpDialogTitle" class="help-dialog__title">Pagalba ir legendos</h2>
-          <p id="helpDialogIntro" class="help-dialog__intro">Trumpi paaiškinimai grafikams ir šauktiniams.</p>
+          <p id="helpDialogIntro" class="help-dialog__intro">Trumpi paaiškinimai grafikams.</p>
         </div>
         <button id="helpDialogClose" type="button" class="help-dialog__close" aria-label="Uždaryti pagalbos langą">
           <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
@@ -6324,7 +6282,7 @@
       },
       help: {
         title: 'Pagalba ir legendos',
-        intro: 'Trumpi paaiškinimai pacientų srautų grafikuose ir svarbiausi šauktiniai.',
+        intro: 'Trumpi paaiškinimai pacientų srautų grafikuose.',
         openLabel: 'Grafikų pagalba',
         openHint: 'Atidaryti grafikų pagalbos langą',
         close: 'Uždaryti pagalbos langą',
@@ -6357,21 +6315,9 @@
             ],
           },
         ],
-        shortcuts: {
-          title: 'Klaviatūros šauktiniai',
-          description: 'Galimi visame skydelyje.',
-          items: [
-            { keys: ['R'], description: 'Perkrauti duomenis.' },
-            { keys: ['Shift', 'R'], description: 'Atkurti KPI filtrus.' },
-            { keys: ['Ctrl', 'Shift', 'L'], description: 'Perjungti šviesią/tamsią temą.' },
-            { keys: ['Ctrl', 'Shift', 'H'], description: 'Fokusuoti atvykimų šilumos žemėlapio pasirinkimą.' },
-            { keys: ['Ctrl', 'Shift', 'E'], description: 'Eksportuoti aktyvų rezultatų laikotarpį į CSV.' },
-            { keys: ['?'], description: 'Atidaryti šį pagalbos langą.' },
-          ],
-        },
         en: {
           title: 'Help & legends',
-          intro: 'Quick explanations for patient flow visuals and the main shortcuts.',
+          intro: 'Quick explanations for patient flow visuals.',
           openLabel: 'Charts help',
           openHint: 'Open the charts help dialog',
           close: 'Close help dialog',
@@ -6404,18 +6350,6 @@
               ],
             },
           ],
-          shortcuts: {
-            title: 'Keyboard shortcuts',
-            description: 'Available across the dashboard.',
-            items: [
-              { keys: ['R'], description: 'Reload data.' },
-              { keys: ['Shift', 'R'], description: 'Reset KPI filters.' },
-              { keys: ['Ctrl', 'Shift', 'L'], description: 'Toggle light/dark theme.' },
-              { keys: ['Ctrl', 'Shift', 'H'], description: 'Focus the heatmap metric selector.' },
-              { keys: ['Ctrl', 'Shift', 'E'], description: 'Export the active results period to CSV.' },
-              { keys: ['?'], description: 'Open this help dialog.' },
-            ],
-          },
         },
       },
       insights: {
@@ -8281,65 +8215,6 @@
           container.appendChild(sectionEl);
         }
       });
-      const shortcuts = config.shortcuts || {};
-      const shortcutItems = Array.isArray(shortcuts.items) ? shortcuts.items : [];
-      if (shortcuts.title || shortcuts.description || shortcutItems.length) {
-        const shortcutSection = document.createElement('section');
-        shortcutSection.className = 'help-dialog__section';
-        if (shortcuts.title) {
-          const heading = document.createElement('h3');
-          heading.className = 'help-dialog__section-title';
-          heading.textContent = shortcuts.title;
-          shortcutSection.appendChild(heading);
-        }
-        if (shortcuts.description) {
-          const description = document.createElement('p');
-          description.className = 'help-dialog__section-description';
-          description.textContent = shortcuts.description;
-          shortcutSection.appendChild(description);
-        }
-        if (shortcutItems.length) {
-          const list = document.createElement('ul');
-          list.className = 'help-dialog__shortcuts';
-          shortcutItems.forEach((item) => {
-            if (!item) {
-              return;
-            }
-            const li = document.createElement('li');
-            li.className = 'help-dialog__shortcut-item';
-            const keysWrapper = document.createElement('span');
-            keysWrapper.className = 'help-dialog__shortcut-keys';
-            const keys = Array.isArray(item.keys)
-              ? item.keys
-              : String(item.keys ?? '')
-                .split('+')
-                .map((key) => key.trim())
-                .filter((key) => key.length > 0);
-            keys.forEach((key) => {
-              const kbd = document.createElement('kbd');
-              kbd.textContent = key;
-              keysWrapper.appendChild(kbd);
-            });
-            if (!keysWrapper.childNodes.length) {
-              return;
-            }
-            li.appendChild(keysWrapper);
-            if (item.description) {
-              const desc = document.createElement('p');
-              desc.className = 'help-dialog__shortcut-text';
-              desc.textContent = item.description;
-              li.appendChild(desc);
-            }
-            list.appendChild(li);
-          });
-          if (list.childNodes.length) {
-            shortcutSection.appendChild(list);
-          }
-        }
-        if (shortcutSection.childNodes.length) {
-          container.appendChild(shortcutSection);
-        }
-      }
     }
 
     function openHelpDialog(options = {}) {
@@ -19792,23 +19667,6 @@
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'E' || event.key === 'e')) {
         event.preventDefault();
         triggerPerformanceExport();
-      }
-      if (!event.ctrlKey && !event.metaKey && !event.altKey
-        && (event.key === '?' || (event.key === '/' && event.shiftKey))) {
-        const tagName = event.target && 'tagName' in event.target
-          ? String(event.target.tagName).toUpperCase()
-          : '';
-        const isEditable = event.target && typeof event.target === 'object'
-          && 'isContentEditable' in event.target
-          && event.target.isContentEditable === true;
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName) || isEditable) {
-          return;
-        }
-        event.preventDefault();
-        const trigger = typeof document !== 'undefined' ? document.activeElement : null;
-        helpState.lastTrigger = trigger && trigger !== document.body ? trigger : null;
-        openHelpDialog({ trigger });
-        return;
       }
       if (!event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'A' || event.key === 'a')) {
         const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
