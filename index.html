@@ -6836,6 +6836,63 @@
       };
     }
 
+    const GLOBAL_FILTER_KEYS = ['window', 'shift', 'arrival', 'disposition', 'cardType'];
+    const GLOBAL_CHART_FILTER_KEYS = ['arrival', 'disposition', 'cardType'];
+
+    function areFilterValuesEqual(a = {}, b = {}, keys = GLOBAL_FILTER_KEYS) {
+      return keys.every((key) => {
+        const valueA = a?.[key];
+        const valueB = b?.[key];
+        return valueA === valueB;
+      });
+    }
+
+    let suppressGlobalFilterReaction = false;
+
+    function handleGlobalFiltersChanged(rawFilters = {}) {
+      const sanitized = sanitizeKpiFilters(rawFilters);
+      const previousKpiFilters = dashboardState.kpi?.filters || {};
+      const previousChartFilters = dashboardState.chartFilters || {};
+
+      dashboardState.filters = { ...sanitized };
+
+      const kpiChanged = !areFilterValuesEqual(previousKpiFilters, sanitized);
+      if (kpiChanged) {
+        dashboardState.kpi.filters = { ...sanitized };
+        refreshKpiWindowOptions();
+        syncKpiFilterControls();
+        if (!suppressGlobalFilterReaction) {
+          void applyKpiFiltersAndRender();
+        }
+      }
+
+      const chartSubset = {
+        arrival: sanitized.arrival,
+        disposition: sanitized.disposition,
+        cardType: sanitized.cardType,
+      };
+      const chartChanged = !areFilterValuesEqual(previousChartFilters, chartSubset, GLOBAL_CHART_FILTER_KEYS);
+      if (chartChanged) {
+        dashboardState.chartFilters = { ...chartSubset };
+        syncChartFilterControls();
+        if (!suppressGlobalFilterReaction) {
+          void applyChartFilters();
+        }
+      }
+
+      if (suppressGlobalFilterReaction) {
+        updateKpiSummary({
+          records: dashboardState.kpi.records,
+          dailyStats: dashboardState.kpi.daily,
+          windowDays: sanitized.window,
+        });
+        updateChartFiltersSummary({
+          records: dashboardState.chartData.filteredRecords,
+          daily: dashboardState.chartData.filteredDaily,
+        });
+      }
+    }
+
     let layoutV2TabButtons = [];
     let layoutV2TabObserver = null;
     let layoutV2ActiveTabId = 'overview';
@@ -8839,21 +8896,19 @@
       settings = normalizeSettings(extracted);
       const previousFilters = dashboardState.kpi.filters;
       const defaultFilters = getDefaultKpiFilters();
-      dashboardState.kpi.filters = {
+      const nextFilters = sanitizeKpiFilters({
         ...defaultFilters,
         shift: previousFilters.shift,
         arrival: previousFilters.arrival,
         disposition: previousFilters.disposition,
         cardType: previousFilters.cardType,
-      };
-      syncGlobalFiltersFromKpi();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
+      });
+      globalFilterController.apply(nextFilters);
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
       applyFooterSource();
-    initializeLayoutV2Shell();
+      initializeLayoutV2Shell();
       applySectionVisibility();
       closeSettingsDialog();
       loadDashboard();
@@ -8865,18 +8920,13 @@
         return;
       }
       settings = normalizeSettings({});
-      dashboardState.kpi.filters = getDefaultKpiFilters();
-      syncGlobalFiltersFromKpi();
-      dashboardState.chartFilters = getDefaultChartFilters();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      syncChartFilterControls();
-      updateChartFiltersSummary({ records: [], daily: [] });
+      const defaultFilters = getDefaultKpiFilters();
+      globalFilterController.apply(defaultFilters);
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
       applyFooterSource();
-    initializeLayoutV2Shell();
+      initializeLayoutV2Shell();
       applySectionVisibility();
       populateSettingsForm();
       loadDashboard();
@@ -8988,15 +9038,7 @@
     };
     const globalFilterController = createGlobalFilterController(dashboardState.filters);
 
-    globalFilterController.subscribe((filters) => {
-      dashboardState.filters = { ...filters };
-    });
-
-    function syncGlobalFiltersFromKpi() {
-      globalFilterController.apply({ ...dashboardState.kpi.filters });
-    }
-
-    syncGlobalFiltersFromKpi();
+    globalFilterController.subscribe(handleGlobalFiltersChanged);
 
     function resetMonthlyState() {
       dashboardState.monthly.all = [];
@@ -13779,7 +13821,6 @@
     async function applyKpiFiltersAndRender() {
       const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters);
       dashboardState.kpi.filters = { ...normalizedFilters };
-      syncGlobalFiltersFromKpi();
       const defaultFilters = getDefaultKpiFilters();
       const windowDays = normalizedFilters.window;
       const workerPayload = {
@@ -13833,22 +13874,34 @@
         return;
       }
       const { name, value } = target;
-      const filters = dashboardState.kpi.filters;
+      const current = typeof globalFilterController.getState === 'function'
+        ? globalFilterController.getState()
+        : { ...dashboardState.kpi.filters };
+      const next = { ...current };
+      let shouldApply = false;
       if (name === 'window') {
         const numeric = Number.parseInt(value, 10);
         if (Number.isFinite(numeric) && numeric >= 0) {
-          filters.window = numeric;
+          next.window = numeric;
+          shouldApply = true;
         }
       } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
-        filters.shift = value;
+        next.shift = value;
+        shouldApply = true;
       } else if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
-        filters.arrival = value;
+        next.arrival = value;
+        shouldApply = true;
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
-        filters.disposition = value;
+        next.disposition = value;
+        shouldApply = true;
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
-        filters.cardType = value;
+        next.cardType = value;
+        shouldApply = true;
       }
-      void applyKpiFiltersAndRender();
+      if (shouldApply) {
+        const sanitized = sanitizeKpiFilters(next);
+        globalFilterController.apply(sanitized);
+      }
     }
 
     function handleChartFilterChange(event) {
@@ -13857,16 +13910,25 @@
         return;
       }
       const { name, value } = target;
-      const filters = { ...dashboardState.chartFilters };
+      const current = typeof globalFilterController.getState === 'function'
+        ? globalFilterController.getState()
+        : { ...dashboardState.filters };
+      const next = { ...current };
+      let shouldApply = false;
       if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
-        filters.arrival = value;
+        next.arrival = value;
+        shouldApply = true;
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
-        filters.disposition = value;
+        next.disposition = value;
+        shouldApply = true;
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
-        filters.cardType = value;
+        next.cardType = value;
+        shouldApply = true;
       }
-      dashboardState.chartFilters = filters;
-      void applyChartFilters();
+      if (shouldApply) {
+        const sanitized = sanitizeKpiFilters(next);
+        globalFilterController.apply(sanitized);
+      }
     }
 
     function applyChartFilters() {
@@ -13891,11 +13953,8 @@
     }
 
     function resetKpiFilters({ fromKeyboard } = {}) {
-      dashboardState.kpi.filters = getDefaultKpiFilters();
-      syncGlobalFiltersFromKpi();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      void applyKpiFiltersAndRender();
+      const defaults = getDefaultKpiFilters();
+      globalFilterController.apply(defaults);
       if (fromKeyboard && selectors.kpiFiltersReset) {
         selectors.kpiFiltersReset.focus();
       }
@@ -19382,9 +19441,16 @@
           ? Number(settings.calculations.windowDays)
           : DEFAULT_SETTINGS.calculations.windowDays;
         if (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0) {
-          dashboardState.kpi.filters.window = windowDays;
-          syncGlobalFiltersFromKpi();
-          syncKpiFilterControls();
+          const baseFilters = typeof globalFilterController.getState === 'function'
+            ? globalFilterController.getState()
+            : { ...dashboardState.kpi.filters };
+          const nextFilters = sanitizeKpiFilters({ ...baseFilters, window: windowDays });
+          suppressGlobalFilterReaction = true;
+          try {
+            globalFilterController.apply(nextFilters);
+          } finally {
+            suppressGlobalFilterReaction = false;
+          }
         }
         const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
         const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
