@@ -6,7 +6,7 @@
 
 | File | Planned updates |
 | --- | --- |
-| `index.html` | Add the new top bar markup (logo/identity, status, refresh, TV mode, settings, filter trigger) and the tab strip. Remove the old hero banner and section navigation once the new bar is verified. Update the existing sections so their headings match the new tab anchors and adjust CSS classes/variables for the new sticky header height. |
+| `index.html` | Add the new top bar markup (logo/identity, status, refresh, TV mode, settings, filter trigger) and the tab strip from `prototypes/layout_prototype.html`. Remove the old hero banner and section navigation once the new bar is verified. Update the existing sections so their headings match the new tab anchors and adjust CSS classes/variables for the new sticky header height. |
 | `data-worker.js` | Merge separate KPI and chart filter handling into a single message format. Update worker functions such as `transformCsvWithStats`, `applyKpiFilters`, and any helpers so they understand the unified filter schema. Keep comments that explain how to extend filters later. |
 | `index.html` (embedded script) | Introduce a shared `dashboardState.filters` object that every renderer and worker call can read. Replace duplicated filter logic in KPI/chart renderers with calls into a central controller. Update keyboard shortcuts and event listeners (reload, TV mode, settings, filter toggle) to target the new top bar elements. |
 | `README.md` | Extend the smoke test checklist with new steps for the unified filters and tab navigation. Document how to toggle any temporary feature flag used during rollout. |
@@ -19,29 +19,25 @@ If we discover new helper files are needed (for example a dedicated `filters-con
 - A top bar that matches the approved prototype, keeps key actions in one place, and improves keyboard navigation.
 - Smooth rollout: fallback options stay available, and every change is easy to test manually.
 
-## Detailed steps
-
-1. **Set up safe rollout scaffolding**
+## Incremental Roadmap
+1. **Prep & flagging**
    - Add a `DATA_LAYOUT_V2` (or similar) feature flag near the top of the main script. Default it to `false` so we can merge incremental work without breaking production.
    - Capture the current smoke test list from `README.md` and note load-time telemetry points to compare before/after.
-
-2. **Create the global filter controller**
+2. **Global filter controller**
    - Inside the main script, define a plain object (for example `filterController`) that stores the active filters, normalises user input, and notifies listeners with a debounced update (`requestAnimationFrame` or `setTimeout` 150–200 ms).
    - Update `runKpiWorkerJob`, chart update calls, and any other worker messages so they all pass the same `dashboardState.filters` object. Confirm `computeDailyStats` and related helpers still receive the data they expect.
    - Adjust renderers (`renderKpiGrid`, `renderCharts`, `renderTables`) to read directly from `dashboardState.filters`. Remove local copies of filter state to avoid drift.
-
-3. **Build the new top bar and tab shell**
-   - Behind the feature flag, add semantic HTML for the top bar inside `index.html` and copy the current hero contents into it. Make sure the CSS keeps the bar sticky using the existing custom properties (`--hero-height`, `--section-nav-height`) so scroll behaviour stays stable.
+3. **Top bar lift & tab bar**
+   - Behind the feature flag, add semantic HTML for the top bar inside `index.html` using `.top-bar` structure from the prototype. Keep existing hero content in place until QA signs off.
    - Implement the tab list with proper accessibility attributes (`role="tablist"`, `aria-selected`, `aria-controls`). Support keyboard arrow keys to move between tabs and restore focus to the correct tab after navigation.
    - Map each tab to existing section IDs (for example `#kpi-section`, `#chart-section`) and update `scroll-margin-top` values to account for the new header height.
-
-4. **Move actions into the new shell**
+4. **Wire up actions**
    - Rewire reload, TV mode, settings, and filter toggle buttons so they live in the new bar. Ensure keyboard shortcuts (e.g., `r` for refresh, `t` for TV mode) still call the same handlers.
    - Update scroll and section tracking (`handleScroll`, `sectionNavState`) so the active tab highlights correctly when the user scrolls.
-
-5. **Clean up legacy code**
+5. **Clean up & document**
    - Once the new layout is stable under the feature flag, delete the old hero markup/styles and related JavaScript. Consolidate CSS rules to avoid duplicates.
    - Review the `TEXT` localisation object and add Lithuanian + English strings for any new labels introduced by the top bar or tabs.
+   - Refresh `README.md` smoke steps and include a quick mention of how to toggle the layout flag.
 
 ## Testing & validation
 - Follow the current smoke checklist, then add checks for: applying global filters, switching tabs with keyboard and mouse, and toggling TV mode from the new top bar.
