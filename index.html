@@ -5063,12 +5063,13 @@
             class="chart-help-button"
             aria-haspopup="dialog"
             aria-controls="helpDialog"
-            title="Grafikų pagalba (?)"
+            aria-label="Grafikų pagalba"
+            title="Grafikų pagalba"
           >
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6a4 4 0 0 1 4 4c0 1.657-1.343 3-3 3v1.5" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 17h.01" />
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="9" />
+              <path d="M12 10v6" />
+              <path d="M12 7h.01" />
             </svg>
             <span class="sr-only">Grafikų pagalba</span>
           </button>
@@ -9248,12 +9249,11 @@
       if (selectors.patientFlowHelpBtn) {
         const label = TEXT.help?.openLabel || 'Grafikų pagalba';
         const hint = TEXT.help?.openHint || label;
-        const suffix = ' (?)';
-        selectors.patientFlowHelpBtn.setAttribute('aria-label', `${label}${suffix}`);
-        selectors.patientFlowHelpBtn.title = `${hint}${suffix}`;
+        selectors.patientFlowHelpBtn.setAttribute('aria-label', label);
+        selectors.patientFlowHelpBtn.title = hint;
         const srLabel = selectors.patientFlowHelpBtn.querySelector('.sr-only');
         if (srLabel) {
-          srLabel.textContent = `${label}${suffix}`;
+          srLabel.textContent = label;
         }
       }
       renderHelpDialogSections();
