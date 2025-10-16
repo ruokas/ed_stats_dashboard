@@ -2160,6 +2160,109 @@
       display: none;
     }
 
+    .shift-strip {
+      margin: 12px 0 20px;
+      padding: 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      box-shadow: 0 10px 26px -18px rgba(15, 23, 42, 0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .shift-strip__title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .shift-strip__content {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .shift-strip__item {
+      border: 1px solid rgba(37, 99, 235, 0.08);
+      border-radius: 12px;
+      background: var(--color-surface-alt);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 92px;
+    }
+
+    .shift-strip__label {
+      margin: 0;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+
+    .shift-strip__value {
+      margin: 0;
+      font-size: clamp(1.4rem, 2vw + 0.2rem, 1.8rem);
+      font-weight: 600;
+      color: var(--color-text);
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .shift-strip__unit {
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+
+    .shift-strip__meta {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .shift-strip__delta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .shift-strip__delta-value {
+      font-size: clamp(1.3rem, 1.8vw + 0.2rem, 1.6rem);
+      font-weight: 700;
+    }
+
+    .shift-strip__delta-value[data-trend="up"] {
+      color: var(--color-success);
+    }
+
+    .shift-strip__delta-value[data-trend="down"] {
+      color: var(--color-danger);
+    }
+
+    .shift-strip__delta-value[data-trend="neutral"] {
+      color: var(--color-text-muted);
+    }
+
+    .shift-strip__delta-percent {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+    }
+
+    .shift-strip__empty {
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
     .kpi-summary {
       margin-bottom: 16px;
       padding: 12px 16px;
@@ -4511,6 +4614,10 @@
         </form>
       </div>
       <div id="kpiSummary" class="kpi-summary" role="status" aria-live="polite" hidden></div>
+      <section id="shiftStrip" class="shift-strip" role="region" aria-live="polite" aria-labelledby="shiftStripTitle" hidden>
+        <h3 id="shiftStripTitle" class="shift-strip__title">Pamainų palyginimas</h3>
+        <div id="shiftStripContent" class="shift-strip__content" role="list"></div>
+      </section>
       <div id="kpiGrid" class="kpi-grid" role="list"></div>
       <template id="kpiSkeleton">
         <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
@@ -5661,6 +5768,40 @@
           noMonth: 'Šio mėnesio duomenų nėra.',
           unknownPeriod: 'Nenurodytas laikotarpis',
         },
+        shiftStrip: {
+          title: 'Pamainų palyginimas',
+          currentLabel: 'Dabartinė pamaina',
+          previousLabel: 'Praėjusi pamaina',
+          differenceLabel: 'Skirtumas',
+          unitLabel: 'pac.',
+          previousFallback: 'Praėjusi pamaina',
+          noPrevious: 'Praėjusios pamainos duomenų nėra.',
+          noData: 'Pamainų palyginimui trūksta duomenų.',
+          deltaNoData: 'Skirtumo apskaičiuoti nepavyko.',
+          deltaContext: (reference) => (reference ? `vs ${reference}` : 'vs praėjusi pamaina'),
+          deltaUp: 'Daugiau pacientų nei praėjusi pamaina.',
+          deltaDown: 'Mažiau pacientų nei praėjusi pamaina.',
+          deltaEqual: 'Pacientų skaičius nepasikeitė.',
+          currentMeta: (dateLabel, weekdayLabel) => [dateLabel, weekdayLabel].filter(Boolean).join(' · '),
+          previousMeta: (dateLabel, weekdayLabel) => [dateLabel, weekdayLabel].filter(Boolean).join(' · '),
+          en: {
+            title: 'Shift comparison',
+            currentLabel: 'Current shift',
+            previousLabel: 'Previous shift',
+            differenceLabel: 'Difference',
+            unitLabel: 'pts.',
+            previousFallback: 'Previous shift',
+            noPrevious: 'No previous shift data.',
+            noData: 'Shift comparison data is unavailable.',
+            deltaNoData: 'Unable to calculate the difference.',
+            deltaContext: (reference) => (reference ? `vs ${reference}` : 'vs previous shift'),
+            deltaUp: 'More patients than the previous shift.',
+            deltaDown: 'Fewer patients than the previous shift.',
+            deltaEqual: 'Patient volume unchanged.',
+            currentMeta: (dateLabel, weekdayLabel) => [dateLabel, weekdayLabel].filter(Boolean).join(' · '),
+            previousMeta: (dateLabel, weekdayLabel) => [dateLabel, weekdayLabel].filter(Boolean).join(' · '),
+          },
+        },
         cards: [
           { metricKey: 'total', label: 'Pacientai', format: 'integer', unitLabel: 'pac.' },
           { metricKey: 'night', label: 'Naktiniai pacientai', format: 'integer', unitLabel: 'pac.' },
@@ -6565,6 +6706,9 @@
       kpiHeading: document.getElementById('kpiHeading'),
       kpiSubtitle: document.getElementById('kpiSubtitle'),
       kpiSummary: document.getElementById('kpiSummary'),
+      shiftStrip: document.getElementById('shiftStrip'),
+      shiftStripTitle: document.getElementById('shiftStripTitle'),
+      shiftStripContent: document.getElementById('shiftStripContent'),
       kpiGrid: document.getElementById('kpiGrid'),
       chartHeading: document.getElementById('chartHeading'),
       chartSubtitle: document.getElementById('chartSubtitle'),
@@ -8223,6 +8367,9 @@
       updateFullscreenControls();
       selectors.kpiHeading.textContent = TEXT.kpis.title;
       selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
+      if (selectors.shiftStripTitle) {
+        selectors.shiftStripTitle.textContent = TEXT.kpis.shiftStrip.title;
+      }
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
       if (selectors.insightsHeading) {
@@ -12943,6 +13090,9 @@
       const last = decorated[decorated.length - 1];
       const lastEntry = last.entry;
       const lastDate = last.date;
+      const previous = decorated.length >= 2 ? decorated[decorated.length - 2] : null;
+      const previousEntry = previous ? previous.entry : null;
+      const previousDate = previous ? previous.date : null;
       const weekdayIndex = lastDate.getDay();
       const weekdayLabel = capitalizeSentence(weekdayLongFormatter.format(lastDate));
       const sameWeekdayEntries = decorated.filter((item) => item.date.getDay() === weekdayIndex).map((item) => item.entry);
@@ -12966,9 +13116,11 @@
       };
 
       const valueFor = (key) => (Number.isFinite(lastEntry?.[key]) ? lastEntry[key] : null);
+      const previousValueFor = (key) => (Number.isFinite(previousEntry?.[key]) ? previousEntry[key] : null);
 
       const totalValue = valueFor('count');
       const totalAverage = averageFor('count');
+      const previousTotal = previousValueFor('count');
 
       const shareOf = (value, total) => {
         if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
@@ -12976,6 +13128,29 @@
         }
         return value / total;
       };
+
+      const previousSummary = previousEntry
+        ? {
+          dateLabel: capitalizeSentence(dailyDateFormatter.format(previousDate)),
+          dateKey: previousEntry.date,
+          weekdayLabel: capitalizeSentence(weekdayLongFormatter.format(previousDate)),
+          metrics: {
+            total: { value: previousValueFor('count') },
+            night: { value: previousValueFor('night') },
+            hospitalized: { value: previousValueFor('hospitalized') },
+            discharged: { value: previousValueFor('discharged') },
+          },
+        }
+        : null;
+
+      const totalDiff = Number.isFinite(totalValue) && Number.isFinite(previousTotal)
+        ? totalValue - previousTotal
+        : null;
+      const totalPercent = Number.isFinite(totalDiff)
+        && Number.isFinite(previousTotal)
+        && previousTotal !== 0
+        ? totalDiff / previousTotal
+        : null;
 
       return {
         dateLabel: capitalizeSentence(dailyDateFormatter.format(lastDate)),
@@ -12997,7 +13172,140 @@
             averageShare: shareOf(averageFor('discharged'), totalAverage),
           },
         },
+        previous: previousSummary,
+        comparison: {
+          total: {
+            absolute: totalDiff,
+            percent: totalPercent,
+          },
+        },
       };
+    }
+
+    function renderShiftStrip(lastShiftSummary) {
+      const strip = selectors.shiftStrip;
+      const content = selectors.shiftStripContent;
+      if (!strip || !content) {
+        return;
+      }
+      if (!lastShiftSummary) {
+        content.replaceChildren();
+        strip.hidden = true;
+        strip.setAttribute('aria-hidden', 'true');
+        return;
+      }
+
+      const config = TEXT.kpis.shiftStrip || {};
+      const unitLabel = config.unitLabel || 'pac.';
+      const formatMeta = (formatter, dateLabel, weekdayLabel) => {
+        if (typeof formatter === 'function') {
+          return formatter(dateLabel, weekdayLabel) || '';
+        }
+        return [dateLabel, weekdayLabel].filter(Boolean).join(' · ');
+      };
+      const formatSigned = (value, formatter) => {
+        if (!Number.isFinite(value)) {
+          return null;
+        }
+        const magnitude = Math.abs(value);
+        const formatted = formatter ? formatter(magnitude) : magnitude;
+        if (value > 0) {
+          return `+${formatted}`;
+        }
+        if (value < 0) {
+          return `−${formatted}`;
+        }
+        return `±${formatted}`;
+      };
+
+      const currentTotal = Number.isFinite(lastShiftSummary.metrics?.total?.value)
+        ? lastShiftSummary.metrics.total.value
+        : null;
+      const currentValueHtml = Number.isFinite(currentTotal)
+        ? `${numberFormatter.format(Math.round(currentTotal))}<span class="shift-strip__unit">${escapeHtml(unitLabel)}</span>`
+        : `<span class="shift-strip__empty">${escapeHtml(TEXT.kpis.primaryNoData || '—')}</span>`;
+      const currentMeta = formatMeta(
+        config.currentMeta,
+        lastShiftSummary.dateLabel,
+        lastShiftSummary.weekdayLabel,
+      );
+
+      const previousSummary = lastShiftSummary.previous;
+      const previousTotal = Number.isFinite(previousSummary?.metrics?.total?.value)
+        ? previousSummary.metrics.total.value
+        : null;
+      let previousValueHtml;
+      let previousMeta = '';
+      if (previousSummary) {
+        previousValueHtml = Number.isFinite(previousTotal)
+          ? `${numberFormatter.format(Math.round(previousTotal))}<span class="shift-strip__unit">${escapeHtml(unitLabel)}</span>`
+          : `<span class="shift-strip__empty">${escapeHtml(TEXT.kpis.primaryNoData || '—')}</span>`;
+        previousMeta = formatMeta(
+          config.previousMeta,
+          previousSummary.dateLabel,
+          previousSummary.weekdayLabel,
+        );
+      } else {
+        previousValueHtml = `<span class="shift-strip__empty">${escapeHtml(config.noPrevious || TEXT.kpis.primaryNoData || '—')}</span>`;
+      }
+
+      const totalDiff = Number.isFinite(lastShiftSummary.comparison?.total?.absolute)
+        ? lastShiftSummary.comparison.total.absolute
+        : null;
+      const percentDiff = Number.isFinite(lastShiftSummary.comparison?.total?.percent)
+        ? lastShiftSummary.comparison.total.percent
+        : null;
+      const trend = Number.isFinite(totalDiff)
+        ? (totalDiff > 0 ? 'up' : (totalDiff < 0 ? 'down' : 'neutral'))
+        : 'neutral';
+      const deltaValue = formatSigned(totalDiff, (value) => numberFormatter.format(Math.round(value)));
+      const deltaPercent = formatSigned(percentDiff, (value) => percentFormatter.format(value));
+      const previousLabel = previousSummary?.dateLabel || config.previousFallback || '';
+      const deltaContext = typeof config.deltaContext === 'function'
+        ? config.deltaContext(previousLabel)
+        : (config.deltaContext || '');
+      const deltaAria = Number.isFinite(totalDiff)
+        ? (totalDiff > 0
+          ? (config.deltaUp || '')
+          : (totalDiff < 0 ? (config.deltaDown || '') : (config.deltaEqual || '')))
+        : (config.deltaNoData || '');
+      const deltaValueHtml = deltaValue
+        ? `<span class="shift-strip__delta-value" data-trend="${trend}" aria-label="${escapeHtml(deltaAria)}">${escapeHtml(deltaValue)}</span>`
+        : `<span class="shift-strip__empty">${escapeHtml(config.deltaNoData || TEXT.kpis.primaryNoData || '—')}</span>`;
+      const deltaPercentHtml = deltaPercent
+        ? `<span class="shift-strip__delta-percent">${escapeHtml(deltaPercent)}</span>`
+        : '';
+
+      const items = [
+        `
+          <div class="shift-strip__item" role="listitem">
+            <p class="shift-strip__label">${escapeHtml(config.currentLabel || 'Dabartinė pamaina')}</p>
+            <p class="shift-strip__value">${currentValueHtml}</p>
+            ${currentMeta ? `<p class="shift-strip__meta">${escapeHtml(currentMeta)}</p>` : ''}
+          </div>
+        `,
+        `
+          <div class="shift-strip__item" role="listitem">
+            <p class="shift-strip__label">${escapeHtml(config.previousLabel || 'Praėjusi pamaina')}</p>
+            <p class="shift-strip__value">${previousValueHtml}</p>
+            ${previousMeta ? `<p class="shift-strip__meta">${escapeHtml(previousMeta)}</p>` : ''}
+          </div>
+        `,
+        `
+          <div class="shift-strip__item" role="listitem">
+            <p class="shift-strip__label">${escapeHtml(config.differenceLabel || 'Skirtumas')}</p>
+            <div class="shift-strip__delta">
+              ${deltaValueHtml}
+              ${deltaPercentHtml}
+            </div>
+            ${deltaContext ? `<p class="shift-strip__meta">${escapeHtml(deltaContext)}</p>` : ''}
+          </div>
+        `,
+      ];
+
+      content.innerHTML = items.join('');
+      strip.hidden = false;
+      strip.removeAttribute('aria-hidden');
     }
 
     function renderKpiPeriodSummary(lastShiftSummary, periodMetrics) {
@@ -13072,6 +13380,11 @@
       if (!grid || grid.dataset.skeleton === 'true') {
         return;
       }
+      if (selectors.shiftStrip && selectors.shiftStripContent) {
+        selectors.shiftStripContent.replaceChildren();
+        selectors.shiftStrip.hidden = true;
+        selectors.shiftStrip.setAttribute('aria-hidden', 'true');
+      }
       const template = document.getElementById('kpiSkeleton');
       grid.setAttribute('aria-busy', 'true');
       grid.dataset.skeleton = 'true';
@@ -13101,6 +13414,7 @@
       const windowDays = dashboardState.kpi?.filters?.window;
       const periodMetrics = buildYearMonthMetrics(dailyStats, windowDays);
       const lastShiftSummary = buildLastShiftSummary(dailyStats);
+      renderShiftStrip(lastShiftSummary);
       renderKpiPeriodSummary(lastShiftSummary, periodMetrics);
 
       if (!lastShiftSummary) {
