@@ -3,6 +3,8 @@
 ## Project Structure & Module Organization
 `index.html` is the single-page dashboard; it bundles markup, styling, and the main JavaScript controllers. Keep new UI fragments adjacent to the section they extend (filters, KPI cards, charts) and mirror the existing helper function layout. `data-worker.js` contains the Web Worker responsible for CSV parsing and statistic aggregation. Add heavy data transformations there rather than the UI thread. `README.md` captures behaviour notes and smoke tests; keep it synchronized with any UX change. `LICENSE` documents the MIT terms and should remain untouched unless legal updates are required.
 
+- The settings dialog is organised as a four-section accordion (`.settings-accordion__item`). Preserve the group order (data sources → transformations → labels → toggles), reuse the existing `data-settings-label` attributes for LT/EN copy, and drive button text through `TEXT.settingsDialog` helpers.
+
 ## Build, Test, and Development Commands
 There is no build pipeline. Serve the project locally with `python -m http.server 8000` from the repository root, then open `http://localhost:8000/index.html`. For quick checks, launching `start index.html` in Windows is acceptable, but remember that workers cache aggressively; use `Ctrl+Shift+R` to force-refresh. When debugging CSV imports, open DevTools > Network to verify the Google Sheets CSV and the worker responses.
 
