@@ -5631,9 +5631,9 @@
               </section>
             </div>
           </section>
-          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="true">
+          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="false">
             <h3 class="settings-accordion__header">
-              <button type="button" class="settings-accordion__trigger" id="settingsGroupTransformations" data-settings-accordion-trigger aria-expanded="true" aria-controls="settingsPanelTransformations">
+              <button type="button" class="settings-accordion__trigger" id="settingsGroupTransformations" data-settings-accordion-trigger aria-expanded="false" aria-controls="settingsPanelTransformations">
                 <span class="settings-accordion__text">
                   <span class="settings-accordion__title" data-settings-label="transformationsTitle">Transformacijos</span>
                   <span class="settings-accordion__description" data-settings-label="transformationsDescription">Suderinkite stulpelių pavadinimus ir skaičiavimo logiką.</span>
@@ -5645,7 +5645,7 @@
                 </span>
               </button>
             </h3>
-            <div id="settingsPanelTransformations" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupTransformations">
+            <div id="settingsPanelTransformations" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupTransformations" hidden>
               <section class="settings-section" aria-labelledby="settingsCsvTitle">
                 <h3 id="settingsCsvTitle">CSV stulpelių atitikimas</h3>
                 <div class="settings-field">
@@ -5719,9 +5719,9 @@
               </section>
             </div>
           </section>
-          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="true">
+          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="false">
             <h3 class="settings-accordion__header">
-              <button type="button" class="settings-accordion__trigger" id="settingsGroupLabels" data-settings-accordion-trigger aria-expanded="true" aria-controls="settingsPanelLabels">
+              <button type="button" class="settings-accordion__trigger" id="settingsGroupLabels" data-settings-accordion-trigger aria-expanded="false" aria-controls="settingsPanelLabels">
                 <span class="settings-accordion__text">
                   <span class="settings-accordion__title" data-settings-label="labelsTitle">Etiketės</span>
                   <span class="settings-accordion__description" data-settings-label="labelsDescription">Keiskite hero, kortelių ir sekcijų tekstus.</span>
@@ -5733,7 +5733,7 @@
                 </span>
               </button>
             </h3>
-            <div id="settingsPanelLabels" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupLabels">
+            <div id="settingsPanelLabels" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupLabels" hidden>
               <section class="settings-section" aria-labelledby="settingsOutputTitle">
                 <h3 id="settingsOutputTitle">Išvesties tekstai</h3>
                 <div class="settings-field">
@@ -5871,9 +5871,9 @@
               </section>
             </div>
           </section>
-          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="true">
+          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="false">
             <h3 class="settings-accordion__header">
-              <button type="button" class="settings-accordion__trigger" id="settingsGroupToggles" data-settings-accordion-trigger aria-expanded="true" aria-controls="settingsPanelToggles">
+              <button type="button" class="settings-accordion__trigger" id="settingsGroupToggles" data-settings-accordion-trigger aria-expanded="false" aria-controls="settingsPanelToggles">
                 <span class="settings-accordion__text">
                   <span class="settings-accordion__title" data-settings-label="togglesTitle">Funkcijų jungikliai</span>
                   <span class="settings-accordion__description" data-settings-label="togglesDescription">Pasirinkite, kurie blokai rodomi skydelyje.</span>
@@ -5885,7 +5885,7 @@
                 </span>
               </button>
             </h3>
-            <div id="settingsPanelToggles" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupToggles">
+            <div id="settingsPanelToggles" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupToggles" hidden>
               <section class="settings-section">
                 <h3 id="settingsVisibilityTitle">Sekcijų rodymas</h3>
                 <label class="settings-checkbox" for="settingsShowInsights">
@@ -8975,14 +8975,24 @@
         }
         setSettingsAccordionState(trigger, panel, initialOpen);
         trigger.dataset.accordionReady = 'true';
-        trigger.addEventListener('click', (event) => {
-          event.preventDefault();
+        let ignoreNextClick = false;
+        trigger.addEventListener('click', () => {
+          if (ignoreNextClick) {
+            ignoreNextClick = false;
+            return;
+          }
           const expanded = trigger.getAttribute('aria-expanded') === 'true';
           setSettingsAccordionState(trigger, panel, !expanded);
         });
         trigger.addEventListener('keydown', (event) => {
-          if (event.key === ' ') {
+          if (event.key === ' ' || event.key === 'Spacebar') {
             event.preventDefault();
+            ignoreNextClick = true;
+            window.setTimeout(() => {
+              ignoreNextClick = false;
+            }, 0);
+            const expanded = trigger.getAttribute('aria-expanded') === 'true';
+            setSettingsAccordionState(trigger, panel, !expanded);
           }
         });
       });
