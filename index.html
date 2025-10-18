@@ -8975,24 +8975,14 @@
         }
         setSettingsAccordionState(trigger, panel, initialOpen);
         trigger.dataset.accordionReady = 'true';
-        let ignoreNextClick = false;
         trigger.addEventListener('click', () => {
-          if (ignoreNextClick) {
-            ignoreNextClick = false;
-            return;
-          }
           const expanded = trigger.getAttribute('aria-expanded') === 'true';
           setSettingsAccordionState(trigger, panel, !expanded);
         });
         trigger.addEventListener('keydown', (event) => {
           if (event.key === ' ' || event.key === 'Spacebar') {
             event.preventDefault();
-            ignoreNextClick = true;
-            window.setTimeout(() => {
-              ignoreNextClick = false;
-            }, 0);
-            const expanded = trigger.getAttribute('aria-expanded') === 'true';
-            setSettingsAccordionState(trigger, panel, !expanded);
+            trigger.click();
           }
         });
       });
