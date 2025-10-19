@@ -8975,14 +8975,27 @@
         }
         setSettingsAccordionState(trigger, panel, initialOpen);
         trigger.dataset.accordionReady = 'true';
-        trigger.addEventListener('click', () => {
+        let suppressNextClick = false;
+        const toggleAccordionItem = () => {
           const expanded = trigger.getAttribute('aria-expanded') === 'true';
           setSettingsAccordionState(trigger, panel, !expanded);
+        };
+        trigger.addEventListener('click', () => {
+          if (suppressNextClick) {
+            suppressNextClick = false;
+            return;
+          }
+          toggleAccordionItem();
         });
         trigger.addEventListener('keydown', (event) => {
-          if (event.key === ' ' || event.key === 'Spacebar') {
+          if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Space') {
+            if (event.repeat) {
+              event.preventDefault();
+              return;
+            }
             event.preventDefault();
-            trigger.click();
+            suppressNextClick = true;
+            toggleAccordionItem();
           }
         });
       });
