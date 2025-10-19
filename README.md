@@ -45,6 +45,8 @@ Dialoge yra keturios akordeono grupės:
 
 Akordeono sekcijas galima išskleisti ar suskleisti klaviatūra (`Enter`/`Space`) arba pele; pagal nutylėjimą atsidaro tik „Duomenų šaltiniai“, kad dialogas neapkrautų informacija. Visus tekstus galima keisti ir LT, ir EN kalboms – numatytieji vertimai laikomi `TEXT.settingsDialog` objekte.
 
+Kiekviena etiketė ar paaiškinimas turi LT ir EN versijas, kurios saugomos `TEXT.settingsDialog.sections` struktūroje. UI elementai (`data-settings-copy`) automatiškai pasirenka tinkamą kalbą pagal `<html lang="…">` reikšmę.
+
 Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir išliks iki kol išvalysite naršyklės duomenis arba paspausite **„Atstatyti numatytuosius“**. CSV turinys nėra talpinamas – duomenys laikomi tik atmintyje, kad neviršytų naršyklės kvotų.
 
 ## Trikčių diagnostika
