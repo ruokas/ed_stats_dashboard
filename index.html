@@ -8966,37 +8966,16 @@
         if (!panel) {
           return;
         }
-        const item = trigger.closest('[data-accordion-item]');
-        const initialOpen = item ? item.dataset.initialOpen !== 'false' : true;
+        const expanded = trigger.getAttribute('aria-expanded') === 'true';
         if (trigger.dataset.accordionReady === 'true') {
-          const expanded = trigger.getAttribute('aria-expanded') === 'true';
           setSettingsAccordionState(trigger, panel, expanded);
           return;
         }
-        setSettingsAccordionState(trigger, panel, initialOpen);
+        setSettingsAccordionState(trigger, panel, expanded);
         trigger.dataset.accordionReady = 'true';
-        let suppressNextClick = false;
-        const toggleAccordionItem = () => {
-          const expanded = trigger.getAttribute('aria-expanded') === 'true';
-          setSettingsAccordionState(trigger, panel, !expanded);
-        };
         trigger.addEventListener('click', () => {
-          if (suppressNextClick) {
-            suppressNextClick = false;
-            return;
-          }
-          toggleAccordionItem();
-        });
-        trigger.addEventListener('keydown', (event) => {
-          if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Space') {
-            if (event.repeat) {
-              event.preventDefault();
-              return;
-            }
-            event.preventDefault();
-            suppressNextClick = true;
-            toggleAccordionItem();
-          }
+          const nextExpanded = trigger.getAttribute('aria-expanded') !== 'true';
+          setSettingsAccordionState(trigger, panel, nextExpanded);
         });
       });
     }
