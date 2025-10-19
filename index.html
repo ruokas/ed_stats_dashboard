@@ -4387,8 +4387,97 @@
     .settings-scroll {
       padding: 24px 28px;
       overflow-y: auto;
+    }
+
+    .settings-accordion {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .settings-accordion__item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.28);
+      overflow: hidden;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body[data-theme="dark"] .settings-accordion__item {
+      box-shadow: 0 12px 34px -20px rgba(15, 23, 42, 0.75);
+    }
+
+    .settings-accordion__item[data-open="false"] {
+      box-shadow: none;
+    }
+
+    .settings-accordion__header {
+      margin: 0;
+    }
+
+    .settings-accordion__trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .settings-accordion__trigger:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-accent-soft);
+      border-radius: 20px;
+    }
+
+    .settings-accordion__text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .settings-accordion__title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .settings-accordion__description {
+      font-size: 0.92rem;
+      color: var(--color-text-muted);
+    }
+
+    .settings-accordion__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: var(--color-input-bg);
+      color: var(--color-accent);
+      transition: transform 0.2s ease;
+    }
+
+    .settings-accordion__trigger[aria-expanded="true"] .settings-accordion__icon {
+      transform: rotate(180deg);
+    }
+
+    .settings-accordion__panel {
+      padding: 4px 24px 24px;
       display: grid;
-      gap: 28px;
+      gap: 24px;
+      background: linear-gradient(180deg, rgba(37, 99, 235, 0.04) 0%, transparent 16px);
+    }
+
+    .settings-accordion__panel[hidden] {
+      display: none;
     }
 
     .settings-section {
@@ -4397,8 +4486,16 @@
     }
 
     .settings-section h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .settings-subtitle {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
     }
 
     .settings-fieldset {
@@ -5445,297 +5542,386 @@
     <form method="dialog" id="settingsForm" class="settings-form">
       <header class="settings-header">
         <h2 id="settingsTitle">Skydelio nustatymai</h2>
-        <p>Suasmeninkite CSV laukus, skaičiavimo logiką ir ekrane rodomus tekstus.</p>
+        <p id="settingsIntro" data-settings-label="intro">Suasmeninkite CSV laukus, skaičiavimo logiką ir ekrane rodomus tekstus.</p>
       </header>
       <div class="settings-scroll">
-        <section class="settings-section" aria-labelledby="settingsDataTitle">
-          <h3 id="settingsDataTitle">Duomenų šaltinis</h3>
-          <div class="settings-field">
-            <label for="settingsCsvUrl"><span>CSV nuoroda</span></label>
-            <input id="settingsCsvUrl" name="dataSource.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
-            <p class="settings-hint">Naudokite viešą „Publish to web → CSV“ nuorodą arba palikite tuščią, jei norite naudoti tik demonstracinius duomenis.</p>
-          </div>
-          <label class="settings-checkbox" for="settingsUseFallback">
-            <input id="settingsUseFallback" name="dataSource.useFallback" type="checkbox">
-            <span>Naudoti demonstracinius duomenis, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
-          </label>
-          <div class="settings-field">
-            <label for="settingsFallbackCsv"><span>Demonstracinis CSV</span></label>
-            <textarea id="settingsFallbackCsv" name="dataSource.fallbackCsv" spellcheck="false"></textarea>
-            <p class="settings-hint">Palikite tuščią, jei nereikia rezervinio rinkinio. Galite įklijuoti savo CSV iškarpą.</p>
-          </div>
-
-          <fieldset class="settings-fieldset">
-            <legend>Papildomas istorinis šaltinis</legend>
-            <label class="settings-checkbox" for="settingsHistoricalEnabled">
-              <input id="settingsHistoricalEnabled" name="dataSource.historical.enabled" type="checkbox">
-              <span>Naudoti šį papildomą šaltinį kartu su pagrindiniu.</span>
-            </label>
-            <div class="settings-field">
-              <label for="settingsHistoricalUrl"><span>CSV nuoroda (istoriniai 5 metai)</span></label>
-              <input id="settingsHistoricalUrl" name="dataSource.historical.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
-              <p class="settings-hint">Nuoroda bus sujungta su pagrindiniais duomenimis. Naudokite „Publish to web → CSV“ adresą.</p>
+        <div class="settings-accordion" data-settings-accordion>
+          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="false">
+            <h3 class="settings-accordion__header">
+              <button type="button" class="settings-accordion__trigger" id="settingsGroupDataSources" data-settings-accordion-trigger aria-expanded="false" aria-controls="settingsPanelDataSources">
+                <span class="settings-accordion__text">
+                  <span class="settings-accordion__title" data-settings-label="dataSourcesTitle">Duomenų šaltiniai</span>
+                  <span class="settings-accordion__description" data-settings-label="dataSourcesDescription">Valdykite pagrindines CSV nuorodas ir demonstracinius rinkinius.</span>
+                </span>
+                <span class="settings-accordion__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" focusable="false" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </button>
+            </h3>
+            <div id="settingsPanelDataSources" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupDataSources" hidden>
+              <section class="settings-section" aria-labelledby="settingsDataTitle">
+                <h3 id="settingsDataTitle">Duomenų šaltinis</h3>
+                <div class="settings-field">
+                  <label for="settingsCsvUrl"><span>CSV nuoroda</span></label>
+                  <input id="settingsCsvUrl" name="dataSource.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
+                  <p class="settings-hint">Naudokite viešą „Publish to web → CSV“ nuorodą arba palikite tuščią, jei norite naudoti tik demonstracinius duomenis.</p>
+                </div>
+                <label class="settings-checkbox" for="settingsUseFallback">
+                  <input id="settingsUseFallback" name="dataSource.useFallback" type="checkbox">
+                  <span>Naudoti demonstracinius duomenis, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
+                </label>
+                <div class="settings-field">
+                  <label for="settingsFallbackCsv"><span>Demonstracinis CSV</span></label>
+                  <textarea id="settingsFallbackCsv" name="dataSource.fallbackCsv" spellcheck="false"></textarea>
+                  <p class="settings-hint">Palikite tuščią, jei nereikia rezervinio rinkinio. Galite įklijuoti savo CSV iškarpą.</p>
+                </div>
+                <fieldset class="settings-fieldset">
+                  <legend>Papildomas istorinis rinkinys</legend>
+                  <label class="settings-checkbox" for="settingsHistoricalEnabled">
+                    <input id="settingsHistoricalEnabled" name="dataSource.historical.enabled" type="checkbox">
+                    <span>Įjungti istorinį (5 metų) CSV sujungimą.</span>
+                  </label>
+                  <div class="settings-field">
+                    <label for="settingsHistoricalUrl"><span>CSV nuoroda (istoriniai 5 metai)</span></label>
+                    <input id="settingsHistoricalUrl" name="dataSource.historical.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
+                    <p class="settings-hint">Nuoroda bus sujungta su pagrindiniais duomenimis. Naudokite „Publish to web → CSV“ adresą.</p>
+                  </div>
+                  <label class="settings-checkbox" for="settingsHistoricalUseFallback">
+                    <input id="settingsHistoricalUseFallback" name="dataSource.historical.useFallback" type="checkbox">
+                    <span>Naudoti demonstracinį istorinį CSV, jei nuotolinis nepasiekiamas.</span>
+                  </label>
+                  <div class="settings-field">
+                    <label for="settingsHistoricalFallbackCsv"><span>Demonstracinis CSV (istoriniai)</span></label>
+                    <textarea id="settingsHistoricalFallbackCsv" name="dataSource.historical.fallbackCsv" spellcheck="false"></textarea>
+                    <p class="settings-hint">Palikite tuščią, jei rezervinis istorinių duomenų šaltinis nereikalingas.</p>
+                  </div>
+                </fieldset>
+              </section>
+              <section class="settings-section" aria-labelledby="settingsFeedbackDataTitle">
+                <h3 id="settingsFeedbackDataTitle">Atsiliepimų duomenys</h3>
+                <div class="settings-field">
+                  <label for="settingsFeedbackUrl"><span>CSV nuoroda (atsiliepimai)</span></label>
+                  <input id="settingsFeedbackUrl" name="dataSource.feedback.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
+                  <p class="settings-hint">Naudokite atskirą publikavimo nuorodą atsiliepimų rinkiniui arba palikite tuščią, jei naudosite tik demonstracinius komentarus.</p>
+                </div>
+                <label class="settings-checkbox" for="settingsFeedbackUseFallback">
+                  <input id="settingsFeedbackUseFallback" name="dataSource.feedback.useFallback" type="checkbox">
+                  <span>Naudoti demonstracinius atsiliepimų duomenis, jei nuotolinis šaltinis nepasiekiamas.</span>
+                </label>
+                <div class="settings-field">
+                  <label for="settingsFeedbackFallbackCsv"><span>Demonstracinis CSV (atsiliepimai)</span></label>
+                  <textarea id="settingsFeedbackFallbackCsv" name="dataSource.feedback.fallbackCsv" spellcheck="false"></textarea>
+                  <p class="settings-hint">CSV turi turėti stulpelius: data, įvertinimas, komentaro tekstas, šaltinis ir (pasirinktinai) nuotaikos reikšmė.</p>
+                </div>
+              </section>
+              <section class="settings-section" aria-labelledby="settingsEdDataTitle">
+                <h3 id="settingsEdDataTitle">ED duomenys</h3>
+                <div class="settings-field">
+                  <label for="settingsEdUrl"><span>CSV nuoroda (ED)</span></label>
+                  <input id="settingsEdUrl" name="dataSource.ed.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
+                  <p class="settings-hint">Įklijuokite papildomos ED lentelės „Publish to web → CSV“ nuorodą. Jei paliksite tuščią, bus naudojami demonstraciniai duomenys.</p>
+                </div>
+                <label class="settings-checkbox" for="settingsEdUseFallback">
+                  <input id="settingsEdUseFallback" name="dataSource.ed.useFallback" type="checkbox">
+                  <span>Naudoti demonstracinius ED duomenis, jei nuotolinis šaltinis nepasiekiamas.</span>
+                </label>
+                <div class="settings-field">
+                  <label for="settingsEdFallbackCsv"><span>Demonstracinis CSV (ED)</span></label>
+                  <textarea id="settingsEdFallbackCsv" name="dataSource.ed.fallbackCsv" spellcheck="false"></textarea>
+                  <p class="settings-hint">CSV turėtų turėti bent stulpelius: data, atvykimo / išvykimo laikai, sprendimas ir trukmės (minutėmis). Tekstas gali būti LT arba EN.</p>
+                </div>
+              </section>
             </div>
-            <label class="settings-checkbox" for="settingsHistoricalUseFallback">
-              <input id="settingsHistoricalUseFallback" name="dataSource.historical.useFallback" type="checkbox">
-              <span>Naudoti demonstracinį istorinių duomenų CSV, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
-            </label>
-            <div class="settings-field">
-              <label for="settingsHistoricalFallbackCsv"><span>Demonstracinis CSV (istoriniai)</span></label>
-              <textarea id="settingsHistoricalFallbackCsv" name="dataSource.historical.fallbackCsv" spellcheck="false"></textarea>
-              <p class="settings-hint">Palikite tuščią, jei rezervinis istorinių duomenų šaltinis nereikalingas.</p>
+          </section>
+          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="false">
+            <h3 class="settings-accordion__header">
+              <button type="button" class="settings-accordion__trigger" id="settingsGroupTransformations" data-settings-accordion-trigger aria-expanded="false" aria-controls="settingsPanelTransformations">
+                <span class="settings-accordion__text">
+                  <span class="settings-accordion__title" data-settings-label="transformationsTitle">Transformacijos</span>
+                  <span class="settings-accordion__description" data-settings-label="transformationsDescription">Suderinkite stulpelių pavadinimus ir skaičiavimo logiką.</span>
+                </span>
+                <span class="settings-accordion__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" focusable="false" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </button>
+            </h3>
+            <div id="settingsPanelTransformations" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupTransformations" hidden>
+              <section class="settings-section" aria-labelledby="settingsCsvTitle">
+                <h3 id="settingsCsvTitle">CSV stulpelių atitikimas</h3>
+                <div class="settings-field">
+                  <label for="settingsArrival"><span>Atvykimo data stulpelis</span></label>
+                  <input id="settingsArrival" name="csv.arrival" type="text" placeholder="Atvykimo data">
+                  <p class="settings-hint">Leidžiami keli pavadinimai, atskirkite kableliais arba | ženklu (pvz., <code>Atvykimo data|Arrival</code>).</p>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsDischarge"><span>Išrašymo data stulpelis</span></label>
+                  <input id="settingsDischarge" name="csv.discharge" type="text" placeholder="Išrašymo data">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsDayNight"><span>Diena / naktis stulpelis</span></label>
+                  <input id="settingsDayNight" name="csv.dayNight" type="text" placeholder="Diena/naktis">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsGmp"><span>GMP stulpelis</span></label>
+                  <input id="settingsGmp" name="csv.gmp" type="text" placeholder="GMP">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsDepartment"><span>Hospitalizavimo stulpelis</span></label>
+                  <input id="settingsDepartment" name="csv.department" type="text" placeholder="Nukreiptas į padalinį">
+                  <p class="settings-hint">Jei paliksite tuščią, bus naudojamas numatytasis pavadinimas.</p>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsNumber"><span>Kortelės numerio stulpelis</span></label>
+                  <input id="settingsNumber" name="csv.number" type="text" placeholder="Numeris">
+                  <p class="settings-hint">Naudojama kortelės tipui (T, TR, CH) nustatyti. Jei paliksite tuščią, bus naudojamas numatytasis pavadinimas.</p>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsTrueValues"><span>Reikšmės, laikomos „taip“</span></label>
+                  <input id="settingsTrueValues" name="csv.trueValues" type="text" placeholder="1,true,taip,yes">
+                  <p class="settings-hint">Naudojama GMP laukui (ir kitiems „taip/ne“). Reikšmės automatiškai lyginamos be didžiųjų raidžių; numatytai atpažįstama „GMP“, „su GMP“, „GMP (su GMP)“, o „Ne GMP“ laikoma neigiamu atsakymu.</p>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsHospitalizedValues"><span>Hospitalizavimo reikšmės</span></label>
+                  <input id="settingsHospitalizedValues" name="csv.hospitalizedValues" type="text" placeholder="stacionaras,skyrius,taip">
+                  <p class="settings-hint">Jei paliksite tuščią, bus laikoma, kad bet kuri neužpildyta reikšmė reiškia išleidimą, o ne hospitalizaciją.</p>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsNightKeywords"><span>Nakties raktažodžiai</span></label>
+                  <input id="settingsNightKeywords" name="csv.nightKeywords" type="text" placeholder="nakt">
+                  <p class="settings-hint">Jei reikšmė stulpelyje turi bet kurį iš šių fragmentų, apsilankymas laikomas naktiniu.</p>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsDayKeywords"><span>Dienos / dieninės pamainos raktažodžiai</span></label>
+                  <input id="settingsDayKeywords" name="csv.dayKeywords" type="text" placeholder="dien,ryt">
+                </div>
+              </section>
+              <section class="settings-section" aria-labelledby="settingsCalcTitle">
+                <h3 id="settingsCalcTitle">Skaičiavimo logika</h3>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsWindowDays"><span>Analizuojamų dienų skaičius</span></label>
+                    <input id="settingsWindowDays" name="calculations.windowDays" type="number" min="7" max="365" step="1">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsRecentDays"><span>Paskutinių dienų lentelė</span></label>
+                    <input id="settingsRecentDays" name="calculations.recentDays" type="number" min="1" max="60" step="1">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsNightStart"><span>Nakties pradžia (val.)</span></label>
+                    <input id="settingsNightStart" name="calculations.nightStartHour" type="number" min="0" max="23" step="1">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsNightEnd"><span>Nakties pabaiga (val.)</span></label>
+                    <input id="settingsNightEnd" name="calculations.nightEndHour" type="number" min="0" max="23" step="1">
+                  </div>
+                </div>
+                <p class="settings-hint">Naktis laikoma intervalas tarp pradžios ir pabaigos. Jei pradžia &gt; pabaiga, laikoma, kad intervalas pereina per vidurnaktį.</p>
+              </section>
             </div>
-          </fieldset>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settingsFeedbackDataTitle">
-          <h3 id="settingsFeedbackDataTitle">Atsiliepimų duomenys</h3>
-          <div class="settings-field">
-            <label for="settingsFeedbackUrl"><span>CSV nuoroda (atsiliepimai)</span></label>
-            <input id="settingsFeedbackUrl" name="dataSource.feedback.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
-            <p class="settings-hint">Naudokite atskirą publikavimo nuorodą atsiliepimų rinkiniui arba palikite tuščią, jei naudosite tik demonstracinius komentarus.</p>
-          </div>
-          <label class="settings-checkbox" for="settingsFeedbackUseFallback">
-            <input id="settingsFeedbackUseFallback" name="dataSource.feedback.useFallback" type="checkbox">
-            <span>Naudoti demonstracinius atsiliepimus, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
-          </label>
-          <div class="settings-field">
-            <label for="settingsFeedbackFallbackCsv"><span>Demonstracinis CSV (atsiliepimai)</span></label>
-            <textarea id="settingsFeedbackFallbackCsv" name="dataSource.feedback.fallbackCsv" spellcheck="false"></textarea>
-            <p class="settings-hint">CSV turi turėti stulpelius: data, įvertinimas, komentaro tekstas, šaltinis ir (pasirinktinai) nuotaikos reikšmė.</p>
-          </div>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settingsEdDataTitle">
-          <h3 id="settingsEdDataTitle">ED duomenys</h3>
-          <div class="settings-field">
-            <label for="settingsEdUrl"><span>CSV nuoroda (ED)</span></label>
-            <input id="settingsEdUrl" name="dataSource.ed.url" type="url" placeholder="https://docs.google.com/.../output=csv" autocomplete="off">
-            <p class="settings-hint">Įklijuokite papildomos ED lentelės „Publish to web → CSV“ nuorodą. Jei paliksite tuščią, bus naudojami demonstraciniai duomenys.</p>
-          </div>
-          <label class="settings-checkbox" for="settingsEdUseFallback">
-            <input id="settingsEdUseFallback" name="dataSource.ed.useFallback" type="checkbox">
-            <span>Naudoti demonstracinius ED duomenis, jei nepavyksta pasiekti nuotolinio šaltinio.</span>
-          </label>
-          <div class="settings-field">
-            <label for="settingsEdFallbackCsv"><span>Demonstracinis CSV (ED)</span></label>
-            <textarea id="settingsEdFallbackCsv" name="dataSource.ed.fallbackCsv" spellcheck="false"></textarea>
-            <p class="settings-hint">CSV turėtų turėti bent stulpelius: data, atvykimo / išvykimo laikai, sprendimas ir trukmės (minutėmis). Tekstas gali būti LT arba EN.</p>
-          </div>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settingsCsvTitle">
-          <h3 id="settingsCsvTitle">CSV stulpelių atitikimas</h3>
-          <div class="settings-field">
-            <label for="settingsArrival"><span>Atvykimo data stulpelis</span></label>
-            <input id="settingsArrival" name="csv.arrival" type="text" placeholder="Atvykimo data">
-            <p class="settings-hint">Leidžiami keli pavadinimai, atskirkite kableliais arba | ženklu (pvz., <code>Atvykimo data|Arrival</code>).</p>
-          </div>
-          <div class="settings-field">
-            <label for="settingsDischarge"><span>Išrašymo data stulpelis</span></label>
-            <input id="settingsDischarge" name="csv.discharge" type="text" placeholder="Išrašymo data">
-          </div>
-          <div class="settings-field">
-            <label for="settingsDayNight"><span>Diena / naktis stulpelis</span></label>
-            <input id="settingsDayNight" name="csv.dayNight" type="text" placeholder="Diena/naktis">
-          </div>
-          <div class="settings-field">
-            <label for="settingsGmp"><span>GMP stulpelis</span></label>
-            <input id="settingsGmp" name="csv.gmp" type="text" placeholder="GMP">
-          </div>
-          <div class="settings-field">
-            <label for="settingsDepartment"><span>Hospitalizavimo stulpelis</span></label>
-            <input id="settingsDepartment" name="csv.department" type="text" placeholder="Nukreiptas į padalinį">
-            <p class="settings-hint">Jei paliksite tuščią, bus naudojamas numatytasis pavadinimas.</p>
-          </div>
-          <div class="settings-field">
-            <label for="settingsNumber"><span>Kortelės numerio stulpelis</span></label>
-            <input id="settingsNumber" name="csv.number" type="text" placeholder="Numeris">
-            <p class="settings-hint">Naudojama kortelės tipui (T, TR, CH) nustatyti. Jei paliksite tuščią, bus naudojamas numatytasis pavadinimas.</p>
-          </div>
-          <div class="settings-field">
-            <label for="settingsTrueValues"><span>Reikšmės, laikomos „taip“</span></label>
-            <input id="settingsTrueValues" name="csv.trueValues" type="text" placeholder="1,true,taip,yes">
-            <p class="settings-hint">Naudojama GMP laukui (ir kitiems „taip/ne“). Reikšmės automatiškai lyginamos be didžiųjų raidžių; numatytai atpažįstama „GMP“, „su GMP“, „GMP (su GMP)“, o „Ne GMP“ laikoma neigiamu atsakymu.</p>
-          </div>
-          <div class="settings-field">
-            <label for="settingsHospitalizedValues"><span>Hospitalizavimo reikšmės</span></label>
-            <input id="settingsHospitalizedValues" name="csv.hospitalizedValues" type="text" placeholder="stacionaras,skyrius,taip">
-            <p class="settings-hint">Jei paliksite tuščią, bus laikoma, kad bet kuri neužpildyta reikšmė reiškia išleidimą, o ne hospitalizaciją.</p>
-          </div>
-          <div class="settings-field">
-            <label for="settingsNightKeywords"><span>Nakties raktažodžiai</span></label>
-            <input id="settingsNightKeywords" name="csv.nightKeywords" type="text" placeholder="nakt">
-            <p class="settings-hint">Jei reikšmė stulpelyje turi bet kurį iš šių fragmentų, apsilankymas laikomas naktiniu.</p>
-          </div>
-          <div class="settings-field">
-            <label for="settingsDayKeywords"><span>Dienos / dieninės pamainos raktažodžiai</span></label>
-            <input id="settingsDayKeywords" name="csv.dayKeywords" type="text" placeholder="dien,ryt">
-          </div>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settingsCalcTitle">
-          <h3 id="settingsCalcTitle">Skaičiavimo logika</h3>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsWindowDays"><span>Analizuojamų dienų skaičius</span></label>
-              <input id="settingsWindowDays" name="calculations.windowDays" type="number" min="7" max="365" step="1">
+          </section>
+          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="false">
+            <h3 class="settings-accordion__header">
+              <button type="button" class="settings-accordion__trigger" id="settingsGroupLabels" data-settings-accordion-trigger aria-expanded="false" aria-controls="settingsPanelLabels">
+                <span class="settings-accordion__text">
+                  <span class="settings-accordion__title" data-settings-label="labelsTitle">Etiketės</span>
+                  <span class="settings-accordion__description" data-settings-label="labelsDescription">Keiskite hero, kortelių ir sekcijų tekstus.</span>
+                </span>
+                <span class="settings-accordion__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" focusable="false" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </button>
+            </h3>
+            <div id="settingsPanelLabels" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupLabels" hidden>
+              <section class="settings-section" aria-labelledby="settingsOutputTitle">
+                <h3 id="settingsOutputTitle">Išvesties tekstai</h3>
+                <div class="settings-field">
+                  <label for="settingsPageTitle"><span>Naršyklės skirtuko pavadinimas</span></label>
+                  <input id="settingsPageTitle" name="output.pageTitle" type="text">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsTitleText"><span>Pagrindinis pavadinimas</span></label>
+                  <input id="settingsTitleText" name="output.title" type="text">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsSubtitleText"><span>Hero aprašymas</span></label>
+                  <textarea id="settingsSubtitleText" name="output.subtitle" rows="2"></textarea>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsTabOverviewLabel"><span>Pirmo skirtuko pavadinimas</span></label>
+                    <input id="settingsTabOverviewLabel" name="output.tabOverviewLabel" type="text" placeholder="Bendras vaizdas">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsTabEdLabel"><span>ED skirtuko pavadinimas</span></label>
+                    <input id="settingsTabEdLabel" name="output.tabEdLabel" type="text" placeholder="RŠL SMPS skydelis">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsKpiTitle"><span>KPI skyriaus pavadinimas</span></label>
+                    <input id="settingsKpiTitle" name="output.kpiTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsKpiSubtitle"><span>KPI skyriaus paantraštė</span></label>
+                    <input id="settingsKpiSubtitle" name="output.kpiSubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsChartsTitle"><span>Grafikų pavadinimas</span></label>
+                    <input id="settingsChartsTitle" name="output.chartsTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsChartsSubtitle"><span>Grafikų paantraštė</span></label>
+                    <input id="settingsChartsSubtitle" name="output.chartsSubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsInsightsTitle"><span>„Įžvalgų“ pavadinimas</span></label>
+                    <input id="settingsInsightsTitle" name="output.insightsTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsInsightsSubtitle"><span>„Įžvalgų“ paantraštė</span></label>
+                    <input id="settingsInsightsSubtitle" name="output.insightsSubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsPerformanceTitle"><span>„Rezultatai ir trendai“ pavadinimas</span></label>
+                    <input id="settingsPerformanceTitle" name="output.performanceTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsPerformanceSubtitle"><span>„Rezultatai ir trendai“ paantraštė</span></label>
+                    <input id="settingsPerformanceSubtitle" name="output.performanceSubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsPerformanceToggleLabel"><span>„Rezultatai ir trendai“ jungiklio tekstas</span></label>
+                  <input id="settingsPerformanceToggleLabel" name="output.performanceToggleLabel" type="text">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsPerformanceExportButton"><span>„Rezultatai ir trendai“ eksportavimo mygtukas</span></label>
+                  <input id="settingsPerformanceExportButton" name="output.performanceExportButton" type="text">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsPerformanceExportNote"><span>Eksporto pastaba</span></label>
+                  <textarea id="settingsPerformanceExportNote" name="output.performanceExportNote" rows="2"></textarea>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsRecentTitle"><span>„Paskutinės dienos“ pavadinimas</span></label>
+                    <input id="settingsRecentTitle" name="output.recentTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsRecentSubtitle"><span>„Paskutinės dienos“ paantraštė</span></label>
+                    <input id="settingsRecentSubtitle" name="output.recentSubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsMonthlyTitle"><span>„Mėnesinė suvestinė“ pavadinimas</span></label>
+                    <input id="settingsMonthlyTitle" name="output.monthlyTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsMonthlySubtitle"><span>„Mėnesinė suvestinė“ paantraštė</span></label>
+                    <input id="settingsMonthlySubtitle" name="output.monthlySubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsYearlyTitle"><span>Metinės suvestinės pavadinimas</span></label>
+                    <input id="settingsYearlyTitle" name="output.yearlyTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsYearlySubtitle"><span>Metinės suvestinės paantraštė</span></label>
+                    <input id="settingsYearlySubtitle" name="output.yearlySubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsFeedbackTitle"><span>„Atsiliepimų“ pavadinimas</span></label>
+                    <input id="settingsFeedbackTitle" name="output.feedbackTitle" type="text">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsFeedbackSubtitle"><span>„Atsiliepimų“ paantraštė</span></label>
+                    <input id="settingsFeedbackSubtitle" name="output.feedbackSubtitle" type="text">
+                  </div>
+                </div>
+                <div class="settings-inline">
+                  <div class="settings-field">
+                    <label for="settingsEdTitle"><span>ED skyriaus pavadinimas</span></label>
+                    <input id="settingsEdTitle" name="output.edTitle" type="text" placeholder="RŠL SMPS skydelis">
+                  </div>
+                  <div class="settings-field">
+                    <label for="settingsEdSubtitle"><span>ED skyriaus paantraštė</span></label>
+                    <input id="settingsEdSubtitle" name="output.edSubtitle" type="text" placeholder="Naujausi duomenys">
+                  </div>
+                </div>
+                <div class="settings-field">
+                  <label for="settingsFeedbackDescription"><span>„Atsiliepimų“ aprašymas</span></label>
+                  <input id="settingsFeedbackDescription" name="output.feedbackDescription" type="text">
+                </div>
+                <div class="settings-field">
+                  <label for="settingsFooterSource"><span>Apatinės eilutės tekstas</span></label>
+                  <input id="settingsFooterSource" name="output.footerSource" type="text" placeholder="Duomenys: ...">
+                </div>
+              </section>
             </div>
-            <div class="settings-field">
-              <label for="settingsRecentDays"><span>Paskutinių dienų lentelė</span></label>
-              <input id="settingsRecentDays" name="calculations.recentDays" type="number" min="1" max="60" step="1">
+          </section>
+          <section class="settings-accordion__item" data-accordion-item data-initial-open="false" data-open="false">
+            <h3 class="settings-accordion__header">
+              <button type="button" class="settings-accordion__trigger" id="settingsGroupToggles" data-settings-accordion-trigger aria-expanded="false" aria-controls="settingsPanelToggles">
+                <span class="settings-accordion__text">
+                  <span class="settings-accordion__title" data-settings-label="togglesTitle">Funkcijų jungikliai</span>
+                  <span class="settings-accordion__description" data-settings-label="togglesDescription">Pasirinkite, kurie blokai rodomi skydelyje.</span>
+                </span>
+                <span class="settings-accordion__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" focusable="false" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </button>
+            </h3>
+            <div id="settingsPanelToggles" class="settings-accordion__panel" role="region" aria-labelledby="settingsGroupToggles" hidden>
+              <section class="settings-section">
+                <h3 id="settingsVisibilityTitle">Sekcijų rodymas</h3>
+                <label class="settings-checkbox" for="settingsShowInsights">
+                  <input id="settingsShowInsights" name="output.showInsights" type="checkbox">
+                  <span>Rodyti „Įžvalgų“ sekciją.</span>
+                </label>
+                <label class="settings-checkbox" for="settingsShowRecent">
+                  <input id="settingsShowRecent" name="output.showRecent" type="checkbox">
+                  <span>Rodyti „Paskutinės dienos“ lentelę.</span>
+                </label>
+                <label class="settings-checkbox" for="settingsShowMonthly">
+                  <input id="settingsShowMonthly" name="output.showMonthly" type="checkbox">
+                  <span>Rodyti „Mėnesinė suvestinė“ lentelę.</span>
+                </label>
+                <label class="settings-checkbox" for="settingsShowYearly">
+                  <input id="settingsShowYearly" name="output.showYearly" type="checkbox">
+                  <span>Rodyti „Metinė suvestinė“ lentelę.</span>
+                </label>
+                <label class="settings-checkbox" for="settingsShowFeedback">
+                  <input id="settingsShowFeedback" name="output.showFeedback" type="checkbox">
+                  <span>Rodyti „Atsiliepimų“ sekciją.</span>
+                </label>
+              </section>
             </div>
-            <div class="settings-field">
-              <label for="settingsNightStart"><span>Nakties pradžia (val.)</span></label>
-              <input id="settingsNightStart" name="calculations.nightStartHour" type="number" min="0" max="23" step="1">
-            </div>
-            <div class="settings-field">
-              <label for="settingsNightEnd"><span>Nakties pabaiga (val.)</span></label>
-              <input id="settingsNightEnd" name="calculations.nightEndHour" type="number" min="0" max="23" step="1">
-            </div>
-          </div>
-          <p class="settings-hint">Naktis laikoma intervalas tarp pradžios ir pabaigos. Jei pradžia &gt; pabaiga, laikoma, kad intervalas pereina per vidurnaktį.</p>
-        </section>
-
-        <section class="settings-section" aria-labelledby="settingsOutputTitle">
-          <h3 id="settingsOutputTitle">Išvesties tekstai ir skyriai</h3>
-          <div class="settings-field">
-            <label for="settingsPageTitle"><span>Naršyklės skirtuko pavadinimas</span></label>
-            <input id="settingsPageTitle" name="output.pageTitle" type="text">
-          </div>
-          <div class="settings-field">
-            <label for="settingsTitleText"><span>Pagrindinis pavadinimas</span></label>
-            <input id="settingsTitleText" name="output.title" type="text">
-          </div>
-          <div class="settings-field">
-            <label for="settingsSubtitleText"><span>Hero aprašymas</span></label>
-            <textarea id="settingsSubtitleText" name="output.subtitle" rows="2"></textarea>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsTabOverviewLabel"><span>Pirmo skirtuko pavadinimas</span></label>
-              <input id="settingsTabOverviewLabel" name="output.tabOverviewLabel" type="text" placeholder="Bendras vaizdas">
-            </div>
-            <div class="settings-field">
-              <label for="settingsTabEdLabel"><span>ED skirtuko pavadinimas</span></label>
-              <input id="settingsTabEdLabel" name="output.tabEdLabel" type="text" placeholder="RŠL SMPS skydelis">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsKpiTitle"><span>KPI skyriaus pavadinimas</span></label>
-              <input id="settingsKpiTitle" name="output.kpiTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsKpiSubtitle"><span>KPI skyriaus paantraštė</span></label>
-              <input id="settingsKpiSubtitle" name="output.kpiSubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsChartsTitle"><span>Grafikų pavadinimas</span></label>
-              <input id="settingsChartsTitle" name="output.chartsTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsChartsSubtitle"><span>Grafikų paantraštė</span></label>
-              <input id="settingsChartsSubtitle" name="output.chartsSubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsInsightsTitle"><span>„Įžvalgų“ pavadinimas</span></label>
-              <input id="settingsInsightsTitle" name="output.insightsTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsInsightsSubtitle"><span>„Įžvalgų“ paantraštė</span></label>
-              <input id="settingsInsightsSubtitle" name="output.insightsSubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsRecentTitle"><span>„Paskutinės dienos“ pavadinimas</span></label>
-              <input id="settingsRecentTitle" name="output.recentTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsRecentSubtitle"><span>„Paskutinės dienos“ paantraštė</span></label>
-              <input id="settingsRecentSubtitle" name="output.recentSubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsMonthlyTitle"><span>Mėnesinės suvestinės pavadinimas</span></label>
-              <input id="settingsMonthlyTitle" name="output.monthlyTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsMonthlySubtitle"><span>Mėnesinės suvestinės paantraštė</span></label>
-              <input id="settingsMonthlySubtitle" name="output.monthlySubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsYearlyTitle"><span>Metinės suvestinės pavadinimas</span></label>
-              <input id="settingsYearlyTitle" name="output.yearlyTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsYearlySubtitle"><span>Metinės suvestinės paantraštė</span></label>
-              <input id="settingsYearlySubtitle" name="output.yearlySubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsFeedbackTitle"><span>„Atsiliepimų“ pavadinimas</span></label>
-              <input id="settingsFeedbackTitle" name="output.feedbackTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsFeedbackSubtitle"><span>„Atsiliepimų“ paantraštė</span></label>
-              <input id="settingsFeedbackSubtitle" name="output.feedbackSubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
-              <label for="settingsEdTitle"><span>ED skyriaus pavadinimas</span></label>
-              <input id="settingsEdTitle" name="output.edTitle" type="text" placeholder="RŠL SMPS skydelis">
-            </div>
-            <div class="settings-field">
-              <label for="settingsEdSubtitle"><span>ED skyriaus paantraštė</span></label>
-              <input id="settingsEdSubtitle" name="output.edSubtitle" type="text" placeholder="Naujausi duomenys">
-            </div>
-          </div>
-          <div class="settings-field">
-            <label for="settingsFeedbackDescription"><span>„Atsiliepimų“ aprašymas</span></label>
-            <input id="settingsFeedbackDescription" name="output.feedbackDescription" type="text">
-          </div>
-          <div class="settings-field">
-            <label for="settingsFooterSource"><span>Apatinės eilutės tekstas</span></label>
-            <input id="settingsFooterSource" name="output.footerSource" type="text" placeholder="Duomenys: ...">
-          </div>
-          <label class="settings-checkbox" for="settingsShowInsights">
-            <input id="settingsShowInsights" name="output.showInsights" type="checkbox">
-            <span>Rodyti „Įžvalgų“ sekciją.</span>
-          </label>
-          <label class="settings-checkbox" for="settingsShowRecent">
-            <input id="settingsShowRecent" name="output.showRecent" type="checkbox">
-            <span>Rodyti „Paskutinės dienos“ lentelę.</span>
-          </label>
-          <label class="settings-checkbox" for="settingsShowMonthly">
-            <input id="settingsShowMonthly" name="output.showMonthly" type="checkbox">
-            <span>Rodyti „Mėnesinė suvestinė“ lentelę.</span>
-          </label>
-          <label class="settings-checkbox" for="settingsShowYearly">
-            <input id="settingsShowYearly" name="output.showYearly" type="checkbox">
-            <span>Rodyti „Metinė suvestinė“ lentelę.</span>
-          </label>
-          <label class="settings-checkbox" for="settingsShowFeedback">
-            <input id="settingsShowFeedback" name="output.showFeedback" type="checkbox">
-            <span>Rodyti „Atsiliepimų“ sekciją.</span>
-          </label>
-        </section>
+          </section>
+        </div>
       </div>
       <footer class="settings-footer">
-        <button type="button" id="resetSettingsBtn" class="btn btn-danger">Atstatyti numatytuosius</button>
+        <button type="button" id="resetSettingsBtn" class="btn btn-danger" data-settings-action="reset">Atstatyti numatytuosius</button>
         <div class="settings-footer-actions">
-          <button type="button" id="cancelSettingsBtn" class="btn btn-secondary">Atšaukti</button>
-          <button type="submit" class="btn btn-primary">Išsaugoti</button>
+          <button type="button" id="cancelSettingsBtn" class="btn btn-secondary" data-settings-action="cancel">Atšaukti</button>
+          <button type="submit" class="btn btn-primary" data-settings-action="save">Išsaugoti</button>
         </div>
       </footer>
     </form>
@@ -5855,6 +6041,82 @@
       subtitle: 'Greita statistikos apžvalga.',
       refresh: 'Perkrauti duomenis',
       settings: 'Nustatymai',
+      settingsDialog: {
+        title: {
+          lt: 'Skydelio nustatymai',
+          en: 'Dashboard settings',
+        },
+        intro: {
+          lt: 'Suasmeninkite CSV laukus, skaičiavimo logiką ir ekrane rodomus tekstus.',
+          en: 'Adjust CSV sources, calculation rules, and the on-screen labels.',
+        },
+        groups: {
+          dataSources: {
+            title: {
+              lt: 'Duomenų šaltiniai',
+              en: 'Data sources',
+            },
+            description: {
+              lt: 'Valdykite pagrindines CSV nuorodas ir demonstracinius rinkinius.',
+              en: 'Manage primary CSV links and fallback datasets.',
+            },
+          },
+          transformations: {
+            title: {
+              lt: 'Transformacijos',
+              en: 'Transformations',
+            },
+            description: {
+              lt: 'Suderinkite stulpelių pavadinimus ir skaičiavimo logiką.',
+              en: 'Align column names and adjust calculation windows.',
+            },
+          },
+          labels: {
+            title: {
+              lt: 'Etiketės',
+              en: 'Labels',
+            },
+            description: {
+              lt: 'Keiskite hero, kortelių ir sekcijų tekstus.',
+              en: 'Update hero copy, section headings, and supporting text.',
+            },
+          },
+          toggles: {
+            title: {
+              lt: 'Funkcijų jungikliai',
+              en: 'Feature toggles',
+            },
+            description: {
+              lt: 'Pasirinkite, kurie blokai rodomi skydelyje.',
+              en: 'Control which dashboard sections stay visible.',
+            },
+          },
+        },
+        accordion: {
+          expand: {
+            lt: 'Išskleisti sekciją',
+            en: 'Expand section',
+          },
+          collapse: {
+            lt: 'Sutraukti sekciją',
+            en: 'Collapse section',
+          },
+        },
+        actions: {
+          reset: {
+            lt: 'Atstatyti numatytuosius',
+            en: 'Restore defaults',
+          },
+          cancel: {
+            lt: 'Atšaukti',
+            en: 'Cancel',
+          },
+          save: {
+            lt: 'Išsaugoti',
+            en: 'Save changes',
+          },
+        },
+      },
       theme: {
         toggle: 'Perjungti šviesią/tamsią temą',
         light: 'Šviesi tema',
@@ -6641,6 +6903,32 @@
         },
       },
     };
+
+    const APP_LOCALE = document.documentElement && document.documentElement.lang === 'en' ? 'en' : 'lt';
+
+    function resolveLocalizedCopy(entry, fallback = '') {
+      if (entry == null) {
+        return fallback;
+      }
+      if (typeof entry === 'function') {
+        return entry;
+      }
+      if (typeof entry === 'string') {
+        return entry;
+      }
+      if (typeof entry === 'object') {
+        if (Object.prototype.hasOwnProperty.call(entry, APP_LOCALE) && typeof entry[APP_LOCALE] === 'string') {
+          return entry[APP_LOCALE];
+        }
+        if (typeof entry.lt === 'string') {
+          return entry.lt;
+        }
+        if (typeof entry.en === 'string') {
+          return entry.en;
+        }
+      }
+      return fallback;
+    }
 
     const DEFAULT_FOOTER_SOURCE = 'Duomenys: pagrindinis ir papildomas (istorinis) Google Sheets CSV (automat. nuskaitymas kaskart atnaujinant).';
     const DEFAULT_KPI_WINDOW_DAYS = 365;
@@ -8630,6 +8918,134 @@
       return node;
     }
 
+    function updateAccordionTriggerHelper(trigger, expanded, copyOverride) {
+      if (!trigger) {
+        return;
+      }
+      const accordionCopy = copyOverride || TEXT.settingsDialog?.accordion || {};
+      const helperKey = expanded ? 'collapse' : 'expand';
+      const helperText = resolveLocalizedCopy(accordionCopy[helperKey], '');
+      const titleSpan = trigger.querySelector('.settings-accordion__title');
+      const baseText = titleSpan ? titleSpan.textContent.trim() : trigger.textContent.trim();
+      if (helperText) {
+        trigger.setAttribute('title', `${baseText} — ${helperText}`);
+      } else {
+        trigger.removeAttribute('title');
+      }
+    }
+
+    function setSettingsAccordionState(trigger, panel, expand) {
+      if (!trigger || !panel) {
+        return;
+      }
+      trigger.setAttribute('aria-expanded', expand ? 'true' : 'false');
+      if (expand) {
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('hidden', '');
+      }
+      const item = trigger.closest('[data-accordion-item]');
+      if (item) {
+        item.dataset.open = expand ? 'true' : 'false';
+      }
+      updateAccordionTriggerHelper(trigger, expand);
+    }
+
+    function initializeSettingsAccordion() {
+      const dialog = selectors.settingsDialog;
+      if (!dialog) {
+        return;
+      }
+      const container = dialog.querySelector('[data-settings-accordion]');
+      if (!container) {
+        return;
+      }
+      const triggers = Array.from(container.querySelectorAll('[data-settings-accordion-trigger]'));
+      triggers.forEach((trigger) => {
+        const panelId = trigger.getAttribute('aria-controls');
+        if (!panelId) {
+          return;
+        }
+        const panel = document.getElementById(panelId);
+        if (!panel) {
+          return;
+        }
+        const expanded = trigger.getAttribute('aria-expanded') === 'true';
+        if (trigger.dataset.accordionReady === 'true') {
+          setSettingsAccordionState(trigger, panel, expanded);
+          return;
+        }
+        setSettingsAccordionState(trigger, panel, expanded);
+        trigger.dataset.accordionReady = 'true';
+        trigger.addEventListener('click', () => {
+          const nextExpanded = trigger.getAttribute('aria-expanded') !== 'true';
+          setSettingsAccordionState(trigger, panel, nextExpanded);
+        });
+      });
+    }
+
+    function applySettingsDialogCopy() {
+      const dialog = selectors.settingsDialog;
+      const config = TEXT.settingsDialog || {};
+      if (!dialog) {
+        return;
+      }
+      const titleEl = dialog.querySelector('#settingsTitle');
+      if (titleEl) {
+        const resolved = resolveLocalizedCopy(config.title, titleEl.textContent);
+        if (typeof resolved === 'string') {
+          titleEl.textContent = resolved;
+        }
+      }
+      const introEl = dialog.querySelector('[data-settings-label="intro"]');
+      if (introEl) {
+        const resolved = resolveLocalizedCopy(config.intro, introEl.textContent);
+        if (typeof resolved === 'string') {
+          introEl.textContent = resolved;
+        }
+      }
+      const groupKeys = [
+        { key: 'dataSources', label: 'dataSources' },
+        { key: 'transformations', label: 'transformations' },
+        { key: 'labels', label: 'labels' },
+        { key: 'toggles', label: 'toggles' },
+      ];
+      groupKeys.forEach((entry) => {
+        const copy = config.groups?.[entry.key] || {};
+        const titleSpan = dialog.querySelector(`[data-settings-label="${entry.label}Title"]`);
+        if (titleSpan) {
+          const resolved = resolveLocalizedCopy(copy.title, titleSpan.textContent);
+          if (typeof resolved === 'string') {
+            titleSpan.textContent = resolved;
+          }
+        }
+        const descriptionSpan = dialog.querySelector(`[data-settings-label="${entry.label}Description"]`);
+        if (descriptionSpan) {
+          const resolved = resolveLocalizedCopy(copy.description, descriptionSpan.textContent);
+          if (typeof resolved === 'string') {
+            descriptionSpan.textContent = resolved;
+          }
+        }
+      });
+      const actionButtons = dialog.querySelectorAll('[data-settings-action]');
+      actionButtons.forEach((button) => {
+        const actionKey = button.dataset.settingsAction;
+        const resolved = resolveLocalizedCopy(config.actions?.[actionKey], button.textContent);
+        if (typeof resolved === 'string') {
+          button.textContent = resolved;
+        }
+        if (actionKey === 'save' && typeof resolved === 'string') {
+          button.setAttribute('aria-label', resolved);
+        }
+      });
+      const triggers = dialog.querySelectorAll('[data-settings-accordion-trigger]');
+      const accordionCopy = config.accordion || {};
+      triggers.forEach((trigger) => {
+        const expanded = trigger.getAttribute('aria-expanded') === 'true';
+        updateAccordionTriggerHelper(trigger, expanded, accordionCopy);
+      });
+    }
+
     function populateSettingsForm() {
       const form = selectors.settingsForm;
       if (!form) {
@@ -8906,6 +9322,7 @@
       globalFilterController.apply(nextFilters);
       saveSettings(settings);
       applySettingsToText();
+      applySettingsDialogCopy();
       applyTextContent();
       applyFooterSource();
       initializeLayoutV2Shell();
@@ -8924,6 +9341,7 @@
       globalFilterController.apply(defaultFilters);
       saveSettings(settings);
       applySettingsToText();
+      applySettingsDialogCopy();
       applyTextContent();
       applyFooterSource();
       initializeLayoutV2Shell();
@@ -19508,6 +19926,7 @@
 
     initializeTheme();
     applySettingsToText();
+    applySettingsDialogCopy();
     applyTextContent();
     applyFooterSource();
     initializeLayoutV2Shell();
@@ -19517,6 +19936,7 @@
     initializeScrollTopButton();
     applySectionVisibility();
     populateSettingsForm();
+    initializeSettingsAccordion();
 
     initializeKpiFilters();
     initializeFeedbackFilters();

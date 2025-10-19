@@ -36,12 +36,14 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ### Nustatymų meniu
 
-Dialogas leidžia neredaguojant kodo keisti:
+Dialoge yra keturios akordeono grupės:
 
-1. **Duomenų šaltinį** – CSV nuorodą, demonstracinių duomenų būseną ir turinį.
-2. **CSV stulpelių atitikimą** – laukų pavadinimus (galimi keli sinonimai, atskirti `,` arba `|`), „taip“ reikšmes, dienos/nakties raktažodžius.
-3. **Skaičiavimo logiką** – analizuojamų dienų skaičių, „Paskutinių dienų“ lentelės ilgį, nakties pradžios ir pabaigos valandas.
-4. **Išvesties tekstus** – hero pavadinimą, sekcijų antraštes, apatinius prierašus ir lentelių rodymo jungiklius.
+1. **Duomenų šaltiniai** – pagrindinis, istorinis, atsiliepimų ir ED CSV nuorodos bei demonstraciniai rinkiniai.
+2. **Transformacijos** – CSV stulpelių atitikmenys, „taip“ reikšmės, dienos/nakties raktažodžiai ir skaičiavimo langai.
+3. **Etiketės** – hero, tabų, KPI, grafikų, atsiliepimų ir ED blokų tekstai bei apatinių eilučių šablonas.
+4. **Funkcijų jungikliai** – pasirinkimas, kuriuos skydo blokus rodyti (Įžvalgos, Paskutinės dienos, Mėnesinė, Metinė, Atsiliepimai).
+
+Akordeono sekcijas galima išskleisti ar suskleisti klaviatūra (`Enter`/`Space`) arba pele; pagal nutylėjimą atsidaro tik „Duomenų šaltiniai“, kad dialogas neapkrautų informacija. Visus tekstus galima keisti ir LT, ir EN kalboms – numatytieji vertimai laikomi `TEXT.settingsDialog` objekte.
 
 Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir išliks iki kol išvalysite naršyklės duomenis arba paspausite **„Atstatyti numatytuosius“**. CSV turinys nėra talpinamas – duomenys laikomi tik atmintyje, kad neviršytų naršyklės kvotų.
 
@@ -54,7 +56,7 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 ## Greitas „smoke test“ sąrašas
 1. Atidarykite `index.html` ir patikrinkite, kad nauja viršutinė juosta rodo pavadinimą, būsenos juostą ir veiksmų mygtukus („Perkrauti duomenis“, filtrų suvestinę, nustatymus, TV režimą).
 2. Išbandykite naują tabų juostą: pele paspauskite kiekvieną skiltį ir patikrinkite, kad puslapis sklandžiai nuslysta į atitinkamą sekciją. Tuomet fokusuokite juostą (pvz., `Tab`) ir naudokite rodyklių klavišus (`←`/`→`, `Home`, `End`) – aktyvus tabas turi keistis ir išlaikyti fokusą.
-3. Paspauskite **Ctrl+,** (arba mygtuką „Nustatymai“), pakeiskite „Analizuojamų dienų skaičius“ reikšmę ir išsaugokite – KPI kortelės bei grafikai turi persiskaičiuoti.
+3. Paspauskite **Ctrl+,** (arba mygtuką „Nustatymai“), perjunkite akordeono sekcijas (`Enter`/`Space`) ir patikrinkite, kad formos viduje esantys laukeliai lieka fokusuojami. Pakeiskite „Analizuojamų dienų skaičius“ reikšmę ir išsaugokite – KPI kortelės bei grafikai turi persiskaičiuoti.
 4. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus. Grafikų filtrų forma turi automatiškai perimti tas pačias reikšmes be papildomo derinimo.
 5. Patikrinkite „Pamainų palyginimas“ juostą – turi matytis dabartinės ir praėjusios pamainos datos, vertės bei skirtumo rodyklė. Pakeitus filtrus (pvz., pamainos tipą) juosta persiskaičiuoja.
 6. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės ir pamainų juosta persikrauna.
