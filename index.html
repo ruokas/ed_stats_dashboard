@@ -5289,24 +5289,23 @@
           class="overview-alert"
           role="status"
           aria-live="polite"
-          aria-describedby="overviewAlertSummary overviewAlertReason overviewAlertAction"
+          aria-describedby="overviewAlertSummary overviewAlertReason"
           tabindex="-1"
           data-tone="neutral"
         >
           <header class="overview-alert__header">
-            <h3 id="overviewAlertTitle" class="overview-alert__title">Budrumo signalas</h3>
+            <h3 id="overviewAlertTitle" class="overview-alert__title">Pacientų srauto įžvalgos</h3>
             <span id="overviewAlertMeta" class="overview-alert__meta" aria-hidden="true"></span>
           </header>
           <p id="overviewAlertSummary" class="overview-alert__summary"></p>
           <p id="overviewAlertReason" class="overview-alert__detail"></p>
-          <p id="overviewAlertAction" class="overview-alert__action"></p>
         </article>
         <article
           id="overviewExtra"
           class="overview-alert overview-alert--secondary"
           role="note"
           aria-live="polite"
-          aria-describedby="overviewExtraSummary overviewExtraAction"
+          aria-describedby="overviewExtraSummary"
           tabindex="-1"
           hidden
         >
@@ -5314,7 +5313,6 @@
             <h3 id="overviewExtraTitle" class="overview-alert__title"></h3>
           </header>
           <p id="overviewExtraSummary" class="overview-alert__summary"></p>
-          <p id="overviewExtraAction" class="overview-alert__action"></p>
         </article>
       </section>
       <section id="shiftStrip" class="shift-strip" role="region" aria-live="polite" aria-labelledby="shiftStripTitle" hidden>
@@ -6953,8 +6951,8 @@
       INSIGHTS: {
         overview: {
           title: {
-            lt: 'Budrumo signalas',
-            en: 'Operational alert',
+            lt: 'Pacientų srauto įžvalgos',
+            en: 'Patient flow insights',
           },
           meta: {
             lt: 'Pagal pasirinktus filtrus',
@@ -6970,28 +6968,18 @@
             down: 'Skirtumas nuo ankstesnės pamainos: −{absolute} pac. ({percent}).',
             neutral: 'Skirtumas nedidelis (±{absolute}).',
           },
-          action: {
-            up: 'Papildykite triage komandą ir stebėkite lovų apyvartą.',
-            down: 'Galima atlikti planines užduotis ar mokymus.',
-            neutral: 'Išlaikykite esamą komandų paskirstymą ir stebėkite srautą.',
-          },
           fallback: {
-            summary: 'Budrumo signalų nėra – trūksta duomenų.',
+            summary: 'Įžvalgų nėra – trūksta duomenų.',
             reason: 'Nepavyko apskaičiuoti skirtumo dėl duomenų trūkumo.',
-            action: 'Patikrinkite CSV šaltinį arba padidinkite laikotarpį.',
           },
           extra: {
             title: {
-              lt: 'Stebėti piko langą',
-              en: 'Monitor peak window',
+              lt: 'Piko laikotarpis',
+              en: 'Peak period',
             },
             summary: {
               lt: 'Daugiausia atvykimų fiksuojama 16:00–18:00 val.',
               en: 'Most arrivals occur between 16:00 and 18:00.',
-            },
-            action: {
-              lt: 'Suplanuokite papildomą triage resursą šiame intervale.',
-              en: 'Schedule extra triage coverage for that window.',
             },
           },
         },
@@ -7925,11 +7913,9 @@
       overviewAlertMeta: document.getElementById('overviewAlertMeta'),
       overviewAlertSummary: document.getElementById('overviewAlertSummary'),
       overviewAlertReason: document.getElementById('overviewAlertReason'),
-      overviewAlertAction: document.getElementById('overviewAlertAction'),
       overviewAlertExtra: document.getElementById('overviewExtra'),
       overviewAlertExtraTitle: document.getElementById('overviewExtraTitle'),
       overviewAlertExtraSummary: document.getElementById('overviewExtraSummary'),
-      overviewAlertExtraAction: document.getElementById('overviewExtraAction'),
       chartHeading: document.getElementById('chartHeading'),
       chartSubtitle: document.getElementById('chartSubtitle'),
       insightsSection: document.querySelector('[data-section="insights"]'),
@@ -10065,7 +10051,7 @@
         return typeof value === 'string' ? value : '';
       };
       if (selectors.overviewAlertTitle) {
-        selectors.overviewAlertTitle.textContent = resolveLt(overviewText.title) || selectors.overviewAlertTitle.textContent || 'Budrumo signalas';
+        selectors.overviewAlertTitle.textContent = resolveLt(overviewText.title) || selectors.overviewAlertTitle.textContent || 'Pacientų srauto įžvalgos';
       }
       if (selectors.overviewAlertMeta) {
         selectors.overviewAlertMeta.textContent = resolveLt(overviewText.meta) || selectors.overviewAlertMeta.textContent || '';
@@ -10075,9 +10061,6 @@
       }
       if (selectors.overviewAlertExtraSummary) {
         selectors.overviewAlertExtraSummary.textContent = resolveLt(overviewText.extra?.summary) || selectors.overviewAlertExtraSummary.textContent || '';
-      }
-      if (selectors.overviewAlertExtraAction) {
-        selectors.overviewAlertExtraAction.textContent = resolveLt(overviewText.extra?.action) || selectors.overviewAlertExtraAction.textContent || '';
       }
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
@@ -15087,8 +15070,7 @@
       const alertEl = selectors.overviewAlert;
       const summaryEl = selectors.overviewAlertSummary;
       const reasonEl = selectors.overviewAlertReason;
-      const actionEl = selectors.overviewAlertAction;
-      if (!alertEl || !summaryEl || !reasonEl || !actionEl) {
+      if (!alertEl || !summaryEl || !reasonEl) {
         return;
       }
       const config = TEXT.INSIGHTS?.overview || {};
@@ -15124,7 +15106,6 @@
       let trend = 'neutral';
       let summaryText = '';
       let reasonText = '';
-      let actionText = '';
       if (hasComparison) {
         const absoluteFormatted = Number.isFinite(absoluteDiff)
           ? numberFormatter.format(Math.abs(Math.round(absoluteDiff)))
@@ -15153,19 +15134,14 @@
         reasonText = formatTemplate(config.reason?.[trend], replacements)
           || formatTemplate(fallback.reason, replacements)
           || '';
-        actionText = formatTemplate(config.action?.[trend], replacements)
-          || formatTemplate(fallback.action, replacements)
-          || '';
       } else {
         summaryText = resolveLt(fallback.summary)
           || resolveLt(config.summary?.neutral)
           || '';
         reasonText = resolveLt(fallback.reason) || '';
-        actionText = resolveLt(fallback.action) || '';
       }
       summaryEl.textContent = summaryText;
       reasonEl.textContent = reasonText;
-      actionEl.textContent = actionText;
       let tone = 'neutral';
       if (trend === 'up' || trend === 'down') {
         tone = trend;
