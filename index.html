@@ -19324,17 +19324,22 @@
       }
       card.appendChild(valueEl);
 
-      const metaEl = document.createElement('p');
-      metaEl.className = 'insight-card__meta';
       const metaRaw = cardConfig.metaKey ? data?.[cardConfig.metaKey] : null;
-      let metaText = typeof metaRaw === 'string' ? metaRaw.trim() : '';
-      if (!metaText && cardConfig.description) {
-        metaText = cardConfig.description;
+      const descriptionText = typeof cardConfig.description === 'string'
+        ? cardConfig.description.trim()
+        : '';
+      if (descriptionText) {
+        const metaEl = document.createElement('p');
+        metaEl.className = 'insight-card__meta';
+        metaEl.textContent = descriptionText;
+        card.appendChild(metaEl);
       }
-      metaEl.textContent = metaText;
-      card.appendChild(metaEl);
 
-      const tone = determineInsightTone(cardConfig.key, data, metaText);
+      const tone = determineInsightTone(
+        cardConfig.key,
+        data,
+        typeof metaRaw === 'string' ? metaRaw : '',
+      );
       if (tone) {
         card.dataset.tone = tone;
       } else {
