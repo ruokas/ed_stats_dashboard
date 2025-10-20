@@ -3127,12 +3127,116 @@
       color: var(--color-text-muted);
     }
 
-    .chart-grid {
+    .flow-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: clamp(8px, 1.8vw, 14px);
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.32);
+    }
+
+    .flow-toolbar__group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1 1 auto;
+      min-width: min(320px, 100%);
+    }
+
+    .flow-toolbar__label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .flow-toolbar__field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 180px;
+    }
+
+    .flow-toolbar__field select {
+      appearance: none;
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      min-width: 160px;
+    }
+
+    .flow-toolbar__field select:hover,
+    .flow-toolbar__field select:focus-visible {
+      background: var(--color-input-bg-hover);
+      border-color: rgba(37, 99, 235, 0.35);
+      outline: none;
+    }
+
+    .flow-toolbar__spacer {
+      flex: 1 0 auto;
+    }
+
+    .flow-toolbar__help {
+      flex: 0 0 auto;
+    }
+
+    .flow-layout {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(18px, 3vw, 28px);
+      margin-top: clamp(12px, 2.2vw, 20px);
+    }
+
+    .flow-block {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(14px, 2.2vw, 20px);
+      padding: clamp(18px, 2.6vw, 26px);
+      border-radius: 20px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      box-shadow: 0 14px 34px -26px rgba(15, 23, 42, 0.45);
+    }
+
+    .flow-block__header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .flow-block__title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .flow-block__lead {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+
+    .flow-block__content {
       display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 14px;
-      align-items: stretch;
-      grid-auto-flow: row dense;
+      gap: clamp(14px, 2.4vw, 22px);
+    }
+
+    .flow-block__content--single {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .flow-block__content--split {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
 
     .chart-card {
@@ -3145,9 +3249,14 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      grid-column: span 4;
       position: relative;
       overflow: hidden;
+    }
+
+    body[data-theme="dark"] .flow-toolbar,
+    body[data-theme="dark"] .flow-block {
+      border-color: rgba(148, 163, 184, 0.25);
+      box-shadow: 0 16px 34px -26px rgba(15, 23, 42, 0.85);
     }
 
     .chart-card__skeleton {
@@ -3313,19 +3422,11 @@
       color: var(--color-text-muted);
     }
 
-    .chart-card__toolbar {
-      display: flex;
-      justify-content: flex-end;
-      align-items: flex-start;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
     .chart-controls {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
       width: 100%;
     }
 
@@ -3461,7 +3562,6 @@
       border: 1px solid var(--color-border);
       border-radius: 16px;
       padding: 6px 10px;
-      margin-left: auto;
       min-height: 36px;
       white-space: nowrap;
     }
@@ -3526,11 +3626,11 @@
     }
 
     .chart-card--wide {
-      grid-column: span 8;
+      width: 100%;
     }
 
     .chart-card--heatmap {
-      grid-column: span 12;
+      width: 100%;
     }
 
     .chart-card--compact {
@@ -3920,68 +4020,6 @@
       height: clamp(340px, 36vh, 480px) !important;
     }
 
-    .heatmap-toolbar {
-      width: 100%;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .heatmap-toolbar__field {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.82rem;
-      color: var(--color-text-muted);
-      background: var(--color-surface-alt);
-      border: 1px solid var(--color-border);
-      border-radius: 14px;
-      padding: 6px 10px;
-    }
-
-    .heatmap-toolbar__label {
-      font-weight: 600;
-      letter-spacing: 0.01em;
-    }
-
-    .heatmap-toolbar select {
-      appearance: none;
-      background: var(--color-input-bg);
-      border: 1px solid var(--color-border);
-      border-radius: 10px;
-      padding: 6px 28px 6px 12px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--color-text);
-      cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .heatmap-toolbar select:hover,
-    .heatmap-toolbar select:focus-visible {
-      background: var(--color-input-bg-hover);
-      border-color: rgba(37, 99, 235, 0.35);
-      outline: none;
-    }
-
-    body[data-theme="dark"] .heatmap-toolbar__field {
-      background: rgba(15, 23, 42, 0.4);
-    }
-
-    body[data-theme="dark"] .heatmap-toolbar select {
-      background: rgba(30, 41, 59, 0.7);
-      border-color: rgba(96, 165, 250, 0.25);
-      color: var(--color-text);
-    }
-
-    body[data-theme="dark"] .heatmap-toolbar select:hover,
-    body[data-theme="dark"] .heatmap-toolbar select:focus-visible {
-      background: rgba(37, 99, 235, 0.25);
-      border-color: rgba(96, 165, 250, 0.5);
-    }
-
     .heatmap-scroll {
       width: 100%;
       overflow-x: auto;
@@ -4045,16 +4083,6 @@
       color: var(--color-text-muted);
     }
 
-    @media (max-width: 1200px) {
-      .chart-card {
-        grid-column: span 6;
-      }
-
-      .chart-card--wide {
-        grid-column: span 12;
-      }
-    }
-
     @media (max-width: 768px) {
       .kpi-header-actions {
         width: 100%;
@@ -4093,9 +4121,17 @@
       }
 
       .chart-controls {
+        gap: 10px;
+      }
+
+      .flow-toolbar {
         flex-direction: column;
         align-items: stretch;
-        gap: 10px;
+      }
+
+      .flow-toolbar__group,
+      .flow-toolbar__field {
+        width: 100%;
       }
 
       .chart-help-button {
@@ -4116,20 +4152,6 @@
       .chart-year-filter select {
         flex: 1 1 auto;
         width: 100%;
-      }
-
-      .chart-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .chart-card,
-      .chart-card--wide {
-        grid-column: 1 / -1;
-      }
-
-      .chart-card__toolbar {
-        flex-direction: column;
-        align-items: stretch;
       }
 
       .chart-period {
@@ -5423,36 +5445,47 @@
           <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
         </div>
         <div class="section__actions chart-controls">
-          <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
-            <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
-            <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
-            <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
-            <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
-            <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
-            <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
-          </div>
-          <label class="chart-year-filter" for="chartYear">
-            <span id="chartYearLabel">Metai</span>
-            <select id="chartYear" aria-label="Filtruoti grafikus pagal kalendorinius metus">
-              <option value="all">Visi metai</option>
-            </select>
-          </label>
-          <button
-            id="patientFlowHelpBtn"
-            type="button"
-            class="chart-help-button"
-            aria-haspopup="dialog"
-            aria-controls="helpDialog"
-            aria-label="Grafikų pagalba"
-            title="Grafikų pagalba"
-          >
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 10v6" />
-              <path d="M12 7h.01" />
-            </svg>
-            <span class="sr-only">Grafikų pagalba</span>
-          </button>
+          <form id="flowToolbar" class="flow-toolbar" aria-label="Pacientų srautų įrankių juosta">
+            <div class="flow-toolbar__group">
+              <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
+                <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
+                <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
+                <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
+                <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
+                <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
+                <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
+              </div>
+              <label class="chart-year-filter" for="chartYear">
+                <span id="chartYearLabel" class="flow-toolbar__label">Metai</span>
+                <select id="chartYear" aria-label="Filtruoti grafikus pagal kalendorinius metus">
+                  <option value="all">Visi metai</option>
+                </select>
+              </label>
+              <label class="flow-toolbar__field" for="heatmapMetric">
+                <span id="heatmapMetricLabel" class="flow-toolbar__label">Rodiklis</span>
+                <select id="heatmapMetric" name="heatmapMetric" aria-label="Pasirinkti šilumos žemėlapio rodiklį">
+                  <option value="arrivals">Atvykimų skaičius / d.</option>
+                </select>
+              </label>
+            </div>
+            <div class="flow-toolbar__spacer" aria-hidden="true"></div>
+            <button
+              id="patientFlowHelpBtn"
+              type="button"
+              class="chart-help-button flow-toolbar__help"
+              aria-haspopup="dialog"
+              aria-controls="helpDialog"
+              aria-label="Grafikų pagalba"
+              title="Grafikų pagalba"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 10v6" />
+                <path d="M12 7h.01" />
+              </svg>
+              <span class="sr-only">Grafikų pagalba</span>
+            </button>
+          </form>
           <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
           <form id="chartFiltersForm" class="chart-filters" aria-label="Filtruoti grafikus">
             <label class="chart-filter" for="chartArrival">
@@ -5483,63 +5516,79 @@
           </form>
         </div>
       </div>
-      <div class="chart-grid">
-        <figure class="chart-card chart-card--tall">
-          <div class="chart-card__skeleton" aria-hidden="true" hidden>
-            <span class="skeleton skeleton--title"></span>
-            <span class="skeleton skeleton--chart-area"></span>
-            <span class="skeleton skeleton--caption"></span>
+      <div class="flow-layout" data-flow-layout>
+        <section class="flow-block" data-flow-block="daily">
+          <header class="flow-block__header">
+            <h3 id="flowBlockDailyTitle" class="flow-block__title">Kasdienė dinamika</h3>
+            <p id="flowBlockDailyLead" class="flow-block__lead">Kasdieniai atvykimai ir paskutinio laikotarpio kontekstas.</p>
+          </header>
+          <div class="flow-block__content flow-block__content--single">
+            <figure class="chart-card chart-card--tall">
+              <div class="chart-card__skeleton" aria-hidden="true" hidden>
+                <span class="skeleton skeleton--title"></span>
+                <span class="skeleton skeleton--chart-area"></span>
+                <span class="skeleton skeleton--caption"></span>
+              </div>
+              <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
+              <figcaption id="dailyChartTitle">
+                <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
+                <span id="dailyChartContext" class="chart-caption__context"></span>
+              </figcaption>
+            </figure>
           </div>
-          <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
-          <figcaption id="dailyChartTitle">
-            <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
-            <span id="dailyChartContext" class="chart-caption__context"></span>
-          </figcaption>
-        </figure>
-        <figure class="chart-card chart-card--tall">
-          <div class="chart-card__skeleton" aria-hidden="true" hidden>
-            <span class="skeleton skeleton--title"></span>
-            <span class="skeleton skeleton--chart-area"></span>
-            <span class="skeleton skeleton--caption"></span>
+        </section>
+        <section class="flow-block" data-flow-block="patterns">
+          <header class="flow-block__header">
+            <h3 id="flowBlockPatternsTitle" class="flow-block__title">Savaitės ritmas</h3>
+            <p id="flowBlockPatternsLead" class="flow-block__lead">Vidutinės reikšmės pagal savaitės dienas ir buvimo trukmę.</p>
+          </header>
+          <div class="flow-block__content flow-block__content--split">
+            <figure class="chart-card chart-card--tall">
+              <div class="chart-card__skeleton" aria-hidden="true" hidden>
+                <span class="skeleton skeleton--title"></span>
+                <span class="skeleton skeleton--chart-area"></span>
+                <span class="skeleton skeleton--caption"></span>
+              </div>
+              <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
+              <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
+            </figure>
+            <figure class="chart-card chart-card--tall">
+              <div class="chart-card__skeleton" aria-hidden="true" hidden>
+                <span class="skeleton skeleton--title"></span>
+                <span class="skeleton skeleton--chart-area"></span>
+                <span class="skeleton skeleton--caption"></span>
+              </div>
+              <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
+              <figcaption id="dowStayChartTitle">Vidutinė buvimo trukmė pagal savaitės dieną</figcaption>
+            </figure>
           </div>
-          <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
-          <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
-        </figure>
-        <figure class="chart-card chart-card--tall">
-          <div class="chart-card__skeleton" aria-hidden="true" hidden>
-            <span class="skeleton skeleton--title"></span>
-            <span class="skeleton skeleton--chart-area"></span>
-            <span class="skeleton skeleton--caption"></span>
+        </section>
+        <section class="flow-block" data-flow-block="outcomes">
+          <header class="flow-block__header">
+            <h3 id="flowBlockOutcomesTitle" class="flow-block__title">Sprendimai ir apkrovos</h3>
+            <p id="flowBlockOutcomesLead" class="flow-block__lead">Piltuvėlis ir šilumos žemėlapis atskleidžia didžiausius krūvius.</p>
+          </header>
+          <div class="flow-block__content flow-block__content--split">
+            <figure class="chart-card chart-card--heatmap">
+              <div class="chart-card__skeleton" aria-hidden="true" hidden>
+                <span class="skeleton skeleton--title"></span>
+                <span class="skeleton skeleton--chart-area skeleton--chart-area--heatmap"></span>
+                <span class="skeleton skeleton--caption"></span>
+              </div>
+              <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
+              <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
+            </figure>
+            <figure class="chart-card chart-card--funnel">
+              <div class="chart-card__skeleton" aria-hidden="true" hidden>
+                <span class="skeleton skeleton--title"></span>
+                <span class="skeleton skeleton--chart-area"></span>
+                <span class="skeleton skeleton--caption"></span>
+              </div>
+              <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
+              <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
+            </figure>
           </div>
-          <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
-          <figcaption id="dowStayChartTitle">Vidutinė buvimo trukmė pagal savaitės dieną</figcaption>
-        </figure>
-        <figure class="chart-card chart-card--heatmap">
-          <div class="chart-card__skeleton" aria-hidden="true" hidden>
-            <span class="skeleton skeleton--title"></span>
-            <span class="skeleton skeleton--chart-area skeleton--chart-area--heatmap"></span>
-            <span class="skeleton skeleton--caption"></span>
-          </div>
-          <div class="chart-card__toolbar heatmap-toolbar" role="group" aria-label="Pasirinkti rodiklį">
-            <label class="heatmap-toolbar__field" for="heatmapMetric">
-              <span id="heatmapMetricLabel" class="heatmap-toolbar__label">Rodiklis</span>
-              <select id="heatmapMetric" name="heatmapMetric">
-                <option value="arrivals">Atvykimų skaičius / d.</option>
-              </select>
-            </label>
-          </div>
-          <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
-          <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
-        </figure>
-        <figure class="chart-card chart-card--funnel">
-          <div class="chart-card__skeleton" aria-hidden="true" hidden>
-            <span class="skeleton skeleton--title"></span>
-            <span class="skeleton skeleton--chart-area"></span>
-            <span class="skeleton skeleton--caption"></span>
-          </div>
-          <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
-          <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
-        </figure>
+        </section>
       </div>
     </section>
 
@@ -6801,6 +6850,29 @@
           { key: 'hospitalized', label: 'Hospitalizuoti' },
         ],
         funnelEmpty: 'Piltuvėlio sugeneruoti nepavyko – šiuo metu nėra atvykimų duomenų.',
+        blocks: {
+          daily: {
+            title: { lt: 'Kasdienė dinamika', en: 'Daily pulse' },
+            lead: {
+              lt: 'Kasdieniai atvykimai ir paskutinio laikotarpio kontekstas.',
+              en: 'Daily arrivals with quick context for the active window.',
+            },
+          },
+          patterns: {
+            title: { lt: 'Savaitės ritmas', en: 'Weekday rhythm' },
+            lead: {
+              lt: 'Vidutinės reikšmės pagal savaitės dienas ir buvimo trukmę.',
+              en: 'Weekday averages and length-of-stay shifts.',
+            },
+          },
+          outcomes: {
+            title: { lt: 'Sprendimai ir apkrovos', en: 'Decisions & load' },
+            lead: {
+              lt: 'Piltuvėlis ir šilumos žemėlapis atskleidžia didžiausius krūvius.',
+              en: 'Disposition funnel and heatmap spotlight pressure points.',
+            },
+          },
+        },
         heatmapCaption: (metricLabel) => (metricLabel
           ? `Pasirinkto rodiklio („${metricLabel}“) reikšmės pagal savaitės dieną ir valandą.`
           : 'Rodikliai pagal savaitės dieną ir valandą.'),
@@ -7918,6 +7990,14 @@
       overviewAlertExtraSummary: document.getElementById('overviewExtraSummary'),
       chartHeading: document.getElementById('chartHeading'),
       chartSubtitle: document.getElementById('chartSubtitle'),
+      flowToolbar: document.getElementById('flowToolbar'),
+      flowBlocks: Array.from(document.querySelectorAll('[data-flow-block]')),
+      flowBlockDailyTitle: document.getElementById('flowBlockDailyTitle'),
+      flowBlockDailyLead: document.getElementById('flowBlockDailyLead'),
+      flowBlockPatternsTitle: document.getElementById('flowBlockPatternsTitle'),
+      flowBlockPatternsLead: document.getElementById('flowBlockPatternsLead'),
+      flowBlockOutcomesTitle: document.getElementById('flowBlockOutcomesTitle'),
+      flowBlockOutcomesLead: document.getElementById('flowBlockOutcomesLead'),
       insightsSection: document.querySelector('[data-section="insights"]'),
       insightsHeading: document.getElementById('insightsHeading'),
       insightsSubtitle: document.getElementById('insightsSubtitle'),
@@ -7960,7 +8040,7 @@
       chartFilterArrival: document.getElementById('chartArrival'),
       chartFilterDisposition: document.getElementById('chartDisposition'),
       chartFilterCardType: document.getElementById('chartCardType'),
-      chartCards: Array.from(document.querySelectorAll('.chart-grid .chart-card')),
+      chartCards: Array.from(document.querySelectorAll('[data-flow-block] .chart-card')),
       patientFlowHelpBtn: document.getElementById('patientFlowHelpBtn'),
       helpDialog: document.getElementById('helpDialog'),
       helpDialogTitle: document.getElementById('helpDialogTitle'),
@@ -10064,6 +10144,25 @@
       }
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+      const flowBlocksCopy = TEXT.charts?.blocks || {};
+      if (selectors.flowBlockDailyTitle) {
+        selectors.flowBlockDailyTitle.textContent = resolveLocalizedCopy(flowBlocksCopy.daily?.title, selectors.flowBlockDailyTitle.textContent || 'Kasdienė dinamika');
+      }
+      if (selectors.flowBlockDailyLead) {
+        selectors.flowBlockDailyLead.textContent = resolveLocalizedCopy(flowBlocksCopy.daily?.lead, selectors.flowBlockDailyLead.textContent || 'Kasdieniai atvykimai ir paskutinio laikotarpio kontekstas.');
+      }
+      if (selectors.flowBlockPatternsTitle) {
+        selectors.flowBlockPatternsTitle.textContent = resolveLocalizedCopy(flowBlocksCopy.patterns?.title, selectors.flowBlockPatternsTitle.textContent || 'Savaitės ritmas');
+      }
+      if (selectors.flowBlockPatternsLead) {
+        selectors.flowBlockPatternsLead.textContent = resolveLocalizedCopy(flowBlocksCopy.patterns?.lead, selectors.flowBlockPatternsLead.textContent || 'Vidutinės reikšmės pagal savaitės dienas ir buvimo trukmę.');
+      }
+      if (selectors.flowBlockOutcomesTitle) {
+        selectors.flowBlockOutcomesTitle.textContent = resolveLocalizedCopy(flowBlocksCopy.outcomes?.title, selectors.flowBlockOutcomesTitle.textContent || 'Sprendimai ir apkrovos');
+      }
+      if (selectors.flowBlockOutcomesLead) {
+        selectors.flowBlockOutcomesLead.textContent = resolveLocalizedCopy(flowBlocksCopy.outcomes?.lead, selectors.flowBlockOutcomesLead.textContent || 'Piltuvėlis ir šilumos žemėlapis atskleidžia didžiausius krūvius.');
+      }
       if (selectors.patientFlowHelpBtn) {
         const label = TEXT.help?.openLabel || 'Grafikų pagalba';
         const hint = TEXT.help?.openHint || label;
@@ -16777,11 +16876,38 @@
         });
     }
 
-    function clearChartError() {
-      if (!Array.isArray(selectors.chartCards)) {
-        return;
+    function getFlowBlocks(targetKey = null) {
+      if (!Array.isArray(selectors.flowBlocks)) {
+        return [];
       }
-      selectors.chartCards.forEach((card) => {
+      if (!targetKey) {
+        return selectors.flowBlocks;
+      }
+      return selectors.flowBlocks.filter((block) => block?.dataset?.flowBlock === targetKey);
+    }
+
+    function getChartCards(targetKey = null) {
+      if (!Array.isArray(selectors.chartCards)) {
+        return [];
+      }
+      if (!targetKey) {
+        return selectors.chartCards;
+      }
+      return selectors.chartCards.filter((card) => {
+        const parentBlock = card?.closest('[data-flow-block]');
+        return parentBlock?.dataset?.flowBlock === targetKey;
+      });
+    }
+
+    function clearChartError(targetKey = null) {
+      const blocks = getFlowBlocks(targetKey);
+      blocks.forEach((block) => {
+        if (block) {
+          block.removeAttribute('data-error');
+        }
+      });
+      const cards = getChartCards(targetKey);
+      cards.forEach((card) => {
         if (!card) {
           return;
         }
@@ -16793,12 +16919,16 @@
       });
     }
 
-    function showChartSkeletons() {
-      if (!Array.isArray(selectors.chartCards)) {
-        return;
-      }
-      clearChartError();
-      selectors.chartCards.forEach((card) => {
+    function showChartSkeletons(targetKey = null) {
+      clearChartError(targetKey);
+      const blocks = getFlowBlocks(targetKey);
+      blocks.forEach((block) => {
+        if (block) {
+          block.dataset.loading = 'true';
+        }
+      });
+      const cards = getChartCards(targetKey);
+      cards.forEach((card) => {
         if (!card) {
           return;
         }
@@ -16810,11 +16940,15 @@
       });
     }
 
-    function hideChartSkeletons() {
-      if (!Array.isArray(selectors.chartCards)) {
-        return;
-      }
-      selectors.chartCards.forEach((card) => {
+    function hideChartSkeletons(targetKey = null) {
+      const blocks = getFlowBlocks(targetKey);
+      blocks.forEach((block) => {
+        if (block) {
+          delete block.dataset.loading;
+        }
+      });
+      const cards = getChartCards(targetKey);
+      cards.forEach((card) => {
         if (!card) {
           return;
         }
@@ -16826,18 +16960,22 @@
       });
     }
 
-    function showChartError(message) {
-      if (!Array.isArray(selectors.chartCards)) {
-        return;
-      }
+    function showChartError(message, targetKey = null) {
       const fallbackMessage = (TEXT?.charts?.errorLoading)
         || (TEXT?.status?.error)
         || 'Nepavyko atvaizduoti grafikų.';
       const resolvedMessage = message && String(message).trim().length
         ? String(message)
         : fallbackMessage;
-      hideChartSkeletons();
-      selectors.chartCards.forEach((card) => {
+      hideChartSkeletons(targetKey);
+      const blocks = getFlowBlocks(targetKey);
+      blocks.forEach((block) => {
+        if (block) {
+          block.dataset.error = 'true';
+        }
+      });
+      const cards = getChartCards(targetKey);
+      cards.forEach((card) => {
         if (!card) {
           return;
         }
@@ -20480,6 +20618,9 @@
     if (selectors.chartFiltersForm) {
       selectors.chartFiltersForm.addEventListener('change', handleChartFilterChange);
       selectors.chartFiltersForm.addEventListener('submit', (event) => event.preventDefault());
+    }
+    if (selectors.flowToolbar) {
+      selectors.flowToolbar.addEventListener('submit', (event) => event.preventDefault());
     }
 
     if (selectors.themeToggleBtn) {
