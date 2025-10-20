@@ -12,6 +12,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🧭 Pamainų palyginimo juosta (dabartinė vs praėjusi) su automatiniu pacientų skaičiaus ir procento pokyčiu.
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
 - 🎯 Interaktyvūs KPI filtrai (laikotarpis, pamaina, GMP, išvykimo sprendimas) su aiškia santrauka ir sparčiuoju **Shift+R**.
+- 🎹 Skaičiai **1–6** akimirksniu fokusuoja atitinkamas KPI korteles, o **Shift+I** – „Budrumo signalą“ su papildoma informacija.
 - 🔍 Pacientų atsiliepimų filtras pagal tai, kas pildė anketą ir kur ji pildyta – kortelės, grafikas ir lentelė prisitaiko akimirksniu.
 - ❓ Pacientų srautų „Pagalbos“ dialogas su legendomis (mygtukas „Pagalba“).
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
@@ -69,6 +70,7 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 13. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 10 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
 14. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
 15. Paspauskite „Pagalba“ pacientų srautų skiltyje – turi atsiverti pagalbos dialogas su grafikų legendomis, užsidaro mygtuku „X“ arba „Escape“.
+16. Aktyviame „Bendras vaizdas“ skirtuke spauskite klavišus **1–6** ir **Shift+I** – fokusas turi pereiti į pasirinktas KPI korteles arba budrumo signalą, kortelės išlieka prieinamos skaitytuvams.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
