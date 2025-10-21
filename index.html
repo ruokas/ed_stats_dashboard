@@ -3116,37 +3116,56 @@
 
     .flow-toolbar {
       display: flex;
-      flex-wrap: wrap;
-      align-items: flex-end;
+      align-items: stretch;
+      flex-wrap: nowrap;
       gap: clamp(12px, 1.8vw, 20px);
       padding: clamp(14px, 2vw, 20px);
       border-radius: 18px;
       border: 1px solid var(--color-border);
       background: var(--color-surface);
       box-shadow: 0 16px 40px -28px rgba(15, 23, 42, 0.45);
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-gutter: stable both-edges;
+    }
+
+    .flow-toolbar::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .flow-toolbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .flow-toolbar::-webkit-scrollbar-thumb {
+      background: rgba(37, 99, 235, 0.25);
+      border-radius: 999px;
     }
 
     .flow-toolbar__group {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      justify-content: center;
+      gap: 8px;
       min-width: 0;
+      flex: 0 0 auto;
     }
 
     .flow-toolbar__group[data-group="period"] {
-      flex: 1 1 280px;
-      min-width: 240px;
+      flex: 1 1 360px;
+      min-width: 300px;
+      max-width: 520px;
     }
 
     .flow-toolbar__group[data-group="year"],
     .flow-toolbar__group[data-group="metric"] {
-      flex: 0 1 180px;
-      min-width: 180px;
+      flex: 0 0 160px;
+      min-width: 140px;
     }
 
     .flow-toolbar__group[data-group="detail"] {
-      flex: 1 1 320px;
-      min-width: 280px;
+      flex: 1 1 420px;
+      min-width: 340px;
     }
 
     .flow-toolbar__group-label {
@@ -3166,8 +3185,9 @@
 
     .flow-toolbar__filters {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
       margin: 0;
       padding: 0;
     }
@@ -3176,6 +3196,8 @@
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
+      flex: 1 1 320px;
+      min-width: 260px;
     }
 
     .flow-toolbar__filters-grid .chart-filter {
@@ -3188,6 +3210,7 @@
       font-size: 0.85rem;
       color: var(--color-text-muted);
       line-height: 1.4;
+      flex: 0 0 auto;
     }
 
     .flow-toolbar__summary[data-default="false"] {
@@ -3227,12 +3250,21 @@
 
     @media (max-width: 1200px) {
       .flow-toolbar {
-        align-items: stretch;
+        flex-wrap: wrap;
+        overflow-x: visible;
       }
 
       .flow-toolbar__group[data-group="year"],
       .flow-toolbar__group[data-group="metric"] {
         flex: 1 1 200px;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .flow-toolbar__group[data-group="period"],
+      .flow-toolbar__group[data-group="detail"] {
+        flex: 1 1 100%;
+        max-width: none;
       }
     }
 
@@ -3246,6 +3278,15 @@
         min-width: 0;
       }
 
+      .flow-toolbar__filters {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .flow-toolbar__filters-grid {
+        width: 100%;
+      }
+
       .flow-toolbar__filters-grid .chart-filter {
         flex: 1 1 220px;
       }
@@ -3255,6 +3296,7 @@
       .flow-toolbar {
         flex-direction: column;
         align-items: stretch;
+        overflow-x: visible;
       }
 
       .flow-toolbar__filters-grid {
@@ -3606,17 +3648,14 @@
     }
 
     .chart-period {
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(68px, auto);
-      gap: 6px;
-      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
       background: var(--color-surface-alt);
       border-radius: 16px;
       border: 1px solid var(--color-border);
-      flex: 1 1 320px;
       min-width: 0;
-      align-items: stretch;
       overflow-x: auto;
       scrollbar-width: thin;
       scrollbar-gutter: stable both-edges;
@@ -3639,9 +3678,9 @@
       flex: 0 0 auto;
       min-width: auto;
       text-align: center;
-      padding: 6px 12px;
+      padding: 8px 16px;
       line-height: 1.2;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       white-space: nowrap;
     }
 
