@@ -3144,73 +3144,92 @@
 
     .flow-toolbar__group {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 8px;
+      align-items: center;
+      gap: clamp(10px, 1.4vw, 18px);
       min-width: 0;
       flex: 0 0 auto;
     }
 
     .flow-toolbar__group[data-group="period"] {
-      flex: 1 1 360px;
-      min-width: 300px;
-      max-width: 520px;
+      flex: 1 1 380px;
+      min-width: 320px;
+      max-width: 560px;
+    }
+
+    .flow-toolbar__group[data-group="period"] #chartPeriodGroup {
+      flex: 1 1 auto;
     }
 
     .flow-toolbar__group[data-group="year"],
     .flow-toolbar__group[data-group="metric"] {
-      flex: 0 0 160px;
-      min-width: 140px;
+      flex: 0 0 auto;
     }
 
     .flow-toolbar__group[data-group="detail"] {
-      flex: 1 1 420px;
-      min-width: 340px;
+      flex: 1 1 480px;
+      min-width: 360px;
+      align-items: flex-start;
     }
 
     .flow-toolbar__group-label {
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--color-text-muted);
+      white-space: nowrap;
     }
 
     .flow-toolbar__group-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
+    }
+
+    .flow-toolbar__group--filters {
+      gap: clamp(12px, 1.6vw, 20px);
+    }
+
+    .flow-toolbar__group--filters .flow-toolbar__group-header {
+      flex: 0 0 auto;
+    }
+
+    .flow-toolbar__group--filters .flow-toolbar__filters {
+      flex: 1 1 auto;
     }
 
     .flow-toolbar__filters {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
       margin: 0;
       padding: 0;
+      flex-wrap: nowrap;
     }
 
     .flow-toolbar__filters-grid {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      flex: 1 1 320px;
-      min-width: 260px;
+      flex-wrap: nowrap;
+      gap: 12px;
+      min-width: 0;
+      align-items: center;
     }
 
     .flow-toolbar__filters-grid .chart-filter {
-      flex: 1 1 160px;
-      min-width: 160px;
+      flex: 0 0 auto;
+      min-width: 0;
     }
 
     .flow-toolbar__summary {
       margin: 0;
       font-size: 0.85rem;
       color: var(--color-text-muted);
-      line-height: 1.4;
+      line-height: 1.3;
       flex: 0 0 auto;
+      white-space: nowrap;
+      max-width: clamp(160px, 22vw, 280px);
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .flow-toolbar__summary[data-default="false"] {
@@ -3220,21 +3239,25 @@
 
     .flow-toolbar__field {
       display: flex;
-      flex-direction: column;
-      gap: 6px;
+      align-items: center;
+      gap: 10px;
       min-width: 0;
+    }
+
+    .flow-toolbar__field .flow-toolbar__group-label {
+      flex: 0 0 auto;
     }
 
     .flow-toolbar__field select {
       appearance: none;
       border: 1px solid var(--color-border);
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 8px 14px;
       font-size: 0.9rem;
       font-weight: 600;
       background: var(--color-input-bg);
       color: var(--color-text);
-      min-width: 160px;
+      min-width: 170px;
     }
 
     .flow-toolbar__field select:hover,
@@ -3254,9 +3277,39 @@
         overflow-x: visible;
       }
 
+      .flow-toolbar__group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
       .flow-toolbar__group[data-group="year"],
       .flow-toolbar__group[data-group="metric"] {
         flex: 1 1 200px;
+      }
+
+      .flow-toolbar__group[data-group="detail"] {
+        align-items: stretch;
+      }
+
+      .flow-toolbar__filters,
+      .chart-filters {
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+
+      .flow-toolbar__filters-grid {
+        flex-wrap: wrap;
+      }
+
+      .chart-filter {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .flow-toolbar__field {
+        flex-direction: column;
+        align-items: flex-start;
       }
     }
 
@@ -3278,17 +3331,35 @@
         min-width: 0;
       }
 
-      .flow-toolbar__filters {
+      .flow-toolbar__filters,
+      .chart-filters {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
       }
 
       .flow-toolbar__filters-grid {
         width: 100%;
+        flex-wrap: wrap;
       }
 
       .flow-toolbar__filters-grid .chart-filter {
         flex: 1 1 220px;
+      }
+
+      .chart-filter {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+      }
+
+      .chart-filter select {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .chart-filters__summary,
+      .flow-toolbar__summary {
+        white-space: normal;
       }
     }
 
@@ -3301,6 +3372,7 @@
 
       .flow-toolbar__filters-grid {
         flex-direction: column;
+        gap: 14px;
       }
     }
 
@@ -3609,24 +3681,27 @@
 
     .chart-filters {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
       margin: 0;
       padding: 0;
+      flex-wrap: nowrap;
     }
 
     .chart-filter {
       display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 160px;
-      flex: 1 1 160px;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 0 0 auto;
     }
 
     .chart-filter span {
       font-weight: 600;
       font-size: 0.78rem;
       color: var(--color-text-muted);
+      white-space: nowrap;
     }
 
     .chart-filter select {
@@ -3634,9 +3709,10 @@
       border: 1px solid var(--color-border);
       background: var(--color-input-bg);
       color: var(--color-text);
-      padding: 8px 12px;
+      padding: 8px 14px;
       font-size: 0.9rem;
       font-family: inherit;
+      min-width: 170px;
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
@@ -3651,7 +3727,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 10px;
+      padding: 4px 8px;
       background: var(--color-surface-alt);
       border-radius: 16px;
       border: 1px solid var(--color-border);
@@ -3678,7 +3754,7 @@
       flex: 0 0 auto;
       min-width: auto;
       text-align: center;
-      padding: 8px 16px;
+      padding: 6px 14px;
       line-height: 1.2;
       font-size: 0.88rem;
       white-space: nowrap;
