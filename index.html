@@ -3148,6 +3148,31 @@
       min-width: min(320px, 100%);
     }
 
+    .flow-toolbar__group--primary {
+      flex: 2 1 min(420px, 100%);
+    }
+
+    .flow-toolbar__group--filters {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      flex: 1 1 min(360px, 100%);
+      min-width: min(360px, 100%);
+    }
+
+    .flow-toolbar__summary {
+      order: 0;
+      width: auto;
+    }
+
+    .flow-toolbar__filters {
+      order: 1;
+      width: 100%;
+      justify-content: flex-start;
+      margin: 0;
+      flex: 1 1 auto;
+    }
+
     .flow-toolbar__label {
       font-size: 0.85rem;
       font-weight: 600;
@@ -3482,8 +3507,8 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      flex: 1 1 100%;
-      order: 3;
+      flex: 0 0 auto;
+      max-width: 100%;
     }
 
     .chart-filters__summary[data-default="true"] {
@@ -3496,10 +3521,8 @@
       flex-wrap: wrap;
       gap: 8px;
       align-items: flex-end;
-      margin-left: auto;
       flex: 1 1 360px;
-      min-width: 0;
-      order: 4;
+      min-width: min(320px, 100%);
     }
 
     .chart-filter {
@@ -4130,7 +4153,16 @@
       }
 
       .flow-toolbar__group,
+      .flow-toolbar__group--filters,
       .flow-toolbar__field {
+        width: 100%;
+      }
+
+      .flow-toolbar__group--filters {
+        align-items: stretch;
+      }
+
+      .flow-toolbar__filters {
         width: 100%;
       }
 
@@ -5445,8 +5477,8 @@
           <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
         </div>
         <div class="section__actions chart-controls">
-          <form id="flowToolbar" class="flow-toolbar" aria-label="Pacientų srautų įrankių juosta">
-            <div class="flow-toolbar__group">
+          <div id="flowToolbar" class="flow-toolbar" role="group" aria-label="Pacientų srautų įrankių juosta">
+            <div class="flow-toolbar__group flow-toolbar__group--primary">
               <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
                 <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
                 <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
@@ -5468,6 +5500,36 @@
                 </select>
               </label>
             </div>
+            <div class="flow-toolbar__group flow-toolbar__group--filters">
+              <p id="chartFiltersSummary" class="chart-filters__summary flow-toolbar__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
+              <form id="chartFiltersForm" class="chart-filters flow-toolbar__filters" aria-label="Filtruoti grafikus">
+                <label class="chart-filter" for="chartArrival">
+                  <span>Atvykimo tipas</span>
+                  <select id="chartArrival" name="arrival" aria-label="Filtruoti grafikus pagal atvykimo tipą">
+                    <option value="all">Visi</option>
+                    <option value="ems">Tik GMP</option>
+                    <option value="self">Be GMP</option>
+                  </select>
+                </label>
+                <label class="chart-filter" for="chartDisposition">
+                  <span>Būsena išvykstant</span>
+                  <select id="chartDisposition" name="disposition" aria-label="Filtruoti grafikus pagal išvykimo sprendimą">
+                    <option value="all">Visi</option>
+                    <option value="hospitalized">Hospitalizuoti</option>
+                    <option value="discharged">Išleisti</option>
+                  </select>
+                </label>
+                <label class="chart-filter" for="chartCardType">
+                  <span>Kortelės tipas</span>
+                  <select id="chartCardType" name="cardType" aria-label="Filtruoti grafikus pagal kortelės tipą">
+                    <option value="all">Visos kortelės</option>
+                    <option value="t">T kortelės</option>
+                    <option value="tr">TR kortelės</option>
+                    <option value="ch">CH kortelės</option>
+                  </select>
+                </label>
+              </form>
+            </div>
             <div class="flow-toolbar__spacer" aria-hidden="true"></div>
             <button
               id="patientFlowHelpBtn"
@@ -5485,35 +5547,7 @@
               </svg>
               <span class="sr-only">Grafikų pagalba</span>
             </button>
-          </form>
-          <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
-          <form id="chartFiltersForm" class="chart-filters" aria-label="Filtruoti grafikus">
-            <label class="chart-filter" for="chartArrival">
-              <span>Atvykimo tipas</span>
-              <select id="chartArrival" name="arrival" aria-label="Filtruoti grafikus pagal atvykimo tipą">
-                <option value="all">Visi</option>
-                <option value="ems">Tik GMP</option>
-                <option value="self">Be GMP</option>
-              </select>
-            </label>
-            <label class="chart-filter" for="chartDisposition">
-              <span>Būsena išvykstant</span>
-              <select id="chartDisposition" name="disposition" aria-label="Filtruoti grafikus pagal išvykimo sprendimą">
-                <option value="all">Visi</option>
-                <option value="hospitalized">Hospitalizuoti</option>
-                <option value="discharged">Išleisti</option>
-              </select>
-            </label>
-            <label class="chart-filter" for="chartCardType">
-              <span>Kortelės tipas</span>
-              <select id="chartCardType" name="cardType" aria-label="Filtruoti grafikus pagal kortelės tipą">
-                <option value="all">Visos kortelės</option>
-                <option value="t">T kortelės</option>
-                <option value="tr">TR kortelės</option>
-                <option value="ch">CH kortelės</option>
-              </select>
-            </label>
-          </form>
+          </div>
         </div>
       </div>
       <div class="flow-layout" data-flow-layout>
@@ -20619,7 +20653,7 @@
       selectors.chartFiltersForm.addEventListener('change', handleChartFilterChange);
       selectors.chartFiltersForm.addEventListener('submit', (event) => event.preventDefault());
     }
-    if (selectors.flowToolbar) {
+    if (selectors.flowToolbar && selectors.flowToolbar.tagName === 'FORM') {
       selectors.flowToolbar.addEventListener('submit', (event) => event.preventDefault());
     }
 
