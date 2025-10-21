@@ -3606,25 +3606,43 @@
     }
 
     .chart-period {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2px;
-      padding: 2px 6px;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(68px, auto);
+      gap: 6px;
+      padding: 4px 8px;
       background: var(--color-surface-alt);
       border-radius: 16px;
       border: 1px solid var(--color-border);
       flex: 1 1 320px;
       min-width: 0;
-      align-items: center;
+      align-items: stretch;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-gutter: stable both-edges;
+    }
+
+    .chart-period::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .chart-period::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .chart-period::-webkit-scrollbar-thumb {
+      background: rgba(37, 99, 235, 0.25);
+      border-radius: 999px;
     }
 
     .chart-period .chip-button {
-      flex: 1 1 64px;
-      min-width: 64px;
+      flex: 0 0 auto;
+      min-width: auto;
       text-align: center;
-      padding: 2px 8px;
-      line-height: 1.05;
-      font-size: 0.76rem;
+      padding: 6px 12px;
+      line-height: 1.2;
+      font-size: 0.85rem;
+      white-space: nowrap;
     }
 
 
