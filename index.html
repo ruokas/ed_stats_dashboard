@@ -3117,6 +3117,9 @@
     .flow-toolbar {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-areas:
+        "period period period period year year year year metric metric metric metric"
+        "detail detail detail detail detail detail detail detail detail detail detail detail";
       gap: clamp(14px, 2vw, 20px) clamp(12px, 1.8vw, 20px);
       align-items: start;
       padding: clamp(14px, 2vw, 20px);
@@ -3135,19 +3138,19 @@
     }
 
     .flow-toolbar__group[data-group="period"] {
-      grid-column: span 5;
+      grid-area: period;
     }
 
     .flow-toolbar__group[data-group="year"] {
-      grid-column: span 3;
+      grid-area: year;
     }
 
     .flow-toolbar__group[data-group="metric"] {
-      grid-column: span 4;
+      grid-area: metric;
     }
 
     .flow-toolbar__group[data-group="detail"] {
-      grid-column: 1 / -1;
+      grid-area: detail;
     }
 
     .flow-toolbar__group[data-group="period"] #chartPeriodGroup {
@@ -3190,7 +3193,7 @@
 
     .flow-toolbar__filters-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       min-width: 0;
       width: 100%;
@@ -3250,32 +3253,30 @@
     }
 
     @media (max-width: 1280px) {
-      .flow-toolbar__group[data-group="period"] {
-        grid-column: 1 / -1;
+      .flow-toolbar {
+        grid-template-areas:
+          "period period period period period period period period period period period period"
+          "year year year year year year metric metric metric metric metric metric"
+          "detail detail detail detail detail detail detail detail detail detail detail detail";
       }
 
-      .flow-toolbar__group[data-group="year"],
-      .flow-toolbar__group[data-group="metric"] {
-        grid-column: span 6;
-      }
-
-      .flow-toolbar__group[data-group="detail"] {
-        grid-column: 1 / -1;
+      .flow-toolbar__filters-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 960px) {
       .flow-toolbar {
         grid-template-columns: repeat(12, minmax(0, 1fr));
-      }
-
-      .flow-toolbar__group[data-group="year"],
-      .flow-toolbar__group[data-group="metric"] {
-        grid-column: 1 / -1;
+        grid-template-areas:
+          "period period period period period period period period period period period period"
+          "year year year year year year year year year year year year"
+          "metric metric metric metric metric metric metric metric metric metric metric metric"
+          "detail detail detail detail detail detail detail detail detail detail detail detail";
       }
 
       .flow-toolbar__filters-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
@@ -5531,14 +5532,16 @@
         <div class="section__actions chart-controls">
           <div id="flowToolbar" class="flow-toolbar" role="group" aria-label="Pacientų srautų filtrai">
             <div class="flow-toolbar__group" data-group="period">
-              <span id="chartPeriodLabel" class="flow-toolbar__group-label">Laikotarpis</span>
-              <div id="chartPeriodGroup" class="chart-period" role="group" aria-labelledby="chartPeriodLabel">
-                <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
-                <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
-                <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
-                <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
-                <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
-                <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
+              <div class="flow-toolbar__field flow-toolbar__field--period">
+                <span id="chartPeriodLabel" class="flow-toolbar__group-label">Laikotarpis</span>
+                <div id="chartPeriodGroup" class="chart-period" role="group" aria-labelledby="chartPeriodLabel">
+                  <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
+                  <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
+                  <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
+                  <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
+                  <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
+                  <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
+                </div>
               </div>
             </div>
             <div class="flow-toolbar__group" data-group="year">
