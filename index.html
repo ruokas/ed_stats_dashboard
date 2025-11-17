@@ -2094,6 +2094,86 @@
       color: var(--color-text-muted);
     }
 
+    .feedback-comments {
+      margin: 20px 0 12px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-elevated);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .feedback-comments__header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .feedback-comments__title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .feedback-comments__meta {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-comments__list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .feedback-comments__item {
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: var(--color-surface-alt);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feedback-comments__text {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--color-text);
+      line-height: 1.4;
+    }
+
+    .feedback-comments__meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    .feedback-comments__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--color-input-bg);
+    }
+
+    body[data-theme="dark"] .feedback-comments__item {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -4771,6 +4851,14 @@
           <p id="feedbackTrendMessage" class="feedback-trend-message" role="status" aria-live="polite" hidden></p>
         </div>
       </div>
+      <section class="feedback-comments" aria-labelledby="feedbackCommentsTitle">
+        <div class="feedback-comments__header">
+          <h3 id="feedbackCommentsTitle" class="feedback-comments__title">Naujausi komentarai</h3>
+          <p id="feedbackCommentsMeta" class="feedback-comments__meta"></p>
+        </div>
+        <ul id="feedbackCommentsList" class="feedback-comments__list"></ul>
+        <p id="feedbackCommentsEmpty" class="feedback-empty" role="status"></p>
+      </section>
       <div class="table-wrapper table-wrapper--feedback" role="region" aria-live="polite" aria-labelledby="feedbackHeading">
         <table aria-describedby="feedbackSubtitle feedbackDescription">
           <caption id="feedbackCaption" class="sr-only">Mėnesio atsiliepimų suvestinė pagal apklausos vertinimus.</caption>
@@ -5197,23 +5285,23 @@
 2024-02-08T05:50:00+02:00,2024-02-08T09:15:00+02:00,Rytas,TAIP,
 2024-02-08T19:30:00+02:00,2024-02-08T23:05:00+02:00,Vakare,NE,
 2024-02-09T23:10:00+02:00,2024-02-10T02:20:00+02:00,Naktis,TAIP,Traumatologija`;
-    const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Šaltinis,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?
-2024-02-01T09:12:00+02:00,Pacientas,Registratūros QR kodas,4,4,5,Taip,5,4
-2024-02-02T18:40:00+02:00,Artimasis,SMS nuoroda,3,4,3,Ne,,3
-2024-02-03T12:05:00+02:00,Pacientas,Planšetė skyriuje,5,5,5,Taip,5,5
-2024-02-04T22:20:00+02:00,Artimasis,El. pašto kvietimas,2,3,2,Taip,3,2
-2024-02-05T08:55:00+02:00,Pacientas,Registratūros QR kodas,4,5,4,Ne,,4`;
-    const DEFAULT_ED_CSV = `Šiuo metu pacientų,Užimta lovų,Slaugytojų - pacientų santykis,Gydytojų - pacientų santykis,1 kategorijos pacientų,2 kategorijos pacientų,3 kategorijos pacientų,4 kategorijos pacientų,5 kategorijos pacientų
-14,11,1:4,1:7,3,4,4,2,1
-18,13,1:5,1:8,4,5,5,3,1
-20,15,1:5,1:9,5,6,5,3,1
-16,12,1:4.5,1:8,3,4,5,3,1
-12,9,1:4,1:7,2,3,4,2,1
-22,17,1:5.5,1:10,4,6,6,4,2
-19,14,1:5,1:8.5,4,5,5,3,2
-15,11,1:4.2,1:7.5,3,4,4,3,1
-17,13,1:4.8,1:8.2,3,5,5,3,1
-21,16,1:5.4,1:9.5,4,6,6,4,1`;
+    const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Šaltinis,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?,Turite pasiūlymų ar pastabų, kaip galėtume tobulėti?
+2024-02-01T09:12:00+02:00,Pacientas,Registratūros QR kodas,4,4,5,Taip,5,4,"Registratūroje viskas aišku, galėtų būti daugiau žymėjimo salėje."
+2024-02-02T18:40:00+02:00,Artimasis,SMS nuoroda,3,4,3,Ne,,3,"Ilgokas laukimas, bet personalas malonus."
+2024-02-03T12:05:00+02:00,Pacientas,Planšetė skyriuje,5,5,5,Taip,5,5,"Ačiū už greitą pagalbą, puiki komanda!"
+2024-02-04T22:20:00+02:00,Artimasis,El. pašto kvietimas,2,3,2,Taip,3,2,"Būtų gerai aiškesni ženklai kur laukti."
+2024-02-05T08:55:00+02:00,Pacientas,Registratūros QR kodas,4,5,4,Ne,,4,"Galima dar pagerinti informacijos sklaidą apie tyrimų laiką."`;
+    const DEFAULT_ED_CSV = `Šiuo metu pacientų,Užimta lovų,Slaugytojų - pacientų santykis,Gydytojų - pacientų santykis,1 kategorijos pacientų,2 kategorijos pacientų,3 kategorijos pacientų,4 kategorijos pacientų,5 kategorijos pacientų,Paskirstymas pagal zoną - ambulatorija,Paskirstymas pagal zoną - salė
+14,11,1:4,1:7,3,4,4,2,1,6,8
+18,13,1:5,1:8,4,5,5,3,1,7,11
+20,15,1:5,1:9,5,6,5,3,1,9,11
+16,12,1:4.5,1:8,3,4,5,3,1,7,9
+12,9,1:4,1:7,2,3,4,2,1,5,7
+22,17,1:5.5,1:10,4,6,6,4,2,10,12
+19,14,1:5,1:8.5,4,5,5,3,2,8,11
+15,11,1:4.2,1:7.5,3,4,4,3,1,6,9
+17,13,1:4.8,1:8.2,3,5,5,3,1,7,10
+21,16,1:5.4,1:9.5,4,6,6,4,1,9,12`;
     const DEFAULT_ED_SOURCE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv';
     const ED_TOTAL_BEDS = 29;
     const FEEDBACK_RATING_MIN = 1;
@@ -5403,6 +5491,24 @@
               title: 'Pacientai skyriuje dabar',
               description: '',
               empty: '—',
+              section: 'flow',
+            },
+            {
+              key: 'zoneAmbulatorija',
+              title: 'Ambulatorija',
+              description: 'Pacientai ambulatorijoje (dabar).',
+              empty: '—',
+              format: 'integer',
+              metaKey: 'zoneAmbulatorijaShareText',
+              section: 'flow',
+            },
+            {
+              key: 'zoneSale',
+              title: 'Salė',
+              description: 'Pacientai salėje (dabar).',
+              empty: '—',
+              format: 'integer',
+              metaKey: 'zoneSaleShareText',
               section: 'flow',
             },
             {
@@ -5674,6 +5780,12 @@
         subtitle: 'Apibendrinti apklausos rezultatai.',
         description: 'Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.',
         empty: 'Kol kas nėra apibendrintų atsiliepimų.',
+        comments: {
+          title: 'Naujausi komentarai',
+          empty: 'Kol kas nėra pacientų komentarų.',
+          meta: (count) => (Number.isFinite(count) && count > 0
+            ? `Rodoma ${count} naujausių atsakymų` : ''),
+        },
         trend: {
           title: 'Bendro vertinimo dinamika',
           subtitle: (months) => {
@@ -6133,6 +6245,11 @@
       feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
       feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
       feedbackTrendChart: document.getElementById('feedbackTrendChart'),
+      feedbackCommentsSection: document.querySelector('.feedback-comments'),
+      feedbackCommentsList: document.getElementById('feedbackCommentsList'),
+      feedbackCommentsEmpty: document.getElementById('feedbackCommentsEmpty'),
+      feedbackCommentsMeta: document.getElementById('feedbackCommentsMeta'),
+      feedbackCommentsTitle: document.getElementById('feedbackCommentsTitle'),
       feedbackTable: document.getElementById('feedbackTable'),
       feedbackColumnMonth: document.getElementById('feedbackColumnMonth'),
       feedbackColumnResponses: document.getElementById('feedbackColumnResponses'),
@@ -7452,6 +7569,7 @@
         trendWindow: 6,
         records: [],
         filteredRecords: [],
+        comments: [],
         filters: getDefaultFeedbackFilters(),
         filterOptions: { respondent: [], location: [] },
       },
@@ -9012,6 +9130,7 @@
       aidesContact: 'ar bendravote su slaugytojų padėjėjais?,ar bendravote su slaugytojų padėjėjais,ar bendravote su slaugytoju padejejais,ar bendravote su padėjėjais,contact with aides',
       aides: 'kaip vertinate slaugytojų padėjėjų darbą,*padėjėjų darb*,slaugytoju padejeju darba,padėjėjų vertinimas,aide rating',
       waiting: 'kaip vertinate laukimo laiką skyriuje?,*laukimo laik*,wait time,laukimo vertinimas',
+      comment: 'turite pasiūlymų ar pastabų, kaip galėtume tobulėti?,pasiūlymai ar pastabos,pasiūlymai,pastabos,komentarai,komentaras,atsiliepimas',
     };
 
     const FEEDBACK_CONTACT_YES = 'taip,yes,yeah,1,true';
@@ -9145,6 +9264,7 @@
         aidesContact: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aidesContact),
         aides: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aides),
         waiting: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.waiting),
+        comment: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.comment),
       };
 
       const yesCandidates = parseCandidateList(FEEDBACK_CONTACT_YES, FEEDBACK_CONTACT_YES)
@@ -9165,6 +9285,10 @@
 
           const location = indices.location >= 0
             ? String(columns[indices.location] ?? '').trim()
+            : '';
+
+          const comment = indices.comment >= 0
+            ? String(columns[indices.comment] ?? '').trim()
             : '';
 
           const overallRating = indices.overall >= 0
@@ -9193,7 +9317,9 @@
 
           const hasLocation = location.length > 0;
 
-          if (!dateValue && !hasRating && !hasRespondent && !hasContact && !hasLocation) {
+          const hasComment = comment.length > 0;
+
+          if (!dateValue && !hasRating && !hasRespondent && !hasContact && !hasLocation && !hasComment) {
             return null;
           }
 
@@ -9201,6 +9327,7 @@
             receivedAt: dateValue,
             respondent,
             location,
+            comment,
             overallRating: Number.isFinite(overallRating) ? overallRating : null,
             doctorsRating: Number.isFinite(doctorsRating) ? doctorsRating : null,
             nursesRating: Number.isFinite(nursesRating) ? nursesRating : null,
@@ -9535,6 +9662,13 @@
         hospitalizedShare: null,
         hospitalizedMonthShare: null,
         hospitalizedYearShare: null,
+        zoneAmbulatorija: null,
+        zoneSale: null,
+        zoneTotal: null,
+        zoneAmbulatorijaShare: null,
+        zoneSaleShare: null,
+        zoneAmbulatorijaShareText: '',
+        zoneSaleShareText: '',
         avgDaytimePatientsMonth: null,
         currentMonthKey: '',
         entryCount: 0,
@@ -9621,6 +9755,8 @@
           'vid. lab. tyrimų laikas (min)',
           'vid. lab. tyrimų laikas',
         ],
+        zoneAmbulatorija: ['paskirstymas pagal zoną - ambulatorija', 'ambulatorija', 'ambulatorijoje', 'zona ambulatorija'],
+        zoneSale: ['paskirstymas pagal zoną - salė', 'salė', 'sale', 'zona salė'],
         category1: ['1 kategorijos pacientų', 'category 1 patients', 'patients category 1', 'c1'],
         category2: ['2 kategorijos pacientų', 'category 2 patients', 'patients category 2', 'c2'],
         category3: ['3 kategorijos pacientų', 'category 3 patients', 'patients category 3', 'c3'],
@@ -9634,6 +9770,8 @@
         nurseRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.nurseRatio),
         doctorRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.doctorRatio),
         lab: resolveColumnIndex(headerNormalized, snapshotCandidates.lab),
+        zoneAmbulatorija: resolveColumnIndex(headerNormalized, snapshotCandidates.zoneAmbulatorija),
+        zoneSale: resolveColumnIndex(headerNormalized, snapshotCandidates.zoneSale),
         category1: resolveColumnIndex(headerNormalized, snapshotCandidates.category1),
         category2: resolveColumnIndex(headerNormalized, snapshotCandidates.category2),
         category3: resolveColumnIndex(headerNormalized, snapshotCandidates.category3),
@@ -9644,6 +9782,8 @@
         || snapshotIndices.occupiedBeds >= 0
         || snapshotIndices.nurseRatio >= 0
         || snapshotIndices.doctorRatio >= 0
+        || snapshotIndices.zoneAmbulatorija >= 0
+        || snapshotIndices.zoneSale >= 0
         || snapshotIndices.category1 >= 0
         || snapshotIndices.category2 >= 0
         || snapshotIndices.category3 >= 0
@@ -9707,6 +9847,12 @@
         const snapshotLabMinutes = snapshotIndices.lab >= 0
           ? parseNumericCell(normalizedRow[snapshotIndices.lab])
           : null;
+        const zoneAmbulatorija = snapshotIndices.zoneAmbulatorija >= 0
+          ? parseNumericCell(normalizedRow[snapshotIndices.zoneAmbulatorija])
+          : null;
+        const zoneSale = snapshotIndices.zoneSale >= 0
+          ? parseNumericCell(normalizedRow[snapshotIndices.zoneSale])
+          : null;
         const categories = {};
         let hasCategoryData = false;
         ['1', '2', '3', '4', '5'].forEach((key) => {
@@ -9724,6 +9870,8 @@
           || Number.isFinite(occupiedBeds)
           || Number.isFinite(nurseRatioInfo.ratio)
           || Number.isFinite(doctorRatioInfo.ratio)
+          || Number.isFinite(zoneAmbulatorija)
+          || Number.isFinite(zoneSale)
           || hasCategoryData;
 
         if (!hasSnapshotData && datasetType === 'snapshot') {
@@ -9755,6 +9903,8 @@
           nurseRatioText: nurseRatioInfo.text,
           doctorRatio: Number.isFinite(doctorRatioInfo.ratio) && doctorRatioInfo.ratio > 0 ? doctorRatioInfo.ratio : null,
           doctorRatioText: doctorRatioInfo.text,
+          zoneAmbulatorija: Number.isFinite(zoneAmbulatorija) && zoneAmbulatorija >= 0 ? zoneAmbulatorija : null,
+          zoneSale: Number.isFinite(zoneSale) && zoneSale >= 0 ? zoneSale : null,
           categories,
           arrivalHour: arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
           departureHour: departureDate instanceof Date && !Number.isNaN(departureDate.getTime()) ? departureDate.getHours() : null,
@@ -10221,6 +10371,13 @@
         occupiedBeds: null,
         nursePatientsPerStaff: null,
         doctorPatientsPerStaff: null,
+        zoneAmbulatorija: null,
+        zoneSale: null,
+        zoneTotal: null,
+        zoneAmbulatorijaShare: null,
+        zoneSaleShare: null,
+        zoneAmbulatorijaShareText: '',
+        zoneSaleShareText: '',
         labMinutes: null,
         latestSnapshotLabel: '',
         latestSnapshotAt: null,
@@ -10238,6 +10395,8 @@
             || Number.isFinite(r.occupiedBeds)
             || Number.isFinite(r.nurseRatio)
             || Number.isFinite(r.doctorRatio)
+            || Number.isFinite(r.zoneAmbulatorija)
+            || Number.isFinite(r.zoneSale)
             || (r.categories && Object.values(r.categories).some((value) => Number.isFinite(value)));
           return hasValue;
         })
@@ -10288,6 +10447,29 @@
         if (Number.isFinite(latest.snapshotLabMinutes)) {
           result.labMinutes = latest.snapshotLabMinutes;
         }
+        if (Number.isFinite(latest.zoneAmbulatorija)) {
+          result.zoneAmbulatorija = latest.zoneAmbulatorija;
+        }
+        if (Number.isFinite(latest.zoneSale)) {
+          result.zoneSale = latest.zoneSale;
+        }
+        const zoneTotal = [result.zoneAmbulatorija, result.zoneSale]
+          .filter((value) => Number.isFinite(value) && value >= 0)
+          .reduce((sum, value) => sum + value, 0);
+        const resolvedTotal = zoneTotal > 0
+          ? zoneTotal
+          : (Number.isFinite(result.currentPatients) ? result.currentPatients : null);
+        result.zoneTotal = resolvedTotal;
+        if (resolvedTotal && resolvedTotal > 0) {
+          if (Number.isFinite(result.zoneAmbulatorija)) {
+            result.zoneAmbulatorijaShare = result.zoneAmbulatorija / resolvedTotal;
+            result.zoneAmbulatorijaShareText = percentFormatter.format(result.zoneAmbulatorijaShare);
+          }
+          if (Number.isFinite(result.zoneSale)) {
+            result.zoneSaleShare = result.zoneSale / resolvedTotal;
+            result.zoneSaleShareText = percentFormatter.format(result.zoneSaleShare);
+          }
+        }
         if (latest.categories && typeof latest.categories === 'object') {
           const categoryEntries = [];
           let total = 0;
@@ -10319,6 +10501,8 @@
             || Number.isFinite(record.occupiedBeds)
             || Number.isFinite(record.nurseRatio)
             || Number.isFinite(record.doctorRatio)
+            || Number.isFinite(record.zoneAmbulatorija)
+            || Number.isFinite(record.zoneSale)
             || (record.categories && Object.values(record.categories).some((value) => Number.isFinite(value)))));
       const hasLegacy = Array.isArray(records)
         && records.some((record) => record
@@ -11490,6 +11674,19 @@
         contactShare: bucket.contactResponses > 0 ? bucket.contactYes / bucket.contactResponses : null,
       }));
 
+      const latestComments = sorted
+        .filter((entry) => typeof entry?.comment === 'string' && entry.comment.trim().length)
+        .slice(0, 8)
+        .map((entry) => ({
+          comment: entry.comment.trim(),
+          respondent: entry.respondent || '',
+          location: entry.location || '',
+          receivedAt: entry.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())
+            ? entry.receivedAt
+            : null,
+          overallRating: Number.isFinite(entry?.overallRating) ? entry.overallRating : null,
+        }));
+
       return {
         summary: {
           totalResponses,
@@ -11508,6 +11705,7 @@
           contactShare,
         },
         monthly,
+        comments: latestComments,
       };
     }
 
@@ -11755,6 +11953,7 @@
       const feedbackStats = computeFeedbackStats(filteredRecords);
       dashboardState.feedback.summary = feedbackStats.summary;
       dashboardState.feedback.monthly = feedbackStats.monthly;
+      dashboardState.feedback.comments = feedbackStats.comments;
       renderFeedbackSection(feedbackStats);
       updateFeedbackFiltersSummary(feedbackStats.summary);
       return feedbackStats;
@@ -13302,6 +13501,81 @@
       });
     }
 
+    function renderFeedbackComments(comments) {
+      const texts = TEXT.feedback?.comments || {};
+      if (selectors.feedbackCommentsTitle && texts.title) {
+        selectors.feedbackCommentsTitle.textContent = texts.title;
+      }
+      if (!selectors.feedbackCommentsList || !selectors.feedbackCommentsEmpty) {
+        return;
+      }
+
+      const list = Array.isArray(comments)
+        ? comments.filter((entry) => entry && typeof entry.comment === 'string' && entry.comment.trim())
+        : [];
+      selectors.feedbackCommentsList.replaceChildren();
+
+      if (!list.length) {
+        const emptyText = texts.empty || TEXT.feedback?.empty || 'Kol kas nėra pacientų komentarų.';
+        selectors.feedbackCommentsEmpty.textContent = emptyText;
+        selectors.feedbackCommentsEmpty.hidden = false;
+        selectors.feedbackCommentsList.hidden = true;
+        if (selectors.feedbackCommentsMeta) {
+          selectors.feedbackCommentsMeta.textContent = '';
+        }
+        return;
+      }
+
+      selectors.feedbackCommentsEmpty.textContent = '';
+      selectors.feedbackCommentsEmpty.hidden = true;
+      selectors.feedbackCommentsList.hidden = false;
+
+      const metaText = typeof texts.meta === 'function' ? texts.meta(list.length) : '';
+      if (selectors.feedbackCommentsMeta) {
+        selectors.feedbackCommentsMeta.textContent = metaText || '';
+      }
+
+      const createBadge = (label, value) => {
+        const badge = document.createElement('span');
+        badge.className = 'feedback-comments__badge';
+        badge.textContent = value != null && value !== '' ? `${label}: ${value}` : label;
+        return badge;
+      };
+
+      list.forEach((entry) => {
+        const item = document.createElement('li');
+        item.className = 'feedback-comments__item';
+
+        const text = document.createElement('p');
+        text.className = 'feedback-comments__text';
+        text.textContent = entry.comment.trim();
+        item.appendChild(text);
+
+        const metaRow = document.createElement('div');
+        metaRow.className = 'feedback-comments__meta-row';
+
+        if (entry.overallRating != null) {
+          const ratingText = `${oneDecimalFormatter.format(entry.overallRating)} / ${oneDecimalFormatter.format(FEEDBACK_RATING_MAX)}`;
+          metaRow.appendChild(createBadge(TEXT.feedback?.table?.headers?.overall || 'Bendra patirtis', ratingText));
+        }
+
+        if (entry.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
+          metaRow.appendChild(createBadge(shortDateFormatter.format(entry.receivedAt), ''));
+        }
+
+        if (entry.respondent) {
+          metaRow.appendChild(createBadge(TEXT.feedback?.filters?.respondent || 'Kas pildė', capitalizeSentence(entry.respondent)));
+        }
+
+        if (entry.location) {
+          metaRow.appendChild(createBadge(TEXT.feedback?.filters?.location || 'Kur pildyta', capitalizeSentence(entry.location)));
+        }
+
+        item.appendChild(metaRow);
+        selectors.feedbackCommentsList.appendChild(item);
+      });
+    }
+
     function renderFeedbackTable(monthlyStats) {
       if (!selectors.feedbackTable) {
         return;
@@ -13369,9 +13643,14 @@
       const monthly = Array.isArray(feedbackStats?.monthly)
         ? feedbackStats.monthly
         : [];
+      const comments = Array.isArray(feedbackStats?.comments)
+        ? feedbackStats.comments
+        : [];
 
       renderFeedbackCards(summary);
       renderFeedbackTable(monthly);
+
+      renderFeedbackComments(comments);
 
       renderFeedbackTrendChart(monthly).catch((error) => {
         console.error('Nepavyko atvaizduoti atsiliepimų trendo:', error);
@@ -15691,6 +15970,24 @@
           flowMetrics.push({
             label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
             value: hospShare,
+          });
+        }
+        if (Number.isFinite(summary.zoneAmbulatorija)) {
+          const shareText = formatEdCardValue(summary.zoneAmbulatorijaShare, 'percent');
+          const label = metricTexts.zoneAmbulatorija || 'Ambulatorija';
+          flowMetrics.push({
+            label,
+            value: numberFormatter.format(summary.zoneAmbulatorija),
+            meta: shareText ? [`${shareText} visų pacientų`] : [],
+          });
+        }
+        if (Number.isFinite(summary.zoneSale)) {
+          const shareText = formatEdCardValue(summary.zoneSaleShare, 'percent');
+          const label = metricTexts.zoneSale || 'Salė';
+          flowMetrics.push({
+            label,
+            value: numberFormatter.format(summary.zoneSale),
+            meta: shareText ? [`${shareText} visų pacientų`] : [],
           });
         }
       } else {
