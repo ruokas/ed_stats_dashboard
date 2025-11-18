@@ -603,47 +603,63 @@
     .ed-panel-close-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 999px;
-      border: 1px solid var(--color-border);
-      background: var(--color-surface-alt);
+      gap: 10px;
+      padding: 4px;
+      border: none;
+      background: transparent;
       color: var(--color-text);
-      font-weight: 600;
-      font-size: 0.92rem;
+      font-weight: 700;
+      font-size: 0.94rem;
       white-space: nowrap;
       cursor: pointer;
-      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      transition: color 0.2s ease;
+      align-self: flex-start;
+    }
+
+    .ed-panel-close-btn__circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: #ffffff;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 12px 24px -16px rgba(15, 23, 42, 0.35);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
 
     .ed-panel-close-btn svg {
-      width: 1.1em;
-      height: 1.1em;
+      width: 1.05em;
+      height: 1.05em;
+      color: #0f172a;
     }
 
-    .ed-panel-close-btn:hover,
-    .ed-panel-close-btn:focus-visible {
-      background: var(--color-accent);
+    .ed-panel-close-btn__label {
+      color: var(--color-text);
+      letter-spacing: -0.01em;
+    }
+
+    .ed-panel-close-btn:hover .ed-panel-close-btn__circle,
+    .ed-panel-close-btn:focus-visible .ed-panel-close-btn__circle {
       border-color: var(--color-accent);
-      color: #fff;
-      box-shadow: 0 14px 28px -20px rgba(37, 99, 235, 0.65);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18), 0 18px 28px -20px rgba(15, 23, 42, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .ed-panel-close-btn:focus-visible {
       outline: none;
     }
 
-    .ed-panel-close-btn:focus-visible {
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 14px 28px -20px rgba(37, 99, 235, 0.65);
+    body:not([data-theme="light"]) .ed-panel-close-btn__circle {
+      border-color: rgba(148, 163, 184, 0.3);
+      background: #ffffff;
+      box-shadow: 0 12px 24px -16px rgba(8, 12, 32, 0.7);
     }
 
-    body:not([data-theme="light"]) .ed-panel-close-btn {
-      background: rgba(96, 165, 250, 0.16);
-      border-color: rgba(96, 165, 250, 0.35);
-      color: var(--color-text);
-    }
-
-    body:not([data-theme="light"]) .ed-panel-close-btn:hover,
-    body:not([data-theme="light"]) .ed-panel-close-btn:focus-visible {
-      background: rgba(96, 165, 250, 0.45);
-      border-color: rgba(96, 165, 250, 0.75);
+    body:not([data-theme="light"]) .ed-panel-close-btn:hover .ed-panel-close-btn__circle,
+    body:not([data-theme="light"]) .ed-panel-close-btn:focus-visible .ed-panel-close-btn__circle {
+      border-color: rgba(138, 180, 255, 0.9);
+      box-shadow: 0 0 0 4px rgba(138, 180, 255, 0.25), 0 20px 32px -22px rgba(8, 12, 32, 0.85);
     }
 
     .ed-dashboard__cards {
@@ -4844,12 +4860,15 @@
             <button type="button"
                     id="closeEdPanelBtn"
                     class="ed-panel-close-btn"
-                    aria-label="Grįžti į Bendras vaizdas">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m11 7-5 5 5 5" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12h12" />
-              </svg>
-              <span>Grįžti į Bendras vaizdas</span>
+                    aria-label="Grįžti į Bendras vaizdas"
+                    title="Grįžti į Bendras vaizdas">
+              <span class="ed-panel-close-btn__circle" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m11 7-5 5 5 5" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12h12" />
+                </svg>
+              </span>
+              <span class="ed-panel-close-btn__label">← Grįžti</span>
             </button>
           </div>
           <div id="edCards" class="ed-dashboard__cards" role="list"></div>
