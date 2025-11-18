@@ -5309,6 +5309,7 @@
       ed: {
         title: 'RŠL SMPS skydelis',
         subtitle: 'Naujausi duomenys',
+        closeButtonLabel: '← Grįžti',
         closeButton: (label) => `Grįžti į ${label}`,
         status: {
           loading: 'Kraunama...',
@@ -7718,13 +7719,12 @@
         const closeLabel = typeof TEXT.ed?.closeButton === 'function'
           ? TEXT.ed.closeButton(overviewLabel)
           : (TEXT.ed?.closeButton || `Grįžti į ${overviewLabel}`);
+        const visibleLabel = TEXT.ed?.closeButtonLabel || 'Grįžti';
         selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
         selectors.closeEdPanelBtn.title = closeLabel;
-        const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
+        const labelSpan = selectors.closeEdPanelBtn.querySelector('.ed-panel-close-btn__label');
         if (labelSpan) {
-          labelSpan.textContent = closeLabel;
-        } else {
-          selectors.closeEdPanelBtn.textContent = closeLabel;
+          labelSpan.textContent = visibleLabel;
         }
       }
       if (selectors.edTvToggleBtn) {
