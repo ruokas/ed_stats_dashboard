@@ -991,7 +991,10 @@
         </section>
       </div>
       <footer class="settings-footer">
-        <button type="button" id="resetSettingsBtn" class="btn btn-danger">Atstatyti numatytuosius</button>
+        <div class="settings-footer-actions">
+          <button type="button" id="resetSettingsBtn" class="btn btn-danger">Atstatyti numatytuosius</button>
+          <button type="button" id="clearDataBtn" class="btn btn-secondary">Išvalyti duomenis</button>
+        </div>
         <div class="settings-footer-actions">
           <button type="button" id="cancelSettingsBtn" class="btn btn-secondary">Atšaukti</button>
           <button type="submit" class="btn btn-primary">Išsaugoti</button>
@@ -1008,6 +1011,8 @@
   </footer>
 
   <script type="module">
+    import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData } from './app.js';
+
     /**
      * Įkelia Chart.js iš CDN naudojant klasikinį <script>, kad išvengtume CORS/MIME klaidų.
      * Jei biblioteka jau užkrauta (pvz., iš ankstesnio seanso), panaudojamas esamas egzempliorius.
@@ -1069,7 +1074,16 @@
       });
     }
 
+    function initializeServiceWorker() {
+      registerServiceWorker('/service-worker.js').then((registration) => {
+        if (registration?.scope) {
+          updateClientConfig({ swScope: registration.scope });
+        }
+      });
+    }
+
     enableLazyLoading();
+    initializeServiceWorker();
 
     // Iškart inicijuojame įkėlimą, kad biblioteka būtų paruošta, kai prireiks piešti grafikus.
     runAfterDomAndIdle(() => loadChartJs());
@@ -1733,6 +1747,12 @@
     const DEFAULT_PAGE_TITLE = document.title || 'RŠL SMPS statistika';
     const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
     const THEME_STORAGE_KEY = 'edDashboardTheme';
+    const CLIENT_CONFIG_KEY = 'edDashboardClientConfig-v1';
+    const CACHE_PREFIXES = ['ed-static', 'ed-api'];
+
+    const clientStore = createClientStore(CLIENT_CONFIG_KEY);
+    const perfMonitor = new PerfMonitor();
+    let clientConfig = { profilingEnabled: true, ...clientStore.load() };
 
     const DEFAULT_SETTINGS = {
       dataSource: {
@@ -2072,6 +2092,7 @@
       settingsDialog: document.getElementById('settingsDialog'),
       settingsForm: document.getElementById('settingsForm'),
       resetSettingsBtn: document.getElementById('resetSettingsBtn'),
+      clearDataBtn: document.getElementById('clearDataBtn'),
       cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
       recentSection: document.querySelector('[data-section="recent"]'),
       monthlySection: document.querySelector('[data-section="monthly"]'),
@@ -2593,6 +2614,15 @@
         }
       });
       return target;
+    }
+
+    function updateClientConfig(patch = {}) {
+      if (!patch || typeof patch !== 'object') {
+        return clientConfig;
+      }
+      clientConfig = { ...clientConfig, ...patch };
+      clientStore.save(clientConfig);
+      return clientConfig;
     }
 
     function clampNumber(value, min, max, fallback) {
@@ -3234,6 +3264,33 @@
       loadDashboard();
     }
 
+    async function handleClearData() {
+      const confirmed = window.confirm('Išvalyti vietinius nustatymus, talpyklas ir service worker?');
+      if (!confirmed) {
+        return;
+      }
+      try {
+        inMemoryDataCache.clear();
+        updateClientConfig({ lastClearedAt: new Date().toISOString() });
+        settings = normalizeSettings({});
+        saveSettings(settings);
+        applySettingsToText();
+        applyTextContent();
+        applyFooterSource();
+        populateSettingsForm();
+        await clearClientData({
+          storageKeys: [SETTINGS_STORAGE_KEY, THEME_STORAGE_KEY, CLIENT_CONFIG_KEY],
+          cachePrefixes: CACHE_PREFIXES,
+        });
+        initializeServiceWorker();
+        setStatus('success', 'Vietiniai duomenys išvalyti. Puslapis perkraunamas iš tinklo.');
+        loadDashboard();
+      } catch (error) {
+        console.error('Nepavyko išvalyti vietinių duomenų:', error);
+        setStatus('error', 'Nepavyko išvalyti vietinių duomenų.');
+      }
+    }
+
     /**
      * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
      */
@@ -3275,6 +3332,7 @@
         window: [],
       },
       dataMeta: null,
+      loadCounter: 0,
       chartPeriod: 30,
       chartYear: null,
       heatmapMetric: DEFAULT_HEATMAP_METRIC,
@@ -4050,6 +4108,7 @@
       }
       const response = await fetch(url, { cache: 'no-store', headers });
       const statusText = response.statusText || '';
+      const cacheStatusHeader = response.headers.get('x-cache-status') || '';
       if (response.status === 304) {
         return {
           status: 304,
@@ -4058,6 +4117,7 @@
           etag: cacheInfo?.etag || '',
           lastModified: cacheInfo?.lastModified || '',
           signature: cacheInfo?.signature || '',
+          cacheStatus: cacheStatusHeader || 'not-modified',
         };
       }
       if (!response.ok) {
@@ -4108,6 +4168,7 @@
         contentType,
         etag,
         lastModified,
+        cacheStatus: cacheStatusHeader || 'tinklas',
         signature: etag || lastModified || createTextSignature(textContent),
       };
     }
@@ -4196,6 +4257,22 @@
       }
 
       inMemoryDataCache.delete(key);
+    }
+
+    function describeCacheMeta(meta) {
+      if (!meta) {
+        return 'tinklas';
+      }
+      if (meta.cacheStatus && /hit|revalidated/i.test(meta.cacheStatus)) {
+        return meta.cacheStatus.toLowerCase();
+      }
+      if (meta.fromFallback) {
+        return 'demonstracinis';
+      }
+      if (meta.fromCache) {
+        return 'talpykla';
+      }
+      return 'tinklas';
     }
 
     function runWorkerJob(message, { onProgress } = {}) {
@@ -4593,6 +4670,7 @@
               etag: cacheEntry.etag,
               lastModified: cacheEntry.lastModified,
               signature: cacheEntry.signature,
+              cacheStatus: download.cacheStatus,
               fromCache: true,
             });
             return result;
@@ -4612,6 +4690,7 @@
           etag: download.etag,
           lastModified: download.lastModified,
           signature: download.signature,
+          cacheStatus: download.cacheStatus,
           fromCache: false,
         });
         writeDataCache(trimmedUrl, {
@@ -12820,6 +12899,17 @@
         return;
       }
 
+      dashboardState.loadCounter += 1;
+      const runNumber = dashboardState.loadCounter;
+      const loadHandle = clientConfig.profilingEnabled
+        ? perfMonitor.start('dashboard-load', { seansas: runNumber })
+        : null;
+      const fetchHandle = clientConfig.profilingEnabled
+        ? perfMonitor.start('duomenų-atsiuntimas', { seansas: runNumber })
+        : null;
+      const fetchSummary = { pagrindinis: 'tinklas', istorinis: 'tinklas' };
+      let fetchMeasured = false;
+
       dashboardState.loading = true;
       const shouldShowSkeletons = !dashboardState.hasLoadedOnce;
       if (shouldShowSkeletons && (!selectors.kpiGrid || !selectors.kpiGrid.children.length)) {
@@ -12852,6 +12942,24 @@
           fetchFeedbackData(),
           fetchEdData({ onChunk: edChunkReporter }),
         ]);
+
+        if (clientConfig.profilingEnabled && fetchHandle) {
+          const primaryCache = dataResult.status === 'fulfilled'
+            ? describeCacheMeta(dataResult.value?.meta?.primary)
+            : 'klaida';
+          const historicalCache = dataResult.status === 'fulfilled'
+            ? describeCacheMeta(dataResult.value?.meta?.historical)
+            : 'klaida';
+          fetchSummary.pagrindinis = primaryCache;
+          fetchSummary.istorinis = historicalCache;
+          perfMonitor.finish(fetchHandle, {
+            pagrindinis: primaryCache,
+            istorinis: historicalCache,
+            fallbackas: dashboardState.usingFallback,
+            šaltiniai: dataResult.status === 'fulfilled' ? dataResult.value?.meta?.sources?.length || 0 : 0,
+          });
+          fetchMeasured = true;
+        }
 
         if (edResult.status === 'fulfilled') {
           dashboardState.ed = edResult.value;
@@ -12959,6 +13067,23 @@
           window.setTimeout(() => {
             loadDashboard();
           }, 0);
+        }
+        if (clientConfig.profilingEnabled && loadHandle) {
+          if (fetchHandle && !fetchMeasured) {
+            perfMonitor.finish(fetchHandle, {
+              pagrindinis: fetchSummary.pagrindinis,
+              istorinis: fetchSummary.istorinis,
+              fallbackas: dashboardState.usingFallback,
+              šaltiniai: 0,
+            });
+          }
+          const status = dashboardState.lastErrorMessage ? 'klaida' : 'ok';
+          perfMonitor.finish(loadHandle, {
+            status,
+            pagrindinis: fetchSummary.pagrindinis,
+            istorinis: fetchSummary.istorinis,
+          });
+          perfMonitor.logTable();
         }
       }
     }
@@ -13142,6 +13267,10 @@
 
     if (selectors.resetSettingsBtn) {
       selectors.resetSettingsBtn.addEventListener('click', handleResetSettings);
+    }
+
+    if (selectors.clearDataBtn) {
+      selectors.clearDataBtn.addEventListener('click', handleClearData);
     }
 
     if (selectors.cancelSettingsBtn) {
