@@ -3,6 +3,7 @@ const CHART_JS_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd
 
 let secondaryModulePromise = null;
 let secondaryLoaded = false;
+let autoLoadScheduled = false;
 
 function loadSecondaryModule() {
   if (secondaryLoaded) {
@@ -23,6 +24,32 @@ function loadSecondaryModule() {
   }
 
   return secondaryModulePromise;
+}
+
+function scheduleAutoLoad() {
+  if (autoLoadScheduled) return;
+  autoLoadScheduled = true;
+
+  const triggerLoad = () => {
+    if (secondaryLoaded) return;
+    loadSecondaryModule().catch((error) => {
+      console.error('Automatinis antrinio modulio įkėlimas nepavyko.', error);
+    });
+  };
+
+  const runAfterLoad = () => {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(triggerLoad, { timeout: 1200 });
+    } else {
+      window.setTimeout(triggerLoad, 400);
+    }
+  };
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    runAfterLoad();
+  } else {
+    window.addEventListener('DOMContentLoaded', runAfterLoad, { once: true });
+  }
 }
 
 function prefetchLink(href, rel = 'prefetch', as) {
@@ -71,4 +98,5 @@ function attachLazyTriggers() {
 }
 
 attachLazyTriggers();
+scheduleAutoLoad();
 setupPrefetches();
