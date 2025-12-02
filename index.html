@@ -8256,6 +8256,15 @@
       return runWorkerJob({ type: 'transformCsv', csvText, options });
     }
 
+    function runCombineAggregates(combinedRecords, options = {}) {
+      return runWorkerJob({
+        type: 'combineAggregates',
+        combinedRecords: Array.isArray(combinedRecords) ? combinedRecords : [],
+        calculations: options.calculations || {},
+        calculationDefaults: options.calculationDefaults || {},
+      });
+    }
+
     function runKpiWorkerJob(payload) {
       return runWorkerJob({ type: 'applyKpiFilters', ...payload });
     }
@@ -8791,10 +8800,24 @@
       };
 
       const hasBaseDaily = Array.isArray(baseDaily) && baseDaily.length > 0;
-      const combinedDaily = (combinedRecords.length === baseRecords.length && hasBaseDaily)
-        ? baseDaily.slice()
-        : computeDailyStats(combinedRecords);
-      const combinedYearlyStats = computeYearlyStats(computeMonthlyStats(combinedDaily.slice()));
+      let combinedDaily = [];
+      let combinedYearlyStats = [];
+
+      try {
+        const aggregateResult = await runCombineAggregates(combinedRecords, {
+          calculations: workerOptions.calculations,
+          calculationDefaults: workerOptions.calculationDefaults,
+        });
+        combinedDaily = Array.isArray(aggregateResult?.dailyStats) ? aggregateResult.dailyStats : [];
+        combinedYearlyStats = Array.isArray(aggregateResult?.yearlyStats) ? aggregateResult.yearlyStats : [];
+      } catch (error) {
+        console.error('Nepavyko apskaičiuoti agregatų worker’yje:', error);
+        warnings.push('Nepavyko apskaičiuoti suvestinių foniniame procese – naudojami vietiniai skaičiavimai.');
+        combinedDaily = (combinedRecords.length === baseRecords.length && hasBaseDaily)
+          ? baseDaily.slice()
+          : computeDailyStats(combinedRecords);
+        combinedYearlyStats = computeYearlyStats(computeMonthlyStats(combinedDaily.slice()));
+      }
 
       return {
         records: combinedRecords,

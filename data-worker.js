@@ -14,6 +14,22 @@ self.addEventListener('message', (event) => {
       payload = transformCsvWithStats(csvText, options);
     } else if (type === 'applyKpiFilters') {
       payload = applyKpiFiltersInWorker(event.data);
+    } else if (type === 'combineAggregates') {
+      const {
+        combinedRecords = [],
+        calculations = {},
+        calculationDefaults = {},
+      } = event.data || {};
+      const dailyStats = computeDailyStats(
+        Array.isArray(combinedRecords) ? combinedRecords : [],
+        calculations,
+        calculationDefaults,
+      );
+      const monthlyStats = computeMonthlyStats(dailyStats);
+      payload = {
+        dailyStats,
+        yearlyStats: computeYearlyStats(monthlyStats),
+      };
     } else {
       return;
     }
@@ -746,4 +762,92 @@ function computeDailyStats(data, calculations, defaults) {
         ? item.hospitalizedTime / item.hospitalizedDurations
         : 0,
     }));
+}
+
+function computeMonthlyStats(daily) {
+  const monthlyMap = new Map();
+  daily.forEach((entry) => {
+    if (!entry?.date) {
+      return;
+    }
+    const monthKey = entry.date.slice(0, 7);
+    if (!monthKey) {
+      return;
+    }
+    if (!monthlyMap.has(monthKey)) {
+      monthlyMap.set(monthKey, {
+        month: monthKey,
+        count: 0,
+        night: 0,
+        ems: 0,
+        discharged: 0,
+        hospitalized: 0,
+        totalTime: 0,
+        durations: 0,
+        hospitalizedTime: 0,
+        hospitalizedDurations: 0,
+        dayCount: 0,
+      });
+    }
+    const summary = monthlyMap.get(monthKey);
+    summary.count += Number.isFinite(entry.count) ? entry.count : 0;
+    summary.night += Number.isFinite(entry.night) ? entry.night : 0;
+    summary.ems += Number.isFinite(entry.ems) ? entry.ems : 0;
+    summary.discharged += Number.isFinite(entry.discharged) ? entry.discharged : 0;
+    summary.hospitalized += Number.isFinite(entry.hospitalized) ? entry.hospitalized : 0;
+    summary.totalTime += Number.isFinite(entry.totalTime) ? entry.totalTime : 0;
+    summary.durations += Number.isFinite(entry.durations) ? entry.durations : 0;
+    summary.hospitalizedTime += Number.isFinite(entry.hospitalizedTime) ? entry.hospitalizedTime : 0;
+    summary.hospitalizedDurations += Number.isFinite(entry.hospitalizedDurations)
+      ? entry.hospitalizedDurations
+      : 0;
+    summary.dayCount += 1;
+  });
+
+  return Array.from(monthlyMap.values()).sort((a, b) => (a.month > b.month ? 1 : -1));
+}
+
+function computeYearlyStats(monthlyStats) {
+  const yearlyMap = new Map();
+  monthlyStats.forEach((entry) => {
+    if (!entry?.month) {
+      return;
+    }
+    const yearKey = entry.month.slice(0, 4);
+    if (!yearKey) {
+      return;
+    }
+    if (!yearlyMap.has(yearKey)) {
+      yearlyMap.set(yearKey, {
+        year: yearKey,
+        count: 0,
+        night: 0,
+        ems: 0,
+        discharged: 0,
+        hospitalized: 0,
+        totalTime: 0,
+        durations: 0,
+        hospitalizedTime: 0,
+        hospitalizedDurations: 0,
+        dayCount: 0,
+        monthCount: 0,
+      });
+    }
+    const bucket = yearlyMap.get(yearKey);
+    bucket.count += Number.isFinite(entry.count) ? entry.count : 0;
+    bucket.night += Number.isFinite(entry.night) ? entry.night : 0;
+    bucket.ems += Number.isFinite(entry.ems) ? entry.ems : 0;
+    bucket.discharged += Number.isFinite(entry.discharged) ? entry.discharged : 0;
+    bucket.hospitalized += Number.isFinite(entry.hospitalized) ? entry.hospitalized : 0;
+    bucket.totalTime += Number.isFinite(entry.totalTime) ? entry.totalTime : 0;
+    bucket.durations += Number.isFinite(entry.durations) ? entry.durations : 0;
+    bucket.hospitalizedTime += Number.isFinite(entry.hospitalizedTime) ? entry.hospitalizedTime : 0;
+    bucket.hospitalizedDurations += Number.isFinite(entry.hospitalizedDurations)
+      ? entry.hospitalizedDurations
+      : 0;
+    bucket.dayCount += Number.isFinite(entry.dayCount) ? entry.dayCount : 0;
+    bucket.monthCount += 1;
+  });
+
+  return Array.from(yearlyMap.values()).sort((a, b) => (a.year > b.year ? 1 : -1));
 }
