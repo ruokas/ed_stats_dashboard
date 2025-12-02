@@ -155,7 +155,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
       ed: {
         title: 'RŠL SMPS skydelis',
-        subtitle: 'Naujausi duomenys',
         closeButton: (label) => `Grįžti į ${label}`,
         status: {
           loading: 'Kraunama...',
@@ -806,7 +805,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         tabOverviewLabel: TEXT.tabs.overview,
         tabEdLabel: TEXT.tabs.ed,
         edTitle: TEXT.ed.title,
-        edSubtitle: TEXT.ed.subtitle,
         showRecent: true,
         showMonthly: true,
         showYearly: true,
@@ -1048,7 +1046,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       feedbackColumnWaiting: document.getElementById('feedbackColumnWaiting'),
       feedbackColumnContact: document.getElementById('feedbackColumnContact'),
       edHeading: document.getElementById('edHeading'),
-      edSubtitle: document.getElementById('edSubtitle'),
       edStatus: document.getElementById('edStatus'),
       edSearchInput: document.getElementById('edSearchInput'),
       edCards: document.getElementById('edCards'),
@@ -1738,7 +1735,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       merged.output.tabOverviewLabel = merged.output.tabOverviewLabel != null ? String(merged.output.tabOverviewLabel) : DEFAULT_SETTINGS.output.tabOverviewLabel;
       merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
       merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
-      merged.output.edSubtitle = merged.output.edSubtitle != null ? String(merged.output.edSubtitle) : DEFAULT_SETTINGS.output.edSubtitle;
       merged.output.showRecent = Boolean(merged.output.showRecent);
       merged.output.showMonthly = Boolean(merged.output.showMonthly);
       merged.output.showYearly = Boolean(merged.output.showYearly);
@@ -1790,7 +1786,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       TEXT.tabs.overview = settings.output.tabOverviewLabel || DEFAULT_SETTINGS.output.tabOverviewLabel;
       TEXT.tabs.ed = settings.output.tabEdLabel || DEFAULT_SETTINGS.output.tabEdLabel;
       TEXT.ed.title = settings.output.edTitle || DEFAULT_SETTINGS.output.edTitle;
-      TEXT.ed.subtitle = settings.output.edSubtitle || DEFAULT_SETTINGS.output.edSubtitle;
       TEXT.kpis.title = settings.output.kpiTitle || DEFAULT_SETTINGS.output.kpiTitle;
       TEXT.kpis.subtitle = settings.output.kpiSubtitle || DEFAULT_SETTINGS.output.kpiSubtitle;
       TEXT.charts.title = settings.output.chartsTitle || DEFAULT_SETTINGS.output.chartsTitle;
@@ -2021,7 +2016,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       assign('output.feedbackSubtitle', settings.output.feedbackSubtitle);
       assign('output.feedbackDescription', settings.output.feedbackDescription);
       assign('output.edTitle', settings.output.edTitle);
-      assign('output.edSubtitle', settings.output.edSubtitle);
       assign('output.footerSource', settings.output.footerSource);
       assign('output.showRecent', settings.output.showRecent);
       assign('output.showMonthly', settings.output.showMonthly);
@@ -2160,7 +2154,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       result.output.feedbackSubtitle = readText('output.feedbackSubtitle').trim();
       result.output.feedbackDescription = readText('output.feedbackDescription').trim();
       result.output.edTitle = readText('output.edTitle').trim();
-      result.output.edSubtitle = readText('output.edSubtitle').trim();
       result.output.footerSource = readText('output.footerSource').trim();
       result.output.showRecent = readCheckbox('output.showRecent');
       result.output.showMonthly = readCheckbox('output.showMonthly');
@@ -2730,9 +2723,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
       if (selectors.edHeading) {
         selectors.edHeading.textContent = settings.output.edTitle || TEXT.ed.title;
-      }
-      if (selectors.edSubtitle) {
-        selectors.edSubtitle.textContent = settings.output.edSubtitle || TEXT.ed.subtitle;
       }
       if (selectors.edStatus) {
         selectors.edStatus.textContent = TEXT.ed.status.loading;
