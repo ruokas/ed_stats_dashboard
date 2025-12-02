@@ -44,8 +44,22 @@
         }
       };
 
+      const setThemeAttributes = (theme) => {
+        if (!theme) return;
+        root.setAttribute('data-theme', theme);
+        if (document.body) {
+          document.body.setAttribute('data-theme', theme);
+        } else {
+          document.addEventListener(
+            'DOMContentLoaded',
+            () => document.body && document.body.setAttribute('data-theme', theme),
+            { once: true }
+          );
+        }
+      };
+
       const initialTheme = getStoredTheme() || (preferDark() ? 'dark' : 'light');
-      root.setAttribute('data-theme', initialTheme);
+      setThemeAttributes(initialTheme);
       root.classList.add('theme-transition-block');
       window.ED_DASHBOARD_THEME = initialTheme;
 

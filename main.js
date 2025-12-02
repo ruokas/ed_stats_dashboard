@@ -2928,15 +2928,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               ? 'dark'
               : 'light');
 
-      dashboardState.theme = resolvedTheme;
-      updateThemeToggleState(resolvedTheme);
-      if (typeof window !== 'undefined') {
-        window.ED_DASHBOARD_THEME = resolvedTheme;
-      }
-      if (!attributeTheme) {
-        applyTheme(resolvedTheme, { persist: false });
-      }
-      checkKpiContrast();
+      applyTheme(resolvedTheme, { persist: false });
     }
 
     function toggleTheme() {
