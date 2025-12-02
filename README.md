@@ -16,6 +16,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 🛡️ Automatinis demonstracinių duomenų rezervas ir aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
 - ⚙️ Nustatymų dialogas (Ctrl+,) CSV laukų, skaičiavimo logikos ir išvesties tekstų pritaikymui be kodo keitimo (pakeitimai išsaugomi naršyklės `localStorage`).
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
+- ⚡ Našumo optimizavimas: kritinis CSS paliekamas inline, o likęs įkeliami su `media="print"`/`onload` triuku; trečiųjų šalių skriptai žymimi `defer`; visiems `<img>`/`<iframe>` taikomas `loading="lazy"`.
 
 ## Diegimas
 1. Atsisiųskite saugomą saugyklą arba jos ZIP: `git clone https://example.com/ed_stats_dashboard.git`.
@@ -40,6 +41,11 @@ Dialogas leidžia neredaguojant kodo keisti:
 4. **Išvesties tekstus** – hero pavadinimą, sekcijų antraštes, apatinius prierašus ir lentelių rodymo jungiklius.
 
 Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir išliks iki kol išvalysite naršyklės duomenis arba paspausite **„Atstatyti numatytuosius“**. CSV turinys nėra talpinamas – duomenys laikomi tik atmintyje, kad neviršytų naršyklės kvotų.
+
+## Našumo ir talpyklos rekomendacijos
+- Nginx pavyzdinė konfigūracija su `gzip`, `brotli` ir `Cache-Control` antraštėmis pateikta faile [`nginx.conf`](./nginx.conf). Static failams taikoma 7 dienų talpykla, nes pavadinimai neversijuojami; jei pradėsite naudoti `styles.<hash>.css` ar `data-worker.<hash>.js`, galite ilginti TTL ir pridėti `immutable`.
+- SVG naudojamos ikonoms; jei prireiks nuotraukų, konvertuokite jas į `webp`/`avif` formatus prieš diegimą.
+- Visi `img`/`iframe` elementai automatiškai gauna `loading="lazy"`, nebent nustatytas `data-force-eager` atributas.
 
 ## Trikčių diagnostika
 - Statuso eilutė praneš „Rodomi demonstraciniai duomenys…“, jei nepavyko pasiekti nuotolinio CSV (HTTP 404/403, CORS, tinklo klaidos).
