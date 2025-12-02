@@ -17,6 +17,8 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - ⚙️ Nustatymų dialogas (Ctrl+,) CSV laukų, skaičiavimo logikos ir išvesties tekstų pritaikymui be kodo keitimo (pakeitimai išsaugomi naršyklės `localStorage`).
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
 - ⚡ Našumo optimizavimas: kritinis CSS paliekamas inline, o likęs įkeliami su `media="print"`/`onload` triuku; trečiųjų šalių skriptai žymimi `defer`; visiems `<img>`/`<iframe>` taikomas `loading="lazy"`.
+- 📦 Service worker talpina statinius failus ir CSV atsakymus („stale-while-revalidate“), suteikia HTML atsarginę kopiją be papildomų bibliotekų.
+- ⏱️ `performance.mark/measure` ir `console.table` matavimai leidžia greitai palyginti įkėlimus su ir be talpyklos.
 
 ## Diegimas
 1. Atsisiųskite saugomą saugyklą arba jos ZIP: `git clone https://example.com/ed_stats_dashboard.git`.
@@ -63,6 +65,7 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 7. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
 8. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 7 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
 9. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
+10. Nustatymų dialoge spauskite **„Išvalyti duomenis“** – vietiniai nustatymai ir talpyklos turi būti išvalyti, konsolėje atsiranda service worker registracijos žinutės.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
