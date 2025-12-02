@@ -4537,6 +4537,10 @@
         lastErrorMessage: '',
         error: null,
       };
+      const onChunk = typeof config?.onChunk === 'function' ? config.onChunk : null;
+      const onWorkerProgress = typeof config?.onWorkerProgress === 'function'
+        ? config.onWorkerProgress
+        : null;
       const workerProgressStep = onWorkerProgress
         ? (Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
           ? config.workerProgressStep
@@ -4577,10 +4581,6 @@
       }
 
       const cacheEntry = readDataCache(trimmedUrl);
-      const onChunk = typeof config?.onChunk === 'function' ? config.onChunk : null;
-      const onWorkerProgress = typeof config?.onWorkerProgress === 'function'
-        ? config.onWorkerProgress
-        : null;
 
       try {
         let download = await downloadCsv(trimmedUrl, { cacheInfo: cacheEntry, onChunk });
