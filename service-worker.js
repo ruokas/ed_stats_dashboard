@@ -36,11 +36,35 @@ function cacheFirst(request) {
   }).catch(() => caches.match(OFFLINE_FALLBACK));
 }
 
-async function staleWhileRevalidate(request) {
+async function staleWhileRevalidate(request, event) {
   const cache = await caches.open(API_CACHE);
   const cachedResponse = await cache.match(request);
 
+  const networkFetch = fetch(request)
+    .then(async (response) => {
+      if (response && response.ok) {
+        const clone = response.clone();
+        const headers = new Headers(clone.headers);
+        headers.set('X-Cache-Status', cachedResponse ? 'revalidated' : 'updated');
+        const responseWithHeader = new Response(await clone.blob(), {
+          status: clone.status,
+          statusText: clone.statusText,
+          headers,
+        });
+        await cache.put(request, responseWithHeader.clone());
+        return responseWithHeader;
+      }
+      return response;
+    })
+    .catch(() => cachedResponse);
+
   if (cachedResponse) {
+    if (event && typeof event.waitUntil === 'function') {
+      event.waitUntil(networkFetch);
+    } else {
+      networkFetch.catch(() => {});
+    }
+
     const headers = new Headers(cachedResponse.headers);
     headers.set('X-Cache-Status', 'hit');
     return new Response(await cachedResponse.clone().blob(), {
@@ -50,25 +74,7 @@ async function staleWhileRevalidate(request) {
     });
   }
 
-  const networkFetch = fetch(request)
-    .then(async (response) => {
-      if (response && response.ok) {
-        const clone = response.clone();
-        const headers = new Headers(clone.headers);
-        headers.set('X-Cache-Status', 'revalidated');
-        const responseWithHeader = new Response(await clone.blob(), {
-          status: clone.status,
-          statusText: clone.statusText,
-          headers,
-        });
-        cache.put(request, responseWithHeader.clone());
-        return responseWithHeader;
-      }
-      return response;
-    })
-    .catch(() => cachedResponse);
-
-  return cachedResponse || networkFetch;
+  return networkFetch;
 }
 
 self.addEventListener('fetch', (event) => {
@@ -89,6 +95,6 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (/\.csv($|\?)/i.test(url.pathname)) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(staleWhileRevalidate(request, event));
   }
 });
