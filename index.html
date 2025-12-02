@@ -8662,11 +8662,38 @@
         missingMessage: 'Nenurodytas duomenų URL.',
       };
 
-      const primaryResult = await loadCsvSource(mainConfig, workerOptions, {
+      const historicalDefaults = DEFAULT_SETTINGS?.dataSource?.historical || {};
+      const historicalConfig = settings?.dataSource?.historical || historicalDefaults;
+      const historicalLabel = historicalConfig.label || historicalDefaults.label || 'Papildomas istorinis (5 metai)';
+      const historicalEnabled = historicalConfig.enabled !== false;
+      let historicalMeta = null;
+
+      const normalizedHistoricalConfig = historicalEnabled
+        ? {
+          url: historicalConfig.url,
+          useFallback: historicalConfig.useFallback,
+          fallbackCsv: historicalConfig.fallbackCsv,
+          missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
+        }
+        : null;
+      const historicalShouldAttempt = Boolean(normalizedHistoricalConfig)
+        && ((normalizedHistoricalConfig.url ?? '').trim().length > 0
+          || (normalizedHistoricalConfig.useFallback && (normalizedHistoricalConfig.fallbackCsv ?? '').trim().length > 0));
+
+      const primaryPromise = loadCsvSource(mainConfig, workerOptions, {
         required: true,
         sourceId: 'primary',
         label: 'Pagrindinis CSV',
       });
+      const historicalPromise = historicalEnabled && historicalShouldAttempt
+        ? loadCsvSource(normalizedHistoricalConfig, workerOptions, {
+          required: false,
+          sourceId: 'historical',
+          label: historicalLabel,
+        })
+        : Promise.resolve(null);
+
+      const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
 
       const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
       const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
@@ -8697,28 +8724,8 @@
         warnings.push(`Pagrindinis CSV: ${primaryResult.error}`);
       }
 
-      const historicalDefaults = DEFAULT_SETTINGS?.dataSource?.historical || {};
-      const historicalConfig = settings?.dataSource?.historical || historicalDefaults;
-      const historicalLabel = historicalConfig.label || historicalDefaults.label || 'Papildomas istorinis (5 metai)';
-      const historicalEnabled = historicalConfig.enabled !== false;
-      let historicalMeta = null;
-
       if (historicalEnabled) {
-        const normalizedHistoricalConfig = {
-          url: historicalConfig.url,
-          useFallback: historicalConfig.useFallback,
-          fallbackCsv: historicalConfig.fallbackCsv,
-          missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
-        };
-        const shouldAttempt = (normalizedHistoricalConfig.url ?? '').trim().length > 0
-          || (normalizedHistoricalConfig.useFallback && (normalizedHistoricalConfig.fallbackCsv ?? '').trim().length > 0);
-
-        if (shouldAttempt) {
-          const historicalResult = await loadCsvSource(normalizedHistoricalConfig, workerOptions, {
-            required: false,
-            sourceId: 'historical',
-            label: historicalLabel,
-          });
+        if (historicalShouldAttempt && historicalResult) {
           historicalMeta = historicalResult.meta || null;
           const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
           if (historicalRecords.length) {
