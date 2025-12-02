@@ -25,6 +25,8 @@ body[data-theme="light"] {
   --hero-height: 0px;
   --section-nav-height: 0px;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 :root[data-theme="dark"],
 body[data-theme="dark"] {
   --color-bg: #050816;
