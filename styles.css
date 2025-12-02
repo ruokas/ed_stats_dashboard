@@ -21,7 +21,7 @@
       --shadow-elevated: 0 20px 40px -24px rgba(15, 23, 42, 0.45);
       --hero-height: 0px;
       --section-nav-height: 0px;
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     * {
