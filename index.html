@@ -681,6 +681,11 @@
                 <p id="edStatus" class="ed-dashboard__status" role="status" data-tone="info">Kraunama...</p>
               </div>
               <p id="edSubtitle" class="ed-dashboard__subtitle">Naujausi duomenys</p>
+              <div class="ed-dashboard__search" role="search">
+                <label class="ed-dashboard__search-label" for="edSearchInput">Greita paieška</label>
+                <input id="edSearchInput" type="search" name="edSearch" placeholder="Filtruoti pagal sprendimą ar datą" autocomplete="off">
+                <p class="ed-dashboard__search-hint">Filtruojami ED įrašai (debounce), taikoma kortelėms ir suvestinėms.</p>
+              </div>
             </div>
             <button type="button"
                     id="closeEdPanelBtn"
@@ -1033,6 +1038,26 @@
       return chartJsPromise;
     }
 
+    function runAfterDomAndIdle(task, { timeout = 1200 } = {}) {
+      if (typeof task !== 'function') {
+        return;
+      }
+
+      const execute = () => {
+        if (typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(() => task(), { timeout });
+        } else {
+          window.setTimeout(() => task(), timeout);
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', execute, { once: true });
+      } else {
+        execute();
+      }
+    }
+
     function enableLazyLoading() {
       document.querySelectorAll('img:not([loading])').forEach((img) => {
         if (!img.dataset?.forceEager) {
@@ -1047,7 +1072,7 @@
     enableLazyLoading();
 
     // Iškart inicijuojame įkėlimą, kad biblioteka būtų paruošta, kai prireiks piešti grafikus.
-    loadChartJs();
+    runAfterDomAndIdle(() => loadChartJs());
     /**
      * Pagrindinė demonstracinė duomenų kopija, naudojama kaip rezervas, jei nepavyksta pasiekti nuotolinio CSV.
      */
@@ -1915,6 +1940,16 @@
       return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`;
     }
 
+    function debounce(fn, delay = 200) {
+      let timeoutId;
+      return (...args) => {
+        window.clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => {
+          fn(...args);
+        }, delay);
+      };
+    }
+
     function restartAutoRefreshTimer() {
       if (autoRefreshTimerId) {
         window.clearInterval(autoRefreshTimerId);
@@ -2008,6 +2043,7 @@
       edHeading: document.getElementById('edHeading'),
       edSubtitle: document.getElementById('edSubtitle'),
       edStatus: document.getElementById('edStatus'),
+      edSearchInput: document.getElementById('edSearchInput'),
       edCards: document.getElementById('edCards'),
       edDispositionsTitle: document.getElementById('edDispositionsTitle'),
       edDispositionsChart: document.getElementById('edDispositionsChart'),
@@ -3218,6 +3254,7 @@
     const dashboardState = {
       loading: false,
       queuedReload: false,
+      hasLoadedOnce: false,
       charts: {
         daily: null,
         dow: null,
@@ -3287,6 +3324,7 @@
         error: null,
         updatedAt: null,
       },
+      edSearchQuery: '',
     };
 
     function resetMonthlyState() {
@@ -3692,6 +3730,26 @@
       selectors.statusNote.removeAttribute('hidden');
     }
 
+    function createChunkReporter(label) {
+      let lastUpdate = 0;
+      return (payload = {}) => {
+        const now = performance.now();
+        if (now - lastUpdate < 120) {
+          return;
+        }
+        lastUpdate = now;
+        const { receivedBytes = 0, current = 0, total = 0 } = payload;
+        const sizeKb = receivedBytes ? `~${Math.max(1, Math.round(receivedBytes / 1024))} KB` : '';
+        const percent = total > 0 ? `${Math.min(100, Math.round((current / total) * 100))}%` : '';
+        const progressLabel = percent || sizeKb;
+        if (!progressLabel && !label) {
+          return;
+        }
+        const message = label ? `${label}: įkeliama ${progressLabel}`.trim() : `Įkeliama ${progressLabel}`.trim();
+        showStatusNote(message, 'info');
+      };
+    }
+
     function updateThemeToggleState(theme) {
       if (!selectors.themeToggleBtn) {
         return;
@@ -3982,7 +4040,7 @@
       return `${length}:${head}`;
     }
 
-    async function downloadCsv(url, cacheInfo = null) {
+    async function downloadCsv(url, { cacheInfo = null, onChunk } = {}) {
       const headers = {};
       if (cacheInfo?.etag) {
         headers['If-None-Match'] = cacheInfo.etag;
@@ -4012,7 +4070,26 @@
         };
         throw error;
       }
-      const textContent = await response.text();
+      let textContent = '';
+      if (response.body && typeof response.body.getReader === 'function') {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let receivedBytes = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          receivedBytes += value.byteLength;
+          textContent += decoder.decode(value, { stream: true });
+          if (typeof onChunk === 'function') {
+            onChunk({ receivedBytes });
+          }
+        }
+        textContent += decoder.decode();
+      } else {
+        textContent = await response.text();
+      }
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html') || /^<!doctype html/i.test(textContent.trim())) {
         const error = new Error('HTML atsakas vietoje CSV – patikrinkite, ar nuoroda publikuota kaip CSV.');
@@ -4121,7 +4198,7 @@
       inMemoryDataCache.delete(key);
     }
 
-    function runWorkerJob(message) {
+    function runWorkerJob(message, { onProgress } = {}) {
       if (typeof Worker !== 'function') {
         return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
       }
@@ -4138,6 +4215,12 @@
         worker.addEventListener('message', (event) => {
           const data = event.data;
           if (!data || data.id !== jobId) {
+            return;
+          }
+          if (data.status === 'progress') {
+            if (typeof onProgress === 'function') {
+              onProgress(data.payload || {});
+            }
             return;
           }
           cleanup();
@@ -4168,8 +4251,12 @@
       });
     }
 
-    function runDataWorker(csvText, options) {
-      return runWorkerJob({ type: 'transformCsv', csvText, options });
+    function runDataWorker(csvText, options, jobOptions = {}) {
+      const message = { type: 'transformCsv', csvText, options };
+      if (Number.isInteger(jobOptions.progressStep) && jobOptions.progressStep > 0) {
+        message.progressStep = jobOptions.progressStep;
+      }
+      return runWorkerJob(message, jobOptions);
     }
 
     function runKpiWorkerJob(payload) {
@@ -4450,9 +4537,14 @@
         lastErrorMessage: '',
         error: null,
       };
+      const workerProgressStep = onWorkerProgress
+        ? (Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
+          ? config.workerProgressStep
+          : 400)
+        : null;
 
       const parseDataset = async (csvText) => {
-        const dataset = await runDataWorker(csvText, workerOptions);
+        const dataset = await runDataWorker(csvText, workerOptions, { onProgress: onWorkerProgress, progressStep: workerProgressStep });
         return {
           records: Array.isArray(dataset?.records) ? dataset.records : [],
           dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
@@ -4485,9 +4577,13 @@
       }
 
       const cacheEntry = readDataCache(trimmedUrl);
+      const onChunk = typeof config?.onChunk === 'function' ? config.onChunk : null;
+      const onWorkerProgress = typeof config?.onWorkerProgress === 'function'
+        ? config.onWorkerProgress
+        : null;
 
       try {
-        let download = await downloadCsv(trimmedUrl, cacheEntry);
+        let download = await downloadCsv(trimmedUrl, { cacheInfo: cacheEntry, onChunk });
         if (download.status === 304) {
           if (cacheEntry?.records && cacheEntry?.dailyStats) {
             assignDataset({
@@ -4502,11 +4598,17 @@
             return result;
           }
           clearDataCache(trimmedUrl);
-          download = await downloadCsv(trimmedUrl, null);
+          download = await downloadCsv(trimmedUrl, { onChunk });
         }
 
-        const dataset = await parseDataset(download.text);
-        assignDataset(dataset, {
+        const dataset = await runDataWorker(download.text, workerOptions, {
+          onProgress: onWorkerProgress,
+          progressStep: workerProgressStep,
+        });
+        assignDataset({
+          records: Array.isArray(dataset?.records) ? dataset.records : [],
+          dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
+        }, {
           etag: download.etag,
           lastModified: download.lastModified,
           signature: download.signature,
@@ -4563,7 +4665,7 @@
       }
     }
 
-    async function fetchData() {
+    async function fetchData(options = {}) {
       const workerOptions = {
         csvSettings: settings.csv || {},
         csvDefaults: DEFAULT_SETTINGS.csv || {},
@@ -4576,6 +4678,8 @@
         useFallback: settings?.dataSource?.useFallback,
         fallbackCsv: settings?.dataSource?.fallbackCsv,
         missingMessage: 'Nenurodytas duomenų URL.',
+        onChunk: typeof options?.onPrimaryChunk === 'function' ? options.onPrimaryChunk : null,
+        onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
       };
 
       const historicalDefaults = DEFAULT_SETTINGS?.dataSource?.historical || {};
@@ -4590,6 +4694,8 @@
           useFallback: historicalConfig.useFallback,
           fallbackCsv: historicalConfig.fallbackCsv,
           missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
+          onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
+          onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
         }
         : null;
       const historicalShouldAttempt = Boolean(normalizedHistoricalConfig)
@@ -4722,7 +4828,7 @@
       };
     }
 
-    async function fetchEdData() {
+    async function fetchEdData(options = {}) {
       const config = settings?.dataSource?.ed || DEFAULT_SETTINGS.dataSource.ed;
       const url = (config?.url ?? '').trim();
       const allowFallback = Boolean(config?.useFallback);
@@ -4791,7 +4897,7 @@
       }
 
       try {
-        const download = await downloadCsv(url);
+        const download = await downloadCsv(url, { onChunk: options?.onChunk });
         const result = transformEdCsv(download.text);
         return finalize(result);
       } catch (error) {
@@ -11766,11 +11872,56 @@
     return svg;
   }
 
+  function normalizeEdSearchQuery(value) {
+    if (typeof value !== 'string') {
+      return '';
+    }
+    return value.trim().toLowerCase();
+  }
+
+  function matchesEdSearch(record, query) {
+    if (!query) {
+      return true;
+    }
+    const haystack = [
+      record?.disposition,
+      record?.dispositionCategory,
+      record?.nurseRatioText,
+      record?.doctorRatioText,
+      record?.rawTimestamp,
+      record?.dateKey,
+    ]
+      .filter((part) => typeof part === 'string')
+      .map((part) => part.toLowerCase())
+      .join(' ');
+    return haystack.includes(query);
+  }
+
+  function applyEdSearchFilter(query) {
+    dashboardState.edSearchQuery = normalizeEdSearchQuery(query);
+    renderEdDashboard(dashboardState.ed);
+  }
+
   async function renderEdDashboard(edData) {
     if (!selectors.edPanel) {
       return;
     }
-      const dataset = edData || {};
+      const baseDataset = edData || {};
+      const searchQuery = normalizeEdSearchQuery(dashboardState.edSearchQuery);
+      const baseRecords = Array.isArray(baseDataset.records) ? baseDataset.records : [];
+      let dataset = baseDataset;
+      if (searchQuery) {
+        const filteredRecords = baseRecords.filter((record) => matchesEdSearch(record, searchQuery));
+        const aggregates = summarizeEdRecords(filteredRecords, baseDataset.meta || {});
+        dataset = {
+          ...baseDataset,
+          records: filteredRecords,
+          summary: aggregates.summary,
+          dispositions: aggregates.dispositions,
+          daily: aggregates.daily,
+          meta: { ...(baseDataset.meta || {}), searchQuery },
+        };
+      }
       const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
       const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
       const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
@@ -12670,14 +12821,15 @@
       }
 
       dashboardState.loading = true;
-      if (!selectors.kpiGrid || !selectors.kpiGrid.children.length) {
+      const shouldShowSkeletons = !dashboardState.hasLoadedOnce;
+      if (shouldShowSkeletons && (!selectors.kpiGrid || !selectors.kpiGrid.children.length)) {
         showKpiSkeleton();
       }
       const chartsInitialized = dashboardState.charts.daily
         || dashboardState.charts.dow
         || dashboardState.charts.dowStay
         || dashboardState.charts.funnel;
-      if (!chartsInitialized) {
+      if (shouldShowSkeletons && !chartsInitialized) {
         showChartSkeletons();
       }
 
@@ -12687,10 +12839,18 @@
           selectors.edStatus.textContent = TEXT.ed.status.loading;
           selectors.edStatus.dataset.tone = 'info';
         }
+        const primaryChunkReporter = createChunkReporter('Pagrindinis CSV');
+        const historicalChunkReporter = createChunkReporter('Istorinis CSV');
+        const workerProgressReporter = createChunkReporter('Apdorojama CSV');
+        const edChunkReporter = createChunkReporter('ED CSV');
         const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
-          fetchData(),
+          fetchData({
+            onPrimaryChunk: primaryChunkReporter,
+            onHistoricalChunk: historicalChunkReporter,
+            onWorkerProgress: workerProgressReporter,
+          }),
           fetchFeedbackData(),
-          fetchEdData(),
+          fetchEdData({ onChunk: edChunkReporter }),
         ]);
 
         if (edResult.status === 'fulfilled') {
@@ -12792,6 +12952,7 @@
         await renderEdDashboard(dashboardState.ed);
       } finally {
         dashboardState.loading = false;
+        dashboardState.hasLoadedOnce = true;
         restartAutoRefreshTimer();
         if (dashboardState.queuedReload) {
           dashboardState.queuedReload = false;
@@ -12800,6 +12961,14 @@
           }, 0);
         }
       }
+    }
+
+    function scheduleInitialLoad() {
+      runAfterDomAndIdle(() => {
+        if (!dashboardState.loading) {
+          loadDashboard();
+        }
+      }, { timeout: 800 });
     }
 
     initializeTheme();
@@ -12818,7 +12987,7 @@
     initializeFeedbackTrendControls();
     initializeTabSwitcher();
     initializeTvMode();
-    loadDashboard();
+    scheduleInitialLoad();
 
     if (typeof window.clearDashboard === 'function') {
       const originalClearDashboard = window.clearDashboard;
@@ -12941,6 +13110,16 @@
     if (selectors.closeEdPanelBtn) {
       selectors.closeEdPanelBtn.addEventListener('click', () => {
         setActiveTab('overview', { restoreFocus: true });
+      });
+    }
+
+    const debouncedEdSearch = debounce((value) => {
+      applyEdSearchFilter(value);
+    }, 350);
+
+    if (selectors.edSearchInput) {
+      selectors.edSearchInput.addEventListener('input', (event) => {
+        debouncedEdSearch(event.target.value || '');
       });
     }
 
