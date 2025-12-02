@@ -10,8 +10,11 @@ self.addEventListener('message', (event) => {
   try {
     let payload;
     if (type === 'transformCsv') {
-      const { csvText, options } = event.data;
-      payload = transformCsvWithStats(csvText, options);
+      const { csvText, options, progressStep } = event.data;
+      const reportProgress = Number.isInteger(progressStep) && progressStep > 0
+        ? createProgressReporter(id, progressStep)
+        : null;
+      payload = transformCsvWithStats(csvText, options, { reportProgress, progressStep });
     } else if (type === 'applyKpiFilters') {
       payload = applyKpiFiltersInWorker(event.data);
     } else {
@@ -38,12 +41,28 @@ function serializeError(error) {
   };
 }
 
+function createProgressReporter(id, step = 500) {
+  const normalizedStep = Number.isInteger(step) && step > 0 ? step : 500;
+  let lastSent = 0;
+  return (current = 0, total = 0) => {
+    if (!id) {
+      return;
+    }
+    const now = Date.now();
+    if (current < total && now - lastSent < 100 && (current % normalizedStep !== 0)) {
+      return;
+    }
+    lastSent = now;
+    self.postMessage({ id, status: 'progress', payload: { current, total } });
+  };
+}
+
 const KPI_SHIFT_VALUES = ['all', 'day', 'night'];
 const KPI_ARRIVAL_VALUES = ['all', 'ems', 'self'];
 const KPI_DISPOSITION_VALUES = ['all', 'hospitalized', 'discharged'];
 const KPI_CARD_TYPE_VALUES = ['all', 't', 'tr', 'ch'];
 
-function transformCsvWithStats(text, options = {}) {
+function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   if (!text) {
     throw new Error('CSV turinys tuščias.');
   }
@@ -53,6 +72,12 @@ function transformCsvWithStats(text, options = {}) {
     calculations = {},
     calculationDefaults = {},
   } = options;
+  const progressStep = Number.isInteger(progressOptions.progressStep) && progressOptions.progressStep > 0
+    ? progressOptions.progressStep
+    : 500;
+  const reportProgress = typeof progressOptions.reportProgress === 'function'
+    ? progressOptions.reportProgress
+    : null;
   const { rows, delimiter } = parseCsv(text);
   if (!rows.length) {
     throw new Error('CSV failas tuščias.');
@@ -95,15 +120,22 @@ function transformCsvWithStats(text, options = {}) {
   const dataRows = rows
     .slice(1)
     .filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
-  const records = dataRows.map((cols) => mapRow(
-    header,
-    cols,
-    delimiter,
-    columnIndices,
-    csvRuntime,
-    calculations,
-    calculationDefaults,
-  ));
+  const totalRows = dataRows.length;
+  const records = dataRows.map((cols, index) => {
+    const record = mapRow(
+      header,
+      cols,
+      delimiter,
+      columnIndices,
+      csvRuntime,
+      calculations,
+      calculationDefaults,
+    );
+    if (reportProgress && ((index + 1) % progressStep === 0 || index + 1 === totalRows)) {
+      reportProgress(index + 1, totalRows);
+    }
+    return record;
+  });
   const dailyStats = computeDailyStats(records, calculations, calculationDefaults);
   return { records, dailyStats };
 }
