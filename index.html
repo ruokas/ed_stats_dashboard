@@ -4226,16 +4226,6 @@
               </span>
               <span class="section-nav__label">Grafikai</span>
             </a>
-            <a class="section-nav__link" href="#insightsHeading">
-              <span class="section-nav__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z" />
-                  <path d="M10 18h4" />
-                  <path d="M9 21h6" />
-                </svg>
-              </span>
-              <span class="section-nav__label" id="navInsightsLabel">Įžvalgos</span>
-            </a>
             <a class="section-nav__link" href="#recentHeading">
               <span class="section-nav__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -4566,26 +4556,6 @@
           <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
         </figure>
       </div>
-    </section>
-
-    <section class="section" aria-labelledby="insightsHeading" data-section="insights">
-      <div class="section__header">
-        <div>
-          <h2 id="insightsHeading" class="section__title">
-            <span class="section-title__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z" />
-                <path d="M10 18h4" />
-                <path d="M9 21h6" />
-              </svg>
-            </span>
-            <span class="section-title__text">Įžvalgos</span>
-          </h2>
-          <p id="insightsSubtitle" class="section__subtitle">„Boarding“ langai ir procesų apkrova</p>
-        </div>
-      </div>
-      <div id="insightsGrid" class="insights-grid" role="list"></div>
-      <p id="insightsEmpty" class="insights-empty" hidden>Įžvalgoms sugeneruoti kol kas trūksta duomenų.</p>
     </section>
 
     <section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
@@ -5038,16 +5008,6 @@
           </div>
           <div class="settings-inline">
             <div class="settings-field">
-              <label for="settingsInsightsTitle"><span>„Įžvalgų“ pavadinimas</span></label>
-              <input id="settingsInsightsTitle" name="output.insightsTitle" type="text">
-            </div>
-            <div class="settings-field">
-              <label for="settingsInsightsSubtitle"><span>„Įžvalgų“ paantraštė</span></label>
-              <input id="settingsInsightsSubtitle" name="output.insightsSubtitle" type="text">
-            </div>
-          </div>
-          <div class="settings-inline">
-            <div class="settings-field">
               <label for="settingsRecentTitle"><span>„Paskutinės dienos“ pavadinimas</span></label>
               <input id="settingsRecentTitle" name="output.recentTitle" type="text">
             </div>
@@ -5104,10 +5064,6 @@
             <label for="settingsFooterSource"><span>Apatinės eilutės tekstas</span></label>
             <input id="settingsFooterSource" name="output.footerSource" type="text" placeholder="Duomenys: ...">
           </div>
-          <label class="settings-checkbox" for="settingsShowInsights">
-            <input id="settingsShowInsights" name="output.showInsights" type="checkbox">
-            <span>Rodyti „Įžvalgų“ sekciją.</span>
-          </label>
           <label class="settings-checkbox" for="settingsShowRecent">
             <input id="settingsShowRecent" name="output.showRecent" type="checkbox">
             <span>Rodyti „Paskutinės dienos“ lentelę.</span>
@@ -5887,8 +5843,6 @@
         kpiSubtitle: TEXT.kpis.subtitle,
         chartsTitle: TEXT.charts.title,
         chartsSubtitle: TEXT.charts.subtitle,
-        insightsTitle: TEXT.insights.title,
-        insightsSubtitle: TEXT.insights.subtitle,
         recentTitle: TEXT.recent.title,
         recentSubtitle: TEXT.recent.subtitle,
         monthlyTitle: TEXT.monthly.title,
@@ -5905,7 +5859,6 @@
         tabEdLabel: TEXT.tabs.ed,
         edTitle: TEXT.ed.title,
         edSubtitle: TEXT.ed.subtitle,
-        showInsights: true,
         showRecent: true,
         showMonthly: true,
         showYearly: true,
@@ -6079,12 +6032,6 @@
       kpiGrid: document.getElementById('kpiGrid'),
       chartHeading: document.getElementById('chartHeading'),
       chartSubtitle: document.getElementById('chartSubtitle'),
-      insightsSection: document.querySelector('[data-section="insights"]'),
-      insightsHeading: document.getElementById('insightsHeading'),
-      insightsSubtitle: document.getElementById('insightsSubtitle'),
-      insightsGrid: document.getElementById('insightsGrid'),
-      insightsEmpty: document.getElementById('insightsEmpty'),
-      navInsightsLabel: document.getElementById('navInsightsLabel'),
       dailyCaption: document.getElementById('dailyChartLabel'),
       dailyCaptionContext: document.getElementById('dailyChartContext'),
       dowCaption: document.getElementById('dowChartTitle'),
@@ -6723,23 +6670,6 @@
         }
       }
 
-      const legacyInsightsToggleOnly = Boolean(
-        originalSettings
-        && typeof originalSettings === 'object'
-        && originalSettings.output
-        && typeof originalSettings.output === 'object'
-        && originalSettings.output.showInsights === false
-        && !Object.prototype.hasOwnProperty.call(originalSettings.output, 'insightsTitle')
-        && !Object.prototype.hasOwnProperty.call(originalSettings.output, 'insightsSubtitle'),
-      );
-      if (legacyInsightsToggleOnly
-        && sanitizedSettings
-        && typeof sanitizedSettings === 'object'
-        && sanitizedSettings.output
-        && typeof sanitizedSettings.output === 'object') {
-        delete sanitizedSettings.output.showInsights;
-      }
-
       const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), sanitizedSettings ?? {});
       merged.dataSource.url = (merged.dataSource.url ?? '').trim();
       merged.dataSource.useFallback = Boolean(merged.dataSource.useFallback);
@@ -6816,8 +6746,6 @@
       merged.output.kpiSubtitle = merged.output.kpiSubtitle != null ? String(merged.output.kpiSubtitle) : DEFAULT_SETTINGS.output.kpiSubtitle;
       merged.output.chartsTitle = merged.output.chartsTitle != null ? String(merged.output.chartsTitle) : DEFAULT_SETTINGS.output.chartsTitle;
       merged.output.chartsSubtitle = merged.output.chartsSubtitle != null ? String(merged.output.chartsSubtitle) : DEFAULT_SETTINGS.output.chartsSubtitle;
-      merged.output.insightsTitle = merged.output.insightsTitle != null ? String(merged.output.insightsTitle) : DEFAULT_SETTINGS.output.insightsTitle;
-      merged.output.insightsSubtitle = merged.output.insightsSubtitle != null ? String(merged.output.insightsSubtitle) : DEFAULT_SETTINGS.output.insightsSubtitle;
       merged.output.recentTitle = merged.output.recentTitle != null ? String(merged.output.recentTitle) : DEFAULT_SETTINGS.output.recentTitle;
       merged.output.recentSubtitle = merged.output.recentSubtitle != null ? String(merged.output.recentSubtitle) : DEFAULT_SETTINGS.output.recentSubtitle;
       if (merged.output.monthlyTitle == null && merged.output.weeklyTitle != null) {
@@ -6842,16 +6770,6 @@
       merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
       merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
       merged.output.edSubtitle = merged.output.edSubtitle != null ? String(merged.output.edSubtitle) : DEFAULT_SETTINGS.output.edSubtitle;
-      const hasExplicitShowInsights = Boolean(
-        sanitizedSettings
-        && typeof sanitizedSettings === 'object'
-        && sanitizedSettings.output
-        && typeof sanitizedSettings.output === 'object'
-        && Object.prototype.hasOwnProperty.call(sanitizedSettings.output, 'showInsights'),
-      );
-      merged.output.showInsights = hasExplicitShowInsights
-        ? Boolean(merged.output.showInsights)
-        : DEFAULT_SETTINGS.output.showInsights;
       merged.output.showRecent = Boolean(merged.output.showRecent);
       merged.output.showMonthly = Boolean(merged.output.showMonthly);
       merged.output.showYearly = Boolean(merged.output.showYearly);
@@ -6908,8 +6826,6 @@
       TEXT.kpis.subtitle = settings.output.kpiSubtitle || DEFAULT_SETTINGS.output.kpiSubtitle;
       TEXT.charts.title = settings.output.chartsTitle || DEFAULT_SETTINGS.output.chartsTitle;
       TEXT.charts.subtitle = settings.output.chartsSubtitle || DEFAULT_SETTINGS.output.chartsSubtitle;
-      TEXT.insights.title = settings.output.insightsTitle || DEFAULT_SETTINGS.output.insightsTitle;
-      TEXT.insights.subtitle = settings.output.insightsSubtitle || DEFAULT_SETTINGS.output.insightsSubtitle;
       TEXT.recent.title = settings.output.recentTitle || DEFAULT_SETTINGS.output.recentTitle;
       TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
       TEXT.monthly.title = settings.output.monthlyTitle || DEFAULT_SETTINGS.output.monthlyTitle;
@@ -6945,7 +6861,6 @@
     }
 
     function applySectionVisibility() {
-      toggleSectionVisibility(selectors.insightsSection, settings.output.showInsights);
       toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
       toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
       toggleSectionVisibility(selectors.yearlySection, settings.output.showYearly);
@@ -7127,8 +7042,6 @@
       assign('output.kpiSubtitle', settings.output.kpiSubtitle);
       assign('output.chartsTitle', settings.output.chartsTitle);
       assign('output.chartsSubtitle', settings.output.chartsSubtitle);
-      assign('output.insightsTitle', settings.output.insightsTitle);
-      assign('output.insightsSubtitle', settings.output.insightsSubtitle);
       assign('output.recentTitle', settings.output.recentTitle);
       assign('output.recentSubtitle', settings.output.recentSubtitle);
       assign('output.monthlyTitle', settings.output.monthlyTitle);
@@ -7141,7 +7054,6 @@
       assign('output.edTitle', settings.output.edTitle);
       assign('output.edSubtitle', settings.output.edSubtitle);
       assign('output.footerSource', settings.output.footerSource);
-      assign('output.showInsights', settings.output.showInsights);
       assign('output.showRecent', settings.output.showRecent);
       assign('output.showMonthly', settings.output.showMonthly);
       assign('output.showYearly', settings.output.showYearly);
@@ -7197,8 +7109,6 @@
           kpiSubtitle: '',
           chartsTitle: '',
           chartsSubtitle: '',
-          insightsTitle: '',
-          insightsSubtitle: '',
           recentTitle: '',
           recentSubtitle: '',
           monthlyTitle: '',
@@ -7209,7 +7119,6 @@
           feedbackSubtitle: '',
           feedbackDescription: '',
           footerSource: '',
-          showInsights: false,
           showRecent: false,
           showMonthly: false,
           showYearly: false,
@@ -7272,8 +7181,6 @@
       result.output.kpiSubtitle = readText('output.kpiSubtitle').trim();
       result.output.chartsTitle = readText('output.chartsTitle').trim();
       result.output.chartsSubtitle = readText('output.chartsSubtitle').trim();
-      result.output.insightsTitle = readText('output.insightsTitle').trim();
-      result.output.insightsSubtitle = readText('output.insightsSubtitle').trim();
       result.output.recentTitle = readText('output.recentTitle').trim();
       result.output.recentSubtitle = readText('output.recentSubtitle').trim();
       result.output.monthlyTitle = readText('output.monthlyTitle').trim();
@@ -7286,7 +7193,6 @@
       result.output.edTitle = readText('output.edTitle').trim();
       result.output.edSubtitle = readText('output.edSubtitle').trim();
       result.output.footerSource = readText('output.footerSource').trim();
-      result.output.showInsights = readCheckbox('output.showInsights');
       result.output.showRecent = readCheckbox('output.showRecent');
       result.output.showMonthly = readCheckbox('output.showMonthly');
       result.output.showYearly = readCheckbox('output.showYearly');
@@ -7712,19 +7618,6 @@
       selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
       selectors.chartHeading.textContent = TEXT.charts.title;
       selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
-      if (selectors.insightsHeading) {
-        const target = selectors.insightsHeading.querySelector('.section-title__text') || selectors.insightsHeading;
-        target.textContent = TEXT.insights.title;
-      }
-      if (selectors.navInsightsLabel) {
-        selectors.navInsightsLabel.textContent = TEXT.insights.title;
-      }
-      if (selectors.insightsSubtitle) {
-        selectors.insightsSubtitle.textContent = TEXT.insights.subtitle;
-      }
-      if (selectors.insightsEmpty) {
-        selectors.insightsEmpty.textContent = TEXT.insights.empty || selectors.insightsEmpty.textContent || '';
-      }
       if (selectors.chartYearLabel) {
         selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
       }
@@ -15934,129 +15827,6 @@
     return element;
   }
 
-  function determineInsightTone(key, summary, metaText) {
-    if (!key) {
-      return '';
-    }
-    const normalizedNote = typeof metaText === 'string' ? metaText.toLowerCase() : '';
-    switch (key) {
-      case 'peakWindowText':
-        if (normalizedNote.includes('rizika') || normalizedNote.includes('trūksta')) {
-          return 'warning';
-        }
-        if (normalizedNote.includes('sutampa') || normalizedNote.includes('balansas')) {
-          return 'success';
-        }
-        break;
-      case 'fastSlowSplitValue': {
-        const fastDelta = Number(summary?.fastLaneDelta);
-        const slowDelta = Number(summary?.slowLaneDelta);
-        if (Number.isFinite(slowDelta) && slowDelta > 0) {
-          return 'warning';
-        }
-        if (Number.isFinite(fastDelta) && fastDelta > 0 && (!Number.isFinite(slowDelta) || slowDelta <= 0)) {
-          return 'success';
-        }
-        break;
-      }
-      default:
-        break;
-    }
-    return '';
-  }
-
-  function renderInsightsSection(summary) {
-    const section = selectors.insightsSection;
-    const grid = selectors.insightsGrid;
-    const emptyMessage = selectors.insightsEmpty;
-    if (!grid || !section) {
-      return;
-    }
-
-    const config = TEXT.insights || {};
-    const cardsConfig = Array.isArray(config.cards) ? config.cards : [];
-    grid.replaceChildren();
-
-    if (!cardsConfig.length) {
-      if (emptyMessage) {
-        emptyMessage.hidden = false;
-        emptyMessage.textContent = config.empty || emptyMessage.textContent || '';
-      }
-      return;
-    }
-
-    const data = summary && typeof summary === 'object' ? summary : createEmptyEdSummary();
-    let hasValue = false;
-
-    cardsConfig.forEach((cardConfig) => {
-      if (!cardConfig || typeof cardConfig !== 'object' || !cardConfig.key) {
-        return;
-      }
-
-      const card = document.createElement('article');
-      card.className = 'insight-card';
-      card.setAttribute('role', 'listitem');
-
-      const titleEl = document.createElement('h3');
-      titleEl.className = 'insight-card__title';
-      titleEl.textContent = cardConfig.title || cardConfig.key;
-      card.appendChild(titleEl);
-
-      const valueEl = document.createElement('p');
-      valueEl.className = 'insight-card__value';
-      const rawValue = data?.[cardConfig.key];
-      const formatted = formatEdCardValue(rawValue, cardConfig.format || 'text');
-
-      if (formatted != null) {
-        const mainSpan = document.createElement('span');
-        mainSpan.className = 'insight-card__value-main';
-        mainSpan.textContent = formatted;
-        valueEl.appendChild(mainSpan);
-        if (cardConfig.unit) {
-          const unitSpan = document.createElement('span');
-          unitSpan.className = 'insight-card__unit';
-          unitSpan.textContent = cardConfig.unit;
-          valueEl.appendChild(unitSpan);
-        }
-        hasValue = true;
-      } else {
-        const emptySpan = document.createElement('span');
-        emptySpan.className = 'insight-card__empty';
-        emptySpan.textContent = cardConfig.empty || config.empty || '—';
-        valueEl.appendChild(emptySpan);
-      }
-      card.appendChild(valueEl);
-
-      const metaEl = document.createElement('p');
-      metaEl.className = 'insight-card__meta';
-      const metaRaw = cardConfig.metaKey ? data?.[cardConfig.metaKey] : null;
-      let metaText = typeof metaRaw === 'string' ? metaRaw.trim() : '';
-      if (!metaText && cardConfig.description) {
-        metaText = cardConfig.description;
-      }
-      metaEl.textContent = metaText;
-      card.appendChild(metaEl);
-
-      const tone = determineInsightTone(cardConfig.key, data, metaText);
-      if (tone) {
-        card.dataset.tone = tone;
-      } else {
-        delete card.dataset.tone;
-      }
-
-      grid.appendChild(card);
-    });
-
-    if (emptyMessage) {
-      if (hasValue) {
-        emptyMessage.hidden = true;
-      } else {
-        emptyMessage.hidden = false;
-        emptyMessage.textContent = config.empty || emptyMessage.textContent || '';
-      }
-    }
-  }
-
   function createEdSectionIcon(iconKey) {
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
@@ -16344,8 +16114,6 @@
           selectors.edDispositionsMessage.hidden = false;
         }
       }
-
-      renderInsightsSection(summary);
 
       const statusInfo = buildEdStatus(summary, dataset, displayVariant);
       if (selectors.edStatus) {
