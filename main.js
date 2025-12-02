@@ -1,5 +1,9 @@
 import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData } from './app.js';
 
+    const APP_VERSION = (typeof window !== 'undefined' && window.APP_VERSION)
+      ? String(window.APP_VERSION)
+      : 'dev';
+
     /**
      * Įkelia Chart.js iš CDN naudojant klasikinį <script>, kad išvengtume CORS/MIME klaidų.
      * Jei biblioteka jau užkrauta (pvz., iš ankstesnio seanso), panaudojamas esamas egzempliorius.
@@ -984,6 +988,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       statusNote: document.getElementById('statusNote'),
       footerUpdated: document.getElementById('footerUpdated'),
       footerSource: document.getElementById('footerSource'),
+      appVersion: document.getElementById('app-version'),
       kpiHeading: document.getElementById('kpiHeading'),
       kpiSubtitle: document.getElementById('kpiSubtitle'),
       kpiSummary: document.getElementById('kpiSummary'),
@@ -1814,6 +1819,15 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (selectors.footerSource) {
         selectors.footerSource.textContent = settings.output.footerSource || DEFAULT_FOOTER_SOURCE;
       }
+    }
+
+    function applyAppVersion() {
+      if (!selectors.appVersion) {
+        return;
+      }
+      const versionLabel = APP_VERSION ? `v${APP_VERSION}` : '';
+      selectors.appVersion.textContent = versionLabel;
+      selectors.appVersion.toggleAttribute('hidden', versionLabel.length === 0);
     }
 
     function toggleSectionVisibility(element, isVisible) {
@@ -12087,6 +12101,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     applySettingsToText();
     applyTextContent();
     applyFooterSource();
+    applyAppVersion();
     initializeSectionNavigation();
     initializeHeroCompactMode();
     initializeStickyTitleObserver();

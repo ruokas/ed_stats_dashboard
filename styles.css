@@ -3920,6 +3920,12 @@ body[data-theme="dark"] select optgroup {
       align-items: center;
     }
 
+    .app-version {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      opacity: 0.9;
+    }
+
     dialog {
       width: min(720px, 92vw);
       border: none;
