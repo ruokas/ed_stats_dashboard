@@ -1,5 +1,7 @@
 /* Base / Global */
-:root {
+:root,
+:root[data-theme="light"],
+body[data-theme="light"] {
   --color-bg: #f4f7fb;
   --color-surface: #ffffff;
   --color-surface-alt: #f0f4ff;
@@ -23,8 +25,7 @@
   --hero-height: 0px;
   --section-nav-height: 0px;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
+:root[data-theme="dark"],
 body[data-theme="dark"] {
   --color-bg: #050816;
   --color-surface: #0f172a;

@@ -2883,11 +2883,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 
     function applyTheme(theme, { persist = false } = {}) {
       const normalized = theme === 'dark' ? 'dark' : 'light';
-      if (normalized === 'dark') {
-        document.body.setAttribute('data-theme', 'dark');
-      } else {
-        document.body.removeAttribute('data-theme');
-      }
+      const targets = [document.documentElement, document.body].filter(Boolean);
+      targets.forEach((el) => {
+        el.setAttribute('data-theme', normalized);
+      });
       dashboardState.theme = normalized;
       updateThemeToggleState(normalized);
       if (persist) {
@@ -2904,22 +2903,40 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     }
 
     function initializeTheme() {
+      const attributeTheme = (() => {
+        const htmlTheme = document.documentElement.getAttribute('data-theme');
+        const bodyTheme = document.body ? document.body.getAttribute('data-theme') : null;
+        const candidate = htmlTheme || bodyTheme;
+        return candidate === 'dark' || candidate === 'light' ? candidate : null;
+      })();
+
       let storedTheme = null;
       try {
         storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
       } catch (error) {
         storedTheme = null;
       }
+
       const windowTheme = typeof window !== 'undefined' ? window.ED_DASHBOARD_THEME : null;
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = windowTheme === 'dark' || windowTheme === 'light'
-        ? windowTheme
-        : storedTheme === 'dark' || storedTheme === 'light'
-          ? storedTheme
-          : prefersDark
-            ? 'dark'
-            : 'light';
-      applyTheme(initialTheme, { persist: false });
+      const resolvedTheme = attributeTheme
+        || (windowTheme === 'dark' || windowTheme === 'light'
+          ? windowTheme
+          : storedTheme === 'dark' || storedTheme === 'light'
+            ? storedTheme
+            : prefersDark
+              ? 'dark'
+              : 'light');
+
+      dashboardState.theme = resolvedTheme;
+      updateThemeToggleState(resolvedTheme);
+      if (typeof window !== 'undefined') {
+        window.ED_DASHBOARD_THEME = resolvedTheme;
+      }
+      if (!attributeTheme) {
+        applyTheme(resolvedTheme, { persist: false });
+      }
+      checkKpiContrast();
     }
 
     function toggleTheme() {

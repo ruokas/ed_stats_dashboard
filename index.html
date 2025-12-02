@@ -6,9 +6,63 @@
   <title>RŠL SMPS statistika</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="apple-touch-icon" href="favicon.svg">
-  <link rel="preload" href="styles.css" as="style">
-  <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="styles.css"></noscript>
+  <style>
+    :root {
+      --color-bg: #f4f7fb;
+      --color-text: #0f172a;
+    }
+
+    [data-theme="dark"] {
+      --color-bg: #050816;
+      --color-text: #e2e8f0;
+    }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+  </style>
+  <style id="theme-transition-blocker">
+    .theme-transition-block *,
+    .theme-transition-block *::before,
+    .theme-transition-block *::after {
+      transition: none !important;
+    }
+  </style>
+  <script>
+    (() => {
+      const storageKey = 'edDashboardTheme';
+      const root = document.documentElement;
+      const preferDark = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      const getStoredTheme = () => {
+        try {
+          const value = localStorage.getItem(storageKey);
+          return value === 'dark' || value === 'light' ? value : null;
+        } catch (error) {
+          return null;
+        }
+      };
+
+      const initialTheme = getStoredTheme() || (preferDark() ? 'dark' : 'light');
+      root.setAttribute('data-theme', initialTheme);
+      root.classList.add('theme-transition-block');
+      window.ED_DASHBOARD_THEME = initialTheme;
+
+      const removeBlocker = () => {
+        root.classList.remove('theme-transition-block');
+        const blocker = document.getElementById('theme-transition-blocker');
+        if (blocker) blocker.remove();
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removeBlocker, { once: true });
+      } else {
+        removeBlocker();
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
 
 </head>
 <body>
