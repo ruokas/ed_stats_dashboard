@@ -728,7 +728,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       },
     };
 
-    const DEFAULT_FOOTER_SOURCE = 'Duomenys: pagrindinis ir papildomas (istorinis) Google Sheets CSV (automat. nuskaitymas kaskart atnaujinant).';
+    const DEFAULT_FOOTER_SOURCE = '';
     const DEFAULT_KPI_WINDOW_DAYS = 365;
     const DEFAULT_PAGE_TITLE = document.title || 'RŠL SMPS statistika';
     const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
