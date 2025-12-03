@@ -1113,6 +1113,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     let sectionObserver = null;
     let layoutRefreshHandle = null;
     let layoutResizeObserver = null;
+    let layoutStylesReady = false;
+    let layoutStylesReadyPromise = null;
+    let layoutRefreshAllowed = false;
+    let pendingLayoutRefresh = false;
     const stickyTitleState = { heroVisible: true, observer: null };
     const scrollTopState = { visible: false, rafHandle: null };
     const tvState = { clockHandle: null };
@@ -1121,7 +1125,53 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       rafHandle: null,
       enterOffset: 160,
       exitOffset: 100,
+      pendingEvaluation: false,
     };
+
+    function areStylesheetsLoaded() {
+      const sheets = Array.from(document.styleSheets || []);
+      if (!sheets.length) {
+        return false;
+      }
+      return sheets.every((sheet) => {
+        try {
+          return sheet.cssRules != null;
+        } catch (error) {
+          return true;
+        }
+      });
+    }
+
+    function waitForFontsAndStyles() {
+      if (layoutStylesReadyPromise) {
+        return layoutStylesReadyPromise;
+      }
+
+      const fontsPromise = document.fonts && typeof document.fonts.ready?.then === 'function'
+        ? document.fonts.ready.catch(() => undefined)
+        : Promise.resolve();
+
+      const stylesheetPromise = new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 40;
+        const check = () => {
+          if (areStylesheetsLoaded() || attempts >= maxAttempts) {
+            resolve();
+            return;
+          }
+          attempts += 1;
+          window.setTimeout(check, 50);
+        };
+        check();
+      });
+
+      layoutStylesReadyPromise = Promise.all([fontsPromise, stylesheetPromise]).then(() => {
+        layoutStylesReady = true;
+        return true;
+      });
+
+      return layoutStylesReadyPromise;
+    }
 
     function computeVisibleRatio(rect) {
       if (!rect) {
@@ -1167,6 +1217,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (!selectors.hero) {
         return;
       }
+      if (!layoutStylesReady || layoutMetrics.hero === 0) {
+        heroCompactState.pendingEvaluation = true;
+        return;
+      }
+      heroCompactState.pendingEvaluation = false;
       const offset = getScrollOffset();
       let shouldCompact = heroCompactState.compact;
       if (heroCompactState.compact) {
@@ -1293,11 +1348,22 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     }
 
     function initializeHeroCompactMode() {
+      layoutRefreshAllowed = true;
+      if (selectors.hero) {
+        heroCompactState.compact = false;
+        applyHeroCompactMode(false);
+      }
+      waitForFontsAndStyles().then(() => {
+        if (heroCompactState.pendingEvaluation) {
+          heroCompactState.pendingEvaluation = false;
+          evaluateHeroCompactMode();
+        }
+        flushPendingLayoutRefresh();
+      });
+      flushPendingLayoutRefresh();
       if (!selectors.hero) {
         return;
       }
-      heroCompactState.compact = selectors.hero.dataset.compact === 'true';
-      applyHeroCompactMode(heroCompactState.compact);
       evaluateHeroCompactMode();
       window.addEventListener('scroll', scheduleHeroCompactEvaluation, { passive: true });
       window.addEventListener('resize', scheduleHeroCompactEvaluation, { passive: true });
@@ -1383,6 +1449,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (!sectionNavState.initialized) {
         return;
       }
+      if (!layoutRefreshAllowed || !layoutStylesReady) {
+        pendingLayoutRefresh = true;
+        return;
+      }
       if (typeof window.requestAnimationFrame !== 'function') {
         updateLayoutMetrics();
         refreshSectionObserver();
@@ -1400,6 +1470,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         updateScrollTopButtonVisibility();
         evaluateHeroCompactMode();
       });
+    }
+
+    function flushPendingLayoutRefresh() {
+      if (pendingLayoutRefresh && layoutRefreshAllowed && layoutStylesReady) {
+        pendingLayoutRefresh = false;
+        scheduleLayoutRefresh();
+      }
     }
 
     function handleSectionIntersection(entries) {
@@ -1573,8 +1650,14 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       window.addEventListener('resize', scheduleLayoutRefresh, { passive: true });
       window.addEventListener('load', scheduleLayoutRefresh);
 
-      updateLayoutMetrics();
       syncSectionNavVisibility();
+      waitForFontsAndStyles().then(() => {
+        updateLayoutMetrics();
+        refreshSectionObserver();
+        updateScrollTopButtonVisibility();
+        evaluateHeroCompactMode();
+        flushPendingLayoutRefresh();
+      });
     }
 
     function cloneSettings(value) {
@@ -12086,8 +12169,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     applySettingsToText();
     applyTextContent();
     applyFooterSource();
-    initializeSectionNavigation();
     initializeHeroCompactMode();
+    initializeSectionNavigation();
     initializeStickyTitleObserver();
     initializeScrollTopButton();
     applySectionVisibility();
