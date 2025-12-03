@@ -1108,6 +1108,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       activeHeadingId: '',
     };
 
+    const sectionNavCompactQuery = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 640px)')
+      : null;
+
     const sectionVisibility = new Map();
     const layoutMetrics = { hero: 0, nav: 0 };
     let sectionObserver = null;
@@ -1413,6 +1417,34 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
     }
 
+    function updateSectionNavCompactState(forceCompact) {
+      if (!selectors.sectionNav) {
+        return;
+      }
+
+      const isCompact = typeof forceCompact === 'boolean'
+        ? forceCompact
+        : Boolean(sectionNavCompactQuery?.matches);
+
+      selectors.sectionNav.classList.toggle('section-nav--compact', isCompact);
+
+      selectors.sectionNavLinks.forEach((link) => {
+        const labelText = (link.querySelector('.section-nav__label')?.textContent || '').trim();
+        if (!labelText) {
+          link.removeAttribute('aria-label');
+          link.removeAttribute('title');
+          return;
+        }
+
+        link.setAttribute('aria-label', labelText);
+        if (isCompact) {
+          link.setAttribute('title', labelText);
+        } else {
+          link.removeAttribute('title');
+        }
+      });
+    }
+
     function refreshSectionObserver() {
       const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
       if (!observedItems.length) {
@@ -1628,6 +1660,16 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
 
       selectors.sectionNavLinks = sectionNavState.items.map((item) => item.link);
+
+      updateSectionNavCompactState();
+      if (sectionNavCompactQuery) {
+        const handleCompactChange = (event) => updateSectionNavCompactState(event.matches);
+        if (typeof sectionNavCompactQuery.addEventListener === 'function') {
+          sectionNavCompactQuery.addEventListener('change', handleCompactChange);
+        } else if (typeof sectionNavCompactQuery.addListener === 'function') {
+          sectionNavCompactQuery.addListener(handleCompactChange);
+        }
+      }
 
       sectionNavState.initialized = true;
       setupNavKeyboardNavigation();

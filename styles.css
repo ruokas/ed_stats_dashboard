@@ -276,6 +276,7 @@ body[data-theme="dark"] select optgroup {
       border: none;
       cursor: pointer;
       font: inherit;
+      min-height: 44px;
     }
 
     .section-nav__icon {
@@ -303,7 +304,8 @@ body[data-theme="dark"] select optgroup {
     .section-nav__trigger:focus-visible {
       background: var(--color-accent-soft);
       color: var(--color-accent);
-      outline: none;
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
     }
 
@@ -1767,6 +1769,20 @@ body[data-theme="dark"] select optgroup {
           justify-content: flex-start;
           gap: 8px;
           flex-wrap: wrap;
+        }
+
+        .section-nav--compact .section-nav__bar,
+        .section-nav--compact .section-nav__inner {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .section-nav--compact .section-nav__link {
+          padding: 6px 10px;
+        }
+
+        .section-nav--compact .section-nav__label {
+          display: none;
         }
 
         .hero__nav .section-nav__bar,
