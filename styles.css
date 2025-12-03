@@ -1755,6 +1755,21 @@ body[data-theme="dark"] select optgroup {
         flex-direction: column;
         gap: 8px;
         width: 100%;
+        overflow: visible;
+        scrollbar-width: none;
+        align-items: stretch;
+      }
+
+      .section-nav--open .section-nav__inner::-webkit-scrollbar {
+        display: none;
+      }
+
+      .section-nav__link,
+      .section-nav__trigger {
+        width: 100%;
+        justify-content: flex-start;
+        white-space: normal;
+        text-align: left;
       }
     }
 
