@@ -1520,22 +1520,6 @@ body[data-theme="dark"] select optgroup {
       outline-offset: 3px;
     }
 
-    button.refresh {
-      background: #fff;
-      color: var(--color-accent);
-    }
-
-    button.refresh:hover,
-    button.refresh:focus-visible {
-      transform: translateY(-1px);
-      box-shadow: 0 15px 35px -20px rgba(15, 23, 42, 0.75);
-      background: rgba(255, 255, 255, 0.92);
-    }
-
-    button.refresh:active {
-      transform: translateY(0);
-    }
-
     button.ed-panel-toggle {
       background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.35);

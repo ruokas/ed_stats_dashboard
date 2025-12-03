@@ -4,7 +4,7 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 
 ## Savybės
 - 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
-- ⏱️ Automatinis duomenų atnaujinimas kas 5 min., papildomai galima perkrauti rankiniu mygtuku.
+- ⏱️ Automatinis duomenų atnaujinimas kas 5 min. (be rankinio mygtuko).
 - 🔗 Galimybė kartu naudoti pagrindinį operatyvinį ir papildomą 5 metų istorinį CSV šaltinį.
 - 📊 KPI kortelės su aiškia „Metinis vidurkis“ eilute ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
 - 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
@@ -56,16 +56,15 @@ Visi pakeitimai įrašomi `localStorage` (raktas `edDashboardSettings-v1`) ir i�
 - Rezervinį duomenų rinkinį galite išjungti nustatymų dialoge (nuimkite pažymėjimą „Naudoti demonstracinius duomenis“), jei norite matyti tik realią klaidos būseną.
 
 ## Greitas „smoke test“ sąrašas
-1. Atidarykite `index.html` ir patikrinkite, kad hero blokas rodo pavadinimą bei mygtuką „Perkrauti duomenis“.
+1. Atidarykite `index.html` ir patikrinkite, kad hero blokas rodo pavadinimą, navigacijos nuorodas ir statuso eilutę.
 2. Paspauskite **Ctrl+,** (arba mygtuką „Nustatymai“), pakeiskite „Analizuojamų dienų skaičius“ reikšmę ir išsaugokite – KPI kortelės bei grafikai turi persiskaičiuoti.
 3. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus.
 4. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės persikrauna.
 5. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir lentelės (jei jos nepaslėptos nustatymuose) užsipildo.
-6. Paspauskite „Perkrauti duomenis“ – statusas turi trumpam rodyti „Kraunama...“, po sėkmės – atnaujinimo laiką.
-7. Laikinai atjunkite internetą ir spauskite „Perkrauti duomenis“ – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
-8. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 7 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
-9. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
-10. Nustatymų dialoge spauskite **„Išvalyti duomenis“** – vietiniai nustatymai ir talpyklos turi būti išvalyti, konsolėje atsiranda service worker registracijos žinutės.
+6. (Pasirinktinai) Laikinai atjunkite internetą ir paspauskite „Atnaujinti“ nustatymų dialoge – statusas turi pereiti į oranžinę žinutę apie demonstracinius duomenis, konsolėje matysite klaidos detalizaciją.
+7. (Pasirinktinai) Nustatymuose išjunkite demonstracinius duomenis ir pakartokite 6 žingsnį – statusas turi tapti raudonas su konkrečiu klaidos aprašu.
+8. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
+9. Nustatymų dialoge spauskite **„Išvalyti duomenis“** – vietiniai nustatymai ir talpyklos turi būti išvalyti, konsolėje atsiranda service worker registracijos žinutės.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
