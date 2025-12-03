@@ -125,7 +125,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     const TEXT = {
       title: 'RŠL SMPS statistika',
       subtitle: 'Greita statistikos apžvalga.',
-      refresh: 'Perkrauti duomenis',
       settings: 'Nustatymai',
       theme: {
         toggle: 'Perjungti šviesią/tamsią temą',
@@ -977,7 +976,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       closeEdPanelBtn: document.getElementById('closeEdPanelBtn'),
       overviewPanel: document.getElementById('panelOverview'),
       edPanel: document.getElementById('panelEd'),
-      refreshBtn: document.getElementById('refreshBtn'),
       status: document.getElementById('status'),
       statusNote: document.getElementById('statusNote'),
       footerUpdated: document.getElementById('footerUpdated'),
@@ -2717,10 +2715,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
       if (selectors.edTvSubtitle) {
         selectors.edTvSubtitle.textContent = TEXT.edTv?.subtitle || selectors.edTvSubtitle.textContent || '';
-      }
-      if (selectors.refreshBtn) {
-        selectors.refreshBtn.setAttribute('aria-label', TEXT.refresh);
-        selectors.refreshBtn.title = `${TEXT.refresh} (R)`;
       }
       if (selectors.openSettingsBtn) {
         selectors.openSettingsBtn.setAttribute('aria-label', TEXT.settings);
@@ -12356,13 +12350,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     if (selectors.edSearchInput) {
       selectors.edSearchInput.addEventListener('input', (event) => {
         debouncedEdSearch(event.target.value || '');
-      });
-    }
-
-    const refreshButton = selectors.refreshBtn;
-    if (refreshButton) {
-      refreshButton.addEventListener('click', () => {
-        loadDashboard();
       });
     }
 
