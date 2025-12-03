@@ -86,10 +86,18 @@
         <h1 id="pageTitle" class="hero__title">RŠL SMPS statistika</h1>
         <p id="pageSubtitle" class="hero__subtitle">Greita statistikos apžvalga.</p>
       </div>
-      <nav class="section-nav hero__nav" aria-label="Pagrindinės sekcijos">
+      <nav class="section-nav hero__nav section-nav--collapsed" aria-label="Pagrindinės sekcijos">
         <div class="section-nav__bar">
           <div class="section-nav__title" id="stickyTitle" aria-hidden="true">RŠL SMPS statistika</div>
-          <div class="section-nav__inner">
+          <button id="sectionNavToggle"
+                  class="section-nav__toggle"
+                  type="button"
+                  aria-controls="sectionNavMenu"
+                  aria-expanded="false">
+            Meniu
+          </button>
+          <div class="section-nav__container" id="sectionNavMenu">
+            <div class="section-nav__inner">
             <a class="section-nav__link" href="#kpiHeading">
               <span class="section-nav__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -151,6 +159,7 @@
               </span>
               <span class="section-nav__label">Atsiliepimai</span>
             </a>
+            </div>
           </div>
         </div>
       </nav>

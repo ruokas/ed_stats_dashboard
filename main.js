@@ -1097,6 +1097,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       compareSummary: document.getElementById('compareSummary'),
       compareClear: document.getElementById('compareClear'),
       sectionNav: document.querySelector('.section-nav'),
+      sectionNavToggle: document.getElementById('sectionNavToggle'),
+      sectionNavContainer: document.getElementById('sectionNavMenu'),
       sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
       scrollTopBtn: document.getElementById('scrollTopBtn'),
     };
@@ -1106,6 +1108,12 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       items: [],
       itemBySection: new Map(),
       activeHeadingId: '',
+    };
+
+    const sectionNavMenuState = {
+      open: false,
+      outsideHandler: null,
+      escapeHandler: null,
     };
 
     const sectionVisibility = new Map();
@@ -1413,6 +1421,89 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
     }
 
+    function getVisibleNavLinks() {
+      if (!sectionNavState.initialized) {
+        return selectors.sectionNavLinks || [];
+      }
+      return sectionNavState.items
+        .map((item) => item.link)
+        .filter((link) => link && !link.hidden && !link.hasAttribute('aria-hidden'));
+    }
+
+    function focusPreferredNavLink() {
+      const visibleLinks = getVisibleNavLinks();
+      if (!visibleLinks.length) {
+        return;
+      }
+      const activeLink = visibleLinks.find((link) => link.classList.contains('is-active') || link.getAttribute('aria-current') === 'true');
+      const target = activeLink ?? visibleLinks[0];
+      if (target && typeof target.focus === 'function') {
+        target.focus({ preventScroll: true });
+      }
+    }
+
+    function closeSectionNavMenu({ restoreFocus = false } = {}) {
+      if (!selectors.sectionNav || !selectors.sectionNavToggle) {
+        return;
+      }
+      selectors.sectionNav.classList.add('section-nav--collapsed');
+      selectors.sectionNav.classList.remove('section-nav--open');
+      selectors.sectionNavToggle.setAttribute('aria-expanded', 'false');
+      sectionNavMenuState.open = false;
+
+      if (sectionNavMenuState.outsideHandler) {
+        document.removeEventListener('pointerdown', sectionNavMenuState.outsideHandler, true);
+        sectionNavMenuState.outsideHandler = null;
+      }
+      if (sectionNavMenuState.escapeHandler) {
+        document.removeEventListener('keydown', sectionNavMenuState.escapeHandler, true);
+        sectionNavMenuState.escapeHandler = null;
+      }
+
+      if (restoreFocus && typeof selectors.sectionNavToggle.focus === 'function') {
+        selectors.sectionNavToggle.focus({ preventScroll: true });
+      }
+    }
+
+    function openSectionNavMenu() {
+      if (!selectors.sectionNav || !selectors.sectionNavToggle) {
+        return;
+      }
+      selectors.sectionNav.classList.add('section-nav--open');
+      selectors.sectionNav.classList.remove('section-nav--collapsed');
+      selectors.sectionNavToggle.setAttribute('aria-expanded', 'true');
+      sectionNavMenuState.open = true;
+
+      sectionNavMenuState.outsideHandler = (event) => {
+        if (!selectors.sectionNav) {
+          return;
+        }
+        const target = event.target;
+        if (target instanceof Node && selectors.sectionNav.contains(target)) {
+          return;
+        }
+        closeSectionNavMenu({ restoreFocus: false });
+      };
+      sectionNavMenuState.escapeHandler = (event) => {
+        if (event.key === 'Escape' && sectionNavMenuState.open) {
+          closeSectionNavMenu({ restoreFocus: true });
+        }
+      };
+
+      document.addEventListener('pointerdown', sectionNavMenuState.outsideHandler, true);
+      document.addEventListener('keydown', sectionNavMenuState.escapeHandler, true);
+
+      focusPreferredNavLink();
+    }
+
+    function toggleSectionNavMenu() {
+      if (sectionNavMenuState.open) {
+        closeSectionNavMenu({ restoreFocus: true });
+      } else {
+        openSectionNavMenu();
+      }
+    }
+
     function refreshSectionObserver() {
       const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
       if (!observedItems.length) {
@@ -1657,6 +1748,26 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         updateScrollTopButtonVisibility();
         evaluateHeroCompactMode();
         flushPendingLayoutRefresh();
+      });
+    }
+
+    function initializeSectionNavMenuToggle() {
+      if (!selectors.sectionNav || !selectors.sectionNavToggle || !selectors.sectionNavContainer) {
+        return;
+      }
+
+      selectors.sectionNavToggle.setAttribute('aria-expanded', 'false');
+
+      selectors.sectionNavToggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        toggleSectionNavMenu();
+      });
+
+      selectors.sectionNavContainer.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target.closest('a.section-nav__link') : null;
+        if (target) {
+          closeSectionNavMenu({ restoreFocus: false });
+        }
       });
     }
 
@@ -12171,6 +12282,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     applyFooterSource();
     initializeHeroCompactMode();
     initializeSectionNavigation();
+    initializeSectionNavMenuToggle();
     initializeStickyTitleObserver();
     initializeScrollTopButton();
     applySectionVisibility();
