@@ -224,10 +224,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               type: 'donut',
               section: 'flow',
             },
-            {
+            { 
               key: 'avgLosMinutes',
               title: 'Vid. buvimo trukmė',
-              description: 'Vidutinė buvimo trukmė skyriuje (val.).',
+              description: 'Vidutinė buvimo trukmė skyriuje.',
               empty: '—',
               format: 'hours',
               section: 'efficiency',
@@ -240,7 +240,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               format: 'minutes',
               section: 'efficiency',
             },
-            {
+            { 
               key: 'avgLosMonthMinutes',
               title: 'Vid. laikas skyriuje (šis mėn.)',
               description: 'Šio mėnesio vidutinė buvimo trukmė (val.).',
@@ -248,7 +248,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               format: 'hours',
               section: 'efficiency',
             },
-            {
+            { 
               key: 'avgLabMonthMinutes',
               title: 'Vid. lab. tyrimų laikas',
               description: 'Šio mėnesio laboratorinių tyrimų trukmė (min.).',
@@ -325,10 +325,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               format: 'ratio',
               section: 'staffing',
             },
-            {
+            { 
               key: 'avgLosMonthMinutes',
               title: 'Vidutinis laikas',
-              description: 'Vidutinė buvimo trukmė skyriuje (val.).',
+              description: 'Vidutinė buvimo trukmė skyriuje.',
               empty: '—',
               format: 'hours',
               section: 'efficiency',
@@ -349,10 +349,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               type: 'donut',
               section: 'flow',
             },
-            {
+            { 
               key: 'avgLabMonthMinutes',
               title: 'Vid. lab. tyrimų laikas',
-              description: 'Šių metų laboratorinių tyrimų trukmė (min.).',
+              description: 'Šių metų laboratorinių tyrimų trukmė.',
               empty: '—',
               format: 'minutes',
               section: 'efficiency',
@@ -10522,12 +10522,19 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? Math.max(ED_TOTAL_BEDS, 0) : 0;
         if (totalBeds > 0) {
           const occupancyShare = Math.max(0, Math.min(1, primaryRaw / totalBeds));
+          const occupancyLevel = occupancyShare >= 0.9
+            ? 'critical'
+            : occupancyShare >= 0.75
+              ? 'elevated'
+              : 'normal';
           const progress = document.createElement('div');
           progress.className = 'ed-dashboard__card-progress';
           progress.setAttribute('aria-hidden', 'true');
+          progress.dataset.occupancyLevel = occupancyLevel;
           const fill = document.createElement('div');
           fill.className = 'ed-dashboard__card-progress-fill';
           fill.setAttribute('aria-hidden', 'true');
+          fill.dataset.occupancyLevel = occupancyLevel;
           const width = `${Math.round(occupancyShare * 1000) / 10}%`;
           fill.style.setProperty('--progress-width', width);
           const occupancyText = percentFormatter.format(occupancyShare);
