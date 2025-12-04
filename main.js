@@ -166,7 +166,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         cardSections: {
           default: {
             title: 'Skydelio rodikliai',
-            description: 'Pagrindiniai ED rodikliai',
+            description: '',
             icon: 'flow',
           },
           flow: {
