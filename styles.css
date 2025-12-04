@@ -1342,22 +1342,22 @@ body[data-theme="dark"] select optgroup {
 
     header.hero .section-nav__inner {
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     header.hero .section-nav__link,
     header.hero .section-nav__trigger {
       color: rgba(232, 236, 246, 0.9);
       box-shadow: none;
-      padding: 6px 12px;
-      min-height: 38px;
-      font-size: 0.88rem;
+      padding: 4px 10px;
+      min-height: 32px;
+      font-size: 0.82rem;
       gap: 4px;
     }
 
     header.hero .section-nav__icon svg {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     }
 
     header.hero .section-nav__link:hover,
@@ -1384,7 +1384,7 @@ body[data-theme="dark"] select optgroup {
         radial-gradient(circle at 82% 12%, rgba(24, 30, 45, 0.7), transparent 42%),
         linear-gradient(150deg, #0e1220, #13192b 56%, #0b0f18);
       color: #e8ecf6;
-      padding: 10px 0;
+      padding: 6px 0;
       position: sticky;
       top: 0;
       z-index: 8;
@@ -1396,7 +1396,7 @@ body[data-theme="dark"] select optgroup {
       grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
       grid-template-areas: "identity nav actions";
       align-items: center;
-      gap: clamp(12px, 2vw, 20px);
+      gap: clamp(8px, 1.5vw, 16px);
       position: relative;
       z-index: 1;
     }
@@ -1405,19 +1405,19 @@ body[data-theme="dark"] select optgroup {
       grid-area: identity;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
       min-width: 0;
     }
 
     .hero__title {
-      font-size: clamp(1.35rem, 1rem + 0.9vw, 1.8rem);
+      font-size: clamp(1.2rem, 0.95rem + 0.7vw, 1.55rem);
       margin: 0;
       letter-spacing: -0.01em;
     }
 
     .hero__subtitle {
       margin: 0;
-      font-size: 0.86rem;
+      font-size: 0.82rem;
       color: rgba(255, 255, 255, 0.8);
       max-width: 420px;
     }
@@ -1435,14 +1435,14 @@ body[data-theme="dark"] select optgroup {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 6px;
+      gap: 4px;
     }
 
     .hero__buttons {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 6px;
+      gap: 4px;
       flex-wrap: wrap;
     }
 
@@ -1454,8 +1454,8 @@ body[data-theme="dark"] select optgroup {
     button.icon-button {
       border: none;
       border-radius: 10px;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1466,8 +1466,8 @@ body[data-theme="dark"] select optgroup {
     }
 
     button.icon-button svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
     }
 
     button.icon-button:focus-visible {
@@ -1583,9 +1583,13 @@ body[data-theme="dark"] select optgroup {
     }
 
     .status {
-      margin-top: 4px;
-      font-size: 0.82rem;
+      margin-top: 2px;
+      font-size: 0.8rem;
       color: rgba(255, 255, 255, 0.82);
+    }
+
+    .status:empty {
+      display: none;
     }
 
     .status--error {
@@ -1642,7 +1646,7 @@ body[data-theme="dark"] select optgroup {
 
     @media (max-width: 900px) {
       header.hero {
-        padding: 14px 0;
+        padding: 10px 0;
       }
 
       .hero__content {
@@ -1651,18 +1655,18 @@ body[data-theme="dark"] select optgroup {
           "identity"
           "actions"
           "nav";
-        gap: 18px;
+        gap: 14px;
       }
 
       .hero__actions {
         align-items: flex-start;
-        gap: 8px;
+        gap: 6px;
       }
 
       .hero__buttons {
         width: 100%;
         justify-content: flex-start;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
       }
 
@@ -1674,74 +1678,74 @@ body[data-theme="dark"] select optgroup {
 
     /* Mobile header adjustments */
     @media (max-width: 640px) {
-        header.hero {
-          padding: 14px 0;
+      header.hero {
+        padding: 10px 0;
       }
 
-        .hero__content {
-          grid-template-columns: minmax(0, 1fr);
-          grid-template-areas:
-            "identity"
-            "actions"
-            "nav";
-          gap: 18px;
-        }
+      .hero__content {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "identity"
+          "actions"
+          "nav";
+        gap: 14px;
+      }
 
       .hero__title {
-        font-size: clamp(1.35rem, 1.2rem + 1vw, 1.8rem);
+        font-size: clamp(1.25rem, 1.1rem + 1vw, 1.55rem);
       }
 
       .hero__subtitle {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         max-width: none;
       }
 
-        .hero__actions {
-          width: 100%;
-          align-items: flex-start;
-          gap: 8px;
-          margin-top: 0;
-        }
+      .hero__actions {
+        width: 100%;
+        align-items: flex-start;
+        gap: 6px;
+        margin-top: 0;
+      }
 
-        .hero__buttons {
-          width: 100%;
-          justify-content: flex-start;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
+      .hero__buttons {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
 
-        .section-nav--compact .section-nav__bar,
-        .section-nav--compact .section-nav__inner {
-          flex-wrap: wrap;
-          gap: 10px;
-        }
+      .section-nav--compact .section-nav__bar,
+      .section-nav--compact .section-nav__inner {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
 
-        .section-nav--compact .section-nav__link {
-          padding: 6px 10px;
-        }
+      .section-nav--compact .section-nav__link {
+        padding: 5px 10px;
+      }
 
-        .section-nav--compact .section-nav__label {
-          display: none;
-        }
+      .section-nav--compact .section-nav__label {
+        display: none;
+      }
 
-        .hero__nav .section-nav__bar,
-        .hero__nav .section-nav__inner {
-          justify-content: flex-start;
-        }
+      .hero__nav .section-nav__bar,
+      .hero__nav .section-nav__inner {
+        justify-content: flex-start;
+      }
 
-        .hero__buttons button.icon-button {
-          width: 36px;
-          height: 36px;
-        }
+      .hero__buttons button.icon-button {
+        width: 32px;
+        height: 32px;
+      }
 
       .status {
         text-align: left;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         width: 100%;
       }
 
       .status-note {
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         padding: 6px 10px;
         width: 100%;
       }

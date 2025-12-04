@@ -2939,6 +2939,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (type === 'loading') {
         selectors.status.textContent = TEXT.status.loading;
         selectors.status.classList.remove('status--error');
+        selectors.status.removeAttribute('hidden');
         hideStatusNote();
         return;
       }
@@ -2947,6 +2948,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const message = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
         selectors.status.textContent = message;
         selectors.status.classList.add('status--error');
+        selectors.status.removeAttribute('hidden');
         showStatusNote(TEXT.status.errorAdvice, 'error');
         return;
       }
@@ -2955,6 +2957,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       selectors.status.classList.remove('status--error');
       if (dashboardState.usingFallback) {
         selectors.status.textContent = TEXT.status.fallbackSuccess(formatted);
+        selectors.status.removeAttribute('hidden');
         const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
           ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
           : [];
@@ -2966,7 +2969,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           : fallbackNote;
         showStatusNote(combinedNote, 'warning');
       } else {
-        selectors.status.textContent = details || TEXT.status.success(formatted);
+        selectors.status.textContent = '';
+        selectors.status.setAttribute('hidden', 'hidden');
         const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
           ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
           : [];
