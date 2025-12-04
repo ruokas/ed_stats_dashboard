@@ -11454,11 +11454,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const theme = styleTarget?.dataset?.theme || 'light';
 
       const CATEGORY_COLORS = {
-        '1': '#8da4ff',
-        '2': '#f9a8d4',
-        '3': '#fde68a',
-        '4': '#a5f3fc',
-        '5': '#c4b5fd',
+        '1': '#2563eb', // mėlyna
+        '2': '#ef4444', // raudona
+        '3': '#f59e0b', // geltona
+        '4': '#22c55e', // žalia
+        '5': '#6b7280', // pilka
       };
       const accentRgb = ensureRgb(palette.accent);
       const accentSoftRgb = ensureRgb(palette.accentSoft, mixRgbColors(accentRgb, { r: 255, g: 255, b: 255 }, 0.65));
@@ -11469,8 +11469,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const isDarkTheme = theme === 'dark';
 
       const sequentialPalette = createSequentialPalette(accentRgb, accentSoftRgb, surfaceRgb, validEntries.length, theme);
-      const baseAlpha = theme === 'dark' ? 0.78 : 0.86;
-      const alphaStep = theme === 'dark' ? -0.04 : -0.06;
+      const baseAlpha = theme === 'dark' ? 0.88 : 0.94;
+      const alphaStep = theme === 'dark' ? -0.025 : -0.035;
 
       const backgroundColors = validEntries.map((entry, index) => {
         const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
@@ -11481,13 +11481,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
         const fillRgb = sequentialPalette[paletteIndex] || accentRgb;
         return rgbToRgba(fillRgb, Math.max(0.45, baseAlpha + alphaStep * paletteIndex));
-      });
-
-      const borderColors = validEntries.map((_, index) => {
-        const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
-        const baseRgb = sequentialPalette[paletteIndex] || accentRgb;
-        const borderRgb = mixRgbColors(baseRgb, accentRgb, 0.4);
-        return rgbToRgba(borderRgb, theme === 'dark' ? 0.9 : 0.82);
       });
 
       const values = validEntries.map((entry) => Number(entry.count) || 0);
@@ -11573,7 +11566,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           const areaSize = area ? Math.min(area.width, area.height) : Math.min(chartArg.width, chartArg.height);
           const resolvedFontSize = Number.isFinite(pluginOptions.fontSize) && pluginOptions.fontSize > 0
             ? pluginOptions.fontSize
-            : Math.max(Math.round(areaSize / 9), 12);
+            : Math.max(Math.round(areaSize / 7.5), 14);
           const fontFamily = pluginOptions.fontFamily
             || Chart.defaults.font.family
             || computedFontFamily
@@ -11588,6 +11581,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
+          const placed = [];
+
           meta.data.forEach((arc, index) => {
             const rawValue = Number(rawValues[index]);
             if (!Number.isFinite(rawValue) || rawValue <= 0) {
@@ -11598,12 +11593,21 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               return;
             }
 
-            const { x, y } = arc.tooltipPosition();
-            const scale = share < 0.06 ? 0.72 : (share < 0.12 ? 0.85 : 1);
-            const fontSize = Math.max(Math.round(resolvedFontSize * scale), 11);
-            const percentText = percentFormatter.format(share);
+            const props = arc.getProps(['x', 'y', 'startAngle', 'endAngle', 'innerRadius', 'outerRadius'], true);
+            const angle = (props.startAngle + props.endAngle) / 2;
+            const baseRadius = ((props.innerRadius || 0) + (props.outerRadius || 0)) / 2;
+            const scale = share < 0.06 ? 0.82 : (share < 0.12 ? 0.94 : 1.05);
+            const fontSize = Math.max(Math.round(resolvedFontSize * scale), 12);
+            const percentText = `${Math.round(share * 100)}%`;
 
             ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+
+            const metrics = ctx.measureText(percentText);
+            const textWidth = Math.max(metrics.width || 0, fontSize * 0.9);
+            const textHeight = Math.max(
+              (metrics.actualBoundingBoxAscent || 0) + (metrics.actualBoundingBoxDescent || 0),
+              fontSize * 0.9,
+            );
 
             const backgroundColor = ensureRgb(
               Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[index] : dataset.backgroundColor,
@@ -11616,13 +11620,48 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             const textFill = useBase ? baseColor : contrastColor;
             const haloColor = useBase ? contrastColor : baseColor;
 
-            ctx.lineWidth = Math.max(Math.round(fontSize / 3.4), 3);
-            ctx.strokeStyle = `rgba(${haloColor.r}, ${haloColor.g}, ${haloColor.b}, ${isDarkTheme ? 0.32 : 0.22})`;
+            const minDistance = Math.max(Math.hypot(textWidth, textHeight) * 0.8, fontSize * 1.25, 16);
+            let radius = baseRadius * (share < 0.12 ? 0.94 : 1.02);
+            const maxRadius = (props.outerRadius || radius) * 1.1;
+            const angleStep = (Math.PI / 180) * 6;
+
+            const buildCandidate = (offsetAngle, r) => ({
+              x: props.x + Math.cos(angle + offsetAngle) * r,
+              y: props.y + Math.sin(angle + offsetAngle) * r,
+              width: textWidth,
+              height: textHeight,
+            });
+
+            const overlaps = (pos, candidate) => {
+              const dx = Math.abs(pos.x - candidate.x);
+              const dy = Math.abs(pos.y - candidate.y);
+              const overlapX = dx < (pos.width + candidate.width) / 2;
+              const overlapY = dy < (pos.height + candidate.height) / 2;
+              return (overlapX && overlapY) || Math.hypot(dx, dy) < minDistance;
+            };
+
+            let attempt = 0;
+            let angleOffset = 0;
+            let candidate = buildCandidate(angleOffset, radius);
+            while (
+              attempt < 10
+              && placed.some((pos) => overlaps(pos, candidate))
+            ) {
+              const direction = attempt % 2 === 0 ? 1 : -1;
+              angleOffset += direction * angleStep;
+              radius = Math.min(maxRadius, radius + Math.max(fontSize * 0.35, 4));
+              candidate = buildCandidate(angleOffset, radius);
+              attempt += 1;
+            }
+            placed.push(candidate);
+
+            ctx.lineWidth = Math.max(Math.round(fontSize / 3.1), 3);
+            ctx.strokeStyle = `rgba(${haloColor.r}, ${haloColor.g}, ${haloColor.b}, ${isDarkTheme ? 0.4 : 0.28})`;
             ctx.lineJoin = 'round';
-            ctx.strokeText(percentText, x, y);
+            ctx.strokeText(percentText, candidate.x, candidate.y);
 
             ctx.fillStyle = `rgb(${textFill.r}, ${textFill.g}, ${textFill.b})`;
-            ctx.fillText(percentText, x, y);
+            ctx.fillText(percentText, candidate.x, candidate.y);
           });
 
           ctx.restore();
@@ -11638,8 +11677,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               label: datasetLabel,
               data: chartEntries.map((entry) => entry.count),
               backgroundColor: backgroundColors,
-              borderColor: borderColors,
-              borderWidth: 2,
+              borderWidth: 0,
               hoverOffset: 0,
             },
           ],
@@ -11660,7 +11698,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               fallbackColor: palette.accent,
               minShare: 0,
               fontFamily: computedFontFamily || Chart.defaults.font.family,
-              fontWeight: 600,
+              fontWeight: 700,
             },
           },
         },
@@ -11783,11 +11821,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     function createSequentialPalette(baseRgb, softRgb, surfaceRgb, count, theme) {
       const safeCount = Math.max(1, Math.floor(Number(count)) || 1);
       const palette = [];
-      const softenTarget = mixRgbColors(softRgb, surfaceRgb, theme === 'dark' ? 0.25 : 0.5);
+      const softenTarget = mixRgbColors(softRgb, surfaceRgb, theme === 'dark' ? 0.18 : 0.32);
       for (let index = 0; index < safeCount; index += 1) {
         const progress = safeCount === 1 ? 0.5 : index / (safeCount - 1);
-        const softened = mixRgbColors(baseRgb, softRgb, 0.35 + progress * 0.25);
-        const tinted = mixRgbColors(softened, softenTarget, theme === 'dark' ? progress * 0.2 : progress * 0.45);
+        const softened = mixRgbColors(baseRgb, softRgb, 0.2 + progress * 0.18);
+        const tinted = mixRgbColors(softened, softenTarget, theme === 'dark' ? progress * 0.16 : progress * 0.28);
         palette.push(tinted);
       }
       return palette;
