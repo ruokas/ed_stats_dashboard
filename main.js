@@ -171,17 +171,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           },
           flow: {
             title: 'Pacientų srautas',
-            description: 'Paros apkrova, momentinė situacija ir hospitalizacijų dalys.',
+            description: '',
             icon: 'flow',
           },
           staffing: {
             title: 'Komanda ir lovos',
-            description: 'Lovų užimtumas ir personalo apkrovos rodikliai.',
+            description: '',
             icon: 'staffing',
           },
           efficiency: {
             title: 'Procesų trukmės',
-            description: 'Vidutiniai laukimo ir buvimo laiko rodikliai.',
+            description: '',
             icon: 'efficiency',
           },
           insights: {
