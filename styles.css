@@ -1388,6 +1388,8 @@ body[data-theme="dark"] select optgroup {
     header.hero .section-nav__trigger {
       color: rgba(232, 236, 246, 0.9);
       box-shadow: none;
+      padding: calc(10px - 3px * var(--hero-compact-progress)) 14px;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, padding 0.25s ease;
     }
 
     header.hero .section-nav__link:hover,
@@ -1408,21 +1410,27 @@ body[data-theme="dark"] select optgroup {
     }
 
     header.hero {
-      --hero-compact-tint: 0;
-      --hero-overlay-opacity: 1;
-      --hero-overlay-scale: 1;
+      --hero-compact-progress: 0;
+      --hero-compact-tint: calc(0.32 * var(--hero-compact-progress));
+      --hero-overlay-opacity: calc(1 - 0.1 * var(--hero-compact-progress));
+      --hero-overlay-scale: calc(1 + 0.02 * var(--hero-compact-progress));
       background:
         linear-gradient(118deg, rgba(47, 91, 234, 0.4) 0%, rgba(26, 34, 52, 0.4) 34%),
         radial-gradient(circle at 12% 24%, rgba(47, 91, 234, 0.6), transparent 46%),
         radial-gradient(circle at 82% 12%, rgba(24, 30, 45, 0.7), transparent 42%),
         linear-gradient(150deg, #0e1220, #13192b 56%, #0b0f18);
       color: #e8ecf6;
-      padding: 16px 0;
+      padding: calc(16px - 6px * var(--hero-compact-progress)) 0;
       position: sticky;
       top: 0;
       z-index: 8;
       overflow: hidden;
-      transition: padding 0.28s ease, box-shadow 0.35s ease, filter 0.35s ease;
+      backdrop-filter: blur(calc(2px * var(--hero-compact-progress)));
+      transition:
+        padding 0.28s ease,
+        box-shadow 0.35s ease,
+        filter 0.35s ease,
+        backdrop-filter 0.35s ease;
     }
 
     header.hero::before {
@@ -1443,11 +1451,9 @@ body[data-theme="dark"] select optgroup {
 
     header.hero.hero--compact,
     header.hero[data-compact="true"] {
-      padding: 10px 0;
+      --hero-compact-progress: 1;
       box-shadow: 0 22px 48px -28px rgba(0, 0, 0, 0.55);
       filter: saturate(125%);
-      --hero-compact-tint: 0.28;
-      --hero-overlay-scale: 1.02;
     }
 
     /* Kompaktiško hero režimo detalizacija */
@@ -1460,29 +1466,22 @@ body[data-theme="dark"] select optgroup {
     }
 
     header.hero[data-compact="true"] .hero__actions {
-      gap: 4px;
       flex-direction: row;
       align-items: center;
       justify-content: flex-end;
       flex-wrap: wrap;
     }
 
-    header.hero[data-compact="true"] .hero__buttons {
-      gap: 6px;
-    }
-
     header.hero[data-compact="true"] .status,
     header.hero[data-compact="true"] .status-note {
-      display: none;
+      opacity: 0;
+      max-height: 0;
+      pointer-events: none;
     }
 
     header.hero[data-compact="true"] button.icon-button {
       width: 34px;
       height: 34px;
-    }
-
-    header.hero[data-compact="true"] .section-nav__link {
-      padding: 6px 12px;
     }
 
     header.hero::after {
@@ -1508,9 +1507,10 @@ body[data-theme="dark"] select optgroup {
       grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
       grid-template-areas: "identity nav actions";
       align-items: center;
-      gap: clamp(16px, 3vw, 28px);
+      gap: calc(clamp(16px, 3vw, 28px) - 6px * var(--hero-compact-progress));
       position: relative;
       z-index: 1;
+      transition: gap 0.25s ease;
     }
 
     .hero__identity {
@@ -1519,21 +1519,25 @@ body[data-theme="dark"] select optgroup {
       flex-direction: column;
       gap: 6px;
       min-width: 0;
+      transition: transform 0.28s ease;
+      transform: translateY(calc(-2px * var(--hero-compact-progress)));
     }
 
     .hero__title {
-      font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem);
+      font-size: calc(clamp(1.5rem, 1.1rem + 1vw, 2rem) - 0.2rem * var(--hero-compact-progress));
       margin: 0 0 4px;
       letter-spacing: -0.01em;
       animation: riseIn 0.7s ease 0.05s both;
+      transition: font-size 0.25s ease;
     }
 
     .hero__subtitle {
       margin: 0;
-      font-size: 0.9rem;
+      font-size: calc(0.9rem - 0.08rem * var(--hero-compact-progress));
       color: rgba(255, 255, 255, 0.85);
       max-width: 460px;
-      transition: opacity 0.25s ease, max-height 0.25s ease;
+      transition: opacity 0.25s ease, max-height 0.25s ease, font-size 0.25s ease;
+      opacity: calc(1 - 0.25 * var(--hero-compact-progress));
       animation: riseIn 0.85s ease 0.12s both;
     }
 
@@ -1551,6 +1555,8 @@ body[data-theme="dark"] select optgroup {
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.3s ease;
+      transform: translateY(calc(2px * var(--hero-compact-progress)));
     }
 
     .hero__actions {
@@ -1558,16 +1564,26 @@ body[data-theme="dark"] select optgroup {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 6px;
+      gap: calc(6px + 2px * (1 - var(--hero-compact-progress)));
+      transition: gap 0.25s ease;
     }
 
     .hero__buttons {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 8px;
+      gap: calc(8px - 3px * var(--hero-compact-progress));
       flex-wrap: wrap;
       animation: riseIn 0.9s ease 0.2s both;
+      transition: gap 0.25s ease;
+    }
+
+    .hero__actions .status,
+    .hero__actions .status-note {
+      opacity: calc(1 - 0.95 * var(--hero-compact-progress));
+      max-height: calc(48px * (1 - var(--hero-compact-progress)));
+      transition: opacity 0.25s ease, max-height 0.3s ease;
+      overflow: hidden;
     }
 
     button.icon-button {

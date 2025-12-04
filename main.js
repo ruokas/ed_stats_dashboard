@@ -1128,6 +1128,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       enterOffset: 160,
       exitOffset: 100,
       pendingEvaluation: false,
+      progress: 0,
     };
 
     function areStylesheetsLoaded() {
@@ -1215,6 +1216,18 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       selectors.hero.classList.toggle('hero--compact', shouldCompact);
     }
 
+    function setHeroCompactProgress(progress) {
+      if (!selectors.hero) {
+        return;
+      }
+      const clamped = Math.max(0, Math.min(1, progress));
+      if (Math.abs(clamped - heroCompactState.progress) < 0.002) {
+        return;
+      }
+      heroCompactState.progress = clamped;
+      selectors.hero.style.setProperty('--hero-compact-progress', clamped.toFixed(3));
+    }
+
     function evaluateHeroCompactMode() {
       if (!selectors.hero) {
         return;
@@ -1225,6 +1238,12 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
       heroCompactState.pendingEvaluation = false;
       const offset = getScrollOffset();
+      const start = heroCompactState.exitOffset;
+      const end = heroCompactState.enterOffset;
+      const range = Math.max(1, end - start);
+      const progress = Math.max(0, Math.min(1, (offset - start) / range));
+      setHeroCompactProgress(progress);
+
       let shouldCompact = heroCompactState.compact;
       if (heroCompactState.compact) {
         shouldCompact = offset > heroCompactState.exitOffset;
