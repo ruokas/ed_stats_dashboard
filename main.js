@@ -11598,9 +11598,16 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             const baseRadius = ((props.innerRadius || 0) + (props.outerRadius || 0)) / 2;
             const scale = share < 0.06 ? 0.82 : (share < 0.12 ? 0.94 : 1.05);
             const fontSize = Math.max(Math.round(resolvedFontSize * scale), 12);
-            const percentText = percentFormatter.format(share);
+            const percentText = `${Math.round(share * 100)}%`;
 
             ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+
+            const metrics = ctx.measureText(percentText);
+            const textWidth = Math.max(metrics.width || 0, fontSize * 0.9);
+            const textHeight = Math.max(
+              (metrics.actualBoundingBoxAscent || 0) + (metrics.actualBoundingBoxDescent || 0),
+              fontSize * 0.9,
+            );
 
             const backgroundColor = ensureRgb(
               Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[index] : dataset.backgroundColor,
@@ -11613,29 +11620,38 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             const textFill = useBase ? baseColor : contrastColor;
             const haloColor = useBase ? contrastColor : baseColor;
 
-            const minDistance = Math.max(fontSize * 1.15, 14);
+            const minDistance = Math.max(Math.hypot(textWidth, textHeight) * 0.8, fontSize * 1.25, 16);
             let radius = baseRadius * (share < 0.12 ? 0.94 : 1.02);
-            const maxRadius = (props.outerRadius || radius) * 1.06;
-            let candidate = {
-              x: props.x + Math.cos(angle) * radius,
-              y: props.y + Math.sin(angle) * radius,
+            const maxRadius = (props.outerRadius || radius) * 1.1;
+            const angleStep = (Math.PI / 180) * 6;
+
+            const buildCandidate = (offsetAngle, r) => ({
+              x: props.x + Math.cos(angle + offsetAngle) * r,
+              y: props.y + Math.sin(angle + offsetAngle) * r,
+              width: textWidth,
+              height: textHeight,
+            });
+
+            const overlaps = (pos, candidate) => {
+              const dx = Math.abs(pos.x - candidate.x);
+              const dy = Math.abs(pos.y - candidate.y);
+              const overlapX = dx < (pos.width + candidate.width) / 2;
+              const overlapY = dy < (pos.height + candidate.height) / 2;
+              return (overlapX && overlapY) || Math.hypot(dx, dy) < minDistance;
             };
 
-            let attempts = 0;
+            let attempt = 0;
+            let angleOffset = 0;
+            let candidate = buildCandidate(angleOffset, radius);
             while (
-              attempts < 6 &&
-              placed.some((pos) => {
-                const dx = pos.x - candidate.x;
-                const dy = pos.y - candidate.y;
-                return Math.hypot(dx, dy) < minDistance;
-              })
+              attempt < 10
+              && placed.some((pos) => overlaps(pos, candidate))
             ) {
-              radius = Math.min(maxRadius, radius * 1.08);
-              candidate = {
-                x: props.x + Math.cos(angle) * radius,
-                y: props.y + Math.sin(angle) * radius,
-              };
-              attempts += 1;
+              const direction = attempt % 2 === 0 ? 1 : -1;
+              angleOffset += direction * angleStep;
+              radius = Math.min(maxRadius, radius + Math.max(fontSize * 0.35, 4));
+              candidate = buildCandidate(angleOffset, radius);
+              attempt += 1;
             }
             placed.push(candidate);
 
