@@ -11454,11 +11454,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const theme = styleTarget?.dataset?.theme || 'light';
 
       const CATEGORY_COLORS = {
-        '1': '#4f46e5',
-        '2': '#ec4899',
-        '3': '#f59e0b',
-        '4': '#06b6d4',
-        '5': '#a855f7',
+        '1': '#2563eb', // mėlyna
+        '2': '#ef4444', // raudona
+        '3': '#f59e0b', // geltona
+        '4': '#22c55e', // žalia
+        '5': '#6b7280', // pilka
       };
       const accentRgb = ensureRgb(palette.accent);
       const accentSoftRgb = ensureRgb(palette.accentSoft, mixRgbColors(accentRgb, { r: 255, g: 255, b: 255 }, 0.65));
@@ -11581,6 +11581,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
+          const placed = [];
+
           meta.data.forEach((arc, index) => {
             const rawValue = Number(rawValues[index]);
             if (!Number.isFinite(rawValue) || rawValue <= 0) {
@@ -11591,7 +11593,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               return;
             }
 
-            const { x, y } = arc.tooltipPosition();
+            const props = arc.getProps(['x', 'y', 'startAngle', 'endAngle', 'innerRadius', 'outerRadius'], true);
+            const angle = (props.startAngle + props.endAngle) / 2;
+            const baseRadius = ((props.innerRadius || 0) + (props.outerRadius || 0)) / 2;
             const scale = share < 0.06 ? 0.82 : (share < 0.12 ? 0.94 : 1.05);
             const fontSize = Math.max(Math.round(resolvedFontSize * scale), 12);
             const percentText = percentFormatter.format(share);
@@ -11609,13 +11613,39 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             const textFill = useBase ? baseColor : contrastColor;
             const haloColor = useBase ? contrastColor : baseColor;
 
+            const minDistance = Math.max(fontSize * 1.15, 14);
+            let radius = baseRadius * (share < 0.12 ? 0.94 : 1.02);
+            const maxRadius = (props.outerRadius || radius) * 1.06;
+            let candidate = {
+              x: props.x + Math.cos(angle) * radius,
+              y: props.y + Math.sin(angle) * radius,
+            };
+
+            let attempts = 0;
+            while (
+              attempts < 6 &&
+              placed.some((pos) => {
+                const dx = pos.x - candidate.x;
+                const dy = pos.y - candidate.y;
+                return Math.hypot(dx, dy) < minDistance;
+              })
+            ) {
+              radius = Math.min(maxRadius, radius * 1.08);
+              candidate = {
+                x: props.x + Math.cos(angle) * radius,
+                y: props.y + Math.sin(angle) * radius,
+              };
+              attempts += 1;
+            }
+            placed.push(candidate);
+
             ctx.lineWidth = Math.max(Math.round(fontSize / 3.1), 3);
             ctx.strokeStyle = `rgba(${haloColor.r}, ${haloColor.g}, ${haloColor.b}, ${isDarkTheme ? 0.4 : 0.28})`;
             ctx.lineJoin = 'round';
-            ctx.strokeText(percentText, x, y);
+            ctx.strokeText(percentText, candidate.x, candidate.y);
 
             ctx.fillStyle = `rgb(${textFill.r}, ${textFill.g}, ${textFill.b})`;
-            ctx.fillText(percentText, x, y);
+            ctx.fillText(percentText, candidate.x, candidate.y);
           });
 
           ctx.restore();
