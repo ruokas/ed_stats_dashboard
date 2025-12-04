@@ -967,7 +967,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       hero: document.querySelector('header.hero'),
       title: document.getElementById('pageTitle'),
       subtitle: document.getElementById('pageSubtitle'),
-      stickyTitle: document.getElementById('stickyTitle'),
       tabSwitcher: document.getElementById('tabSwitcher'),
       tabButtons: Array.from(document.querySelectorAll('[data-tab-target]')),
       tabPanels: Array.from(document.querySelectorAll('[data-tab-panel]')),
@@ -978,7 +977,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       edPanel: document.getElementById('panelEd'),
       status: document.getElementById('status'),
       statusNote: document.getElementById('statusNote'),
-      footerUpdated: document.getElementById('footerUpdated'),
       footerSource: document.getElementById('footerSource'),
       kpiHeading: document.getElementById('kpiHeading'),
       kpiSubtitle: document.getElementById('kpiSubtitle'),
@@ -1119,17 +1117,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     let layoutStylesReadyPromise = null;
     let layoutRefreshAllowed = false;
     let pendingLayoutRefresh = false;
-    const stickyTitleState = { heroVisible: true, observer: null };
     const scrollTopState = { visible: false, rafHandle: null };
     const tvState = { clockHandle: null };
-    const heroCompactState = {
-      compact: false,
-      rafHandle: null,
-      enterOffset: 160,
-      exitOffset: 100,
-      pendingEvaluation: false,
-      progress: 0,
-    };
 
     function areStylesheetsLoaded() {
       const sheets = Array.from(document.styleSheets || []);
@@ -1201,106 +1190,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const rootStyle = document.documentElement.style;
       rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
       rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
-      // Kompaktiškėjimo slenkstis: koreguokite koeficientą, jei reikia ankstesnio/perdėto susitraukimo.
-      const enter = heroHeight > 0 ? heroHeight * 0.55 : 160;
-      heroCompactState.enterOffset = Math.max(80, Math.round(enter));
-      heroCompactState.exitOffset = Math.max(40, Math.round(heroCompactState.enterOffset * 0.6));
-    }
-
-    function applyHeroCompactMode(shouldCompact) {
-      if (!selectors.hero) {
-        return;
-      }
-      // Vykdome realų perėjimą tarp didesnio ir kompaktiško hero režimų.
-      selectors.hero.dataset.compact = shouldCompact ? 'true' : 'false';
-      selectors.hero.classList.toggle('hero--compact', shouldCompact);
-    }
-
-    function setHeroCompactProgress(progress) {
-      if (!selectors.hero) {
-        return;
-      }
-      const clamped = Math.max(0, Math.min(1, progress));
-      if (Math.abs(clamped - heroCompactState.progress) < 0.002) {
-        return;
-      }
-      heroCompactState.progress = clamped;
-      selectors.hero.style.setProperty('--hero-compact-progress', clamped.toFixed(3));
-    }
-
-    function evaluateHeroCompactMode() {
-      if (!selectors.hero) {
-        return;
-      }
-      if (!layoutStylesReady || layoutMetrics.hero === 0) {
-        heroCompactState.pendingEvaluation = true;
-        return;
-      }
-      heroCompactState.pendingEvaluation = false;
-      const offset = getScrollOffset();
-      const start = heroCompactState.exitOffset;
-      const end = heroCompactState.enterOffset;
-      const range = Math.max(1, end - start);
-      const progress = Math.max(0, Math.min(1, (offset - start) / range));
-      setHeroCompactProgress(progress);
-
-      let shouldCompact = heroCompactState.compact;
-      if (heroCompactState.compact) {
-        shouldCompact = offset > heroCompactState.exitOffset;
-      } else {
-        shouldCompact = offset > heroCompactState.enterOffset;
-      }
-      if (heroCompactState.compact !== shouldCompact) {
-        heroCompactState.compact = shouldCompact;
-        applyHeroCompactMode(shouldCompact);
-      }
-    }
-
-    function scheduleHeroCompactEvaluation() {
-      if (heroCompactState.rafHandle) {
-        return;
-      }
-      const raf = typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame.bind(window)
-        : (cb) => window.setTimeout(cb, 16);
-      heroCompactState.rafHandle = raf(() => {
-        heroCompactState.rafHandle = null;
-        evaluateHeroCompactMode();
-      });
-    }
-
-    function updateStickyTitleVisibility(heroVisible) {
-      stickyTitleState.heroVisible = heroVisible;
-      const stickyTitle = selectors.stickyTitle;
-      if (!stickyTitle) {
-        return;
-      }
-      const shouldShow = !heroVisible;
-      stickyTitle.dataset.visible = shouldShow ? 'true' : 'false';
-      stickyTitle.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-    }
-
-    function initializeStickyTitleObserver() {
-      const stickyTitle = selectors.stickyTitle;
-      if (!stickyTitle) {
-        return;
-      }
-      updateStickyTitleVisibility(true);
-      if (stickyTitleState.observer && typeof stickyTitleState.observer.disconnect === 'function') {
-        stickyTitleState.observer.disconnect();
-        stickyTitleState.observer = null;
-      }
-      if (typeof IntersectionObserver !== 'function' || !selectors.hero) {
-        updateStickyTitleVisibility(false);
-        return;
-      }
-      const observer = new IntersectionObserver((entries) => {
-        const entry = entries && entries.length ? entries[0] : null;
-        const isVisible = Boolean(entry) && entry.isIntersecting && entry.intersectionRatio > 0.12;
-        updateStickyTitleVisibility(isVisible);
-      }, { threshold: [0, 0.12, 0.5] });
-      observer.observe(selectors.hero);
-      stickyTitleState.observer = observer;
     }
 
     function getScrollOffset() {
@@ -1366,30 +1255,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       });
       window.addEventListener('scroll', scheduleScrollTopUpdate, { passive: true });
       window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
-    }
-
-    function initializeHeroCompactMode() {
-      layoutRefreshAllowed = true;
-      if (selectors.hero) {
-        heroCompactState.compact = false;
-        applyHeroCompactMode(false);
-      }
-      waitForFontsAndStyles().then(() => {
-        if (heroCompactState.pendingEvaluation) {
-          heroCompactState.pendingEvaluation = false;
-          evaluateHeroCompactMode();
-        }
-        flushPendingLayoutRefresh();
-      });
-      flushPendingLayoutRefresh();
-      if (!selectors.hero) {
-        return;
-      }
-      evaluateHeroCompactMode();
-      window.addEventListener('scroll', scheduleHeroCompactEvaluation, { passive: true });
-      window.addEventListener('resize', scheduleHeroCompactEvaluation, { passive: true });
-      window.addEventListener('orientationchange', scheduleHeroCompactEvaluation);
-      window.addEventListener('load', scheduleHeroCompactEvaluation);
     }
 
     function updateActiveNavLink(headingId) {
@@ -1506,7 +1371,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         updateLayoutMetrics();
         refreshSectionObserver();
         updateScrollTopButtonVisibility();
-        evaluateHeroCompactMode();
         return;
       }
       if (layoutRefreshHandle) {
@@ -1517,7 +1381,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         updateLayoutMetrics();
         refreshSectionObserver();
         updateScrollTopButtonVisibility();
-        evaluateHeroCompactMode();
       });
     }
 
@@ -1649,6 +1512,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (!selectors.sectionNav) {
         return;
       }
+      layoutRefreshAllowed = true;
       const links = Array.from(selectors.sectionNav.querySelectorAll('.section-nav__link'));
       selectors.sectionNavLinks = links;
       sectionNavState.items = [];
@@ -1714,7 +1578,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         updateLayoutMetrics();
         refreshSectionObserver();
         updateScrollTopButtonVisibility();
-        evaluateHeroCompactMode();
         flushPendingLayoutRefresh();
       });
     }
@@ -2679,9 +2542,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
      */
     function applyTextContent() {
       selectors.title.textContent = TEXT.title;
-      if (selectors.stickyTitle) {
-        selectors.stickyTitle.textContent = TEXT.title;
-      }
       selectors.subtitle.textContent = TEXT.subtitle;
       if (selectors.tabOverview) {
         selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
@@ -3087,7 +2947,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const message = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
         selectors.status.textContent = message;
         selectors.status.classList.add('status--error');
-        selectors.footerUpdated.textContent = message;
         showStatusNote(TEXT.status.errorAdvice, 'error');
         return;
       }
@@ -3096,7 +2955,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       selectors.status.classList.remove('status--error');
       if (dashboardState.usingFallback) {
         selectors.status.textContent = TEXT.status.fallbackSuccess(formatted);
-        selectors.footerUpdated.textContent = TEXT.footerFallback(formatted);
         const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
           ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
           : [];
@@ -3109,7 +2967,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         showStatusNote(combinedNote, 'warning');
       } else {
         selectors.status.textContent = details || TEXT.status.success(formatted);
-        selectors.footerUpdated.textContent = TEXT.footer(formatted);
         const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
           ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
           : [];
@@ -12269,9 +12126,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     applySettingsToText();
     applyTextContent();
     applyFooterSource();
-    initializeHeroCompactMode();
     initializeSectionNavigation();
-    initializeStickyTitleObserver();
     initializeScrollTopButton();
     applySectionVisibility();
     populateSettingsForm();
