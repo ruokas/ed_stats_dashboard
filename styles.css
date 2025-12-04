@@ -1408,6 +1408,9 @@ body[data-theme="dark"] select optgroup {
     }
 
     header.hero {
+      --hero-compact-tint: 0;
+      --hero-overlay-opacity: 1;
+      --hero-overlay-scale: 1;
       background:
         linear-gradient(118deg, rgba(47, 91, 234, 0.4) 0%, rgba(26, 34, 52, 0.4) 34%),
         radial-gradient(circle at 12% 24%, rgba(47, 91, 234, 0.6), transparent 46%),
@@ -1419,14 +1422,32 @@ body[data-theme="dark"] select optgroup {
       top: 0;
       z-index: 8;
       overflow: hidden;
-      transition: padding 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, filter 0.25s ease;
+      transition: padding 0.28s ease, box-shadow 0.35s ease, filter 0.35s ease;
+    }
+
+    header.hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(125deg, rgba(47, 91, 234, 0.28), rgba(12, 18, 32, 0.4)),
+        linear-gradient(98deg, rgba(16, 22, 34, 0.2), rgba(16, 22, 34, 0.55));
+      opacity: var(--hero-compact-tint);
+      transform: scale(var(--hero-overlay-scale));
+      transform-origin: center;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
+      z-index: 0;
+      mix-blend-mode: screen;
     }
 
     header.hero.hero--compact,
     header.hero[data-compact="true"] {
-      padding: 8px 0;
+      padding: 10px 0;
       box-shadow: 0 22px 48px -28px rgba(0, 0, 0, 0.55);
       filter: saturate(125%);
+      --hero-compact-tint: 0.28;
+      --hero-overlay-scale: 1.02;
     }
 
     /* Kompaktiško hero režimo detalizacija */
@@ -1472,12 +1493,14 @@ body[data-theme="dark"] select optgroup {
         radial-gradient(circle at 76% 18%, rgba(255, 255, 255, 0.14), transparent 56%),
         linear-gradient(115deg, rgba(255, 255, 255, 0.08) 12%, rgba(255, 255, 255, 0) 36%),
         repeating-linear-gradient(135deg, rgba(230, 242, 236, 0.06) 0 10px, transparent 10px 22px);
+      opacity: var(--hero-overlay-opacity);
+      transition: opacity 0.35s ease;
       pointer-events: none;
     }
 
     header.hero.hero--compact::after,
     header.hero[data-compact="true"]::after {
-      background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 70%);
+      opacity: 0.9;
     }
 
     .hero__content {
