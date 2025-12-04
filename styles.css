@@ -1342,13 +1342,22 @@ body[data-theme="dark"] select optgroup {
 
     header.hero .section-nav__inner {
       justify-content: center;
+      gap: 8px;
     }
 
     header.hero .section-nav__link,
     header.hero .section-nav__trigger {
       color: rgba(232, 236, 246, 0.9);
       box-shadow: none;
-      padding: 10px 14px;
+      padding: 6px 12px;
+      min-height: 38px;
+      font-size: 0.88rem;
+      gap: 4px;
+    }
+
+    header.hero .section-nav__icon svg {
+      width: 16px;
+      height: 16px;
     }
 
     header.hero .section-nav__link:hover,
@@ -1375,7 +1384,7 @@ body[data-theme="dark"] select optgroup {
         radial-gradient(circle at 82% 12%, rgba(24, 30, 45, 0.7), transparent 42%),
         linear-gradient(150deg, #0e1220, #13192b 56%, #0b0f18);
       color: #e8ecf6;
-      padding: 16px 0;
+      padding: 10px 0;
       position: sticky;
       top: 0;
       z-index: 8;
@@ -1387,7 +1396,7 @@ body[data-theme="dark"] select optgroup {
       grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
       grid-template-areas: "identity nav actions";
       align-items: center;
-      gap: clamp(16px, 3vw, 28px);
+      gap: clamp(12px, 2vw, 20px);
       position: relative;
       z-index: 1;
     }
@@ -1396,21 +1405,21 @@ body[data-theme="dark"] select optgroup {
       grid-area: identity;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
       min-width: 0;
     }
 
     .hero__title {
-      font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem);
-      margin: 0 0 4px;
+      font-size: clamp(1.35rem, 1rem + 0.9vw, 1.8rem);
+      margin: 0;
       letter-spacing: -0.01em;
     }
 
     .hero__subtitle {
       margin: 0;
-      font-size: 0.9rem;
-      color: rgba(255, 255, 255, 0.85);
-      max-width: 460px;
+      font-size: 0.86rem;
+      color: rgba(255, 255, 255, 0.8);
+      max-width: 420px;
     }
 
     .hero__nav {
@@ -1426,14 +1435,14 @@ body[data-theme="dark"] select optgroup {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 8px;
+      gap: 6px;
     }
 
     .hero__buttons {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
@@ -1444,21 +1453,21 @@ body[data-theme="dark"] select optgroup {
 
     button.icon-button {
       border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      border-radius: 10px;
+      width: 36px;
+      height: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease;
-      box-shadow: 0 12px 30px -22px rgba(15, 23, 42, 0.7);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.25s ease, border-color 0.25s ease;
+      box-shadow: 0 12px 26px -22px rgba(15, 23, 42, 0.7);
       padding: 0;
     }
 
     button.icon-button svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
     }
 
     button.icon-button:focus-visible {
@@ -1468,9 +1477,9 @@ body[data-theme="dark"] select optgroup {
 
     button.ed-panel-toggle {
       background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       color: #fff;
-      box-shadow: 0 12px 28px -20px rgba(15, 23, 42, 0.8);
+      box-shadow: 0 12px 24px -20px rgba(15, 23, 42, 0.8);
     }
 
     .ed-panel-toggle__icon {
@@ -1480,9 +1489,9 @@ body[data-theme="dark"] select optgroup {
 
     button.ed-panel-toggle:hover,
     button.ed-panel-toggle:focus-visible {
-      transform: translateY(-1px);
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 18px 36px -24px rgba(15, 23, 42, 0.85);
+      transform: translateY(-0.5px);
+      background: rgba(255, 255, 255, 0.16);
+      box-shadow: 0 16px 32px -26px rgba(15, 23, 42, 0.85);
     }
 
     button.ed-panel-toggle.is-active {
