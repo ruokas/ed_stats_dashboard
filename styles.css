@@ -1364,10 +1364,10 @@ body[data-theme="dark"] select optgroup {
     header.hero .section-nav__link:focus-visible,
     header.hero .section-nav__trigger:hover,
     header.hero .section-nav__trigger:focus-visible {
-      background: rgba(47, 91, 234, 0.3);
-      color: #f6f8ff;
-      text-shadow: 0 2px 10px rgba(12, 16, 28, 0.55);
-      box-shadow: 0 0 0 2px rgba(47, 91, 234, 0.42);
+      background: transparent;
+      color: #f8fbff;
+      text-shadow: none;
+      box-shadow: none;
     }
 
     header.hero .section-nav__link.is-active,
@@ -1434,11 +1434,23 @@ body[data-theme="dark"] select optgroup {
     .hero__actions {
       grid-area: actions;
       display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      min-height: 52px;
+      flex-wrap: wrap;
+    }
+
+    .hero__status-stack {
+      display: inline-flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 4px;
-      min-height: 88px;
       justify-content: center;
+      gap: 3px;
+      min-width: 140px;
+      max-width: 360px;
+      order: 1;
     }
 
     .hero__buttons {
@@ -1447,15 +1459,18 @@ body[data-theme="dark"] select optgroup {
       justify-content: flex-end;
       gap: 4px;
       flex-wrap: wrap;
+      order: 2;
     }
 
     .hero__actions .status,
     .hero__actions .status-note {
-      max-width: 520px;
+      max-width: none;
+      width: 100%;
     }
 
     .hero__actions .status {
       min-height: 18px;
+      text-align: right;
     }
 
     button.icon-button {
@@ -1641,7 +1656,7 @@ body[data-theme="dark"] select optgroup {
       }
 
       .hero__actions {
-        align-items: flex-end;
+        align-items: center;
         justify-self: end;
       }
 
@@ -1667,7 +1682,8 @@ body[data-theme="dark"] select optgroup {
 
       .hero__actions {
         align-items: flex-start;
-        gap: 6px;
+        gap: 8px;
+        justify-content: flex-start;
       }
 
       .hero__buttons {
@@ -1675,6 +1691,12 @@ body[data-theme="dark"] select optgroup {
         justify-content: flex-start;
         gap: 6px;
         flex-wrap: wrap;
+      }
+
+      .hero__status-stack {
+        min-width: 0;
+        width: 100%;
+        align-items: flex-start;
       }
 
       .hero__nav .section-nav__bar,
