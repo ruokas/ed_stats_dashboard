@@ -865,6 +865,18 @@ body[data-theme="dark"] select optgroup {
       transition: width 0.4s ease;
     }
 
+    .ed-dashboard__card-progress-fill[data-occupancy-level="normal"] {
+      background: var(--color-success);
+    }
+
+    .ed-dashboard__card-progress-fill[data-occupancy-level="elevated"] {
+      background: var(--color-warning);
+    }
+
+    .ed-dashboard__card-progress-fill[data-occupancy-level="critical"] {
+      background: var(--color-danger);
+    }
+
     .ed-dashboard__card-progress-marker {
       position: absolute;
       top: 50%;
