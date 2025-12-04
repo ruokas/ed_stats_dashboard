@@ -1364,9 +1364,10 @@ body[data-theme="dark"] select optgroup {
     header.hero .section-nav__link:focus-visible,
     header.hero .section-nav__trigger:hover,
     header.hero .section-nav__trigger:focus-visible {
-      background: rgba(47, 91, 234, 0.22);
-      color: #0f1625;
-      box-shadow: 0 0 0 3px rgba(47, 91, 234, 0.35);
+      background: rgba(47, 91, 234, 0.3);
+      color: #f6f8ff;
+      text-shadow: 0 2px 10px rgba(12, 16, 28, 0.55);
+      box-shadow: 0 0 0 2px rgba(47, 91, 234, 0.42);
     }
 
     header.hero .section-nav__link.is-active,
@@ -1436,6 +1437,8 @@ body[data-theme="dark"] select optgroup {
       flex-direction: column;
       align-items: flex-end;
       gap: 4px;
+      min-height: 88px;
+      justify-content: center;
     }
 
     .hero__buttons {
@@ -1449,6 +1452,10 @@ body[data-theme="dark"] select optgroup {
     .hero__actions .status,
     .hero__actions .status-note {
       max-width: 520px;
+    }
+
+    .hero__actions .status {
+      min-height: 18px;
     }
 
     button.icon-button {
@@ -1600,8 +1607,8 @@ body[data-theme="dark"] select optgroup {
     .status-note {
       margin: 0;
       font-size: 0.82rem;
-      line-height: 1.4;
-      padding: 8px 12px;
+      line-height: 1.35;
+      padding: 6px 10px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.35);
       background: rgba(255, 255, 255, 0.16);
