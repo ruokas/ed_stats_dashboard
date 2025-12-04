@@ -11454,11 +11454,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const theme = styleTarget?.dataset?.theme || 'light';
 
       const CATEGORY_COLORS = {
-        '1': '#8da4ff',
-        '2': '#f9a8d4',
-        '3': '#fde68a',
-        '4': '#a5f3fc',
-        '5': '#c4b5fd',
+        '1': '#4f46e5',
+        '2': '#ec4899',
+        '3': '#f59e0b',
+        '4': '#06b6d4',
+        '5': '#a855f7',
       };
       const accentRgb = ensureRgb(palette.accent);
       const accentSoftRgb = ensureRgb(palette.accentSoft, mixRgbColors(accentRgb, { r: 255, g: 255, b: 255 }, 0.65));
@@ -11469,8 +11469,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const isDarkTheme = theme === 'dark';
 
       const sequentialPalette = createSequentialPalette(accentRgb, accentSoftRgb, surfaceRgb, validEntries.length, theme);
-      const baseAlpha = theme === 'dark' ? 0.78 : 0.86;
-      const alphaStep = theme === 'dark' ? -0.04 : -0.06;
+      const baseAlpha = theme === 'dark' ? 0.88 : 0.94;
+      const alphaStep = theme === 'dark' ? -0.025 : -0.035;
 
       const backgroundColors = validEntries.map((entry, index) => {
         const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
@@ -11481,13 +11481,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
         const fillRgb = sequentialPalette[paletteIndex] || accentRgb;
         return rgbToRgba(fillRgb, Math.max(0.45, baseAlpha + alphaStep * paletteIndex));
-      });
-
-      const borderColors = validEntries.map((_, index) => {
-        const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
-        const baseRgb = sequentialPalette[paletteIndex] || accentRgb;
-        const borderRgb = mixRgbColors(baseRgb, accentRgb, 0.4);
-        return rgbToRgba(borderRgb, theme === 'dark' ? 0.9 : 0.82);
       });
 
       const values = validEntries.map((entry) => Number(entry.count) || 0);
@@ -11573,7 +11566,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           const areaSize = area ? Math.min(area.width, area.height) : Math.min(chartArg.width, chartArg.height);
           const resolvedFontSize = Number.isFinite(pluginOptions.fontSize) && pluginOptions.fontSize > 0
             ? pluginOptions.fontSize
-            : Math.max(Math.round(areaSize / 9), 12);
+            : Math.max(Math.round(areaSize / 7.5), 14);
           const fontFamily = pluginOptions.fontFamily
             || Chart.defaults.font.family
             || computedFontFamily
@@ -11599,8 +11592,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             }
 
             const { x, y } = arc.tooltipPosition();
-            const scale = share < 0.06 ? 0.72 : (share < 0.12 ? 0.85 : 1);
-            const fontSize = Math.max(Math.round(resolvedFontSize * scale), 11);
+            const scale = share < 0.06 ? 0.82 : (share < 0.12 ? 0.94 : 1.05);
+            const fontSize = Math.max(Math.round(resolvedFontSize * scale), 12);
             const percentText = percentFormatter.format(share);
 
             ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
@@ -11616,8 +11609,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             const textFill = useBase ? baseColor : contrastColor;
             const haloColor = useBase ? contrastColor : baseColor;
 
-            ctx.lineWidth = Math.max(Math.round(fontSize / 3.4), 3);
-            ctx.strokeStyle = `rgba(${haloColor.r}, ${haloColor.g}, ${haloColor.b}, ${isDarkTheme ? 0.32 : 0.22})`;
+            ctx.lineWidth = Math.max(Math.round(fontSize / 3.1), 3);
+            ctx.strokeStyle = `rgba(${haloColor.r}, ${haloColor.g}, ${haloColor.b}, ${isDarkTheme ? 0.4 : 0.28})`;
             ctx.lineJoin = 'round';
             ctx.strokeText(percentText, x, y);
 
@@ -11638,8 +11631,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               label: datasetLabel,
               data: chartEntries.map((entry) => entry.count),
               backgroundColor: backgroundColors,
-              borderColor: borderColors,
-              borderWidth: 2,
+              borderWidth: 0,
               hoverOffset: 0,
             },
           ],
@@ -11660,7 +11652,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               fallbackColor: palette.accent,
               minShare: 0,
               fontFamily: computedFontFamily || Chart.defaults.font.family,
-              fontWeight: 600,
+              fontWeight: 700,
             },
           },
         },
@@ -11783,11 +11775,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     function createSequentialPalette(baseRgb, softRgb, surfaceRgb, count, theme) {
       const safeCount = Math.max(1, Math.floor(Number(count)) || 1);
       const palette = [];
-      const softenTarget = mixRgbColors(softRgb, surfaceRgb, theme === 'dark' ? 0.25 : 0.5);
+      const softenTarget = mixRgbColors(softRgb, surfaceRgb, theme === 'dark' ? 0.18 : 0.32);
       for (let index = 0; index < safeCount; index += 1) {
         const progress = safeCount === 1 ? 0.5 : index / (safeCount - 1);
-        const softened = mixRgbColors(baseRgb, softRgb, 0.35 + progress * 0.25);
-        const tinted = mixRgbColors(softened, softenTarget, theme === 'dark' ? progress * 0.2 : progress * 0.45);
+        const softened = mixRgbColors(baseRgb, softRgb, 0.2 + progress * 0.18);
+        const tinted = mixRgbColors(softened, softenTarget, theme === 'dark' ? progress * 0.16 : progress * 0.28);
         palette.push(tinted);
       }
       return palette;
