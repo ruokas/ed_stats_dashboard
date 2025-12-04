@@ -10522,9 +10522,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? Math.max(ED_TOTAL_BEDS, 0) : 0;
         if (totalBeds > 0) {
           const occupancyShare = Math.max(0, Math.min(1, primaryRaw / totalBeds));
-          const occupancyLevel = occupancyShare >= 0.9
+          const occupancyLevel = occupancyShare > 0.7
             ? 'critical'
-            : occupancyShare >= 0.75
+            : occupancyShare > 0.5
               ? 'elevated'
               : 'normal';
           const progress = document.createElement('div');
