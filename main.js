@@ -976,7 +976,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       overviewPanel: document.getElementById('panelOverview'),
       edPanel: document.getElementById('panelEd'),
       status: document.getElementById('status'),
-      statusNote: document.getElementById('statusNote'),
       footerSource: document.getElementById('footerSource'),
       kpiHeading: document.getElementById('kpiHeading'),
       kpiSubtitle: document.getElementById('kpiSubtitle'),
@@ -2740,27 +2739,50 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       hideStatusNote();
     }
 
-    /**
-     * Pagalbinė funkcija būsenos juostai atnaujinti.
-     * @param {('loading'|'success'|'error')} type
-     * @param {string} [details]
-     */
+    const statusDisplay = {
+      base: TEXT.status.loading,
+      note: '',
+      tone: 'info',
+    };
+
+    function applyTone(tone = 'info') {
+      const normalized = tone === 'error' ? 'error' : tone === 'warning' ? 'warning' : 'info';
+      if (normalized === 'error' || statusDisplay.tone === 'error') {
+        statusDisplay.tone = 'error';
+        return;
+      }
+      if (normalized === 'warning' || statusDisplay.tone === 'warning') {
+        statusDisplay.tone = 'warning';
+        return;
+      }
+      statusDisplay.tone = 'info';
+    }
+
+    function renderStatusDisplay() {
+      if (!selectors.status) return;
+      const parts = [statusDisplay.base, statusDisplay.note].filter(Boolean);
+      const message = parts.join(' · ');
+      selectors.status.classList.toggle('status--error', statusDisplay.tone === 'error');
+      selectors.status.dataset.tone = statusDisplay.tone;
+      if (!message) {
+        selectors.status.textContent = '';
+        selectors.status.setAttribute('hidden', 'hidden');
+        return;
+      }
+      selectors.status.textContent = message;
+      selectors.status.removeAttribute('hidden');
+    }
+
     function hideStatusNote() {
-      if (!selectors.statusNote) return;
-      selectors.statusNote.textContent = '';
-      selectors.statusNote.dataset.tone = 'info';
-      selectors.statusNote.setAttribute('hidden', 'hidden');
+      statusDisplay.note = '';
+      applyTone('info');
+      renderStatusDisplay();
     }
 
     function showStatusNote(message, tone = 'info') {
-      if (!selectors.statusNote) return;
-      if (!message) {
-        hideStatusNote();
-        return;
-      }
-      selectors.statusNote.textContent = message;
-      selectors.statusNote.dataset.tone = tone;
-      selectors.statusNote.removeAttribute('hidden');
+      statusDisplay.note = message || '';
+      applyTone(tone);
+      renderStatusDisplay();
     }
 
     function createChunkReporter(label) {
@@ -2855,9 +2877,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const ratio = (lighter + 0.05) / (darker + 0.05);
       if (ratio < 4.5) {
         dashboardState.contrastWarning = true;
-        const existingMessage = selectors.statusNote && !selectors.statusNote.hasAttribute('hidden')
-          ? selectors.statusNote.textContent
-          : '';
+        const existingMessage = statusDisplay.note || '';
         if (existingMessage && existingMessage !== TEXT.theme.contrastWarning) {
           const combined = existingMessage.includes(TEXT.theme.contrastWarning)
             ? existingMessage
@@ -2868,13 +2888,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         }
       } else if (dashboardState.contrastWarning) {
         dashboardState.contrastWarning = false;
-        if (selectors.statusNote && selectors.statusNote.textContent) {
-          const cleaned = selectors.statusNote.textContent.replace(TEXT.theme.contrastWarning, '').trim();
-          if (cleaned) {
-            selectors.statusNote.textContent = cleaned;
-          } else {
-            hideStatusNote();
-          }
+        if (statusDisplay.note) {
+          const cleaned = statusDisplay.note.replace(TEXT.theme.contrastWarning, '').trim();
+          statusDisplay.note = cleaned;
+          renderStatusDisplay();
         }
       }
     }
@@ -2937,27 +2954,26 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 
     function setStatus(type, details = '') {
       if (type === 'loading') {
-        selectors.status.textContent = TEXT.status.loading;
-        selectors.status.classList.remove('status--error');
-        selectors.status.removeAttribute('hidden');
-        hideStatusNote();
+        statusDisplay.base = TEXT.status.loading;
+        statusDisplay.note = '';
+        statusDisplay.tone = 'info';
+        renderStatusDisplay();
         return;
       }
 
       if (type === 'error') {
         const message = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-        selectors.status.textContent = message;
-        selectors.status.classList.add('status--error');
-        selectors.status.removeAttribute('hidden');
-        showStatusNote(TEXT.status.errorAdvice, 'error');
+        statusDisplay.base = message;
+        statusDisplay.note = TEXT.status.errorAdvice;
+        statusDisplay.tone = 'error';
+        renderStatusDisplay();
         return;
       }
 
       const formatted = statusTimeFormatter.format(new Date());
-      selectors.status.classList.remove('status--error');
       if (dashboardState.usingFallback) {
-        selectors.status.textContent = TEXT.status.fallbackSuccess(formatted);
-        selectors.status.removeAttribute('hidden');
+        statusDisplay.base = TEXT.status.fallbackSuccess(formatted);
+        statusDisplay.tone = 'warning';
         const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
           ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
           : [];
@@ -2967,17 +2983,21 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const combinedNote = warningsList.length
           ? `${fallbackNote} ${warningsList.join(' ')}`.trim()
           : fallbackNote;
-        showStatusNote(combinedNote, 'warning');
+        statusDisplay.note = combinedNote;
+        renderStatusDisplay();
       } else {
-        selectors.status.textContent = '';
-        selectors.status.setAttribute('hidden', 'hidden');
+        statusDisplay.base = '';
+        statusDisplay.tone = 'info';
         const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
           ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
           : [];
         if (warningsList.length) {
-          showStatusNote(warningsList.join(' '), 'warning');
+          statusDisplay.note = warningsList.join(' ');
+          statusDisplay.tone = 'warning';
+          renderStatusDisplay();
         } else {
-          hideStatusNote();
+          statusDisplay.note = '';
+          renderStatusDisplay();
         }
       }
     }

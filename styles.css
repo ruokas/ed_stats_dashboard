@@ -1438,18 +1438,17 @@ body[data-theme="dark"] select optgroup {
       align-items: center;
       justify-content: flex-end;
       gap: 10px;
-      min-height: 52px;
+      min-height: 44px;
       flex-wrap: wrap;
     }
 
-    .hero__status-stack {
+    .hero__status {
       display: inline-flex;
-      flex-direction: column;
-      align-items: flex-end;
-      justify-content: center;
-      gap: 3px;
+      align-items: center;
+      justify-content: flex-end;
+      min-height: 24px;
       min-width: 140px;
-      max-width: 360px;
+      max-width: 320px;
       order: 1;
     }
 
@@ -1462,13 +1461,9 @@ body[data-theme="dark"] select optgroup {
       order: 2;
     }
 
-    .hero__actions .status,
-    .hero__actions .status-note {
+    .hero__actions .status {
       max-width: none;
       width: 100%;
-    }
-
-    .hero__actions .status {
       min-height: 18px;
       text-align: right;
     }
@@ -1619,32 +1614,8 @@ body[data-theme="dark"] select optgroup {
       font-weight: 600;
     }
 
-    .status-note {
-      margin: 0;
-      font-size: 0.82rem;
-      line-height: 1.35;
-      padding: 6px 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.16);
-      color: #fff;
-      backdrop-filter: blur(4px);
-    }
-
-    .status-note[hidden] {
-      display: none;
-    }
-
-    .status-note[data-tone="warning"] {
-      background: rgba(251, 191, 36, 0.22);
-      border-color: rgba(251, 191, 36, 0.45);
-      color: #0f172a;
-    }
-
-    .status-note[data-tone="error"] {
-      background: rgba(248, 113, 113, 0.28);
-      border-color: rgba(248, 113, 113, 0.55);
-      color: #fff;
+    .status[data-tone="warning"] {
+      color: #f9d977;
     }
 
     @media (max-width: 1200px) {
@@ -1693,10 +1664,11 @@ body[data-theme="dark"] select optgroup {
         flex-wrap: wrap;
       }
 
-      .hero__status-stack {
+      .hero__status {
         min-width: 0;
         width: 100%;
-        align-items: flex-start;
+        justify-content: flex-start;
+        text-align: left;
       }
 
       .hero__nav .section-nav__bar,
@@ -1770,12 +1742,6 @@ body[data-theme="dark"] select optgroup {
       .status {
         text-align: left;
         font-size: 0.78rem;
-        width: 100%;
-      }
-
-      .status-note {
-        font-size: 0.76rem;
-        padding: 6px 10px;
         width: 100%;
       }
 
