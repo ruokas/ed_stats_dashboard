@@ -6,22 +6,27 @@
   <title>RŠL SMPS statistika</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="apple-touch-icon" href="favicon.svg">
-  <style>
-    :root {
-      --color-bg: #f4f7fb;
-      --color-text: #0f172a;
-    }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+    <style>
+      :root {
+        --color-bg: #eaedf3;
+        --color-text: #101420;
+      }
 
-    [data-theme="dark"] {
-      --color-bg: #050816;
-      --color-text: #e2e8f0;
-    }
+      [data-theme="dark"] {
+        --color-bg: #0a0d14;
+        --color-text: #e8ecf6;
+      }
 
-    body {
-      background: var(--color-bg);
-      color: var(--color-text);
-    }
-  </style>
+      body {
+        background: var(--color-bg);
+        color: var(--color-text);
+      }
+    </style>
   <style id="theme-transition-blocker">
     .theme-transition-block *,
     .theme-transition-block *::before,
@@ -80,7 +85,7 @@
 
 </head>
 <body>
-  <header class="hero" role="banner" data-compact="false">
+  <header class="hero" role="banner">
     <div class="container hero__content">
       <div class="hero__identity">
         <h1 id="pageTitle" class="hero__title">RŠL SMPS statistika</h1>
@@ -88,7 +93,6 @@
       </div>
       <nav class="section-nav hero__nav" aria-label="Pagrindinės sekcijos">
         <div class="section-nav__bar">
-          <div class="section-nav__title" id="stickyTitle" aria-hidden="true">RŠL SMPS statistika</div>
           <div class="section-nav__inner">
             <a class="section-nav__link" href="#kpiHeading">
               <span class="section-nav__icon" aria-hidden="true">
@@ -155,6 +159,9 @@
         </div>
       </nav>
       <div class="hero__actions">
+        <div class="hero__status" aria-live="polite">
+          <p id="status" class="status" role="status" aria-live="polite">Kraunama...</p>
+        </div>
         <div class="hero__buttons">
           <button id="edNavButton"
                   type="button"
@@ -185,8 +192,6 @@
             </svg>
           </button>
         </div>
-        <p id="status" class="status" role="status" aria-live="polite">Kraunama...</p>
-        <p id="statusNote" class="status-note" role="note" aria-live="polite" hidden></p>
       </div>
     </div>
   </header>
@@ -972,7 +977,6 @@
   <footer>
     <div class="container footer__meta">
       <span id="footerSource"></span>
-      <span id="footerUpdated">Atnaujinta dabar</span>
     </div>
   </footer>
 
