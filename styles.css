@@ -659,6 +659,7 @@ body[data-theme="dark"] select optgroup {
       gap: clamp(18px, 2.5vw, 26px);
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       align-content: start;
+      grid-auto-rows: minmax(240px, 1fr);
     }
 
     .ed-dashboard__section {
@@ -739,7 +740,7 @@ body[data-theme="dark"] select optgroup {
       display: flex;
       flex-direction: column;
       gap: clamp(10px, 1.6vw, 16px);
-      min-height: 140px;
+      min-height: 100%;
     }
 
     .ed-dashboard__card::after {
