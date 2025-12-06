@@ -2102,7 +2102,9 @@ body[data-theme="dark"] select optgroup {
       grid-template-columns: repeat(12, minmax(0, 1fr));
       gap: 18px;
       grid-auto-flow: row dense;
+      grid-auto-rows: minmax(220px, 1fr);
       align-items: stretch;
+      align-content: start;
     }
 
     .kpi-grid > .kpi-card {
@@ -2358,6 +2360,9 @@ body[data-theme="dark"] select optgroup {
       box-shadow: var(--shadow-elevated);
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
     }
 
     #kpiGrid[aria-busy="true"] {
