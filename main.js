@@ -11221,14 +11221,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     },
     feedback(svg) {
       svg.appendChild(createSvgElement('path', {
-        d: 'M4 6h12a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H9l-4 3v-3H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z',
+        d: 'M5 5h11a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3h-5l-4 3v-3H5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z',
         fill: 'none',
       }));
-      svg.appendChild(createSvgElement('path', { d: 'M8 10.5h8' }));
-      svg.appendChild(createSvgElement('path', { d: 'M8 13.5h5' }));
-      svg.appendChild(createSvgElement('path', {
-        d: 'M9 4h7.5A1.5 1.5 0 0 1 18 5.5V8',
-        fill: 'none',
+      svg.appendChild(createSvgElement('path', { d: 'M8.5 10.5h7' }));
+      svg.appendChild(createSvgElement('path', { d: 'M8.5 13h4.5' }));
+      svg.appendChild(createSvgElement('circle', {
+        cx: '16.5',
+        cy: '8.2',
+        r: '0.8',
+        fill: 'currentColor',
+        stroke: 'none',
       }));
     },
     insights(svg) {
