@@ -837,6 +837,26 @@ body[data-theme="dark"] select optgroup {
       display: none;
     }
 
+    .ed-dashboard__card--comments {
+      gap: 12px;
+      min-height: 180px;
+    }
+
+    .ed-dashboard__comment {
+      margin: 0;
+      font-size: clamp(1.1rem, 1.7vw, 1.25rem);
+      line-height: 1.6;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .ed-dashboard__comment-meta {
+      margin: 0;
+      font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+      color: var(--color-text);
+      opacity: 0.82;
+    }
+
     .ed-dashboard__card-progress {
       position: relative;
       width: 100%;

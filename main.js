@@ -341,18 +341,28 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               format: 'minutes',
               section: 'efficiency',
             },
-            {
-              key: 'feedbackCurrentMonthOverall',
-              title: 'Bendras vertinimas šį mėn.',
-              description: 'Vidutinis įvertinimas (1–5) pagal šio mėnesio atsiliepimus.',
-              empty: 'Nėra vertinimų.',
-              format: 'oneDecimal',
-              metaKey: 'feedbackCurrentMonthMeta',
-              trendKey: 'feedbackCurrentMonthTrend',
-              section: 'staffing',
-            },
-          ],
-        },
+          {
+            key: 'feedbackCurrentMonthOverall',
+            title: 'Bendras vertinimas šį mėn.',
+            description: 'Vidutinis įvertinimas (1–5) pagal šio mėnesio atsiliepimus.',
+            empty: 'Nėra vertinimų.',
+            format: 'oneDecimal',
+            metaKey: 'feedbackCurrentMonthMeta',
+            trendKey: 'feedbackCurrentMonthTrend',
+            section: 'staffing',
+          },
+          {
+            key: 'feedbackComments',
+            title: 'Pacientų komentarai',
+            description: 'Naujausi atsiliepimai (rodymai rotuojasi kas kelias sekundes).',
+            empty: 'Kol kas nėra komentarų.',
+            type: 'comments',
+            rotateMs: 8000,
+            metaKey: 'feedbackCommentsMeta',
+            section: 'staffing',
+          },
+        ],
+      },
         dispositions: {
           legacy: {
             title: 'Pacientų išvykimo sprendimai',
@@ -680,14 +690,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             description: 'Bendras gautų atsakymų skaičius.',
             empty: '0',
             format: 'integer',
-          },
-          {
-            key: 'comments',
-            title: 'Pacientų komentarai',
-            description: 'Paskutiniai atsiliepimai (rodymai rotuojasi kas kelias sekundes).',
-            empty: 'Kol kas nėra komentarų.',
-            type: 'comments',
-            rotateMs: 8000,
           },
         ],
         table: {
@@ -2368,6 +2370,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         lastErrorMessage: '',
         error: null,
         updatedAt: null,
+        commentRotation: { timerId: null, index: 0, entries: [] },
       },
       edSearchQuery: '',
     };
@@ -4578,6 +4581,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         fastSlowSplitValue: '',
         fastSlowTrendText: '',
         fastSlowTrendWindowDays: 0,
+        feedbackComments: [],
+        feedbackCommentsMeta: '',
       };
     }
 
@@ -8301,6 +8306,90 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
     }
 
+    function resetEdCommentRotation() {
+      const rotation = dashboardState?.ed?.commentRotation;
+      if (rotation?.timerId) {
+        window.clearInterval(rotation.timerId);
+      }
+      if (dashboardState?.ed) {
+        dashboardState.ed.commentRotation = { timerId: null, index: 0, entries: [] };
+      }
+    }
+
+    function renderEdCommentsCard(cardElement, cardConfig, rawComments, fallbackMeta = '') {
+      const content = document.createElement('p');
+      content.className = 'ed-dashboard__comment';
+      content.setAttribute('aria-live', 'polite');
+
+      const meta = document.createElement('p');
+      meta.className = 'ed-dashboard__card-meta ed-dashboard__comment-meta';
+
+      cardElement.append(content, meta);
+
+      const rotation = dashboardState.ed.commentRotation || { timerId: null, index: 0, entries: [] };
+      if (rotation.timerId) {
+        window.clearInterval(rotation.timerId);
+      }
+
+      const comments = Array.isArray(rawComments)
+        ? rawComments.filter((item) => item && typeof item.text === 'string' && item.text.trim())
+        : [];
+      rotation.entries = comments.map((item) => ({
+        ...item,
+        text: item.text.trim(),
+      }));
+      rotation.index = 0;
+      rotation.timerId = null;
+      dashboardState.ed.commentRotation = rotation;
+
+      if (!rotation.entries.length) {
+        content.textContent = cardConfig.empty || TEXT.ed?.empty || '—';
+        meta.textContent = typeof fallbackMeta === 'string' && fallbackMeta.trim().length
+          ? fallbackMeta.trim()
+          : (cardConfig.description || '');
+        return;
+      }
+
+      const renderEntry = (entry) => {
+        content.textContent = entry?.text || (cardConfig.empty || TEXT.ed?.empty || '—');
+        const metaParts = [];
+        if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
+          metaParts.push(statusTimeFormatter.format(entry.receivedAt));
+        }
+        if (entry?.respondent) {
+          metaParts.push(entry.respondent);
+        }
+        if (entry?.location) {
+          metaParts.push(entry.location);
+        }
+        if (!metaParts.length) {
+          const metaText = typeof fallbackMeta === 'string' ? fallbackMeta.trim() : '';
+          if (metaText) {
+            metaParts.push(metaText);
+          }
+        }
+        if (!metaParts.length && cardConfig?.description) {
+          metaParts.push(cardConfig.description);
+        }
+        meta.textContent = metaParts.join(' • ');
+      };
+
+      const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 8000;
+
+      const advance = () => {
+        const entry = rotation.entries[rotation.index] || rotation.entries[0];
+        renderEntry(entry);
+        if (rotation.entries.length > 1) {
+          rotation.index = (rotation.index + 1) % rotation.entries.length;
+        }
+      };
+
+      advance();
+      if (rotation.entries.length > 1) {
+        rotation.timerId = window.setInterval(advance, rotateMs);
+      }
+    }
+
     function formatFeedbackCardValue(value, format) {
       if (format === 'text') {
         if (typeof value === 'string') {
@@ -11204,11 +11293,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     renderEdDashboard(dashboardState.ed);
   }
 
-  async function renderEdDashboard(edData) {
-    if (!selectors.edPanel) {
-      return;
-    }
+    async function renderEdDashboard(edData) {
+      if (!selectors.edPanel) {
+        return;
+      }
       const baseDataset = edData || {};
+      const baseComments = Array.isArray(baseDataset?.summary?.feedbackComments)
+        ? baseDataset.summary.feedbackComments
+        : [];
+      const baseCommentsMeta = typeof baseDataset?.summary?.feedbackCommentsMeta === 'string'
+        ? baseDataset.summary.feedbackCommentsMeta
+        : '';
       const searchQuery = normalizeEdSearchQuery(dashboardState.edSearchQuery);
       const baseRecords = Array.isArray(baseDataset.records) ? baseDataset.records : [];
       let dataset = baseDataset;
@@ -11225,6 +11320,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         };
       }
       const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
+      if (!Array.isArray(summary.feedbackComments) || !summary.feedbackComments.length) {
+        summary.feedbackComments = baseComments.slice();
+      }
+      if (!summary.feedbackCommentsMeta && baseCommentsMeta) {
+        summary.feedbackCommentsMeta = baseCommentsMeta;
+      }
+      resetEdCommentRotation();
       const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
       const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
       const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
@@ -11340,6 +11442,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       summary.feedbackCurrentMonthOverall = feedbackAverage;
       summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
       summary.feedbackCurrentMonthTrend = feedbackTrend;
+      const feedbackComments = Array.isArray(dashboardState?.feedback?.summary?.comments)
+        ? dashboardState.feedback.summary.comments
+        : [];
+      summary.feedbackComments = feedbackComments;
+      const existingCommentsMeta = typeof summary.feedbackCommentsMeta === 'string'
+        ? summary.feedbackCommentsMeta.trim()
+        : '';
+      const commentsMeta = feedbackComments.length
+        ? `Komentarai: ${numberFormatter.format(feedbackComments.length)}`
+        : '';
+      summary.feedbackCommentsMeta = existingCommentsMeta || commentsMeta;
 
       if (selectors.edCards) {
         selectors.edCards.replaceChildren();
@@ -11447,15 +11560,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             card.className = 'ed-dashboard__card';
             card.setAttribute('role', 'listitem');
 
-            const isDonutCard = config.type === 'donut';
-            if (isDonutCard) {
-              card.classList.add('ed-dashboard__card--donut');
-            }
+              const isDonutCard = config.type === 'donut';
+              if (isDonutCard) {
+                card.classList.add('ed-dashboard__card--donut');
+              }
 
-            const title = document.createElement('p');
-            title.className = 'ed-dashboard__card-title';
-            title.textContent = config.title;
-            if (isDonutCard) {
+              const isCommentsCard = config.type === 'comments';
+
+              const title = document.createElement('p');
+              title.className = 'ed-dashboard__card-title';
+              title.textContent = config.title;
+              if (isDonutCard) {
               title.id = 'edDispositionsTitle';
             }
             card.appendChild(title);
@@ -11477,12 +11592,21 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               message.hidden = true;
               card.appendChild(message);
 
-              cardsWrapper.appendChild(card);
-              return;
-            }
+                cardsWrapper.appendChild(card);
+                return;
+              }
 
-            const value = document.createElement('p');
-            value.className = 'ed-dashboard__card-value';
+              if (isCommentsCard) {
+                card.classList.add('ed-dashboard__card--comments');
+                const rawComments = Array.isArray(summary?.[config.key]) ? summary[config.key] : [];
+                const metaValue = config.metaKey ? summary?.[config.metaKey] : '';
+                renderEdCommentsCard(card, config, rawComments, metaValue);
+                cardsWrapper.appendChild(card);
+                return;
+              }
+
+              const value = document.createElement('p');
+              value.className = 'ed-dashboard__card-value';
             const primaryRaw = summary?.[config.key];
             const secondaryRaw = config.secondaryKey ? summary?.[config.secondaryKey] : undefined;
             let hasValue = false;
@@ -12317,8 +12441,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             updatedAt: new Date(),
           };
         }
-        await renderEdDashboard(dashboardState.ed);
-
         if (dataResult.status !== 'fulfilled') {
           throw dataResult.reason;
         }
@@ -12386,7 +12508,20 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         renderYearlyTable(yearlyStats);
         dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
         updateFeedbackFilterOptions(dashboardState.feedback.records);
-        applyFeedbackFiltersAndRender();
+        const feedbackStats = applyFeedbackFiltersAndRender();
+        const edSummaryForComments = dashboardState.ed.summary || createEmptyEdSummary(dashboardState.ed?.meta?.type);
+        edSummaryForComments.feedbackComments = Array.isArray(feedbackStats?.summary?.comments)
+          ? feedbackStats.summary.comments
+          : [];
+        const commentsMeta = edSummaryForComments.feedbackCommentsMeta
+          && typeof edSummaryForComments.feedbackCommentsMeta === 'string'
+          ? edSummaryForComments.feedbackCommentsMeta.trim()
+          : '';
+        const fallbackCommentsMeta = edSummaryForComments.feedbackComments.length
+          ? `Komentarai: ${numberFormatter.format(edSummaryForComments.feedbackComments.length)}`
+          : '';
+        edSummaryForComments.feedbackCommentsMeta = commentsMeta || fallbackCommentsMeta;
+        dashboardState.ed.summary = edSummaryForComments;
         setStatus('success');
         applyFeedbackStatusNote();
         await renderEdDashboard(dashboardState.ed);
