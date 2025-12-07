@@ -357,7 +357,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             description: 'Naujausi atsiliepimai (rodymai rotuojasi kas kelias sekundes).',
             empty: 'Kol kas nėra komentarų.',
             type: 'comments',
-            rotateMs: 8000,
+            rotateMs: 10000,
             metaKey: 'feedbackCommentsMeta',
             section: 'staffing',
           },
@@ -8322,7 +8322,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         meta.textContent = metaParts.join(' • ');
       };
 
-      const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 8000;
+      const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 10000;
 
       const advance = () => {
         const entry = rotation.entries[rotation.index] || rotation.entries[0];
@@ -8443,7 +8443,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         applyEdCommentAutoScroll(wrapper);
       };
 
-      const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 8000;
+      const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 10000;
 
       const advance = () => {
         const entry = rotation.entries[rotation.index] || rotation.entries[0];
