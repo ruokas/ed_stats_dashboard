@@ -187,7 +187,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           staffing: {
             title: 'Pacientų atsiliepimai',
             description: '',
-            icon: 'staffing',
+            icon: 'feedback',
           },
         },
         cards: {
@@ -11219,11 +11219,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '9' }));
       svg.appendChild(createSvgElement('polyline', { points: '12 7 12 12 15 15' }));
     },
-    staffing(svg) {
-      svg.appendChild(createSvgElement('circle', { cx: '8.5', cy: '8.5', r: '3' }));
-      svg.appendChild(createSvgElement('circle', { cx: '15.5', cy: '8.5', r: '3' }));
-      svg.appendChild(createSvgElement('path', { d: 'M4.5 20v-1.6A4.5 4.5 0 0 1 9 13.8h0A4.5 4.5 0 0 1 13.5 18.3V20' }));
-      svg.appendChild(createSvgElement('path', { d: 'M11 20v-1.2a4.5 4.5 0 0 1 4.5-4.5h0a4.5 4.5 0 0 1 4.5 4.5V20' }));
+    feedback(svg) {
+      svg.appendChild(createSvgElement('path', {
+        d: 'M4 6h12a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H9l-4 3v-3H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z',
+        fill: 'none',
+      }));
+      svg.appendChild(createSvgElement('path', { d: 'M8 10.5h8' }));
+      svg.appendChild(createSvgElement('path', { d: 'M8 13.5h5' }));
+      svg.appendChild(createSvgElement('path', {
+        d: 'M9 4h7.5A1.5 1.5 0 0 1 18 5.5V8',
+        fill: 'none',
+      }));
     },
     insights(svg) {
       svg.appendChild(createSvgElement('path', { d: 'M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z' }));
