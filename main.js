@@ -356,7 +356,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             legendAction: 'Išryškinti kategoriją grafike',
           },
           snapshot: {
-            title: 'Pasiskirstymas pagal ESI',
+            title: 'Pasiskirstymas pagal kategoriją',
             caption: 'Pacientų pasiskirstymas pagal naujausią įrašą.',
             empty: 'Nėra kategorijų duomenų.',
             legendTitle: 'Pacientų kategorijos',
