@@ -11511,6 +11511,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           const sectionEl = document.createElement('section');
           sectionEl.className = 'ed-dashboard__section';
           sectionEl.setAttribute('role', 'region');
+          if (section.key) {
+            sectionEl.dataset.sectionKey = section.key;
+          }
 
           const shouldRenderHeader = Boolean(section.title || section.description || groupedSections.length > 1);
           let sectionLabelId = '';

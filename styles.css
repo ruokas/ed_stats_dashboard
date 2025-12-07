@@ -728,6 +728,10 @@ body[data-theme="dark"] select optgroup {
       align-items: stretch;
     }
 
+    .ed-dashboard__section[data-section-key="staffing"] .ed-dashboard__section-grid {
+      grid-template-columns: 1fr;
+    }
+
     .ed-dashboard__card {
       position: relative;
       overflow: hidden;
