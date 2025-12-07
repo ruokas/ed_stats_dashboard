@@ -840,6 +840,10 @@ body[data-theme="dark"] select optgroup {
     .ed-dashboard__card--comments {
       gap: 12px;
       min-height: 180px;
+      max-height: 595px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-gutter: stable both-edges;
     }
 
     .ed-dashboard__comment {
