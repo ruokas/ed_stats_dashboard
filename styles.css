@@ -870,46 +870,40 @@ body[data-theme="dark"] select optgroup {
       gap: 12px;
       min-height: 256px;
       max-height: 595px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-gutter: stable;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(47, 91, 234, 0.45) rgba(255, 255, 255, 0.3);
+      overflow: hidden;
       background-clip: padding-box;
     }
 
-    .ed-dashboard__card--comments::-webkit-scrollbar {
-      width: 10px;
+    .ed-dashboard__comment-wrapper {
+      position: relative;
+      display: flex;
+      flex: 1 1 auto;
+      width: 100%;
+      overflow: hidden;
     }
 
-    .ed-dashboard__card--comments::-webkit-scrollbar-track {
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(236, 243, 255, 0.65));
-      border-radius: 12px;
-      box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.08);
+    .ed-dashboard__comment-scroller {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      transform: translateY(0);
+      will-change: transform;
     }
 
-    .ed-dashboard__card--comments::-webkit-scrollbar-thumb {
-      background: linear-gradient(160deg, rgba(47, 91, 234, 0.55), rgba(59, 130, 246, 0.5));
-      border-radius: 10px;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+    .ed-dashboard__comment-wrapper.is-scrollable .ed-dashboard__comment-scroller {
+      animation: ed-comment-scroll var(--scroll-duration, 12000ms) linear infinite;
     }
 
-    .ed-dashboard__card--comments::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(160deg, rgba(47, 91, 234, 0.7), rgba(59, 130, 246, 0.68));
-    }
-
-    body[data-theme="dark"] .ed-dashboard__card--comments {
-      scrollbar-color: rgba(148, 163, 184, 0.65) rgba(30, 41, 59, 0.5);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__card--comments::-webkit-scrollbar-track {
-      background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(30, 41, 59, 0.6));
-      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18);
-    }
-
-    body[data-theme="dark"] .ed-dashboard__card--comments::-webkit-scrollbar-thumb {
-      background: linear-gradient(160deg, rgba(148, 163, 184, 0.65), rgba(148, 163, 184, 0.55));
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.55);
+    @keyframes ed-comment-scroll {
+      0%,
+      10% {
+        transform: translateY(0);
+      }
+      90%,
+      100% {
+        transform: translateY(calc(-1 * var(--scroll-distance, 0px)));
+      }
     }
 
     .ed-dashboard__comment {
