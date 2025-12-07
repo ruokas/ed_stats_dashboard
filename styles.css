@@ -743,7 +743,7 @@ body[data-theme="dark"] select optgroup {
       display: flex;
       flex-direction: column;
       gap: clamp(10px, 1.6vw, 16px);
-      min-height: 140px;
+      min-height: 256px;
     }
 
     .ed-dashboard__card::after {
@@ -758,7 +758,7 @@ body[data-theme="dark"] select optgroup {
     .ed-dashboard__card--donut {
       align-items: center;
       text-align: center;
-      min-height: 220px;
+      min-height: 256px;
     }
 
     .ed-dashboard__card--donut .ed-dashboard__card-title {
@@ -843,7 +843,7 @@ body[data-theme="dark"] select optgroup {
 
     .ed-dashboard__card--comments {
       gap: 12px;
-      min-height: 180px;
+      min-height: 256px;
       max-height: 595px;
       overflow-y: auto;
       overflow-x: hidden;
@@ -1359,7 +1359,7 @@ body[data-theme="dark"] select optgroup {
       }
 
       .ed-dashboard__card {
-        min-height: 140px;
+        min-height: 256px;
       }
     }
 
