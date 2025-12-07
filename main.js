@@ -376,7 +376,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             legendAction: 'Išryškinti kategoriją grafike',
           },
           snapshot: {
-            title: 'Pasiskirstymas pagal kategoriją',
+            title: 'Pasiskirstymas pagal kat.',
             caption: 'Pacientų pasiskirstymas pagal naujausią įrašą.',
             empty: 'Nėra kategorijų duomenų.',
             legendTitle: 'Pacientų kategorijos',
@@ -8348,7 +8348,40 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
     }
 
+    function applyEdCommentAutoScroll(wrapper) {
+      if (!wrapper) {
+        return;
+      }
+      const scroller = wrapper.querySelector('.ed-dashboard__comment-scroller');
+      if (!scroller) {
+        return;
+      }
+
+      scroller.style.removeProperty('--scroll-distance');
+      scroller.style.removeProperty('--scroll-duration');
+      scroller.style.transform = 'translateY(0)';
+      wrapper.classList.remove('is-scrollable');
+
+      window.requestAnimationFrame(() => {
+        const containerHeight = wrapper.clientHeight;
+        const contentHeight = scroller.scrollHeight;
+        const overflow = contentHeight - containerHeight;
+        if (overflow > 4) {
+          const duration = Math.min(30000, Math.max(8000, overflow * 80));
+          scroller.style.setProperty('--scroll-distance', `${overflow}px`);
+          scroller.style.setProperty('--scroll-duration', `${duration}ms`);
+          wrapper.classList.add('is-scrollable');
+        }
+      });
+    }
+
     function renderEdCommentsCard(cardElement, cardConfig, rawComments, fallbackMeta = '') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ed-dashboard__comment-wrapper';
+
+      const scroller = document.createElement('div');
+      scroller.className = 'ed-dashboard__comment-scroller';
+
       const content = document.createElement('p');
       content.className = 'ed-dashboard__comment';
       content.setAttribute('aria-live', 'polite');
@@ -8356,7 +8389,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const meta = document.createElement('p');
       meta.className = 'ed-dashboard__card-meta ed-dashboard__comment-meta';
 
-      cardElement.append(content, meta);
+      scroller.append(content, meta);
+      wrapper.appendChild(scroller);
+      cardElement.appendChild(wrapper);
 
       const rotation = dashboardState.ed.commentRotation || { timerId: null, index: 0, entries: [] };
       if (rotation.timerId) {
@@ -8379,6 +8414,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         meta.textContent = typeof fallbackMeta === 'string' && fallbackMeta.trim().length
           ? fallbackMeta.trim()
           : (cardConfig.description || '');
+        applyEdCommentAutoScroll(wrapper);
         return;
       }
 
@@ -8404,6 +8440,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           metaParts.push(cardConfig.description);
         }
         meta.textContent = metaParts.join(' • ');
+        applyEdCommentAutoScroll(wrapper);
       };
 
       const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 8000;
