@@ -2117,6 +2117,23 @@ body[data-theme="dark"] select optgroup {
       line-height: 1.3;
     }
 
+    .feedback-card--comments {
+      min-height: 180px;
+      justify-content: flex-start;
+    }
+
+    .feedback-card__comment {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 2px 0 6px;
+      line-height: 1.5;
+    }
+
+    .feedback-card__comment-meta {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
     .feedback-empty {
       padding: 18px;
       text-align: center;
