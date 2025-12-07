@@ -310,22 +310,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               section: 'staffing',
             },
             {
-              key: 'nursePatientsPerStaff',
-              title: 'Slaugytojų santykis (1:n)',
-              description: 'Pacientai vienai slaugytojai.',
-              empty: '—',
-              format: 'ratio',
-              section: 'staffing',
-            },
-            {
-              key: 'doctorPatientsPerStaff',
-              title: 'Gydytojų santykis (1:n)',
-              description: 'Pacientai vienam gydytojui.',
-              empty: '—',
-              format: 'ratio',
-              section: 'staffing',
-            },
-            { 
               key: 'avgLosMonthMinutes',
               title: 'Vidutinis laikas',
               description: 'Vidutinė buvimo trukmė skyriuje.',
