@@ -95,12 +95,12 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 2024-02-08T05:50:00+02:00,2024-02-08T09:15:00+02:00,Rytas,TAIP,
 2024-02-08T19:30:00+02:00,2024-02-08T23:05:00+02:00,Vakare,NE,
 2024-02-09T23:10:00+02:00,2024-02-10T02:20:00+02:00,Naktis,TAIP,Traumatologija`;
-    const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Šaltinis,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?
-2024-02-01T09:12:00+02:00,Pacientas,Registratūros QR kodas,4,4,5,Taip,5,4
-2024-02-02T18:40:00+02:00,Artimasis,SMS nuoroda,3,4,3,Ne,,3
-2024-02-03T12:05:00+02:00,Pacientas,Planšetė skyriuje,5,5,5,Taip,5,5
-2024-02-04T22:20:00+02:00,Artimasis,El. pašto kvietimas,2,3,2,Taip,3,2
-2024-02-05T08:55:00+02:00,Pacientas,Registratūros QR kodas,4,5,4,Ne,,4`;
+    const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Šaltinis,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?,Turite pasiūlymų ar pastabų, kaip galėtume tobulėti?
+2024-02-01T09:12:00+02:00,Pacientas,Registratūros QR kodas,4,4,5,Taip,5,4,Daugiau informacijos apie laukimą priėmime būtų naudinga.
+2024-02-02T18:40:00+02:00,Artimasis,SMS nuoroda,3,4,3,Ne,,3,Ačiū už greitą pagalbą.
+2024-02-03T12:05:00+02:00,Pacientas,Planšetė skyriuje,5,5,5,Taip,5,5,
+2024-02-04T22:20:00+02:00,Artimasis,El. pašto kvietimas,2,3,2,Taip,3,2,Būtų puiku gauti aiškesnius laukimo laikus.
+2024-02-05T08:55:00+02:00,Pacientas,Registratūros QR kodas,4,5,4,Ne,,4,Labai draugiška komanda.`;
     const DEFAULT_ED_CSV = `Šiuo metu pacientų,Užimta lovų,Slaugytojų - pacientų santykis,Gydytojų - pacientų santykis,1 kategorijos pacientų,2 kategorijos pacientų,3 kategorijos pacientų,4 kategorijos pacientų,5 kategorijos pacientų
 14,11,1:4,1:7,3,4,4,2,1
 18,13,1:5,1:8,4,5,5,3,1
@@ -154,7 +154,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
       ed: {
         title: 'RŠL SMPS skydelis',
-        closeButton: (label) => `Grįžti į ${label}`,
+        closeButton: 'Grįžti',
         status: {
           loading: 'Kraunama...',
           empty: 'ED duomenų nerasta.',
@@ -174,11 +174,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             description: '',
             icon: 'flow',
           },
-          staffing: {
-            title: 'Komanda ir lovos',
-            description: '',
-            icon: 'staffing',
-          },
           efficiency: {
             title: 'Procesų trukmės',
             description: '',
@@ -188,6 +183,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             title: 'Įžvalgos',
             description: 'Srautų disbalanso ir procesų apkrovos indikatoriai.',
             icon: 'insights',
+          },
+          staffing: {
+            title: 'Pacientų atsiliepimai',
+            description: '',
+            icon: 'feedback',
           },
         },
         cards: {
@@ -307,25 +307,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               description: '',
               empty: '—',
               format: 'beds',
-              section: 'staffing',
+              section: 'flow',
             },
             {
-              key: 'nursePatientsPerStaff',
-              title: 'Slaugytojų santykis (1:n)',
-              description: 'Pacientai vienai slaugytojai.',
-              empty: '—',
-              format: 'ratio',
-              section: 'staffing',
-            },
-            {
-              key: 'doctorPatientsPerStaff',
-              title: 'Gydytojų santykis (1:n)',
-              description: 'Pacientai vienam gydytojui.',
-              empty: '—',
-              format: 'ratio',
-              section: 'staffing',
-            },
-            { 
               key: 'avgLosMonthMinutes',
               title: 'Vidutinis laikas',
               description: 'Vidutinė buvimo trukmė skyriuje.',
@@ -349,7 +333,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               type: 'donut',
               section: 'flow',
             },
-            { 
+            {
               key: 'avgLabMonthMinutes',
               title: 'Vid. lab. tyrimų laikas',
               description: 'Šių metų laboratorinių tyrimų trukmė.',
@@ -357,8 +341,28 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               format: 'minutes',
               section: 'efficiency',
             },
-          ],
-        },
+          {
+            key: 'feedbackCurrentMonthOverall',
+            title: 'Bendras vertinimas šį mėn.',
+            description: 'Vidutinis įvertinimas (1–5) pagal šio mėnesio atsiliepimus.',
+            empty: 'Nėra vertinimų.',
+            format: 'oneDecimal',
+            metaKey: 'feedbackCurrentMonthMeta',
+            trendKey: 'feedbackCurrentMonthTrend',
+            section: 'staffing',
+          },
+          {
+            key: 'feedbackComments',
+            title: 'Pacientų komentarai',
+            description: 'Naujausi atsiliepimai (rodymai rotuojasi kas kelias sekundes).',
+            empty: 'Kol kas nėra komentarų.',
+            type: 'comments',
+            rotateMs: 8000,
+            metaKey: 'feedbackCommentsMeta',
+            section: 'staffing',
+          },
+        ],
+      },
         dispositions: {
           legacy: {
             title: 'Pacientų išvykimo sprendimai',
@@ -372,7 +376,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             legendAction: 'Išryškinti kategoriją grafike',
           },
           snapshot: {
-            title: 'Pasiskirstymas pagal ESI',
+            title: 'Pasiskirstymas pagal kategoriją',
             caption: 'Pacientų pasiskirstymas pagal naujausią įrašą.',
             empty: 'Nėra kategorijų duomenų.',
             legendTitle: 'Pacientų kategorijos',
@@ -2355,6 +2359,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         filteredRecords: [],
         filters: getDefaultFeedbackFilters(),
         filterOptions: { respondent: [], location: [] },
+        commentRotation: { timerId: null, index: 0, entries: [] },
       },
       ed: {
         records: [],
@@ -2365,6 +2370,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         lastErrorMessage: '',
         error: null,
         updatedAt: null,
+        commentRotation: { timerId: null, index: 0, entries: [] },
       },
       edSearchQuery: '',
     };
@@ -2565,7 +2571,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
         const closeLabel = typeof TEXT.ed?.closeButton === 'function'
           ? TEXT.ed.closeButton(overviewLabel)
-          : (TEXT.ed?.closeButton || `Grįžti į ${overviewLabel}`);
+          : (TEXT.ed?.closeButton || 'Grįžti');
         selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
         selectors.closeEdPanelBtn.title = closeLabel;
         const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
@@ -4017,8 +4023,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       nurses: 'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
       aidesContact: 'ar bendravote su slaugytojų padėjėjais?,ar bendravote su slaugytojų padėjėjais,ar bendravote su slaugytoju padejejais,ar bendravote su padėjėjais,contact with aides',
       aides: 'kaip vertinate slaugytojų padėjėjų darbą,*padėjėjų darb*,slaugytoju padejeju darba,padėjėjų vertinimas,aide rating',
-      waiting: 'kaip vertinate laukimo laiką skyriuje?,*laukimo laik*,wait time,laukimo vertinimas',
-    };
+        waiting: 'kaip vertinate laukimo laiką skyriuje?,*laukimo laik*,wait time,laukimo vertinimas',
+        comments: 'turite pasiūlymų ar pastabų, kaip galėtume tobulėti?,pasiūlymai,pastabos,komentarai,atsiliepimų komentarai',
+      };
 
     const FEEDBACK_CONTACT_YES = 'taip,yes,yeah,1,true';
     const FEEDBACK_CONTACT_NO = 'ne,no,0,false';
@@ -4151,6 +4158,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         aidesContact: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aidesContact),
         aides: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aides),
         waiting: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.waiting),
+        comments: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.comments),
       };
 
       const yesCandidates = parseCandidateList(FEEDBACK_CONTACT_YES, FEEDBACK_CONTACT_YES)
@@ -4173,9 +4181,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             ? String(columns[indices.location] ?? '').trim()
             : '';
 
-          const overallRating = indices.overall >= 0
-            ? parseFeedbackRatingCell(columns[indices.overall])
-            : null;
+        const overallRating = indices.overall >= 0
+          ? parseFeedbackRatingCell(columns[indices.overall])
+          : null;
           const doctorsRating = indices.doctors >= 0
             ? parseFeedbackRatingCell(columns[indices.doctors])
             : null;
@@ -4188,33 +4196,38 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           const aidesRating = indices.aides >= 0
             ? parseFeedbackRatingCell(columns[indices.aides])
             : null;
-          const waitingRating = indices.waiting >= 0
-            ? parseFeedbackRatingCell(columns[indices.waiting])
-            : null;
+        const waitingRating = indices.waiting >= 0
+          ? parseFeedbackRatingCell(columns[indices.waiting])
+          : null;
 
-          const hasRating = [overallRating, doctorsRating, nursesRating, aidesRating, waitingRating]
-            .some((value) => Number.isFinite(value));
-          const hasContact = aidesContact === true || aidesContact === false;
-          const hasRespondent = respondent.length > 0;
+        const commentRaw = indices.comments >= 0
+          ? String(columns[indices.comments] ?? '').trim()
+          : '';
+        const hasComment = commentRaw.length > 0;
 
-          const hasLocation = location.length > 0;
+        const hasRating = [overallRating, doctorsRating, nursesRating, aidesRating, waitingRating]
+          .some((value) => Number.isFinite(value));
+        const hasContact = aidesContact === true || aidesContact === false;
+        const hasRespondent = respondent.length > 0;
+        const hasLocation = location.length > 0;
 
-          if (!dateValue && !hasRating && !hasRespondent && !hasContact && !hasLocation) {
-            return null;
-          }
+        if (!dateValue && !hasRating && !hasRespondent && !hasContact && !hasLocation && !hasComment) {
+          return null;
+        }
 
-          return {
-            receivedAt: dateValue,
-            respondent,
-            location,
-            overallRating: Number.isFinite(overallRating) ? overallRating : null,
-            doctorsRating: Number.isFinite(doctorsRating) ? doctorsRating : null,
-            nursesRating: Number.isFinite(nursesRating) ? nursesRating : null,
-            aidesContact: hasContact ? aidesContact : null,
-            aidesRating: Number.isFinite(aidesRating) ? aidesRating : null,
-            waitingRating: Number.isFinite(waitingRating) ? waitingRating : null,
-          };
-        })
+        return {
+          receivedAt: dateValue,
+          respondent,
+          location,
+          overallRating: Number.isFinite(overallRating) ? overallRating : null,
+          doctorsRating: Number.isFinite(doctorsRating) ? doctorsRating : null,
+          nursesRating: Number.isFinite(nursesRating) ? nursesRating : null,
+          aidesContact: hasContact ? aidesContact : null,
+          aidesRating: Number.isFinite(aidesRating) ? aidesRating : null,
+          waitingRating: Number.isFinite(waitingRating) ? waitingRating : null,
+          comment: hasComment ? commentRaw : '',
+        };
+      })
         .filter(Boolean);
     }
 
@@ -4568,6 +4581,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         fastSlowSplitValue: '',
         fastSlowTrendText: '',
         fastSlowTrendWindowDays: 0,
+        feedbackComments: [],
+        feedbackCommentsMeta: '',
       };
     }
 
@@ -6383,6 +6398,24 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           return bTime - aTime;
         });
 
+      const comments = sorted
+        .map((entry) => {
+          const text = typeof entry?.comment === 'string' ? entry.comment.trim() : '';
+          if (!text) {
+            return null;
+          }
+          const receivedAt = entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())
+            ? entry.receivedAt
+            : null;
+          return {
+            text,
+            receivedAt,
+            respondent: typeof entry?.respondent === 'string' ? entry.respondent.trim() : '',
+            location: typeof entry?.location === 'string' ? entry.location.trim() : '',
+          };
+        })
+        .filter(Boolean);
+
       const totalResponses = sorted.length;
       const collectValues = (key, predicate = null) => sorted
         .filter((entry) => (typeof predicate === 'function' ? predicate(entry) : true))
@@ -6496,6 +6529,19 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         contactShare: bucket.contactResponses > 0 ? bucket.contactYes / bucket.contactResponses : null,
       }));
 
+      const monthlySorted = monthly.slice().sort((a, b) => {
+        if (a?.month === b?.month) {
+          return 0;
+        }
+        if (!a?.month) {
+          return 1;
+        }
+        if (!b?.month) {
+          return -1;
+        }
+        return a.month > b.month ? 1 : -1;
+      });
+
       return {
         summary: {
           totalResponses,
@@ -6512,8 +6558,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           contactResponses,
           contactYes,
           contactShare,
+          comments,
         },
-        monthly,
+        monthly: monthlySorted,
       };
     }
 
@@ -8183,7 +8230,179 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       });
     }
 
+    function resetFeedbackCommentRotation() {
+      const rotation = dashboardState?.feedback?.commentRotation;
+      if (rotation?.timerId) {
+        window.clearInterval(rotation.timerId);
+      }
+      if (dashboardState?.feedback) {
+        dashboardState.feedback.commentRotation = { timerId: null, index: 0, entries: [] };
+      }
+    }
+
+    function renderFeedbackCommentsCard(cardElement, cardConfig, rawComments) {
+      const content = document.createElement('p');
+      content.className = 'feedback-card__comment';
+      content.setAttribute('aria-live', 'polite');
+
+      const meta = document.createElement('p');
+      meta.className = 'feedback-card__meta feedback-card__comment-meta';
+
+      cardElement.append(content, meta);
+
+      const rotation = dashboardState.feedback.commentRotation || { timerId: null, index: 0, entries: [] };
+      if (rotation.timerId) {
+        window.clearInterval(rotation.timerId);
+      }
+
+      const comments = Array.isArray(rawComments)
+        ? rawComments.filter((item) => item && typeof item.text === 'string' && item.text.trim())
+        : [];
+      rotation.entries = comments.map((item) => ({
+        ...item,
+        text: item.text.trim(),
+      }));
+      rotation.index = 0;
+      rotation.timerId = null;
+      dashboardState.feedback.commentRotation = rotation;
+
+      if (!rotation.entries.length) {
+        content.textContent = cardConfig.empty || TEXT.feedback?.empty || '—';
+        meta.textContent = '';
+        return;
+      }
+
+      const renderEntry = (entry) => {
+        content.textContent = entry?.text || (cardConfig.empty || TEXT.feedback?.empty || '—');
+        const metaParts = [];
+        if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
+          metaParts.push(statusTimeFormatter.format(entry.receivedAt));
+        }
+        if (entry?.respondent) {
+          metaParts.push(entry.respondent);
+        }
+        if (entry?.location) {
+          metaParts.push(entry.location);
+        }
+        if (!metaParts.length && cardConfig?.description) {
+          metaParts.push(cardConfig.description);
+        }
+        meta.textContent = metaParts.join(' • ');
+      };
+
+      const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 8000;
+
+      const advance = () => {
+        const entry = rotation.entries[rotation.index] || rotation.entries[0];
+        renderEntry(entry);
+        if (rotation.entries.length > 1) {
+          rotation.index = (rotation.index + 1) % rotation.entries.length;
+        }
+      };
+
+      advance();
+      if (rotation.entries.length > 1) {
+        rotation.timerId = window.setInterval(advance, rotateMs);
+      }
+    }
+
+    function resetEdCommentRotation() {
+      const rotation = dashboardState?.ed?.commentRotation;
+      if (rotation?.timerId) {
+        window.clearInterval(rotation.timerId);
+      }
+      if (dashboardState?.ed) {
+        dashboardState.ed.commentRotation = { timerId: null, index: 0, entries: [] };
+      }
+    }
+
+    function renderEdCommentsCard(cardElement, cardConfig, rawComments, fallbackMeta = '') {
+      const content = document.createElement('p');
+      content.className = 'ed-dashboard__comment';
+      content.setAttribute('aria-live', 'polite');
+
+      const meta = document.createElement('p');
+      meta.className = 'ed-dashboard__card-meta ed-dashboard__comment-meta';
+
+      cardElement.append(content, meta);
+
+      const rotation = dashboardState.ed.commentRotation || { timerId: null, index: 0, entries: [] };
+      if (rotation.timerId) {
+        window.clearInterval(rotation.timerId);
+      }
+
+      const comments = Array.isArray(rawComments)
+        ? rawComments.filter((item) => item && typeof item.text === 'string' && item.text.trim())
+        : [];
+      rotation.entries = comments.map((item) => ({
+        ...item,
+        text: item.text.trim(),
+      }));
+      rotation.index = 0;
+      rotation.timerId = null;
+      dashboardState.ed.commentRotation = rotation;
+
+      if (!rotation.entries.length) {
+        content.textContent = cardConfig.empty || TEXT.ed?.empty || '—';
+        meta.textContent = typeof fallbackMeta === 'string' && fallbackMeta.trim().length
+          ? fallbackMeta.trim()
+          : (cardConfig.description || '');
+        return;
+      }
+
+      const renderEntry = (entry) => {
+        content.textContent = entry?.text || (cardConfig.empty || TEXT.ed?.empty || '—');
+        const metaParts = [];
+        if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
+          metaParts.push(statusTimeFormatter.format(entry.receivedAt));
+        }
+        if (entry?.respondent) {
+          metaParts.push(entry.respondent);
+        }
+        if (entry?.location) {
+          metaParts.push(entry.location);
+        }
+        if (!metaParts.length) {
+          const metaText = typeof fallbackMeta === 'string' ? fallbackMeta.trim() : '';
+          if (metaText) {
+            metaParts.push(metaText);
+          }
+        }
+        if (!metaParts.length && cardConfig?.description) {
+          metaParts.push(cardConfig.description);
+        }
+        meta.textContent = metaParts.join(' • ');
+      };
+
+      const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 8000;
+
+      const advance = () => {
+        const entry = rotation.entries[rotation.index] || rotation.entries[0];
+        renderEntry(entry);
+        if (rotation.entries.length > 1) {
+          rotation.index = (rotation.index + 1) % rotation.entries.length;
+        }
+      };
+
+      advance();
+      if (rotation.entries.length > 1) {
+        rotation.timerId = window.setInterval(advance, rotateMs);
+      }
+    }
+
     function formatFeedbackCardValue(value, format) {
+      if (format === 'text') {
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          return trimmed || null;
+        }
+        if (value != null) {
+          const coerced = String(value).trim();
+          return coerced || null;
+        }
+        return null;
+      }
+
       let numericValue = null;
       if (Number.isFinite(value)) {
         numericValue = value;
@@ -8215,6 +8434,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         return;
       }
 
+      resetFeedbackCommentRotation();
+
       const cardsConfig = Array.isArray(TEXT.feedback?.cards)
         ? TEXT.feedback.cards
         : [];
@@ -8233,6 +8454,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const hasValues = cardsConfig.some((card) => {
         if (!card || typeof card !== 'object') {
           return false;
+        }
+        if (card.type === 'comments') {
+          return Array.isArray(summaryData[card.key]) && summaryData[card.key].length > 0;
         }
         const raw = summaryData[card.key];
         const formatted = formatFeedbackCardValue(raw, card.format);
@@ -8268,6 +8492,14 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         title.className = 'feedback-card__title';
         title.textContent = card.title || '';
 
+        if (card.type === 'comments') {
+          cardElement.classList.add('feedback-card--comments');
+          cardElement.appendChild(title);
+          renderFeedbackCommentsCard(cardElement, card, summaryData[card.key]);
+          selectors.feedbackCards.appendChild(cardElement);
+          return;
+        }
+
         const valueElement = document.createElement('p');
         valueElement.className = 'feedback-card__value';
         const rawValue = summaryData[card.key];
@@ -8280,6 +8512,12 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const metaParts = [];
         if (card.description) {
           metaParts.push(card.description);
+        }
+        if (card.metaKey && summaryData[card.metaKey]) {
+          const metaText = String(summaryData[card.metaKey]).trim();
+          if (metaText) {
+            metaParts.push(metaText);
+          }
         }
         if (card.countKey) {
           const rawCount = summaryData[card.countKey];
@@ -8300,6 +8538,23 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         if (metaParts.length) {
           metaElement.textContent = metaParts.join(' • ');
           nodes.push(metaElement);
+        }
+        if (card.trendKey && summaryData[card.trendKey]) {
+          const trendInfo = summaryData[card.trendKey];
+          const trendElement = document.createElement('p');
+          trendElement.className = 'feedback-card__trend';
+          trendElement.dataset.trend = trendInfo.trend || 'neutral';
+          if (trendInfo.ariaLabel) {
+            trendElement.setAttribute('aria-label', trendInfo.ariaLabel);
+          }
+          const arrowSpan = document.createElement('span');
+          arrowSpan.className = 'feedback-card__trend-arrow';
+          arrowSpan.textContent = trendInfo.arrow || '→';
+          const textSpan = document.createElement('span');
+          textSpan.className = 'feedback-card__trend-text';
+          textSpan.textContent = trendInfo.text || '';
+          trendElement.append(arrowSpan, textSpan);
+          nodes.push(trendElement);
         }
         nodes.forEach((node) => {
           cardElement.appendChild(node);
@@ -10385,6 +10640,51 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       };
     }
 
+    function buildFeedbackTrendInfo(currentValue, previousValue, { currentLabel = '', previousLabel = '' } = {}) {
+      if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) {
+        return null;
+      }
+
+      const diff = currentValue - previousValue;
+      const absDiff = Math.round(Math.abs(diff) * 10) / 10;
+
+      let trend = 'neutral';
+      if (diff > 0) {
+        trend = 'up';
+      } else if (diff < 0) {
+        trend = 'down';
+      }
+
+      if (!absDiff) {
+        trend = 'neutral';
+      }
+
+      const arrow = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+      const sign = trend === 'down' ? '−' : '+';
+      const previous = oneDecimalFormatter.format(previousValue);
+      const current = oneDecimalFormatter.format(currentValue);
+      const referenceLabel = previousLabel || 'praėjusiu mėnesiu';
+      const changeText = trend === 'neutral'
+        ? `Be pokyčio vs ${referenceLabel}`
+        : `${sign}${oneDecimalFormatter.format(absDiff)} vs ${referenceLabel}`;
+      const rangeText = previous && current ? `(${previous} → ${current})` : '';
+      const text = [changeText, rangeText].filter(Boolean).join(' ');
+      const ariaLabel = trend === 'neutral'
+        ? `Pokyčio nėra lyginant su ${referenceLabel}. Dabartinis: ${current}.`
+        : `Pokytis lyginant su ${referenceLabel}: ${sign}${oneDecimalFormatter.format(absDiff)} (nuo ${previous} iki ${current}).`;
+
+      return {
+        trend,
+        arrow,
+        text,
+        ariaLabel,
+        previousValue,
+        previousLabel,
+        currentValue,
+        currentLabel,
+      };
+    }
+
     function buildEdCardVisuals(config, primaryRaw, secondaryRaw) {
       const visuals = [];
 
@@ -10919,11 +11219,20 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '9' }));
       svg.appendChild(createSvgElement('polyline', { points: '12 7 12 12 15 15' }));
     },
-    staffing(svg) {
-      svg.appendChild(createSvgElement('circle', { cx: '8.5', cy: '8.5', r: '3' }));
-      svg.appendChild(createSvgElement('circle', { cx: '15.5', cy: '8.5', r: '3' }));
-      svg.appendChild(createSvgElement('path', { d: 'M4.5 20v-1.6A4.5 4.5 0 0 1 9 13.8h0A4.5 4.5 0 0 1 13.5 18.3V20' }));
-      svg.appendChild(createSvgElement('path', { d: 'M11 20v-1.2a4.5 4.5 0 0 1 4.5-4.5h0a4.5 4.5 0 0 1 4.5 4.5V20' }));
+    feedback(svg) {
+      svg.appendChild(createSvgElement('path', {
+        d: 'M5 5h11a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3h-5l-4 3v-3H5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z',
+        fill: 'none',
+      }));
+      svg.appendChild(createSvgElement('path', { d: 'M8.5 10.5h7' }));
+      svg.appendChild(createSvgElement('path', { d: 'M8.5 13h4.5' }));
+      svg.appendChild(createSvgElement('circle', {
+        cx: '16.5',
+        cy: '8.2',
+        r: '0.8',
+        fill: 'currentColor',
+        stroke: 'none',
+      }));
     },
     insights(svg) {
       svg.appendChild(createSvgElement('path', { d: 'M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z' }));
@@ -10993,11 +11302,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     renderEdDashboard(dashboardState.ed);
   }
 
-  async function renderEdDashboard(edData) {
-    if (!selectors.edPanel) {
-      return;
-    }
+    async function renderEdDashboard(edData) {
+      if (!selectors.edPanel) {
+        return;
+      }
       const baseDataset = edData || {};
+      const baseComments = Array.isArray(baseDataset?.summary?.feedbackComments)
+        ? baseDataset.summary.feedbackComments
+        : [];
+      const baseCommentsMeta = typeof baseDataset?.summary?.feedbackCommentsMeta === 'string'
+        ? baseDataset.summary.feedbackCommentsMeta
+        : '';
       const searchQuery = normalizeEdSearchQuery(dashboardState.edSearchQuery);
       const baseRecords = Array.isArray(baseDataset.records) ? baseDataset.records : [];
       let dataset = baseDataset;
@@ -11014,6 +11329,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         };
       }
       const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
+      if (!Array.isArray(summary.feedbackComments) || !summary.feedbackComments.length) {
+        summary.feedbackComments = baseComments.slice();
+      }
+      if (!summary.feedbackCommentsMeta && baseCommentsMeta) {
+        summary.feedbackCommentsMeta = baseCommentsMeta;
+      }
+      resetEdCommentRotation();
       const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
       const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
       const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
@@ -11068,6 +11390,79 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         ? summary.generatedAt
         : (dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime()) ? dataset.updatedAt : null);
 
+      const feedbackMonthly = Array.isArray(dashboardState?.feedback?.monthly)
+        ? dashboardState.feedback.monthly
+        : [];
+      const currentMonthKey = (formatLocalDateKey(new Date()) || '').slice(0, 7);
+      let feedbackMonth = feedbackMonthly.find((entry) => entry?.month === currentMonthKey) || null;
+      if (!feedbackMonth && feedbackMonthly.length) {
+        feedbackMonth = feedbackMonthly.reduce((latest, entry) => {
+          if (!entry?.month) {
+            return latest;
+          }
+          if (!latest) {
+            return entry;
+          }
+          return entry.month > latest.month ? entry : latest;
+        }, null);
+      }
+      const feedbackAverage = Number.isFinite(feedbackMonth?.overallAverage)
+        ? feedbackMonth.overallAverage
+        : null;
+      const feedbackResponses = Number.isFinite(feedbackMonth?.responses)
+        ? Math.max(0, Math.round(feedbackMonth.responses))
+        : null;
+      const feedbackMonthLabel = feedbackMonth?.month
+        ? (formatMonthLabel(feedbackMonth.month) || feedbackMonth.month)
+        : '';
+      const feedbackIndex = feedbackMonth?.month
+        ? feedbackMonthly.findIndex((entry) => entry?.month === feedbackMonth.month)
+        : -1;
+      let previousFeedbackMonth = null;
+      if (feedbackIndex > 0) {
+        for (let i = feedbackIndex - 1; i >= 0; i -= 1) {
+          const candidate = feedbackMonthly[i];
+          if (candidate?.month && Number.isFinite(candidate.overallAverage)) {
+            previousFeedbackMonth = candidate;
+            break;
+          }
+        }
+      }
+      const previousMonthLabel = previousFeedbackMonth?.month
+        ? (formatMonthLabel(previousFeedbackMonth.month) || previousFeedbackMonth.month)
+        : '';
+      const feedbackTrend = previousFeedbackMonth && Number.isFinite(feedbackAverage)
+        ? buildFeedbackTrendInfo(
+          feedbackAverage,
+          previousFeedbackMonth.overallAverage,
+          {
+            currentLabel: feedbackMonthLabel,
+            previousLabel: previousMonthLabel,
+          },
+        )
+        : null;
+      const feedbackMetaParts = [];
+      if (feedbackMonthLabel) {
+        feedbackMetaParts.push(feedbackMonthLabel);
+      }
+      if (feedbackResponses != null) {
+        feedbackMetaParts.push(`Atsakymai: ${numberFormatter.format(feedbackResponses)}`);
+      }
+      summary.feedbackCurrentMonthOverall = feedbackAverage;
+      summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
+      summary.feedbackCurrentMonthTrend = feedbackTrend;
+      const feedbackComments = Array.isArray(dashboardState?.feedback?.summary?.comments)
+        ? dashboardState.feedback.summary.comments
+        : [];
+      summary.feedbackComments = feedbackComments;
+      const existingCommentsMeta = typeof summary.feedbackCommentsMeta === 'string'
+        ? summary.feedbackCommentsMeta.trim()
+        : '';
+      const commentsMeta = feedbackComments.length
+        ? `Komentarai: ${numberFormatter.format(feedbackComments.length)}`
+        : '';
+      summary.feedbackCommentsMeta = existingCommentsMeta || commentsMeta;
+
       if (selectors.edCards) {
         selectors.edCards.replaceChildren();
         const sectionDefinitions = TEXT.ed.cardSections || {};
@@ -11102,6 +11497,22 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           });
         }
 
+        const sectionOrder = Array.isArray(sectionDefinitions)
+          ? sectionDefinitions
+          : Object.keys(sectionDefinitions || {});
+        if (sectionOrder.length) {
+          groupedSections.sort((a, b) => {
+            const aIndex = sectionOrder.indexOf(a.key);
+            const bIndex = sectionOrder.indexOf(b.key);
+            const normalizedA = aIndex === -1 ? Number.POSITIVE_INFINITY : aIndex;
+            const normalizedB = bIndex === -1 ? Number.POSITIVE_INFINITY : bIndex;
+            if (normalizedA === normalizedB) {
+              return String(a.key || '').localeCompare(String(b.key || ''));
+            }
+            return normalizedA - normalizedB;
+          });
+        }
+
         groupedSections.forEach((section, sectionIndex) => {
           if (!Array.isArray(section.cards) || !section.cards.length) {
             return;
@@ -11109,6 +11520,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           const sectionEl = document.createElement('section');
           sectionEl.className = 'ed-dashboard__section';
           sectionEl.setAttribute('role', 'region');
+          if (section.key) {
+            sectionEl.dataset.sectionKey = section.key;
+          }
 
           const shouldRenderHeader = Boolean(section.title || section.description || groupedSections.length > 1);
           let sectionLabelId = '';
@@ -11158,15 +11572,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             card.className = 'ed-dashboard__card';
             card.setAttribute('role', 'listitem');
 
-            const isDonutCard = config.type === 'donut';
-            if (isDonutCard) {
-              card.classList.add('ed-dashboard__card--donut');
-            }
+              const isDonutCard = config.type === 'donut';
+              if (isDonutCard) {
+                card.classList.add('ed-dashboard__card--donut');
+              }
 
-            const title = document.createElement('p');
-            title.className = 'ed-dashboard__card-title';
-            title.textContent = config.title;
-            if (isDonutCard) {
+              const isCommentsCard = config.type === 'comments';
+
+              const title = document.createElement('p');
+              title.className = 'ed-dashboard__card-title';
+              title.textContent = config.title;
+              if (isDonutCard) {
               title.id = 'edDispositionsTitle';
             }
             card.appendChild(title);
@@ -11188,12 +11604,21 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               message.hidden = true;
               card.appendChild(message);
 
-              cardsWrapper.appendChild(card);
-              return;
-            }
+                cardsWrapper.appendChild(card);
+                return;
+              }
 
-            const value = document.createElement('p');
-            value.className = 'ed-dashboard__card-value';
+              if (isCommentsCard) {
+                card.classList.add('ed-dashboard__card--comments');
+                const rawComments = Array.isArray(summary?.[config.key]) ? summary[config.key] : [];
+                const metaValue = config.metaKey ? summary?.[config.metaKey] : '';
+                renderEdCommentsCard(card, config, rawComments, metaValue);
+                cardsWrapper.appendChild(card);
+                return;
+              }
+
+              const value = document.createElement('p');
+              value.className = 'ed-dashboard__card-value';
             const primaryRaw = summary?.[config.key];
             const secondaryRaw = config.secondaryKey ? summary?.[config.secondaryKey] : undefined;
             let hasValue = false;
@@ -12028,8 +12453,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             updatedAt: new Date(),
           };
         }
-        await renderEdDashboard(dashboardState.ed);
-
         if (dataResult.status !== 'fulfilled') {
           throw dataResult.reason;
         }
@@ -12097,7 +12520,20 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         renderYearlyTable(yearlyStats);
         dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
         updateFeedbackFilterOptions(dashboardState.feedback.records);
-        applyFeedbackFiltersAndRender();
+        const feedbackStats = applyFeedbackFiltersAndRender();
+        const edSummaryForComments = dashboardState.ed.summary || createEmptyEdSummary(dashboardState.ed?.meta?.type);
+        edSummaryForComments.feedbackComments = Array.isArray(feedbackStats?.summary?.comments)
+          ? feedbackStats.summary.comments
+          : [];
+        const commentsMeta = edSummaryForComments.feedbackCommentsMeta
+          && typeof edSummaryForComments.feedbackCommentsMeta === 'string'
+          ? edSummaryForComments.feedbackCommentsMeta.trim()
+          : '';
+        const fallbackCommentsMeta = edSummaryForComments.feedbackComments.length
+          ? `Komentarai: ${numberFormatter.format(edSummaryForComments.feedbackComments.length)}`
+          : '';
+        edSummaryForComments.feedbackCommentsMeta = commentsMeta || fallbackCommentsMeta;
+        dashboardState.ed.summary = edSummaryForComments;
         setStatus('success');
         applyFeedbackStatusNote();
         await renderEdDashboard(dashboardState.ed);
