@@ -210,7 +210,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             },
             {
               key: 'hospitalizedMonthShare',
-              title: 'Hospitalizacijų dalis (šis mėn.)',
+              title: 'ospitalizacijų dalis šį mėn.',
               description: 'Šio mėnesio hospitalizacijų dalis.',
               empty: '—',
               format: 'percent',
@@ -319,7 +319,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             },
             {
               key: 'hospitalizedMonthShare',
-              title: 'Hospitalizacijų dalis (šis mėn.)',
+              title: 'ospitalizacijų dalis šį mėn.',
               description: '',
               empty: '—',
               format: 'percent',
