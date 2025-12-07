@@ -728,6 +728,18 @@ body[data-theme="dark"] select optgroup {
       align-items: stretch;
     }
 
+    .ed-dashboard__section--skeleton {
+      opacity: 0.95;
+    }
+
+    .ed-dashboard__section--skeleton .ed-dashboard__section-icon {
+      background: transparent;
+      box-shadow: none;
+      border: 1px dashed var(--color-border-strong);
+      color: transparent;
+      min-width: 44px;
+    }
+
     .ed-dashboard__section[data-section-key="staffing"] .ed-dashboard__section-grid {
       grid-template-columns: 1fr;
     }
@@ -744,6 +756,19 @@ body[data-theme="dark"] select optgroup {
       flex-direction: column;
       gap: clamp(10px, 1.6vw, 16px);
       min-height: 256px;
+    }
+
+    .ed-dashboard__card--skeleton {
+      gap: 10px;
+      box-shadow: none;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      opacity: 0.9;
+    }
+
+    body[data-theme="dark"] .ed-dashboard__card--skeleton {
+      border-color: rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.82);
     }
 
     .ed-dashboard__card::after {

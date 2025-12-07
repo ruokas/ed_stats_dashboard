@@ -210,7 +210,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             },
             {
               key: 'hospitalizedMonthShare',
-              title: 'Hospitalizacijų dalis (šis mėn.)',
+              title: 'Hospitalizacijų dalis šį mėn.',
               description: 'Šio mėnesio hospitalizacijų dalis.',
               empty: '—',
               format: 'percent',
@@ -319,7 +319,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             },
             {
               key: 'hospitalizedMonthShare',
-              title: 'Hospitalizacijų dalis (šis mėn.)',
+              title: 'Hospitalizacijų dalis šį mėn.',
               description: '',
               empty: '—',
               format: 'percent',
@@ -7639,6 +7639,38 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       delete grid.dataset.skeleton;
     }
 
+    function showEdSkeleton() {
+      const container = selectors.edCards;
+      if (!container || container.dataset.skeleton === 'true') {
+        return;
+      }
+      const template = document.getElementById('edSkeleton');
+      if (selectors.edStandardSection) {
+        selectors.edStandardSection.setAttribute('aria-busy', 'true');
+      }
+      container.dataset.skeleton = 'true';
+      if (template instanceof HTMLTemplateElement) {
+        const skeletonFragment = template.content.cloneNode(true);
+        container.replaceChildren(skeletonFragment);
+      } else {
+        container.replaceChildren();
+      }
+    }
+
+    function hideEdSkeleton() {
+      const container = selectors.edCards;
+      if (!container) {
+        return;
+      }
+      if (selectors.edStandardSection) {
+        selectors.edStandardSection.removeAttribute('aria-busy');
+      }
+      if (container.dataset.skeleton === 'true') {
+        container.replaceChildren();
+      }
+      delete container.dataset.skeleton;
+    }
+
     function renderKpis(dailyStats) {
       hideKpiSkeleton();
       selectors.kpiGrid.replaceChildren();
@@ -10664,11 +10696,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const previous = oneDecimalFormatter.format(previousValue);
       const current = oneDecimalFormatter.format(currentValue);
       const referenceLabel = previousLabel || 'praėjusiu mėnesiu';
-      const changeText = trend === 'neutral'
-        ? `Be pokyčio vs ${referenceLabel}`
-        : `${sign}${oneDecimalFormatter.format(absDiff)} vs ${referenceLabel}`;
+      const changeSummary = trend === 'neutral'
+        ? 'Pokyčio nėra'
+        : `${sign}${oneDecimalFormatter.format(absDiff)}`;
       const rangeText = previous && current ? `(${previous} → ${current})` : '';
-      const text = [changeText, rangeText].filter(Boolean).join(' ');
+      const text = [changeSummary, rangeText].filter(Boolean).join(' ');
       const ariaLabel = trend === 'neutral'
         ? `Pokyčio nėra lyginant su ${referenceLabel}. Dabartinis: ${current}.`
         : `Pokytis lyginant su ${referenceLabel}: ${sign}${oneDecimalFormatter.format(absDiff)} (nuo ${previous} iki ${current}).`;
@@ -10685,7 +10717,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       };
     }
 
-    function buildEdCardVisuals(config, primaryRaw, secondaryRaw) {
+    function buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary) {
       const visuals = [];
 
       if (config.format === 'percent' && Number.isFinite(primaryRaw)) {
@@ -10766,6 +10798,33 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           }
           visuals.push(delta);
         }
+      } else if (config.trendKey && summary?.[config.trendKey]) {
+        const trendInfo = summary[config.trendKey];
+        const delta = document.createElement('p');
+        delta.className = 'ed-dashboard__card-delta';
+        delta.dataset.trend = trendInfo.trend || 'neutral';
+        if (trendInfo.ariaLabel) {
+          delta.setAttribute('aria-label', trendInfo.ariaLabel);
+        }
+
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'ed-dashboard__card-delta-arrow';
+        arrowSpan.textContent = trendInfo.arrow || '→';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'ed-dashboard__card-delta-text';
+        textSpan.textContent = trendInfo.text || '';
+
+        delta.append(arrowSpan, textSpan);
+
+        if (trendInfo.previousLabel) {
+          const referenceSpan = document.createElement('span');
+          referenceSpan.className = 'ed-dashboard__card-delta-reference';
+          referenceSpan.textContent = `vs ${trendInfo.previousLabel}`;
+          delta.appendChild(referenceSpan);
+        }
+
+        visuals.push(delta);
       }
 
       return visuals;
@@ -11306,6 +11365,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (!selectors.edPanel) {
         return;
       }
+      hideEdSkeleton();
       const baseDataset = edData || {};
       const baseComments = Array.isArray(baseDataset?.summary?.feedbackComments)
         ? baseDataset.summary.feedbackComments
@@ -11665,7 +11725,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 
             card.appendChild(value);
 
-            const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw);
+            const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary);
             visuals.forEach((node) => {
               card.appendChild(node);
             });
@@ -12396,6 +12456,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         || dashboardState.charts.funnel;
       if (shouldShowSkeletons && !chartsInitialized) {
         showChartSkeletons();
+      }
+      if (shouldShowSkeletons && (!selectors.edCards || !selectors.edCards.children.length)) {
+        showEdSkeleton();
       }
 
       try {
