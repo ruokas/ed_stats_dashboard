@@ -333,13 +333,22 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               type: 'donut',
               section: 'flow',
             },
-            { 
+            {
               key: 'avgLabMonthMinutes',
               title: 'Vid. lab. tyrimų laikas',
               description: 'Šių metų laboratorinių tyrimų trukmė.',
               empty: '—',
               format: 'minutes',
               section: 'efficiency',
+            },
+            {
+              key: 'feedbackCurrentMonthOverall',
+              title: 'Bendras vertinimas šį mėn.',
+              description: 'Vidutinis įvertinimas (1–5) pagal šio mėnesio atsiliepimus.',
+              empty: 'Nėra vertinimų.',
+              format: 'oneDecimal',
+              metaKey: 'feedbackCurrentMonthMeta',
+              section: 'staffing',
             },
           ],
         },
@@ -6480,6 +6489,19 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         contactShare: bucket.contactResponses > 0 ? bucket.contactYes / bucket.contactResponses : null,
       }));
 
+      const monthlySorted = monthly.slice().sort((a, b) => {
+        if (a?.month === b?.month) {
+          return 0;
+        }
+        if (!a?.month) {
+          return 1;
+        }
+        if (!b?.month) {
+          return -1;
+        }
+        return a.month > b.month ? 1 : -1;
+      });
+
       return {
         summary: {
           totalResponses,
@@ -6497,7 +6519,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           contactYes,
           contactShare,
         },
-        monthly,
+        monthly: monthlySorted,
       };
     }
 
@@ -11051,6 +11073,41 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const updatedAt = summary.generatedAt instanceof Date && !Number.isNaN(summary.generatedAt.getTime())
         ? summary.generatedAt
         : (dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime()) ? dataset.updatedAt : null);
+
+      const feedbackMonthly = Array.isArray(dashboardState?.feedback?.monthly)
+        ? dashboardState.feedback.monthly
+        : [];
+      const currentMonthKey = (formatLocalDateKey(new Date()) || '').slice(0, 7);
+      let feedbackMonth = feedbackMonthly.find((entry) => entry?.month === currentMonthKey) || null;
+      if (!feedbackMonth && feedbackMonthly.length) {
+        feedbackMonth = feedbackMonthly.reduce((latest, entry) => {
+          if (!entry?.month) {
+            return latest;
+          }
+          if (!latest) {
+            return entry;
+          }
+          return entry.month > latest.month ? entry : latest;
+        }, null);
+      }
+      const feedbackAverage = Number.isFinite(feedbackMonth?.overallAverage)
+        ? feedbackMonth.overallAverage
+        : null;
+      const feedbackResponses = Number.isFinite(feedbackMonth?.responses)
+        ? Math.max(0, Math.round(feedbackMonth.responses))
+        : null;
+      const feedbackMonthLabel = feedbackMonth?.month
+        ? (formatMonthLabel(feedbackMonth.month) || feedbackMonth.month)
+        : '';
+      const feedbackMetaParts = [];
+      if (feedbackMonthLabel) {
+        feedbackMetaParts.push(feedbackMonthLabel);
+      }
+      if (feedbackResponses != null) {
+        feedbackMetaParts.push(`Atsakymai: ${numberFormatter.format(feedbackResponses)}`);
+      }
+      summary.feedbackCurrentMonthOverall = feedbackAverage;
+      summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
 
       if (selectors.edCards) {
         selectors.edCards.replaceChildren();
