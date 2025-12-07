@@ -154,7 +154,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
       ed: {
         title: 'RŠL SMPS skydelis',
-        closeButton: (label) => `Grįžti į ${label}`,
+        closeButton: 'Grįžti',
         status: {
           loading: 'Kraunama...',
           empty: 'ED duomenų nerasta.',
@@ -2549,7 +2549,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
         const closeLabel = typeof TEXT.ed?.closeButton === 'function'
           ? TEXT.ed.closeButton(overviewLabel)
-          : (TEXT.ed?.closeButton || `Grįžti į ${overviewLabel}`);
+          : (TEXT.ed?.closeButton || 'Grįžti');
         selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
         selectors.closeEdPanelBtn.title = closeLabel;
         const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
