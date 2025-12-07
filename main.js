@@ -10664,11 +10664,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const previous = oneDecimalFormatter.format(previousValue);
       const current = oneDecimalFormatter.format(currentValue);
       const referenceLabel = previousLabel || 'praėjusiu mėnesiu';
-      const changeText = trend === 'neutral'
-        ? `Be pokyčio vs ${referenceLabel}`
-        : `${sign}${oneDecimalFormatter.format(absDiff)} vs ${referenceLabel}`;
+      const changeSummary = trend === 'neutral'
+        ? 'Pokyčio nėra'
+        : `${sign}${oneDecimalFormatter.format(absDiff)}`;
       const rangeText = previous && current ? `(${previous} → ${current})` : '';
-      const text = [changeText, rangeText].filter(Boolean).join(' ');
+      const text = [changeSummary, rangeText].filter(Boolean).join(' ');
       const ariaLabel = trend === 'neutral'
         ? `Pokyčio nėra lyginant su ${referenceLabel}. Dabartinis: ${current}.`
         : `Pokytis lyginant su ${referenceLabel}: ${sign}${oneDecimalFormatter.format(absDiff)} (nuo ${previous} iki ${current}).`;
