@@ -10685,7 +10685,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       };
     }
 
-    function buildEdCardVisuals(config, primaryRaw, secondaryRaw) {
+    function buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary) {
       const visuals = [];
 
       if (config.format === 'percent' && Number.isFinite(primaryRaw)) {
@@ -10766,6 +10766,33 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           }
           visuals.push(delta);
         }
+      } else if (config.trendKey && summary?.[config.trendKey]) {
+        const trendInfo = summary[config.trendKey];
+        const delta = document.createElement('p');
+        delta.className = 'ed-dashboard__card-delta';
+        delta.dataset.trend = trendInfo.trend || 'neutral';
+        if (trendInfo.ariaLabel) {
+          delta.setAttribute('aria-label', trendInfo.ariaLabel);
+        }
+
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'ed-dashboard__card-delta-arrow';
+        arrowSpan.textContent = trendInfo.arrow || '→';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'ed-dashboard__card-delta-text';
+        textSpan.textContent = trendInfo.text || '';
+
+        delta.append(arrowSpan, textSpan);
+
+        if (trendInfo.previousLabel) {
+          const referenceSpan = document.createElement('span');
+          referenceSpan.className = 'ed-dashboard__card-delta-reference';
+          referenceSpan.textContent = `vs ${trendInfo.previousLabel}`;
+          delta.appendChild(referenceSpan);
+        }
+
+        visuals.push(delta);
       }
 
       return visuals;
@@ -11665,7 +11692,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 
             card.appendChild(value);
 
-            const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw);
+            const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary);
             visuals.forEach((node) => {
               card.appendChild(node);
             });
