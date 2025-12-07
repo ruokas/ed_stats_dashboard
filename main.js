@@ -7639,6 +7639,38 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       delete grid.dataset.skeleton;
     }
 
+    function showEdSkeleton() {
+      const container = selectors.edCards;
+      if (!container || container.dataset.skeleton === 'true') {
+        return;
+      }
+      const template = document.getElementById('edSkeleton');
+      if (selectors.edStandardSection) {
+        selectors.edStandardSection.setAttribute('aria-busy', 'true');
+      }
+      container.dataset.skeleton = 'true';
+      if (template instanceof HTMLTemplateElement) {
+        const skeletonFragment = template.content.cloneNode(true);
+        container.replaceChildren(skeletonFragment);
+      } else {
+        container.replaceChildren();
+      }
+    }
+
+    function hideEdSkeleton() {
+      const container = selectors.edCards;
+      if (!container) {
+        return;
+      }
+      if (selectors.edStandardSection) {
+        selectors.edStandardSection.removeAttribute('aria-busy');
+      }
+      if (container.dataset.skeleton === 'true') {
+        container.replaceChildren();
+      }
+      delete container.dataset.skeleton;
+    }
+
     function renderKpis(dailyStats) {
       hideKpiSkeleton();
       selectors.kpiGrid.replaceChildren();
@@ -11333,6 +11365,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (!selectors.edPanel) {
         return;
       }
+      hideEdSkeleton();
       const baseDataset = edData || {};
       const baseComments = Array.isArray(baseDataset?.summary?.feedbackComments)
         ? baseDataset.summary.feedbackComments
@@ -12423,6 +12456,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         || dashboardState.charts.funnel;
       if (shouldShowSkeletons && !chartsInitialized) {
         showChartSkeletons();
+      }
+      if (shouldShowSkeletons && (!selectors.edCards || !selectors.edCards.children.length)) {
+        showEdSkeleton();
       }
 
       try {
