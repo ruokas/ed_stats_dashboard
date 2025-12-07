@@ -174,11 +174,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             description: '',
             icon: 'flow',
           },
-          staffing: {
-            title: 'Komanda ir lovos',
-            description: '',
-            icon: 'staffing',
-          },
           efficiency: {
             title: 'Procesų trukmės',
             description: '',
@@ -188,6 +183,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             title: 'Įžvalgos',
             description: 'Srautų disbalanso ir procesų apkrovos indikatoriai.',
             icon: 'insights',
+          },
+          staffing: {
+            title: 'Pacientų atsiliepimai',
+            description: '',
+            icon: 'staffing',
           },
         },
         cards: {
@@ -307,7 +307,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               description: '',
               empty: '—',
               format: 'beds',
-              section: 'staffing',
+              section: 'flow',
             },
             {
               key: 'avgLosMonthMinutes',
@@ -11083,6 +11083,22 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
             description: sectionDefinitions?.default?.description || '',
             icon: sectionDefinitions?.default?.icon || '',
             cards: cardConfigs.filter((config) => config && typeof config === 'object'),
+          });
+        }
+
+        const sectionOrder = Array.isArray(sectionDefinitions)
+          ? sectionDefinitions
+          : Object.keys(sectionDefinitions || {});
+        if (sectionOrder.length) {
+          groupedSections.sort((a, b) => {
+            const aIndex = sectionOrder.indexOf(a.key);
+            const bIndex = sectionOrder.indexOf(b.key);
+            const normalizedA = aIndex === -1 ? Number.POSITIVE_INFINITY : aIndex;
+            const normalizedB = bIndex === -1 ? Number.POSITIVE_INFINITY : bIndex;
+            if (normalizedA === normalizedB) {
+              return String(a.key || '').localeCompare(String(b.key || ''));
+            }
+            return normalizedA - normalizedB;
           });
         }
 
