@@ -348,6 +348,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
               empty: 'Nėra vertinimų.',
               format: 'oneDecimal',
               metaKey: 'feedbackCurrentMonthMeta',
+              trendKey: 'feedbackCurrentMonthTrend',
               section: 'staffing',
             },
           ],
@@ -8287,6 +8288,12 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         if (card.description) {
           metaParts.push(card.description);
         }
+        if (card.metaKey && summaryData[card.metaKey]) {
+          const metaText = String(summaryData[card.metaKey]).trim();
+          if (metaText) {
+            metaParts.push(metaText);
+          }
+        }
         if (card.countKey) {
           const rawCount = summaryData[card.countKey];
           let numericCount = null;
@@ -8306,6 +8313,23 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         if (metaParts.length) {
           metaElement.textContent = metaParts.join(' • ');
           nodes.push(metaElement);
+        }
+        if (card.trendKey && summaryData[card.trendKey]) {
+          const trendInfo = summaryData[card.trendKey];
+          const trendElement = document.createElement('p');
+          trendElement.className = 'feedback-card__trend';
+          trendElement.dataset.trend = trendInfo.trend || 'neutral';
+          if (trendInfo.ariaLabel) {
+            trendElement.setAttribute('aria-label', trendInfo.ariaLabel);
+          }
+          const arrowSpan = document.createElement('span');
+          arrowSpan.className = 'feedback-card__trend-arrow';
+          arrowSpan.textContent = trendInfo.arrow || '→';
+          const textSpan = document.createElement('span');
+          textSpan.className = 'feedback-card__trend-text';
+          textSpan.textContent = trendInfo.text || '';
+          trendElement.append(arrowSpan, textSpan);
+          nodes.push(trendElement);
         }
         nodes.forEach((node) => {
           cardElement.appendChild(node);
@@ -10391,6 +10415,51 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       };
     }
 
+    function buildFeedbackTrendInfo(currentValue, previousValue, { currentLabel = '', previousLabel = '' } = {}) {
+      if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) {
+        return null;
+      }
+
+      const diff = currentValue - previousValue;
+      const absDiff = Math.round(Math.abs(diff) * 10) / 10;
+
+      let trend = 'neutral';
+      if (diff > 0) {
+        trend = 'up';
+      } else if (diff < 0) {
+        trend = 'down';
+      }
+
+      if (!absDiff) {
+        trend = 'neutral';
+      }
+
+      const arrow = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+      const sign = trend === 'down' ? '−' : '+';
+      const previous = oneDecimalFormatter.format(previousValue);
+      const current = oneDecimalFormatter.format(currentValue);
+      const referenceLabel = previousLabel || 'praėjusiu mėnesiu';
+      const changeText = trend === 'neutral'
+        ? `Be pokyčio vs ${referenceLabel}`
+        : `${sign}${oneDecimalFormatter.format(absDiff)} vs ${referenceLabel}`;
+      const rangeText = previous && current ? `(${previous} → ${current})` : '';
+      const text = [changeText, rangeText].filter(Boolean).join(' ');
+      const ariaLabel = trend === 'neutral'
+        ? `Pokyčio nėra lyginant su ${referenceLabel}. Dabartinis: ${current}.`
+        : `Pokytis lyginant su ${referenceLabel}: ${sign}${oneDecimalFormatter.format(absDiff)} (nuo ${previous} iki ${current}).`;
+
+      return {
+        trend,
+        arrow,
+        text,
+        ariaLabel,
+        previousValue,
+        previousLabel,
+        currentValue,
+        currentLabel,
+      };
+    }
+
     function buildEdCardVisuals(config, primaryRaw, secondaryRaw) {
       const visuals = [];
 
@@ -11099,6 +11168,32 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const feedbackMonthLabel = feedbackMonth?.month
         ? (formatMonthLabel(feedbackMonth.month) || feedbackMonth.month)
         : '';
+      const feedbackIndex = feedbackMonth?.month
+        ? feedbackMonthly.findIndex((entry) => entry?.month === feedbackMonth.month)
+        : -1;
+      let previousFeedbackMonth = null;
+      if (feedbackIndex > 0) {
+        for (let i = feedbackIndex - 1; i >= 0; i -= 1) {
+          const candidate = feedbackMonthly[i];
+          if (candidate?.month && Number.isFinite(candidate.overallAverage)) {
+            previousFeedbackMonth = candidate;
+            break;
+          }
+        }
+      }
+      const previousMonthLabel = previousFeedbackMonth?.month
+        ? (formatMonthLabel(previousFeedbackMonth.month) || previousFeedbackMonth.month)
+        : '';
+      const feedbackTrend = previousFeedbackMonth && Number.isFinite(feedbackAverage)
+        ? buildFeedbackTrendInfo(
+          feedbackAverage,
+          previousFeedbackMonth.overallAverage,
+          {
+            currentLabel: feedbackMonthLabel,
+            previousLabel: previousMonthLabel,
+          },
+        )
+        : null;
       const feedbackMetaParts = [];
       if (feedbackMonthLabel) {
         feedbackMetaParts.push(feedbackMonthLabel);
@@ -11108,6 +11203,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
       summary.feedbackCurrentMonthOverall = feedbackAverage;
       summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
+      summary.feedbackCurrentMonthTrend = feedbackTrend;
 
       if (selectors.edCards) {
         selectors.edCards.replaceChildren();
