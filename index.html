@@ -34,6 +34,38 @@
       transition: none !important;
     }
   </style>
+  <style>
+    :root[data-show-recent="false"] [data-section="recent"],
+    :root[data-show-monthly="false"] [data-section="monthly"],
+    :root[data-show-yearly="false"] [data-section="yearly"],
+    :root[data-show-feedback="false"] [data-section="feedback"] {
+      display: none;
+    }
+  </style>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const storageKey = 'edDashboardSettings-v1';
+      const applyFlag = (name, value, fallback = true) => {
+        const normalized = typeof value === 'boolean' ? value : fallback;
+        root.setAttribute(`data-show-${name}`, normalized ? 'true' : 'false');
+      };
+      try {
+        const raw = localStorage.getItem(storageKey);
+        const parsed = raw ? JSON.parse(raw) : null;
+        const output = parsed?.output || {};
+        applyFlag('recent', output.showRecent);
+        applyFlag('monthly', output.showMonthly);
+        applyFlag('yearly', output.showYearly);
+        applyFlag('feedback', output.showFeedback);
+      } catch (error) {
+        applyFlag('recent', undefined, true);
+        applyFlag('monthly', undefined, true);
+        applyFlag('yearly', undefined, true);
+        applyFlag('feedback', undefined, true);
+      }
+    })();
+  </script>
   <script>
     (() => {
       const storageKey = 'edDashboardTheme';

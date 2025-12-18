@@ -1819,6 +1819,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
     }
 
+    function syncSectionVisibilityAttributes() {
+      const root = document.documentElement;
+      if (!root) {
+        return;
+      }
+      root.setAttribute('data-show-recent', settings.output.showRecent ? 'true' : 'false');
+      root.setAttribute('data-show-monthly', settings.output.showMonthly ? 'true' : 'false');
+      root.setAttribute('data-show-yearly', settings.output.showYearly ? 'true' : 'false');
+      root.setAttribute('data-show-feedback', settings.output.showFeedback ? 'true' : 'false');
+    }
+
     function toggleSectionVisibility(element, isVisible) {
       if (!element) {
         return;
@@ -1837,6 +1848,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
       toggleSectionVisibility(selectors.yearlySection, settings.output.showYearly);
       toggleSectionVisibility(selectors.feedbackSection, settings.output.showFeedback);
+      syncSectionVisibilityAttributes();
       syncSectionNavVisibility();
     }
 
