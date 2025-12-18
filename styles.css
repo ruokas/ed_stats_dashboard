@@ -4323,3 +4323,110 @@ body[data-theme="dark"] select optgroup {
         scroll-behavior: auto !important;
       }
     }
+
+    /* Global filter sidebar */
+    body[data-global-filters-enabled="true"] #kpiFiltersToggle,
+    body[data-global-filters-enabled="true"] .kpi-controls,
+    body[data-global-filters-enabled="true"] .chart-period,
+    body[data-global-filters-enabled="true"] .chart-year-filter,
+    body[data-global-filters-enabled="true"] #chartFiltersForm {
+      display: none !important;
+    }
+
+    body[data-global-filters-open="true"] {
+      overflow: hidden;
+    }
+
+    .global-filters-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(12, 18, 32, 0.52);
+      backdrop-filter: blur(6px);
+      z-index: 95;
+    }
+
+    body[data-theme="dark"] .global-filters-overlay {
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    .global-filters {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: min(380px, 92vw);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 96;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+    }
+
+    .global-filters__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .global-filters__title {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .global-filters__summary {
+      margin: 6px 0 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .global-filters__close {
+      flex: 0 0 auto;
+    }
+
+    .global-filters__form {
+      padding: 14px 18px 18px;
+      display: grid;
+      gap: 12px;
+      overflow: auto;
+    }
+
+    .global-filter {
+      display: grid;
+      gap: 6px;
+      font-size: 0.92rem;
+    }
+
+    .global-filter span {
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .global-filter select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      font: inherit;
+      outline: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .global-filter select:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .global-filters__actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 6px;
+    }

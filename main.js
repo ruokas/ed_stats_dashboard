@@ -737,6 +737,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
     const THEME_STORAGE_KEY = 'edDashboardTheme';
     const CLIENT_CONFIG_KEY = 'edDashboardClientConfig-v1';
+    const GLOBAL_FILTERS_STORAGE_KEY = 'edDashboardGlobalFilters-v1';
     const CACHE_PREFIXES = ['ed-static', 'ed-api'];
 
     const clientStore = createClientStore(CLIENT_CONFIG_KEY);
@@ -865,6 +866,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 
     function getDefaultChartFilters() {
       return {
+        shift: 'all',
         arrival: 'all',
         disposition: 'all',
         cardType: 'all',
@@ -895,6 +897,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     function sanitizeChartFilters(filters) {
       const defaults = getDefaultChartFilters();
       const normalized = { ...defaults, ...(filters || {}) };
+      if (!(normalized.shift in KPI_FILTER_LABELS.shift)) {
+        normalized.shift = defaults.shift;
+      }
       if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
         normalized.arrival = defaults.arrival;
       }
@@ -905,6 +910,81 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         normalized.cardType = defaults.cardType;
       }
       return normalized;
+    }
+
+    const GLOBAL_TIMEFRAME_OPTIONS = [30, 90, 365, 0];
+
+    function normalizeGlobalWindow(value, fallbackValue = 30) {
+      const numeric = Number.isFinite(value) ? value : Number.parseInt(String(value), 10);
+      if (GLOBAL_TIMEFRAME_OPTIONS.includes(numeric)) {
+        return numeric;
+      }
+      if (!Number.isFinite(numeric)) {
+        return fallbackValue;
+      }
+      if (numeric <= 0) {
+        return 0;
+      }
+      if (numeric <= 30) {
+        return 30;
+      }
+      if (numeric <= 90) {
+        return 90;
+      }
+      return 365;
+    }
+
+    function getDefaultGlobalFilters() {
+      const kpiDefaults = getDefaultKpiFilters();
+      return {
+        window: normalizeGlobalWindow(kpiDefaults.window, 30),
+        shift: 'all',
+        arrival: 'all',
+        disposition: 'all',
+        cardType: 'all',
+      };
+    }
+
+    function sanitizeGlobalFilters(filters) {
+      const defaults = getDefaultGlobalFilters();
+      const normalized = { ...defaults, ...(filters || {}) };
+      normalized.window = normalizeGlobalWindow(normalized.window, defaults.window);
+      if (!(normalized.shift in KPI_FILTER_LABELS.shift)) {
+        normalized.shift = defaults.shift;
+      }
+      if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
+        normalized.arrival = defaults.arrival;
+      }
+      if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
+        normalized.disposition = defaults.disposition;
+      }
+      if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
+        normalized.cardType = defaults.cardType;
+      }
+      return normalized;
+    }
+
+    function loadGlobalFilters() {
+      try {
+        const raw = localStorage.getItem(GLOBAL_FILTERS_STORAGE_KEY);
+        if (!raw) {
+          return sanitizeGlobalFilters({});
+        }
+        const parsed = JSON.parse(raw);
+        return sanitizeGlobalFilters(parsed && typeof parsed === 'object' ? parsed : {});
+      } catch (error) {
+        return sanitizeGlobalFilters({});
+      }
+    }
+
+    function saveGlobalFilters(filters) {
+      try {
+        const payload = JSON.stringify(sanitizeGlobalFilters(filters));
+        localStorage.setItem(GLOBAL_FILTERS_STORAGE_KEY, payload);
+        return true;
+      } catch (error) {
+        return false;
+      }
     }
 
     const FEEDBACK_FILTER_ALL = 'all';
@@ -1070,6 +1150,19 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       edTvTriageTitle: document.getElementById('edTvTriageTitle'),
       edTvTriageMeta: document.getElementById('edTvTriageMeta'),
       edTvTriageList: document.getElementById('edTvTriageList'),
+      openGlobalFiltersBtn: document.getElementById('openGlobalFiltersBtn'),
+      globalFiltersSidebar: document.getElementById('globalFiltersSidebar'),
+      globalFiltersOverlay: document.getElementById('globalFiltersOverlay'),
+      closeGlobalFiltersBtn: document.getElementById('closeGlobalFiltersBtn'),
+      globalFiltersForm: document.getElementById('globalFiltersForm'),
+      globalTimeframe: document.getElementById('globalTimeframe'),
+      globalShift: document.getElementById('globalShift'),
+      globalArrival: document.getElementById('globalArrival'),
+      globalDisposition: document.getElementById('globalDisposition'),
+      globalCardType: document.getElementById('globalCardType'),
+      globalFiltersSummary: document.getElementById('globalFiltersSummary'),
+      globalFiltersReset: document.getElementById('globalFiltersReset'),
+      globalFiltersApply: document.getElementById('globalFiltersApply'),
       openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
       settingsDialog: document.getElementById('settingsDialog'),
@@ -2211,17 +2304,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
       const extracted = extractSettingsFromForm(selectors.settingsForm);
       settings = normalizeSettings(extracted);
-      const previousFilters = dashboardState.kpi.filters;
-      const defaultFilters = getDefaultKpiFilters();
-      dashboardState.kpi.filters = {
-        ...defaultFilters,
-        shift: previousFilters.shift,
-        arrival: previousFilters.arrival,
-        disposition: previousFilters.disposition,
-        cardType: previousFilters.cardType,
-      };
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
+      dashboardState.globalFilters = sanitizeGlobalFilters(dashboardState.globalFilters);
+      saveGlobalFilters(dashboardState.globalFilters);
+      syncGlobalFilterControls();
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
@@ -2237,12 +2322,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         return;
       }
       settings = normalizeSettings({});
+      dashboardState.globalFilters = getDefaultGlobalFilters();
+      saveGlobalFilters(dashboardState.globalFilters);
       dashboardState.kpi.filters = getDefaultKpiFilters();
       dashboardState.chartFilters = getDefaultChartFilters();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      syncChartFilterControls();
-      updateChartFiltersSummary({ records: [], daily: [] });
+      syncGlobalFilterControls();
       saveSettings(settings);
       applySettingsToText();
       applyTextContent();
@@ -2267,9 +2351,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         applyFooterSource();
         populateSettingsForm();
         await clearClientData({
-          storageKeys: [SETTINGS_STORAGE_KEY, THEME_STORAGE_KEY, CLIENT_CONFIG_KEY],
+          storageKeys: [SETTINGS_STORAGE_KEY, THEME_STORAGE_KEY, CLIENT_CONFIG_KEY, GLOBAL_FILTERS_STORAGE_KEY],
           cachePrefixes: CACHE_PREFIXES,
         });
+        dashboardState.globalFilters = sanitizeGlobalFilters({});
+        syncGlobalFilterControls();
         initializeServiceWorker();
         setStatus('success', 'Vietiniai duomenys išvalyti. Puslapis perkraunamas iš tinklo.');
         loadDashboard();
@@ -2343,6 +2429,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         selections: [],
       },
       contrastWarning: false,
+      globalFilters: loadGlobalFilters(),
+      ui: {
+        globalFiltersOpen: false,
+      },
       chartFilters: getDefaultChartFilters(),
       kpi: {
         filters: getDefaultKpiFilters(),
@@ -5794,7 +5884,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     }
 
     function prepareChartDataForPeriod(period) {
-      const normalized = Number.isFinite(Number(period)) && Number(period) > 0
+      const normalized = Number.isFinite(Number(period)) && Number(period) >= 0
         ? Number(period)
         : 30;
       const baseDaily = Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
@@ -6798,14 +6888,46 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       });
     }
 
+    function filterFeedbackRecordsByWindow(records, days) {
+      const list = Array.isArray(records) ? records.filter(Boolean) : [];
+      if (!Number.isFinite(days) || days <= 0) {
+        return list;
+      }
+      const decorated = list
+        .map((entry) => {
+          const date = entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())
+            ? entry.receivedAt
+            : null;
+          if (!date) {
+            return null;
+          }
+          const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+          if (!Number.isFinite(utc)) {
+            return null;
+          }
+          return { entry, utc };
+        })
+        .filter(Boolean);
+      if (!decorated.length) {
+        return [];
+      }
+      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+      const startUtc = endUtc - (days - 1) * 86400000;
+      return decorated
+        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
+        .map((item) => item.entry);
+    }
+
     function applyFeedbackFiltersAndRender() {
       const options = dashboardState.feedback.filterOptions || { respondent: [], location: [] };
       const sanitized = sanitizeFeedbackFilters(dashboardState.feedback.filters, options);
       dashboardState.feedback.filters = sanitized;
       syncFeedbackFilterControls();
       const filteredRecords = filterFeedbackRecords(dashboardState.feedback.records, sanitized);
-      dashboardState.feedback.filteredRecords = filteredRecords;
-      const feedbackStats = computeFeedbackStats(filteredRecords);
+      const windowDays = Number.isFinite(dashboardState?.globalFilters?.window) ? Number(dashboardState.globalFilters.window) : 0;
+      const windowedRecords = filterFeedbackRecordsByWindow(filteredRecords, windowDays);
+      dashboardState.feedback.filteredRecords = windowedRecords;
+      const feedbackStats = computeFeedbackStats(windowedRecords);
       dashboardState.feedback.summary = feedbackStats.summary;
       dashboardState.feedback.monthly = feedbackStats.monthly;
       renderFeedbackSection(feedbackStats);
@@ -7084,6 +7206,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const filters = sanitizeChartFilters(dashboardState.chartFilters);
       const defaults = getDefaultChartFilters();
       const summaryParts = [];
+      if (filters.shift !== defaults.shift) {
+        summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.shift[filters.shift]));
+      }
       if (filters.arrival !== defaults.arrival) {
         summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.arrival[filters.arrival]));
       }
@@ -7159,6 +7284,12 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       if (!record) {
         return false;
       }
+      if (filters.shift === 'day' && record.night) {
+        return false;
+      }
+      if (filters.shift === 'night' && !record.night) {
+        return false;
+      }
       return matchesSharedPatientFilters(record, filters);
     }
 
@@ -7172,6 +7303,224 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         return '';
       }
       return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+    function buildGlobalFiltersSummary(filters) {
+      const normalized = sanitizeGlobalFilters(filters);
+      const defaults = getDefaultGlobalFilters();
+      const parts = [];
+      const windowDays = Number.isFinite(normalized.window) ? normalized.window : defaults.window;
+      parts.push(windowDays === 0 ? 'Visi' : `${windowDays} d.`);
+      if (normalized.shift !== defaults.shift) {
+        parts.push(toSentenceCase(KPI_FILTER_LABELS.shift[normalized.shift]));
+      }
+      if (normalized.arrival !== defaults.arrival) {
+        parts.push(toSentenceCase(KPI_FILTER_LABELS.arrival[normalized.arrival]));
+      }
+      if (normalized.disposition !== defaults.disposition) {
+        parts.push(toSentenceCase(KPI_FILTER_LABELS.disposition[normalized.disposition]));
+      }
+      if (normalized.cardType !== defaults.cardType) {
+        parts.push(toSentenceCase(KPI_FILTER_LABELS.cardType[normalized.cardType]));
+      }
+      return parts.join(' › ');
+    }
+
+    function syncGlobalFilterControls() {
+      const filters = sanitizeGlobalFilters(dashboardState.globalFilters);
+      dashboardState.globalFilters = filters;
+      if (selectors.globalTimeframe) {
+        selectors.globalTimeframe.value = String(filters.window);
+      }
+      if (selectors.globalShift) {
+        selectors.globalShift.value = filters.shift;
+      }
+      if (selectors.globalArrival) {
+        selectors.globalArrival.value = filters.arrival;
+      }
+      if (selectors.globalDisposition) {
+        selectors.globalDisposition.value = filters.disposition;
+      }
+      if (selectors.globalCardType) {
+        selectors.globalCardType.value = filters.cardType;
+      }
+      if (selectors.globalFiltersSummary) {
+        selectors.globalFiltersSummary.textContent = buildGlobalFiltersSummary(filters);
+      }
+    }
+
+    function computeGlobalPatientDataset() {
+      const filters = sanitizeGlobalFilters(dashboardState.globalFilters);
+      const patientFilters = {
+        shift: filters.shift,
+        arrival: filters.arrival,
+        disposition: filters.disposition,
+        cardType: filters.cardType,
+      };
+      const baseRecords = Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : [];
+      const filteredRecords = baseRecords.filter((record) => recordMatchesKpiFilters(record, patientFilters));
+      const dailyStats = computeDailyStats(filteredRecords);
+      return { filters, patientFilters, records: filteredRecords, dailyStats };
+    }
+
+    function renderDerivedTablesFromGlobalFilters() {
+      const { records, dailyStats } = computeGlobalPatientDataset();
+      const recentWindowDays = Number.isFinite(Number(settings?.calculations?.recentDays))
+        ? Number(settings.calculations.recentDays)
+        : DEFAULT_SETTINGS.calculations.recentDays;
+      const effectiveRecentDays = Math.max(1, Math.round(recentWindowDays));
+      const recentDailyStats = filterDailyStatsByWindow(dailyStats, effectiveRecentDays);
+      renderRecentTable(recentDailyStats);
+
+      const monthlyStats = computeMonthlyStats(dailyStats);
+      dashboardState.monthly.all = monthlyStats;
+      const monthsLimit = 12;
+      const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
+        ? monthlyStats.slice(-monthsLimit)
+        : monthlyStats;
+      renderMonthlyTable(limitedMonthlyStats);
+      dashboardState.monthly.window = limitedMonthlyStats;
+      const yearlyStats = computeYearlyStats(monthlyStats);
+      renderYearlyTable(yearlyStats);
+
+      populateChartYearOptions(dailyStats);
+      dashboardState.chartData.baseDaily = dailyStats.slice();
+      dashboardState.chartData.baseRecords = records.slice();
+    }
+
+    async function applyGlobalFiltersAndRender({ persist = true } = {}) {
+      const normalized = sanitizeGlobalFilters(dashboardState.globalFilters);
+      dashboardState.globalFilters = normalized;
+      if (persist) {
+        saveGlobalFilters(normalized);
+      }
+
+      document.body?.setAttribute('data-global-filters-enabled', 'true');
+
+      dashboardState.kpi.filters = sanitizeKpiFilters({
+        ...dashboardState.kpi.filters,
+        window: normalized.window,
+        shift: normalized.shift,
+        arrival: normalized.arrival,
+        disposition: normalized.disposition,
+        cardType: normalized.cardType,
+      });
+
+      dashboardState.chartFilters = sanitizeChartFilters({
+        ...dashboardState.chartFilters,
+        shift: normalized.shift,
+        arrival: normalized.arrival,
+        disposition: normalized.disposition,
+        cardType: normalized.cardType,
+      });
+
+      dashboardState.chartPeriod = normalized.window;
+
+      refreshKpiWindowOptions();
+      syncKpiFilterControls();
+      syncChartFilterControls();
+      syncGlobalFilterControls();
+
+      if (Array.isArray(dashboardState.rawRecords) && dashboardState.rawRecords.length) {
+        renderDerivedTablesFromGlobalFilters();
+      }
+
+      await applyChartFilters();
+      await applyKpiFiltersAndRender();
+      return applyFeedbackFiltersAndRender();
+    }
+
+    function resetGlobalFilters({ fromKeyboard } = {}) {
+      dashboardState.globalFilters = getDefaultGlobalFilters();
+      void applyGlobalFiltersAndRender({ persist: true });
+      if (fromKeyboard && selectors.openGlobalFiltersBtn && typeof selectors.openGlobalFiltersBtn.focus === 'function') {
+        selectors.openGlobalFiltersBtn.focus();
+      }
+    }
+
+    function setGlobalFiltersSidebarOpen(isOpen, { restoreFocus = true } = {}) {
+      dashboardState.ui.globalFiltersOpen = Boolean(isOpen);
+      const open = dashboardState.ui.globalFiltersOpen;
+      if (selectors.globalFiltersSidebar) {
+        selectors.globalFiltersSidebar.hidden = !open;
+      }
+      if (selectors.globalFiltersOverlay) {
+        selectors.globalFiltersOverlay.hidden = !open;
+      }
+      if (document.body) {
+        document.body.setAttribute('data-global-filters-open', open ? 'true' : 'false');
+      }
+      if (open) {
+        const first = selectors.globalFiltersForm?.querySelector('select, button, [tabindex]');
+        if (first && typeof first.focus === 'function') {
+          window.requestAnimationFrame(() => {
+            try {
+              first.focus({ preventScroll: true });
+            } catch (error) {
+              first.focus();
+            }
+          });
+        }
+      } else if (restoreFocus && selectors.openGlobalFiltersBtn && typeof selectors.openGlobalFiltersBtn.focus === 'function') {
+        selectors.openGlobalFiltersBtn.focus();
+      }
+    }
+
+    function initializeGlobalFiltersSidebar() {
+      document.body?.setAttribute('data-global-filters-enabled', 'true');
+      syncGlobalFilterControls();
+      setGlobalFiltersSidebarOpen(false, { restoreFocus: false });
+
+      if (selectors.openGlobalFiltersBtn) {
+        selectors.openGlobalFiltersBtn.addEventListener('click', () => {
+          setGlobalFiltersSidebarOpen(true, { restoreFocus: false });
+        });
+      }
+      if (selectors.closeGlobalFiltersBtn) {
+        selectors.closeGlobalFiltersBtn.addEventListener('click', () => {
+          setGlobalFiltersSidebarOpen(false);
+        });
+      }
+      if (selectors.globalFiltersOverlay) {
+        selectors.globalFiltersOverlay.addEventListener('click', () => {
+          setGlobalFiltersSidebarOpen(false);
+        });
+      }
+      if (selectors.globalFiltersForm) {
+        selectors.globalFiltersForm.addEventListener('change', (event) => {
+          const target = event.target;
+          if (!target || !('name' in target)) {
+            return;
+          }
+          const { name, value } = target;
+          const next = { ...dashboardState.globalFilters };
+          if (name === 'window') {
+            next.window = normalizeGlobalWindow(value, next.window);
+          } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
+            next.shift = value;
+          } else if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
+            next.arrival = value;
+          } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
+            next.disposition = value;
+          } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
+            next.cardType = value;
+          } else {
+            return;
+          }
+          dashboardState.globalFilters = next;
+          void applyGlobalFiltersAndRender({ persist: true });
+        });
+      }
+      if (selectors.globalFiltersReset) {
+        selectors.globalFiltersReset.addEventListener('click', () => {
+          resetGlobalFilters();
+        });
+      }
+      if (selectors.globalFiltersApply) {
+        selectors.globalFiltersApply.addEventListener('click', () => {
+          setGlobalFiltersSidebarOpen(false);
+        });
+      }
     }
 
     function updateKpiSummary({ records, dailyStats, windowDays }) {
@@ -7308,22 +7657,23 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         return;
       }
       const { name, value } = target;
-      const filters = dashboardState.kpi.filters;
+      const next = { ...dashboardState.globalFilters };
       if (name === 'window') {
         const numeric = Number.parseInt(value, 10);
         if (Number.isFinite(numeric) && numeric >= 0) {
-          filters.window = numeric;
+          next.window = normalizeGlobalWindow(numeric, next.window);
         }
       } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
-        filters.shift = value;
+        next.shift = value;
       } else if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
-        filters.arrival = value;
+        next.arrival = value;
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
-        filters.disposition = value;
+        next.disposition = value;
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
-        filters.cardType = value;
+        next.cardType = value;
       }
-      void applyKpiFiltersAndRender();
+      dashboardState.globalFilters = next;
+      void applyGlobalFiltersAndRender({ persist: true });
     }
 
     function handleChartFilterChange(event) {
@@ -7332,16 +7682,16 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         return;
       }
       const { name, value } = target;
-      const filters = { ...dashboardState.chartFilters };
+      const next = { ...dashboardState.globalFilters };
       if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
-        filters.arrival = value;
+        next.arrival = value;
       } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
-        filters.disposition = value;
+        next.disposition = value;
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
-        filters.cardType = value;
+        next.cardType = value;
       }
-      dashboardState.chartFilters = filters;
-      void applyChartFilters();
+      dashboardState.globalFilters = next;
+      void applyGlobalFiltersAndRender({ persist: true });
     }
 
     function applyChartFilters() {
@@ -7366,13 +7716,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     }
 
     function resetKpiFilters({ fromKeyboard } = {}) {
-      dashboardState.kpi.filters = getDefaultKpiFilters();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      void applyKpiFiltersAndRender();
-      if (fromKeyboard && selectors.kpiFiltersReset) {
-        selectors.kpiFiltersReset.focus();
-      }
+      resetGlobalFilters({ fromKeyboard });
     }
 
     function initializeKpiFilters() {
@@ -8114,7 +8458,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 
     function formatDailyCaption(period) {
       const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientų srautai';
-      if (!Number.isFinite(period) || period <= 0) {
+      if (!Number.isFinite(period) || period < 0) {
         return base;
       }
       const normalized = Math.max(1, Math.round(period));
@@ -8122,6 +8466,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
       const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
       const yearFragment = Number.isFinite(selectedYear) ? `, ${selectedYear} m.` : '';
+      if (period === 0) {
+        const combinedSuffix = `visi duomenys${yearFragment}`;
+        if (base.includes('(')) {
+          return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
+        }
+        return `${base} (${combinedSuffix})`;
+      }
       const combinedSuffix = `${suffix}${yearFragment}`;
       if (base.includes('(')) {
         return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
@@ -8132,13 +8483,15 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     function renderDailyChart(dailyStats, period, ChartLib, palette) {
       const Chart = ChartLib;
       const themePalette = palette || getThemePalette();
-      const normalizedPeriod = Number.isFinite(Number(period)) && Number(period) > 0 ? Number(period) : 30;
+      const normalizedPeriod = Number.isFinite(Number(period)) && Number(period) >= 0 ? Number(period) : 30;
       dashboardState.chartPeriod = normalizedPeriod;
       syncChartPeriodButtons(normalizedPeriod);
       if (selectors.dailyCaption) {
         selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
       }
-      const scopedData = Array.isArray(dailyStats) ? dailyStats.slice(-normalizedPeriod) : [];
+      const scopedData = Array.isArray(dailyStats)
+        ? (normalizedPeriod > 0 ? dailyStats.slice(-normalizedPeriod) : dailyStats.slice())
+        : [];
       if (selectors.dailyCaptionContext) {
         const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
         const dateValue = lastEntry?.date ? dateKeyToDate(lastEntry.date) : null;
@@ -9336,7 +9689,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
 
     function updateChartPeriod(period) {
       const numeric = Number.parseInt(period, 10);
-      if (!Number.isFinite(numeric) || numeric <= 0) {
+      if (!Number.isFinite(numeric) || numeric < 0) {
         return;
       }
       dashboardState.chartPeriod = numeric;
@@ -12582,45 +12935,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
         dashboardState.primaryRecords = primaryRecords.slice();
         dashboardState.primaryDaily = primaryDaily.slice();
         dashboardState.dataMeta = dataset.meta || null;
-        populateChartYearOptions(dailyStats);
-        const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
-          ? Number(settings.calculations.windowDays)
-          : DEFAULT_SETTINGS.calculations.windowDays;
-        if (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0) {
-          dashboardState.kpi.filters.window = windowDays;
-          syncKpiFilterControls();
-        }
-        const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
-        const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
-          ? Number(settings.calculations.recentDays)
-          : DEFAULT_SETTINGS.calculations.recentDays;
-        const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
-        const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
-        dashboardState.chartData.baseDaily = dailyStats.slice();
-        dashboardState.chartData.baseRecords = combinedRecords.slice();
-        dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters);
-        syncChartFilterControls();
-        const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-        await applyKpiFiltersAndRender();
-        await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
-        renderRecentTable(recentDailyStats);
-        const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
-        dashboardState.monthly.all = monthlyStats;
-        // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
-        const monthsLimit = 12;
-        const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
-          ? monthlyStats.slice(-monthsLimit)
-          : monthlyStats;
-        renderMonthlyTable(limitedMonthlyStats);
-        dashboardState.monthly.window = limitedMonthlyStats;
-        const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
-        const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
-          ? datasetYearlyStats
-          : computeYearlyStats(monthlyStats);
-        renderYearlyTable(yearlyStats);
         dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
         updateFeedbackFilterOptions(dashboardState.feedback.records);
-        const feedbackStats = applyFeedbackFiltersAndRender();
+        const feedbackStats = await applyGlobalFiltersAndRender({ persist: false });
         const edSummaryForComments = dashboardState.ed.summary || createEmptyEdSummary(dashboardState.ed?.meta?.type);
         edSummaryForComments.feedbackComments = Array.isArray(feedbackStats?.summary?.comments)
           ? feedbackStats.summary.comments
@@ -12691,6 +13008,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     applySectionVisibility();
     populateSettingsForm();
 
+    initializeGlobalFiltersSidebar();
     initializeKpiFilters();
     initializeFeedbackFilters();
     initializeFeedbackTrendControls();
@@ -12711,7 +13029,14 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       selectors.chartPeriodButtons.forEach((button) => {
         button.addEventListener('click', () => {
           const period = Number.parseInt(button.dataset.chartPeriod || '', 10);
-          updateChartPeriod(period);
+          if (!Number.isFinite(period)) {
+            return;
+          }
+          if (![30, 90, 365].includes(period)) {
+            return;
+          }
+          dashboardState.globalFilters = { ...dashboardState.globalFilters, window: period };
+          void applyGlobalFiltersAndRender({ persist: true });
         });
       });
     }
@@ -12906,6 +13231,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
           event.preventDefault();
           setActiveTab('overview', { restoreFocus: true });
         }
+      }
+      if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key === 'Escape' && dashboardState.ui.globalFiltersOpen) {
+        event.preventDefault();
+        setGlobalFiltersSidebarOpen(false);
+        return;
       }
       if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key === 'Escape' && dashboardState.fullscreen) {
         event.preventDefault();
