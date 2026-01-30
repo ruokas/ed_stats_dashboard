@@ -1,4 +1,4 @@
-import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData } from './app.js';
+import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js';
 
     /**
      * Įkelia Chart.js iš CDN naudojant klasikinį <script>, kad išvengtume CORS/MIME klaidų.
@@ -125,7 +125,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     const TEXT = {
       title: 'RŠL SMPS statistika',
       subtitle: 'Greita statistikos apžvalga.',
-      settings: 'Nustatymai',
       theme: {
         toggle: 'Perjungti šviesią/tamsią temą',
         light: 'Šviesi tema',
@@ -734,10 +733,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
     const DEFAULT_FOOTER_SOURCE = '';
     const DEFAULT_KPI_WINDOW_DAYS = 365;
     const DEFAULT_PAGE_TITLE = document.title || 'RŠL SMPS statistika';
-    const SETTINGS_STORAGE_KEY = 'edDashboardSettings-v1';
     const THEME_STORAGE_KEY = 'edDashboardTheme';
     const CLIENT_CONFIG_KEY = 'edDashboardClientConfig-v1';
-    const CACHE_PREFIXES = ['ed-static', 'ed-api'];
 
     const clientStore = createClientStore(CLIENT_CONFIG_KEY);
     const perfMonitor = new PerfMonitor();
@@ -815,7 +812,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       },
     };
 
-    let settings = loadSettings();
+    let settings = normalizeSettings({});
 
     const KPI_WINDOW_OPTION_BASE = [7, 14, 30, 60, 90, 180, 365];
     const KPI_FILTER_LABELS = {
@@ -1070,13 +1067,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       edTvTriageTitle: document.getElementById('edTvTriageTitle'),
       edTvTriageMeta: document.getElementById('edTvTriageMeta'),
       edTvTriageList: document.getElementById('edTvTriageList'),
-      openSettingsBtn: document.getElementById('openSettingsBtn'),
       themeToggleBtn: document.getElementById('themeToggleBtn'),
-      settingsDialog: document.getElementById('settingsDialog'),
-      settingsForm: document.getElementById('settingsForm'),
-      resetSettingsBtn: document.getElementById('resetSettingsBtn'),
-      clearDataBtn: document.getElementById('clearDataBtn'),
-      cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
       recentSection: document.querySelector('[data-section="recent"]'),
       monthlySection: document.querySelector('[data-section="monthly"]'),
       yearlySection: document.querySelector('[data-section="yearly"]'),
@@ -1751,40 +1742,30 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       return merged;
     }
 
-    function loadSettings() {
-      let storedSettings = {};
-      try {
-        const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
-            storedSettings = parsed;
-          }
-        }
-      } catch (error) {
-        console.warn('Nepavyko įkelti nustatymų iš localStorage, naudojami numatytieji.', error);
-        storedSettings = {};
+    function getRuntimeConfigUrl() {
+      if (typeof window === 'undefined') {
+        return 'config.json';
       }
-
-      const windowSettings = typeof window !== 'undefined' && window.ED_DASHBOARD_SETTINGS
-        ? window.ED_DASHBOARD_SETTINGS
-        : {};
-
-      const merged = deepMerge(
-        deepMerge({}, storedSettings && typeof storedSettings === 'object' ? storedSettings : {}),
-        windowSettings && typeof windowSettings === 'object' ? windowSettings : {},
-      );
-      return normalizeSettings(merged);
+      const params = new URLSearchParams(window.location.search);
+      const paramUrl = params.get('config');
+      if (paramUrl && paramUrl.trim().length) {
+        return paramUrl.trim();
+      }
+      return 'config.json';
     }
 
-    function saveSettings(currentSettings) {
+    async function loadSettingsFromConfig() {
+      const configUrl = getRuntimeConfigUrl();
       try {
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(currentSettings));
+        const response = await fetch(configUrl, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Nepavyko atsisiųsti konfigūracijos (${response.status})`);
+        }
+        const configData = await response.json();
+        return normalizeSettings(configData);
       } catch (error) {
-        console.warn('Nepavyko išsaugoti nustatymų.', error);
-      }
-      if (typeof window !== 'undefined') {
-        window.ED_DASHBOARD_SETTINGS = cloneSettings(currentSettings);
+        console.warn('Nepavyko įkelti config.json, naudojami numatytieji.', error);
+        return normalizeSettings({});
       }
     }
 
@@ -1944,340 +1925,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       return csvRuntime.hospitalizedValues.some((candidate) => matchesWildcard(normalized, candidate));
     }
 
-    function getField(form, name) {
-      if (!form) {
-        return null;
-      }
-      const node = form.elements.namedItem(name);
-      if (!node) {
-        return null;
-      }
-      if (typeof RadioNodeList !== 'undefined' && node instanceof RadioNodeList) {
-        return node[0] ?? null;
-      }
-      return node;
-    }
-
-    function populateSettingsForm() {
-      const form = selectors.settingsForm;
-      if (!form) {
-        return;
-      }
-      const assign = (name, value) => {
-        const field = getField(form, name);
-        if (!field) {
-          return;
-        }
-        if ('type' in field && field.type === 'checkbox') {
-          field.checked = Boolean(value);
-        } else if ('value' in field) {
-          field.value = value ?? '';
-        }
-      };
-
-      assign('dataSource.url', settings.dataSource.url);
-      assign('dataSource.useFallback', settings.dataSource.useFallback);
-      assign('dataSource.fallbackCsv', settings.dataSource.fallbackCsv);
-      assign('dataSource.feedback.url', settings.dataSource.feedback?.url);
-      assign('dataSource.feedback.useFallback', settings.dataSource.feedback?.useFallback);
-      assign('dataSource.feedback.fallbackCsv', settings.dataSource.feedback?.fallbackCsv);
-      assign('dataSource.ed.url', settings.dataSource.ed?.url);
-      assign('dataSource.ed.useFallback', settings.dataSource.ed?.useFallback);
-      assign('dataSource.ed.fallbackCsv', settings.dataSource.ed?.fallbackCsv);
-      assign('dataSource.historical.enabled', settings.dataSource.historical?.enabled);
-      assign('dataSource.historical.url', settings.dataSource.historical?.url);
-      assign('dataSource.historical.useFallback', settings.dataSource.historical?.useFallback);
-      assign('dataSource.historical.fallbackCsv', settings.dataSource.historical?.fallbackCsv);
-
-      assign('csv.arrival', settings.csv.arrival);
-      assign('csv.discharge', settings.csv.discharge);
-      assign('csv.dayNight', settings.csv.dayNight);
-      assign('csv.gmp', settings.csv.gmp);
-      assign('csv.department', settings.csv.department);
-      assign('csv.number', settings.csv.number);
-      assign('csv.trueValues', settings.csv.trueValues);
-      assign('csv.hospitalizedValues', settings.csv.hospitalizedValues);
-      assign('csv.nightKeywords', settings.csv.nightKeywords);
-      assign('csv.dayKeywords', settings.csv.dayKeywords);
-
-      assign('calculations.windowDays', settings.calculations.windowDays);
-      assign('calculations.recentDays', settings.calculations.recentDays);
-      assign('calculations.nightStartHour', settings.calculations.nightStartHour);
-      assign('calculations.nightEndHour', settings.calculations.nightEndHour);
-
-      assign('output.pageTitle', settings.output.pageTitle);
-      assign('output.title', settings.output.title);
-      assign('output.subtitle', settings.output.subtitle);
-      assign('output.tabOverviewLabel', settings.output.tabOverviewLabel);
-      assign('output.tabEdLabel', settings.output.tabEdLabel);
-      assign('output.kpiTitle', settings.output.kpiTitle);
-      assign('output.kpiSubtitle', settings.output.kpiSubtitle);
-      assign('output.chartsTitle', settings.output.chartsTitle);
-      assign('output.chartsSubtitle', settings.output.chartsSubtitle);
-      assign('output.recentTitle', settings.output.recentTitle);
-      assign('output.recentSubtitle', settings.output.recentSubtitle);
-      assign('output.monthlyTitle', settings.output.monthlyTitle);
-      assign('output.monthlySubtitle', settings.output.monthlySubtitle);
-      assign('output.yearlyTitle', settings.output.yearlyTitle);
-      assign('output.yearlySubtitle', settings.output.yearlySubtitle);
-      assign('output.feedbackTitle', settings.output.feedbackTitle);
-      assign('output.feedbackSubtitle', settings.output.feedbackSubtitle);
-      assign('output.feedbackDescription', settings.output.feedbackDescription);
-      assign('output.edTitle', settings.output.edTitle);
-      assign('output.footerSource', settings.output.footerSource);
-      assign('output.showRecent', settings.output.showRecent);
-      assign('output.showMonthly', settings.output.showMonthly);
-      assign('output.showYearly', settings.output.showYearly);
-      assign('output.showFeedback', settings.output.showFeedback);
-    }
-
-    function extractSettingsFromForm(form) {
-      const result = {
-        dataSource: {
-          url: '',
-          useFallback: false,
-          fallbackCsv: '',
-          feedback: {
-            url: '',
-            useFallback: false,
-            fallbackCsv: '',
-          },
-          ed: {
-            url: '',
-            useFallback: false,
-            fallbackCsv: '',
-          },
-          historical: {
-            enabled: false,
-            url: '',
-            useFallback: false,
-            fallbackCsv: '',
-          },
-        },
-        csv: {
-          arrival: '',
-          discharge: '',
-          dayNight: '',
-          gmp: '',
-          department: '',
-          number: '',
-          trueValues: '',
-          hospitalizedValues: '',
-          nightKeywords: '',
-          dayKeywords: '',
-        },
-        calculations: {
-          windowDays: '',
-          recentDays: '',
-          nightStartHour: '',
-          nightEndHour: '',
-        },
-        output: {
-          pageTitle: '',
-          title: '',
-          subtitle: '',
-          kpiTitle: '',
-          kpiSubtitle: '',
-          chartsTitle: '',
-          chartsSubtitle: '',
-          recentTitle: '',
-          recentSubtitle: '',
-          monthlyTitle: '',
-          monthlySubtitle: '',
-          yearlyTitle: '',
-          yearlySubtitle: '',
-          feedbackTitle: '',
-          feedbackSubtitle: '',
-          feedbackDescription: '',
-          footerSource: '',
-          showRecent: false,
-          showMonthly: false,
-          showYearly: false,
-          showFeedback: false,
-        },
-      };
-
-      const readText = (name) => {
-        const field = getField(form, name);
-        if (!field || !('value' in field)) {
-          return '';
-        }
-        return String(field.value ?? '');
-      };
-
-      const readCheckbox = (name) => {
-        const field = getField(form, name);
-        if (!field || !('type' in field) || field.type !== 'checkbox') {
-          return false;
-        }
-        return Boolean(field.checked);
-      };
-
-      result.dataSource.url = readText('dataSource.url').trim();
-      result.dataSource.useFallback = readCheckbox('dataSource.useFallback');
-      result.dataSource.fallbackCsv = readText('dataSource.fallbackCsv').trim();
-      result.dataSource.feedback.url = readText('dataSource.feedback.url').trim();
-      result.dataSource.feedback.useFallback = readCheckbox('dataSource.feedback.useFallback');
-      result.dataSource.feedback.fallbackCsv = readText('dataSource.feedback.fallbackCsv').trim();
-      result.dataSource.ed.url = readText('dataSource.ed.url').trim();
-      result.dataSource.ed.useFallback = readCheckbox('dataSource.ed.useFallback');
-      result.dataSource.ed.fallbackCsv = readText('dataSource.ed.fallbackCsv').trim();
-      result.dataSource.historical.enabled = readCheckbox('dataSource.historical.enabled');
-      result.dataSource.historical.url = readText('dataSource.historical.url').trim();
-      result.dataSource.historical.useFallback = readCheckbox('dataSource.historical.useFallback');
-      result.dataSource.historical.fallbackCsv = readText('dataSource.historical.fallbackCsv').trim();
-
-      result.csv.arrival = readText('csv.arrival').trim();
-      result.csv.discharge = readText('csv.discharge').trim();
-      result.csv.dayNight = readText('csv.dayNight').trim();
-      result.csv.gmp = readText('csv.gmp').trim();
-      result.csv.department = readText('csv.department').trim();
-      result.csv.number = readText('csv.number').trim();
-      result.csv.trueValues = readText('csv.trueValues').trim();
-      result.csv.hospitalizedValues = readText('csv.hospitalizedValues').trim();
-      result.csv.nightKeywords = readText('csv.nightKeywords').trim();
-      result.csv.dayKeywords = readText('csv.dayKeywords').trim();
-
-      result.calculations.windowDays = readText('calculations.windowDays').trim();
-      result.calculations.recentDays = readText('calculations.recentDays').trim();
-      result.calculations.nightStartHour = readText('calculations.nightStartHour').trim();
-      result.calculations.nightEndHour = readText('calculations.nightEndHour').trim();
-
-      result.output.pageTitle = readText('output.pageTitle').trim();
-      result.output.title = readText('output.title').trim();
-      result.output.subtitle = readText('output.subtitle').trim();
-      result.output.tabOverviewLabel = readText('output.tabOverviewLabel').trim();
-      result.output.tabEdLabel = readText('output.tabEdLabel').trim();
-      result.output.kpiTitle = readText('output.kpiTitle').trim();
-      result.output.kpiSubtitle = readText('output.kpiSubtitle').trim();
-      result.output.chartsTitle = readText('output.chartsTitle').trim();
-      result.output.chartsSubtitle = readText('output.chartsSubtitle').trim();
-      result.output.recentTitle = readText('output.recentTitle').trim();
-      result.output.recentSubtitle = readText('output.recentSubtitle').trim();
-      result.output.monthlyTitle = readText('output.monthlyTitle').trim();
-      result.output.monthlySubtitle = readText('output.monthlySubtitle').trim();
-      result.output.yearlyTitle = readText('output.yearlyTitle').trim();
-      result.output.yearlySubtitle = readText('output.yearlySubtitle').trim();
-      result.output.feedbackTitle = readText('output.feedbackTitle').trim();
-      result.output.feedbackSubtitle = readText('output.feedbackSubtitle').trim();
-      result.output.feedbackDescription = readText('output.feedbackDescription').trim();
-      result.output.edTitle = readText('output.edTitle').trim();
-      result.output.footerSource = readText('output.footerSource').trim();
-      result.output.showRecent = readCheckbox('output.showRecent');
-      result.output.showMonthly = readCheckbox('output.showMonthly');
-      result.output.showYearly = readCheckbox('output.showYearly');
-      result.output.showFeedback = readCheckbox('output.showFeedback');
-
-      return result;
-    }
-
-    function openSettingsDialog() {
-      if (!selectors.settingsDialog) {
-        return;
-      }
-      if (selectors.settingsDialog.hasAttribute('open')) {
-        return;
-      }
-      populateSettingsForm();
-      if (typeof selectors.settingsDialog.showModal === 'function') {
-        selectors.settingsDialog.showModal();
-      } else {
-        selectors.settingsDialog.setAttribute('open', 'open');
-      }
-      const focusable = selectors.settingsForm?.querySelector('input, textarea, select, button');
-      if (focusable && typeof focusable.focus === 'function') {
-        focusable.focus();
-      }
-    }
-
-    function closeSettingsDialog() {
-      if (!selectors.settingsDialog) {
-        return;
-      }
-      if (typeof selectors.settingsDialog.close === 'function') {
-        selectors.settingsDialog.close();
-      } else {
-        selectors.settingsDialog.removeAttribute('open');
-      }
-      if (selectors.openSettingsBtn && typeof selectors.openSettingsBtn.focus === 'function') {
-        selectors.openSettingsBtn.focus();
-      }
-    }
-
-    function handleSettingsSubmit(event) {
-      event.preventDefault();
-      if (!selectors.settingsForm) {
-        return;
-      }
-      const extracted = extractSettingsFromForm(selectors.settingsForm);
-      settings = normalizeSettings(extracted);
-      const previousFilters = dashboardState.kpi.filters;
-      const defaultFilters = getDefaultKpiFilters();
-      dashboardState.kpi.filters = {
-        ...defaultFilters,
-        shift: previousFilters.shift,
-        arrival: previousFilters.arrival,
-        disposition: previousFilters.disposition,
-        cardType: previousFilters.cardType,
-      };
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      saveSettings(settings);
-      applySettingsToText();
-      applyTextContent();
-      applyFooterSource();
-      applySectionVisibility();
-      closeSettingsDialog();
-      loadDashboard();
-    }
-
-    function handleResetSettings() {
-      const confirmed = window.confirm('Atstatyti numatytuosius nustatymus?');
-      if (!confirmed) {
-        return;
-      }
-      settings = normalizeSettings({});
-      dashboardState.kpi.filters = getDefaultKpiFilters();
-      dashboardState.chartFilters = getDefaultChartFilters();
-      refreshKpiWindowOptions();
-      syncKpiFilterControls();
-      syncChartFilterControls();
-      updateChartFiltersSummary({ records: [], daily: [] });
-      saveSettings(settings);
-      applySettingsToText();
-      applyTextContent();
-      applyFooterSource();
-      applySectionVisibility();
-      populateSettingsForm();
-      loadDashboard();
-    }
-
-    async function handleClearData() {
-      const confirmed = window.confirm('Išvalyti vietinius nustatymus, talpyklas ir service worker?');
-      if (!confirmed) {
-        return;
-      }
-      try {
-        inMemoryDataCache.clear();
-        updateClientConfig({ lastClearedAt: new Date().toISOString() });
-        settings = normalizeSettings({});
-        saveSettings(settings);
-        applySettingsToText();
-        applyTextContent();
-        applyFooterSource();
-        populateSettingsForm();
-        await clearClientData({
-          storageKeys: [SETTINGS_STORAGE_KEY, THEME_STORAGE_KEY, CLIENT_CONFIG_KEY],
-          cachePrefixes: CACHE_PREFIXES,
-        });
-        initializeServiceWorker();
-        setStatus('success', 'Vietiniai duomenys išvalyti. Puslapis perkraunamas iš tinklo.');
-        loadDashboard();
-      } catch (error) {
-        console.error('Nepavyko išvalyti vietinių duomenų:', error);
-        setStatus('error', 'Nepavyko išvalyti vietinių duomenų.');
-      }
-    }
 
     /**
      * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
@@ -2599,10 +2246,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }
       if (selectors.edTvSubtitle) {
         selectors.edTvSubtitle.textContent = TEXT.edTv?.subtitle || selectors.edTvSubtitle.textContent || '';
-      }
-      if (selectors.openSettingsBtn) {
-        selectors.openSettingsBtn.setAttribute('aria-label', TEXT.settings);
-        selectors.openSettingsBtn.title = `${TEXT.settings} (Ctrl+,)`;
       }
       if (selectors.themeToggleBtn) {
         selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
@@ -12682,21 +12325,28 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       }, { timeout: 800 });
     }
 
-    initializeTheme();
-    applySettingsToText();
-    applyTextContent();
-    applyFooterSource();
-    initializeSectionNavigation();
-    initializeScrollTopButton();
-    applySectionVisibility();
-    populateSettingsForm();
+    async function bootstrap() {
+      settings = await loadSettingsFromConfig();
+      dashboardState.kpi.filters = getDefaultKpiFilters();
+      dashboardState.chartFilters = getDefaultChartFilters();
+      dashboardState.feedback.filters = getDefaultFeedbackFilters();
+      applySettingsToText();
+      applyTextContent();
+      applyFooterSource();
+      initializeSectionNavigation();
+      initializeScrollTopButton();
+      applySectionVisibility();
 
-    initializeKpiFilters();
-    initializeFeedbackFilters();
-    initializeFeedbackTrendControls();
-    initializeTabSwitcher();
-    initializeTvMode();
-    scheduleInitialLoad();
+      initializeKpiFilters();
+      initializeFeedbackFilters();
+      initializeFeedbackTrendControls();
+      initializeTabSwitcher();
+      initializeTvMode();
+      scheduleInitialLoad();
+    }
+
+    initializeTheme();
+    bootstrap();
 
     if (typeof window.clearDashboard === 'function') {
       const originalClearDashboard = window.clearDashboard;
@@ -12832,47 +12482,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor, clearClientData 
       });
     }
 
-    if (selectors.openSettingsBtn) {
-      selectors.openSettingsBtn.addEventListener('click', () => {
-        openSettingsDialog();
-      });
-    }
-
-    if (selectors.settingsForm) {
-      selectors.settingsForm.addEventListener('submit', handleSettingsSubmit);
-    }
-
-    if (selectors.resetSettingsBtn) {
-      selectors.resetSettingsBtn.addEventListener('click', handleResetSettings);
-    }
-
-    if (selectors.clearDataBtn) {
-      selectors.clearDataBtn.addEventListener('click', handleClearData);
-    }
-
-    if (selectors.cancelSettingsBtn) {
-      selectors.cancelSettingsBtn.addEventListener('click', () => {
-        closeSettingsDialog();
-      });
-    }
-
-    if (selectors.settingsDialog) {
-      selectors.settingsDialog.addEventListener('cancel', (event) => {
-        event.preventDefault();
-        closeSettingsDialog();
-      });
-      selectors.settingsDialog.addEventListener('click', (event) => {
-        if (event.target === selectors.settingsDialog) {
-          closeSettingsDialog();
-        }
-      });
-    }
 
     document.addEventListener('keydown', (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === ',') {
-        event.preventDefault();
-        openSettingsDialog();
-      }
       if (!event.ctrlKey && !event.metaKey && event.shiftKey && (event.key === 'R' || event.key === 'r')) {
         const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
         if (tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
