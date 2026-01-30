@@ -3086,6 +3086,10 @@ body[data-theme="dark"] select optgroup {
       grid-column: span 8;
     }
 
+    .chart-card--full {
+      grid-column: span 12;
+    }
+
     .chart-card--heatmap {
       grid-column: span 12;
     }
@@ -3469,12 +3473,36 @@ body[data-theme="dark"] select optgroup {
       width: 100% !important;
       min-height: 280px;
       height: clamp(280px, 30vh, 400px) !important;
+      display: block;
     }
 
     /* Papildomas aukštis pacientų srautų grafiko kortelėms. */
+    .chart-card--tall {
+      min-height: 420px;
+    }
+
+    .chart-card--hourly {
+      min-height: 520px;
+    }
+
+    .chart-card__canvas {
+      width: 100%;
+      flex: 1 1 auto;
+      display: flex;
+    }
+
+    .chart-card__canvas--hourly {
+      height: clamp(360px, 42vh, 520px);
+    }
+
     .chart-card--tall canvas {
       min-height: 340px;
       height: clamp(340px, 36vh, 480px) !important;
+    }
+
+    .chart-card--hourly canvas {
+      min-height: 0;
+      height: 100% !important;
     }
 
     .heatmap-toolbar {
@@ -3484,6 +3512,207 @@ body[data-theme="dark"] select optgroup {
       align-items: center;
       flex-wrap: wrap;
       gap: 8px;
+    }
+
+    .hourly-toolbar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      align-items: stretch;
+    }
+
+    .hourly-toolbar__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hourly-toolbar__field {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .hourly-toolbar__field--metric {
+      min-width: 220px;
+    }
+
+    .hourly-toolbar__hint {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .segmented-control {
+      display: inline-flex;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      overflow: hidden;
+    }
+
+    .segmented-control__button {
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .segmented-control__button[aria-pressed="true"] {
+      background: var(--color-accent);
+      color: #fff;
+    }
+
+    .chip-button--ghost {
+      background: var(--color-surface-alt);
+      border: 1px dashed var(--color-border);
+      color: var(--color-text-muted);
+    }
+
+    .chip-button--ghost:hover,
+    .chip-button--ghost:focus-visible {
+      color: var(--color-accent);
+      border-color: rgba(37, 99, 235, 0.35);
+    }
+
+    .hourly-toolbar select,
+    .hourly-toolbar .chip-button,
+    .hourly-toolbar .segmented-control__button,
+    .hourly-toolbar #hourlyDepartment,
+    .hourly-department__toggle {
+      height: 34px;
+      min-height: 34px;
+    }
+
+    .segmented-control {
+      min-height: 34px;
+      align-items: stretch;
+    }
+
+    .segmented-control__button,
+    .hourly-toolbar .chip-button {
+      line-height: 34px;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .hourly-toolbar select {
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--color-text);
+      border-color: rgba(96, 165, 250, 0.25);
+    }
+
+    .hourly-toolbar select:hover,
+    .hourly-toolbar select:focus-visible {
+      background: rgba(37, 99, 235, 0.25);
+      border-color: rgba(96, 165, 250, 0.5);
+    }
+
+    .chart-card--hourly label[for="hourlyDepartment"] {
+      flex: 1 1 280px;
+      min-width: 220px;
+    }
+
+    .hourly-department {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      background: var(--color-input-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      overflow: visible;
+      position: relative;
+    }
+
+    .chart-card--hourly #hourlyDepartment {
+      min-width: 220px;
+      border: none;
+      background: transparent;
+      color: var(--color-text);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      min-height: 36px;
+      border-top-left-radius: 10px;
+      border-bottom-left-radius: 10px;
+    }
+
+    .hourly-department__toggle {
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted);
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+
+    .hourly-department__toggle:hover,
+    .hourly-department__toggle:focus-visible {
+      background: var(--color-input-bg-hover);
+      border-color: rgba(37, 99, 235, 0.35);
+      color: var(--color-accent);
+      outline: none;
+    }
+
+    .chart-card--hourly #hourlyDepartment:hover,
+    .chart-card--hourly #hourlyDepartment:focus-visible {
+      background: var(--color-input-bg-hover);
+      border-color: rgba(37, 99, 235, 0.35);
+      outline: none;
+    }
+
+    .hourly-department:focus-within {
+      border-color: rgba(37, 99, 235, 0.35);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+
+    .hourly-suggestions {
+      position: absolute;
+      margin-top: 6px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      box-shadow: 0 12px 26px -20px rgba(15, 23, 42, 0.45);
+      max-height: 320px;
+      overflow-y: auto;
+      z-index: 20;
+      min-width: 220px;
+    }
+
+    .hourly-department .hourly-suggestions {
+      top: 100%;
+      right: 0;
+      left: auto;
+      margin-top: 6px;
+    }
+
+    .hourly-suggestions__item {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .hourly-suggestions__item[aria-selected="true"],
+    .hourly-suggestions__item:hover {
+      background: rgba(37, 99, 235, 0.12);
+      color: var(--color-accent);
+    }
+
+    body[data-theme="dark"] .hourly-suggestions {
+      background: rgba(15, 23, 42, 0.98);
+      border-color: rgba(96, 165, 250, 0.25);
+      box-shadow: 0 16px 40px -28px rgba(15, 23, 42, 0.85);
     }
 
     .heatmap-toolbar__field {
@@ -3535,6 +3764,95 @@ body[data-theme="dark"] select optgroup {
 
     body[data-theme="dark"] .heatmap-toolbar select:hover,
     body[data-theme="dark"] .heatmap-toolbar select:focus-visible {
+      background: rgba(37, 99, 235, 0.25);
+      border-color: rgba(96, 165, 250, 0.5);
+    }
+
+    body[data-theme="dark"] .segmented-control {
+      background: rgba(15, 23, 42, 0.4);
+      border-color: rgba(96, 165, 250, 0.25);
+    }
+
+    body[data-theme="dark"] .segmented-control__button[aria-pressed="true"] {
+      background: rgba(96, 165, 250, 0.9);
+      color: #0f172a;
+    }
+
+    body[data-theme="dark"] .chart-card--hourly #hourlyDepartment {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(96, 165, 250, 0.25);
+      color: var(--color-text);
+    }
+
+    body[data-theme="dark"] .hourly-department {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(96, 165, 250, 0.25);
+    }
+
+    .hourly-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hourly-action__hint {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--color-surface-alt);
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      position: relative;
+      line-height: 1;
+    }
+
+    .hourly-action[aria-expanded="true"] .hourly-action__hint {
+      color: var(--color-accent);
+    }
+
+    .hourly-action__hint::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.45);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      margin-left: 6px;
+      z-index: 10;
+    }
+
+    .hourly-action__hint:hover::after,
+    .hourly-action__hint:focus-visible::after {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    body[data-theme="dark"] .hourly-department__toggle {
+      background: rgba(15, 23, 42, 0.4);
+      border-color: rgba(96, 165, 250, 0.25);
+      color: rgba(203, 213, 225, 0.85);
+    }
+
+    .hourly-department.is-disabled {
+      opacity: 0.55;
+      filter: grayscale(0.15);
+      pointer-events: none;
+    }
+
+    body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:hover,
+    body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:focus-visible {
       background: rgba(37, 99, 235, 0.25);
       border-color: rgba(96, 165, 250, 0.5);
     }

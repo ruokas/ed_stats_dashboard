@@ -407,6 +407,71 @@
           <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
           <figcaption id="dowStayChartTitle">Vidutinė buvimo trukmė pagal savaitės dieną</figcaption>
         </figure>
+        <figure class="chart-card chart-card--tall chart-card--full chart-card--hourly">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar hourly-toolbar" aria-label="Filtruoti valandinį grafiką">
+            <div class="hourly-toolbar__row" role="group" aria-label="Rodiklio ir skyriaus filtrai">
+              <div class="hourly-toolbar__field hourly-toolbar__field--metric">
+                <div class="segmented-control" role="group" aria-label="Pasirinkti rodiklį">
+                  <button type="button" class="segmented-control__button" data-hourly-metric="arrivals" aria-pressed="true">Atvykimai</button>
+                  <button type="button" class="segmented-control__button" data-hourly-metric="hospitalized" aria-pressed="false">Hospitalizacijos</button>
+                </div>
+              </div>
+              <label class="heatmap-toolbar__field" for="hourlyDepartment" hidden>
+                <span id="hourlyDepartmentLabel" class="heatmap-toolbar__label">Skyrius</span>
+                <div class="hourly-department" role="group" aria-label="Skyrių paieška">
+                  <input
+                    id="hourlyDepartment"
+                    name="hourlyDepartment"
+                    placeholder="Visi skyriai"
+                    aria-label="Filtruoti grafiką pagal skyrių"
+                    autocomplete="off"
+                    aria-expanded="false"
+                    aria-controls="hourlyDepartmentSuggestions"
+                  />
+                    <button type="button" id="hourlyDepartmentToggle" class="hourly-department__toggle" aria-label="Atverti skyrių sąrašą" aria-expanded="false">
+                      ▾
+                    </button>
+                    <div id="hourlyDepartmentSuggestions" class="hourly-suggestions" role="listbox" hidden></div>
+                  </div>
+              </label>
+            </div>
+            <div class="hourly-toolbar__row" role="group" aria-label="Laiko ir mastelio filtrai">
+              <label class="heatmap-toolbar__field" for="hourlyWeekday">
+                <span id="hourlyWeekdayLabel" class="heatmap-toolbar__label">Savaitės diena</span>
+                <select id="hourlyWeekday" name="hourlyWeekday" aria-label="Filtruoti grafiką pagal savaitės dieną">
+                  <option value="all">Visos dienos</option>
+                  <option value="0">Pirmadienis</option>
+                  <option value="1">Antradienis</option>
+                  <option value="2">Trečiadienis</option>
+                  <option value="3">Ketvirtadienis</option>
+                  <option value="4">Penktadienis</option>
+                  <option value="5">Šeštadienis</option>
+                  <option value="6">Sekmadienis</option>
+                </select>
+              </label>
+              <label class="heatmap-toolbar__field" for="hourlyStayBucket">
+                <span id="hourlyStayLabel" class="heatmap-toolbar__label">Buvimo trukmė</span>
+                <select id="hourlyStayBucket" name="hourlyStayBucket" aria-label="Filtruoti grafiką pagal buvimo trukmę">
+                  <option value="all">Visi laikai</option>
+                  <option value="lt4">&lt;4 val.</option>
+                  <option value="4to8">4–8 val.</option>
+                  <option value="8to16">8–16 val.</option>
+                  <option value="gt16">&gt;16 val.</option>
+                </select>
+              </label>
+              <button type="button" id="hourlyResetFilters" class="chip-button chip-button--ghost hourly-action" aria-label="Išvalyti šio grafiko filtrus">Išvalyti filtrus</button>
+            </div>
+          </div>
+          <div class="chart-card__canvas chart-card__canvas--hourly">
+            <canvas id="hourlyChart" aria-labelledby="hourlyChartTitle"></canvas>
+          </div>
+          <figcaption id="hourlyChartTitle">Vidutinis pacientų skaičius per valandą</figcaption>
+        </figure>
         <figure class="chart-card chart-card--heatmap">
           <div class="chart-card__skeleton" aria-hidden="true" hidden>
             <span class="skeleton skeleton--title"></span>

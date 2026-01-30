@@ -430,6 +430,29 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         dowStayCaption: 'Vidutinė buvimo trukmė pagal savaitės dieną.',
         dowStayLabel: 'Vidutinė trukmė (val.)',
+      hourlyCaption: (weekdayLabel) => (weekdayLabel
+        ? `Vidutinis pacientų skaičius per valandą (${weekdayLabel}).`
+        : 'Vidutinis pacientų skaičius per valandą.'),
+        hourlyDatasetTotalLabel: 'Iš viso',
+        hourlyDatasetEmsLabel: 'Tik GMP',
+        hourlyDatasetSelfLabel: 'Be GMP',
+        hourlyMetricLabel: 'Rodiklis',
+        hourlyMetricOptions: {
+          arrivals: 'Atvykimų skaičius',
+          hospitalized: 'Hospitalizacijų skaičius',
+        },
+        hourlyDepartmentLabel: 'Skyrius',
+        hourlyDepartmentAll: 'Visi skyriai',
+        hourlyWeekdayLabel: 'Savaitės diena',
+        hourlyWeekdayAll: 'Visos dienos',
+        hourlyStayLabel: 'Buvimo trukmė',
+        hourlyStayAll: 'Visi laikai',
+        hourlyStayBuckets: {
+          lt4: '<4 val.',
+          '4to8': '4–8 val.',
+          '8to16': '8–16 val.',
+          gt16: '>16 val.',
+        },
         funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
         funnelCaptionWithYear: (year) => (year
           ? `Pacientų srautas pagal sprendimą – ${year} m. (atvykę → sprendimas).`
@@ -942,6 +965,18 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       dailyCaptionContext: document.getElementById('dailyChartContext'),
       dowCaption: document.getElementById('dowChartTitle'),
       dowStayCaption: document.getElementById('dowStayChartTitle'),
+      hourlyCaption: document.getElementById('hourlyChartTitle'),
+      hourlyMetricLabel: document.getElementById('hourlyMetricLabel'),
+      hourlyMetricButtons: Array.from(document.querySelectorAll('[data-hourly-metric]')),
+      hourlyDepartmentLabel: document.getElementById('hourlyDepartmentLabel'),
+      hourlyDepartmentInput: document.getElementById('hourlyDepartment'),
+      hourlyDepartmentSuggestions: document.getElementById('hourlyDepartmentSuggestions'),
+      hourlyDepartmentToggle: document.getElementById('hourlyDepartmentToggle'),
+      hourlyWeekdayLabel: document.getElementById('hourlyWeekdayLabel'),
+      hourlyWeekdaySelect: document.getElementById('hourlyWeekday'),
+      hourlyStayLabel: document.getElementById('hourlyStayLabel'),
+      hourlyStaySelect: document.getElementById('hourlyStayBucket'),
+      hourlyResetFilters: document.getElementById('hourlyResetFilters'),
       funnelCaption: document.getElementById('funnelChartTitle'),
       heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
       heatmapContainer: document.getElementById('arrivalHeatmap'),
@@ -1878,6 +1913,17 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       'Sekmadienis',
     ];
     const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
+    const HOURLY_WEEKDAY_ALL = 'all';
+    const HOURLY_STAY_BUCKET_ALL = 'all';
+    const HOURLY_METRIC_ARRIVALS = 'arrivals';
+    const HOURLY_METRIC_HOSPITALIZED = 'hospitalized';
+    const HOURLY_METRICS = [HOURLY_METRIC_ARRIVALS, HOURLY_METRIC_HOSPITALIZED];
+    const HOURLY_STAY_BUCKETS = [
+      { key: 'lt4', min: 0, max: 4 },
+      { key: '4to8', min: 4, max: 8 },
+      { key: '8to16', min: 8, max: 16 },
+      { key: 'gt16', min: 16, max: Number.POSITIVE_INFINITY },
+    ];
     const HEATMAP_METRIC_KEYS = ['arrivals', 'discharges', 'hospitalized', 'avgDuration'];
     const DEFAULT_HEATMAP_METRIC = HEATMAP_METRIC_KEYS[0];
 
@@ -1889,6 +1935,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         daily: null,
         dow: null,
         dowStay: null,
+        hourly: null,
         funnel: null,
         feedbackTrend: null,
         edDispositions: null,
@@ -1909,6 +1956,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       chartPeriod: 30,
       chartYear: null,
       heatmapMetric: DEFAULT_HEATMAP_METRIC,
+      hourlyWeekday: 'all',
+      hourlyStayBucket: 'all',
+      hourlyMetric: HOURLY_METRIC_ARRIVALS,
+      hourlyDepartment: 'all',
+      hourlyYAxisSuggestedMax: null,
+      hourlyDepartmentOptions: [],
+      hourlyDepartmentSuggestIndex: -1,
       chartData: {
         baseDaily: [],
         baseRecords: [],
@@ -2211,6 +2265,43 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       if (selectors.dowStayCaption) {
         selectors.dowStayCaption.textContent = TEXT.charts.dowStayCaption;
       }
+      if (selectors.hourlyWeekdayLabel) {
+        const hourlyLabelText = TEXT.charts?.hourlyWeekdayLabel || 'Savaitės diena';
+        selectors.hourlyWeekdayLabel.textContent = hourlyLabelText;
+        if (selectors.hourlyWeekdaySelect) {
+          selectors.hourlyWeekdaySelect.setAttribute('aria-label', hourlyLabelText);
+          selectors.hourlyWeekdaySelect.title = hourlyLabelText;
+        }
+      }
+      if (selectors.hourlyMetricLabel) {
+        syncHourlyMetricButtons();
+      }
+      if (selectors.hourlyDepartmentLabel) {
+        const departmentLabelText = TEXT.charts?.hourlyDepartmentLabel || 'Skyrius';
+        selectors.hourlyDepartmentLabel.textContent = departmentLabelText;
+        if (selectors.hourlyDepartmentInput) {
+          selectors.hourlyDepartmentInput.setAttribute('aria-label', departmentLabelText);
+          selectors.hourlyDepartmentInput.title = departmentLabelText;
+          selectors.hourlyDepartmentInput.placeholder = TEXT.charts?.hourlyDepartmentAll || 'Visi skyriai';
+        }
+      }
+      if (selectors.hourlyStayLabel) {
+        const stayLabelText = TEXT.charts?.hourlyStayLabel || 'Buvimo trukmė';
+        selectors.hourlyStayLabel.textContent = stayLabelText;
+        if (selectors.hourlyStaySelect) {
+          selectors.hourlyStaySelect.setAttribute('aria-label', stayLabelText);
+          selectors.hourlyStaySelect.title = stayLabelText;
+        }
+      }
+      populateHourlyWeekdayOptions();
+      populateHourlyStayOptions();
+      syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
+      updateHourlyCaption(
+        dashboardState.hourlyWeekday,
+        dashboardState.hourlyStayBucket,
+        dashboardState.hourlyMetric,
+        dashboardState.hourlyDepartment,
+      );
       const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
         ? TEXT.charts.funnelCaptionWithYear(null)
         : TEXT.charts.funnelCaption;
@@ -5460,6 +5551,453 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       return { metrics };
     }
 
+    function normalizeHourlyWeekday(value) {
+      if (value === HOURLY_WEEKDAY_ALL) {
+        return HOURLY_WEEKDAY_ALL;
+      }
+      const numeric = Number.parseInt(String(value), 10);
+      if (Number.isInteger(numeric) && numeric >= 0 && numeric <= 6) {
+        return numeric;
+      }
+      return HOURLY_WEEKDAY_ALL;
+    }
+
+    function getHourlyWeekdayLabel(value) {
+      const normalized = normalizeHourlyWeekday(value);
+      if (normalized === HOURLY_WEEKDAY_ALL) {
+        return TEXT.charts?.hourlyWeekdayAll || 'Visos dienos';
+      }
+      return HEATMAP_WEEKDAY_FULL[normalized] || '';
+    }
+
+    function normalizeHourlyMetric(value) {
+      const normalized = typeof value === 'string' ? value : String(value ?? '');
+      if (HOURLY_METRICS.includes(normalized)) {
+        return normalized;
+      }
+      return HOURLY_METRIC_ARRIVALS;
+    }
+
+    function getHourlyMetricLabel(value) {
+      const normalized = normalizeHourlyMetric(value);
+      const options = TEXT.charts?.hourlyMetricOptions || {};
+      return typeof options[normalized] === 'string' && options[normalized].trim()
+        ? options[normalized]
+        : normalized;
+    }
+
+    function normalizeHourlyDepartment(value) {
+      if (!value || String(value).trim().length === 0) {
+        return 'all';
+      }
+      const raw = String(value).trim();
+      const allLabel = TEXT.charts?.hourlyDepartmentAll || 'Visi skyriai';
+      if (raw === 'all' || raw === allLabel) {
+        return 'all';
+      }
+      return raw;
+    }
+
+    function isKnownHourlyDepartment(value) {
+      if (!value || value === 'all') {
+        return false;
+      }
+      const options = Array.isArray(dashboardState.hourlyDepartmentOptions)
+        ? dashboardState.hourlyDepartmentOptions
+        : [];
+      return options.includes(value);
+    }
+
+    function applyHourlyYAxisAuto(chartInstance) {
+      const chart = chartInstance || dashboardState.charts?.hourly;
+      if (chart?.options?.scales?.y) {
+        chart.options.scales.y.max = undefined;
+        chart.options.scales.y.suggestedMax = dashboardState.hourlyYAxisSuggestedMax ?? undefined;
+      }
+    }
+
+    function normalizeHourlyStayBucket(value) {
+      if (value === HOURLY_STAY_BUCKET_ALL) {
+        return HOURLY_STAY_BUCKET_ALL;
+      }
+      const candidate = String(value);
+      if (HOURLY_STAY_BUCKETS.some((bucket) => bucket.key === candidate)) {
+        return candidate;
+      }
+      return HOURLY_STAY_BUCKET_ALL;
+    }
+
+    function getHourlyStayLabel(value) {
+      const normalized = normalizeHourlyStayBucket(value);
+      if (normalized === HOURLY_STAY_BUCKET_ALL) {
+        return TEXT.charts?.hourlyStayAll || 'Visi laikai';
+      }
+      const labels = TEXT.charts?.hourlyStayBuckets || {};
+      if (typeof labels[normalized] === 'string' && labels[normalized].trim()) {
+        return labels[normalized];
+      }
+      const bucket = HOURLY_STAY_BUCKETS.find((item) => item.key === normalized);
+      if (!bucket) {
+        return '';
+      }
+      if (Number.isFinite(bucket.max)) {
+        return `${bucket.min}–${bucket.max} val.`;
+      }
+      return `>${bucket.min} val.`;
+    }
+
+    function buildHourlyCaptionLabel(weekdayValue, stayBucket, metricValue, departmentValue) {
+      const parts = [];
+      const metricLabel = getHourlyMetricLabel(metricValue);
+      if (metricLabel) {
+        parts.push(metricLabel);
+      }
+      const normalizedWeekday = normalizeHourlyWeekday(weekdayValue);
+      const normalizedStay = normalizeHourlyStayBucket(stayBucket);
+      if (normalizedWeekday !== HOURLY_WEEKDAY_ALL) {
+        const weekdayLabel = getHourlyWeekdayLabel(normalizedWeekday);
+        if (weekdayLabel) {
+          parts.push(weekdayLabel);
+        }
+      }
+      if (normalizedStay !== HOURLY_STAY_BUCKET_ALL) {
+        const stayLabel = getHourlyStayLabel(normalizedStay);
+        if (stayLabel) {
+          parts.push(stayLabel);
+        }
+      }
+      const normalizedMetric = normalizeHourlyMetric(metricValue);
+      const normalizedDepartment = normalizeHourlyDepartment(departmentValue);
+      if (normalizedMetric === HOURLY_METRIC_HOSPITALIZED && normalizedDepartment !== 'all') {
+        parts.push(`Skyrius: ${normalizedDepartment}`);
+      }
+      return parts.join(' • ');
+    }
+
+    function updateHourlyCaption(weekdayValue, stayBucket, metricValue, departmentValue) {
+      if (!selectors.hourlyCaption) {
+        return;
+      }
+      const label = buildHourlyCaptionLabel(weekdayValue, stayBucket, metricValue, departmentValue);
+      const captionText = typeof TEXT.charts?.hourlyCaption === 'function'
+        ? TEXT.charts.hourlyCaption(label)
+        : (TEXT.charts?.hourlyCaption || 'Vidutinis pacientų skaičius per valandą.');
+      selectors.hourlyCaption.textContent = captionText;
+    }
+
+    function populateHourlyWeekdayOptions() {
+      if (!selectors.hourlyWeekdaySelect) {
+        return;
+      }
+      const select = selectors.hourlyWeekdaySelect;
+      select.innerHTML = '';
+      const allOption = document.createElement('option');
+      allOption.value = HOURLY_WEEKDAY_ALL;
+      allOption.textContent = TEXT.charts?.hourlyWeekdayAll || 'Visos dienos';
+      select.appendChild(allOption);
+      HEATMAP_WEEKDAY_FULL.forEach((label, index) => {
+        const option = document.createElement('option');
+        option.value = String(index);
+        option.textContent = label;
+        select.appendChild(option);
+      });
+      const current = normalizeHourlyWeekday(dashboardState.hourlyWeekday);
+      select.value = String(current);
+    }
+
+    function syncHourlyMetricButtons() {
+      if (!Array.isArray(selectors.hourlyMetricButtons) || !selectors.hourlyMetricButtons.length) {
+        return;
+      }
+      const current = normalizeHourlyMetric(dashboardState.hourlyMetric);
+      selectors.hourlyMetricButtons.forEach((button) => {
+        const metric = button?.dataset?.hourlyMetric;
+        if (!metric) {
+          return;
+        }
+        const isActive = metric === current;
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function populateHourlyStayOptions() {
+      if (!selectors.hourlyStaySelect) {
+        return;
+      }
+      const select = selectors.hourlyStaySelect;
+      select.innerHTML = '';
+      const allOption = document.createElement('option');
+      allOption.value = HOURLY_STAY_BUCKET_ALL;
+      allOption.textContent = TEXT.charts?.hourlyStayAll || 'Visi laikai';
+      select.appendChild(allOption);
+      const labels = TEXT.charts?.hourlyStayBuckets || {};
+      HOURLY_STAY_BUCKETS.forEach((bucket) => {
+        const option = document.createElement('option');
+        option.value = bucket.key;
+        option.textContent = (typeof labels[bucket.key] === 'string' && labels[bucket.key].trim())
+          ? labels[bucket.key]
+          : getHourlyStayLabel(bucket.key);
+        select.appendChild(option);
+      });
+      const current = normalizeHourlyStayBucket(dashboardState.hourlyStayBucket);
+      select.value = String(current);
+    }
+
+    function getRecordDepartment(record) {
+      const direct = record?.department;
+      if (typeof direct === 'string' && direct.trim()) {
+        return direct.trim();
+      }
+      const candidateKey = settings?.csv?.department || DEFAULT_SETTINGS.csv.department;
+      if (candidateKey && record && typeof record === 'object' && candidateKey in record) {
+        const raw = record[candidateKey];
+        if (typeof raw === 'string' && raw.trim()) {
+          return raw.trim();
+        }
+      }
+      return '';
+    }
+
+    function updateHourlyDepartmentOptions(records) {
+      if (!selectors.hourlyDepartmentInput) {
+        return;
+      }
+      const departments = new Set();
+      (Array.isArray(records) ? records : []).forEach((record) => {
+        if (!record?.hospitalized) {
+          return;
+        }
+        const label = getRecordDepartment(record);
+        if (label) {
+          departments.add(label);
+        }
+      });
+      const sorted = Array.from(departments).sort((a, b) => textCollator.compare(a, b));
+      const previous = Array.isArray(dashboardState.hourlyDepartmentOptions)
+        ? dashboardState.hourlyDepartmentOptions
+        : [];
+      const isSame = previous.length === sorted.length
+        && previous.every((value, index) => value === sorted[index]);
+      if (isSame) {
+        return;
+      }
+      dashboardState.hourlyDepartmentOptions = sorted.slice();
+      const current = normalizeHourlyDepartment(dashboardState.hourlyDepartment);
+      if (current === 'all') {
+        selectors.hourlyDepartmentInput.value = '';
+        return;
+      }
+      if (sorted.includes(current)) {
+        selectors.hourlyDepartmentInput.value = current;
+      }
+    }
+
+    function setHourlyDepartmentSuggestions(items) {
+      const container = selectors.hourlyDepartmentSuggestions;
+      if (!container) {
+        return;
+      }
+      container.replaceChildren();
+      const hasItems = Array.isArray(items) && items.length > 0;
+      if (!hasItems) {
+        container.setAttribute('hidden', 'hidden');
+        if (selectors.hourlyDepartmentInput) {
+          selectors.hourlyDepartmentInput.setAttribute('aria-expanded', 'false');
+        }
+        if (selectors.hourlyDepartmentToggle) {
+          selectors.hourlyDepartmentToggle.setAttribute('aria-expanded', 'false');
+        }
+        dashboardState.hourlyDepartmentSuggestIndex = -1;
+        return;
+      }
+      items.forEach((item, index) => {
+        const option = document.createElement('div');
+        option.className = 'hourly-suggestions__item';
+        option.setAttribute('role', 'option');
+        option.setAttribute('data-index', String(index));
+        option.setAttribute('aria-selected', index === dashboardState.hourlyDepartmentSuggestIndex ? 'true' : 'false');
+        option.textContent = item;
+        option.addEventListener('mousedown', (event) => {
+          event.preventDefault();
+          applyHourlyDepartmentSelection(item);
+        });
+        container.appendChild(option);
+      });
+      container.removeAttribute('hidden');
+      if (selectors.hourlyDepartmentInput) {
+        selectors.hourlyDepartmentInput.setAttribute('aria-expanded', 'true');
+      }
+      if (selectors.hourlyDepartmentToggle) {
+        selectors.hourlyDepartmentToggle.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    function applyHourlyDepartmentSelection(value) {
+      dashboardState.hourlyDepartment = normalizeHourlyDepartment(value);
+      if (selectors.hourlyDepartmentInput) {
+        selectors.hourlyDepartmentInput.value = dashboardState.hourlyDepartment === 'all'
+          ? ''
+          : dashboardState.hourlyDepartment;
+      }
+      setHourlyDepartmentSuggestions([]);
+      handleHourlyFilterChange();
+    }
+
+    function updateHourlyDepartmentSuggestions(query, { force } = {}) {
+      const options = Array.isArray(dashboardState.hourlyDepartmentOptions)
+        ? dashboardState.hourlyDepartmentOptions
+        : [];
+      const normalizedQuery = String(query ?? '').trim().toLowerCase();
+      if (!normalizedQuery && !force) {
+        setHourlyDepartmentSuggestions([]);
+        return;
+      }
+      const filtered = normalizedQuery
+        ? options.filter((item) => item.toLowerCase().includes(normalizedQuery))
+        : options.slice();
+      const limited = filtered.slice(0, 24);
+      if (!limited.length) {
+        setHourlyDepartmentSuggestions([]);
+        return;
+      }
+      if (dashboardState.hourlyDepartmentSuggestIndex >= limited.length) {
+        dashboardState.hourlyDepartmentSuggestIndex = -1;
+      }
+      setHourlyDepartmentSuggestions(limited);
+    }
+
+    function syncHourlyDepartmentVisibility(metricValue) {
+      if (!selectors.hourlyDepartmentInput) {
+        return;
+      }
+      const normalizedMetric = normalizeHourlyMetric(metricValue);
+      const shouldShow = normalizedMetric === HOURLY_METRIC_HOSPITALIZED;
+      const field = selectors.hourlyDepartmentInput.closest('.heatmap-toolbar__field');
+      if (field) {
+        if (shouldShow) {
+          field.removeAttribute('hidden');
+        } else {
+          field.setAttribute('hidden', 'hidden');
+        }
+      }
+      selectors.hourlyDepartmentInput.disabled = !shouldShow;
+      if (selectors.hourlyDepartmentToggle) {
+        selectors.hourlyDepartmentToggle.disabled = !shouldShow;
+      }
+      const wrapper = selectors.hourlyDepartmentInput.closest('.hourly-department');
+      if (wrapper) {
+        wrapper.classList.toggle('is-disabled', !shouldShow);
+      }
+    }
+
+    function matchesHourlyStayBucket(record, bucketKey) {
+      const normalized = normalizeHourlyStayBucket(bucketKey);
+      if (normalized === HOURLY_STAY_BUCKET_ALL) {
+        return true;
+      }
+      let hours = null;
+      const losMinutes = record?.losMinutes;
+      if (Number.isFinite(losMinutes) && losMinutes >= 0) {
+        hours = losMinutes / 60;
+      } else if (record?.arrival instanceof Date && record?.discharge instanceof Date) {
+        const diffMs = record.discharge.getTime() - record.arrival.getTime();
+        if (Number.isFinite(diffMs) && diffMs >= 0) {
+          hours = diffMs / 3600000;
+        }
+      }
+      if (!Number.isFinite(hours) || hours < 0) {
+        return false;
+      }
+      const bucket = HOURLY_STAY_BUCKETS.find((item) => item.key === normalized);
+      if (!bucket) {
+        return true;
+      }
+      if (Number.isFinite(bucket.max)) {
+        return hours >= bucket.min && hours < bucket.max;
+      }
+      return hours >= bucket.min;
+    }
+
+    function matchesHourlyMetric(record, metricValue, departmentValue) {
+      const metric = normalizeHourlyMetric(metricValue);
+      if (metric === HOURLY_METRIC_ARRIVALS) {
+        return true;
+      }
+      if (!record?.hospitalized) {
+        return false;
+      }
+      const normalizedDepartment = normalizeHourlyDepartment(departmentValue);
+      if (normalizedDepartment === 'all') {
+        return true;
+      }
+      if (!isKnownHourlyDepartment(normalizedDepartment)) {
+        return true;
+      }
+      const department = getRecordDepartment(record);
+      return department === normalizedDepartment;
+    }
+
+    function computeHourlySeries(records, weekdayValue, stayBucket, metricValue, departmentValue) {
+      const totals = {
+        all: Array(24).fill(0),
+        ems: Array(24).fill(0),
+        self: Array(24).fill(0),
+      };
+      const weekdayDays = Array.from({ length: 7 }, () => new Set());
+      const allDays = new Set();
+      (Array.isArray(records) ? records : []).forEach((entry) => {
+        if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
+          return;
+        }
+        const hour = entry.arrival.getHours();
+        if (hour < 0 || hour > 23) {
+          return;
+        }
+        const rawDay = entry.arrival.getDay();
+        const dayIndex = (rawDay + 6) % 7;
+        const dateKey = formatLocalDateKey(entry.arrival);
+        if (dateKey) {
+          weekdayDays[dayIndex].add(dateKey);
+          allDays.add(dateKey);
+        }
+        const normalizedWeekday = normalizeHourlyWeekday(weekdayValue);
+        if (!matchesHourlyStayBucket(entry, stayBucket)) {
+          return;
+        }
+        if (!matchesHourlyMetric(entry, metricValue, departmentValue)) {
+          return;
+        }
+        if (normalizedWeekday === HOURLY_WEEKDAY_ALL || normalizedWeekday === dayIndex) {
+          totals.all[hour] += 1;
+          if (entry.ems) {
+            totals.ems[hour] += 1;
+          } else {
+            totals.self[hour] += 1;
+          }
+        }
+      });
+      const normalizedWeekday = normalizeHourlyWeekday(weekdayValue);
+      const divisor = normalizedWeekday === HOURLY_WEEKDAY_ALL
+        ? allDays.size
+        : weekdayDays[normalizedWeekday]?.size || 0;
+      const toAverage = (values) => values.map((value) => (divisor > 0 ? value / divisor : 0));
+      const averages = {
+        all: toAverage(totals.all),
+        ems: toAverage(totals.ems),
+        self: toAverage(totals.self),
+      };
+      const hasData = totals.all.some((value) => value > 0);
+      return { averages, hasData, divisor };
+    }
+
+    function getHourlyChartRecords(baseRecords, selectedYear, filters, period) {
+      const sanitized = sanitizeChartFilters(filters);
+      sanitized.arrival = 'all';
+      const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
+      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, sanitized);
+      return filterRecordsByWindow(filteredRecords, period);
+    }
+
     function getHeatmapMetricLabel(metricKey) {
       const options = TEXT.charts?.heatmapMetricOptions || {};
       if (typeof options[metricKey] === 'string' && options[metricKey].trim()) {
@@ -7733,6 +8271,172 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       });
     }
 
+    function renderHourlyChart(records, ChartLib, palette) {
+      const Chart = ChartLib;
+      const themePalette = palette || getThemePalette();
+      const canvas = document.getElementById('hourlyChart');
+      if (!canvas || !canvas.getContext) {
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+      if (!ctx || !Chart) {
+        return;
+      }
+
+      const weekdayValue = normalizeHourlyWeekday(dashboardState.hourlyWeekday);
+      const stayBucket = normalizeHourlyStayBucket(dashboardState.hourlyStayBucket);
+      const metricValue = normalizeHourlyMetric(dashboardState.hourlyMetric);
+      const departmentValue = normalizeHourlyDepartment(dashboardState.hourlyDepartment);
+      updateHourlyCaption(weekdayValue, stayBucket, metricValue, departmentValue);
+
+      if (dashboardState.charts.hourly) {
+        if (dashboardState.charts.hourly._yAxisWheelHandler && canvas) {
+          canvas.removeEventListener('wheel', dashboardState.charts.hourly._yAxisWheelHandler);
+        }
+        dashboardState.charts.hourly.destroy();
+      }
+
+      updateHourlyDepartmentOptions(records);
+      const normalizedDepartment = normalizeHourlyDepartment(dashboardState.hourlyDepartment);
+      if (normalizedDepartment !== departmentValue) {
+        dashboardState.hourlyDepartment = normalizedDepartment;
+      }
+      syncHourlyDepartmentVisibility(metricValue);
+      updateHourlyCaption(weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
+      const result = computeHourlySeries(records, weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
+      if (!result.hasData) {
+        setChartCardMessage(canvas, TEXT.charts?.empty);
+        dashboardState.charts.hourly = null;
+        return;
+      }
+      setChartCardMessage(canvas, null);
+
+      const baseSeries = computeHourlySeries(records, weekdayValue, HOURLY_STAY_BUCKET_ALL, metricValue, 'all');
+      const baseMax = baseSeries?.averages?.all
+        ? Math.max(0, ...baseSeries.averages.all)
+        : 0;
+      const suggestedMax = baseMax > 0
+        ? Math.ceil(baseMax * 1.1 * 10) / 10
+        : undefined;
+      dashboardState.hourlyYAxisSuggestedMax = suggestedMax ?? null;
+
+      const labels = HEATMAP_HOURS;
+      dashboardState.charts.hourly = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+              data: result.averages.all,
+              borderColor: themePalette.accent,
+              backgroundColor: themePalette.accentSoft,
+              tension: 0.35,
+              fill: false,
+              pointRadius: 2,
+              pointHoverRadius: 4,
+              pointBackgroundColor: themePalette.accent,
+              pointBorderColor: themePalette.accent,
+            },
+            {
+              label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
+              data: result.averages.ems,
+              borderColor: themePalette.success,
+              backgroundColor: themePalette.success,
+              tension: 0.35,
+              fill: false,
+              pointRadius: 2,
+              pointHoverRadius: 4,
+              pointBackgroundColor: themePalette.success,
+              pointBorderColor: themePalette.success,
+            },
+            {
+              label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+              data: result.averages.self,
+              borderColor: themePalette.weekendAccent,
+              backgroundColor: themePalette.weekendAccent,
+              tension: 0.35,
+              fill: false,
+              pointRadius: 2,
+              pointHoverRadius: 4,
+              pointBackgroundColor: themePalette.weekendAccent,
+              pointBorderColor: themePalette.weekendAccent,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: {
+              top: 8,
+              bottom: 14,
+            },
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                color: themePalette.textColor,
+                usePointStyle: true,
+                padding: 18,
+              },
+              padding: 10,
+              onClick(event, legendItem, legend) {
+                const chart = legend.chart;
+                const index = legendItem.datasetIndex;
+                const meta = chart.getDatasetMeta(index);
+                meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                chart.update();
+              },
+            },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: themePalette.textColor,
+                autoSkip: false,
+                maxRotation: 90,
+                minRotation: 90,
+                padding: 10,
+                font: {
+                  size: 10,
+                },
+              },
+              grid: {
+                color: themePalette.gridColor,
+                drawBorder: false,
+              },
+            },
+            y: {
+              beginAtZero: true,
+              suggestedMax,
+              ticks: {
+                color: themePalette.textColor,
+                padding: 8,
+                callback(value) {
+                  return decimalFormatter.format(value);
+                },
+              },
+              grid: {
+                color: themePalette.gridColor,
+                drawBorder: false,
+              },
+            },
+          },
+        },
+      });
+      applyHourlyYAxisAuto(dashboardState.charts.hourly);
+    }
+
     function resetFeedbackCommentRotation() {
       const rotation = dashboardState?.feedback?.commentRotation;
       if (rotation?.timerId) {
@@ -9184,6 +9888,18 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           }
         }
 
+        const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
+          && dashboardState.chartData.baseRecords.length
+          ? dashboardState.chartData.baseRecords
+          : dashboardState.rawRecords;
+        const hourlyRecords = getHourlyChartRecords(
+          baseRecords,
+          selectedYear,
+          dashboardState.chartFilters || {},
+          dashboardState.chartPeriod,
+        );
+        renderHourlyChart(hourlyRecords, Chart, palette);
+
         if (selectors.funnelCaption) {
           const funnelYear = dashboardState.chartData.funnel?.year ?? null;
           const captionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
@@ -9226,6 +9942,170 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         palette.accent,
         dashboardState.heatmapMetric,
       );
+    }
+
+    async function handleHourlyFilterChange() {
+      const metricValue = dashboardState.hourlyMetric;
+      const departmentValue = selectors.hourlyDepartmentInput?.value ?? dashboardState.hourlyDepartment;
+      const weekdayValue = selectors.hourlyWeekdaySelect?.value ?? dashboardState.hourlyWeekday;
+      const stayValue = selectors.hourlyStaySelect?.value ?? dashboardState.hourlyStayBucket;
+      dashboardState.hourlyDepartment = normalizeHourlyDepartment(departmentValue);
+      dashboardState.hourlyWeekday = normalizeHourlyWeekday(weekdayValue);
+      dashboardState.hourlyStayBucket = normalizeHourlyStayBucket(stayValue);
+      if (selectors.hourlyWeekdaySelect) {
+        selectors.hourlyWeekdaySelect.value = String(dashboardState.hourlyWeekday);
+      }
+      if (selectors.hourlyStaySelect) {
+        selectors.hourlyStaySelect.value = String(dashboardState.hourlyStayBucket);
+      }
+      if (dashboardState.hourlyMetric !== HOURLY_METRIC_HOSPITALIZED) {
+        dashboardState.hourlyDepartment = 'all';
+        if (selectors.hourlyDepartmentInput) {
+          selectors.hourlyDepartmentInput.value = '';
+        }
+      }
+      syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
+      updateHourlyCaption(
+        dashboardState.hourlyWeekday,
+        dashboardState.hourlyStayBucket,
+        dashboardState.hourlyMetric,
+        dashboardState.hourlyDepartment,
+      );
+      const Chart = dashboardState.chartLib ?? await loadChartJs();
+      if (!Chart) {
+        showChartError(TEXT.charts?.errorLoading);
+        return;
+      }
+      const palette = getThemePalette();
+      const styleTarget = getThemeStyleTarget();
+      Chart.defaults.color = palette.textColor;
+      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+      Chart.defaults.borderColor = palette.gridColor;
+
+      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+      const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
+        && dashboardState.chartData.baseRecords.length
+        ? dashboardState.chartData.baseRecords
+        : dashboardState.rawRecords;
+      const hourlyRecords = getHourlyChartRecords(
+        baseRecords,
+        selectedYear,
+        dashboardState.chartFilters || {},
+        dashboardState.chartPeriod,
+      );
+      renderHourlyChart(hourlyRecords, Chart, palette);
+    }
+
+    function handleHourlyMetricClick(event) {
+      const button = event?.currentTarget;
+      const metric = button?.dataset?.hourlyMetric;
+      if (!metric) {
+        return;
+      }
+      dashboardState.hourlyMetric = normalizeHourlyMetric(metric);
+      syncHourlyMetricButtons();
+      if (dashboardState.hourlyMetric !== HOURLY_METRIC_HOSPITALIZED) {
+        dashboardState.hourlyDepartment = 'all';
+        if (selectors.hourlyDepartmentInput) {
+          selectors.hourlyDepartmentInput.value = '';
+        }
+      }
+      handleHourlyFilterChange();
+    }
+
+    function handleHourlyResetFilters() {
+      dashboardState.hourlyMetric = HOURLY_METRIC_ARRIVALS;
+      dashboardState.hourlyDepartment = 'all';
+      dashboardState.hourlyWeekday = HOURLY_WEEKDAY_ALL;
+      dashboardState.hourlyStayBucket = HOURLY_STAY_BUCKET_ALL;
+      syncHourlyMetricButtons();
+      if (selectors.hourlyDepartmentInput) {
+        selectors.hourlyDepartmentInput.value = '';
+      }
+      if (selectors.hourlyWeekdaySelect) {
+        selectors.hourlyWeekdaySelect.value = String(dashboardState.hourlyWeekday);
+      }
+      if (selectors.hourlyStaySelect) {
+        selectors.hourlyStaySelect.value = String(dashboardState.hourlyStayBucket);
+      }
+      syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
+      handleHourlyFilterChange();
+    }
+
+    function handleHourlyDepartmentInput(event) {
+      const value = event?.target?.value ?? '';
+      dashboardState.hourlyDepartment = normalizeHourlyDepartment(value);
+      dashboardState.hourlyDepartmentSuggestIndex = -1;
+      updateHourlyDepartmentSuggestions(value);
+      handleHourlyFilterChange();
+    }
+
+    function handleHourlyDepartmentBlur() {
+      window.setTimeout(() => {
+        const active = document.activeElement;
+        if (active === selectors.hourlyDepartmentInput || active === selectors.hourlyDepartmentToggle) {
+          return;
+        }
+        if (selectors.hourlyDepartmentSuggestions && selectors.hourlyDepartmentSuggestions.contains(active)) {
+          return;
+        }
+        setHourlyDepartmentSuggestions([]);
+      }, 120);
+    }
+
+    function handleHourlyDepartmentToggle() {
+      const isOpen = selectors.hourlyDepartmentSuggestions
+        && !selectors.hourlyDepartmentSuggestions.hasAttribute('hidden');
+      if (isOpen) {
+        setHourlyDepartmentSuggestions([]);
+        if (selectors.hourlyDepartmentToggle) {
+          selectors.hourlyDepartmentToggle.setAttribute('aria-expanded', 'false');
+        }
+        if (selectors.hourlyDepartmentInput) {
+          selectors.hourlyDepartmentInput.setAttribute('aria-expanded', 'false');
+        }
+        return;
+      }
+      updateHourlyDepartmentSuggestions('', { force: true });
+      if (selectors.hourlyDepartmentToggle) {
+        selectors.hourlyDepartmentToggle.setAttribute('aria-expanded', 'true');
+      }
+      if (selectors.hourlyDepartmentInput) {
+        selectors.hourlyDepartmentInput.setAttribute('aria-expanded', 'true');
+        selectors.hourlyDepartmentInput.focus();
+      }
+    }
+
+    function handleHourlyDepartmentKeydown(event) {
+      if (!selectors.hourlyDepartmentSuggestions || selectors.hourlyDepartmentSuggestions.hasAttribute('hidden')) {
+        return;
+      }
+      const items = Array.from(selectors.hourlyDepartmentSuggestions.querySelectorAll('.hourly-suggestions__item'));
+      if (!items.length) {
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        dashboardState.hourlyDepartmentSuggestIndex = Math.min(items.length - 1, dashboardState.hourlyDepartmentSuggestIndex + 1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        dashboardState.hourlyDepartmentSuggestIndex = Math.max(0, dashboardState.hourlyDepartmentSuggestIndex - 1);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const active = items[dashboardState.hourlyDepartmentSuggestIndex] || items[0];
+        if (active) {
+          applyHourlyDepartmentSelection(active.textContent || '');
+        }
+        return;
+      } else if (event.key === 'Escape') {
+        setHourlyDepartmentSuggestions([]);
+        return;
+      } else {
+        return;
+      }
+      items.forEach((item, index) => {
+        item.setAttribute('aria-selected', index === dashboardState.hourlyDepartmentSuggestIndex ? 'true' : 'false');
+      });
     }
 
     function rerenderChartsForTheme() {
@@ -12207,6 +13087,38 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
 
     if (selectors.heatmapMetricSelect) {
       selectors.heatmapMetricSelect.addEventListener('change', handleHeatmapMetricChange);
+    }
+
+    if (Array.isArray(selectors.hourlyMetricButtons)) {
+      selectors.hourlyMetricButtons.forEach((button) => {
+        button.addEventListener('click', handleHourlyMetricClick);
+      });
+    }
+
+    if (selectors.hourlyDepartmentInput) {
+      selectors.hourlyDepartmentInput.addEventListener('input', handleHourlyDepartmentInput);
+      selectors.hourlyDepartmentInput.addEventListener('change', handleHourlyDepartmentInput);
+      selectors.hourlyDepartmentInput.addEventListener('blur', handleHourlyDepartmentBlur);
+      selectors.hourlyDepartmentInput.addEventListener('keydown', handleHourlyDepartmentKeydown);
+    }
+
+    if (selectors.hourlyDepartmentToggle) {
+      selectors.hourlyDepartmentToggle.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+      });
+      selectors.hourlyDepartmentToggle.addEventListener('click', handleHourlyDepartmentToggle);
+    }
+
+    if (selectors.hourlyWeekdaySelect) {
+      selectors.hourlyWeekdaySelect.addEventListener('change', handleHourlyFilterChange);
+    }
+
+    if (selectors.hourlyStaySelect) {
+      selectors.hourlyStaySelect.addEventListener('change', handleHourlyFilterChange);
+    }
+
+    if (selectors.hourlyResetFilters) {
+      selectors.hourlyResetFilters.addEventListener('click', handleHourlyResetFilters);
     }
 
     if (selectors.chartFiltersForm) {

@@ -673,6 +673,7 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   entry.discharge = parseDate(dischargeRaw);
   entry.night = detectNight(dayNightRaw, entry.arrival, csvRuntime, calculations, calculationDefaults);
   entry.ems = parseBoolean(gmpRaw, csvRuntime.trueValues, csvRuntime.fallbackTrueValues);
+  entry.department = departmentRaw != null ? String(departmentRaw).trim() : '';
   entry.hospitalized = detectHospitalized(departmentRaw, csvRuntime);
   entry.cardType = detectCardTypeFromNumber(cardNumberRaw);
   return entry;
