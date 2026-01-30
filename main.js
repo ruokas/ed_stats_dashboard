@@ -74,44 +74,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
 
     // Iškart inicijuojame įkėlimą, kad biblioteka būtų paruošta, kai prireiks piešti grafikus.
     runAfterDomAndIdle(() => loadChartJs());
-    /**
-     * Pagrindinė demonstracinė duomenų kopija, naudojama kaip rezervas, jei nepavyksta pasiekti nuotolinio CSV.
-     */
-    const DEFAULT_DEMO_CSV = `Atvykimo data,Išrašymo data,Diena/naktis,GMP,Nukreiptas į padalinį
-2024-02-01T07:15:00+02:00,2024-02-01T10:45:00+02:00,Diena,TAIP,Chirurgija
-2024-02-01T13:20:00+02:00,2024-02-01T16:00:00+02:00,Diena,NE,
-2024-02-01T21:10:00+02:00,2024-02-02T00:30:00+02:00,Naktis,TAIP,Traumatologija
-2024-02-02T06:55:00+02:00,2024-02-02T09:10:00+02:00,Diena,NE,
-2024-02-02T18:40:00+02:00,2024-02-02T22:05:00+02:00,Vakare,TAIP,Chirurgija
-2024-02-03T02:30:00+02:00,2024-02-03T05:00:00+02:00,Naktis,NE,
-2024-02-03T10:15:00+02:00,2024-02-03T13:20:00+02:00,Diena,NE,
-2024-02-04T08:05:00+02:00,2024-02-04T11:15:00+02:00,Diena,TAIP,Chirurgija
-2024-02-04T17:50:00+02:00,2024-02-04T21:30:00+02:00,Vakare,NE,
-2024-02-05T00:40:00+02:00,2024-02-05T04:10:00+02:00,Naktis,TAIP,Reanimacija
-2024-02-05T12:25:00+02:00,2024-02-05T15:45:00+02:00,Diena,NE,
-2024-02-06T07:55:00+02:00,2024-02-06T10:35:00+02:00,Diena,TAIP,Chirurgija
-2024-02-06T22:20:00+02:00,2024-02-07T01:40:00+02:00,Naktis,NE,
-2024-02-07T14:10:00+02:00,2024-02-07T18:55:00+02:00,Diena,NE,
-2024-02-08T05:50:00+02:00,2024-02-08T09:15:00+02:00,Rytas,TAIP,
-2024-02-08T19:30:00+02:00,2024-02-08T23:05:00+02:00,Vakare,NE,
-2024-02-09T23:10:00+02:00,2024-02-10T02:20:00+02:00,Naktis,TAIP,Traumatologija`;
-    const DEFAULT_FEEDBACK_CSV = `Timestamp,Kas pildo formą?,Šaltinis,Kaip vertinate savo bendrą patirtį mūsų skyriuje?,Kaip vertinate gydytojų darbą,Kaip vertinate slaugytojų darbą ?,Ar bendravote su slaugytojų padėjėjais?,Kaip vertinate slaugytojų padėjėjų darbą,Kaip vertinate laukimo laiką skyriuje?,Turite pasiūlymų ar pastabų, kaip galėtume tobulėti?
-2024-02-01T09:12:00+02:00,Pacientas,Registratūros QR kodas,4,4,5,Taip,5,4,Daugiau informacijos apie laukimą priėmime būtų naudinga.
-2024-02-02T18:40:00+02:00,Artimasis,SMS nuoroda,3,4,3,Ne,,3,Ačiū už greitą pagalbą.
-2024-02-03T12:05:00+02:00,Pacientas,Planšetė skyriuje,5,5,5,Taip,5,5,
-2024-02-04T22:20:00+02:00,Artimasis,El. pašto kvietimas,2,3,2,Taip,3,2,Būtų puiku gauti aiškesnius laukimo laikus.
-2024-02-05T08:55:00+02:00,Pacientas,Registratūros QR kodas,4,5,4,Ne,,4,Labai draugiška komanda.`;
-    const DEFAULT_ED_CSV = `Šiuo metu pacientų,Užimta lovų,Slaugytojų - pacientų santykis,Gydytojų - pacientų santykis,1 kategorijos pacientų,2 kategorijos pacientų,3 kategorijos pacientų,4 kategorijos pacientų,5 kategorijos pacientų
-14,11,1:4,1:7,3,4,4,2,1
-18,13,1:5,1:8,4,5,5,3,1
-20,15,1:5,1:9,5,6,5,3,1
-16,12,1:4.5,1:8,3,4,5,3,1
-12,9,1:4,1:7,2,3,4,2,1
-22,17,1:5.5,1:10,4,6,6,4,2
-19,14,1:5,1:8.5,4,5,5,3,2
-15,11,1:4.2,1:7.5,3,4,4,3,1
-17,13,1:4.8,1:8.2,3,5,5,3,1
-21,16,1:5.4,1:9.5,4,6,6,4,1`;
     const DEFAULT_ED_SOURCE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv';
     const ED_TOTAL_BEDS = 29;
     const FEEDBACK_RATING_MIN = 1;
@@ -144,13 +106,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         loading: 'Kraunama...',
         error: 'Nepavyko įkelti duomenų. Patikrinkite ryšį ir bandykite dar kartą.',
         success: (timestamp) => `Atnaujinta ${timestamp}`,
-        fallbackSuccess: (timestamp) => `Rodomi demonstraciniai duomenys (bandyta ${timestamp})`,
+        fallbackSuccess: (timestamp) => `Rodomi talpyklos duomenys (bandyta ${timestamp})`,
         fallbackNote: (reason) => `Nepavyko pasiekti nuotolinio šaltinio: ${reason}.`,
         errorDetails: (details) => `Nepavyko įkelti duomenų${details ? ` (${details})` : ''}.`,
         errorAdvice: 'Patikrinkite, ar „Google Sheet“ paskelbta pasirinkus „File → Share → Publish to web → CSV“.',
       },
       footer: (timestamp) => `Atnaujinta ${timestamp}`,
-      footerFallback: (timestamp) => `Rodoma demonstracinė versija (atnaujinta ${timestamp})`,
+      footerFallback: (timestamp) => `Rodomi talpyklos duomenys (atnaujinta ${timestamp})`,
       ed: {
         title: 'RŠL SMPS skydelis',
         closeButton: 'Grįžti',
@@ -158,9 +120,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           loading: 'Kraunama...',
           empty: 'ED duomenų nerasta.',
           success: (timestamp) => (timestamp ? `Atnaujinta ${timestamp}` : 'Duomenys sėkmingai atnaujinti'),
-          fallback: (reason, timestamp) => `Rodomi ED demonstraciniai duomenys${timestamp ? ` (${timestamp})` : ''}. Priežastis: ${reason}`,
+          fallback: (reason, timestamp) => `Rodomi ED talpyklos duomenys${timestamp ? ` (${timestamp})` : ''}. Priežastis: ${reason}`,
           error: (reason) => `Nepavyko įkelti ED duomenų: ${reason}`,
-          noUrl: 'Nenurodytas ED duomenų URL. Rodomi demonstraciniai duomenys.',
+          noUrl: 'Nenurodytas ED duomenų URL.',
         },
         cardSections: {
           default: {
@@ -707,7 +669,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           placeholder: '—',
         },
         status: {
-          fallback: (reason) => `Atsiliepimai rodomi iš demonstracinio šaltinio: ${reason}`,
+          fallback: (reason) => `Atsiliepimai rodomi iš talpyklos: ${reason}`,
           error: (reason) => `Atsiliepimų nepavyko įkelti: ${reason}`,
           missingUrl: 'Nenurodytas atsiliepimų duomenų URL.',
         },
@@ -744,24 +706,16 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       dataSource: {
         // Pagrindinis operatyvinių duomenų šaltinis (Google Sheets → Publish to CSV)
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv',
-        useFallback: true,
-        fallbackCsv: DEFAULT_DEMO_CSV,
         feedback: {
           url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4ghdkkUJw5pYjb7nTDgoGdaTIUjLT7bD_8q05QyBNR4Z-tTVqhWMvXGemJUIneXyyUF_8-O-EftK/pub?gid=369777093&single=true&output=csv',
-          useFallback: true,
-          fallbackCsv: DEFAULT_FEEDBACK_CSV,
         },
         ed: {
           url: DEFAULT_ED_SOURCE_URL,
-          useFallback: true,
-          fallbackCsv: DEFAULT_ED_CSV,
         },
         historical: {
           enabled: true,
           label: 'Papildomas istorinis (5 metai)',
           url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?output=csv',
-          useFallback: false,
-          fallbackCsv: '',
         },
       },
       csv: {
@@ -1637,37 +1591,21 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
 
       const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), sanitizedSettings ?? {});
       merged.dataSource.url = (merged.dataSource.url ?? '').trim();
-      merged.dataSource.useFallback = Boolean(merged.dataSource.useFallback);
-      merged.dataSource.fallbackCsv = typeof merged.dataSource.fallbackCsv === 'string'
-        ? merged.dataSource.fallbackCsv
-        : DEFAULT_SETTINGS.dataSource.fallbackCsv;
       if (!merged.dataSource.feedback || typeof merged.dataSource.feedback !== 'object') {
         merged.dataSource.feedback = cloneSettings(DEFAULT_SETTINGS.dataSource.feedback);
       }
       merged.dataSource.feedback.url = (merged.dataSource.feedback.url ?? '').trim();
-      merged.dataSource.feedback.useFallback = Boolean(merged.dataSource.feedback.useFallback);
-      merged.dataSource.feedback.fallbackCsv = typeof merged.dataSource.feedback.fallbackCsv === 'string'
-        ? merged.dataSource.feedback.fallbackCsv
-        : DEFAULT_SETTINGS.dataSource.feedback.fallbackCsv;
 
       if (!merged.dataSource.ed || typeof merged.dataSource.ed !== 'object') {
         merged.dataSource.ed = cloneSettings(DEFAULT_SETTINGS.dataSource.ed);
       }
       merged.dataSource.ed.url = (merged.dataSource.ed.url ?? '').trim();
-      merged.dataSource.ed.useFallback = Boolean(merged.dataSource.ed.useFallback);
-      merged.dataSource.ed.fallbackCsv = typeof merged.dataSource.ed.fallbackCsv === 'string'
-        ? merged.dataSource.ed.fallbackCsv
-        : DEFAULT_SETTINGS.dataSource.ed.fallbackCsv;
 
       if (!merged.dataSource.historical || typeof merged.dataSource.historical !== 'object') {
         merged.dataSource.historical = cloneSettings(DEFAULT_SETTINGS.dataSource.historical);
       }
       merged.dataSource.historical.enabled = merged.dataSource.historical.enabled !== false;
       merged.dataSource.historical.url = (merged.dataSource.historical.url ?? '').trim();
-      merged.dataSource.historical.useFallback = Boolean(merged.dataSource.historical.useFallback);
-      merged.dataSource.historical.fallbackCsv = typeof merged.dataSource.historical.fallbackCsv === 'string'
-        ? merged.dataSource.historical.fallbackCsv
-        : DEFAULT_SETTINGS.dataSource.historical.fallbackCsv;
       merged.dataSource.historical.label = merged.dataSource.historical.label != null
         ? String(merged.dataSource.historical.label)
         : DEFAULT_SETTINGS.dataSource.historical.label;
@@ -2920,9 +2858,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       if (meta.cacheStatus && /hit|revalidated/i.test(meta.cacheStatus)) {
         return meta.cacheStatus.toLowerCase();
       }
-      if (meta.fromFallback) {
-        return 'demonstracinis';
-      }
       if (meta.fromCache) {
         return 'talpykla';
       }
@@ -3248,13 +3183,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
 
 
     /**
-     * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio) su demonstraciniu rezervu.
+     * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio).
      */
     async function loadCsvSource(config, workerOptions, { required = false, sourceId = 'primary', label = '' } = {}) {
       const trimmedUrl = (config?.url ?? '').trim();
-      const allowFallback = Boolean(config?.useFallback);
-      const fallbackRaw = typeof config?.fallbackCsv === 'string' ? config.fallbackCsv : '';
-      const fallbackContent = allowFallback && fallbackRaw.trim().length ? fallbackRaw : '';
       const missingMessage = config?.missingMessage || 'Nenurodytas duomenų URL.';
       const result = {
         records: [],
@@ -3293,14 +3225,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       };
 
       if (!trimmedUrl) {
-        if (fallbackContent) {
-          const dataset = await parseDataset(fallbackContent);
-          assignDataset(dataset, { fromFallback: true });
-          result.usingFallback = true;
-          result.lastErrorMessage = missingMessage;
-          result.error = missingMessage;
-          return result;
-        }
         result.lastErrorMessage = missingMessage;
         result.error = missingMessage;
         if (required) {
@@ -3374,23 +3298,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           });
           return result;
         }
-        if (fallbackContent) {
-          try {
-            const fallbackDataset = await parseDataset(fallbackContent);
-            assignDataset(fallbackDataset, { fromFallback: true });
-            result.usingFallback = true;
-            return result;
-          } catch (fallbackError) {
-            console.error(`Klaida skaitant demonstracinius duomenis (${sourceId}):`, fallbackError);
-            const fallbackFriendly = describeError(fallbackError);
-            result.lastErrorMessage = fallbackFriendly;
-            result.error = fallbackFriendly;
-            if (required) {
-              throw fallbackError;
-            }
-            return result;
-          }
-        }
         if (required) {
           throw error;
         }
@@ -3408,8 +3315,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
 
       const mainConfig = {
         url: settings?.dataSource?.url,
-        useFallback: settings?.dataSource?.useFallback,
-        fallbackCsv: settings?.dataSource?.fallbackCsv,
         missingMessage: 'Nenurodytas duomenų URL.',
         onChunk: typeof options?.onPrimaryChunk === 'function' ? options.onPrimaryChunk : null,
         onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
@@ -3424,16 +3329,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const normalizedHistoricalConfig = historicalEnabled
         ? {
           url: historicalConfig.url,
-          useFallback: historicalConfig.useFallback,
-          fallbackCsv: historicalConfig.fallbackCsv,
           missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
           onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
           onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
         }
         : null;
       const historicalShouldAttempt = Boolean(normalizedHistoricalConfig)
-        && ((normalizedHistoricalConfig.url ?? '').trim().length > 0
-          || (normalizedHistoricalConfig.useFallback && (normalizedHistoricalConfig.fallbackCsv ?? '').trim().length > 0));
+        && (normalizedHistoricalConfig.url ?? '').trim().length > 0;
 
       const primaryPromise = loadCsvSource(mainConfig, workerOptions, {
         required: true,
@@ -3453,11 +3355,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
       const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
       let combinedRecords = baseRecords.slice();
-      let usingFallback = Boolean(primaryResult.usingFallback);
-      const fallbackMessages = [];
-      if (primaryResult.usingFallback) {
-        fallbackMessages.push(primaryResult.lastErrorMessage || 'Nenurodytas duomenų URL.');
-      }
+      let usingFallback = false;
       const warnings = [];
       const primaryUrl = (settings?.dataSource?.url ?? '').trim();
       const sources = [
@@ -3467,7 +3365,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           url: primaryResult.meta?.url || primaryUrl,
           fromCache: Boolean(primaryResult.meta?.fromCache),
           fromFallback: Boolean(primaryResult.meta?.fromFallback),
-          usingFallback: primaryResult.usingFallback,
+          usingFallback: false,
           lastErrorMessage: primaryResult.lastErrorMessage || '',
           error: primaryResult.error || '',
           used: baseRecords.length > 0,
@@ -3475,7 +3373,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         },
       ];
 
-      if (primaryResult.error && !primaryResult.usingFallback && primaryResult.meta?.fromCache) {
+      if (primaryResult.error && primaryResult.meta?.fromCache) {
         warnings.push(`Pagrindinis CSV: ${primaryResult.error}`);
       }
 
@@ -3486,11 +3384,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           if (historicalRecords.length) {
             combinedRecords = combinedRecords.concat(historicalRecords);
           }
-          if (historicalResult.usingFallback) {
-            usingFallback = true;
-            const message = historicalResult.lastErrorMessage || 'Papildomas šaltinis pasiektas iš demonstracinių duomenų.';
-            fallbackMessages.push(`${historicalLabel}: ${message}`);
-          } else if (historicalResult.error) {
+          if (historicalResult.error) {
             warnings.push(`${historicalLabel}: ${historicalResult.error}`);
           }
           sources.push({
@@ -3499,7 +3393,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
             url: historicalResult.meta?.url || (historicalConfig.url ?? ''),
             fromCache: Boolean(historicalResult.meta?.fromCache),
             fromFallback: Boolean(historicalResult.meta?.fromFallback),
-            usingFallback: historicalResult.usingFallback,
+            usingFallback: false,
             lastErrorMessage: historicalResult.lastErrorMessage || '',
             error: historicalResult.error || '',
             used: historicalRecords.length > 0,
@@ -3536,7 +3430,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       }
 
       dashboardState.usingFallback = usingFallback;
-      dashboardState.lastErrorMessage = usingFallback ? fallbackMessages.join(' ').trim() : '';
+      dashboardState.lastErrorMessage = '';
 
       const meta = {
         primary: { ...(primaryResult.meta || {}), sourceId: 'primary' },
@@ -3564,10 +3458,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     async function fetchEdData(options = {}) {
       const config = settings?.dataSource?.ed || DEFAULT_SETTINGS.dataSource.ed;
       const url = (config?.url ?? '').trim();
-      const allowFallback = Boolean(config?.useFallback);
-      const fallbackCsv = typeof config?.fallbackCsv === 'string' && config.fallbackCsv.trim().length
-        ? config.fallbackCsv
-        : DEFAULT_ED_CSV;
       const empty = {
         records: [],
         summary: createEmptyEdSummary(),
@@ -3603,30 +3493,12 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         };
       };
 
-      const useFallback = (reason) => {
-        if (!allowFallback || !fallbackCsv) {
-          return {
-            ...empty,
-            lastErrorMessage: reason || TEXT.ed.status.noUrl,
-            error: reason || TEXT.ed.status.noUrl,
-          };
-        }
-        try {
-          const result = transformEdCsv(fallbackCsv);
-          return finalize(result, { usingFallback: true, lastErrorMessage: reason || TEXT.ed.status.noUrl });
-        } catch (fallbackError) {
-          const friendly = describeError(fallbackError);
-          return {
-            ...empty,
-            usingFallback: true,
-            lastErrorMessage: friendly,
-            error: reason || friendly,
-          };
-        }
-      };
-
       if (!url) {
-        return useFallback(TEXT.ed.status.noUrl);
+        return {
+          ...empty,
+          lastErrorMessage: TEXT.ed.status.noUrl,
+          error: TEXT.ed.status.noUrl,
+        };
       }
 
       try {
@@ -3635,20 +3507,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         return finalize(result);
       } catch (error) {
         const friendly = describeError(error);
-        if (allowFallback && fallbackCsv) {
-          try {
-            const result = transformEdCsv(fallbackCsv);
-            return finalize(result, { usingFallback: true, lastErrorMessage: friendly });
-          } catch (fallbackError) {
-            const fallbackFriendly = describeError(fallbackError);
-            return {
-              ...empty,
-              usingFallback: true,
-              lastErrorMessage: fallbackFriendly,
-              error: friendly,
-            };
-          }
-        }
         return {
           ...empty,
           lastErrorMessage: friendly,
@@ -3877,28 +3735,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     async function fetchFeedbackData() {
       const config = settings?.dataSource?.feedback || DEFAULT_SETTINGS.dataSource.feedback;
       const url = (config?.url ?? '').trim();
-      const useFallback = Boolean(config?.useFallback);
-      const fallbackCsv = typeof config?.fallbackCsv === 'string'
-        ? config.fallbackCsv
-        : DEFAULT_SETTINGS.dataSource.feedback.fallbackCsv;
-      const fallbackContent = useFallback ? fallbackCsv : '';
 
       if (!url) {
-        if (fallbackContent) {
-          try {
-            const dataset = transformFeedbackCsv(fallbackContent);
-            dashboardState.feedback.usingFallback = true;
-            dashboardState.feedback.lastErrorMessage = TEXT.feedback.status.missingUrl;
-            return dataset;
-          } catch (error) {
-            console.error('Klaida skaitant demonstracinius atsiliepimus:', error);
-            dashboardState.feedback.usingFallback = false;
-            dashboardState.feedback.lastErrorMessage = describeError(error);
-            return [];
-          }
-        }
         dashboardState.feedback.usingFallback = false;
-        dashboardState.feedback.lastErrorMessage = '';
+        dashboardState.feedback.lastErrorMessage = TEXT.feedback.status.missingUrl;
         return [];
       }
 
@@ -3912,18 +3752,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         console.error('Nepavyko atsisiųsti atsiliepimų CSV:', error);
         const friendly = describeError(error);
         dashboardState.feedback.lastErrorMessage = friendly;
-        if (fallbackContent) {
-          try {
-            const dataset = transformFeedbackCsv(fallbackContent);
-            dashboardState.feedback.usingFallback = true;
-            return dataset;
-          } catch (fallbackError) {
-            console.error('Klaida skaitant demonstracinius atsiliepimų duomenis:', fallbackError);
-            dashboardState.feedback.usingFallback = false;
-            dashboardState.feedback.lastErrorMessage = describeError(fallbackError);
-            return [];
-          }
-        }
         dashboardState.feedback.usingFallback = false;
         return [];
       }
