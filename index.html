@@ -383,6 +383,37 @@
             <span class="skeleton skeleton--chart-area"></span>
             <span class="skeleton skeleton--caption"></span>
           </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#dailyChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#dailyChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
           <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
           <figcaption id="dailyChartTitle">
             <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
@@ -395,6 +426,37 @@
             <span class="skeleton skeleton--chart-area"></span>
             <span class="skeleton skeleton--caption"></span>
           </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#dowChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#dowChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
           <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
         </figure>
@@ -403,6 +465,37 @@
             <span class="skeleton skeleton--title"></span>
             <span class="skeleton skeleton--chart-area"></span>
             <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#dowStayChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#dowStayChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
           </div>
           <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
           <figcaption id="dowStayChartTitle">Vidutinė buvimo trukmė pagal savaitės dieną</figcaption>
@@ -466,6 +559,37 @@
               </label>
               <button type="button" id="hourlyResetFilters" class="chip-button chip-button--ghost hourly-action" aria-label="Išvalyti šio grafiko filtrus">Išvalyti filtrus</button>
             </div>
+            <div class="hourly-toolbar__row hourly-toolbar__row--actions">
+              <button
+                type="button"
+                class="chart-copy-btn"
+                data-chart-copy
+                data-chart-target="#hourlyChart"
+                data-tooltip="Kopijuoti grafiką"
+                aria-label="Kopijuoti grafiką"
+                title="Kopijuoti grafiką"
+              >
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                  <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="chart-download-btn"
+                data-chart-download
+                data-chart-target="#hourlyChart"
+                data-tooltip="Parsisiųsti PNG"
+                aria-label="Parsisiųsti grafiką PNG formatu"
+                title="Parsisiųsti PNG"
+              >
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3v12"></path>
+                  <path d="M8 11l4 4 4-4"></path>
+                  <path d="M4 21h16"></path>
+                </svg>
+              </button>
+            </div>
           </div>
           <div class="chart-card__canvas chart-card__canvas--hourly">
             <canvas id="hourlyChart" aria-labelledby="hourlyChartTitle"></canvas>
@@ -485,6 +609,35 @@
                 <option value="arrivals">Atvykimų skaičius / d.</option>
               </select>
             </label>
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#arrivalHeatmap"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#arrivalHeatmap"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
           </div>
           <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
           <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
@@ -494,6 +647,37 @@
             <span class="skeleton skeleton--title"></span>
             <span class="skeleton skeleton--chart-area"></span>
             <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#funnelChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#funnelChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
           </div>
           <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
           <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
@@ -676,6 +860,35 @@
               <button type="button" class="feedback-trend-card__button" data-trend-months="6" aria-pressed="false">6 mėn.</button>
               <button type="button" class="feedback-trend-card__button" data-trend-months="12" aria-pressed="false">12 mėn.</button>
             </div>
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#feedbackTrendChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#feedbackTrendChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
           </div>
         </div>
         <p id="feedbackTrendSummary" class="feedback-trend-summary" hidden></p>

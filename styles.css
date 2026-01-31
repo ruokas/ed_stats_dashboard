@@ -2920,6 +2920,89 @@ body[data-theme="dark"] select optgroup {
       flex-wrap: wrap;
     }
 
+    .chart-card__toolbar--actions {
+      justify-content: flex-end;
+    }
+
+    .chart-copy-btn,
+    .chart-download-btn {
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      color: var(--color-text-muted);
+      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      position: relative;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .chart-copy-btn svg,
+    .chart-download-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .chart-copy-btn:hover,
+    .chart-copy-btn:focus-visible,
+    .chart-download-btn:hover,
+    .chart-download-btn:focus-visible {
+      background: var(--color-surface);
+      color: var(--color-accent);
+      border-color: rgba(37, 99, 235, 0.35);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .chart-copy-btn::after,
+    .chart-download-btn::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.45);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 5;
+      top: calc(100% + 6px);
+      right: 0;
+    }
+
+    .chart-copy-btn:hover::after,
+    .chart-copy-btn:focus-visible::after,
+    .chart-copy-btn.is-feedback::after,
+    .chart-download-btn:hover::after,
+    .chart-download-btn:focus-visible::after,
+    .chart-download-btn.is-feedback::after {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .chart-copy-btn.is-error,
+    .chart-download-btn.is-error {
+      color: var(--color-danger);
+      border-color: rgba(195, 75, 85, 0.35);
+    }
+
+    .chart-copy-btn.is-error:hover,
+    .chart-copy-btn.is-error:focus-visible,
+    .chart-download-btn.is-error:hover,
+    .chart-download-btn.is-error:focus-visible {
+      color: var(--color-danger);
+      border-color: rgba(195, 75, 85, 0.6);
+    }
+
     .chart-controls {
       display: flex;
       align-items: center;
@@ -3527,6 +3610,10 @@ body[data-theme="dark"] select optgroup {
       flex-wrap: wrap;
       align-items: center;
       gap: 8px;
+    }
+
+    .hourly-toolbar__row--actions {
+      justify-content: flex-end;
     }
 
     .hourly-toolbar__field {
