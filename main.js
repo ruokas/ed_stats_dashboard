@@ -905,6 +905,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     const oneDecimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const percentFormatter = new Intl.NumberFormat('lt-LT', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
+    const monthOnlyFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'short' });
     const shortDateFormatter = new Intl.DateTimeFormat('lt-LT', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const monthDayFormatter = new Intl.DateTimeFormat('lt-LT', { month: '2-digit', day: '2-digit' });
     const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
@@ -9463,6 +9464,13 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const normalized = Number.isFinite(period) ? Math.round(period) : null;
       const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
       const yearFragment = Number.isFinite(selectedYear) ? `, ${selectedYear} m.` : '';
+      if (normalized === 365) {
+        const combinedSuffix = `mėnesinė dinamika (12 mėn.)${yearFragment}`;
+        if (base.includes('(')) {
+          return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
+        }
+        return `${base} (${combinedSuffix})`;
+      }
       if (normalized === 0) {
         const combinedSuffix = `visas laikotarpis${yearFragment}`;
         if (base.includes('(')) {
@@ -9491,6 +9499,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       dashboardState.chartPeriod = normalizedPeriod;
       syncChartPeriodButtons(normalizedPeriod);
       const compareGmp = dashboardState.chartFilters?.compareGmp === true;
+      const isMonthlyTrend = normalizedPeriod === 365 || normalizedPeriod === 0;
       if (selectors.dailyCaption) {
         selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
       }
@@ -9535,34 +9544,72 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       }
 
       const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
-      // Užtikrina, kad X ašies etiketės nepersidengtų – rodome iki 8 reikšmių.
       const tickEvery = Math.max(1, Math.ceil(scopedData.length / 8));
-      const gmpCounts = scopedData.map((entry) => Number.isFinite(entry?.ems) ? entry.ems : 0);
-      const totalCounts = scopedData.map((entry) => Number.isFinite(entry?.count) ? entry.count : 0);
-      const selfCounts = totalCounts.map((value, index) => Math.max(0, value - gmpCounts[index]));
+
+      let labels = scopedData.map((entry) => entry.date);
+      let gmpCounts = scopedData.map((entry) => Number.isFinite(entry?.ems) ? entry.ems : 0);
+      let totalCounts = scopedData.map((entry) => Number.isFinite(entry?.count) ? entry.count : 0);
+      let nightCounts = scopedData.map((entry) => Number.isFinite(entry?.night) ? entry.night : 0);
+      let selfCounts = totalCounts.map((value, index) => Math.max(0, value - gmpCounts[index]));
+      let chartType = 'bar';
+      let useWeekendColors = true;
+
+      if (isMonthlyTrend) {
+        const monthlyStats = computeMonthlyStats(scopedData);
+        const monthlyWindow = monthlyStats.length > 12 ? monthlyStats.slice(-12) : monthlyStats;
+        labels = monthlyWindow.map((entry) => {
+          const date = typeof entry?.month === 'string' ? new Date(Date.UTC(
+            Number.parseInt(entry.month.slice(0, 4), 10),
+            Number.parseInt(entry.month.slice(5, 7), 10) - 1,
+            1,
+          )) : null;
+          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return formatMonthLabel(entry.month);
+          }
+          return monthOnlyFormatter.format(date);
+        });
+        totalCounts = monthlyWindow.map((entry) => Number.isFinite(entry?.count) ? entry.count : 0);
+        nightCounts = monthlyWindow.map((entry) => Number.isFinite(entry?.night) ? entry.night : 0);
+        gmpCounts = monthlyWindow.map((entry) => Number.isFinite(entry?.ems) ? entry.ems : 0);
+        selfCounts = totalCounts.map((value, index) => Math.max(0, value - gmpCounts[index]));
+        chartType = 'line';
+        useWeekendColors = false;
+      }
+
+      const weekendColors = useWeekendColors
+        ? weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent))
+        : null;
       dashboardState.charts.daily = new Chart(ctx, {
-        type: 'bar',
+        type: chartType,
         data: {
-          labels: scopedData.map((entry) => entry.date),
+          labels,
           datasets: [
             ...(compareGmp ? [
               {
                 label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
                 data: gmpCounts,
-                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.dangerSoft : themePalette.dangerSoft)),
+                backgroundColor: useWeekendColors ? weekendFlags.map(() => themePalette.dangerSoft) : themePalette.dangerSoft,
                 borderColor: themePalette.danger,
-                borderRadius: 10,
-                borderWidth: 1,
-                stack: 'daily',
+                borderRadius: chartType === 'bar' ? 10 : 0,
+                borderWidth: chartType === 'bar' ? 1 : 2,
+                stack: chartType === 'bar' ? 'daily' : undefined,
+                tension: chartType === 'line' ? 0.25 : 0,
+                fill: chartType === 'line' ? false : true,
+                pointRadius: chartType === 'line' ? 2 : 0,
+                pointHoverRadius: chartType === 'line' ? 4 : 0,
               },
               {
                 label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
                 data: selfCounts,
-                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.success : themePalette.success)),
+                backgroundColor: useWeekendColors ? weekendFlags.map(() => themePalette.success) : themePalette.success,
                 borderColor: themePalette.success,
-                borderRadius: 10,
-                borderWidth: 1,
-                stack: 'daily',
+                borderRadius: chartType === 'bar' ? 10 : 0,
+                borderWidth: chartType === 'bar' ? 1 : 2,
+                stack: chartType === 'bar' ? 'daily' : undefined,
+                tension: chartType === 'line' ? 0.25 : 0,
+                fill: chartType === 'line' ? false : true,
+                pointRadius: chartType === 'line' ? 2 : 0,
+                pointHoverRadius: chartType === 'line' ? 4 : 0,
               },
               {
                 type: 'line',
@@ -9581,14 +9628,28 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
               {
                 label: 'Pacientai',
                 data: totalCounts,
-                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent)),
-                borderRadius: 12,
+                backgroundColor: chartType === 'bar' ? weekendColors : themePalette.accent,
+                borderColor: chartType === 'line' ? themePalette.accent : undefined,
+                borderRadius: chartType === 'bar' ? 12 : 0,
+                borderWidth: chartType === 'line' ? 2 : 0,
+                tension: chartType === 'line' ? 0.25 : 0,
+                fill: chartType === 'line' ? false : true,
+                pointRadius: chartType === 'line' ? 2 : 0,
+                pointHoverRadius: chartType === 'line' ? 4 : 0,
               },
               {
                 label: 'Naktiniai pacientai',
-                data: scopedData.map((entry) => entry.night),
-                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft)),
-                borderRadius: 12,
+                data: nightCounts,
+                backgroundColor: chartType === 'bar'
+                  ? weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft))
+                  : themePalette.accentSoft,
+                borderColor: chartType === 'line' ? themePalette.accentSoft : undefined,
+                borderRadius: chartType === 'bar' ? 12 : 0,
+                borderWidth: chartType === 'line' ? 2 : 0,
+                tension: chartType === 'line' ? 0.25 : 0,
+                fill: chartType === 'line' ? false : true,
+                pointRadius: chartType === 'line' ? 2 : 0,
+                pointHoverRadius: chartType === 'line' ? 4 : 0,
               },
             ]),
           ],
@@ -9615,20 +9676,24 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           },
           scales: {
             x: {
-              stacked: compareGmp,
+              stacked: compareGmp && chartType === 'bar',
               ticks: {
-                autoSkip: false,
+                autoSkip: isMonthlyTrend,
                 maxRotation: 0,
                 minRotation: 0,
+                maxTicksLimit: isMonthlyTrend ? 12 : undefined,
                 padding: 10,
-                color: (ctxTick) => (weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
+                color: (ctxTick) => (useWeekendColors && weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
                 callback(value, index) {
-                  if (index % tickEvery !== 0) {
+                  if (!isMonthlyTrend && index % tickEvery !== 0) {
                     return '';
                   }
                   const rawLabel = this.getLabelForValue(value);
                   if (!rawLabel) {
                     return '';
+                  }
+                  if (isMonthlyTrend) {
+                    return rawLabel;
                   }
                   const dateObj = dateKeyToDate(rawLabel);
                   if (dateObj instanceof Date && !Number.isNaN(dateObj.getTime())) {
@@ -9644,7 +9709,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
             },
             y: {
               beginAtZero: true,
-              stacked: compareGmp,
+              stacked: compareGmp && chartType === 'bar',
               ticks: {
                 padding: 6,
                 color: themePalette.textColor,
@@ -13381,8 +13446,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       ? iconKey
       : 'default';
     edSectionIconDefinitions[iconName](svg);
-    return svg;
-  }
+      return svg;
+    }
+
 
   function normalizeEdSearchQuery(value) {
     if (typeof value !== 'string') {
