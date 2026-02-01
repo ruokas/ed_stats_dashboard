@@ -3580,7 +3580,7 @@ body[data-theme="dark"] select optgroup {
 
     /* Papildomas aukštis pacientų srautų grafiko kortelėms. */
     .chart-card--tall {
-      min-height: 420px;
+      min-height: 460px;
     }
 
     .chart-card--hourly {
@@ -3598,8 +3598,8 @@ body[data-theme="dark"] select optgroup {
     }
 
     .chart-card--tall canvas {
-      min-height: 340px;
-      height: clamp(340px, 36vh, 480px) !important;
+      min-height: 380px;
+      height: clamp(380px, 42vh, 520px) !important;
     }
 
     .chart-card--hourly canvas {

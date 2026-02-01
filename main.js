@@ -8,6 +8,9 @@ import { createMainDataHandlers } from './src/data/main-data.js';
 import { createFeedbackHandlers } from './src/data/feedback.js';
 import { createEdHandlers } from './src/data/ed.js';
 import { computeDailyStats, computeMonthlyStats, computeYearlyStats, formatLocalDateKey } from './src/data/stats.js';
+import { createChartRenderers } from './src/charts/index.js';
+import { createKpiRenderer } from './src/render/kpi.js';
+import { createEdRenderer } from './src/render/ed.js';
 import {
   numberFormatter,
   decimalFormatter,
@@ -3861,73 +3864,10 @@ function normalizeHourlyCompareYears(valueA, valueB) {
     }
 
     function renderKpiPeriodSummary(lastShiftSummary, periodMetrics) {
-      const summaryEl = selectors.kpiSummary;
-      if (!summaryEl) {
-        return;
-      }
-      if (!lastShiftSummary) {
-        summaryEl.innerHTML = `<p class="kpi-summary__empty">${TEXT.kpis.noYearData}</p>`;
-        summaryEl.hidden = false;
-        return;
-      }
-
-      const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string'
-        ? lastShiftSummary.weekdayLabel
-        : '';
-      const periodText = lastShiftSummary.dateLabel
-        || TEXT.kpis.summary.periodFallback
-        || TEXT.kpis.summary.unknownPeriod;
-      const referenceText = weekdayLabel
-        ? (typeof TEXT.kpis.summary.weekdayReference === 'function'
-          ? TEXT.kpis.summary.weekdayReference(weekdayLabel)
-          : `${TEXT.kpis.summary.reference} (${weekdayLabel})`)
-        : (TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference);
-
-      const summaryItems = [
-        {
-          label: TEXT.kpis.summary.period,
-          value: escapeHtml(periodText),
-        },
-        {
-          label: TEXT.kpis.summary.reference,
-          value: escapeHtml(referenceText),
-        },
-      ];
-
-      if (periodMetrics) {
-        const monthLabel = typeof periodMetrics.monthLabel === 'string'
-          ? periodMetrics.monthLabel
-          : '';
-        const hasMonthData = Number.isFinite(periodMetrics?.monthMetrics?.days)
-          && periodMetrics.monthMetrics.days > 0;
-        if (monthLabel || hasMonthData) {
-          const monthContent = monthLabel
-            ? escapeHtml(monthLabel)
-            : `<span class="kpi-summary__muted">${escapeHtml(TEXT.kpis.summary.noMonth)}</span>`;
-          summaryItems.push({
-            label: TEXT.kpis.summary.month,
-            value: monthContent,
-          });
-        }
-      }
-
-      const summaryRows = summaryItems.map((item) => `
-          <div class="kpi-summary__item">
-            <dt>${escapeHtml(item.label)}</dt>
-            <dd>${item.value}</dd>
-          </div>
-        `).join('');
-
-      summaryEl.innerHTML = `
-        <p class="kpi-summary__title">${TEXT.kpis.summary.title}</p>
-        <dl class="kpi-summary__list">
-          ${summaryRows}
-        </dl>
-      `;
-      summaryEl.hidden = false;
+      return kpiRenderer.renderKpiPeriodSummary(lastShiftSummary, periodMetrics);
     }
 
-    function showKpiSkeleton() {
+function showKpiSkeleton() {
       const grid = selectors.kpiGrid;
       if (!grid || grid.dataset.skeleton === 'true') {
         return;
@@ -3988,946 +3928,15 @@ function normalizeHourlyCompareYears(valueA, valueB) {
     }
 
     function renderKpis(dailyStats) {
-      hideKpiSkeleton();
-      selectors.kpiGrid.replaceChildren();
-      const windowDays = dashboardState.kpi?.filters?.window;
-      const periodMetrics = buildYearMonthMetrics(dailyStats, windowDays);
-      const lastShiftSummary = buildLastShiftSummary(dailyStats);
-      renderKpiPeriodSummary(lastShiftSummary, periodMetrics);
-
-      if (!lastShiftSummary) {
-        const card = document.createElement('article');
-        card.className = 'kpi-card';
-        card.setAttribute('role', 'listitem');
-        card.innerHTML = `
-          <header class="kpi-card__header">
-            <h3 class="kpi-card__title">Rodiklių nepakanka</h3>
-          </header>
-          <p class="kpi-mainline">
-            <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
-          </p>
-        `;
-        selectors.kpiGrid.appendChild(card);
-        return;
-      }
-
-      const cardsConfig = Array.isArray(TEXT.kpis.cards) ? TEXT.kpis.cards : [];
-      if (!cardsConfig.length) {
-        const card = document.createElement('article');
-        card.className = 'kpi-card';
-        card.setAttribute('role', 'listitem');
-        card.innerHTML = `
-          <header class="kpi-card__header">
-            <h3 class="kpi-card__title">Rodiklių konfigūracija nerasta</h3>
-          </header>
-          <p class="kpi-mainline">
-            <span class="kpi-mainline__value"><span class="kpi-empty">${TEXT.kpis.noYearData}</span></span>
-          </p>
-        `;
-        selectors.kpiGrid.appendChild(card);
-        return;
-      }
-
-      const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string'
-        ? lastShiftSummary.weekdayLabel
-        : '';
-      const referenceText = weekdayLabel
-        ? (typeof TEXT.kpis.summary.weekdayReference === 'function'
-          ? TEXT.kpis.summary.weekdayReference(weekdayLabel)
-          : `${TEXT.kpis.summary.reference} (${weekdayLabel})`)
-        : (TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference);
-
-      const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
-        const aria = ariaLabel ? ` aria-label="${escapeHtml(ariaLabel)}"` : '';
-        const extra = extraClass ? ` ${extraClass}` : '';
-        return `<div class="kpi-detail${extra}" role="listitem"${aria}><span class="kpi-detail__label">${escapeHtml(label)}</span><span class="kpi-detail__value">${valueHtml}</span></div>`;
-      };
-
-      cardsConfig.forEach((config) => {
-        if (!config || typeof config !== 'object' || !config.metricKey) {
-          return;
-        }
-        const metric = lastShiftSummary.metrics?.[config.metricKey] || {};
-        const rawValue = Number.isFinite(metric.value) ? metric.value : null;
-        const averageValue = Number.isFinite(metric.average) ? metric.average : null;
-        const valueFormat = config.format || 'integer';
-
-        const shareValue = Number.isFinite(metric.share) ? metric.share : null;
-        const averageShareValue = Number.isFinite(metric.averageShare) ? metric.averageShare : null;
-
-        const card = document.createElement('article');
-        card.className = 'kpi-card';
-        card.setAttribute('role', 'listitem');
-
-        const titleText = config.label ? escapeHtml(config.label) : '';
-        const mainLabel = typeof config.mainLabel === 'string'
-          ? config.mainLabel
-          : (typeof TEXT.kpis.mainValueLabel === 'string' ? TEXT.kpis.mainValueLabel : '');
-        const mainLabelHtml = mainLabel
-          ? `<span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>`
-          : '';
-        const shareBadge = shareValue != null
-          ? `<span class="kpi-mainline__share">(${percentFormatter.format(shareValue)})</span>`
-          : '';
-        const mainValueHtml = Number.isFinite(rawValue)
-          ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>${shareBadge}`
-          : `<span class="kpi-empty">${TEXT.kpis.primaryNoData || TEXT.kpis.noYearData}</span>`;
-
-        const details = [];
-        const unitContext = config.unitLabel
-          ? `<span class="kpi-detail__context">${escapeHtml(config.unitLabel)}</span>`
-          : '';
-
-        if (Number.isFinite(rawValue) && Number.isFinite(averageValue)) {
-          const diff = rawValue - averageValue;
-          let trend = 'neutral';
-          let arrow = '→';
-          if (diff > 0) {
-            trend = 'up';
-            arrow = '↑';
-          } else if (diff < 0) {
-            trend = 'down';
-            arrow = '↓';
-          }
-          const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
-          const formattedDiff = formatKpiValue(Math.abs(diff), valueFormat);
-          const deltaContext = typeof TEXT.kpis.deltaContext === 'function'
-            ? TEXT.kpis.deltaContext(referenceText, weekdayLabel)
-            : TEXT.kpis.deltaContext;
-          const contextHtml = deltaContext
-            ? `<span class="kpi-detail__context">${escapeHtml(deltaContext)}</span>`
-            : '';
-          const deltaAria = diff > 0
-            ? `Skirtumas lyginant su ${referenceText}: padidėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
-            : diff < 0
-              ? `Skirtumas lyginant su ${referenceText}: sumažėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
-              : `Skirtumo nėra lyginant su ${referenceText}.`;
-          const deltaValueHtml = `
-            <span class="kpi-detail__icon" aria-hidden="true">${arrow}</span>
-            <strong>${sign}${formattedDiff}</strong>${unitContext}${contextHtml}
-          `;
-          details.push(detailWrapper(
-            TEXT.kpis.detailLabels?.delta || 'Skirtumas',
-            deltaValueHtml,
-            `kpi-detail--delta-${trend}`,
-            deltaAria,
-          ));
-        } else {
-          details.push(detailWrapper(
-            TEXT.kpis.detailLabels?.delta || 'Skirtumas',
-            `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
-            'kpi-detail--muted',
-          ));
-        }
-
-        const averageLabel = typeof TEXT.kpis.detailLabels?.average === 'function'
-          ? TEXT.kpis.detailLabels.average(weekdayLabel)
-          : (TEXT.kpis.detailLabels?.average || 'Vidurkis');
-        const averageContextRaw = typeof TEXT.kpis.detailLabels?.averageContext === 'function'
-          ? TEXT.kpis.detailLabels.averageContext(weekdayLabel)
-          : (TEXT.kpis.detailLabels?.averageContext || '');
-        const averageContextHtml = averageContextRaw
-          ? `<span class="kpi-detail__context">${escapeHtml(averageContextRaw)}</span>`
-          : '';
-        if (Number.isFinite(averageValue)) {
-          const averageShareHtml = averageShareValue != null
-            ? `<span class="kpi-detail__share">(${percentFormatter.format(averageShareValue)})</span>`
-            : '';
-          const averageValueHtml = `<strong>${formatKpiValue(averageValue, valueFormat)}</strong>${unitContext}${averageContextHtml}${averageShareHtml}`;
-          details.push(detailWrapper(averageLabel, averageValueHtml));
-        } else {
-          details.push(detailWrapper(
-            averageLabel,
-            `<span class="kpi-empty">${TEXT.kpis.averageNoData}</span>`,
-            'kpi-detail--muted',
-          ));
-        }
-
-        card.innerHTML = `
-          <header class="kpi-card__header">
-            <h3 class="kpi-card__title">${titleText}</h3>
-          </header>
-          <p class="kpi-mainline">
-            ${mainLabelHtml}
-            <span class="kpi-mainline__value">${mainValueHtml}</span>
-          </p>
-          <div class="kpi-card__details" role="list">${details.join('')}</div>
-        `;
-        selectors.kpiGrid.appendChild(card);
-      });
-
-      const monthlySettings = TEXT.kpis.monthly || {};
-      const monthlyCardsConfig = Array.isArray(monthlySettings.cards) ? monthlySettings.cards : [];
-      const hasPeriodMetrics = periodMetrics && typeof periodMetrics === 'object';
-      const monthMetrics = hasPeriodMetrics ? periodMetrics.monthMetrics : null;
-      const yearMetrics = hasPeriodMetrics ? periodMetrics.yearMetrics : null;
-      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
-
-      if (monthlyCardsConfig.length) {
-        if (monthlySettings.title || monthlySettings.subtitle) {
-          const sectionLabel = document.createElement('p');
-          sectionLabel.className = 'kpi-grid__section-label';
-          sectionLabel.setAttribute('role', 'presentation');
-          sectionLabel.setAttribute('aria-hidden', 'true');
-          sectionLabel.textContent = monthlySettings.title || 'Šio mėnesio vidurkiai';
-          if (monthlySettings.subtitle) {
-            const subtitleEl = document.createElement('span');
-            subtitleEl.textContent = monthlySettings.subtitle;
-            sectionLabel.appendChild(subtitleEl);
-          }
-          selectors.kpiGrid.appendChild(sectionLabel);
-        }
-
-        if (!monthHasData || !monthMetrics) {
-          const emptyCard = document.createElement('article');
-          emptyCard.className = 'kpi-card kpi-card--monthly';
-          emptyCard.setAttribute('role', 'listitem');
-          const emptyTitle = monthlySettings.emptyTitle || monthlySettings.title || TEXT.kpis.monthPrefix || 'Šio mėnesio vidurkiai';
-          const emptyMessage = monthlySettings.empty || TEXT.kpis.monthNoData;
-          emptyCard.innerHTML = `
-            <header class="kpi-card__header">
-              <h3 class="kpi-card__title">${escapeHtml(emptyTitle)}</h3>
-            </header>
-            <p class="kpi-mainline">
-              <span class="kpi-mainline__value"><span class="kpi-empty">${escapeHtml(emptyMessage || '')}</span></span>
-            </p>
-          `;
-          selectors.kpiGrid.appendChild(emptyCard);
-          return;
-        }
-
-        const monthLabel = typeof periodMetrics?.monthLabel === 'string' ? periodMetrics.monthLabel : '';
-        const monthPrefixShort = TEXT.kpis.monthPrefixShort || TEXT.kpis.monthPrefix || '';
-        const monthMetaText = monthLabel
-          ? `${monthPrefixShort ? `${monthPrefixShort}: ` : ''}${monthLabel}`
-          : '';
-        const resolvedReferenceLabel = typeof monthlySettings.referenceLabel === 'function'
-          ? monthlySettings.referenceLabel(periodMetrics?.referenceLabel, periodMetrics?.yearLabel)
-          : (monthlySettings.referenceLabel
-            || periodMetrics?.referenceLabel
-            || TEXT.kpis.summary.referenceFallback
-            || TEXT.kpis.summary.reference
-            || 'Metinis vidurkis');
-        const accessibleReference = resolvedReferenceLabel
-          || TEXT.kpis.summary.referenceFallback
-          || TEXT.kpis.summary.reference
-          || 'Metinis vidurkis';
-
-        monthlyCardsConfig.forEach((config) => {
-          if (!config || typeof config !== 'object' || !config.metricKey) {
-            return;
-          }
-          const valueFormat = config.format || 'oneDecimal';
-          const monthValueRaw = monthMetrics?.[config.metricKey];
-          const monthValue = Number.isFinite(monthValueRaw) ? monthValueRaw : null;
-          const compareKey = config.compareKey || config.metricKey;
-          const yearValueRaw = yearMetrics?.[compareKey];
-          const yearValue = Number.isFinite(yearValueRaw) ? yearValueRaw : null;
-          const shareKey = typeof config.shareKey === 'string' ? config.shareKey : null;
-          const monthShareValue = shareKey && Number.isFinite(monthMetrics?.[shareKey])
-            ? monthMetrics[shareKey]
-            : null;
-          const yearShareValue = shareKey && Number.isFinite(yearMetrics?.[shareKey])
-            ? yearMetrics[shareKey]
-            : null;
-          const card = document.createElement('article');
-          card.className = 'kpi-card kpi-card--monthly';
-          card.setAttribute('role', 'listitem');
-
-          const titleText = config.label ? escapeHtml(config.label) : '';
-          const metaHtml = monthMetaText
-            ? `<span class="kpi-card__meta">${escapeHtml(monthMetaText)}</span>`
-            : '';
-          const mainLabel = typeof config.mainLabel === 'string'
-            ? config.mainLabel
-            : (typeof monthlySettings.mainLabel === 'string' ? monthlySettings.mainLabel : '');
-          const mainLabelHtml = mainLabel
-            ? `<span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>`
-            : '';
-          const unitLabel = config.unitLabel ? String(config.unitLabel) : '';
-          const mainUnitHtml = unitLabel
-            ? `<span class="kpi-unit">${escapeHtml(unitLabel)}</span>`
-            : '';
-          const noDataText = monthlySettings.primaryNoData
-            || TEXT.kpis.primaryNoData
-            || TEXT.kpis.monthNoDataShort
-            || TEXT.kpis.monthNoData
-            || 'Nėra duomenų';
-          const mainShareHtml = monthShareValue != null
-            ? `<span class="kpi-mainline__share">(${percentFormatter.format(monthShareValue)})</span>`
-            : '';
-          const mainValueHtml = Number.isFinite(monthValue)
-            ? `<strong class="kpi-main-value">${formatKpiValue(monthValue, valueFormat)}</strong>${mainUnitHtml}${mainShareHtml}`
-            : `<span class="kpi-empty">${escapeHtml(noDataText)}</span>`;
-
-          const details = [];
-          const unitContext = unitLabel
-            ? `<span class="kpi-detail__context">${escapeHtml(unitLabel)}</span>`
-            : '';
-
-          if (Number.isFinite(monthValue) && Number.isFinite(yearValue)) {
-            const diff = monthValue - yearValue;
-            let trend = 'neutral';
-            let arrow = '→';
-            if (diff > 0) {
-              trend = 'up';
-              arrow = '↑';
-            } else if (diff < 0) {
-              trend = 'down';
-              arrow = '↓';
-            }
-            const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
-            const formattedDiff = formatKpiValue(Math.abs(diff), valueFormat);
-            const deltaContextRaw = typeof config.deltaContext === 'function'
-              ? config.deltaContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-              : (config.deltaContext
-                ?? (typeof monthlySettings.deltaContext === 'function'
-                  ? monthlySettings.deltaContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-                  : monthlySettings.deltaContext));
-            const deltaContextHtml = deltaContextRaw
-              ? `<span class="kpi-detail__context">${escapeHtml(deltaContextRaw)}</span>`
-              : '';
-            const deltaAriaReference = accessibleReference || 'metiniu vidurkiu';
-            const deltaAria = diff > 0
-              ? `Skirtumas lyginant su ${deltaAriaReference}: padidėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}.`
-              : diff < 0
-                ? `Skirtumas lyginant su ${deltaAriaReference}: sumažėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}.`
-                : `Skirtumo nėra lyginant su ${deltaAriaReference}.`;
-            const deltaLabel = typeof config.deltaLabel === 'string'
-              ? config.deltaLabel
-              : (monthlySettings.deltaLabel || TEXT.kpis.detailLabels?.delta || 'Skirtumas');
-            const deltaValueHtml = `
-              <span class="kpi-detail__icon" aria-hidden="true">${arrow}</span>
-              <strong>${sign}${formattedDiff}</strong>${unitContext}${deltaContextHtml}
-            `;
-            details.push(detailWrapper(
-              deltaLabel,
-              deltaValueHtml,
-              `kpi-detail--delta-${trend}`,
-              deltaAria,
-            ));
-          } else {
-            const deltaLabel = typeof config.deltaLabel === 'string'
-              ? config.deltaLabel
-              : (monthlySettings.deltaLabel || TEXT.kpis.detailLabels?.delta || 'Skirtumas');
-            details.push(detailWrapper(
-              deltaLabel,
-              `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
-              'kpi-detail--muted',
-            ));
-          }
-
-          const averageLabel = typeof config.averageLabel === 'string'
-            ? config.averageLabel
-            : (typeof monthlySettings.averageLabel === 'function'
-              ? monthlySettings.averageLabel(resolvedReferenceLabel, periodMetrics?.yearLabel)
-              : (monthlySettings.averageLabel || TEXT.kpis.detailLabels?.average || 'Vidurkis'));
-          const averageContextRaw = typeof config.averageContext === 'function'
-            ? config.averageContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-            : (config.averageContext ?? (typeof monthlySettings.averageContext === 'function'
-              ? monthlySettings.averageContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-              : monthlySettings.averageContext));
-          const averageContextHtml = averageContextRaw
-            ? `<span class="kpi-detail__context">${escapeHtml(averageContextRaw)}</span>`
-            : '';
-
-          if (Number.isFinite(yearValue)) {
-            const averageShareHtml = yearShareValue != null
-              ? `<span class="kpi-detail__share">(${percentFormatter.format(yearShareValue)})</span>`
-              : '';
-            const averageValueHtml = `<strong>${formatKpiValue(yearValue, valueFormat)}</strong>${unitContext}${averageContextHtml}${averageShareHtml}`;
-            details.push(detailWrapper(averageLabel, averageValueHtml));
-          } else {
-            details.push(detailWrapper(
-              averageLabel,
-              `<span class="kpi-empty">${TEXT.kpis.averageNoData}</span>`,
-              'kpi-detail--muted',
-            ));
-          }
-
-          card.innerHTML = `
-            <header class="kpi-card__header">
-              <h3 class="kpi-card__title">${titleText}</h3>
-              ${metaHtml}
-            </header>
-            <p class="kpi-mainline">
-              ${mainLabelHtml}
-              <span class="kpi-mainline__value">${mainValueHtml}</span>
-            </p>
-            <div class="kpi-card__details" role="list">${details.join('')}</div>
-          `;
-          selectors.kpiGrid.appendChild(card);
-        });
-      }
-    }
-    function getThemeStyleTarget() {
-      return document.body || document.documentElement;
-    }
-
-    function getThemePalette() {
-      const styleTarget = getThemeStyleTarget();
-      const rootStyles = getComputedStyle(styleTarget);
-      const danger = rootStyles.getPropertyValue('--color-danger').trim() || '#c34b55';
-      return {
-        accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
-        accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
-        weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
-        weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
-        success: rootStyles.getPropertyValue('--color-success').trim() || '#16a34a',
-        danger,
-        dangerSoft: rootStyles.getPropertyValue('--color-danger-soft').trim()
-          || rgbToRgba(ensureRgb(danger, { r: 195, g: 75, b: 85 }), 0.28),
-        textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
-        textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
-        gridColor: rootStyles.getPropertyValue('--chart-grid').trim() || 'rgba(15, 23, 42, 0.12)',
-      };
-    }
-
-    function syncChartPeriodButtons(period) {
-      if (!selectors.chartPeriodButtons || !selectors.chartPeriodButtons.length) {
-        return;
-      }
-      selectors.chartPeriodButtons.forEach((button) => {
-        const rawValue = button.dataset.chartPeriod;
-        const isAll = rawValue === 'all';
-        const buttonPeriod = Number.parseInt(rawValue || '', 10);
-        const isActive = isAll ? period === 0 : (Number.isFinite(buttonPeriod) && buttonPeriod === period);
-        button.setAttribute('aria-pressed', String(isActive));
-      });
-    }
-
-    function getActiveFeedbackTrendWindow() {
-      const raw = dashboardState.feedback?.trendWindow;
-      if (Number.isFinite(raw) && raw > 0) {
-        return Math.max(1, Math.round(raw));
-      }
-      return null;
-    }
-
-    function updateFeedbackTrendSubtitle() {
-      if (!selectors.feedbackTrendSubtitle) {
-        return;
-      }
-      const builder = TEXT.feedback?.trend?.subtitle;
-      const activeWindow = getActiveFeedbackTrendWindow();
-      if (typeof builder === 'function') {
-        selectors.feedbackTrendSubtitle.textContent = builder(activeWindow);
-      } else if (typeof builder === 'string') {
-        selectors.feedbackTrendSubtitle.textContent = builder;
-      } else if (Number.isFinite(activeWindow) && activeWindow > 0) {
-        selectors.feedbackTrendSubtitle.textContent = `Paskutinių ${activeWindow} mėnesių dinamika`;
-      } else {
-        selectors.feedbackTrendSubtitle.textContent = 'Visų prieinamų mėnesių dinamika';
-      }
-    }
-
-    function syncFeedbackTrendControls() {
-      if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
-        return;
-      }
-      const activeWindow = getActiveFeedbackTrendWindow();
-      selectors.feedbackTrendButtons.forEach((button) => {
-        const months = Number.parseInt(button.dataset.trendMonths || '', 10);
-        const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
-        button.setAttribute('aria-pressed', String(Boolean(isActive)));
-        button.dataset.active = String(Boolean(isActive));
-      });
-    }
-
-    function formatDailyCaption(period) {
-      const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientų srautai';
-      const normalized = Number.isFinite(period) ? Math.round(period) : null;
-      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
-      const yearFragment = Number.isFinite(selectedYear) ? `, ${selectedYear} m.` : '';
-      if (normalized === 365) {
-        const combinedSuffix = `mėnesinė dinamika (12 mėn.)${yearFragment}`;
-        if (base.includes('(')) {
-          return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
-        }
-        return `${base} (${combinedSuffix})`;
-      }
-      if (normalized === 0) {
-        const combinedSuffix = `visas laikotarpis${yearFragment}`;
-        if (base.includes('(')) {
-          return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
-        }
-        return `${base} (${combinedSuffix})`;
-      }
-      if (!Number.isFinite(period) || period < 0) {
-        return base;
-      }
-      const formattedDays = numberFormatter.format(normalized);
-      const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
-      const combinedSuffix = `${suffix}${yearFragment}`;
-      if (base.includes('(')) {
-        return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
-      }
-      return `${base} (${combinedSuffix})`;
+      return kpiRenderer.renderKpis(dailyStats);
     }
 
     function renderDailyChart(dailyStats, period, ChartLib, palette) {
-      const Chart = ChartLib;
-      const themePalette = palette || getThemePalette();
-      const normalizedPeriod = Number.isFinite(Number(period))
-        ? Math.max(0, Number(period))
-        : 30;
-      dashboardState.chartPeriod = normalizedPeriod;
-      syncChartPeriodButtons(normalizedPeriod);
-      const compareGmp = dashboardState.chartFilters?.compareGmp === true;
-      const isMonthlyTrend = normalizedPeriod === 365 || normalizedPeriod === 0;
-      if (selectors.dailyCaption) {
-        selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
-      }
-      const scopedData = Array.isArray(dailyStats)
-        ? (normalizedPeriod === 0 ? dailyStats.slice() : dailyStats.slice(-normalizedPeriod))
-        : [];
-      if (selectors.dailyCaptionContext) {
-        const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
-        const dateValue = lastEntry?.date ? dateKeyToDate(lastEntry.date) : null;
-        const formatted = dateValue ? shortDateFormatter.format(dateValue) : lastEntry?.date || '';
-        const dayCount = scopedData.length;
-        const dayNote = dayCount ? `n=${numberFormatter.format(dayCount)} d.` : '';
-        const contextText = TEXT.charts.dailyContext(formatted);
-        selectors.dailyCaptionContext.textContent = [contextText, dayNote].filter(Boolean).join(' • ');
-      }
-
-      const canvas = document.getElementById('dailyChart');
-      if (!canvas || !canvas.getContext) {
-        return;
-      }
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        return;
-      }
-
-      if (!Chart) {
-        return;
-      }
-
-      const styleTarget = getThemeStyleTarget();
-      Chart.defaults.color = themePalette.textColor;
-      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
-      Chart.defaults.borderColor = themePalette.gridColor;
-
-      if (dashboardState.charts.daily) {
-        dashboardState.charts.daily.destroy();
-      }
-
-      if (!scopedData.length) {
-        dashboardState.charts.daily = null;
-        return;
-      }
-
-      const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
-      const tickEvery = Math.max(1, Math.ceil(scopedData.length / 8));
-
-      let labels = scopedData.map((entry) => entry.date);
-      let gmpCounts = scopedData.map((entry) => Number.isFinite(entry?.ems) ? entry.ems : 0);
-      let totalCounts = scopedData.map((entry) => Number.isFinite(entry?.count) ? entry.count : 0);
-      let nightCounts = scopedData.map((entry) => Number.isFinite(entry?.night) ? entry.night : 0);
-      let selfCounts = totalCounts.map((value, index) => Math.max(0, value - gmpCounts[index]));
-      let chartType = 'bar';
-      let useWeekendColors = true;
-
-      if (isMonthlyTrend) {
-        const monthlyStats = computeMonthlyStats(scopedData);
-        const monthlyWindow = monthlyStats.length > 12 ? monthlyStats.slice(-12) : monthlyStats;
-        labels = monthlyWindow.map((entry) => {
-          const date = typeof entry?.month === 'string' ? new Date(Date.UTC(
-            Number.parseInt(entry.month.slice(0, 4), 10),
-            Number.parseInt(entry.month.slice(5, 7), 10) - 1,
-            1,
-          )) : null;
-          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-            return formatMonthLabel(entry.month);
-          }
-          return monthOnlyFormatter.format(date);
-        });
-        totalCounts = monthlyWindow.map((entry) => Number.isFinite(entry?.count) ? entry.count : 0);
-        nightCounts = monthlyWindow.map((entry) => Number.isFinite(entry?.night) ? entry.night : 0);
-        gmpCounts = monthlyWindow.map((entry) => Number.isFinite(entry?.ems) ? entry.ems : 0);
-        selfCounts = totalCounts.map((value, index) => Math.max(0, value - gmpCounts[index]));
-        chartType = 'line';
-        useWeekendColors = false;
-      }
-
-      const weekendColors = useWeekendColors
-        ? weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent))
-        : null;
-      dashboardState.charts.daily = new Chart(ctx, {
-        type: chartType,
-        data: {
-          labels,
-          datasets: [
-            ...(compareGmp ? [
-              {
-                label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
-                data: gmpCounts,
-                backgroundColor: useWeekendColors ? weekendFlags.map(() => themePalette.dangerSoft) : themePalette.dangerSoft,
-                borderColor: themePalette.danger,
-                borderRadius: chartType === 'bar' ? 10 : 0,
-                borderWidth: chartType === 'bar' ? 1 : 2,
-                stack: chartType === 'bar' ? 'daily' : undefined,
-                tension: chartType === 'line' ? 0.25 : 0,
-                fill: chartType === 'line' ? false : true,
-                pointRadius: chartType === 'line' ? 2 : 0,
-                pointHoverRadius: chartType === 'line' ? 4 : 0,
-              },
-              {
-                label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-                data: selfCounts,
-                backgroundColor: useWeekendColors ? weekendFlags.map(() => themePalette.success) : themePalette.success,
-                borderColor: themePalette.success,
-                borderRadius: chartType === 'bar' ? 10 : 0,
-                borderWidth: chartType === 'bar' ? 1 : 2,
-                stack: chartType === 'bar' ? 'daily' : undefined,
-                tension: chartType === 'line' ? 0.25 : 0,
-                fill: chartType === 'line' ? false : true,
-                pointRadius: chartType === 'line' ? 2 : 0,
-                pointHoverRadius: chartType === 'line' ? 4 : 0,
-              },
-              {
-                type: 'line',
-                label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-                data: totalCounts,
-                borderColor: themePalette.textColor,
-                backgroundColor: themePalette.textColor,
-                borderWidth: 3,
-                pointRadius: 2,
-                pointHoverRadius: 4,
-                tension: 0.25,
-                fill: false,
-                order: 0,
-              },
-            ] : [
-              {
-                label: 'Pacientai',
-                data: totalCounts,
-                backgroundColor: chartType === 'bar' ? weekendColors : themePalette.accent,
-                borderColor: chartType === 'line' ? themePalette.accent : undefined,
-                borderRadius: chartType === 'bar' ? 12 : 0,
-                borderWidth: chartType === 'line' ? 2 : 0,
-                tension: chartType === 'line' ? 0.25 : 0,
-                fill: chartType === 'line' ? false : true,
-                pointRadius: chartType === 'line' ? 2 : 0,
-                pointHoverRadius: chartType === 'line' ? 4 : 0,
-              },
-              {
-                label: 'Naktiniai pacientai',
-                data: nightCounts,
-                backgroundColor: chartType === 'bar'
-                  ? weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft))
-                  : themePalette.accentSoft,
-                borderColor: chartType === 'line' ? themePalette.accentSoft : undefined,
-                borderRadius: chartType === 'bar' ? 12 : 0,
-                borderWidth: chartType === 'line' ? 2 : 0,
-                tension: chartType === 'line' ? 0.25 : 0,
-                fill: chartType === 'line' ? false : true,
-                pointRadius: chartType === 'line' ? 2 : 0,
-                pointHoverRadius: chartType === 'line' ? 4 : 0,
-              },
-            ]),
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'bottom',
-              labels: {
-                color: themePalette.textColor,
-              },
-            },
-            tooltip: {
-              callbacks: {
-                label(context) {
-                  return `${context.dataset.label}: ${numberFormatter.format(context.parsed.y)}`;
-                },
-              },
-            },
-          },
-          scales: {
-            x: {
-              stacked: compareGmp && chartType === 'bar',
-              ticks: {
-                autoSkip: isMonthlyTrend,
-                maxRotation: 0,
-                minRotation: 0,
-                maxTicksLimit: isMonthlyTrend ? 12 : undefined,
-                padding: 10,
-                color: (ctxTick) => (useWeekendColors && weekendFlags[ctxTick.index] ? themePalette.weekendAccent : themePalette.textColor),
-                callback(value, index) {
-                  if (!isMonthlyTrend && index % tickEvery !== 0) {
-                    return '';
-                  }
-                  const rawLabel = this.getLabelForValue(value);
-                  if (!rawLabel) {
-                    return '';
-                  }
-                  if (isMonthlyTrend) {
-                    return rawLabel;
-                  }
-                  const dateObj = dateKeyToDate(rawLabel);
-                  if (dateObj instanceof Date && !Number.isNaN(dateObj.getTime())) {
-                    return monthDayFormatter.format(dateObj);
-                  }
-                  return rawLabel.slice(5);
-                },
-              },
-              grid: {
-                color: themePalette.gridColor,
-                drawBorder: false,
-              },
-            },
-            y: {
-              beginAtZero: true,
-              stacked: compareGmp && chartType === 'bar',
-              ticks: {
-                padding: 6,
-                color: themePalette.textColor,
-                callback(value) {
-                  return numberFormatter.format(value);
-                },
-              },
-              grid: {
-                color: themePalette.gridColor,
-                drawBorder: false,
-              },
-            },
-          },
-        },
-      });
+      return chartRenderers.renderDailyChart(dailyStats, period, ChartLib, palette);
     }
 
     function renderHourlyChart(records, ChartLib, palette) {
-      const Chart = ChartLib;
-      const themePalette = palette || getThemePalette();
-      const canvas = document.getElementById('hourlyChart');
-      if (!canvas || !canvas.getContext) {
-        return;
-      }
-      const ctx = canvas.getContext('2d');
-      if (!ctx || !Chart) {
-        return;
-      }
-
-      const weekdayValue = normalizeHourlyWeekday(dashboardState.hourlyWeekday);
-      const stayBucket = normalizeHourlyStayBucket(dashboardState.hourlyStayBucket);
-      const metricValue = normalizeHourlyMetric(dashboardState.hourlyMetric);
-      const departmentValue = normalizeHourlyDepartment(dashboardState.hourlyDepartment);
-      updateHourlyCaption(weekdayValue, stayBucket, metricValue, departmentValue);
-
-      if (dashboardState.charts.hourly) {
-        if (dashboardState.charts.hourly._yAxisWheelHandler && canvas) {
-          canvas.removeEventListener('wheel', dashboardState.charts.hourly._yAxisWheelHandler);
-        }
-        dashboardState.charts.hourly.destroy();
-      }
-
-      const compareEnabled = dashboardState.hourlyCompareEnabled === true;
-      const compareYears = normalizeHourlyCompareYears(
-        dashboardState.hourlyCompareYears?.[0],
-        dashboardState.hourlyCompareYears?.[1],
-      );
-      const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-        && dashboardState.chartData.baseRecords.length
-        ? dashboardState.chartData.baseRecords
-        : dashboardState.rawRecords;
-      const optionRecords = compareEnabled
-        ? getHourlyChartRecords(baseRecords, null, dashboardState.chartFilters || {}, dashboardState.chartPeriod)
-        : records;
-
-      updateHourlyDepartmentOptions(optionRecords);
-      const normalizedDepartment = normalizeHourlyDepartment(dashboardState.hourlyDepartment);
-      if (normalizedDepartment !== departmentValue) {
-        dashboardState.hourlyDepartment = normalizedDepartment;
-      }
-      syncHourlyDepartmentVisibility(metricValue);
-      updateHourlyCaption(weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
-
-      let datasets = [];
-      let suggestedMax = undefined;
-      let hasData = false;
-
-      if (compareEnabled && compareYears.length) {
-        const colorPalette = [themePalette.accent, themePalette.weekendAccent, themePalette.success];
-        const compareMaxes = [];
-        const seriesKey = HOURLY_COMPARE_SERIES.includes(dashboardState.hourlyCompareSeries)
-          ? dashboardState.hourlyCompareSeries
-          : HOURLY_COMPARE_SERIES_ALL;
-        datasets = compareYears.map((year, index) => {
-          const yearRecords = getHourlyChartRecords(baseRecords, year, dashboardState.chartFilters || {}, dashboardState.chartPeriod);
-          const yearResult = computeHourlySeries(
-            yearRecords,
-            weekdayValue,
-            stayBucket,
-            metricValue,
-            dashboardState.hourlyDepartment,
-          );
-          if (yearResult?.hasData) {
-            hasData = true;
-            const localMax = Math.max(0, ...(yearResult.averages?.[seriesKey] || []));
-            compareMaxes.push(localMax);
-          }
-          const lineColor = colorPalette[index % colorPalette.length] || themePalette.accent;
-          return {
-            label: `${year} m.`,
-            data: yearResult?.averages?.[seriesKey] || [],
-            borderColor: lineColor,
-            backgroundColor: lineColor,
-            tension: 0.35,
-            fill: false,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-            pointBackgroundColor: lineColor,
-            pointBorderColor: lineColor,
-          };
-        });
-        const maxValue = compareMaxes.length ? Math.max(...compareMaxes) : 0;
-        suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
-      } else {
-        const result = computeHourlySeries(records, weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
-        if (result?.hasData) {
-          hasData = true;
-        }
-        const baseSeries = computeHourlySeries(records, weekdayValue, HOURLY_STAY_BUCKET_ALL, metricValue, 'all');
-        const baseMax = baseSeries?.averages?.all
-          ? Math.max(0, ...baseSeries.averages.all)
-          : 0;
-        suggestedMax = baseMax > 0
-          ? Math.ceil(baseMax * 1.1 * 10) / 10
-          : undefined;
-
-        datasets = [
-          {
-            label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-            data: result.averages.all,
-            borderColor: themePalette.accent,
-            backgroundColor: themePalette.accentSoft,
-            tension: 0.35,
-            fill: false,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-            pointBackgroundColor: themePalette.accent,
-            pointBorderColor: themePalette.accent,
-          },
-          {
-            label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
-            data: result.averages.ems,
-            borderColor: themePalette.danger,
-            backgroundColor: themePalette.danger,
-            tension: 0.35,
-            fill: false,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-            pointBackgroundColor: themePalette.danger,
-            pointBorderColor: themePalette.danger,
-          },
-          {
-            label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-            data: result.averages.self,
-            borderColor: themePalette.success,
-            backgroundColor: themePalette.success,
-            tension: 0.35,
-            fill: false,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-            pointBackgroundColor: themePalette.success,
-            pointBorderColor: themePalette.success,
-          },
-        ];
-      }
-
-      if (!hasData) {
-        setChartCardMessage(canvas, TEXT.charts?.empty);
-        dashboardState.charts.hourly = null;
-        return;
-      }
-      setChartCardMessage(canvas, null);
-
-      dashboardState.hourlyYAxisSuggestedMax = suggestedMax ?? null;
-
-      const labels = HEATMAP_HOURS;
-      dashboardState.charts.hourly = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets,
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: {
-            padding: {
-              top: 8,
-              bottom: 14,
-            },
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'bottom',
-              labels: {
-                color: themePalette.textColor,
-                usePointStyle: true,
-                padding: 18,
-              },
-              padding: 10,
-              onClick(event, legendItem, legend) {
-                const chart = legend.chart;
-                const index = legendItem.datasetIndex;
-                const meta = chart.getDatasetMeta(index);
-                meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
-                chart.update();
-              },
-            },
-            tooltip: {
-              callbacks: {
-                label(context) {
-                  return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
-                },
-              },
-            },
-          },
-          scales: {
-            x: {
-              ticks: {
-                color: themePalette.textColor,
-                autoSkip: false,
-                maxRotation: 90,
-                minRotation: 90,
-                padding: 10,
-                font: {
-                  size: 10,
-                },
-              },
-              grid: {
-                color: themePalette.gridColor,
-                drawBorder: false,
-              },
-            },
-            y: {
-              beginAtZero: true,
-              suggestedMax,
-              ticks: {
-                color: themePalette.textColor,
-                padding: 8,
-                callback(value) {
-                  return decimalFormatter.format(value);
-                },
-              },
-              grid: {
-                color: themePalette.gridColor,
-                drawBorder: false,
-              },
-            },
-          },
-        },
-      });
-      applyHourlyYAxisAuto(dashboardState.charts.hourly);
+      return chartRenderers.renderHourlyChart(records, ChartLib, palette);
     }
 
     function resetFeedbackCommentRotation() {
@@ -5376,429 +4385,49 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       });
     }
 
-    async function renderFeedbackTrendChart(monthlyStats) {
-      const canvas = selectors.feedbackTrendChart || document.getElementById('feedbackTrendChart');
-      const messageElement = selectors.feedbackTrendMessage || document.getElementById('feedbackTrendMessage');
-      const summaryElement = selectors.feedbackTrendSummary || document.getElementById('feedbackTrendSummary');
+    function getActiveFeedbackTrendWindow() {
+      const raw = dashboardState.feedback?.trendWindow;
+      if (Number.isFinite(raw) && raw > 0) {
+        return Math.max(1, Math.round(raw));
+      }
+      return null;
+    }
 
-      const updateSummary = (text) => {
-        if (!summaryElement) {
-          return;
-        }
-        if (text) {
-          summaryElement.textContent = text;
-          summaryElement.hidden = false;
-        } else {
-          summaryElement.textContent = '';
-          summaryElement.hidden = true;
-        }
-      };
-
-      const setTrendMessage = (text) => {
-        if (messageElement) {
-          if (text) {
-            messageElement.textContent = text;
-            messageElement.hidden = false;
-          } else {
-            messageElement.textContent = '';
-            messageElement.hidden = true;
-          }
-        }
-        if (canvas) {
-          if (text) {
-            canvas.setAttribute('aria-hidden', 'true');
-            canvas.hidden = true;
-          } else {
-            canvas.removeAttribute('aria-hidden');
-            canvas.hidden = false;
-          }
-        }
-        if (text) {
-          updateSummary('');
-        }
-      };
-
-      syncFeedbackTrendControls();
-      updateFeedbackTrendSubtitle();
-
-      if (!canvas || typeof canvas.getContext !== 'function') {
-        const fallbackText = TEXT.feedback?.trend?.unavailable
-          || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
-        setTrendMessage(fallbackText);
+    function updateFeedbackTrendSubtitle() {
+      if (!selectors.feedbackTrendSubtitle) {
         return;
       }
-
-      const monthlyArray = Array.isArray(monthlyStats)
-        ? monthlyStats.filter((entry) => entry && typeof entry === 'object')
-        : [];
-
-      const normalized = monthlyArray
-        .map((entry) => {
-          const rawMonth = typeof entry.month === 'string' ? entry.month.trim() : '';
-          if (!rawMonth) {
-            return null;
-          }
-          const monthLabel = formatMonthLabel(rawMonth) || rawMonth;
-
-          const rawAverage = entry?.overallAverage;
-          let overallAverage = null;
-          if (Number.isFinite(rawAverage)) {
-            overallAverage = Number(rawAverage);
-          } else if (typeof rawAverage === 'string') {
-            const parsed = Number.parseFloat(rawAverage.replace(',', '.'));
-            overallAverage = Number.isFinite(parsed) ? parsed : null;
-          } else if (rawAverage != null) {
-            const coerced = Number(rawAverage);
-            overallAverage = Number.isFinite(coerced) ? coerced : null;
-          }
-
-          if (!Number.isFinite(overallAverage)) {
-            return null;
-          }
-
-          let responses = null;
-          const rawResponses = entry?.responses;
-          if (Number.isFinite(rawResponses)) {
-            responses = Number(rawResponses);
-          } else if (typeof rawResponses === 'string') {
-            const parsedResponses = Number.parseFloat(rawResponses.replace(',', '.'));
-            responses = Number.isFinite(parsedResponses) ? parsedResponses : null;
-          } else if (rawResponses != null) {
-            const coercedResponses = Number(rawResponses);
-            responses = Number.isFinite(coercedResponses) ? coercedResponses : null;
-          }
-
-          return {
-            month: rawMonth,
-            label: monthLabel,
-            overallAverage,
-            responses,
-          };
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.month.localeCompare(b.month));
-
-      if (!normalized.length) {
-        if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
-          dashboardState.charts.feedbackTrend.destroy();
-        }
-        dashboardState.charts.feedbackTrend = null;
-        const emptyText = TEXT.feedback?.trend?.empty
-          || 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.';
-        setTrendMessage(emptyText);
-        return;
-      }
-
-      const scoped = (() => {
-        const activeWindow = getActiveFeedbackTrendWindow();
-        if (Number.isFinite(activeWindow) && activeWindow > 0) {
-          const subset = normalized.slice(-Math.max(1, Math.round(activeWindow)));
-          return subset.length ? subset : normalized.slice();
-        }
-        return normalized.slice();
-      })();
-
-      const Chart = dashboardState.chartLib ?? await loadChartJs();
-      if (!Chart) {
-        const unavailableText = TEXT.feedback?.trend?.unavailable
-          || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
-        if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
-          dashboardState.charts.feedbackTrend.destroy();
-        }
-        dashboardState.charts.feedbackTrend = null;
-        setTrendMessage(unavailableText);
-        return;
-      }
-      if (!dashboardState.chartLib) {
-        dashboardState.chartLib = Chart;
-      }
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        const unavailableText = TEXT.feedback?.trend?.unavailable
-          || 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.';
-        if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
-          dashboardState.charts.feedbackTrend.destroy();
-        }
-        dashboardState.charts.feedbackTrend = null;
-        setTrendMessage(unavailableText);
-        return;
-      }
-
-      if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
-        dashboardState.charts.feedbackTrend.destroy();
-      }
-
-      const palette = getThemePalette();
-      const styleTarget = getThemeStyleTarget();
-      Chart.defaults.color = palette.textColor;
-      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
-      Chart.defaults.borderColor = palette.gridColor;
-
-      const labels = scoped.map((entry) => entry.label);
-      const ratingValues = scoped.map((entry) => entry.overallAverage);
-      const numericRatings = ratingValues.filter((value) => Number.isFinite(value));
-      if (!numericRatings.length) {
-        updateSummary('');
-        const emptyText = TEXT.feedback?.trend?.empty
-          || 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.';
-        setTrendMessage(emptyText);
-        return;
-      }
-
-      const responsesValues = scoped.map((entry) => (Number.isFinite(entry.responses) ? entry.responses : null));
-      const numericResponses = responsesValues.filter((value) => Number.isFinite(value));
-      const hasResponses = numericResponses.length > 0;
-      const responsesLabel = TEXT.feedback?.trend?.responsesLabel || 'Atsakymų skaičius';
-      const datasetLabel = TEXT.feedback?.table?.headers?.overall || 'Bendra patirtis (vid. 1–5)';
-      const referenceLabel = TEXT.feedback?.trend?.averageLabel || 'Vidutinis įvertinimas';
-      const chartTitle = TEXT.feedback?.trend?.title || 'Bendro vertinimo dinamika';
-
-      let bestIndex = null;
-      let worstIndex = null;
-      ratingValues.forEach((value, index) => {
-        if (!Number.isFinite(value)) {
-          return;
-        }
-        if (bestIndex == null || value > ratingValues[bestIndex]) {
-          bestIndex = index;
-        }
-        if (worstIndex == null || value < ratingValues[worstIndex]) {
-          worstIndex = index;
-        }
-      });
-
-      const averageValue = numericRatings.reduce((sum, value) => sum + value, 0) / numericRatings.length;
-      const responsesMin = hasResponses ? Math.min(...numericResponses) : null;
-      const responsesMax = hasResponses ? Math.max(...numericResponses) : null;
-
-      const summaryInfo = {
-        average: {
-          raw: averageValue,
-          formatted: oneDecimalFormatter.format(averageValue),
-        },
-        best: bestIndex != null
-          ? {
-              raw: ratingValues[bestIndex],
-              formatted: oneDecimalFormatter.format(ratingValues[bestIndex]),
-              label: labels[bestIndex] || '',
-            }
-          : null,
-        worst: worstIndex != null
-          ? {
-              raw: ratingValues[worstIndex],
-              formatted: oneDecimalFormatter.format(ratingValues[worstIndex]),
-              label: labels[worstIndex] || '',
-            }
-          : null,
-        responses: hasResponses
-          ? {
-              min: responsesMin,
-              max: responsesMax,
-              minFormatted: numberFormatter.format(Math.round(responsesMin)),
-              maxFormatted: numberFormatter.format(Math.round(responsesMax)),
-              label: responsesLabel,
-            }
-          : null,
-      };
-
-      const summaryBuilder = TEXT.feedback?.trend?.summary;
-      const summaryText = typeof summaryBuilder === 'function'
-        ? summaryBuilder(summaryInfo)
-        : (() => {
-            const parts = [`Vidurkis ${summaryInfo.average.formatted}`];
-            if (summaryInfo.best?.label && summaryInfo.best?.formatted) {
-              parts.push(`Geriausias ${summaryInfo.best.label} (${summaryInfo.best.formatted})`);
-            }
-            if (summaryInfo.worst?.label && summaryInfo.worst?.formatted) {
-              parts.push(`Silpniausias ${summaryInfo.worst.label} (${summaryInfo.worst.formatted})`);
-            }
-            if (summaryInfo.responses?.minFormatted && summaryInfo.responses?.maxFormatted) {
-              if (summaryInfo.responses.minFormatted === summaryInfo.responses.maxFormatted) {
-                parts.push(`${responsesLabel}: ${summaryInfo.responses.minFormatted}`);
-              } else {
-                parts.push(`${responsesLabel}: ${summaryInfo.responses.minFormatted}–${summaryInfo.responses.maxFormatted}`);
-              }
-            }
-            return parts.join(' • ');
-          })();
-
-      updateSummary(summaryText);
-      setTrendMessage('');
-
-      const ariaBuilder = TEXT.feedback?.trend?.aria;
-      const firstLabel = labels[0] || '';
-      const lastLabel = labels[labels.length - 1] || '';
-      if (typeof ariaBuilder === 'function') {
-        canvas.setAttribute('aria-label', ariaBuilder(chartTitle, firstLabel, lastLabel));
+      const builder = TEXT.feedback?.trend?.subtitle;
+      const activeWindow = getActiveFeedbackTrendWindow();
+      if (typeof builder === 'function') {
+        selectors.feedbackTrendSubtitle.textContent = builder(activeWindow);
+      } else if (typeof builder === 'string') {
+        selectors.feedbackTrendSubtitle.textContent = builder;
+      } else if (Number.isFinite(activeWindow) && activeWindow > 0) {
+        selectors.feedbackTrendSubtitle.textContent = `Paskutinių ${activeWindow} mėnesių dinamika`;
       } else {
-        canvas.setAttribute('aria-label', `${chartTitle}: ${firstLabel}${lastLabel && firstLabel !== lastLabel ? ` – ${lastLabel}` : ''}`);
+        selectors.feedbackTrendSubtitle.textContent = 'Visų prieinamų mėnesių dinamika';
       }
+    }
 
-      const ratingMin = Math.min(...numericRatings);
-      const ratingMax = Math.max(...numericRatings);
-      const ratingRange = ratingMax - ratingMin;
-      const padding = numericRatings.length > 1 ? Math.max(0.2, ratingRange * 0.25) : 0.2;
-      const yMin = Math.max(1, Math.floor((ratingMin - padding) * 10) / 10);
-      const yMax = Math.min(5, Math.ceil((ratingMax + padding) * 10) / 10);
-
-      const pointColors = ratingValues.map((_, index) => {
-        if (index === bestIndex && palette.success) {
-          return palette.success;
-        }
-        if (index === worstIndex) {
-          return palette.weekendAccent;
-        }
-        return palette.accent;
-      });
-      const pointRadii = ratingValues.map((_, index) => (index === bestIndex || index === worstIndex ? 6 : 4));
-      const pointHoverRadii = pointRadii.map((radius) => radius + 2);
-
-      const datasets = [];
-
-      if (hasResponses) {
-        datasets.push({
-          type: 'bar',
-          label: responsesLabel,
-          data: responsesValues,
-          backgroundColor: palette.accentSoft,
-          borderColor: 'transparent',
-          borderRadius: 10,
-          maxBarThickness: 36,
-          yAxisID: 'yResponses',
-          order: 0,
-        });
+    function syncFeedbackTrendControls() {
+      if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
+        return;
       }
-
-      datasets.push({
-        type: 'line',
-        label: datasetLabel,
-        data: ratingValues,
-        yAxisID: 'yRatings',
-        borderColor: palette.accent,
-        backgroundColor: palette.accentSoft,
-        borderWidth: 2,
-        tension: 0.35,
-        spanGaps: true,
-        fill: false,
-        pointBackgroundColor: pointColors,
-        pointBorderColor: pointColors,
-        pointRadius: pointRadii,
-        pointHoverRadius: pointHoverRadii,
-        order: 2,
-      });
-
-      if (Number.isFinite(averageValue)) {
-        datasets.push({
-          type: 'line',
-          label: referenceLabel,
-          data: ratingValues.map(() => averageValue),
-          yAxisID: 'yRatings',
-          borderColor: palette.textMuted,
-          borderWidth: 1.5,
-          borderDash: [6, 6],
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          order: 1,
-        });
-      }
-
-      const scales = {
-        x: {
-          ticks: {
-            color: palette.textMuted,
-          },
-          grid: {
-            color: palette.gridColor,
-            drawBorder: false,
-          },
-        },
-        yRatings: {
-          position: 'left',
-          min: yMin,
-          max: yMax,
-          ticks: {
-            color: palette.textColor,
-            callback(value) {
-              return oneDecimalFormatter.format(value);
-            },
-          },
-          grid: {
-            color: palette.gridColor,
-            drawBorder: false,
-          },
-        },
-      };
-
-      if (hasResponses) {
-        const suggestedMax = responsesMax ? responsesMax * 1.15 : undefined;
-        scales.yResponses = {
-          position: 'right',
-          beginAtZero: true,
-          suggestedMax,
-          grid: {
-            drawOnChartArea: false,
-            drawBorder: false,
-          },
-          ticks: {
-            color: palette.textMuted,
-            callback(value) {
-              return numberFormatter.format(Math.round(value));
-            },
-          },
-        };
-      }
-
-      dashboardState.charts.feedbackTrend = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets,
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          plugins: {
-            title: {
-              display: false,
-            },
-            legend: {
-              display: datasets.length > 1,
-              position: 'bottom',
-              labels: {
-                color: palette.textMuted,
-                usePointStyle: true,
-                padding: 16,
-              },
-            },
-            tooltip: {
-              callbacks: {
-                label(context) {
-                  const value = context.parsed?.y;
-                  const label = context.dataset?.label || '';
-                  if (context.dataset?.yAxisID === 'yResponses') {
-                    if (Number.isFinite(value)) {
-                      return `${label}: ${numberFormatter.format(Math.round(value))}`;
-                    }
-                    return label;
-                  }
-                  if (Number.isFinite(value)) {
-                    return `${label}: ${oneDecimalFormatter.format(value)}`;
-                  }
-                  return label;
-                },
-              },
-            },
-          },
-          scales,
-        },
+      const activeWindow = getActiveFeedbackTrendWindow();
+      selectors.feedbackTrendButtons.forEach((button) => {
+        const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+        const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
+        button.setAttribute('aria-pressed', String(Boolean(isActive)));
+        button.dataset.active = String(Boolean(isActive));
       });
     }
+
+    async function renderFeedbackTrendChart(monthlyStats) {
+      return chartRenderers.renderFeedbackTrendChart(monthlyStats);
+    }
+
+
 
     function setFeedbackTrendWindow(months) {
       const normalized = Number.isFinite(months) && months > 0
@@ -6988,383 +5617,10 @@ function normalizeHourlyCompareYears(valueA, valueB) {
     }
 
     async function renderCharts(dailyStats, funnelTotals, heatmapData) {
-      showChartSkeletons();
-      const Chart = await loadChartJs();
-      if (!Chart) {
-        console.error('Chart.js biblioteka nepasiekiama.');
-        showChartError(TEXT.charts?.errorLoading);
-        return;
-      }
-
-      try {
-        clearChartError();
-        const palette = getThemePalette();
-        const styleTarget = getThemeStyleTarget();
-        Chart.defaults.color = palette.textColor;
-        Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
-        Chart.defaults.borderColor = palette.gridColor;
-
-        if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod < 0) {
-          dashboardState.chartPeriod = 30;
-        }
-
-        dashboardState.chartLib = Chart;
-        const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
-        dashboardState.chartData.dailyWindow = scopedDaily;
-
-        const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
-        const baseDailyForFallback = Array.isArray(dashboardState.chartData.baseDaily)
-          && dashboardState.chartData.baseDaily.length
-          ? dashboardState.chartData.baseDaily
-          : dashboardState.dailyStats;
-        const fallbackDaily = filterDailyStatsByYear(baseDailyForFallback, selectedYear);
-        const filteredDaily = Array.isArray(dashboardState.chartData.filteredDaily)
-          ? dashboardState.chartData.filteredDaily
-          : fallbackDaily;
-        const funnelSource = funnelTotals ?? computeFunnelStats(scopedDaily, selectedYear, filteredDaily);
-        dashboardState.chartData.funnel = funnelSource;
-
-        let heatmapSource = heatmapData ?? null;
-        if (!isValidHeatmapData(heatmapSource)) {
-          let fallbackRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
-            && dashboardState.chartData.filteredWindowRecords.length
-            ? dashboardState.chartData.filteredWindowRecords
-            : null;
-          if (!fallbackRecords || !fallbackRecords.length) {
-            const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-              && dashboardState.chartData.baseRecords.length
-              ? dashboardState.chartData.baseRecords
-              : dashboardState.rawRecords;
-            const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-            const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, dashboardState.chartFilters || {});
-            fallbackRecords = filterRecordsByWindow(filteredRecords, dashboardState.chartPeriod);
-          }
-          heatmapSource = computeArrivalHeatmap(fallbackRecords);
-        }
-        dashboardState.chartData.heatmap = heatmapSource;
-        if (!HEATMAP_METRIC_KEYS.includes(dashboardState.heatmapMetric)) {
-          dashboardState.heatmapMetric = DEFAULT_HEATMAP_METRIC;
-        }
-
-        hideChartSkeletons();
-        renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
-
-        const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
-        const compareGmp = dashboardState.chartFilters?.compareGmp === true;
-        const dowCounts = Array(7).fill(0);
-        const dowEmsCounts = Array(7).fill(0);
-        const dowSelfCounts = Array(7).fill(0);
-        const dowTotals = Array(7).fill(0);
-        const dowStayTotals = Array(7).fill(0);
-        const dowStayCounts = Array(7).fill(0);
-        scopedDaily.forEach((entry) => {
-          const dayIndex = getWeekdayIndexFromDateKey(entry?.date);
-          if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex > 6) {
-            return;
-          }
-          const patientCount = Number.isFinite(entry?.count) ? entry.count : 0;
-          dowCounts[dayIndex] += patientCount;
-          const emsCount = Number.isFinite(entry?.ems) ? entry.ems : 0;
-          dowEmsCounts[dayIndex] += emsCount;
-          dowSelfCounts[dayIndex] += Math.max(0, patientCount - emsCount);
-          dowTotals[dayIndex] += 1;
-          const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
-          const durations = Number.isFinite(entry?.durations) ? entry.durations : 0;
-          if (totalTime > 0 && durations > 0) {
-            dowStayTotals[dayIndex] += totalTime;
-            dowStayCounts[dayIndex] += durations;
-          }
-        });
-        const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-        const dowEmsAverages = dowEmsCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-        const dowSelfAverages = dowSelfCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-        const dowStayAverages = dowStayTotals.map((value, index) => (dowStayCounts[index] ? value / dowStayCounts[index] : 0));
-        const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
-        const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
-        const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
-        const totalDays = dowTotals.reduce((sum, value) => sum + value, 0);
-        const totalStaySamples = dowStayCounts.reduce((sum, value) => sum + value, 0);
-        if (selectors.dowCaptionContext) {
-          selectors.dowCaptionContext.textContent = totalDays ? `n=${numberFormatter.format(totalDays)} d.` : '';
-        }
-        if (selectors.dowStayCaptionContext) {
-          selectors.dowStayCaptionContext.textContent = totalStaySamples
-            ? `n=${numberFormatter.format(totalStaySamples)} viz.`
-            : '';
-        }
-
-        const dowCanvas = document.getElementById('dowChart');
-        if (dowCanvas && dowCanvas.getContext) {
-          if (dashboardState.charts.dow) {
-            dashboardState.charts.dow.destroy();
-          }
-          const hasDowData = dowTotals.some((total) => total > 0);
-          if (!hasDowData) {
-            setChartCardMessage(dowCanvas, TEXT.charts?.empty);
-            dashboardState.charts.dow = null;
-          } else {
-            setChartCardMessage(dowCanvas, null);
-            const ctxDow = dowCanvas.getContext('2d');
-            const isWeekendIndex = (index) => index >= 5;
-            dashboardState.charts.dow = new Chart(ctxDow, {
-              type: compareGmp ? 'bar' : 'line',
-              data: {
-                labels: dowLabels,
-                datasets: [
-                  ...(compareGmp ? [
-                    {
-                      label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
-                      data: dowEmsAverages,
-                      backgroundColor: palette.dangerSoft,
-                      borderColor: palette.danger,
-                      borderWidth: 1,
-                      borderRadius: 10,
-                    },
-                    {
-                      label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-                      data: dowSelfAverages,
-                      backgroundColor: palette.success,
-                      borderColor: palette.success,
-                      borderWidth: 1,
-                      borderRadius: 10,
-                    },
-                    {
-                      type: 'line',
-                      label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-                      data: dowAverages,
-                      fill: false,
-                      tension: 0.2,
-                      borderColor: palette.textColor,
-                      backgroundColor: palette.textColor,
-                      borderDash: [6, 6],
-                      borderWidth: 2,
-                      pointRadius: 2,
-                      pointHoverRadius: 4,
-                    },
-                  ] : [
-                    {
-                      label: 'Vidutinis pacientų skaičius',
-                      data: dowAverages,
-                      fill: true,
-                      tension: 0.35,
-                      borderColor: palette.accent,
-                      backgroundColor: palette.accentSoft,
-                      pointBackgroundColor: dowPointColors,
-                      pointBorderColor: dowPointColors,
-                      pointRadius: dowPointRadii,
-                      pointHoverRadius: dowHoverRadii,
-                    },
-                  ]),
-                ],
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: compareGmp },
-                  tooltip: {
-                    callbacks: {
-                      label(context) {
-                        return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    ticks: {
-                      color: (context) => (isWeekendIndex(context.index) ? palette.weekendAccent : palette.textColor),
-                    },
-                    grid: {
-                      color: palette.gridColor,
-                      drawBorder: false,
-                    },
-                  },
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      color: palette.textColor,
-                      callback(value) {
-                        return decimalFormatter.format(value);
-                      },
-                    },
-                    grid: {
-                      color: palette.gridColor,
-                      drawBorder: false,
-                    },
-                  },
-                },
-              },
-            });
-          }
-        }
-
-        const dowStayCanvas = document.getElementById('dowStayChart');
-        if (dowStayCanvas && dowStayCanvas.getContext) {
-          if (dashboardState.charts.dowStay) {
-            dashboardState.charts.dowStay.destroy();
-          }
-          const hasDowStayData = dowStayCounts.some((count) => count > 0);
-          if (!hasDowStayData) {
-            setChartCardMessage(dowStayCanvas, TEXT.charts?.empty);
-            dashboardState.charts.dowStay = null;
-          } else {
-            setChartCardMessage(dowStayCanvas, null);
-            const ctxDowStay = dowStayCanvas.getContext('2d');
-            let compareStay = null;
-            if (compareGmp) {
-              const stayTotals = {
-                ems: Array(7).fill(0),
-                self: Array(7).fill(0),
-                emsCounts: Array(7).fill(0),
-                selfCounts: Array(7).fill(0),
-              };
-              const windowKeySet = new Set(scopedDaily.map((entry) => entry?.date).filter(Boolean));
-              const shiftStartHour = resolveShiftStartHour(settings?.calculations);
-              const stayRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
-                ? dashboardState.chartData.filteredWindowRecords
-                : [];
-              stayRecords.forEach((record) => {
-                const reference = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-                  ? record.arrival
-                  : record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-                    ? record.discharge
-                    : null;
-                const dateKey = computeShiftDateKey(reference, shiftStartHour);
-                if (!dateKey || !windowKeySet.has(dateKey)) {
-                  return;
-                }
-                const dayIndex = getWeekdayIndexFromDateKey(dateKey);
-                if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex > 6) {
-                  return;
-                }
-                if (!(record.arrival instanceof Date) || !(record.discharge instanceof Date)) {
-                  return;
-                }
-                const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
-                if (!Number.isFinite(duration) || duration < 0 || duration > 24) {
-                  return;
-                }
-                if (record.ems) {
-                  stayTotals.ems[dayIndex] += duration;
-                  stayTotals.emsCounts[dayIndex] += 1;
-                } else {
-                  stayTotals.self[dayIndex] += duration;
-                  stayTotals.selfCounts[dayIndex] += 1;
-                }
-              });
-              compareStay = {
-                ems: stayTotals.ems.map((value, index) => (stayTotals.emsCounts[index] ? value / stayTotals.emsCounts[index] : 0)),
-                self: stayTotals.self.map((value, index) => (stayTotals.selfCounts[index] ? value / stayTotals.selfCounts[index] : 0)),
-              };
-            }
-            dashboardState.charts.dowStay = new Chart(ctxDowStay, {
-              type: 'bar',
-              data: {
-                labels: dowLabels,
-                datasets: [
-                  ...(compareGmp && compareStay ? [
-                    {
-                      label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
-                      data: compareStay.ems,
-                      backgroundColor: palette.dangerSoft,
-                      borderColor: palette.danger,
-                      borderRadius: 10,
-                    },
-                    {
-                      label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-                      data: compareStay.self,
-                      backgroundColor: palette.success,
-                      borderColor: palette.success,
-                      borderRadius: 10,
-                    },
-                  ] : [
-                    {
-                      label: TEXT.charts?.dowStayLabel || 'Vidutinė trukmė (val.)',
-                      data: dowStayAverages,
-                      backgroundColor: dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent)),
-                      borderRadius: 12,
-                    },
-                  ]),
-                ],
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: compareGmp },
-                  tooltip: {
-                    callbacks: {
-                      label(context) {
-                        return `${context.dataset.label}: ${decimalFormatter.format(context.parsed.y)}`;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  x: {
-                    grid: { color: palette.gridColor, drawBorder: false },
-                    ticks: {
-                      color: (context) => (context.index >= 5 ? palette.weekendAccent : palette.textColor),
-                    },
-                  },
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      color: palette.textColor,
-                      callback(value) {
-                        return decimalFormatter.format(value);
-                      },
-                    },
-                    grid: { color: palette.gridColor, drawBorder: false },
-                  },
-                },
-              },
-            });
-          }
-        }
-
-        const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-          && dashboardState.chartData.baseRecords.length
-          ? dashboardState.chartData.baseRecords
-          : dashboardState.rawRecords;
-        const hourlyRecords = getHourlyChartRecords(
-          baseRecords,
-          selectedYear,
-          dashboardState.chartFilters || {},
-          dashboardState.chartPeriod,
-        );
-        renderHourlyChart(hourlyRecords, Chart, palette);
-
-        if (selectors.funnelCaption) {
-          const funnelYear = dashboardState.chartData.funnel?.year ?? null;
-          const captionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
-            ? TEXT.charts.funnelCaptionWithYear(funnelYear)
-            : TEXT.charts.funnelCaption;
-          selectors.funnelCaption.textContent = captionText;
-        }
-
-        const funnelCanvas = document.getElementById('funnelChart');
-        if (funnelCanvas) {
-          if (dashboardState.charts.funnel && typeof dashboardState.charts.funnel.destroy === 'function') {
-            dashboardState.charts.funnel.destroy();
-          }
-          dashboardState.charts.funnel = null;
-          renderFunnelShape(funnelCanvas, dashboardState.chartData.funnel, palette.accent, palette.textColor);
-        }
-
-        renderArrivalHeatmap(
-          selectors.heatmapContainer,
-          dashboardState.chartData.heatmap,
-          palette.accent,
-          dashboardState.heatmapMetric,
-        );
-    } catch (error) {
-      console.error('Nepavyko atvaizduoti grafikų:', error);
-      showChartError(TEXT.charts?.errorLoading);
-      throw error;
+      return chartRenderers.renderCharts(dailyStats, funnelTotals, heatmapData);
     }
-    }
+
+
 
     function handleHeatmapMetricChange(event) {
       const candidate = event?.target?.value;
@@ -9256,17 +7512,6 @@ function areStylesheetsLoaded() {
         dashboardState.hourlyMetric,
         dashboardState.hourlyDepartment,
       );
-      const Chart = dashboardState.chartLib ?? await loadChartJs();
-      if (!Chart) {
-        showChartError(TEXT.charts?.errorLoading);
-        return;
-      }
-      const palette = getThemePalette();
-      const styleTarget = getThemeStyleTarget();
-      Chart.defaults.color = palette.textColor;
-      Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
-      Chart.defaults.borderColor = palette.gridColor;
-
       const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
       const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
         && dashboardState.chartData.baseRecords.length
@@ -9278,7 +7523,10 @@ function areStylesheetsLoaded() {
         dashboardState.chartFilters || {},
         dashboardState.chartPeriod,
       );
-      renderHourlyChart(hourlyRecords, Chart, palette);
+      chartRenderers.renderHourlyChartWithTheme(hourlyRecords).catch((error) => {
+        console.error('Nepavyko atnaujinti valandinio grafiko:', error);
+        showChartError(TEXT.charts?.errorLoading);
+      });
     }
 
     function handleHourlyMetricClick(event) {
@@ -11132,743 +9380,16 @@ function areStylesheetsLoaded() {
   }
 
     async function renderEdDashboard(edData) {
-      if (!selectors.edPanel) {
-        return;
-      }
-      hideEdSkeleton();
-      const baseDataset = edData || {};
-      const baseComments = Array.isArray(baseDataset?.summary?.feedbackComments)
-        ? baseDataset.summary.feedbackComments
-        : [];
-      const baseCommentsMeta = typeof baseDataset?.summary?.feedbackCommentsMeta === 'string'
-        ? baseDataset.summary.feedbackCommentsMeta
-        : '';
-      const searchQuery = normalizeEdSearchQuery(dashboardState.edSearchQuery);
-      const baseRecords = Array.isArray(baseDataset.records) ? baseDataset.records : [];
-      let dataset = baseDataset;
-      if (searchQuery) {
-        const filteredRecords = baseRecords.filter((record) => matchesEdSearch(record, searchQuery));
-        const aggregates = summarizeEdRecords(filteredRecords, baseDataset.meta || {});
-        dataset = {
-          ...baseDataset,
-          records: filteredRecords,
-          summary: aggregates.summary,
-          dispositions: aggregates.dispositions,
-          daily: aggregates.daily,
-          meta: { ...(baseDataset.meta || {}), searchQuery },
-        };
-      }
-      const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
-      if (!Array.isArray(summary.feedbackComments) || !summary.feedbackComments.length) {
-        summary.feedbackComments = baseComments.slice();
-      }
-      if (!summary.feedbackCommentsMeta && baseCommentsMeta) {
-        summary.feedbackCommentsMeta = baseCommentsMeta;
-      }
-      resetEdCommentRotation();
-      const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
-      const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
-      const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
-        || Number.isFinite(summary?.occupiedBeds)
-        || Number.isFinite(summary?.nursePatientsPerStaff)
-        || Number.isFinite(summary?.doctorPatientsPerStaff);
-      const displayVariant = summaryMode === 'snapshot'
-        || (summaryMode === 'hybrid' && hasSnapshotMetrics)
-        ? 'snapshot'
-        : 'legacy';
-
-      const overviewDailyStats = Array.isArray(dashboardState?.kpi?.daily) && dashboardState.kpi.daily.length
-        ? dashboardState.kpi.daily
-        : (Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : []);
-      const configuredWindowRaw = Number.isFinite(Number(dashboardState?.kpi?.filters?.window))
-        ? Number(dashboardState.kpi.filters.window)
-        : (Number.isFinite(Number(settings?.calculations?.windowDays))
-          ? Number(settings.calculations.windowDays)
-          : DEFAULT_KPI_WINDOW_DAYS);
-      const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
-        ? configuredWindowRaw
-        : DEFAULT_KPI_WINDOW_DAYS;
-      if (overviewDailyStats.length) {
-        const overviewMetrics = buildYearMonthMetrics(overviewDailyStats, configuredWindow);
-        if (overviewMetrics) {
-          const { yearMetrics, monthMetrics } = overviewMetrics;
-          const yearAvgMinutes = Number.isFinite(yearMetrics?.avgTime) ? yearMetrics.avgTime * 60 : null;
-          const yearHospLosMinutes = Number.isFinite(yearMetrics?.avgHospitalizedTime)
-            ? yearMetrics.avgHospitalizedTime * 60
-            : null;
-          const monthAvgMinutes = Number.isFinite(monthMetrics?.avgTime) ? monthMetrics.avgTime * 60 : null;
-          const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare) ? yearMetrics.hospitalizedShare : null;
-          const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare) ? monthMetrics.hospitalizedShare : null;
-
-          summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
-          summary.avgLosHospitalizedMinutes = yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
-          summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : null;
-          summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : null;
-          summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
-          summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : null;
-          summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : null;
-        }
-      }
-      const overviewRecords = Array.isArray(dashboardState?.primaryRecords) && dashboardState.primaryRecords.length
-        ? dashboardState.primaryRecords
-        : (Array.isArray(dashboardState?.rawRecords) ? dashboardState.rawRecords : []);
-      enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDailyStats, { windowDays: configuredWindow });
-      const cardsConfigSource = TEXT.ed.cards || {};
-      const cardConfigs = Array.isArray(cardsConfigSource[displayVariant]) ? cardsConfigSource[displayVariant] : [];
-      const dispositionsText = TEXT.ed.dispositions?.[displayVariant] || TEXT.ed.dispositions?.legacy || {};
-      const updatedAt = summary.generatedAt instanceof Date && !Number.isNaN(summary.generatedAt.getTime())
-        ? summary.generatedAt
-        : (dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime()) ? dataset.updatedAt : null);
-
-      const feedbackMonthly = Array.isArray(dashboardState?.feedback?.monthly)
-        ? dashboardState.feedback.monthly
-        : [];
-      const currentMonthKey = (formatLocalDateKey(new Date()) || '').slice(0, 7);
-      let feedbackMonth = feedbackMonthly.find((entry) => entry?.month === currentMonthKey) || null;
-      if (!feedbackMonth && feedbackMonthly.length) {
-        feedbackMonth = feedbackMonthly.reduce((latest, entry) => {
-          if (!entry?.month) {
-            return latest;
-          }
-          if (!latest) {
-            return entry;
-          }
-          return entry.month > latest.month ? entry : latest;
-        }, null);
-      }
-      const feedbackAverage = Number.isFinite(feedbackMonth?.overallAverage)
-        ? feedbackMonth.overallAverage
-        : null;
-      const feedbackResponses = Number.isFinite(feedbackMonth?.responses)
-        ? Math.max(0, Math.round(feedbackMonth.responses))
-        : null;
-      const feedbackMonthLabel = feedbackMonth?.month
-        ? (formatMonthLabel(feedbackMonth.month) || feedbackMonth.month)
-        : '';
-      const feedbackIndex = feedbackMonth?.month
-        ? feedbackMonthly.findIndex((entry) => entry?.month === feedbackMonth.month)
-        : -1;
-      let previousFeedbackMonth = null;
-      if (feedbackIndex > 0) {
-        for (let i = feedbackIndex - 1; i >= 0; i -= 1) {
-          const candidate = feedbackMonthly[i];
-          if (candidate?.month && Number.isFinite(candidate.overallAverage)) {
-            previousFeedbackMonth = candidate;
-            break;
-          }
-        }
-      }
-      const previousMonthLabel = previousFeedbackMonth?.month
-        ? (formatMonthLabel(previousFeedbackMonth.month) || previousFeedbackMonth.month)
-        : '';
-      const feedbackTrend = previousFeedbackMonth && Number.isFinite(feedbackAverage)
-        ? buildFeedbackTrendInfo(
-          feedbackAverage,
-          previousFeedbackMonth.overallAverage,
-          {
-            currentLabel: feedbackMonthLabel,
-            previousLabel: previousMonthLabel,
-          },
-        )
-        : null;
-      const feedbackMetaParts = [];
-      if (feedbackMonthLabel) {
-        feedbackMetaParts.push(feedbackMonthLabel);
-      }
-      if (feedbackResponses != null) {
-        feedbackMetaParts.push(`Atsakymai: ${numberFormatter.format(feedbackResponses)}`);
-      }
-      summary.feedbackCurrentMonthOverall = feedbackAverage;
-      summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
-      summary.feedbackCurrentMonthTrend = feedbackTrend;
-      const feedbackComments = Array.isArray(dashboardState?.feedback?.summary?.comments)
-        ? dashboardState.feedback.summary.comments
-        : [];
-      summary.feedbackComments = feedbackComments;
-      const existingCommentsMeta = typeof summary.feedbackCommentsMeta === 'string'
-        ? summary.feedbackCommentsMeta.trim()
-        : '';
-      const commentsMeta = feedbackComments.length
-        ? `Komentarai: ${numberFormatter.format(feedbackComments.length)}`
-        : '';
-      summary.feedbackCommentsMeta = existingCommentsMeta || commentsMeta;
-
-      if (selectors.edCards) {
-        selectors.edCards.replaceChildren();
-        const sectionDefinitions = TEXT.ed.cardSections || {};
-        const sectionsMap = new Map();
-
-        cardConfigs.forEach((config) => {
-          if (!config || typeof config !== 'object') {
-            return;
-          }
-          const sectionKey = config.section || 'default';
-          if (!sectionsMap.has(sectionKey)) {
-            const sectionMeta = sectionDefinitions[sectionKey] || sectionDefinitions.default || {};
-            sectionsMap.set(sectionKey, {
-              key: sectionKey,
-              title: sectionMeta.title || '',
-              description: sectionMeta.description || '',
-              icon: sectionMeta.icon || '',
-              cards: [],
-            });
-          }
-          sectionsMap.get(sectionKey).cards.push(config);
-        });
-
-        const groupedSections = Array.from(sectionsMap.values());
-        if (!groupedSections.length && cardConfigs.length) {
-          groupedSections.push({
-            key: 'default',
-            title: sectionDefinitions?.default?.title || '',
-            description: sectionDefinitions?.default?.description || '',
-            icon: sectionDefinitions?.default?.icon || '',
-            cards: cardConfigs.filter((config) => config && typeof config === 'object'),
-          });
-        }
-
-        const sectionOrder = Array.isArray(sectionDefinitions)
-          ? sectionDefinitions
-          : Object.keys(sectionDefinitions || {});
-        if (sectionOrder.length) {
-          groupedSections.sort((a, b) => {
-            const aIndex = sectionOrder.indexOf(a.key);
-            const bIndex = sectionOrder.indexOf(b.key);
-            const normalizedA = aIndex === -1 ? Number.POSITIVE_INFINITY : aIndex;
-            const normalizedB = bIndex === -1 ? Number.POSITIVE_INFINITY : bIndex;
-            if (normalizedA === normalizedB) {
-              return String(a.key || '').localeCompare(String(b.key || ''));
-            }
-            return normalizedA - normalizedB;
-          });
-        }
-
-        groupedSections.forEach((section, sectionIndex) => {
-          if (!Array.isArray(section.cards) || !section.cards.length) {
-            return;
-          }
-          const sectionEl = document.createElement('section');
-          sectionEl.className = 'ed-dashboard__section';
-          sectionEl.setAttribute('role', 'region');
-          if (section.key) {
-            sectionEl.dataset.sectionKey = section.key;
-          }
-
-          const shouldRenderHeader = Boolean(section.title || section.description || groupedSections.length > 1);
-          let sectionLabelId = '';
-          if (shouldRenderHeader) {
-            const header = document.createElement('header');
-            header.className = 'ed-dashboard__section-header';
-
-            const iconWrapper = document.createElement('span');
-            iconWrapper.className = 'ed-dashboard__section-icon';
-            const iconKey = section.icon || (section.key !== 'default' ? section.key : 'default');
-            iconWrapper.appendChild(createEdSectionIcon(iconKey));
-            header.appendChild(iconWrapper);
-
-            const textWrapper = document.createElement('div');
-            textWrapper.className = 'ed-dashboard__section-header-text';
-            const titleEl = document.createElement('h3');
-            sectionLabelId = `edSectionTitle-${String(section.key || sectionIndex).replace(/[^a-z0-9_-]/gi, '') || sectionIndex}`;
-            titleEl.className = 'ed-dashboard__section-title';
-            titleEl.id = sectionLabelId;
-            titleEl.textContent = section.title || sectionDefinitions?.default?.title || TEXT.ed.title || 'RŠL SMPS skydelis';
-            textWrapper.appendChild(titleEl);
-
-            if (section.description || sectionDefinitions?.default?.description) {
-              const descriptionEl = document.createElement('p');
-              descriptionEl.className = 'ed-dashboard__section-description';
-              descriptionEl.textContent = section.description || sectionDefinitions?.default?.description || '';
-              textWrapper.appendChild(descriptionEl);
-            }
-
-            header.appendChild(textWrapper);
-            sectionEl.appendChild(header);
-            sectionEl.setAttribute('aria-labelledby', sectionLabelId);
-          }
-
-          const cardsWrapper = document.createElement('div');
-          cardsWrapper.className = 'ed-dashboard__section-grid';
-          cardsWrapper.setAttribute('role', 'list');
-          if (sectionLabelId) {
-            cardsWrapper.setAttribute('aria-labelledby', sectionLabelId);
-          }
-
-          section.cards.forEach((config) => {
-            if (!config || typeof config !== 'object') {
-              return;
-            }
-            const card = document.createElement('article');
-            card.className = 'ed-dashboard__card';
-            card.setAttribute('role', 'listitem');
-
-              const isDonutCard = config.type === 'donut';
-              if (isDonutCard) {
-                card.classList.add('ed-dashboard__card--donut');
-              }
-
-              const isCommentsCard = config.type === 'comments';
-
-              const title = document.createElement('p');
-              title.className = 'ed-dashboard__card-title';
-              title.textContent = config.title;
-              if (isDonutCard) {
-              title.id = 'edDispositionsTitle';
-            }
-            card.appendChild(title);
-
-            if (isDonutCard) {
-              const chartWrapper = document.createElement('div');
-              chartWrapper.className = 'ed-dashboard__donut-chart';
-              const canvas = document.createElement('canvas');
-              canvas.id = 'edDispositionsChart';
-              canvas.setAttribute('role', 'img');
-              canvas.setAttribute('aria-labelledby', 'edDispositionsTitle');
-              chartWrapper.appendChild(canvas);
-              card.appendChild(chartWrapper);
-
-              const message = document.createElement('p');
-              message.className = 'ed-dashboard__chart-message';
-              message.id = 'edDispositionsMessage';
-              message.setAttribute('role', 'status');
-              message.hidden = true;
-              card.appendChild(message);
-
-                cardsWrapper.appendChild(card);
-                return;
-              }
-
-              if (isCommentsCard) {
-                card.classList.add('ed-dashboard__card--comments');
-                const rawComments = Array.isArray(summary?.[config.key]) ? summary[config.key] : [];
-                const metaValue = config.metaKey ? summary?.[config.metaKey] : '';
-                renderEdCommentsCard(card, config, rawComments, metaValue);
-                cardsWrapper.appendChild(card);
-                return;
-              }
-
-              const value = document.createElement('p');
-              value.className = 'ed-dashboard__card-value';
-            const primaryRaw = summary?.[config.key];
-            const secondaryRaw = config.secondaryKey ? summary?.[config.secondaryKey] : undefined;
-            let hasValue = false;
-            if (config.secondaryKey) {
-              const primaryFormatted = formatEdCardValue(primaryRaw, config.format);
-              const secondaryFormatted = formatEdCardValue(secondaryRaw, config.format);
-              const suffix = config.format === 'hours'
-                ? ' val.'
-                : (config.format === 'minutes' ? ' min.' : '');
-              const primaryText = primaryFormatted != null
-                ? `${primaryFormatted}${suffix}`
-                : '—';
-              const secondaryText = secondaryFormatted != null
-                ? `${secondaryFormatted}${suffix}`
-                : '—';
-              if (primaryFormatted != null || secondaryFormatted != null) {
-                value.textContent = `${primaryText} / ${secondaryText}`;
-                hasValue = true;
-              }
-            } else {
-              const formatted = formatEdCardValue(primaryRaw, config.format);
-              if (formatted != null) {
-                if (config.format === 'hours') {
-                  value.textContent = `${formatted} val.`;
-                } else if (config.format === 'minutes') {
-                  value.textContent = `${formatted} min.`;
-                } else {
-                  value.textContent = formatted;
-                }
-                hasValue = true;
-              }
-            }
-            if (!hasValue) {
-              value.textContent = config.empty ?? '—';
-            }
-
-            const meta = document.createElement('p');
-            meta.className = 'ed-dashboard__card-meta';
-            const metaRaw = config.metaKey ? summary?.[config.metaKey] : null;
-            const metaText = typeof metaRaw === 'string'
-              ? metaRaw.trim()
-              : (metaRaw != null ? String(metaRaw).trim() : '');
-            meta.textContent = metaText.length ? metaText : (config.description || '');
-
-            card.appendChild(value);
-
-            const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary);
-            visuals.forEach((node) => {
-              card.appendChild(node);
-            });
-
-            card.appendChild(meta);
-            cardsWrapper.appendChild(card);
-          });
-
-          sectionEl.appendChild(cardsWrapper);
-          selectors.edCards.appendChild(sectionEl);
-        });
-      }
-
-      selectors.edDispositionsTitle = document.getElementById('edDispositionsTitle');
-      selectors.edDispositionsChart = document.getElementById('edDispositionsChart');
-      selectors.edDispositionsMessage = document.getElementById('edDispositionsMessage');
-
-      if (selectors.edDispositionsTitle) {
-        selectors.edDispositionsTitle.textContent = dispositionsText.title || '';
-      }
-      if (selectors.edDispositionsMessage) {
-        selectors.edDispositionsMessage.hidden = true;
-        selectors.edDispositionsMessage.textContent = '';
-      }
-
-      try {
-        await renderEdDispositionsChart(dispositions, dispositionsText, displayVariant);
-      } catch (error) {
-        console.error('Nepavyko atvaizduoti pacientų kategorijų grafiko:', error);
-        if (selectors.edDispositionsChart) {
-          selectors.edDispositionsChart.hidden = true;
-          selectors.edDispositionsChart.setAttribute('aria-hidden', 'true');
-        }
-        if (selectors.edDispositionsMessage) {
-          selectors.edDispositionsMessage.textContent = dispositionsText.empty || 'Nepavyko atvaizduoti grafiko.';
-          selectors.edDispositionsMessage.hidden = false;
-        }
-      }
-
-      const statusInfo = buildEdStatus(summary, dataset, displayVariant);
-      if (selectors.edStatus) {
-        const tone = statusInfo.tone || 'info';
-        const pillText = tone === 'success'
-          ? (statusInfo.timestamp || statusInfo.message || TEXT.ed.status.loading)
-          : (statusInfo.message || TEXT.ed.status.loading);
-        selectors.edStatus.textContent = pillText;
-        selectors.edStatus.dataset.tone = tone;
-      }
-      updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
+      return edRenderer.renderEdDashboard(edData);
     }
 
     async function renderEdDispositionsChart(dispositions, text, displayVariant) {
-      const canvas = selectors.edDispositionsChart;
-      const messageEl = selectors.edDispositionsMessage || null;
-
-      if (!canvas) {
-        if (messageEl) {
-          messageEl.textContent = '';
-          messageEl.hidden = true;
-        }
-        return;
-      }
-
-      if (messageEl) {
-        messageEl.textContent = '';
-        messageEl.hidden = true;
-      }
-
-      if (dashboardState.charts.edDispositions && typeof dashboardState.charts.edDispositions.destroy === 'function') {
-        dashboardState.charts.edDispositions.destroy();
-      }
-      dashboardState.charts.edDispositions = null;
-
-      const validEntries = Array.isArray(dispositions)
-        ? dispositions
-          .filter((entry) => Number.isFinite(entry?.count) && entry.count >= 0)
-          .map((entry, index) => ({
-            ...entry,
-            categoryKey: entry?.categoryKey != null ? String(entry.categoryKey) : null,
-            label: entry?.label || `Kategorija ${entry?.categoryKey ?? index + 1}`,
-          }))
-        : [];
-
-      if (!validEntries.length) {
-        canvas.hidden = true;
-        canvas.setAttribute('aria-hidden', 'true');
-        if (messageEl) {
-          messageEl.textContent = text?.empty || 'Nėra duomenų grafiko sudarymui.';
-          messageEl.hidden = false;
-        }
-        return;
-      }
-
-      const Chart = await loadChartJs();
-      if (!Chart) {
-        throw new Error('Chart.js biblioteka nepasiekiama');
-      }
-      if (!dashboardState.chartLib) {
-        dashboardState.chartLib = Chart;
-      }
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Nepavyko gauti grafiko konteksto');
-      }
-
-      canvas.hidden = false;
-      canvas.removeAttribute('aria-hidden');
-      if (text?.caption) {
-        canvas.setAttribute('aria-description', text.caption);
-      } else {
-        canvas.removeAttribute('aria-description');
-      }
-
-      const palette = getThemePalette();
-      const styleTarget = getThemeStyleTarget();
-      const computedStyles = getComputedStyle(styleTarget);
-      const theme = styleTarget?.dataset?.theme || 'light';
-
-      const CATEGORY_COLORS = {
-        '1': '#2563eb', // mėlyna
-        '2': '#ef4444', // raudona
-        '3': '#f59e0b', // geltona
-        '4': '#22c55e', // žalia
-        '5': '#6b7280', // pilka
-      };
-      const accentRgb = ensureRgb(palette.accent);
-      const accentSoftRgb = ensureRgb(palette.accentSoft, mixRgbColors(accentRgb, { r: 255, g: 255, b: 255 }, 0.65));
-      const surfaceColor = computedStyles.getPropertyValue('--color-surface').trim() || (theme === 'dark' ? '#0f172a' : '#ffffff');
-      const surfaceRgb = ensureRgb(surfaceColor, theme === 'dark' ? { r: 15, g: 23, b: 42 } : { r: 255, g: 255, b: 255 });
-      const textColor = computedStyles.getPropertyValue('--color-text').trim() || (theme === 'dark' ? '#e2e8f0' : '#0f172a');
-      const textRgb = ensureRgb(textColor, theme === 'dark' ? { r: 226, g: 232, b: 240 } : { r: 15, g: 23, b: 42 });
-      const isDarkTheme = theme === 'dark';
-
-      const sequentialPalette = createSequentialPalette(accentRgb, accentSoftRgb, surfaceRgb, validEntries.length, theme);
-      const baseAlpha = theme === 'dark' ? 0.88 : 0.94;
-      const alphaStep = theme === 'dark' ? -0.025 : -0.035;
-
-      const backgroundColors = validEntries.map((entry, index) => {
-        const key = entry?.categoryKey != null ? String(entry.categoryKey) : null;
-        if (key && CATEGORY_COLORS[key]) {
-          const presetRgb = ensureRgb(CATEGORY_COLORS[key]);
-          return rgbToRgba(presetRgb, Math.max(0.45, baseAlpha + alphaStep * index));
-        }
-        const paletteIndex = sequentialPalette.length ? index % sequentialPalette.length : index;
-        const fillRgb = sequentialPalette[paletteIndex] || accentRgb;
-        return rgbToRgba(fillRgb, Math.max(0.45, baseAlpha + alphaStep * paletteIndex));
-      });
-
-      const values = validEntries.map((entry) => Number(entry.count) || 0);
-      const total = values.reduce((sum, value) => (Number.isFinite(value) ? sum + value : sum), 0);
-
-      const chartEntries = validEntries.map((entry, index) => {
-        const count = Number(values[index]) || 0;
-        const percent = total > 0 ? count / total : 0;
-        return {
-          ...entry,
-          count,
-          percent,
-          color: backgroundColors[index] || palette.accent,
-        };
-      });
-
-      const formatValue = (value) => {
-        if (!Number.isFinite(value)) {
-          return '—';
-        }
-        if (displayVariant === 'snapshot') {
-          return numberFormatter.format(Math.round(value));
-        }
-        if (Math.abs(value) >= 1) {
-          return oneDecimalFormatter.format(value);
-        }
-        return decimalFormatter.format(value);
-      };
-
-      const datasetLabel = text?.title || 'Pacientų kategorijos';
-      const totalLabel = text?.centerLabel || 'Viso pacientų';
-
-      const labels = chartEntries.map((entry) => entry.label);
-      const ariaSummary = chartEntries
-        .map((entry) => {
-          const value = formatValue(entry.count);
-          const percent = percentFormatter.format(entry.percent);
-          return `${entry.label}: ${value} (${percent})`;
-        })
-        .filter(Boolean)
-        .join('; ');
-      if (ariaSummary) {
-        const ariaParts = [`${datasetLabel} – ${ariaSummary}`];
-        if (total > 0) {
-          ariaParts.push(`${totalLabel}: ${formatValue(total)}`);
-        }
-        canvas.setAttribute('aria-label', ariaParts.join('. '));
-      } else {
-        canvas.setAttribute('aria-label', datasetLabel);
-      }
-
-      const computedFontFamily = (computedStyles.fontFamily || '').trim();
-
-      const donutLabelsPlugin = {
-        id: 'edDonutPercentLabels',
-        afterDatasetsDraw(chartArg, _args, pluginOptions = {}) {
-          const dataset = chartArg.data?.datasets?.[0];
-          if (!dataset) {
-            return;
-          }
-          const meta = chartArg.getDatasetMeta(0);
-          if (!meta?.data?.length) {
-            return;
-          }
-          const rawValues = Array.isArray(dataset.data) ? dataset.data : [];
-          const totalValue = rawValues.reduce((sum, value) => {
-            const numeric = Number(value);
-            return Number.isFinite(numeric) ? sum + numeric : sum;
-          }, 0);
-          if (totalValue <= 0) {
-            return;
-          }
-
-          const ctx = chartArg.ctx;
-          const baseColor = ensureRgb(pluginOptions.baseColor, textRgb);
-          const contrastColor = ensureRgb(pluginOptions.contrastColor, surfaceRgb);
-          const fallbackColor = ensureRgb(pluginOptions.fallbackColor, accentRgb);
-          const minShare = Number.isFinite(pluginOptions.minShare)
-            ? Math.max(0, pluginOptions.minShare)
-            : 0;
-          const fontWeight = pluginOptions.fontWeight || 600;
-          const area = chartArg.chartArea;
-          const areaSize = area ? Math.min(area.width, area.height) : Math.min(chartArg.width, chartArg.height);
-          const resolvedFontSize = Number.isFinite(pluginOptions.fontSize) && pluginOptions.fontSize > 0
-            ? pluginOptions.fontSize
-            : Math.max(Math.round(areaSize / 7.5), 14);
-          const fontFamily = pluginOptions.fontFamily
-            || Chart.defaults.font.family
-            || computedFontFamily
-            || computedStyles.fontFamily;
-
-          const contrastRatio = (lum1, lum2) => {
-            const [lighter, darker] = lum1 >= lum2 ? [lum1, lum2] : [lum2, lum1];
-            return (lighter + 0.05) / (darker + 0.05);
-          };
-
-          ctx.save();
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-
-          const placed = [];
-
-          meta.data.forEach((arc, index) => {
-            const rawValue = Number(rawValues[index]);
-            if (!Number.isFinite(rawValue) || rawValue <= 0) {
-              return;
-            }
-            const share = rawValue / totalValue;
-            if (share < minShare) {
-              return;
-            }
-
-            const props = arc.getProps(['x', 'y', 'startAngle', 'endAngle', 'innerRadius', 'outerRadius'], true);
-            const angle = (props.startAngle + props.endAngle) / 2;
-            const baseRadius = ((props.innerRadius || 0) + (props.outerRadius || 0)) / 2;
-            const scale = share < 0.06 ? 0.82 : (share < 0.12 ? 0.94 : 1.05);
-            const fontSize = Math.max(Math.round(resolvedFontSize * scale), 12);
-            const percentText = `${Math.round(share * 100)}%`;
-
-            ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-
-            const metrics = ctx.measureText(percentText);
-            const textWidth = Math.max(metrics.width || 0, fontSize * 0.9);
-            const textHeight = Math.max(
-              (metrics.actualBoundingBoxAscent || 0) + (metrics.actualBoundingBoxDescent || 0),
-              fontSize * 0.9,
-            );
-
-            const backgroundColor = ensureRgb(
-              Array.isArray(dataset.backgroundColor) ? dataset.backgroundColor[index] : dataset.backgroundColor,
-              fallbackColor,
-            );
-            const backgroundLum = relativeLuminance(backgroundColor);
-            const baseLum = relativeLuminance(baseColor);
-            const contrastLum = relativeLuminance(contrastColor);
-            const useBase = contrastRatio(backgroundLum, baseLum) >= contrastRatio(backgroundLum, contrastLum);
-            const textFill = useBase ? baseColor : contrastColor;
-            const haloColor = useBase ? contrastColor : baseColor;
-
-            const minDistance = Math.max(Math.hypot(textWidth, textHeight) * 0.8, fontSize * 1.25, 16);
-            let radius = baseRadius * (share < 0.12 ? 0.94 : 1.02);
-            const maxRadius = (props.outerRadius || radius) * 1.1;
-            const angleStep = (Math.PI / 180) * 6;
-
-            const buildCandidate = (offsetAngle, r) => ({
-              x: props.x + Math.cos(angle + offsetAngle) * r,
-              y: props.y + Math.sin(angle + offsetAngle) * r,
-              width: textWidth,
-              height: textHeight,
-            });
-
-            const overlaps = (pos, candidate) => {
-              const dx = Math.abs(pos.x - candidate.x);
-              const dy = Math.abs(pos.y - candidate.y);
-              const overlapX = dx < (pos.width + candidate.width) / 2;
-              const overlapY = dy < (pos.height + candidate.height) / 2;
-              return (overlapX && overlapY) || Math.hypot(dx, dy) < minDistance;
-            };
-
-            let attempt = 0;
-            let angleOffset = 0;
-            let candidate = buildCandidate(angleOffset, radius);
-            while (
-              attempt < 10
-              && placed.some((pos) => overlaps(pos, candidate))
-            ) {
-              const direction = attempt % 2 === 0 ? 1 : -1;
-              angleOffset += direction * angleStep;
-              radius = Math.min(maxRadius, radius + Math.max(fontSize * 0.35, 4));
-              candidate = buildCandidate(angleOffset, radius);
-              attempt += 1;
-            }
-            placed.push(candidate);
-
-            ctx.lineWidth = Math.max(Math.round(fontSize / 3.1), 3);
-            ctx.strokeStyle = `rgba(${haloColor.r}, ${haloColor.g}, ${haloColor.b}, ${isDarkTheme ? 0.4 : 0.28})`;
-            ctx.lineJoin = 'round';
-            ctx.strokeText(percentText, candidate.x, candidate.y);
-
-            ctx.fillStyle = `rgb(${textFill.r}, ${textFill.g}, ${textFill.b})`;
-            ctx.fillText(percentText, candidate.x, candidate.y);
-          });
-
-          ctx.restore();
-        },
-      };
-
-      const chartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: datasetLabel,
-              data: chartEntries.map((entry) => entry.count),
-              backgroundColor: backgroundColors,
-              borderWidth: 0,
-              hoverOffset: 0,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '62%',
-          radius: '90%',
-          animation: false,
-          events: [],
-          plugins: {
-            legend: { display: false },
-            tooltip: { enabled: false },
-            edDonutPercentLabels: {
-              baseColor: textColor,
-              contrastColor: surfaceColor,
-              fallbackColor: palette.accent,
-              minShare: 0,
-              fontFamily: computedFontFamily || Chart.defaults.font.family,
-              fontWeight: 700,
-            },
-          },
-        },
-        plugins: [donutLabelsPlugin],
-      });
-
-      dashboardState.charts.edDispositions = chartInstance;
+      return chartRenderers.renderEdDispositionsChart(dispositions, text, displayVariant);
     }
+
+
+
+
     function clampColorChannel(value) {
       return Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
     }
@@ -12008,6 +9529,73 @@ function areStylesheetsLoaded() {
         shadow: isLightText ? 'rgba(8, 12, 32, 0.45)' : 'rgba(255, 255, 255, 0.3)',
         shadowBlur: isLightText ? 8 : 5,
       };
+    }
+
+    function getThemeStyleTarget() {
+      return document.body || document.documentElement;
+    }
+
+    function getThemePalette() {
+      const styleTarget = getThemeStyleTarget();
+      const rootStyles = getComputedStyle(styleTarget);
+      const danger = rootStyles.getPropertyValue('--color-danger').trim() || '#c34b55';
+      return {
+        accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
+        accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
+        weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
+        weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
+        success: rootStyles.getPropertyValue('--color-success').trim() || '#16a34a',
+        danger,
+        dangerSoft: rootStyles.getPropertyValue('--color-danger-soft').trim()
+          || rgbToRgba(ensureRgb(danger, { r: 195, g: 75, b: 85 }), 0.28),
+        textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
+        textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
+        gridColor: rootStyles.getPropertyValue('--chart-grid').trim() || 'rgba(15, 23, 42, 0.12)',
+        surface: rootStyles.getPropertyValue('--color-surface').trim() || '#f8fafc',
+      };
+    }
+
+    function formatDailyCaption(period) {
+      const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientų srautai';
+      const normalized = Number.isFinite(period) ? Math.round(period) : null;
+      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+      const yearFragment = Number.isFinite(selectedYear) ? `, ${selectedYear} m.` : '';
+      if (normalized === 365) {
+        const combinedSuffix = `mėnesinė dinamika (12 mėn.)${yearFragment}`;
+        if (base.includes('(')) {
+          return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
+        }
+        return `${base} (${combinedSuffix})`;
+      }
+      if (normalized === 0) {
+        const combinedSuffix = `visas laikotarpis${yearFragment}`;
+        if (base.includes('(')) {
+          return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
+        }
+        return `${base} (${combinedSuffix})`;
+      }
+      if (!Number.isFinite(period) || period < 0) {
+        return base;
+      }
+      const formattedDays = numberFormatter.format(normalized);
+      const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
+      const combinedSuffix = `${suffix}${yearFragment}`;
+      if (base.includes('(')) {
+        return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
+      }
+      return `${base} (${combinedSuffix})`;
+    }
+
+    function syncChartPeriodButtons(period) {
+      if (!selectors.chartPeriodButtons || !selectors.chartPeriodButtons.length) {
+        return;
+      }
+      selectors.chartPeriodButtons.forEach((button) => {
+        const value = Number.parseInt(button.dataset.chartPeriod || '', 10);
+        const isActive = Number.isFinite(value) && value === period;
+        button.setAttribute('aria-pressed', String(isActive));
+        button.dataset.active = String(isActive);
+      });
     }
 
     function drawFunnelShape(canvas, steps, accentColor, textColor) {
@@ -12416,6 +10004,104 @@ function areStylesheetsLoaded() {
       }, { timeout: 800 });
     }
 
+    const chartRenderers = createChartRenderers({
+      dashboardState,
+      selectors,
+      TEXT,
+      loadChartJs,
+      getThemePalette,
+      getThemeStyleTarget,
+      showChartSkeletons,
+      hideChartSkeletons,
+      clearChartError,
+      showChartError,
+      setChartCardMessage,
+      renderFunnelShape,
+      filterDailyStatsByYear,
+      computeFunnelStats,
+      isValidHeatmapData,
+      filterRecordsByYear,
+      filterRecordsByChartFilters,
+      filterRecordsByWindow,
+      computeArrivalHeatmap,
+      renderArrivalHeatmap,
+      getWeekdayIndexFromDateKey,
+      numberFormatter,
+      decimalFormatter,
+      oneDecimalFormatter,
+      percentFormatter,
+      monthOnlyFormatter,
+      monthDayFormatter,
+      shortDateFormatter,
+      dateKeyToDate,
+      isWeekendDateKey,
+      computeMonthlyStats,
+      formatMonthLabel,
+      formatDailyCaption,
+      syncChartPeriodButtons,
+      HEATMAP_METRIC_KEYS,
+      DEFAULT_HEATMAP_METRIC,
+      HEATMAP_HOURS,
+      HOURLY_STAY_BUCKET_ALL,
+      HOURLY_COMPARE_SERIES,
+      HOURLY_COMPARE_SERIES_ALL,
+      normalizeHourlyWeekday,
+      normalizeHourlyStayBucket,
+      normalizeHourlyMetric,
+      normalizeHourlyDepartment,
+      normalizeHourlyCompareYears,
+      updateHourlyCaption,
+      updateHourlyDepartmentOptions,
+      syncHourlyDepartmentVisibility,
+      getHourlyChartRecords,
+      computeHourlySeries,
+      applyHourlyYAxisAuto,
+      syncFeedbackTrendControls,
+      updateFeedbackTrendSubtitle,
+      getActiveFeedbackTrendWindow,
+      formatMonthLabelForAxis: null,
+    });
+
+    const kpiRenderer = createKpiRenderer({
+      selectors,
+      dashboardState,
+      TEXT,
+      escapeHtml,
+      formatKpiValue,
+      percentFormatter,
+      numberFormatter,
+      buildYearMonthMetrics,
+      buildLastShiftSummary,
+      hideKpiSkeleton,
+    });
+
+    const edRenderer = createEdRenderer({
+      selectors,
+      dashboardState,
+      TEXT,
+      DEFAULT_KPI_WINDOW_DAYS,
+      settings,
+      buildYearMonthMetrics,
+      numberFormatter,
+      resetEdCommentRotation,
+      hideEdSkeleton,
+      normalizeEdSearchQuery,
+      matchesEdSearch,
+      createEmptyEdSummary,
+      summarizeEdRecords,
+      formatLocalDateKey,
+      formatMonthLabel,
+      buildFeedbackTrendInfo,
+      buildEdStatus,
+      updateEdTvPanel,
+      renderEdDispositionsChart,
+      createEdSectionIcon,
+      renderEdCommentsCard,
+      formatEdCardValue,
+      buildEdCardVisuals,
+      enrichSummaryWithOverviewFallback,
+    });
+
     async function bootstrap() {
       settings = await loadSettingsFromConfig();
       dashboardState.kpi.filters = getDefaultKpiFilters();
@@ -12667,6 +10353,14 @@ function areStylesheetsLoaded() {
         setActiveTab('overview', { restoreFocus: true });
       }
     });
+
+
+
+
+
+
+
+
 
 
 
