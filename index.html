@@ -559,37 +559,59 @@
               </label>
               <button type="button" id="hourlyResetFilters" class="chip-button chip-button--ghost hourly-action" aria-label="Išvalyti šio grafiko filtrus">Išvalyti filtrus</button>
             </div>
-            <div class="hourly-toolbar__row hourly-toolbar__row--actions">
-              <button
-                type="button"
-                class="chart-copy-btn"
-                data-chart-copy
-                data-chart-target="#hourlyChart"
-                data-tooltip="Kopijuoti grafiką"
-                aria-label="Kopijuoti grafiką"
-                title="Kopijuoti grafiką"
-              >
-                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="11" height="11" rx="2"></rect>
-                  <rect x="4" y="4" width="11" height="11" rx="2"></rect>
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="chart-download-btn"
-                data-chart-download
-                data-chart-target="#hourlyChart"
-                data-tooltip="Parsisiųsti PNG"
-                aria-label="Parsisiųsti grafiką PNG formatu"
-                title="Parsisiųsti PNG"
-              >
-                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 3v12"></path>
-                  <path d="M8 11l4 4 4-4"></path>
-                  <path d="M4 21h16"></path>
-                </svg>
-              </button>
+            <div class="hourly-toolbar__row" role="group" aria-label="Metų palyginimas">
+              <label class="hourly-compare-toggle" for="hourlyCompareToggle">
+                <input type="checkbox" id="hourlyCompareToggle" aria-controls="hourlyCompareYearA hourlyCompareYearB">
+                <span>Palyginti metus</span>
+              </label>
+              <div class="hourly-compare-series" role="group" aria-label="Palyginimo srautas" hidden>
+                <div class="segmented-control">
+                  <button type="button" class="segmented-control__button" data-hourly-compare-series="all" aria-pressed="true">Visi</button>
+                  <button type="button" class="segmented-control__button" data-hourly-compare-series="ems" aria-pressed="false">GMP</button>
+                  <button type="button" class="segmented-control__button" data-hourly-compare-series="self" aria-pressed="false">Ne GMP</button>
+                </div>
+              </div>
+              <label class="heatmap-toolbar__field" for="hourlyCompareYearA" hidden>
+                <span class="heatmap-toolbar__label">Metai A</span>
+                <select id="hourlyCompareYearA" name="hourlyCompareYearA" aria-label="Pasirinkti pirmus metus palyginimui"></select>
+              </label>
+              <label class="heatmap-toolbar__field" for="hourlyCompareYearB" hidden>
+                <span class="heatmap-toolbar__label">Metai B</span>
+                <select id="hourlyCompareYearB" name="hourlyCompareYearB" aria-label="Pasirinkti antrus metus palyginimui"></select>
+              </label>
+              <div class="hourly-toolbar__actions-inline">
+                <button
+                  type="button"
+                  class="chart-copy-btn"
+                  data-chart-copy
+                  data-chart-target="#hourlyChart"
+                  data-tooltip="Kopijuoti grafiką"
+                  aria-label="Kopijuoti grafiką"
+                  title="Kopijuoti grafiką"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                    <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="chart-download-btn"
+                  data-chart-download
+                  data-chart-target="#hourlyChart"
+                  data-tooltip="Parsisiųsti PNG"
+                  aria-label="Parsisiųsti grafiką PNG formatu"
+                  title="Parsisiųsti PNG"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v12"></path>
+                    <path d="M8 11l4 4 4-4"></path>
+                    <path d="M4 21h16"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
+            <div class="hourly-toolbar__row hourly-toolbar__row--actions"></div>
           </div>
           <div class="chart-card__canvas chart-card__canvas--hourly">
             <canvas id="hourlyChart" aria-labelledby="hourlyChartTitle"></canvas>

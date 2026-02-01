@@ -77,6 +77,10 @@ body {
   font-family: "Sora", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -3616,6 +3620,14 @@ body[data-theme="dark"] select optgroup {
       justify-content: flex-end;
     }
 
+    .hourly-toolbar__actions-inline {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .hourly-toolbar__field {
       display: inline-flex;
       flex-direction: column;
@@ -3632,6 +3644,35 @@ body[data-theme="dark"] select optgroup {
       color: var(--color-text-muted);
       margin-left: auto;
       white-space: nowrap;
+    }
+
+    .hourly-compare-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      color: var(--color-text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .hourly-compare-toggle input {
+      margin: 0;
+      width: 14px;
+      height: 14px;
+      accent-color: var(--color-accent);
+    }
+
+    .hourly-compare-toggle:hover,
+    .hourly-compare-toggle:focus-within {
+      color: var(--color-text);
+      background: var(--color-surface);
+      border-color: rgba(37, 99, 235, 0.35);
     }
 
     .segmented-control {

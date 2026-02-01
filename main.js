@@ -1804,6 +1804,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       hourlyDepartmentInput: document.getElementById('hourlyDepartment'),
       hourlyDepartmentSuggestions: document.getElementById('hourlyDepartmentSuggestions'),
       hourlyDepartmentToggle: document.getElementById('hourlyDepartmentToggle'),
+      hourlyCompareToggle: document.getElementById('hourlyCompareToggle'),
+      hourlyCompareYearA: document.getElementById('hourlyCompareYearA'),
+      hourlyCompareYearB: document.getElementById('hourlyCompareYearB'),
+      hourlyCompareSeriesGroup: document.querySelector('.hourly-compare-series'),
+      hourlyCompareSeriesButtons: Array.from(document.querySelectorAll('[data-hourly-compare-series]')),
       hourlyWeekdayLabel: document.getElementById('hourlyWeekdayLabel'),
       hourlyWeekdaySelect: document.getElementById('hourlyWeekday'),
       hourlyStayLabel: document.getElementById('hourlyStayLabel'),
@@ -2752,6 +2757,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     const HOURLY_METRIC_ARRIVALS = 'arrivals';
     const HOURLY_METRIC_HOSPITALIZED = 'hospitalized';
     const HOURLY_METRICS = [HOURLY_METRIC_ARRIVALS, HOURLY_METRIC_HOSPITALIZED];
+    const HOURLY_COMPARE_SERIES_ALL = 'all';
+    const HOURLY_COMPARE_SERIES_EMS = 'ems';
+    const HOURLY_COMPARE_SERIES_SELF = 'self';
+    const HOURLY_COMPARE_SERIES = [HOURLY_COMPARE_SERIES_ALL, HOURLY_COMPARE_SERIES_EMS, HOURLY_COMPARE_SERIES_SELF];
     const HOURLY_STAY_BUCKETS = [
       { key: 'lt4', min: 0, max: 4 },
       { key: '4to8', min: 4, max: 8 },
@@ -2794,6 +2803,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       hourlyStayBucket: 'all',
       hourlyMetric: HOURLY_METRIC_ARRIVALS,
       hourlyDepartment: 'all',
+      hourlyCompareEnabled: false,
+      hourlyCompareYears: [],
+      hourlyCompareSeries: HOURLY_COMPARE_SERIES_ALL,
       hourlyYAxisSuggestedMax: null,
       hourlyDepartmentOptions: [],
       hourlyDepartmentSuggestIndex: -1,
@@ -6179,6 +6191,34 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       syncChartYearControl();
     }
 
+    function populateHourlyCompareYearOptions(dailyStats) {
+      if (!selectors.hourlyCompareYearA || !selectors.hourlyCompareYearB) {
+        return;
+      }
+      const years = getAvailableYearsFromDaily(dailyStats);
+      const buildOptions = (select) => {
+        select.replaceChildren();
+        const noneOption = document.createElement('option');
+        noneOption.value = 'none';
+        noneOption.textContent = 'Nelyginti';
+        select.appendChild(noneOption);
+        years.forEach((year) => {
+          const option = document.createElement('option');
+          option.value = String(year);
+          option.textContent = `${year} m.`;
+          select.appendChild(option);
+        });
+      };
+      buildOptions(selectors.hourlyCompareYearA);
+      buildOptions(selectors.hourlyCompareYearB);
+      const normalized = normalizeHourlyCompareYears(
+        dashboardState.hourlyCompareYears?.[0],
+        dashboardState.hourlyCompareYears?.[1],
+      );
+      dashboardState.hourlyCompareYears = normalized;
+      syncHourlyCompareControls();
+    }
+
     function syncChartYearControl() {
       if (!selectors.chartYearSelect) {
         return;
@@ -6186,6 +6226,107 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const value = Number.isFinite(dashboardState.chartYear) ? String(dashboardState.chartYear) : 'all';
       if (selectors.chartYearSelect.value !== value) {
         selectors.chartYearSelect.value = value;
+      }
+    }
+
+    function syncHourlyCompareControls() {
+      if (selectors.hourlyCompareToggle) {
+        selectors.hourlyCompareToggle.checked = Boolean(dashboardState.hourlyCompareEnabled);
+      }
+      if (selectors.hourlyCompareSeriesGroup) {
+        selectors.hourlyCompareSeriesGroup.hidden = !dashboardState.hourlyCompareEnabled;
+      }
+      if (Array.isArray(selectors.hourlyCompareSeriesButtons) && selectors.hourlyCompareSeriesButtons.length) {
+        const current = HOURLY_COMPARE_SERIES.includes(dashboardState.hourlyCompareSeries)
+          ? dashboardState.hourlyCompareSeries
+          : HOURLY_COMPARE_SERIES_ALL;
+        selectors.hourlyCompareSeriesButtons.forEach((button) => {
+          const key = button?.dataset?.hourlyCompareSeries;
+          if (!key) {
+            return;
+          }
+          const isActive = key === current;
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+      }
+      if (selectors.hourlyCompareYearA && selectors.hourlyCompareYearB) {
+        const fieldA = selectors.hourlyCompareYearA.closest('.heatmap-toolbar__field');
+        const fieldB = selectors.hourlyCompareYearB.closest('.heatmap-toolbar__field');
+        if (fieldA) {
+          fieldA.hidden = !dashboardState.hourlyCompareEnabled;
+        }
+        if (fieldB) {
+          fieldB.hidden = !dashboardState.hourlyCompareEnabled;
+        }
+        const normalized = normalizeHourlyCompareYears(
+          dashboardState.hourlyCompareYears?.[0],
+          dashboardState.hourlyCompareYears?.[1],
+        );
+        dashboardState.hourlyCompareYears = normalized;
+        const [yearA, yearB] = normalized;
+        selectors.hourlyCompareYearA.value = Number.isFinite(yearA) ? String(yearA) : 'none';
+        selectors.hourlyCompareYearB.value = Number.isFinite(yearB) ? String(yearB) : 'none';
+      }
+    }
+
+    function handleHourlyCompareToggle(event) {
+      const enabled = Boolean(event?.target?.checked);
+      dashboardState.hourlyCompareEnabled = enabled;
+      if (enabled && selectors.hourlyCompareYearA && selectors.hourlyCompareYearB) {
+        const normalized = normalizeHourlyCompareYears(
+          dashboardState.hourlyCompareYears?.[0],
+          dashboardState.hourlyCompareYears?.[1],
+        );
+        if (!normalized.length) {
+          const availableYears = Array.from(selectors.hourlyCompareYearA.options || [])
+            .map((option) => option.value)
+            .filter((value) => value && value !== 'none')
+            .map((value) => Number.parseInt(value, 10))
+            .filter((value) => Number.isFinite(value));
+          if (availableYears.length) {
+            selectors.hourlyCompareYearA.value = String(availableYears[0]);
+            selectors.hourlyCompareYearB.value = availableYears[1] != null ? String(availableYears[1]) : 'none';
+            dashboardState.hourlyCompareYears = normalizeHourlyCompareYears(
+              selectors.hourlyCompareYearA.value,
+              selectors.hourlyCompareYearB.value,
+            );
+          }
+        }
+      }
+      syncHourlyCompareControls();
+      handleHourlyFilterChange();
+    }
+
+    function handleHourlyCompareYearsChange() {
+      if (!selectors.hourlyCompareYearA || !selectors.hourlyCompareYearB) {
+        return;
+      }
+      const normalized = normalizeHourlyCompareYears(
+        selectors.hourlyCompareYearA.value,
+        selectors.hourlyCompareYearB.value,
+      );
+      dashboardState.hourlyCompareYears = normalized;
+      if (normalized.length === 1) {
+        const only = normalized[0];
+        if (String(selectors.hourlyCompareYearA.value) === String(only)) {
+          selectors.hourlyCompareYearB.value = 'none';
+        } else if (String(selectors.hourlyCompareYearB.value) === String(only)) {
+          selectors.hourlyCompareYearA.value = 'none';
+        }
+      }
+      handleHourlyFilterChange();
+    }
+
+    function handleHourlyCompareSeriesClick(event) {
+      const button = event?.currentTarget;
+      const key = button?.dataset?.hourlyCompareSeries;
+      if (!HOURLY_COMPARE_SERIES.includes(key)) {
+        return;
+      }
+      dashboardState.hourlyCompareSeries = key;
+      syncHourlyCompareControls();
+      if (dashboardState.hourlyCompareEnabled) {
+        handleHourlyFilterChange();
       }
     }
 
@@ -6480,6 +6621,41 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       return `>${bucket.min} val.`;
     }
 
+    function normalizeHourlyCompareYears(valueA, valueB) {
+      const raw = [valueA, valueB]
+        .map((value) => {
+          if (value == null) {
+            return null;
+          }
+          const trimmed = String(value).trim();
+          if (!trimmed || trimmed === 'none') {
+            return null;
+          }
+          const parsed = Number.parseInt(trimmed, 10);
+          return Number.isFinite(parsed) ? parsed : null;
+        })
+        .filter((year) => Number.isFinite(year));
+      const unique = Array.from(new Set(raw));
+      return unique.slice(0, 2);
+    }
+
+    function buildHourlyCompareLabel() {
+      const years = normalizeHourlyCompareYears(
+        dashboardState.hourlyCompareYears?.[0],
+        dashboardState.hourlyCompareYears?.[1],
+      );
+      if (!dashboardState.hourlyCompareEnabled || !years.length) {
+        return '';
+      }
+      const seriesLabel = dashboardState.hourlyCompareSeries === HOURLY_COMPARE_SERIES_EMS
+        ? 'GMP'
+        : dashboardState.hourlyCompareSeries === HOURLY_COMPARE_SERIES_SELF
+          ? 'Ne GMP'
+          : '';
+      const seriesSuffix = seriesLabel ? `, ${seriesLabel}` : '';
+      return `Palyginimas: ${years.join(', ')} m.${seriesSuffix}`;
+    }
+
     function buildHourlyCaptionLabel(weekdayValue, stayBucket, metricValue, departmentValue) {
       const parts = [];
       const metricLabel = getHourlyMetricLabel(metricValue);
@@ -6504,6 +6680,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const normalizedDepartment = normalizeHourlyDepartment(departmentValue);
       if (normalizedMetric === HOURLY_METRIC_HOSPITALIZED && normalizedDepartment !== 'all') {
         parts.push(`Skyrius: ${normalizedDepartment}`);
+      }
+      const compareLabel = buildHourlyCompareLabel();
+      if (compareLabel) {
+        parts.push(compareLabel);
       }
       return parts.join(' • ');
     }
@@ -9130,28 +9310,127 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         dashboardState.charts.hourly.destroy();
       }
 
-      updateHourlyDepartmentOptions(records);
+      const compareEnabled = dashboardState.hourlyCompareEnabled === true;
+      const compareYears = normalizeHourlyCompareYears(
+        dashboardState.hourlyCompareYears?.[0],
+        dashboardState.hourlyCompareYears?.[1],
+      );
+      const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
+        && dashboardState.chartData.baseRecords.length
+        ? dashboardState.chartData.baseRecords
+        : dashboardState.rawRecords;
+      const optionRecords = compareEnabled
+        ? getHourlyChartRecords(baseRecords, null, dashboardState.chartFilters || {}, dashboardState.chartPeriod)
+        : records;
+
+      updateHourlyDepartmentOptions(optionRecords);
       const normalizedDepartment = normalizeHourlyDepartment(dashboardState.hourlyDepartment);
       if (normalizedDepartment !== departmentValue) {
         dashboardState.hourlyDepartment = normalizedDepartment;
       }
       syncHourlyDepartmentVisibility(metricValue);
       updateHourlyCaption(weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
-      const result = computeHourlySeries(records, weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
-      if (!result.hasData) {
+
+      let datasets = [];
+      let suggestedMax = undefined;
+      let hasData = false;
+
+      if (compareEnabled && compareYears.length) {
+        const colorPalette = [themePalette.accent, themePalette.weekendAccent, themePalette.success];
+        const compareMaxes = [];
+        const seriesKey = HOURLY_COMPARE_SERIES.includes(dashboardState.hourlyCompareSeries)
+          ? dashboardState.hourlyCompareSeries
+          : HOURLY_COMPARE_SERIES_ALL;
+        datasets = compareYears.map((year, index) => {
+          const yearRecords = getHourlyChartRecords(baseRecords, year, dashboardState.chartFilters || {}, dashboardState.chartPeriod);
+          const yearResult = computeHourlySeries(
+            yearRecords,
+            weekdayValue,
+            stayBucket,
+            metricValue,
+            dashboardState.hourlyDepartment,
+          );
+          if (yearResult?.hasData) {
+            hasData = true;
+            const localMax = Math.max(0, ...(yearResult.averages?.[seriesKey] || []));
+            compareMaxes.push(localMax);
+          }
+          const lineColor = colorPalette[index % colorPalette.length] || themePalette.accent;
+          return {
+            label: `${year} m.`,
+            data: yearResult?.averages?.[seriesKey] || [],
+            borderColor: lineColor,
+            backgroundColor: lineColor,
+            tension: 0.35,
+            fill: false,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            pointBackgroundColor: lineColor,
+            pointBorderColor: lineColor,
+          };
+        });
+        const maxValue = compareMaxes.length ? Math.max(...compareMaxes) : 0;
+        suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
+      } else {
+        const result = computeHourlySeries(records, weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
+        if (result?.hasData) {
+          hasData = true;
+        }
+        const baseSeries = computeHourlySeries(records, weekdayValue, HOURLY_STAY_BUCKET_ALL, metricValue, 'all');
+        const baseMax = baseSeries?.averages?.all
+          ? Math.max(0, ...baseSeries.averages.all)
+          : 0;
+        suggestedMax = baseMax > 0
+          ? Math.ceil(baseMax * 1.1 * 10) / 10
+          : undefined;
+
+        datasets = [
+          {
+            label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+            data: result.averages.all,
+            borderColor: themePalette.accent,
+            backgroundColor: themePalette.accentSoft,
+            tension: 0.35,
+            fill: false,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            pointBackgroundColor: themePalette.accent,
+            pointBorderColor: themePalette.accent,
+          },
+          {
+            label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
+            data: result.averages.ems,
+            borderColor: themePalette.success,
+            backgroundColor: themePalette.success,
+            tension: 0.35,
+            fill: false,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            pointBackgroundColor: themePalette.success,
+            pointBorderColor: themePalette.success,
+          },
+          {
+            label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+            data: result.averages.self,
+            borderColor: themePalette.weekendAccent,
+            backgroundColor: themePalette.weekendAccent,
+            tension: 0.35,
+            fill: false,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            pointBackgroundColor: themePalette.weekendAccent,
+            pointBorderColor: themePalette.weekendAccent,
+          },
+        ];
+      }
+
+      if (!hasData) {
         setChartCardMessage(canvas, TEXT.charts?.empty);
         dashboardState.charts.hourly = null;
         return;
       }
       setChartCardMessage(canvas, null);
 
-      const baseSeries = computeHourlySeries(records, weekdayValue, HOURLY_STAY_BUCKET_ALL, metricValue, 'all');
-      const baseMax = baseSeries?.averages?.all
-        ? Math.max(0, ...baseSeries.averages.all)
-        : 0;
-      const suggestedMax = baseMax > 0
-        ? Math.ceil(baseMax * 1.1 * 10) / 10
-        : undefined;
       dashboardState.hourlyYAxisSuggestedMax = suggestedMax ?? null;
 
       const labels = HEATMAP_HOURS;
@@ -9159,44 +9438,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         type: 'line',
         data: {
           labels,
-          datasets: [
-            {
-              label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-              data: result.averages.all,
-              borderColor: themePalette.accent,
-              backgroundColor: themePalette.accentSoft,
-              tension: 0.35,
-              fill: false,
-              pointRadius: 2,
-              pointHoverRadius: 4,
-              pointBackgroundColor: themePalette.accent,
-              pointBorderColor: themePalette.accent,
-            },
-            {
-              label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
-              data: result.averages.ems,
-              borderColor: themePalette.success,
-              backgroundColor: themePalette.success,
-              tension: 0.35,
-              fill: false,
-              pointRadius: 2,
-              pointHoverRadius: 4,
-              pointBackgroundColor: themePalette.success,
-              pointBorderColor: themePalette.success,
-            },
-            {
-              label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-              data: result.averages.self,
-              borderColor: themePalette.weekendAccent,
-              backgroundColor: themePalette.weekendAccent,
-              tension: 0.35,
-              fill: false,
-              pointRadius: 2,
-              pointHoverRadius: 4,
-              pointBackgroundColor: themePalette.weekendAccent,
-              pointBorderColor: themePalette.weekendAccent,
-            },
-          ],
+          datasets,
         },
         options: {
           responsive: true,
@@ -13768,6 +14010,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         dashboardState.primaryDaily = primaryDaily.slice();
         dashboardState.dataMeta = dataset.meta || null;
         populateChartYearOptions(dailyStats);
+        populateHourlyCompareYearOptions(dailyStats);
         const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
           ? Number(settings.calculations.windowDays)
           : DEFAULT_SETTINGS.calculations.windowDays;
@@ -13951,6 +14194,24 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
 
     if (selectors.hourlyStaySelect) {
       selectors.hourlyStaySelect.addEventListener('change', handleHourlyFilterChange);
+    }
+
+    if (selectors.hourlyCompareToggle) {
+      selectors.hourlyCompareToggle.addEventListener('change', handleHourlyCompareToggle);
+    }
+
+    if (selectors.hourlyCompareYearA) {
+      selectors.hourlyCompareYearA.addEventListener('change', handleHourlyCompareYearsChange);
+    }
+
+    if (selectors.hourlyCompareYearB) {
+      selectors.hourlyCompareYearB.addEventListener('change', handleHourlyCompareYearsChange);
+    }
+
+    if (Array.isArray(selectors.hourlyCompareSeriesButtons)) {
+      selectors.hourlyCompareSeriesButtons.forEach((button) => {
+        button.addEventListener('click', handleHourlyCompareSeriesClick);
+      });
     }
 
     if (selectors.hourlyResetFilters) {
