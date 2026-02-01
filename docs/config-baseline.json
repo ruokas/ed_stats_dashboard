@@ -1,0 +1,62 @@
+{
+  "dataSource": {
+    "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv",
+    "feedback": {
+      "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4ghdkkUJw5pYjb7nTDgoGdaTIUjLT7bD_8q05QyBNR4Z-tTVqhWMvXGemJUIneXyyUF_8-O-EftK/pub?gid=369777093&single=true&output=csv"
+    },
+    "ed": {
+      "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv"
+    },
+    "historical": {
+      "enabled": true,
+      "label": "Papildomas istorinis (5 metai)",
+      "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?output=csv"
+    }
+  },
+  "csv": {
+    "arrival": "Atvykimo data",
+    "discharge": "Išrašymo data",
+    "dayNight": "Diena/naktis",
+    "gmp": "GMP",
+    "department": "Nukreiptas į padalinį",
+    "number": "Numeris",
+    "trueValues": "1,true,taip,t,yes,y,GMP,su GMP,GMP (su GMP)",
+    "hospitalizedValues": "",
+    "nightKeywords": "nakt,night",
+    "dayKeywords": "dien,ryt,vak,day"
+  },
+  "calculations": {
+    "windowDays": 365,
+    "recentDays": 7,
+    "nightStartHour": 20,
+    "nightEndHour": 7
+  },
+  "output": {
+    "pageTitle": "RŠL SMPS statistika",
+    "title": "RŠL SMPS statistika",
+    "subtitle": "Greita statistikos apžvalga.",
+    "kpiTitle": "Pagrindiniai rodikliai",
+    "kpiSubtitle": "Paskutinė pamaina ir palyginimas su metiniu vidurkiu",
+    "chartsTitle": "Pacientų srautai",
+    "chartsSubtitle": "Kasdieniai skaičiai, srautas pagal sprendimą ir atvykimų žemėlapis",
+    "recentTitle": "Paskutinės 7 dienos",
+    "recentSubtitle": "Kasdienė suvestinė pagal naujausius duomenis.",
+    "monthlyTitle": "Mėnesinė suvestinė",
+    "monthlySubtitle": "Kalendoriniai mėnesiai (paskutiniai 12 mėnesių).",
+    "yearlyTitle": "Metinė suvestinė",
+    "yearlySubtitle": "Kalendoriniai metai (paskutiniai 5 metai).",
+    "feedbackTitle": "Pacientų atsiliepimai",
+    "feedbackSubtitle": "Apibendrinti apklausos rezultatai.",
+    "feedbackDescription": "Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.",
+    "feedbackTrendTitle": "Bendro vertinimo dinamika",
+    "footerSource": "",
+    "scrollTopLabel": "Grįžti į pradžią",
+    "tabOverviewLabel": "Bendras vaizdas",
+    "tabEdLabel": "RŠL SMPS skydelis",
+    "edTitle": "RŠL SMPS skydelis",
+    "showRecent": true,
+    "showMonthly": true,
+    "showYearly": true,
+    "showFeedback": true
+  }
+}

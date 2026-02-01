@@ -1,65 +1,30 @@
 import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js';
-
-    /**
-     * Įkelia Chart.js iš CDN naudojant klasikinį <script>, kad išvengtume CORS/MIME klaidų.
-     * Jei biblioteka jau užkrauta (pvz., iš ankstesnio seanso), panaudojamas esamas egzempliorius.
-     * @returns {Promise<typeof window.Chart|null>}
-     */
-    let chartJsPromise = null;
-
-      function loadChartJs() {
-        if (window.Chart) {
-          return Promise.resolve(window.Chart);
-        }
-
-      if (!chartJsPromise) {
-        chartJsPromise = new Promise((resolve) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-          script.defer = true;
-          script.onload = () => resolve(window.Chart ?? null);
-          script.onerror = (error) => {
-            console.error('Nepavyko įkelti Chart.js bibliotekos:', error);
-            chartJsPromise = null;
-            resolve(null);
-          };
-          document.head.appendChild(script);
-        });
-      }
-
-      return chartJsPromise;
-    }
-
-    function runAfterDomAndIdle(task, { timeout = 1200 } = {}) {
-      if (typeof task !== 'function') {
-        return;
-      }
-
-      const execute = () => {
-        if (typeof window.requestIdleCallback === 'function') {
-          window.requestIdleCallback(() => task(), { timeout });
-        } else {
-          window.setTimeout(() => task(), timeout);
-        }
-      };
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', execute, { once: true });
-      } else {
-        execute();
-      }
-    }
-
-    function enableLazyLoading() {
-      document.querySelectorAll('img:not([loading])').forEach((img) => {
-        if (!img.dataset?.forceEager) {
-          img.loading = 'lazy';
-        }
-      });
-      document.querySelectorAll('iframe:not([loading])').forEach((frame) => {
-        frame.loading = 'lazy';
-      });
-    }
+import { loadChartJs } from './src/utils/chart-loader.js';
+import { runAfterDomAndIdle, enableLazyLoading } from './src/utils/dom.js';
+import { debounce } from './src/utils/debounce.js';
+import { createSelectors } from './src/state/selectors.js';
+import { createDashboardState } from './src/state/dashboardState.js';
+import { createMainDataHandlers } from './src/data/main-data.js';
+import { createFeedbackHandlers } from './src/data/feedback.js';
+import { createEdHandlers } from './src/data/ed.js';
+import { computeDailyStats, computeMonthlyStats, computeYearlyStats, formatLocalDateKey } from './src/data/stats.js';
+import {
+  numberFormatter,
+  decimalFormatter,
+  oneDecimalFormatter,
+  percentFormatter,
+  monthFormatter,
+  monthOnlyFormatter,
+  shortDateFormatter,
+  monthDayFormatter,
+  statusTimeFormatter,
+  tvTimeFormatter,
+  tvDateFormatter,
+  weekdayLongFormatter,
+  textCollator,
+  dailyDateFormatter,
+  capitalizeSentence,
+} from './src/utils/format.js';
 
     function initializeServiceWorker() {
       registerServiceWorker('/service-worker.js').then((registration) => {
@@ -899,48 +864,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       };
     }
 
-    // Formatai datoms ir skaičiams (LT locale).
-    const numberFormatter = new Intl.NumberFormat('lt-LT');
-    const decimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const oneDecimalFormatter = new Intl.NumberFormat('lt-LT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-    const percentFormatter = new Intl.NumberFormat('lt-LT', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
-    const monthFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' });
-    const monthOnlyFormatter = new Intl.DateTimeFormat('lt-LT', { month: 'short' });
-    const shortDateFormatter = new Intl.DateTimeFormat('lt-LT', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    const monthDayFormatter = new Intl.DateTimeFormat('lt-LT', { month: '2-digit', day: '2-digit' });
-    const statusTimeFormatter = new Intl.DateTimeFormat('lt-LT', { dateStyle: 'short', timeStyle: 'short' });
-    const tvTimeFormatter = new Intl.DateTimeFormat('lt-LT', { hour: '2-digit', minute: '2-digit' });
-    const tvDateFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long', day: '2-digit', month: 'long' });
-    const weekdayLongFormatter = new Intl.DateTimeFormat('lt-LT', { weekday: 'long' });
-    const textCollator = new Intl.Collator('lt-LT', { sensitivity: 'base', usage: 'sort' });
-    const dailyDateFormatter = new Intl.DateTimeFormat('lt-LT', {
-      weekday: 'short',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-
-    function capitalizeSentence(text) {
-      if (typeof text !== 'string') {
-        return '';
-      }
-      const trimmed = text.trim();
-      if (!trimmed) {
-        return '';
-      }
-      return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`;
-    }
-
-    function debounce(fn, delay = 200) {
-      let timeoutId;
-      return (...args) => {
-        window.clearTimeout(timeoutId);
-        timeoutId = window.setTimeout(() => {
-          fn(...args);
-        }, delay);
-      };
-    }
-
     function storeCopyButtonBaseLabel(button) {
       if (!button || button.dataset.copyLabelBase) {
         return;
@@ -1481,6 +1404,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const titleGap = title ? 12 : 0;
       let titleLines = [];
       let titleHeight = 0;
+      const tmpCanvas = document.createElement('canvas');
+      const tmpCtx = tmpCanvas.getContext('2d');
       if (title && tmpCtx) {
         tmpCtx.font = title.font;
         const maxWidth = Math.max(0, tableWidth - padding * 2);
@@ -1489,9 +1414,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       }
       const headerOffsetY = padding + titleHeight + titleGap;
       const legendGap = legend ? 10 : 0;
-
-      const tmpCanvas = document.createElement('canvas');
-      const tmpCtx = tmpCanvas.getContext('2d');
       let legendLines = [];
       let legendLineHeight = 0;
       let legendHeight = 0;
@@ -2006,155 +1928,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       }, AUTO_REFRESH_INTERVAL_MS);
     }
 
-    const selectors = {
-      hero: document.querySelector('header.hero'),
-      title: document.getElementById('pageTitle'),
-      subtitle: document.getElementById('pageSubtitle'),
-      tabSwitcher: document.getElementById('tabSwitcher'),
-      tabButtons: Array.from(document.querySelectorAll('[data-tab-target]')),
-      tabPanels: Array.from(document.querySelectorAll('[data-tab-panel]')),
-      tabOverview: document.getElementById('tabOverview'),
-      edNavButton: document.getElementById('edNavButton'),
-      closeEdPanelBtn: document.getElementById('closeEdPanelBtn'),
-      overviewPanel: document.getElementById('panelOverview'),
-      edPanel: document.getElementById('panelEd'),
-      status: document.getElementById('status'),
-      footerSource: document.getElementById('footerSource'),
-      kpiHeading: document.getElementById('kpiHeading'),
-      kpiSubtitle: document.getElementById('kpiSubtitle'),
-      kpiSummary: document.getElementById('kpiSummary'),
-      kpiGrid: document.getElementById('kpiGrid'),
-      chartHeading: document.getElementById('chartHeading'),
-      chartSubtitle: document.getElementById('chartSubtitle'),
-      dailyCaption: document.getElementById('dailyChartLabel'),
-      dailyCaptionContext: document.getElementById('dailyChartContext'),
-      dowCaption: document.getElementById('dowChartTitle'),
-      dowStayCaption: document.getElementById('dowStayChartTitle'),
-      dowCaptionContext: document.getElementById('dowChartContext'),
-      dowStayCaptionContext: document.getElementById('dowStayChartContext'),
-      hourlyCaption: document.getElementById('hourlyChartTitle'),
-      hourlyMetricLabel: document.getElementById('hourlyMetricLabel'),
-      hourlyMetricButtons: Array.from(document.querySelectorAll('[data-hourly-metric]')),
-      hourlyDepartmentLabel: document.getElementById('hourlyDepartmentLabel'),
-      hourlyDepartmentInput: document.getElementById('hourlyDepartment'),
-      hourlyDepartmentSuggestions: document.getElementById('hourlyDepartmentSuggestions'),
-      hourlyDepartmentToggle: document.getElementById('hourlyDepartmentToggle'),
-      hourlyCompareToggle: document.getElementById('hourlyCompareToggle'),
-      hourlyCompareYearA: document.getElementById('hourlyCompareYearA'),
-      hourlyCompareYearB: document.getElementById('hourlyCompareYearB'),
-      hourlyCompareSeriesGroup: document.querySelector('.hourly-compare-series'),
-      hourlyCompareSeriesButtons: Array.from(document.querySelectorAll('[data-hourly-compare-series]')),
-      hourlyWeekdayLabel: document.getElementById('hourlyWeekdayLabel'),
-      hourlyWeekdaySelect: document.getElementById('hourlyWeekday'),
-      hourlyStayLabel: document.getElementById('hourlyStayLabel'),
-      hourlyStaySelect: document.getElementById('hourlyStayBucket'),
-      hourlyResetFilters: document.getElementById('hourlyResetFilters'),
-      funnelCaption: document.getElementById('funnelChartTitle'),
-      heatmapCaption: document.getElementById('arrivalHeatmapTitle'),
-      heatmapContainer: document.getElementById('arrivalHeatmap'),
-      heatmapMetricSelect: document.getElementById('heatmapMetric'),
-      heatmapMetricLabel: document.getElementById('heatmapMetricLabel'),
-      chartYearLabel: document.getElementById('chartYearLabel'),
-      chartYearSelect: document.getElementById('chartYear'),
-      chartPeriodButtons: Array.from(document.querySelectorAll('[data-chart-period]')),
-      chartFiltersSummary: document.getElementById('chartFiltersSummary'),
-      chartFiltersForm: document.getElementById('chartFiltersForm'),
-      chartFilterArrival: document.getElementById('chartArrival'),
-      chartFilterDisposition: document.getElementById('chartDisposition'),
-      chartFilterCardType: document.getElementById('chartCardType'),
-      chartFilterCompareGmp: document.getElementById('chartCompareGmp'),
-      chartCards: Array.from(document.querySelectorAll('.chart-grid .chart-card')),
-      chartCopyButtons: Array.from(document.querySelectorAll('[data-chart-copy]')),
-      chartDownloadButtons: Array.from(document.querySelectorAll('[data-chart-download]')),
-      tableDownloadButtons: Array.from(document.querySelectorAll('[data-table-download]')),
-      recentHeading: document.getElementById('recentHeading'),
-      recentSubtitle: document.getElementById('recentSubtitle'),
-      recentCaption: document.getElementById('recentCaption'),
-      recentTable: document.getElementById('recentTable'),
-      monthlyHeading: document.getElementById('monthlyHeading'),
-      monthlySubtitle: document.getElementById('monthlySubtitle'),
-      monthlyCaption: document.getElementById('monthlyCaption'),
-      monthlyTable: document.getElementById('monthlyTable'),
-      yearlyHeading: document.getElementById('yearlyHeading'),
-      yearlySubtitle: document.getElementById('yearlySubtitle'),
-      yearlyCaption: document.getElementById('yearlyCaption'),
-      yearlyTable: document.getElementById('yearlyTable'),
-      feedbackHeading: document.getElementById('feedbackHeading'),
-      feedbackSubtitle: document.getElementById('feedbackSubtitle'),
-      feedbackDescription: document.getElementById('feedbackDescription'),
-      feedbackFiltersSummary: document.getElementById('feedbackFiltersSummary'),
-      feedbackRespondentFilter: document.getElementById('feedbackRespondentFilter'),
-      feedbackRespondentLabel: document.getElementById('feedbackRespondentLabel'),
-      feedbackLocationFilter: document.getElementById('feedbackLocationFilter'),
-      feedbackLocationLabel: document.getElementById('feedbackLocationLabel'),
-      feedbackCaption: document.getElementById('feedbackCaption'),
-      feedbackCards: document.getElementById('feedbackCards'),
-      feedbackTrendTitle: document.getElementById('feedbackTrendTitle'),
-      feedbackTrendSubtitle: document.getElementById('feedbackTrendSubtitle'),
-      feedbackTrendControls: document.getElementById('feedbackTrendControls'),
-      feedbackTrendControlsLabel: document.getElementById('feedbackTrendControlsLabel'),
-      feedbackTrendButtons: Array.from(document.querySelectorAll('[data-trend-months]')),
-      feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
-      feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
-      feedbackTrendChart: document.getElementById('feedbackTrendChart'),
-      feedbackTable: document.getElementById('feedbackTable'),
-      feedbackColumnMonth: document.getElementById('feedbackColumnMonth'),
-      feedbackColumnResponses: document.getElementById('feedbackColumnResponses'),
-      feedbackColumnOverall: document.getElementById('feedbackColumnOverall'),
-      feedbackColumnDoctors: document.getElementById('feedbackColumnDoctors'),
-      feedbackColumnNurses: document.getElementById('feedbackColumnNurses'),
-      feedbackColumnAides: document.getElementById('feedbackColumnAides'),
-      feedbackColumnWaiting: document.getElementById('feedbackColumnWaiting'),
-      feedbackColumnContact: document.getElementById('feedbackColumnContact'),
-      edHeading: document.getElementById('edHeading'),
-      edStatus: document.getElementById('edStatus'),
-      edSearchInput: document.getElementById('edSearchInput'),
-      edCards: document.getElementById('edCards'),
-      edDispositionsTitle: document.getElementById('edDispositionsTitle'),
-      edDispositionsChart: document.getElementById('edDispositionsChart'),
-      edDispositionsMessage: document.getElementById('edDispositionsMessage'),
-      edStandardSection: document.getElementById('edStandardSection'),
-      edTvToggleBtn: document.getElementById('toggleTvBtn'),
-      edTvPanel: document.getElementById('edTvPanel'),
-      edTvTitle: document.getElementById('edTvTitle'),
-      edTvSubtitle: document.getElementById('edTvSubtitle'),
-      edTvClockTime: document.getElementById('edTvClockTime'),
-      edTvClockDate: document.getElementById('edTvClockDate'),
-      edTvUpdated: document.getElementById('edTvUpdated'),
-      edTvStatusText: document.getElementById('edTvStatusText'),
-      edTvNotice: document.getElementById('edTvNotice'),
-      edTvPrimaryTitle: document.getElementById('edTvPrimaryTitle'),
-      edTvStaffTitle: document.getElementById('edTvStaffTitle'),
-      edTvFlowTitle: document.getElementById('edTvFlowTitle'),
-      edTvPrimaryMetrics: document.getElementById('edTvPrimaryMetrics'),
-      edTvStaffMetrics: document.getElementById('edTvStaffMetrics'),
-      edTvFlowMetrics: document.getElementById('edTvFlowMetrics'),
-      edTvTriageTitle: document.getElementById('edTvTriageTitle'),
-      edTvTriageMeta: document.getElementById('edTvTriageMeta'),
-      edTvTriageList: document.getElementById('edTvTriageList'),
-      themeToggleBtn: document.getElementById('themeToggleBtn'),
-      recentSection: document.querySelector('[data-section="recent"]'),
-      monthlySection: document.querySelector('[data-section="monthly"]'),
-      yearlySection: document.querySelector('[data-section="yearly"]'),
-      feedbackSection: document.querySelector('[data-section="feedback"]'),
-      kpiControls: document.querySelector('.kpi-controls'),
-      kpiFiltersForm: document.getElementById('kpiFiltersForm'),
-      kpiWindow: document.getElementById('kpiWindow'),
-      kpiShift: document.getElementById('kpiShift'),
-      kpiArrival: document.getElementById('kpiArrival'),
-      kpiDisposition: document.getElementById('kpiDisposition'),
-      kpiCardType: document.getElementById('kpiCardType'),
-      kpiFiltersReset: document.getElementById('kpiFiltersReset'),
-      kpiFiltersToggle: document.getElementById('kpiFiltersToggle'),
-      kpiActiveInfo: document.getElementById('kpiActiveFilters'),
-      compareToggle: document.getElementById('compareToggle'),
-      compareCard: document.getElementById('compareCard'),
-      compareSummary: document.getElementById('compareSummary'),
-      compareClear: document.getElementById('compareClear'),
-      sectionNav: document.querySelector('.section-nav'),
-      sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
-      scrollTopBtn: document.getElementById('scrollTopBtn'),
-    };
+    const selectors = createSelectors();
 
     const sectionNavState = {
       initialized: false,
@@ -2178,4654 +1952,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     let pendingLayoutRefresh = false;
     const scrollTopState = { visible: false, rafHandle: null };
     const tvState = { clockHandle: null };
-
-    function areStylesheetsLoaded() {
-      const sheets = Array.from(document.styleSheets || []);
-      if (!sheets.length) {
-        return false;
-      }
-      return sheets.every((sheet) => {
-        try {
-          return sheet.cssRules != null;
-        } catch (error) {
-          return true;
-        }
-      });
-    }
-
-    function waitForFontsAndStyles() {
-      if (layoutStylesReadyPromise) {
-        return layoutStylesReadyPromise;
-      }
-
-      const fontsPromise = document.fonts && typeof document.fonts.ready?.then === 'function'
-        ? document.fonts.ready.catch(() => undefined)
-        : Promise.resolve();
-
-      const stylesheetPromise = new Promise((resolve) => {
-        let attempts = 0;
-        const maxAttempts = 40;
-        const check = () => {
-          if (areStylesheetsLoaded() || attempts >= maxAttempts) {
-            resolve();
-            return;
-          }
-          attempts += 1;
-          window.setTimeout(check, 50);
-        };
-        check();
-      });
-
-      layoutStylesReadyPromise = Promise.all([fontsPromise, stylesheetPromise]).then(() => {
-        layoutStylesReady = true;
-        return true;
-      });
-
-      return layoutStylesReadyPromise;
-    }
-
-    function computeVisibleRatio(rect) {
-      if (!rect) {
-        return 0;
-      }
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-      const elementHeight = Math.max(rect.height, 1);
-      if (viewportHeight <= 0 || elementHeight <= 0) {
-        return 0;
-      }
-      const visibleTop = Math.max(rect.top, 0);
-      const visibleBottom = Math.min(rect.bottom, viewportHeight);
-      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-      return Math.max(0, Math.min(1, visibleHeight / elementHeight));
-    }
-
-    function updateLayoutMetrics() {
-      const heroElement = selectors.hero || document.querySelector('header.hero');
-      const navElement = selectors.sectionNav;
-      const heroHeight = heroElement ? heroElement.getBoundingClientRect().height : 0;
-      const navHeight = navElement ? navElement.getBoundingClientRect().height : 0;
-      layoutMetrics.hero = heroHeight;
-      layoutMetrics.nav = navHeight;
-      const rootStyle = document.documentElement.style;
-      rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
-      rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
-    }
-
-    function getScrollOffset() {
-      if (typeof window.scrollY === 'number') {
-        return window.scrollY;
-      }
-      if (typeof window.pageYOffset === 'number') {
-        return window.pageYOffset;
-      }
-      return (document.documentElement && document.documentElement.scrollTop) || (document.body && document.body.scrollTop) || 0;
-    }
-
-    function updateScrollTopButtonVisibility() {
-      const button = selectors.scrollTopBtn;
-      if (!button) {
-        return;
-      }
-      const threshold = Math.max(160, Math.round(layoutMetrics.hero + layoutMetrics.nav + 40));
-      const offset = getScrollOffset();
-      const shouldShow = offset > threshold;
-      if (scrollTopState.visible !== shouldShow) {
-        scrollTopState.visible = shouldShow;
-        button.dataset.visible = shouldShow ? 'true' : 'false';
-      }
-      button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-      button.setAttribute('tabindex', shouldShow ? '0' : '-1');
-    }
-
-    function scheduleScrollTopUpdate() {
-      if (scrollTopState.rafHandle) {
-        return;
-      }
-      const raf = typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame.bind(window)
-        : (cb) => window.setTimeout(cb, 16);
-      scrollTopState.rafHandle = raf(() => {
-        scrollTopState.rafHandle = null;
-        updateScrollTopButtonVisibility();
-      });
-    }
-
-    function initializeScrollTopButton() {
-      const button = selectors.scrollTopBtn;
-      if (!button) {
-        return;
-      }
-      button.setAttribute('aria-hidden', 'true');
-      button.setAttribute('tabindex', '-1');
-      updateScrollTopButtonVisibility();
-      button.addEventListener('click', () => {
-        const prefersReduced = typeof window.matchMedia === 'function'
-          && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (typeof window.scrollTo === 'function') {
-          if (!prefersReduced && 'scrollBehavior' in document.documentElement.style) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          } else {
-            window.scrollTo(0, 0);
-          }
-        } else {
-          document.documentElement.scrollTop = 0;
-          document.body.scrollTop = 0;
-        }
-      });
-      window.addEventListener('scroll', scheduleScrollTopUpdate, { passive: true });
-      window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
-    }
-
-    function updateActiveNavLink(headingId) {
-      sectionNavState.activeHeadingId = headingId;
-      sectionNavState.items.forEach((item) => {
-        const isActive = Boolean(headingId) && item.headingId === headingId && !item.link.hidden;
-        if (isActive) {
-          item.link.setAttribute('aria-current', 'true');
-        } else {
-          item.link.removeAttribute('aria-current');
-        }
-        item.link.classList.toggle('is-active', isActive);
-      });
-    }
-
-    function evaluateActiveSection() {
-      if (!sectionNavState.initialized) {
-        return;
-      }
-      const visibleItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden') && !item.link.hidden);
-      if (!visibleItems.length) {
-        updateActiveNavLink('');
-        return;
-      }
-      const sorted = visibleItems
-        .map((item) => {
-          const data = sectionVisibility.get(item.headingId) || { ratio: 0, top: Number.POSITIVE_INFINITY };
-          return { item, ratio: data.ratio, top: data.top };
-        })
-        .sort((a, b) => {
-          const ratioDiff = b.ratio - a.ratio;
-          if (Math.abs(ratioDiff) > 0.0001) {
-            return ratioDiff;
-          }
-          return a.top - b.top;
-        });
-      const best = sorted.find((candidate) => candidate.ratio > 0)
-        ?? sorted.find((candidate) => candidate.top >= 0)
-        ?? sorted[0];
-      if (best && best.item.headingId !== sectionNavState.activeHeadingId) {
-        updateActiveNavLink(best.item.headingId);
-      }
-    }
-
-    function updateSectionNavCompactState(forceCompact) {
-      if (!selectors.sectionNav) {
-        return;
-      }
-
-      const isCompact = typeof forceCompact === 'boolean'
-        ? forceCompact
-        : Boolean(sectionNavCompactQuery?.matches);
-
-      selectors.sectionNav.classList.toggle('section-nav--compact', isCompact);
-
-      selectors.sectionNavLinks.forEach((link) => {
-        const labelText = (link.querySelector('.section-nav__label')?.textContent || '').trim();
-        if (!labelText) {
-          link.removeAttribute('aria-label');
-          link.removeAttribute('title');
-          return;
-        }
-
-        link.setAttribute('aria-label', labelText);
-        if (isCompact) {
-          link.setAttribute('title', labelText);
-        } else {
-          link.removeAttribute('title');
-        }
-      });
-    }
-
-    function refreshSectionObserver() {
-      const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
-      if (!observedItems.length) {
-        if (sectionObserver) {
-          sectionObserver.disconnect();
-          sectionObserver = null;
-        }
-        evaluateActiveSection();
-        return;
-      }
-      if (sectionObserver) {
-        sectionObserver.disconnect();
-      }
-      const topOffset = Math.max(
-        0,
-        Math.round(Math.max(layoutMetrics.hero || 0, layoutMetrics.nav || 0)),
-      );
-      sectionObserver = new IntersectionObserver(handleSectionIntersection, {
-        rootMargin: `-${topOffset}px 0px -55% 0px`,
-        threshold: [0.1, 0.25, 0.5, 0.75, 1],
-      });
-      observedItems.forEach((item) => {
-        sectionObserver.observe(item.section);
-        const rect = item.section.getBoundingClientRect();
-        sectionVisibility.set(item.headingId, {
-          ratio: computeVisibleRatio(rect),
-          top: rect.top,
-        });
-      });
-      evaluateActiveSection();
-    }
-
-    function scheduleLayoutRefresh() {
-      if (!sectionNavState.initialized) {
-        return;
-      }
-      if (!layoutRefreshAllowed || !layoutStylesReady) {
-        pendingLayoutRefresh = true;
-        return;
-      }
-      if (typeof window.requestAnimationFrame !== 'function') {
-        updateLayoutMetrics();
-        refreshSectionObserver();
-        updateScrollTopButtonVisibility();
-        return;
-      }
-      if (layoutRefreshHandle) {
-        window.cancelAnimationFrame(layoutRefreshHandle);
-      }
-      layoutRefreshHandle = window.requestAnimationFrame(() => {
-        layoutRefreshHandle = null;
-        updateLayoutMetrics();
-        refreshSectionObserver();
-        updateScrollTopButtonVisibility();
-      });
-    }
-
-    function flushPendingLayoutRefresh() {
-      if (pendingLayoutRefresh && layoutRefreshAllowed && layoutStylesReady) {
-        pendingLayoutRefresh = false;
-        scheduleLayoutRefresh();
-      }
-    }
-
-    function handleSectionIntersection(entries) {
-      entries.forEach((entry) => {
-        const item = sectionNavState.itemBySection.get(entry.target);
-        if (!item) {
-          return;
-        }
-        if (item.link.hidden || (item.section && item.section.hasAttribute('hidden'))) {
-          sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
-          return;
-        }
-        sectionVisibility.set(item.headingId, {
-          ratio: entry.isIntersecting ? entry.intersectionRatio : 0,
-          top: entry.boundingClientRect.top,
-        });
-      });
-      evaluateActiveSection();
-    }
-
-    function handleNavKeydown(event) {
-      if (!sectionNavState.initialized) {
-        return;
-      }
-      const controllableKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
-      if (!controllableKeys.includes(event.key)) {
-        return;
-      }
-      const target = event.target;
-      if (!(target instanceof HTMLAnchorElement)) {
-        return;
-      }
-      const visibleLinks = sectionNavState.items
-        .map((item) => item.link)
-        .filter((link) => link && !link.hidden && !link.hasAttribute('aria-hidden'));
-      if (!visibleLinks.length) {
-        return;
-      }
-      const currentIndex = visibleLinks.indexOf(target);
-      if (currentIndex === -1) {
-        return;
-      }
-      event.preventDefault();
-      let nextIndex = currentIndex;
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-        nextIndex = (currentIndex + 1) % visibleLinks.length;
-      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-        nextIndex = (currentIndex - 1 + visibleLinks.length) % visibleLinks.length;
-      } else if (event.key === 'Home') {
-        nextIndex = 0;
-      } else if (event.key === 'End') {
-        nextIndex = visibleLinks.length - 1;
-      }
-      const nextLink = visibleLinks[nextIndex];
-      if (nextLink && typeof nextLink.focus === 'function') {
-        nextLink.focus({ preventScroll: true });
-      }
-    }
-
-    function setupNavKeyboardNavigation() {
-      if (!selectors.sectionNav || selectors.sectionNav.dataset.keyboard === 'bound') {
-        return;
-      }
-      selectors.sectionNav.addEventListener('keydown', handleNavKeydown);
-      selectors.sectionNav.dataset.keyboard = 'bound';
-    }
-
-    function syncSectionNavVisibility() {
-      if (!sectionNavState.initialized) {
-        return;
-      }
-      let hasVisible = false;
-      sectionNavState.items.forEach((item) => {
-        const { link, section } = item;
-        const sectionVisible = Boolean(section) && !section.hasAttribute('hidden');
-        if (sectionVisible) {
-          hasVisible = true;
-          link.hidden = false;
-          link.removeAttribute('aria-hidden');
-          link.removeAttribute('tabindex');
-          const rect = section.getBoundingClientRect();
-          sectionVisibility.set(item.headingId, {
-            ratio: computeVisibleRatio(rect),
-            top: rect.top,
-          });
-        } else {
-          link.hidden = true;
-          link.setAttribute('aria-hidden', 'true');
-          link.setAttribute('tabindex', '-1');
-          sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
-          if (sectionObserver && section) {
-            sectionObserver.unobserve(section);
-          }
-        }
-      });
-
-      if (!hasVisible) {
-        updateActiveNavLink('');
-      } else if (!sectionNavState.activeHeadingId) {
-        const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
-        if (firstVisible) {
-          updateActiveNavLink(firstVisible.headingId);
-        }
-      } else {
-        const activeItem = sectionNavState.items.find((item) => item.headingId === sectionNavState.activeHeadingId);
-        if (!activeItem || activeItem.link.hidden) {
-          const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
-          updateActiveNavLink(firstVisible ? firstVisible.headingId : '');
-        }
-      }
-
-      evaluateActiveSection();
-      scheduleLayoutRefresh();
-    }
-
-    function initializeSectionNavigation() {
-      if (sectionNavState.initialized) {
-        scheduleLayoutRefresh();
-        return;
-      }
-      if (!selectors.sectionNav) {
-        return;
-      }
-      layoutRefreshAllowed = true;
-      const links = Array.from(selectors.sectionNav.querySelectorAll('.section-nav__link'));
-      selectors.sectionNavLinks = links;
-      sectionNavState.items = [];
-      sectionNavState.itemBySection = new Map();
-      sectionVisibility.clear();
-
-      links.forEach((link) => {
-        const href = link.getAttribute('href') || '';
-        const headingId = href.startsWith('#') ? href.slice(1) : '';
-        const headingEl = headingId ? document.getElementById(headingId) : null;
-        const sectionEl = headingEl ? headingEl.closest('section[data-section]') : null;
-        if (!headingId || !sectionEl) {
-          link.hidden = true;
-          link.setAttribute('aria-hidden', 'true');
-          link.setAttribute('tabindex', '-1');
-          return;
-        }
-        const item = { link, headingId, section: sectionEl };
-        sectionNavState.items.push(item);
-        sectionNavState.itemBySection.set(sectionEl, item);
-        sectionVisibility.set(headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
-      });
-
-      if (!sectionNavState.items.length) {
-        return;
-      }
-
-      selectors.sectionNavLinks = sectionNavState.items.map((item) => item.link);
-
-      updateSectionNavCompactState();
-      if (sectionNavCompactQuery) {
-        const handleCompactChange = (event) => updateSectionNavCompactState(event.matches);
-        if (typeof sectionNavCompactQuery.addEventListener === 'function') {
-          sectionNavCompactQuery.addEventListener('change', handleCompactChange);
-        } else if (typeof sectionNavCompactQuery.addListener === 'function') {
-          sectionNavCompactQuery.addListener(handleCompactChange);
-        }
-      }
-
-      sectionNavState.initialized = true;
-      setupNavKeyboardNavigation();
-
-      if (typeof ResizeObserver === 'function') {
-        if (layoutResizeObserver && typeof layoutResizeObserver.disconnect === 'function') {
-          layoutResizeObserver.disconnect();
-        }
-        layoutResizeObserver = new ResizeObserver(() => {
-          scheduleLayoutRefresh();
-        });
-        if (selectors.hero) {
-          layoutResizeObserver.observe(selectors.hero);
-        }
-        if (selectors.sectionNav) {
-          layoutResizeObserver.observe(selectors.sectionNav);
-        }
-      }
-
-      window.addEventListener('resize', scheduleLayoutRefresh, { passive: true });
-      window.addEventListener('load', scheduleLayoutRefresh);
-
-      syncSectionNavVisibility();
-      waitForFontsAndStyles().then(() => {
-        updateLayoutMetrics();
-        refreshSectionObserver();
-        updateScrollTopButtonVisibility();
-        flushPendingLayoutRefresh();
-      });
-    }
-
-    function cloneSettings(value) {
-      return JSON.parse(JSON.stringify(value));
-    }
-
-    function deepMerge(target, source) {
-      if (!source || typeof source !== 'object') {
-        return target;
-      }
-      Object.entries(source).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          target[key] = value.slice();
-        } else if (value && typeof value === 'object') {
-          if (!target[key] || typeof target[key] !== 'object') {
-            target[key] = {};
-          }
-          deepMerge(target[key], value);
-        } else if (value !== undefined) {
-          target[key] = value;
-        }
-      });
-      return target;
-    }
-
-    function updateClientConfig(patch = {}) {
-      if (!patch || typeof patch !== 'object') {
-        return clientConfig;
-      }
-      clientConfig = { ...clientConfig, ...patch };
-      clientStore.save(clientConfig);
-      return clientConfig;
-    }
-
-    function clampNumber(value, min, max, fallback) {
-      const parsed = Number.parseInt(value, 10);
-      if (Number.isFinite(parsed)) {
-        let result = parsed;
-        if (Number.isFinite(min) && result < min) {
-          result = min;
-        }
-        if (Number.isFinite(max) && result > max) {
-          result = max;
-        }
-        return result;
-      }
-      return fallback;
-    }
-
-    function normalizeSettings(rawSettings) {
-      const originalSettings = rawSettings && typeof rawSettings === 'object' ? rawSettings : {};
-      let sanitizedSettings = {};
-      if (originalSettings && typeof originalSettings === 'object') {
-        try {
-          sanitizedSettings = cloneSettings(originalSettings);
-        } catch (error) {
-          console.warn('Nepavyko nukopijuoti išsaugotų nustatymų, naudojami tik numatytieji.', error);
-          sanitizedSettings = {};
-        }
-      }
-
-      const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), sanitizedSettings ?? {});
-      merged.dataSource.url = (merged.dataSource.url ?? '').trim();
-      if (!merged.dataSource.feedback || typeof merged.dataSource.feedback !== 'object') {
-        merged.dataSource.feedback = cloneSettings(DEFAULT_SETTINGS.dataSource.feedback);
-      }
-      merged.dataSource.feedback.url = (merged.dataSource.feedback.url ?? '').trim();
-
-      if (!merged.dataSource.ed || typeof merged.dataSource.ed !== 'object') {
-        merged.dataSource.ed = cloneSettings(DEFAULT_SETTINGS.dataSource.ed);
-      }
-      merged.dataSource.ed.url = (merged.dataSource.ed.url ?? '').trim();
-
-      if (!merged.dataSource.historical || typeof merged.dataSource.historical !== 'object') {
-        merged.dataSource.historical = cloneSettings(DEFAULT_SETTINGS.dataSource.historical);
-      }
-      merged.dataSource.historical.enabled = merged.dataSource.historical.enabled !== false;
-      merged.dataSource.historical.url = (merged.dataSource.historical.url ?? '').trim();
-      merged.dataSource.historical.label = merged.dataSource.historical.label != null
-        ? String(merged.dataSource.historical.label)
-        : DEFAULT_SETTINGS.dataSource.historical.label;
-
-      ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'number', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
-        .forEach((key) => {
-          merged.csv[key] = merged.csv[key] != null
-            ? String(merged.csv[key])
-            : String(DEFAULT_SETTINGS.csv[key] ?? '');
-        });
-
-      merged.calculations.windowDays = clampNumber(
-        merged.calculations.windowDays,
-        7,
-        365,
-        DEFAULT_SETTINGS.calculations.windowDays,
-      );
-      merged.calculations.recentDays = clampNumber(
-        merged.calculations.recentDays,
-        1,
-        60,
-        DEFAULT_SETTINGS.calculations.recentDays,
-      );
-      merged.calculations.nightStartHour = clampNumber(
-        merged.calculations.nightStartHour,
-        0,
-        23,
-        DEFAULT_SETTINGS.calculations.nightStartHour,
-      );
-      merged.calculations.nightEndHour = clampNumber(
-        merged.calculations.nightEndHour,
-        0,
-        23,
-        DEFAULT_SETTINGS.calculations.nightEndHour,
-      );
-
-      merged.output.pageTitle = merged.output.pageTitle != null ? String(merged.output.pageTitle) : DEFAULT_SETTINGS.output.pageTitle;
-      merged.output.title = merged.output.title != null ? String(merged.output.title) : DEFAULT_SETTINGS.output.title;
-      merged.output.subtitle = merged.output.subtitle != null ? String(merged.output.subtitle) : DEFAULT_SETTINGS.output.subtitle;
-      merged.output.kpiTitle = merged.output.kpiTitle != null ? String(merged.output.kpiTitle) : DEFAULT_SETTINGS.output.kpiTitle;
-      merged.output.kpiSubtitle = merged.output.kpiSubtitle != null ? String(merged.output.kpiSubtitle) : DEFAULT_SETTINGS.output.kpiSubtitle;
-      merged.output.chartsTitle = merged.output.chartsTitle != null ? String(merged.output.chartsTitle) : DEFAULT_SETTINGS.output.chartsTitle;
-      merged.output.chartsSubtitle = merged.output.chartsSubtitle != null ? String(merged.output.chartsSubtitle) : DEFAULT_SETTINGS.output.chartsSubtitle;
-      merged.output.recentTitle = merged.output.recentTitle != null ? String(merged.output.recentTitle) : DEFAULT_SETTINGS.output.recentTitle;
-      merged.output.recentSubtitle = merged.output.recentSubtitle != null ? String(merged.output.recentSubtitle) : DEFAULT_SETTINGS.output.recentSubtitle;
-      if (merged.output.monthlyTitle == null && merged.output.weeklyTitle != null) {
-        merged.output.monthlyTitle = merged.output.weeklyTitle;
-      }
-      if (merged.output.monthlySubtitle == null && merged.output.weeklySubtitle != null) {
-        merged.output.monthlySubtitle = merged.output.weeklySubtitle;
-      }
-      if (merged.output.showMonthly == null && merged.output.showWeekly != null) {
-        merged.output.showMonthly = merged.output.showWeekly;
-      }
-      merged.output.monthlyTitle = merged.output.monthlyTitle != null ? String(merged.output.monthlyTitle) : DEFAULT_SETTINGS.output.monthlyTitle;
-      merged.output.monthlySubtitle = merged.output.monthlySubtitle != null ? String(merged.output.monthlySubtitle) : DEFAULT_SETTINGS.output.monthlySubtitle;
-      merged.output.yearlyTitle = merged.output.yearlyTitle != null ? String(merged.output.yearlyTitle) : DEFAULT_SETTINGS.output.yearlyTitle;
-      merged.output.yearlySubtitle = merged.output.yearlySubtitle != null ? String(merged.output.yearlySubtitle) : DEFAULT_SETTINGS.output.yearlySubtitle;
-      merged.output.feedbackTitle = merged.output.feedbackTitle != null ? String(merged.output.feedbackTitle) : DEFAULT_SETTINGS.output.feedbackTitle;
-      merged.output.feedbackSubtitle = merged.output.feedbackSubtitle != null ? String(merged.output.feedbackSubtitle) : DEFAULT_SETTINGS.output.feedbackSubtitle;
-      merged.output.feedbackDescription = merged.output.feedbackDescription != null ? String(merged.output.feedbackDescription) : DEFAULT_SETTINGS.output.feedbackDescription;
-      merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
-      merged.output.scrollTopLabel = merged.output.scrollTopLabel != null ? String(merged.output.scrollTopLabel) : DEFAULT_SETTINGS.output.scrollTopLabel;
-      merged.output.tabOverviewLabel = merged.output.tabOverviewLabel != null ? String(merged.output.tabOverviewLabel) : DEFAULT_SETTINGS.output.tabOverviewLabel;
-      merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
-      merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
-      merged.output.showRecent = Boolean(merged.output.showRecent);
-      merged.output.showMonthly = Boolean(merged.output.showMonthly);
-      merged.output.showYearly = Boolean(merged.output.showYearly);
-      merged.output.showFeedback = Boolean(merged.output.showFeedback);
-
-      return merged;
-    }
-
-    function getRuntimeConfigUrl() {
-      if (typeof window === 'undefined') {
-        return 'config.json';
-      }
-      const params = new URLSearchParams(window.location.search);
-      const paramUrl = params.get('config');
-      if (paramUrl && paramUrl.trim().length) {
-        return paramUrl.trim();
-      }
-      return 'config.json';
-    }
-
-    async function loadSettingsFromConfig() {
-      const configUrl = getRuntimeConfigUrl();
-      try {
-        const response = await fetch(configUrl, { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`Nepavyko atsisiųsti konfigūracijos (${response.status})`);
-        }
-        const configData = await response.json();
-        return normalizeSettings(configData);
-      } catch (error) {
-        console.warn('Nepavyko įkelti config.json, naudojami numatytieji.', error);
-        return normalizeSettings({});
-      }
-    }
-
-    function applySettingsToText() {
-      TEXT.title = settings.output.title || DEFAULT_SETTINGS.output.title;
-      TEXT.subtitle = settings.output.subtitle || DEFAULT_SETTINGS.output.subtitle;
-      TEXT.tabs.overview = settings.output.tabOverviewLabel || DEFAULT_SETTINGS.output.tabOverviewLabel;
-      TEXT.tabs.ed = settings.output.tabEdLabel || DEFAULT_SETTINGS.output.tabEdLabel;
-      TEXT.ed.title = settings.output.edTitle || DEFAULT_SETTINGS.output.edTitle;
-      TEXT.kpis.title = settings.output.kpiTitle || DEFAULT_SETTINGS.output.kpiTitle;
-      TEXT.kpis.subtitle = settings.output.kpiSubtitle || DEFAULT_SETTINGS.output.kpiSubtitle;
-      TEXT.charts.title = settings.output.chartsTitle || DEFAULT_SETTINGS.output.chartsTitle;
-      TEXT.charts.subtitle = settings.output.chartsSubtitle || DEFAULT_SETTINGS.output.chartsSubtitle;
-      TEXT.recent.title = settings.output.recentTitle || DEFAULT_SETTINGS.output.recentTitle;
-      TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
-      TEXT.monthly.title = settings.output.monthlyTitle || DEFAULT_SETTINGS.output.monthlyTitle;
-      TEXT.monthly.subtitle = settings.output.monthlySubtitle || DEFAULT_SETTINGS.output.monthlySubtitle;
-      TEXT.yearly.title = settings.output.yearlyTitle || DEFAULT_SETTINGS.output.yearlyTitle;
-      TEXT.yearly.subtitle = settings.output.yearlySubtitle || DEFAULT_SETTINGS.output.yearlySubtitle;
-      TEXT.feedback.title = settings.output.feedbackTitle || DEFAULT_SETTINGS.output.feedbackTitle;
-      TEXT.feedback.subtitle = settings.output.feedbackSubtitle || DEFAULT_SETTINGS.output.feedbackSubtitle;
-      TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
-      TEXT.feedback.trend.title = settings.output.feedbackTrendTitle || DEFAULT_SETTINGS.output.feedbackTrendTitle;
-      TEXT.scrollTop = settings.output.scrollTopLabel || DEFAULT_SETTINGS.output.scrollTopLabel;
-      const pageTitle = settings.output.pageTitle || TEXT.title || DEFAULT_SETTINGS.output.pageTitle;
-      document.title = pageTitle;
-    }
-
-    function applyFooterSource() {
-      if (selectors.footerSource) {
-        selectors.footerSource.textContent = settings.output.footerSource || DEFAULT_FOOTER_SOURCE;
-      }
-    }
-
-    function toggleSectionVisibility(element, isVisible) {
-      if (!element) {
-        return;
-      }
-      if (isVisible) {
-        element.removeAttribute('hidden');
-        element.removeAttribute('aria-hidden');
-      } else {
-        element.setAttribute('hidden', 'hidden');
-        element.setAttribute('aria-hidden', 'true');
-      }
-    }
-
-    function applySectionVisibility() {
-      toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
-      toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
-      toggleSectionVisibility(selectors.yearlySection, settings.output.showYearly);
-      toggleSectionVisibility(selectors.feedbackSection, settings.output.showFeedback);
-      syncSectionNavVisibility();
-    }
-
-    function parseCandidateList(value, fallback = '') {
-      const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
-      return base
-        .replace(/\r\n/g, '\n')
-        .split(/[\n,|;]+/)
-        .map((part) => part.trim())
-        .filter((part) => part.length > 0);
-    }
-
-    function toHeaderCandidates(value, fallback) {
-      return parseCandidateList(value, fallback);
-    }
-
-    function toNormalizedList(value, fallback) {
-      return parseCandidateList(value, fallback).map((token) => token.toLowerCase());
-    }
-
-    function buildCsvRuntime(csvSettings) {
-      const fallback = DEFAULT_SETTINGS.csv;
-      const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
-      const departmentHeaders = departmentHasValue
-        ? toHeaderCandidates(csvSettings.department, '')
-        : [];
-
-      const runtime = {
-        arrivalHeaders: toHeaderCandidates(csvSettings.arrival, fallback.arrival),
-        dischargeHeaders: toHeaderCandidates(csvSettings.discharge, fallback.discharge),
-        dayNightHeaders: toHeaderCandidates(csvSettings.dayNight, fallback.dayNight),
-        gmpHeaders: toHeaderCandidates(csvSettings.gmp, fallback.gmp),
-        departmentHeaders,
-        trueValues: toNormalizedList(csvSettings.trueValues, fallback.trueValues),
-        hospitalizedValues: toNormalizedList(csvSettings.hospitalizedValues, fallback.hospitalizedValues),
-        nightKeywords: toNormalizedList(csvSettings.nightKeywords, fallback.nightKeywords),
-        dayKeywords: toNormalizedList(csvSettings.dayKeywords, fallback.dayKeywords),
-        labels: {
-          arrival: csvSettings.arrival || fallback.arrival,
-          discharge: csvSettings.discharge || fallback.discharge,
-          dayNight: csvSettings.dayNight || fallback.dayNight,
-          gmp: csvSettings.gmp || fallback.gmp,
-          department: departmentHasValue ? csvSettings.department : fallback.department,
-        },
-      };
-      runtime.hasHospitalizedValues = runtime.hospitalizedValues.length > 0;
-      runtime.requireDepartment = departmentHasValue;
-      return runtime;
-    }
-
-    function resolveColumnIndex(headerNormalized, candidates) {
-      if (!Array.isArray(candidates) || !candidates.length) {
-        return -1;
-      }
-      for (const candidate of candidates) {
-        const trimmed = candidate.trim();
-        const match = headerNormalized.find((column) => column.original === trimmed);
-        if (match) {
-          return match.index;
-        }
-      }
-      for (const candidate of candidates) {
-        const normalized = candidate.trim().toLowerCase();
-        const match = headerNormalized.find((column) => column.normalized === normalized);
-        if (match) {
-          return match.index;
-        }
-      }
-      for (const candidate of candidates) {
-        const normalized = candidate.trim().toLowerCase();
-        const match = headerNormalized.find((column) => column.normalized.includes(normalized));
-        if (match) {
-          return match.index;
-        }
-      }
-      return -1;
-    }
-
-    function matchesWildcard(normalized, candidate) {
-      if (!candidate) {
-        return false;
-      }
-      if (candidate === '*') {
-        return normalized.length > 0;
-      }
-      if (!candidate.includes('*')) {
-        return normalized === candidate;
-      }
-      const parts = candidate.split('*').filter((part) => part.length > 0);
-      if (!parts.length) {
-        return normalized.length > 0;
-      }
-      return parts.every((fragment) => normalized.includes(fragment));
-    }
-
-    function detectHospitalized(value, csvRuntime) {
-      const raw = value != null ? String(value).trim() : '';
-      if (!raw) {
-        return false;
-      }
-      if (!csvRuntime.hasHospitalizedValues) {
-        return true;
-      }
-      const normalized = raw.toLowerCase();
-      return csvRuntime.hospitalizedValues.some((candidate) => matchesWildcard(normalized, candidate));
-    }
-
-
-    /**
-     * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
-     */
-    const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Treč', 'Ketv', 'Penkt', 'Šešt', 'Sekm'];
-    const HEATMAP_WEEKDAY_FULL = [
-      'Pirmadienis',
-      'Antradienis',
-      'Trečiadienis',
-      'Ketvirtadienis',
-      'Penktadienis',
-      'Šeštadienis',
-      'Sekmadienis',
-    ];
-    const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
-    const HOURLY_WEEKDAY_ALL = 'all';
-    const HOURLY_STAY_BUCKET_ALL = 'all';
-    const HOURLY_METRIC_ARRIVALS = 'arrivals';
-    const HOURLY_METRIC_HOSPITALIZED = 'hospitalized';
-    const HOURLY_METRICS = [HOURLY_METRIC_ARRIVALS, HOURLY_METRIC_HOSPITALIZED];
-    const HOURLY_COMPARE_SERIES_ALL = 'all';
-    const HOURLY_COMPARE_SERIES_EMS = 'ems';
-    const HOURLY_COMPARE_SERIES_SELF = 'self';
-    const HOURLY_COMPARE_SERIES = [HOURLY_COMPARE_SERIES_ALL, HOURLY_COMPARE_SERIES_EMS, HOURLY_COMPARE_SERIES_SELF];
-    const HOURLY_STAY_BUCKETS = [
-      { key: 'lt4', min: 0, max: 4 },
-      { key: '4to8', min: 4, max: 8 },
-      { key: '8to16', min: 8, max: 16 },
-      { key: 'gt16', min: 16, max: Number.POSITIVE_INFINITY },
-    ];
-    const HEATMAP_METRIC_KEYS = ['arrivals', 'discharges', 'hospitalized', 'avgDuration'];
-    const DEFAULT_HEATMAP_METRIC = HEATMAP_METRIC_KEYS[0];
-
-    const dashboardState = {
-      loading: false,
-      queuedReload: false,
-      hasLoadedOnce: false,
-      charts: {
-        daily: null,
-        dow: null,
-        dowStay: null,
-        hourly: null,
-        funnel: null,
-        feedbackTrend: null,
-        edDispositions: null,
-      },
-      chartLib: null,
-      usingFallback: false,
-      lastErrorMessage: '',
-      rawRecords: [],
-      dailyStats: [],
-      primaryRecords: [],
-      primaryDaily: [],
-      monthly: {
-        all: [],
-        window: [],
-      },
-      dataMeta: null,
-      loadCounter: 0,
-      chartPeriod: 30,
-      chartYear: null,
-      heatmapMetric: DEFAULT_HEATMAP_METRIC,
-      hourlyWeekday: 'all',
-      hourlyStayBucket: 'all',
-      hourlyMetric: HOURLY_METRIC_ARRIVALS,
-      hourlyDepartment: 'all',
-      hourlyCompareEnabled: false,
-      hourlyCompareYears: [],
-      hourlyCompareSeries: HOURLY_COMPARE_SERIES_ALL,
-      hourlyYAxisSuggestedMax: null,
-      hourlyDepartmentOptions: [],
-      hourlyDepartmentSuggestIndex: -1,
-      chartData: {
-        baseDaily: [],
-        baseRecords: [],
-        dailyWindow: [],
-        funnel: null,
-        heatmap: null,
-        filteredDaily: [],
-        filteredRecords: [],
-        filteredWindowRecords: [],
-      },
-      theme: 'light',
-      fullscreen: false,
-      tvMode: false,
-      activeTab: 'overview',
-      compare: {
-        active: false,
-        selections: [],
-      },
-      contrastWarning: false,
-      chartFilters: getDefaultChartFilters(),
-      kpi: {
-        filters: getDefaultKpiFilters(),
-        records: [],
-        daily: [],
-      },
-      feedback: {
-        summary: null,
-        monthly: [],
-        usingFallback: false,
-        lastErrorMessage: '',
-        trendWindow: 6,
-        records: [],
-        filteredRecords: [],
-        filters: getDefaultFeedbackFilters(),
-        filterOptions: { respondent: [], location: [] },
-        commentRotation: { timerId: null, index: 0, entries: [] },
-      },
-      ed: {
-        records: [],
-        summary: null,
-        dispositions: [],
-        daily: [],
-        usingFallback: false,
-        lastErrorMessage: '',
-        error: null,
-        updatedAt: null,
-        commentRotation: { timerId: null, index: 0, entries: [] },
-      },
-      edSearchQuery: '',
-    };
-
-    function resetMonthlyState() {
-      dashboardState.monthly.all = [];
-      dashboardState.monthly.window = [];
-    }
-
-    function setFullscreenMode(active, options = {}) {
-      const previousState = dashboardState.fullscreen === true;
-      const allowFullscreen = dashboardState.activeTab === 'ed';
-      const requestedActive = Boolean(active);
-      const isActive = requestedActive && allowFullscreen;
-      dashboardState.fullscreen = isActive;
-      if (isActive) {
-        document.body.setAttribute('data-fullscreen', 'true');
-      } else {
-        document.body.removeAttribute('data-fullscreen');
-      }
-      if (selectors.tabSwitcher) {
-        if (isActive) {
-          selectors.tabSwitcher.setAttribute('hidden', 'hidden');
-          selectors.tabSwitcher.setAttribute('aria-hidden', 'true');
-        } else {
-          selectors.tabSwitcher.removeAttribute('hidden');
-          selectors.tabSwitcher.removeAttribute('aria-hidden');
-        }
-      }
-      const shouldRestoreFocus = options.restoreFocus;
-      if (!isActive
-        && previousState
-        && shouldRestoreFocus
-        && selectors.edNavButton
-        && typeof selectors.edNavButton.focus === 'function') {
-        selectors.edNavButton.focus();
-      }
-      updateFullscreenControls();
-    }
-
-    function updateFullscreenControls() {
-      if (!selectors.edNavButton) {
-        return;
-      }
-      const panelLabel = selectors.edNavButton.dataset.panelLabel
-        || settings?.output?.tabEdLabel
-        || TEXT.tabs.ed;
-      const openLabel = selectors.edNavButton.dataset.openLabel
-        || (typeof TEXT.edToggle?.open === 'function'
-          ? TEXT.edToggle.open(panelLabel)
-          : `Atidaryti ${panelLabel}`);
-      const closeLabel = selectors.edNavButton.dataset.closeLabel
-        || (typeof TEXT.edToggle?.close === 'function'
-          ? TEXT.edToggle.close(panelLabel)
-          : `Uždaryti ${panelLabel}`);
-      const isFullscreen = dashboardState.fullscreen === true;
-      const isEdActive = dashboardState.activeTab === 'ed';
-      const activeLabel = isFullscreen && isEdActive ? closeLabel : openLabel;
-      selectors.edNavButton.setAttribute('aria-label', activeLabel);
-      selectors.edNavButton.title = activeLabel;
-      selectors.edNavButton.dataset.fullscreenAvailable = isEdActive ? 'true' : 'false';
-      updateTvToggleControls();
-    }
-
-    function updateTvToggleControls() {
-      if (!selectors.edTvToggleBtn) {
-        return;
-      }
-      const toggleTexts = TEXT.edTv?.toggle || {};
-      const isActive = dashboardState.tvMode === true && dashboardState.activeTab === 'ed';
-      const label = isActive
-        ? (toggleTexts.exit || 'Išjungti ekraną')
-        : (toggleTexts.enter || 'Įjungti ekraną');
-      const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
-      if (labelTarget) {
-        labelTarget.textContent = label;
-      }
-      selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
-      selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
-      selectors.edTvToggleBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    }
-
-    function updateEdTvClock() {
-      if (!selectors.edTvClockTime || !selectors.edTvClockDate) {
-        return;
-      }
-      const now = new Date();
-      selectors.edTvClockTime.textContent = tvTimeFormatter.format(now);
-      selectors.edTvClockDate.textContent = capitalizeSentence(tvDateFormatter.format(now));
-    }
-
-    function startTvClock() {
-      updateEdTvClock();
-      if (tvState.clockHandle != null) {
-        return;
-      }
-      tvState.clockHandle = window.setInterval(updateEdTvClock, 15000);
-    }
-
-    function stopTvClock() {
-      if (tvState.clockHandle != null) {
-        window.clearInterval(tvState.clockHandle);
-        tvState.clockHandle = null;
-      }
-    }
-
-    function setTvMode(active, options = {}) {
-      if (!selectors.edTvPanel) {
-        dashboardState.tvMode = false;
-        document.body.removeAttribute('data-tv-mode');
-        if (selectors.edStandardSection) {
-          selectors.edStandardSection.removeAttribute('hidden');
-          selectors.edStandardSection.removeAttribute('aria-hidden');
-        }
-        stopTvClock();
-        if (!options.silent) {
-          scheduleLayoutRefresh();
-        }
-        return;
-      }
-      const shouldEnable = Boolean(active);
-      const previous = dashboardState.tvMode === true;
-      if (shouldEnable === previous && !options.force) {
-        updateTvToggleControls();
-        return;
-      }
-      dashboardState.tvMode = shouldEnable;
-      if (shouldEnable) {
-        document.body.setAttribute('data-tv-mode', 'true');
-        if (selectors.edStandardSection) {
-          selectors.edStandardSection.setAttribute('hidden', 'hidden');
-          selectors.edStandardSection.setAttribute('aria-hidden', 'true');
-        }
-        if (selectors.edTvPanel) {
-          selectors.edTvPanel.removeAttribute('hidden');
-          selectors.edTvPanel.setAttribute('aria-hidden', 'false');
-        }
-        startTvClock();
-        setFullscreenMode(true);
-        const dataset = dashboardState.ed || {};
-        const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
-        const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
-        const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
-        const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
-          || Number.isFinite(summary?.occupiedBeds)
-          || Number.isFinite(summary?.nursePatientsPerStaff)
-          || Number.isFinite(summary?.doctorPatientsPerStaff);
-        const displayVariant = summaryMode === 'snapshot'
-          || (summaryMode === 'hybrid' && hasSnapshotMetrics)
-          ? 'snapshot'
-          : 'legacy';
-        const statusInfo = buildEdStatus(summary, dataset, displayVariant);
-        updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
-      } else {
-        document.body.removeAttribute('data-tv-mode');
-        if (selectors.edStandardSection) {
-          selectors.edStandardSection.removeAttribute('hidden');
-          selectors.edStandardSection.removeAttribute('aria-hidden');
-        }
-        if (selectors.edTvPanel) {
-          selectors.edTvPanel.setAttribute('hidden', 'hidden');
-          selectors.edTvPanel.setAttribute('aria-hidden', 'true');
-        }
-        stopTvClock();
-      }
-      updateTvToggleControls();
-      if (!options.silent) {
-        scheduleLayoutRefresh();
-      }
-    }
-
-    /**
-     * Pirminis tekstų suleidimas iš konfigūracijos (galima perrašyti iš kitų failų).
-     */
-    function applyTextContent() {
-      selectors.title.textContent = TEXT.title;
-      selectors.subtitle.textContent = TEXT.subtitle;
-      if (selectors.tabOverview) {
-        selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
-      }
-      if (selectors.edNavButton) {
-        const edNavLabel = settings.output.tabEdLabel || TEXT.tabs.ed;
-        const openLabel = typeof TEXT.edToggle?.open === 'function'
-          ? TEXT.edToggle.open(edNavLabel)
-          : `Atidaryti ${edNavLabel}`;
-        const closeLabel = typeof TEXT.edToggle?.close === 'function'
-          ? TEXT.edToggle.close(edNavLabel)
-          : `Uždaryti ${edNavLabel}`;
-        selectors.edNavButton.dataset.panelLabel = edNavLabel;
-        selectors.edNavButton.dataset.openLabel = openLabel;
-        selectors.edNavButton.dataset.closeLabel = closeLabel;
-        const isActive = dashboardState.activeTab === 'ed';
-        const currentLabel = isActive ? closeLabel : openLabel;
-        selectors.edNavButton.setAttribute('aria-label', currentLabel);
-        selectors.edNavButton.title = currentLabel;
-      }
-      if (selectors.closeEdPanelBtn) {
-        const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
-        const closeLabel = typeof TEXT.ed?.closeButton === 'function'
-          ? TEXT.ed.closeButton(overviewLabel)
-          : (TEXT.ed?.closeButton || 'Grįžti');
-        selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
-        selectors.closeEdPanelBtn.title = closeLabel;
-        const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
-        if (labelSpan) {
-          labelSpan.textContent = closeLabel;
-        } else {
-          selectors.closeEdPanelBtn.textContent = closeLabel;
-        }
-      }
-      if (selectors.edTvToggleBtn) {
-        const toggleTexts = TEXT.edTv?.toggle || {};
-        const isActive = dashboardState.tvMode === true;
-        const label = isActive
-          ? (toggleTexts.exit || 'Išjungti ekraną')
-          : (toggleTexts.enter || 'Įjungti ekraną');
-        const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
-        if (labelTarget) {
-          labelTarget.textContent = label;
-        }
-        selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
-        selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
-      }
-      if (selectors.edTvTitle && TEXT.edTv?.title) {
-        selectors.edTvTitle.textContent = TEXT.edTv.title;
-      }
-      if (selectors.edTvSubtitle) {
-        selectors.edTvSubtitle.textContent = TEXT.edTv?.subtitle || selectors.edTvSubtitle.textContent || '';
-      }
-      if (selectors.themeToggleBtn) {
-        selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
-        selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
-      }
-      updateFullscreenControls();
-      selectors.kpiHeading.textContent = TEXT.kpis.title;
-      selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
-      selectors.chartHeading.textContent = TEXT.charts.title;
-      selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
-      if (selectors.chartYearLabel) {
-        selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
-      }
-      if (selectors.chartYearSelect) {
-        const firstOption = selectors.chartYearSelect.querySelector('option[value="all"]');
-        if (firstOption) {
-          firstOption.textContent = TEXT.charts.yearFilterAll;
-        }
-      }
-      selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
-      if (selectors.dailyCaptionContext) {
-        selectors.dailyCaptionContext.textContent = '';
-      }
-      selectors.dowCaption.textContent = TEXT.charts.dowCaption;
-      if (selectors.dowStayCaption) {
-        selectors.dowStayCaption.textContent = TEXT.charts.dowStayCaption;
-      }
-      if (selectors.hourlyWeekdayLabel) {
-        const hourlyLabelText = TEXT.charts?.hourlyWeekdayLabel || 'Savaitės diena';
-        selectors.hourlyWeekdayLabel.textContent = hourlyLabelText;
-        if (selectors.hourlyWeekdaySelect) {
-          selectors.hourlyWeekdaySelect.setAttribute('aria-label', hourlyLabelText);
-          selectors.hourlyWeekdaySelect.title = hourlyLabelText;
-        }
-      }
-      if (selectors.hourlyMetricLabel) {
-        syncHourlyMetricButtons();
-      }
-      if (selectors.hourlyDepartmentLabel) {
-        const departmentLabelText = TEXT.charts?.hourlyDepartmentLabel || 'Skyrius';
-        selectors.hourlyDepartmentLabel.textContent = departmentLabelText;
-        if (selectors.hourlyDepartmentInput) {
-          selectors.hourlyDepartmentInput.setAttribute('aria-label', departmentLabelText);
-          selectors.hourlyDepartmentInput.title = departmentLabelText;
-          selectors.hourlyDepartmentInput.placeholder = TEXT.charts?.hourlyDepartmentAll || 'Visi skyriai';
-        }
-      }
-      if (selectors.hourlyStayLabel) {
-        const stayLabelText = TEXT.charts?.hourlyStayLabel || 'Buvimo trukmė';
-        selectors.hourlyStayLabel.textContent = stayLabelText;
-        if (selectors.hourlyStaySelect) {
-          selectors.hourlyStaySelect.setAttribute('aria-label', stayLabelText);
-          selectors.hourlyStaySelect.title = stayLabelText;
-        }
-      }
-      populateHourlyWeekdayOptions();
-      populateHourlyStayOptions();
-      syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
-      updateHourlyCaption(
-        dashboardState.hourlyWeekday,
-        dashboardState.hourlyStayBucket,
-        dashboardState.hourlyMetric,
-        dashboardState.hourlyDepartment,
-      );
-      const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
-        ? TEXT.charts.funnelCaptionWithYear(null)
-        : TEXT.charts.funnelCaption;
-      selectors.funnelCaption.textContent = funnelCaptionText;
-      if (selectors.heatmapMetricLabel) {
-        const heatmapLabelText = TEXT.charts?.heatmapMetricLabel || 'Rodiklis';
-        selectors.heatmapMetricLabel.textContent = heatmapLabelText;
-        if (selectors.heatmapMetricSelect) {
-          selectors.heatmapMetricSelect.setAttribute('aria-label', heatmapLabelText);
-          selectors.heatmapMetricSelect.title = `${heatmapLabelText} (Ctrl+Shift+H)`;
-        }
-      }
-      populateHeatmapMetricOptions();
-      updateHeatmapCaption(dashboardState.heatmapMetric);
-      selectors.recentHeading.textContent = TEXT.recent.title;
-      selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
-      selectors.recentCaption.textContent = TEXT.recent.caption;
-      selectors.monthlyHeading.textContent = TEXT.monthly.title;
-      selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
-      selectors.monthlyCaption.textContent = TEXT.monthly.caption;
-      if (selectors.yearlyHeading) {
-        selectors.yearlyHeading.textContent = TEXT.yearly.title;
-      }
-      if (selectors.yearlySubtitle) {
-        selectors.yearlySubtitle.textContent = TEXT.yearly.subtitle;
-      }
-      if (selectors.yearlyCaption) {
-        selectors.yearlyCaption.textContent = TEXT.yearly.caption;
-      }
-      selectors.feedbackHeading.textContent = TEXT.feedback.title;
-      selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
-      if (selectors.feedbackDescription) {
-        selectors.feedbackDescription.textContent = TEXT.feedback.description;
-      }
-      const feedbackFiltersText = TEXT.feedback?.filters || {};
-      if (selectors.feedbackRespondentLabel) {
-        selectors.feedbackRespondentLabel.textContent = feedbackFiltersText.respondent?.label || 'Kas pildo anketą';
-      }
-      if (selectors.feedbackLocationLabel) {
-        selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Šaltinis';
-      }
-      populateFeedbackFilterControls();
-      syncFeedbackFilterControls();
-      updateFeedbackFiltersSummary();
-      if (selectors.feedbackTrendTitle) {
-        selectors.feedbackTrendTitle.textContent = TEXT.feedback.trend.title;
-      }
-      updateFeedbackTrendSubtitle();
-      if (selectors.feedbackTrendControlsLabel) {
-        selectors.feedbackTrendControlsLabel.textContent = TEXT.feedback.trend.controlsLabel;
-      }
-      if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
-        const periodConfig = Array.isArray(TEXT.feedback.trend.periods) ? TEXT.feedback.trend.periods : [];
-        selectors.feedbackTrendButtons.forEach((button) => {
-          const months = Number.parseInt(button.dataset.trendMonths || '', 10);
-          const config = periodConfig.find((item) => Number.parseInt(item?.months, 10) === months);
-          if (config?.label) {
-            button.textContent = config.label;
-          }
-          if (config?.hint) {
-            button.title = config.hint;
-          } else {
-            button.removeAttribute('title');
-          }
-        });
-      }
-      syncFeedbackTrendControls();
-      if (selectors.feedbackCaption) {
-        selectors.feedbackCaption.textContent = TEXT.feedback.table.caption;
-      }
-      if (selectors.feedbackColumnMonth) {
-        selectors.feedbackColumnMonth.textContent = TEXT.feedback.table.headers.month;
-      }
-      if (selectors.feedbackColumnResponses) {
-        selectors.feedbackColumnResponses.textContent = TEXT.feedback.table.headers.responses;
-      }
-      if (selectors.feedbackColumnOverall) {
-        selectors.feedbackColumnOverall.textContent = TEXT.feedback.table.headers.overall;
-      }
-      if (selectors.feedbackColumnDoctors) {
-        selectors.feedbackColumnDoctors.textContent = TEXT.feedback.table.headers.doctors;
-      }
-      if (selectors.feedbackColumnNurses) {
-        selectors.feedbackColumnNurses.textContent = TEXT.feedback.table.headers.nurses;
-      }
-      if (selectors.feedbackColumnAides) {
-        selectors.feedbackColumnAides.textContent = TEXT.feedback.table.headers.aides;
-      }
-      if (selectors.feedbackColumnWaiting) {
-        selectors.feedbackColumnWaiting.textContent = TEXT.feedback.table.headers.waiting;
-      }
-      if (selectors.feedbackColumnContact) {
-        selectors.feedbackColumnContact.textContent = TEXT.feedback.table.headers.contact;
-      }
-      if (selectors.edHeading) {
-        selectors.edHeading.textContent = settings.output.edTitle || TEXT.ed.title;
-      }
-      if (selectors.edStatus) {
-        selectors.edStatus.textContent = TEXT.ed.status.loading;
-        selectors.edStatus.dataset.tone = 'info';
-      }
-      if (selectors.compareToggle) {
-        selectors.compareToggle.textContent = TEXT.compare.toggle;
-      }
-      if (selectors.scrollTopBtn) {
-        selectors.scrollTopBtn.textContent = TEXT.scrollTop;
-        selectors.scrollTopBtn.setAttribute('aria-label', TEXT.scrollTop);
-        selectors.scrollTopBtn.title = `${TEXT.scrollTop} (Home)`;
-      }
-      if (selectors.compareSummary) {
-        selectors.compareSummary.textContent = TEXT.compare.prompt;
-      }
-      hideStatusNote();
-    }
-
-    const statusDisplay = {
-      base: TEXT.status.loading,
-      note: '',
-      tone: 'info',
-    };
-
-    function applyTone(tone = 'info') {
-      const normalized = tone === 'error' ? 'error' : tone === 'warning' ? 'warning' : 'info';
-      if (normalized === 'error' || statusDisplay.tone === 'error') {
-        statusDisplay.tone = 'error';
-        return;
-      }
-      if (normalized === 'warning' || statusDisplay.tone === 'warning') {
-        statusDisplay.tone = 'warning';
-        return;
-      }
-      statusDisplay.tone = 'info';
-    }
-
-    function renderStatusDisplay() {
-      if (!selectors.status) return;
-      const parts = [statusDisplay.base, statusDisplay.note].filter(Boolean);
-      const message = parts.join(' · ');
-      selectors.status.classList.toggle('status--error', statusDisplay.tone === 'error');
-      selectors.status.dataset.tone = statusDisplay.tone;
-      if (!message) {
-        selectors.status.textContent = '';
-        selectors.status.setAttribute('hidden', 'hidden');
-        return;
-      }
-      selectors.status.textContent = message;
-      selectors.status.removeAttribute('hidden');
-    }
-
-    function hideStatusNote() {
-      statusDisplay.note = '';
-      applyTone('info');
-      renderStatusDisplay();
-    }
-
-    function showStatusNote(message, tone = 'info') {
-      statusDisplay.note = message || '';
-      applyTone(tone);
-      renderStatusDisplay();
-    }
-
-    function createChunkReporter(label) {
-      let lastUpdate = 0;
-      return (payload = {}) => {
-        const now = performance.now();
-        if (now - lastUpdate < 120) {
-          return;
-        }
-        lastUpdate = now;
-        const { receivedBytes = 0, current = 0, total = 0 } = payload;
-        const sizeKb = receivedBytes ? `~${Math.max(1, Math.round(receivedBytes / 1024))} KB` : '';
-        const percent = total > 0 ? `${Math.min(100, Math.round((current / total) * 100))}%` : '';
-        const progressLabel = percent || sizeKb;
-        if (!progressLabel && !label) {
-          return;
-        }
-        const message = label ? `${label}: įkeliama ${progressLabel}`.trim() : `Įkeliama ${progressLabel}`.trim();
-        showStatusNote(message, 'info');
-      };
-    }
-
-    function updateThemeToggleState(theme) {
-      if (!selectors.themeToggleBtn) {
-        return;
-      }
-      const isDark = theme === 'dark';
-      selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
-      selectors.themeToggleBtn.dataset.theme = theme;
-      selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
-    }
-
-    function parseColorValue(value) {
-      if (!value) {
-        return null;
-      }
-      const trimmed = value.trim();
-      if (trimmed.startsWith('#')) {
-        const hex = trimmed.slice(1);
-        if (hex.length === 3) {
-          const r = parseInt(hex[0] + hex[0], 16);
-          const g = parseInt(hex[1] + hex[1], 16);
-          const b = parseInt(hex[2] + hex[2], 16);
-          return { r, g, b };
-        }
-        if (hex.length === 6) {
-          const r = parseInt(hex.slice(0, 2), 16);
-          const g = parseInt(hex.slice(2, 4), 16);
-          const b = parseInt(hex.slice(4, 6), 16);
-          if ([r, g, b].every((component) => Number.isFinite(component))) {
-            return { r, g, b };
-          }
-        }
-        return null;
-      }
-      const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
-      if (rgbMatch) {
-        const parts = rgbMatch[1].split(',').map((part) => Number.parseFloat(part.trim()));
-        if (parts.length >= 3 && parts.slice(0, 3).every((component) => Number.isFinite(component))) {
-          return { r: parts[0], g: parts[1], b: parts[2] };
-        }
-      }
-      return null;
-    }
-
-    function computeLuminance(rgb) {
-      if (!rgb) {
-        return null;
-      }
-      const normalize = (channel) => {
-        const c = channel / 255;
-        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-      };
-      const r = normalize(rgb.r);
-      const g = normalize(rgb.g);
-      const b = normalize(rgb.b);
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    }
-
-    function checkKpiContrast() {
-      const rootStyles = getComputedStyle(document.body);
-      const surface = parseColorValue(rootStyles.getPropertyValue('--color-surface'));
-      const text = parseColorValue(rootStyles.getPropertyValue('--color-text'));
-      const surfaceLum = computeLuminance(surface);
-      const textLum = computeLuminance(text);
-      if (surfaceLum == null || textLum == null) {
-        dashboardState.contrastWarning = false;
-        return;
-      }
-      const lighter = Math.max(surfaceLum, textLum);
-      const darker = Math.min(surfaceLum, textLum);
-      const ratio = (lighter + 0.05) / (darker + 0.05);
-      if (ratio < 4.5) {
-        dashboardState.contrastWarning = true;
-        const existingMessage = statusDisplay.note || '';
-        if (existingMessage && existingMessage !== TEXT.theme.contrastWarning) {
-          const combined = existingMessage.includes(TEXT.theme.contrastWarning)
-            ? existingMessage
-            : `${existingMessage} ${TEXT.theme.contrastWarning}`;
-          showStatusNote(combined, 'warning');
-        } else {
-          showStatusNote(TEXT.theme.contrastWarning, 'warning');
-        }
-      } else if (dashboardState.contrastWarning) {
-        dashboardState.contrastWarning = false;
-        if (statusDisplay.note) {
-          const cleaned = statusDisplay.note.replace(TEXT.theme.contrastWarning, '').trim();
-          statusDisplay.note = cleaned;
-          renderStatusDisplay();
-        }
-      }
-    }
-
-    function applyTheme(theme, { persist = false } = {}) {
-      const normalized = theme === 'dark' ? 'dark' : 'light';
-      const targets = [document.documentElement, document.body].filter(Boolean);
-      targets.forEach((el) => {
-        el.setAttribute('data-theme', normalized);
-      });
-      dashboardState.theme = normalized;
-      updateThemeToggleState(normalized);
-      if (persist) {
-        try {
-          localStorage.setItem(THEME_STORAGE_KEY, normalized);
-        } catch (error) {
-          console.warn('Nepavyko išsaugoti temos nustatymo:', error);
-        }
-      }
-      if (typeof window !== 'undefined') {
-        window.ED_DASHBOARD_THEME = normalized;
-      }
-      checkKpiContrast();
-    }
-
-    function initializeTheme() {
-      const attributeTheme = (() => {
-        const htmlTheme = document.documentElement.getAttribute('data-theme');
-        const bodyTheme = document.body ? document.body.getAttribute('data-theme') : null;
-        const candidate = htmlTheme || bodyTheme;
-        return candidate === 'dark' || candidate === 'light' ? candidate : null;
-      })();
-
-      let storedTheme = null;
-      try {
-        storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      } catch (error) {
-        storedTheme = null;
-      }
-
-      const windowTheme = typeof window !== 'undefined' ? window.ED_DASHBOARD_THEME : null;
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const resolvedTheme = attributeTheme
-        || (windowTheme === 'dark' || windowTheme === 'light'
-          ? windowTheme
-          : storedTheme === 'dark' || storedTheme === 'light'
-            ? storedTheme
-            : prefersDark
-              ? 'dark'
-              : 'light');
-
-      applyTheme(resolvedTheme, { persist: false });
-    }
-
-    function toggleTheme() {
-      const nextTheme = dashboardState.theme === 'dark' ? 'light' : 'dark';
-      applyTheme(nextTheme, { persist: true });
-      rerenderChartsForTheme();
-    }
-
-    function setStatus(type, details = '') {
-      if (type === 'loading') {
-        statusDisplay.base = TEXT.status.loading;
-        statusDisplay.note = '';
-        statusDisplay.tone = 'info';
-        renderStatusDisplay();
-        return;
-      }
-
-      if (type === 'error') {
-        const message = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-        statusDisplay.base = message;
-        statusDisplay.note = TEXT.status.errorAdvice;
-        statusDisplay.tone = 'error';
-        renderStatusDisplay();
-        return;
-      }
-
-      const formatted = statusTimeFormatter.format(new Date());
-      if (dashboardState.usingFallback) {
-        statusDisplay.base = TEXT.status.fallbackSuccess(formatted);
-        statusDisplay.tone = 'warning';
-        const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
-          ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
-          : [];
-        const fallbackNote = dashboardState.lastErrorMessage
-          ? TEXT.status.fallbackNote(dashboardState.lastErrorMessage)
-          : TEXT.status.fallbackNote(TEXT.status.error);
-        const combinedNote = warningsList.length
-          ? `${fallbackNote} ${warningsList.join(' ')}`.trim()
-          : fallbackNote;
-        statusDisplay.note = combinedNote;
-        renderStatusDisplay();
-      } else {
-        statusDisplay.base = '';
-        statusDisplay.tone = 'info';
-        const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
-          ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
-          : [];
-        if (warningsList.length) {
-          statusDisplay.note = warningsList.join(' ');
-          statusDisplay.tone = 'warning';
-          renderStatusDisplay();
-        } else {
-          statusDisplay.note = '';
-          renderStatusDisplay();
-        }
-      }
-    }
-
-    function applyFeedbackStatusNote() {
-      if (dashboardState.usingFallback || !settings.output.showFeedback) {
-        return;
-      }
-      if (dashboardState.feedback.usingFallback) {
-        const reason = dashboardState.feedback.lastErrorMessage || TEXT.status.error;
-        showStatusNote(TEXT.feedback.status.fallback(reason), 'warning');
-        return;
-      }
-      if (dashboardState.feedback.lastErrorMessage) {
-        showStatusNote(TEXT.feedback.status.error(dashboardState.feedback.lastErrorMessage), 'warning');
-      }
-    }
-
-    /**
-     * CSV duomenų apdorojimo pagalbinės funkcijos: diagnostika, atsisiuntimas ir transformacija.
-     */
-    function formatUrlForDiagnostics(rawUrl) {
-      if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
-        return '';
-      }
-      try {
-        const parsed = new URL(rawUrl);
-        const safeParams = new URLSearchParams();
-        parsed.searchParams.forEach((value, key) => {
-          if (/token|key|auth|secret|signature|pass/i.test(key)) {
-            safeParams.append(key, '***');
-            return;
-          }
-          safeParams.append(key, value);
-        });
-        const query = safeParams.toString();
-        return `${parsed.origin}${parsed.pathname}${query ? `?${query}` : ''}`;
-      } catch (parseError) {
-        console.warn('Nepavyko normalizuoti URL diagnostikai:', parseError);
-        return rawUrl;
-      }
-    }
-
-    function describeError(error) {
-      if (!error) {
-        return TEXT.status.error;
-      }
-      const message = typeof error === 'string' ? error : error.message ?? TEXT.status.error;
-      const hints = [];
-      const diagnostic = typeof error === 'object' && error ? error.diagnostic : null;
-
-      if (diagnostic?.url) {
-        hints.push(`URL: ${diagnostic.url}.`);
-      }
-
-      if (diagnostic?.type === 'http') {
-        if (diagnostic.status === 404) {
-          hints.push('Patikrinkite, ar „Google Sheet“ paskelbta per „File → Share → Publish to web → CSV“ ir kad naudojamas publikuotas CSV adresas.');
-        } else if (diagnostic.status === 403) {
-          hints.push('Patikrinkite bendrinimo teises – dokumentas turi būti pasiekiamas be prisijungimo.');
-        } else if (diagnostic.status === 0) {
-          hints.push('Gautas atsakas be statuso – tikėtina tinklo arba CORS klaida.');
-        }
-        if (diagnostic.statusText) {
-          hints.push(`Serverio atsakymas: ${diagnostic.statusText}.`);
-        }
-      }
-
-      if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
-        hints.push('Nepavyko pasiekti šaltinio – patikrinkite interneto ryšį ir ar serveris leidžia CORS užklausas iš šio puslapio.');
-      }
-
-      if (/HTML atsakas/i.test(message)) {
-        hints.push('Gautas HTML vietoje CSV – nuorodoje turi būti „.../pub?output=csv“.');
-      }
-
-      if (diagnostic?.hint) {
-        hints.push(diagnostic.hint);
-      }
-
-      const renderedHints = hints.length ? ` ${hints.join(' ')}` : '';
-      if (/HTTP klaida:\s*404/.test(message)) {
-        return `HTTP 404 – nuoroda nerasta arba dokumentas nepublikuotas.${renderedHints}`;
-      }
-      if (/HTTP klaida:\s*403/.test(message)) {
-        return `HTTP 403 – prieiga uždrausta.${renderedHints}`;
-      }
-      if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
-        return `Nepavyko pasiekti šaltinio.${renderedHints}`;
-      }
-      if (/HTML atsakas/i.test(message)) {
-        return `Gautas HTML atsakas vietoje CSV.${renderedHints}`;
-      }
-      return `${message}${renderedHints}`.trim();
-    }
-
-    function createTextSignature(text) {
-      if (typeof text !== 'string') {
-        return '';
-      }
-      const length = text.length;
-      const head = text.slice(0, 128);
-      return `${length}:${head}`;
-    }
-
-    async function downloadCsv(url, { cacheInfo = null, onChunk } = {}) {
-      const headers = {};
-      if (cacheInfo?.etag) {
-        headers['If-None-Match'] = cacheInfo.etag;
-      }
-      if (cacheInfo?.lastModified) {
-        headers['If-Modified-Since'] = cacheInfo.lastModified;
-      }
-      const response = await fetch(url, { cache: 'no-store', headers });
-      const statusText = response.statusText || '';
-      const cacheStatusHeader = response.headers.get('x-cache-status') || '';
-      if (response.status === 304) {
-        return {
-          status: 304,
-          text: '',
-          contentType: response.headers.get('content-type') ?? '',
-          etag: cacheInfo?.etag || '',
-          lastModified: cacheInfo?.lastModified || '',
-          signature: cacheInfo?.signature || '',
-          cacheStatus: cacheStatusHeader || 'not-modified',
-        };
-      }
-      if (!response.ok) {
-        const error = new Error(`HTTP klaida: ${response.status}`);
-        error.diagnostic = {
-          type: 'http',
-          status: response.status,
-          statusText,
-          url: formatUrlForDiagnostics(url),
-        };
-        throw error;
-      }
-      let textContent = '';
-      if (response.body && typeof response.body.getReader === 'function') {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let receivedBytes = 0;
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            break;
-          }
-          receivedBytes += value.byteLength;
-          textContent += decoder.decode(value, { stream: true });
-          if (typeof onChunk === 'function') {
-            onChunk({ receivedBytes });
-          }
-        }
-        textContent += decoder.decode();
-      } else {
-        textContent = await response.text();
-      }
-      const contentType = response.headers.get('content-type') ?? '';
-      if (contentType.includes('text/html') || /^<!doctype html/i.test(textContent.trim())) {
-        const error = new Error('HTML atsakas vietoje CSV – patikrinkite, ar nuoroda publikuota kaip CSV.');
-        error.diagnostic = {
-          type: 'html',
-          url: formatUrlForDiagnostics(url),
-          hint: 'Google Sheets lange pasirinkite „File → Share → Publish to web → CSV“ ir naudokite gautą CSV nuorodą.',
-        };
-        throw error;
-      }
-      const etag = response.headers.get('etag') ?? '';
-      const lastModified = response.headers.get('last-modified') ?? '';
-      return {
-        status: response.status,
-        text: textContent,
-        contentType,
-        etag,
-        lastModified,
-        cacheStatus: cacheStatusHeader || 'tinklas',
-        signature: etag || lastModified || createTextSignature(textContent),
-      };
-    }
-
-    const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
-    const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
-    const inMemoryDataCache = new Map();
-    let dataWorkerCounter = 0;
-    let kpiWorkerJobToken = 0;
-
-    function getDataCacheKey(url) {
-      if (!url) {
-        return '';
-      }
-      return `${DATA_CACHE_PREFIX}${encodeURIComponent(url)}`;
-    }
-
-    function cloneCacheRecords(records) {
-      if (!Array.isArray(records)) {
-        return [];
-      }
-      return records.map((record) => {
-        const entry = { ...record };
-        if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
-          entry.arrival = new Date(entry.arrival.getTime());
-        }
-        if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
-          entry.discharge = new Date(entry.discharge.getTime());
-        }
-        return entry;
-      });
-    }
-
-    function cloneCacheDailyStats(dailyStats) {
-      if (!Array.isArray(dailyStats)) {
-        return [];
-      }
-      return dailyStats.map((item) => ({ ...item }));
-    }
-
-    function cloneCacheEntry(entry) {
-      const timestamp = typeof entry?.timestamp === 'number' ? entry.timestamp : Date.now();
-      return {
-        etag: entry?.etag || '',
-        lastModified: entry?.lastModified || '',
-        signature: entry?.signature || '',
-        timestamp,
-        records: cloneCacheRecords(entry?.records),
-        dailyStats: cloneCacheDailyStats(entry?.dailyStats),
-      };
-    }
-
-    function rememberCacheEntry(key, entry) {
-      if (!key) {
-        return;
-      }
-      inMemoryDataCache.set(key, cloneCacheEntry(entry));
-    }
-
-    function readDataCache(url) {
-      const key = getDataCacheKey(url);
-      if (!key) {
-        return null;
-      }
-
-      if (inMemoryDataCache.has(key)) {
-        return cloneCacheEntry(inMemoryDataCache.get(key));
-      }
-      return null;
-    }
-
-    function writeDataCache(url, payload) {
-      const key = getDataCacheKey(url);
-      if (!key) {
-        return;
-      }
-
-      const entry = cloneCacheEntry({ ...payload, timestamp: Date.now() });
-      rememberCacheEntry(key, entry);
-    }
-
-    function clearDataCache(url) {
-      const key = getDataCacheKey(url);
-      if (!key) {
-        return;
-      }
-
-      inMemoryDataCache.delete(key);
-    }
-
-    function describeCacheMeta(meta) {
-      if (!meta) {
-        return 'tinklas';
-      }
-      if (meta.cacheStatus && /hit|revalidated/i.test(meta.cacheStatus)) {
-        return meta.cacheStatus.toLowerCase();
-      }
-      if (meta.fromCache) {
-        return 'talpykla';
-      }
-      return 'tinklas';
-    }
-
-    function runWorkerJob(message, { onProgress } = {}) {
-      if (typeof Worker !== 'function') {
-        return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
-      }
-      const jobId = `data-job-${Date.now()}-${dataWorkerCounter += 1}`;
-      const worker = new Worker(DATA_WORKER_URL);
-      return new Promise((resolve, reject) => {
-        const cleanup = () => {
-          try {
-            worker.terminate();
-          } catch (error) {
-            console.warn('Nepavyko uždaryti duomenų workerio:', error);
-          }
-        };
-        worker.addEventListener('message', (event) => {
-          const data = event.data;
-          if (!data || data.id !== jobId) {
-            return;
-          }
-          if (data.status === 'progress') {
-            if (typeof onProgress === 'function') {
-              onProgress(data.payload || {});
-            }
-            return;
-          }
-          cleanup();
-          if (data.status === 'error') {
-            const error = new Error(data.error?.message || 'Worker klaida.');
-            error.name = data.error?.name || error.name;
-            if (data.error?.stack) {
-              error.stack = data.error.stack;
-            }
-            reject(error);
-            return;
-          }
-          resolve(data.payload);
-        });
-        worker.addEventListener('error', (event) => {
-          cleanup();
-          reject(event.error || new Error(event.message || 'Worker klaida.'));
-        });
-        try {
-          worker.postMessage({
-            id: jobId,
-            ...message,
-          });
-        } catch (error) {
-          cleanup();
-          reject(error);
-        }
-      });
-    }
-
-    function runDataWorker(csvText, options, jobOptions = {}) {
-      const message = { type: 'transformCsv', csvText, options };
-      if (Number.isInteger(jobOptions.progressStep) && jobOptions.progressStep > 0) {
-        message.progressStep = jobOptions.progressStep;
-      }
-      return runWorkerJob(message, jobOptions);
-    }
-
-    function runKpiWorkerJob(payload) {
-      return runWorkerJob({ type: 'applyKpiFilters', ...payload });
-    }
-
-    function detectDelimiter(text) {
-      const sampleLine = text.split('\n').find((line) => line.trim().length > 0) ?? '';
-      const candidates = [',', ';', '\t', '|'];
-      let best = ',';
-      let bestScore = -1;
-      candidates.forEach((delimiter) => {
-        let inQuotes = false;
-        let score = 0;
-        for (let i = 0; i < sampleLine.length; i += 1) {
-          const char = sampleLine[i];
-          if (char === '"') {
-            if (inQuotes && sampleLine[i + 1] === '"') {
-              i += 1;
-            } else {
-              inQuotes = !inQuotes;
-            }
-          } else if (!inQuotes && char === delimiter) {
-            score += 1;
-          }
-        }
-        if (score > bestScore) {
-          bestScore = score;
-          best = delimiter;
-        }
-      });
-      return bestScore > 0 ? best : ',';
-    }
-
-    function parseCsv(text) {
-      const sanitized = text.replace(/\r\n/g, '\n');
-      const delimiter = detectDelimiter(sanitized);
-      const rows = [];
-      let current = [];
-      let value = '';
-      let inQuotes = false;
-      for (let i = 0; i < sanitized.length; i += 1) {
-        const char = sanitized[i];
-        if (char === '"') {
-          if (inQuotes && sanitized[i + 1] === '"') {
-            value += '"';
-            i += 1;
-          } else {
-            inQuotes = !inQuotes;
-          }
-          continue;
-        }
-        if (char === delimiter && !inQuotes) {
-          current.push(value);
-          value = '';
-          continue;
-        }
-        if (char === '\n' && !inQuotes) {
-          current.push(value);
-          rows.push(current);
-          current = [];
-          value = '';
-          continue;
-        }
-        value += char;
-      }
-      if (value.length > 0 || current.length) {
-        current.push(value);
-        rows.push(current);
-      }
-      const filteredRows = rows.filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
-      return { rows: filteredRows, delimiter };
-    }
-
-    function parseDate(value) {
-      if (!value) {
-        return null;
-      }
-      const raw = String(value).trim();
-      if (!raw) {
-        return null;
-      }
-      const normalized = raw.replace(/\s+/g, ' ').trim();
-      let isoCandidate = normalized.includes('T') ? normalized : normalized.replace(' ', 'T');
-      isoCandidate = isoCandidate.replace(' T', 'T').replace(' +', '+').replace(' -', '-');
-      let parsed = new Date(isoCandidate);
-      if (!Number.isNaN(parsed?.getTime?.())) {
-        return parsed;
-      }
-      // Papildoma atrama formoms, kurios vietoje brūkšnių naudoja pasviruosius arba taškus.
-      const slashIso = normalized.match(/^(\d{4})[\/](\d{1,2})[\/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-      if (slashIso) {
-        const [, year, month, day, hour = '0', minute = '0', second = '0'] = slashIso;
-        parsed = new Date(
-          Number(year),
-          Number(month) - 1,
-          Number(day),
-          Number(hour),
-          Number(minute),
-          Number(second)
-        );
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-      const dotIso = normalized.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-      if (dotIso) {
-        const [, year, month, day, hour = '0', minute = '0', second = '0'] = dotIso;
-        parsed = new Date(
-          Number(year),
-          Number(month) - 1,
-          Number(day),
-          Number(hour),
-          Number(minute),
-          Number(second)
-        );
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-      const onlyDate = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (onlyDate) {
-        parsed = new Date(Number(onlyDate[1]), Number(onlyDate[2]) - 1, Number(onlyDate[3]));
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-      const european = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
-      if (european) {
-        const [, day, month, year, hour = '0', minute = '0', second = '0'] = european;
-        parsed = new Date(
-          Number(year),
-          Number(month) - 1,
-          Number(day),
-          Number(hour),
-          Number(minute),
-          Number(second)
-        );
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-      // Google Forms CSV dažnai išveda datą „dd/mm/yyyy“ formatu.
-      const slashEuropean = normalized.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-      if (slashEuropean) {
-        const [, day, month, year, hour = '0', minute = '0', second = '0'] = slashEuropean;
-        parsed = new Date(
-          Number(year),
-          Number(month) - 1,
-          Number(day),
-          Number(hour),
-          Number(minute),
-          Number(second)
-        );
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
-      return null;
-    }
-
-    function toDateKeyFromDate(date) {
-      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return '';
-      }
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-
-    function toMonthKeyFromDate(date) {
-      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return '';
-      }
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      return `${year}-${month}`;
-    }
-
-    function normalizeHourToMinutes(hour) {
-      const raw = Number(hour);
-      if (!Number.isFinite(raw)) {
-        return null;
-      }
-      const dayMinutes = 24 * 60;
-      const minutes = Math.round(raw * 60);
-      return ((minutes % dayMinutes) + dayMinutes) % dayMinutes;
-    }
-
-    function resolveNightBoundsMinutes(calculationSettings = {}) {
-      const defaultStart = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightStartHour))
-        ? Number(DEFAULT_SETTINGS.calculations.nightStartHour)
-        : 20;
-      const defaultEnd = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
-        ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
-        : 7;
-      const startMinutes = normalizeHourToMinutes(
-        Number.isFinite(Number(calculationSettings?.nightStartHour))
-          ? Number(calculationSettings.nightStartHour)
-          : defaultStart
-      );
-      const endMinutes = normalizeHourToMinutes(
-        Number.isFinite(Number(calculationSettings?.nightEndHour))
-          ? Number(calculationSettings.nightEndHour)
-          : defaultEnd
-      );
-      return {
-        startMinutes: Number.isFinite(startMinutes) ? startMinutes : normalizeHourToMinutes(defaultStart),
-        endMinutes: Number.isFinite(endMinutes) ? endMinutes : normalizeHourToMinutes(defaultEnd),
-      };
-    }
-
-    function isNightTimestamp(date, nightStartMinutes, nightEndMinutes) {
-      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return null;
-      }
-      const minutes = date.getHours() * 60 + date.getMinutes();
-      if (!Number.isFinite(nightStartMinutes) || !Number.isFinite(nightEndMinutes)) {
-        return null;
-      }
-      if (nightStartMinutes === nightEndMinutes) {
-        return false;
-      }
-      if (nightStartMinutes < nightEndMinutes) {
-        return minutes >= nightStartMinutes && minutes < nightEndMinutes;
-      }
-      return minutes >= nightStartMinutes || minutes < nightEndMinutes;
-    }
-
-    function dateKeyToUtc(dateKey) {
-      if (typeof dateKey !== 'string') {
-        return Number.NaN;
-      }
-      const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
-      if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
-        return Number.NaN;
-      }
-      const [year, month, day] = parts;
-      return Date.UTC(year, month - 1, day);
-    }
-
-    function dateKeyToDate(dateKey) {
-      const utc = dateKeyToUtc(dateKey);
-      if (!Number.isFinite(utc)) {
-        return null;
-      }
-      return new Date(utc);
-    }
-
-    function formatUtcDateKey(date) {
-      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return '';
-      }
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-
-    function isWeekendDateKey(dateKey) {
-      const date = dateKeyToDate(dateKey);
-      if (!(date instanceof Date)) {
-        return false;
-      }
-      const day = date.getUTCDay();
-      return day === 0 || day === 6;
-    }
-
-    function getWeekdayIndexFromDateKey(dateKey) {
-      const date = dateKeyToDate(dateKey);
-      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-        return null;
-      }
-      const weekday = date.getUTCDay();
-      return (weekday + 6) % 7;
-    }
-
-
-    /**
-     * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio).
-     */
-    async function loadCsvSource(config, workerOptions, { required = false, sourceId = 'primary', label = '' } = {}) {
-      const trimmedUrl = (config?.url ?? '').trim();
-      const missingMessage = config?.missingMessage || 'Nenurodytas duomenų URL.';
-      const result = {
-        records: [],
-        dailyStats: [],
-        meta: {
-          sourceId,
-          url: trimmedUrl,
-          label: label || sourceId,
-        },
-        usingFallback: false,
-        lastErrorMessage: '',
-        error: null,
-      };
-      const onChunk = typeof config?.onChunk === 'function' ? config.onChunk : null;
-      const onWorkerProgress = typeof config?.onWorkerProgress === 'function'
-        ? config.onWorkerProgress
-        : null;
-      const workerProgressStep = onWorkerProgress
-        ? (Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
-          ? config.workerProgressStep
-          : 400)
-        : null;
-
-      const parseDataset = async (csvText) => {
-        const dataset = await runDataWorker(csvText, workerOptions, { onProgress: onWorkerProgress, progressStep: workerProgressStep });
-        return {
-          records: Array.isArray(dataset?.records) ? dataset.records : [],
-          dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
-        };
-      };
-
-      const assignDataset = (dataset, metaOverrides = {}) => {
-        result.records = dataset.records;
-        result.dailyStats = dataset.dailyStats;
-        result.meta = { ...result.meta, ...metaOverrides };
-      };
-
-      if (!trimmedUrl) {
-        result.lastErrorMessage = missingMessage;
-        result.error = missingMessage;
-        if (required) {
-          const error = new Error(missingMessage);
-          error.diagnostic = { type: 'config', sourceId, reason: 'missing-url' };
-          throw error;
-        }
-        return result;
-      }
-
-      const cacheEntry = readDataCache(trimmedUrl);
-
-      try {
-        let download = await downloadCsv(trimmedUrl, { cacheInfo: cacheEntry, onChunk });
-        if (download.status === 304) {
-          if (cacheEntry?.records && cacheEntry?.dailyStats) {
-            assignDataset({
-              records: cacheEntry.records,
-              dailyStats: cacheEntry.dailyStats,
-            }, {
-              etag: cacheEntry.etag,
-              lastModified: cacheEntry.lastModified,
-              signature: cacheEntry.signature,
-              cacheStatus: download.cacheStatus,
-              fromCache: true,
-            });
-            return result;
-          }
-          clearDataCache(trimmedUrl);
-          download = await downloadCsv(trimmedUrl, { onChunk });
-        }
-
-        const dataset = await runDataWorker(download.text, workerOptions, {
-          onProgress: onWorkerProgress,
-          progressStep: workerProgressStep,
-        });
-        assignDataset({
-          records: Array.isArray(dataset?.records) ? dataset.records : [],
-          dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
-        }, {
-          etag: download.etag,
-          lastModified: download.lastModified,
-          signature: download.signature,
-          cacheStatus: download.cacheStatus,
-          fromCache: false,
-        });
-        writeDataCache(trimmedUrl, {
-          etag: download.etag,
-          lastModified: download.lastModified,
-          signature: download.signature,
-          records: result.records,
-          dailyStats: result.dailyStats,
-        });
-        return result;
-      } catch (error) {
-        console.error(`Nepavyko atsisiųsti CSV duomenų (${sourceId}):`, error);
-        const friendly = describeError(error);
-        result.lastErrorMessage = friendly;
-        result.error = friendly;
-        if (cacheEntry?.records && cacheEntry?.dailyStats) {
-          console.warn(`Naudojami talpyklos duomenys dėl klaidos (${sourceId}).`);
-          assignDataset({
-            records: cacheEntry.records,
-            dailyStats: cacheEntry.dailyStats,
-          }, {
-            etag: cacheEntry.etag,
-            lastModified: cacheEntry.lastModified,
-            signature: cacheEntry.signature,
-            fromCache: true,
-            fallbackReason: friendly,
-          });
-          return result;
-        }
-        if (required) {
-          throw error;
-        }
-        return result;
-      }
-    }
-
-    async function fetchData(options = {}) {
-      const workerOptions = {
-        csvSettings: settings.csv || {},
-        csvDefaults: DEFAULT_SETTINGS.csv || {},
-        calculations: settings.calculations || {},
-        calculationDefaults: DEFAULT_SETTINGS.calculations || {},
-      };
-
-      const mainConfig = {
-        url: settings?.dataSource?.url,
-        missingMessage: 'Nenurodytas duomenų URL.',
-        onChunk: typeof options?.onPrimaryChunk === 'function' ? options.onPrimaryChunk : null,
-        onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
-      };
-
-      const historicalDefaults = DEFAULT_SETTINGS?.dataSource?.historical || {};
-      const historicalConfig = settings?.dataSource?.historical || historicalDefaults;
-      const historicalLabel = historicalConfig.label || historicalDefaults.label || 'Papildomas istorinis (5 metai)';
-      const historicalEnabled = historicalConfig.enabled !== false;
-      let historicalMeta = null;
-
-      const normalizedHistoricalConfig = historicalEnabled
-        ? {
-          url: historicalConfig.url,
-          missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
-          onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
-          onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
-        }
-        : null;
-      const historicalShouldAttempt = Boolean(normalizedHistoricalConfig)
-        && (normalizedHistoricalConfig.url ?? '').trim().length > 0;
-
-      const primaryPromise = loadCsvSource(mainConfig, workerOptions, {
-        required: true,
-        sourceId: 'primary',
-        label: 'Pagrindinis CSV',
-      });
-      const historicalPromise = historicalEnabled && historicalShouldAttempt
-        ? loadCsvSource(normalizedHistoricalConfig, workerOptions, {
-          required: false,
-          sourceId: 'historical',
-          label: historicalLabel,
-        })
-        : Promise.resolve(null);
-
-      const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
-
-      const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
-      const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
-      let combinedRecords = baseRecords.slice();
-      let usingFallback = false;
-      const warnings = [];
-      const primaryUrl = (settings?.dataSource?.url ?? '').trim();
-      const sources = [
-        {
-          id: 'primary',
-          label: 'Pagrindinis CSV',
-          url: primaryResult.meta?.url || primaryUrl,
-          fromCache: Boolean(primaryResult.meta?.fromCache),
-          fromFallback: Boolean(primaryResult.meta?.fromFallback),
-          usingFallback: false,
-          lastErrorMessage: primaryResult.lastErrorMessage || '',
-          error: primaryResult.error || '',
-          used: baseRecords.length > 0,
-          enabled: true,
-        },
-      ];
-
-      if (primaryResult.error && primaryResult.meta?.fromCache) {
-        warnings.push(`Pagrindinis CSV: ${primaryResult.error}`);
-      }
-
-      if (historicalEnabled) {
-        if (historicalShouldAttempt && historicalResult) {
-          historicalMeta = historicalResult.meta || null;
-          const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
-          if (historicalRecords.length) {
-            combinedRecords = combinedRecords.concat(historicalRecords);
-          }
-          if (historicalResult.error) {
-            warnings.push(`${historicalLabel}: ${historicalResult.error}`);
-          }
-          sources.push({
-            id: 'historical',
-            label: historicalLabel,
-            url: historicalResult.meta?.url || (historicalConfig.url ?? ''),
-            fromCache: Boolean(historicalResult.meta?.fromCache),
-            fromFallback: Boolean(historicalResult.meta?.fromFallback),
-            usingFallback: false,
-            lastErrorMessage: historicalResult.lastErrorMessage || '',
-            error: historicalResult.error || '',
-            used: historicalRecords.length > 0,
-            enabled: true,
-          });
-        } else {
-          sources.push({
-            id: 'historical',
-            label: historicalLabel,
-            url: historicalConfig.url || '',
-            fromCache: false,
-            fromFallback: false,
-            usingFallback: false,
-            lastErrorMessage: '',
-            error: '',
-            used: false,
-            enabled: true,
-          });
-          warnings.push(`${historicalLabel}: Nenurodytas papildomo istorinio šaltinio URL.`);
-        }
-      } else {
-        sources.push({
-          id: 'historical',
-          label: historicalLabel,
-          url: historicalConfig.url || '',
-          fromCache: false,
-          fromFallback: false,
-          usingFallback: false,
-          lastErrorMessage: '',
-          error: '',
-          used: false,
-          enabled: false,
-        });
-      }
-
-      dashboardState.usingFallback = usingFallback;
-      dashboardState.lastErrorMessage = '';
-
-      const meta = {
-        primary: { ...(primaryResult.meta || {}), sourceId: 'primary' },
-        historical: historicalMeta ? { ...historicalMeta, sourceId: 'historical' } : null,
-        sources,
-        warnings,
-      };
-
-      const hasBaseDaily = Array.isArray(baseDaily) && baseDaily.length > 0;
-      const combinedDaily = (combinedRecords.length === baseRecords.length && hasBaseDaily)
-        ? baseDaily.slice()
-        : computeDailyStats(combinedRecords);
-      const combinedYearlyStats = computeYearlyStats(computeMonthlyStats(combinedDaily.slice()));
-
-      return {
-        records: combinedRecords,
-        primaryRecords: baseRecords,
-        dailyStats: combinedDaily,
-        primaryDaily: baseDaily.slice(),
-        yearlyStats: combinedYearlyStats,
-        meta,
-      };
-    }
-
-    async function fetchEdData(options = {}) {
-      const config = settings?.dataSource?.ed || DEFAULT_SETTINGS.dataSource.ed;
-      const url = (config?.url ?? '').trim();
-      const empty = {
-        records: [],
-        summary: createEmptyEdSummary(),
-        dispositions: [],
-        daily: [],
-        meta: { type: 'legacy' },
-        usingFallback: false,
-        lastErrorMessage: '',
-        error: null,
-        updatedAt: new Date(),
-      };
-
-      const finalize = (result, options = {}) => {
-        const payload = Array.isArray(result)
-          ? { records: result, meta: {} }
-          : (result && typeof result === 'object'
-            ? {
-              records: Array.isArray(result.records) ? result.records : [],
-              meta: result.meta && typeof result.meta === 'object' ? result.meta : {},
-            }
-            : { records: [], meta: {} });
-        const aggregates = summarizeEdRecords(payload.records, payload.meta);
-        return {
-          records: payload.records,
-          summary: aggregates.summary,
-          dispositions: aggregates.dispositions,
-          daily: aggregates.daily,
-          meta: { ...payload.meta, ...(aggregates.meta || {}) },
-          usingFallback: Boolean(options.usingFallback),
-          lastErrorMessage: options.lastErrorMessage || '',
-          error: options.error || null,
-          updatedAt: new Date(),
-        };
-      };
-
-      if (!url) {
-        return {
-          ...empty,
-          lastErrorMessage: TEXT.ed.status.noUrl,
-          error: TEXT.ed.status.noUrl,
-        };
-      }
-
-      try {
-        const download = await downloadCsv(url, { onChunk: options?.onChunk });
-        const result = transformEdCsv(download.text);
-        return finalize(result);
-      } catch (error) {
-        const friendly = describeError(error);
-        return {
-          ...empty,
-          lastErrorMessage: friendly,
-          error: friendly,
-        };
-      }
-    }
-
-    const FEEDBACK_HEADER_CANDIDATES = {
-      date: 'timestamp,gauta,data,received,created,submitted,laikas,pildymo data,pildymo laikas,pildymo data ir laikas,užpildymo data,užpildymo laikas,forma pateikta,data pateikta,atsakymo data,atsakymo laikas,įrašo data,įrašo laikas',
-      respondent: 'kas pildo formą?,kas pildo formą,kas pildo forma,respondentas,role,dalyvis,tipas',
-      location: 'kur pildėte anketą?,kur pildėte anketą,kur pildėte anketa,kur pildėte forma,kur pildėte formą?,kur pildoma anketa,pildymo vieta,pildymo vieta?,apklausos vieta,location,kur pildoma forma,šaltinis,saltinis',
-      overall: 'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
-      doctors: 'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
-      nurses: 'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
-      aidesContact: 'ar bendravote su slaugytojų padėjėjais?,ar bendravote su slaugytojų padėjėjais,ar bendravote su slaugytoju padejejais,ar bendravote su padėjėjais,contact with aides',
-      aides: 'kaip vertinate slaugytojų padėjėjų darbą,*padėjėjų darb*,slaugytoju padejeju darba,padėjėjų vertinimas,aide rating',
-        waiting: 'kaip vertinate laukimo laiką skyriuje?,*laukimo laik*,wait time,laukimo vertinimas',
-        comments: 'turite pasiūlymų ar pastabų, kaip galėtume tobulėti?,pasiūlymai,pastabos,komentarai,atsiliepimų komentarai',
-      };
-
-    const FEEDBACK_CONTACT_YES = 'taip,yes,yeah,1,true';
-    const FEEDBACK_CONTACT_NO = 'ne,no,0,false';
-
-    function resolveFeedbackColumn(headerNormalized, candidateList) {
-      const candidates = parseCandidateList(candidateList, candidateList);
-      for (const candidate of candidates) {
-        const trimmed = candidate.trim();
-        if (!trimmed || trimmed.includes('*')) {
-          continue;
-        }
-        const match = headerNormalized.find((column) => column.original === trimmed);
-        if (match) {
-          return match.index;
-        }
-      }
-
-      for (const candidate of candidates) {
-        const trimmed = candidate.trim().toLowerCase();
-        if (!trimmed || candidate.includes('*')) {
-          continue;
-        }
-        const match = headerNormalized.find((column) => column.normalized === trimmed);
-        if (match) {
-          return match.index;
-        }
-      }
-
-      for (const candidate of candidates) {
-        const normalizedCandidate = candidate.trim().toLowerCase();
-        if (!normalizedCandidate || candidate.includes('*')) {
-          continue;
-        }
-        const match = headerNormalized.find((column) => column.normalized.includes(normalizedCandidate));
-        if (match) {
-          return match.index;
-        }
-      }
-
-      for (const candidate of candidates) {
-        const normalizedCandidate = candidate.trim().toLowerCase();
-        if (!normalizedCandidate) {
-          continue;
-        }
-        const match = headerNormalized.find((column) => matchesWildcard(column.normalized, normalizedCandidate));
-        if (match) {
-          return match.index;
-        }
-      }
-
-      return -1;
-    }
-
-    function normalizeFeedbackRating(value) {
-      if (!Number.isFinite(value)) {
-        return null;
-      }
-      if (value >= FEEDBACK_RATING_MIN && value <= FEEDBACK_RATING_MAX) {
-        return value;
-      }
-      if (value > FEEDBACK_RATING_MAX && value <= FEEDBACK_LEGACY_MAX) {
-        const scaled = (value / FEEDBACK_LEGACY_MAX) * FEEDBACK_RATING_MAX;
-        const clamped = Math.min(FEEDBACK_RATING_MAX, Math.max(FEEDBACK_RATING_MIN, scaled));
-        return clamped;
-      }
-      return null;
-    }
-
-    function parseFeedbackRatingCell(value) {
-      if (value == null) {
-        return null;
-      }
-      const text = String(value).trim();
-      if (!text) {
-        return null;
-      }
-      const normalized = text.replace(',', '.');
-      const direct = Number.parseFloat(normalized);
-      if (Number.isFinite(direct)) {
-        return normalizeFeedbackRating(direct);
-      }
-      const match = normalized.match(/(-?\d+(?:\.\d+)?)/);
-      if (match) {
-        const fallback = Number.parseFloat(match[1]);
-        return normalizeFeedbackRating(fallback);
-      }
-      return null;
-    }
-
-    function parseFeedbackContactValue(value, yesCandidates, noCandidates) {
-      if (value == null) {
-        return null;
-      }
-      const text = String(value).trim();
-      if (!text) {
-        return null;
-      }
-      const normalized = text.toLowerCase();
-      if (yesCandidates.some((candidate) => matchesWildcard(normalized, candidate))) {
-        return true;
-      }
-      if (noCandidates.some((candidate) => matchesWildcard(normalized, candidate))) {
-        return false;
-      }
-      return null;
-    }
-
-    function transformFeedbackCsv(text) {
-      if (typeof text !== 'string' || !text.trim()) {
-        return [];
-      }
-      const { rows } = parseCsv(text);
-      if (!rows.length) {
-        return [];
-      }
-      const header = rows[0].map((cell) => String(cell ?? '').trim());
-      const headerNormalized = header.map((column, index) => ({
-        original: column,
-        normalized: column.toLowerCase(),
-        index,
-      }));
-
-      const indices = {
-        date: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.date),
-        respondent: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.respondent),
-        location: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.location),
-        overall: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.overall),
-        doctors: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.doctors),
-        nurses: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.nurses),
-        aidesContact: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aidesContact),
-        aides: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.aides),
-        waiting: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.waiting),
-        comments: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.comments),
-      };
-
-      const yesCandidates = parseCandidateList(FEEDBACK_CONTACT_YES, FEEDBACK_CONTACT_YES)
-        .map((token) => token.toLowerCase());
-      const noCandidates = parseCandidateList(FEEDBACK_CONTACT_NO, FEEDBACK_CONTACT_NO)
-        .map((token) => token.toLowerCase());
-
-      const rowsWithoutHeader = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
-      return rowsWithoutHeader
-        .map((columns) => {
-          const rawDate = indices.date >= 0 ? columns[indices.date] : '';
-          const parsedDate = parseDate(rawDate);
-          const dateValue = parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
-
-          const respondent = indices.respondent >= 0
-            ? String(columns[indices.respondent] ?? '').trim()
-            : '';
-
-          const location = indices.location >= 0
-            ? String(columns[indices.location] ?? '').trim()
-            : '';
-
-        const overallRating = indices.overall >= 0
-          ? parseFeedbackRatingCell(columns[indices.overall])
-          : null;
-          const doctorsRating = indices.doctors >= 0
-            ? parseFeedbackRatingCell(columns[indices.doctors])
-            : null;
-          const nursesRating = indices.nurses >= 0
-            ? parseFeedbackRatingCell(columns[indices.nurses])
-            : null;
-          const aidesContact = indices.aidesContact >= 0
-            ? parseFeedbackContactValue(columns[indices.aidesContact], yesCandidates, noCandidates)
-            : null;
-          const aidesRating = indices.aides >= 0
-            ? parseFeedbackRatingCell(columns[indices.aides])
-            : null;
-        const waitingRating = indices.waiting >= 0
-          ? parseFeedbackRatingCell(columns[indices.waiting])
-          : null;
-
-        const commentRaw = indices.comments >= 0
-          ? String(columns[indices.comments] ?? '').trim()
-          : '';
-        const hasComment = commentRaw.length > 0;
-
-        const hasRating = [overallRating, doctorsRating, nursesRating, aidesRating, waitingRating]
-          .some((value) => Number.isFinite(value));
-        const hasContact = aidesContact === true || aidesContact === false;
-        const hasRespondent = respondent.length > 0;
-        const hasLocation = location.length > 0;
-
-        if (!dateValue && !hasRating && !hasRespondent && !hasContact && !hasLocation && !hasComment) {
-          return null;
-        }
-
-        return {
-          receivedAt: dateValue,
-          respondent,
-          location,
-          overallRating: Number.isFinite(overallRating) ? overallRating : null,
-          doctorsRating: Number.isFinite(doctorsRating) ? doctorsRating : null,
-          nursesRating: Number.isFinite(nursesRating) ? nursesRating : null,
-          aidesContact: hasContact ? aidesContact : null,
-          aidesRating: Number.isFinite(aidesRating) ? aidesRating : null,
-          waitingRating: Number.isFinite(waitingRating) ? waitingRating : null,
-          comment: hasComment ? commentRaw : '',
-        };
-      })
-        .filter(Boolean);
-    }
-
-    async function fetchFeedbackData() {
-      const config = settings?.dataSource?.feedback || DEFAULT_SETTINGS.dataSource.feedback;
-      const url = (config?.url ?? '').trim();
-
-      if (!url) {
-        dashboardState.feedback.usingFallback = false;
-        dashboardState.feedback.lastErrorMessage = TEXT.feedback.status.missingUrl;
-        return [];
-      }
-
-      try {
-        const download = await downloadCsv(url);
-        const dataset = transformFeedbackCsv(download.text);
-        dashboardState.feedback.usingFallback = false;
-        dashboardState.feedback.lastErrorMessage = '';
-        return dataset;
-      } catch (error) {
-        console.error('Nepavyko atsisiųsti atsiliepimų CSV:', error);
-        const friendly = describeError(error);
-        dashboardState.feedback.lastErrorMessage = friendly;
-        dashboardState.feedback.usingFallback = false;
-        return [];
-      }
-    }
-
-    /**
-     * Grąžina tik paskutines N dienų įrašus (pagal vėliausią turimą datą).
-     * @param {Array<{date: string}>} dailyStats
-     * @param {number} days
-     */
-    function filterDailyStatsByWindow(dailyStats, days) {
-      if (!Array.isArray(dailyStats)) {
-        return [];
-      }
-      if (!Number.isFinite(days) || days <= 0) {
-        return [...dailyStats];
-      }
-      const decorated = dailyStats
-        .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
-        .filter((item) => Number.isFinite(item.utc));
-      if (!decorated.length) {
-        return [];
-      }
-      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-      const startUtc = endUtc - (days - 1) * 86400000;
-      return decorated
-        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-        .map((item) => item.entry);
-    }
-
-    function buildDailyWindowKeys(dailyStats, days) {
-      if (!Array.isArray(dailyStats) || !Number.isFinite(days) || days <= 0) {
-        return [];
-      }
-      const decorated = dailyStats
-        .map((entry) => ({ utc: dateKeyToUtc(entry?.date) }))
-        .filter((item) => Number.isFinite(item.utc));
-      if (!decorated.length) {
-        return [];
-      }
-      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-      const startUtc = endUtc - (days - 1) * 86400000;
-      const keys = [];
-      for (let i = 0; i < days; i += 1) {
-        const date = new Date(startUtc + i * 86400000);
-        keys.push(formatUtcDateKey(date));
-      }
-      return keys;
-    }
-
-    function fillDailyStatsWindow(dailyStats, windowKeys) {
-      const map = new Map((Array.isArray(dailyStats) ? dailyStats : []).map((entry) => [entry?.date, entry]));
-      return (Array.isArray(windowKeys) ? windowKeys : []).map((dateKey) => {
-        const entry = map.get(dateKey);
-        if (entry) {
-          return entry;
-        }
-        return {
-          date: dateKey,
-          count: 0,
-          night: 0,
-          ems: 0,
-          discharged: 0,
-          hospitalized: 0,
-          totalTime: 0,
-          durations: 0,
-          hospitalizedTime: 0,
-          hospitalizedDurations: 0,
-          avgTime: 0,
-          avgHospitalizedTime: 0,
-        };
-      });
-    }
-
-    function filterRecordsByWindow(records, days) {
-      if (!Array.isArray(records)) {
-        return [];
-      }
-      if (!Number.isFinite(days) || days <= 0) {
-        return records.slice();
-      }
-      const decorated = records
-        .map((entry) => {
-          let reference = null;
-          if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
-            reference = entry.arrival;
-          } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
-            reference = entry.discharge;
-          }
-          if (!reference) {
-            return null;
-          }
-          const utc = Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate());
-          if (!Number.isFinite(utc)) {
-            return null;
-          }
-          return { entry, utc };
-        })
-        .filter(Boolean);
-      if (!decorated.length) {
-        return [];
-      }
-      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-      const startUtc = endUtc - (days - 1) * 86400000;
-      return decorated
-        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-        .map((item) => item.entry);
-    }
-
-    function filterRecordsByShiftWindow(records, days) {
-      if (!Array.isArray(records)) {
-        return [];
-      }
-      if (!Number.isFinite(days) || days <= 0) {
-        return records.slice();
-      }
-      const shiftStartHour = resolveShiftStartHour(settings?.calculations);
-      const decorated = records
-        .map((entry) => {
-          const hasArrival = entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime());
-          const hasDischarge = entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime());
-          const reference = hasArrival ? entry.arrival : (hasDischarge ? entry.discharge : null);
-          if (!reference) {
-            return null;
-          }
-          const dateKey = computeShiftDateKey(reference, shiftStartHour);
-          if (!dateKey) {
-            return null;
-          }
-          const utc = dateKeyToUtc(dateKey);
-          if (!Number.isFinite(utc)) {
-            return null;
-          }
-          return { entry, utc };
-        })
-        .filter(Boolean);
-      if (!decorated.length) {
-        return [];
-      }
-      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-      const startUtc = endUtc - (days - 1) * 86400000;
-      return decorated
-        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-        .map((item) => item.entry);
-    }
-
-    function filterDailyStatsByYear(dailyStats, year) {
-      if (!Number.isFinite(year)) {
-        return Array.isArray(dailyStats) ? dailyStats.slice() : [];
-      }
-      const targetYear = Number(year);
-      return (Array.isArray(dailyStats) ? dailyStats : []).filter((entry) => {
-        if (!entry || typeof entry.date !== 'string') {
-          return false;
-        }
-        const date = dateKeyToDate(entry.date);
-        return date instanceof Date
-          && !Number.isNaN(date.getTime())
-          && date.getUTCFullYear() === targetYear;
-      });
-    }
-
-    function filterRecordsByYear(records, year) {
-      if (!Number.isFinite(year)) {
-        return Array.isArray(records) ? records.slice() : [];
-      }
-      const targetYear = Number(year);
-      return (Array.isArray(records) ? records : []).filter((entry) => {
-        const arrivalYear = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())
-          ? entry.arrival.getFullYear()
-          : null;
-        const dischargeYear = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())
-          ? entry.discharge.getFullYear()
-          : null;
-        const referenceYear = Number.isFinite(arrivalYear) ? arrivalYear : dischargeYear;
-        return Number.isFinite(referenceYear) && referenceYear === targetYear;
-      });
-    }
-
-    function parseDurationMinutes(value) {
-      if (value == null) {
-        return null;
-      }
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        return value;
-      }
-      const text = String(value).trim();
-      if (!text) {
-        return null;
-      }
-      const numeric = Number.parseFloat(text.replace(',', '.'));
-      if (Number.isFinite(numeric)) {
-        if (/\b(h|val)\b/i.test(text) && !/\bmin/i.test(text)) {
-          return numeric * 60;
-        }
-        if (/\b(sec|s)\b/i.test(text) && !/\bmin|h|val/i.test(text)) {
-          return numeric / 60;
-        }
-        return numeric;
-      }
-      const parts = text.split(':');
-      if (parts.length >= 2 && parts.length <= 3) {
-        const hours = Number.parseFloat(parts[0].replace(',', '.'));
-        const minutes = Number.parseFloat(parts[1].replace(',', '.'));
-        const seconds = parts.length === 3 ? Number.parseFloat(parts[2].replace(',', '.')) : 0;
-        if ([hours, minutes].every((component) => Number.isFinite(component))) {
-          const secValue = Number.isFinite(seconds) ? seconds : 0;
-          return hours * 60 + minutes + secValue / 60;
-        }
-      }
-      let totalMinutes = 0;
-      let matched = false;
-      const hoursMatch = text.match(/([0-9]+(?:[\.,][0-9]+)?)\s*(h|val)/i);
-      if (hoursMatch) {
-        totalMinutes += Number.parseFloat(hoursMatch[1].replace(',', '.')) * 60;
-        matched = true;
-      }
-      const minutesMatch = text.match(/([0-9]+(?:[\.,][0-9]+)?)\s*(min|minutes|mins)/i);
-      if (minutesMatch) {
-        totalMinutes += Number.parseFloat(minutesMatch[1].replace(',', '.'));
-        matched = true;
-      }
-      const secondsMatch = text.match(/([0-9]+(?:[\.,][0-9]+)?)\s*(sec|s)/i);
-      if (secondsMatch) {
-        totalMinutes += Number.parseFloat(secondsMatch[1].replace(',', '.')) / 60;
-        matched = true;
-      }
-      if (matched && Number.isFinite(totalMinutes) && totalMinutes >= 0) {
-        return totalMinutes;
-      }
-      return null;
-    }
-
-    function parseNumericCell(value) {
-      if (value == null) {
-        return null;
-      }
-      const text = String(value).trim();
-      if (!text) {
-        return null;
-      }
-      const normalized = text.replace(',', '.');
-      const direct = Number.parseFloat(normalized);
-      if (Number.isFinite(direct)) {
-        return direct;
-      }
-      const match = normalized.match(/(-?\d+(?:\.\d+)?)/);
-      if (match) {
-        const fallback = Number.parseFloat(match[1]);
-        return Number.isFinite(fallback) ? fallback : null;
-      }
-      return null;
-    }
-
-    function normalizeRatioValue(value) {
-      if (value == null) {
-        return { ratio: null, text: '' };
-      }
-      const text = String(value).trim();
-      if (!text) {
-        return { ratio: null, text: '' };
-      }
-      const normalized = text.replace(',', '.');
-      const match = normalized.match(/(\d+(?:\.\d+)?)\s*[:\/\-]\s*(\d+(?:\.\d+)?)/);
-      if (match) {
-        const a = Number.parseFloat(match[1]);
-        const b = Number.parseFloat(match[2]);
-        if (Number.isFinite(a) && Number.isFinite(b) && a > 0) {
-          return { ratio: b / a, text };
-        }
-      }
-      const numeric = Number.parseFloat(normalized);
-      if (Number.isFinite(numeric) && numeric > 0) {
-        return { ratio: numeric, text };
-      }
-      return { ratio: null, text };
-    }
-
-    function normalizeDispositionValue(value) {
-      const raw = typeof value === 'string' ? value.trim() : '';
-      if (!raw) {
-        return { label: 'Nežinoma', category: 'unknown' };
-      }
-      const lower = raw.toLowerCase();
-      if (/(hospital|stacion|admit|ward|perkel|stacionar|stac\.|priimtuvas)/i.test(lower)) {
-        return { label: raw, category: 'hospitalized' };
-      }
-      if (/(discharg|nam|ambulator|released|outpatient|home|išle)/i.test(lower)) {
-        return { label: raw, category: 'discharged' };
-      }
-      if (/(transfer|perkeltas|perkelta|pervež|perkėlimo)/i.test(lower)) {
-        return { label: raw, category: 'transfer' };
-      }
-      if (/(left|atsisak|neatvyko|nedalyv|amoa|dnw|did not wait|lwbs|lwt|pabėg|walked)/i.test(lower)) {
-        return { label: raw, category: 'left' };
-      }
-      return { label: raw, category: 'other' };
-    }
-
-    function createEmptyEdSummary(mode = 'legacy') {
-      return {
-        mode,
-        totalPatients: 0,
-        uniqueDates: 0,
-        avgDailyPatients: null,
-        avgLosMinutes: null,
-        avgLosHospitalizedMinutes: null,
-        avgLosMonthMinutes: null,
-        avgLosYearMinutes: null,
-        avgLabMinutes: null,
-        avgLabMonthMinutes: null,
-        avgLabYearMinutes: null,
-        avgDoorToProviderMinutes: null,
-        avgDecisionToLeaveMinutes: null,
-        hospitalizedShare: null,
-        hospitalizedMonthShare: null,
-        hospitalizedYearShare: null,
-        avgDaytimePatientsMonth: null,
-        currentMonthKey: '',
-        entryCount: 0,
-        currentPatients: null,
-        occupiedBeds: null,
-        nursePatientsPerStaff: null,
-        doctorPatientsPerStaff: null,
-        latestSnapshotLabel: '',
-        latestSnapshotAt: null,
-        generatedAt: new Date(),
-        peakWindowText: '',
-        peakWindowRiskNote: '',
-        losMedianMinutes: null,
-        losP90Minutes: null,
-        losVariabilityIndex: null,
-        losPercentilesText: '',
-        taktTimeMinutes: null,
-        taktTimeMeta: '',
-        littlesLawEstimate: null,
-        littlesLawMeta: '',
-        fastLaneShare: null,
-        slowLaneShare: null,
-        fastLaneDelta: null,
-        slowLaneDelta: null,
-        fastSlowSplitValue: '',
-        fastSlowTrendText: '',
-        fastSlowTrendWindowDays: 0,
-        feedbackComments: [],
-        feedbackCommentsMeta: '',
-      };
-    }
-
-    function transformEdCsv(text) {
-      if (!text) {
-        throw new Error('ED CSV turinys tuščias.');
-      }
-      const { rows } = parseCsv(text);
-      if (!rows.length) {
-        throw new Error('ED CSV neturi jokių eilučių.');
-      }
-      const header = rows[0].map((cell) => String(cell ?? '').trim());
-      const headerNormalized = header.map((column, index) => ({
-        original: column,
-        normalized: column.toLowerCase(),
-        index,
-      }));
-      const legacyCandidates = {
-        date: ['date', 'data', 'service date', 'diena', 'atvykimo data'],
-        arrival: ['arrival', 'arrival time', 'atvykimo laikas', 'atvykimo data', 'registered'],
-        departure: ['departure', 'departure time', 'discharge', 'išrašymo data', 'išvykimo laikas', 'completion'],
-        disposition: ['disposition', 'outcome', 'sprendimas', 'status', 'būsena', 'dispo'],
-        los: ['length of stay (min)', 'los (min)', 'stay (min)', 'trukmė (min)', 'los minutes', 'los_min'],
-        door: ['door to provider (min)', 'door to doctor (min)', 'door to doc (min)', 'door to physician (min)', 'laukimo laikas (min)', 'durys iki gydytojo (min)'],
-        decision: ['decision to depart (min)', 'boarding (min)', 'decision to leave (min)', 'disposition to depart (min)', 'sprendimo laukimas (min)'],
-        lab: [
-          'avg lab turnaround (min)',
-          'lab turnaround (min)',
-          'vid. lab. tyrimų laikas (min)',
-          'vid. lab. tyrimų laikas',
-          'vid. lab. tyrimu laikas (min)',
-          'vid. lab. tyrimu laikas',
-          'lab',
-          'laboratorijos trukmė (min)',
-        ],
-      };
-      const legacyIndices = {
-        date: resolveColumnIndex(headerNormalized, legacyCandidates.date),
-        arrival: resolveColumnIndex(headerNormalized, legacyCandidates.arrival),
-        departure: resolveColumnIndex(headerNormalized, legacyCandidates.departure),
-        disposition: resolveColumnIndex(headerNormalized, legacyCandidates.disposition),
-        los: resolveColumnIndex(headerNormalized, legacyCandidates.los),
-        door: resolveColumnIndex(headerNormalized, legacyCandidates.door),
-        decision: resolveColumnIndex(headerNormalized, legacyCandidates.decision),
-        lab: resolveColumnIndex(headerNormalized, legacyCandidates.lab),
-      };
-      const snapshotCandidates = {
-        timestamp: ['timestamp', 'datetime', 'laikas', 'įrašyta', 'atnaujinta', 'data', 'created', 'updated'],
-        currentPatients: ['šiuo metu pacientų', 'current patients', 'patients now', 'patients in ed'],
-        occupiedBeds: ['užimta lovų', 'occupied beds', 'beds occupied'],
-        nurseRatio: ['slaugytojų - pacientų santykis', 'nurse - patient ratio', 'nurse to patient ratio', 'nurse ratio'],
-        doctorRatio: ['gydytojų - pacientų santykis', 'doctor - patient ratio', 'doctor to patient ratio', 'physician ratio'],
-        lab: [
-          'lab',
-          'avg lab turnaround (min)',
-          'lab turnaround (min)',
-          'vid. lab. tyrimų laikas (min)',
-          'vid. lab. tyrimų laikas',
-        ],
-        category1: ['1 kategorijos pacientų', 'category 1 patients', 'patients category 1', 'c1'],
-        category2: ['2 kategorijos pacientų', 'category 2 patients', 'patients category 2', 'c2'],
-        category3: ['3 kategorijos pacientų', 'category 3 patients', 'patients category 3', 'c3'],
-        category4: ['4 kategorijos pacientų', 'category 4 patients', 'patients category 4', 'c4'],
-        category5: ['5 kategorijos pacientų', 'category 5 patients', 'patients category 5', 'c5'],
-      };
-      const snapshotIndices = {
-        timestamp: resolveColumnIndex(headerNormalized, snapshotCandidates.timestamp),
-        currentPatients: resolveColumnIndex(headerNormalized, snapshotCandidates.currentPatients),
-        occupiedBeds: resolveColumnIndex(headerNormalized, snapshotCandidates.occupiedBeds),
-        nurseRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.nurseRatio),
-        doctorRatio: resolveColumnIndex(headerNormalized, snapshotCandidates.doctorRatio),
-        lab: resolveColumnIndex(headerNormalized, snapshotCandidates.lab),
-        category1: resolveColumnIndex(headerNormalized, snapshotCandidates.category1),
-        category2: resolveColumnIndex(headerNormalized, snapshotCandidates.category2),
-        category3: resolveColumnIndex(headerNormalized, snapshotCandidates.category3),
-        category4: resolveColumnIndex(headerNormalized, snapshotCandidates.category4),
-        category5: resolveColumnIndex(headerNormalized, snapshotCandidates.category5),
-      };
-      const hasSnapshot = snapshotIndices.currentPatients >= 0
-        || snapshotIndices.occupiedBeds >= 0
-        || snapshotIndices.nurseRatio >= 0
-        || snapshotIndices.doctorRatio >= 0
-        || snapshotIndices.category1 >= 0
-        || snapshotIndices.category2 >= 0
-        || snapshotIndices.category3 >= 0
-        || snapshotIndices.category4 >= 0
-        || snapshotIndices.category5 >= 0;
-      const hasLegacy = Object.values(legacyIndices).some((index) => index >= 0);
-      const datasetType = hasSnapshot && hasLegacy ? 'hybrid' : (hasSnapshot ? 'snapshot' : 'legacy');
-
-      const records = [];
-      let syntheticCounter = 0;
-      for (let i = 1; i < rows.length; i += 1) {
-        const row = rows[i];
-        if (!row || !row.length) {
-          continue;
-        }
-        const normalizedRow = header.map((_, index) => {
-          const cell = row[index];
-          return cell != null ? String(cell).trim() : '';
-        });
-
-        const timestampRaw = snapshotIndices.timestamp >= 0 ? normalizedRow[snapshotIndices.timestamp] : '';
-        const timestamp = timestampRaw ? parseDate(timestampRaw) : null;
-        const arrivalValue = legacyIndices.arrival >= 0 ? normalizedRow[legacyIndices.arrival] : '';
-        const departureValue = legacyIndices.departure >= 0 ? normalizedRow[legacyIndices.departure] : '';
-        const dateValue = legacyIndices.date >= 0 ? normalizedRow[legacyIndices.date] : '';
-        const arrivalDate = arrivalValue ? parseDate(arrivalValue) : null;
-        const departureDate = departureValue ? parseDate(departureValue) : null;
-        let recordDate = dateValue ? parseDate(dateValue) : null;
-        if (!(recordDate instanceof Date) || Number.isNaN(recordDate.getTime())) {
-          recordDate = arrivalDate || departureDate || (timestamp instanceof Date && !Number.isNaN(timestamp.getTime()) ? timestamp : null);
-        }
-        let dateKey = recordDate instanceof Date && !Number.isNaN(recordDate.getTime())
-          ? toDateKeyFromDate(recordDate)
-          : '';
-
-        const dispositionValue = legacyIndices.disposition >= 0 ? normalizedRow[legacyIndices.disposition] : '';
-        let losMinutes = legacyIndices.los >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.los]) : null;
-        if (!Number.isFinite(losMinutes) && arrivalDate instanceof Date && departureDate instanceof Date) {
-          const diffMinutes = (departureDate.getTime() - arrivalDate.getTime()) / 60000;
-          if (Number.isFinite(diffMinutes) && diffMinutes >= 0) {
-            losMinutes = diffMinutes;
-          }
-        }
-        const doorMinutes = legacyIndices.door >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.door]) : null;
-        const decisionMinutes = legacyIndices.decision >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.decision]) : null;
-        const labMinutes = legacyIndices.lab >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.lab]) : null;
-        const dispositionInfo = normalizeDispositionValue(dispositionValue);
-
-        const currentPatients = snapshotIndices.currentPatients >= 0
-          ? parseNumericCell(normalizedRow[snapshotIndices.currentPatients])
-          : null;
-        const occupiedBeds = snapshotIndices.occupiedBeds >= 0
-          ? parseNumericCell(normalizedRow[snapshotIndices.occupiedBeds])
-          : null;
-        const nurseRatioInfo = snapshotIndices.nurseRatio >= 0
-          ? normalizeRatioValue(normalizedRow[snapshotIndices.nurseRatio])
-          : { ratio: null, text: '' };
-        const doctorRatioInfo = snapshotIndices.doctorRatio >= 0
-          ? normalizeRatioValue(normalizedRow[snapshotIndices.doctorRatio])
-          : { ratio: null, text: '' };
-        const snapshotLabMinutes = snapshotIndices.lab >= 0
-          ? parseNumericCell(normalizedRow[snapshotIndices.lab])
-          : null;
-        const categories = {};
-        let hasCategoryData = false;
-        ['1', '2', '3', '4', '5'].forEach((key) => {
-          const prop = `category${key}`;
-          const index = snapshotIndices[prop];
-          const value = index >= 0 ? parseNumericCell(normalizedRow[index]) : null;
-          if (Number.isFinite(value) && value >= 0) {
-            categories[key] = value;
-            hasCategoryData = true;
-          } else {
-            categories[key] = null;
-          }
-        });
-        const hasSnapshotData = Number.isFinite(currentPatients)
-          || Number.isFinite(occupiedBeds)
-          || Number.isFinite(nurseRatioInfo.ratio)
-          || Number.isFinite(doctorRatioInfo.ratio)
-          || hasCategoryData;
-
-        if (!hasSnapshotData && datasetType === 'snapshot') {
-          continue;
-        }
-
-        if (!dateKey) {
-          if (datasetType === 'legacy' && !hasSnapshotData) {
-            continue;
-          }
-          syntheticCounter += 1;
-          dateKey = `snapshot-${String(syntheticCounter).padStart(3, '0')}`;
-        }
-
-        records.push({
-          dateKey,
-          timestamp: timestamp instanceof Date && !Number.isNaN(timestamp.getTime()) ? timestamp : null,
-          rawTimestamp: timestampRaw,
-          disposition: dispositionInfo.label,
-          dispositionCategory: dispositionInfo.category,
-          losMinutes: Number.isFinite(losMinutes) && losMinutes >= 0 ? losMinutes : null,
-          doorToProviderMinutes: Number.isFinite(doorMinutes) && doorMinutes >= 0 ? doorMinutes : null,
-          decisionToLeaveMinutes: Number.isFinite(decisionMinutes) && decisionMinutes >= 0 ? decisionMinutes : null,
-          labMinutes: Number.isFinite(labMinutes) && labMinutes >= 0 ? labMinutes : null,
-          snapshotLabMinutes: Number.isFinite(snapshotLabMinutes) && snapshotLabMinutes >= 0 ? snapshotLabMinutes : null,
-          currentPatients: Number.isFinite(currentPatients) && currentPatients >= 0 ? currentPatients : null,
-          occupiedBeds: Number.isFinite(occupiedBeds) && occupiedBeds >= 0 ? occupiedBeds : null,
-          nurseRatio: Number.isFinite(nurseRatioInfo.ratio) && nurseRatioInfo.ratio > 0 ? nurseRatioInfo.ratio : null,
-          nurseRatioText: nurseRatioInfo.text,
-          doctorRatio: Number.isFinite(doctorRatioInfo.ratio) && doctorRatioInfo.ratio > 0 ? doctorRatioInfo.ratio : null,
-          doctorRatioText: doctorRatioInfo.text,
-          categories,
-          arrivalHour: arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
-          departureHour: departureDate instanceof Date && !Number.isNaN(departureDate.getTime()) ? departureDate.getHours() : null,
-        });
-      }
-
-      return { records, meta: { type: datasetType } };
-    }
-
-    function formatHourLabel(hour) {
-      if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
-        return '';
-      }
-      return `${String(hour).padStart(2, '0')}:00`;
-    }
-
-    function pickTopHours(hourCounts, limit = 3) {
-      if (!Array.isArray(hourCounts) || !hourCounts.length) {
-        return [];
-      }
-      return hourCounts
-        .map((count, hour) => ({ hour, count }))
-        .filter((entry) => Number.isFinite(entry.count) && entry.count > 0)
-        .sort((a, b) => {
-          if (b.count !== a.count) {
-            return b.count - a.count;
-          }
-          return a.hour - b.hour;
-        })
-        .slice(0, Math.max(0, limit));
-    }
-
-    function computePercentile(sortedValues, percentile) {
-      if (!Array.isArray(sortedValues) || !sortedValues.length) {
-        return null;
-      }
-      const clamped = Math.min(Math.max(percentile, 0), 1);
-      if (sortedValues.length === 1) {
-        return sortedValues[0];
-      }
-      const index = (sortedValues.length - 1) * clamped;
-      const lower = Math.floor(index);
-      const upper = Math.ceil(index);
-      const weight = index - lower;
-      if (upper >= sortedValues.length) {
-        return sortedValues[sortedValues.length - 1];
-      }
-      if (lower === upper) {
-        return sortedValues[lower];
-      }
-      const lowerValue = sortedValues[lower];
-      const upperValue = sortedValues[upper];
-      if (!Number.isFinite(lowerValue) || !Number.isFinite(upperValue)) {
-        return null;
-      }
-      return lowerValue + (upperValue - lowerValue) * weight;
-    }
-
-    function formatPercentPointDelta(delta) {
-      if (!Number.isFinite(delta)) {
-        return '';
-      }
-      const magnitude = Math.abs(delta) * 100;
-      const rounded = Math.round(magnitude * 10) / 10;
-      if (!rounded) {
-        return '±0 p.p.';
-      }
-      const sign = delta > 0 ? '+' : '−';
-      return `${sign}${oneDecimalFormatter.format(rounded)} p.p.`;
-    }
-
-    function summarizeLegacyRecords(records) {
-      const summary = createEmptyEdSummary('legacy');
-      const dispositions = new Map();
-      const categoryTotals = { hospitalized: 0, discharged: 0, left: 0, transfer: 0, other: 0 };
-      const dailyBuckets = new Map();
-      const monthBuckets = new Map();
-      const arrivalHourCounts = Array.from({ length: 24 }, () => 0);
-      const dischargeHourCounts = Array.from({ length: 24 }, () => 0);
-      let arrivalsWithHour = 0;
-      const losValues = [];
-      const losPositiveValues = [];
-      let losValidCount = 0;
-      let fastCount = 0;
-      let slowCount = 0;
-      const validRecords = Array.isArray(records)
-        ? records.filter((record) => record && typeof record.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.dateKey))
-        : [];
-      if (!validRecords.length) {
-        return { summary, dispositions: [], daily: [] };
-      }
-
-      let losSum = 0;
-      let losCount = 0;
-      let hospitalizedLosSum = 0;
-      let hospitalizedLosCount = 0;
-      let doorSum = 0;
-      let doorCount = 0;
-      let decisionSum = 0;
-      let decisionCount = 0;
-      let labSum = 0;
-      let labCount = 0;
-
-      summary.totalPatients = validRecords.length;
-      validRecords.forEach((record) => {
-        const {
-          dateKey,
-          disposition,
-          dispositionCategory,
-          losMinutes,
-          doorToProviderMinutes,
-          decisionToLeaveMinutes,
-          labMinutes,
-          arrivalHour,
-          departureHour,
-        } = record;
-        if (Number.isInteger(arrivalHour) && arrivalHour >= 0 && arrivalHour <= 23) {
-          arrivalHourCounts[arrivalHour] += 1;
-          arrivalsWithHour += 1;
-        }
-        if (Number.isInteger(departureHour) && departureHour >= 0 && departureHour <= 23) {
-          dischargeHourCounts[departureHour] += 1;
-        }
-        const key = disposition && disposition.trim().length ? disposition : 'Nežinoma';
-        if (!dispositions.has(key)) {
-          dispositions.set(key, { label: key, count: 0, category: dispositionCategory || 'other' });
-        }
-        const dispositionEntry = dispositions.get(key);
-        dispositionEntry.count += 1;
-        const categoryKey = dispositionCategory && categoryTotals[dispositionCategory] != null ? dispositionCategory : 'other';
-        categoryTotals[categoryKey] += 1;
-
-        const bucket = dailyBuckets.get(dateKey) || {
-          dateKey,
-          patients: 0,
-          losSum: 0,
-          losCount: 0,
-          doorSum: 0,
-          doorCount: 0,
-          labSum: 0,
-          labCount: 0,
-          fastCount: 0,
-          slowCount: 0,
-        };
-        bucket.patients += 1;
-        if (Number.isFinite(losMinutes)) {
-          bucket.losSum += losMinutes;
-          bucket.losCount += 1;
-          losSum += losMinutes;
-          losCount += 1;
-          losValues.push(losMinutes);
-          if (losMinutes > 0) {
-            losPositiveValues.push(losMinutes);
-          }
-          losValidCount += 1;
-          if (losMinutes < 120) {
-            bucket.fastCount += 1;
-            fastCount += 1;
-          }
-          if (losMinutes > 480) {
-            bucket.slowCount += 1;
-            slowCount += 1;
-          }
-          if (dispositionCategory === 'hospitalized') {
-            hospitalizedLosSum += losMinutes;
-            hospitalizedLosCount += 1;
-          }
-        }
-        if (Number.isFinite(doorToProviderMinutes)) {
-          bucket.doorSum += doorToProviderMinutes;
-          bucket.doorCount += 1;
-          doorSum += doorToProviderMinutes;
-          doorCount += 1;
-        }
-        if (Number.isFinite(decisionToLeaveMinutes)) {
-          decisionSum += decisionToLeaveMinutes;
-          decisionCount += 1;
-        }
-        if (Number.isFinite(labMinutes)) {
-          bucket.labSum += labMinutes;
-          bucket.labCount += 1;
-          labSum += labMinutes;
-          labCount += 1;
-        }
-        dailyBuckets.set(dateKey, bucket);
-
-        const monthKey = typeof dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
-          ? dateKey.slice(0, 7)
-          : '';
-        if (monthKey) {
-          const monthBucket = monthBuckets.get(monthKey) || {
-            count: 0,
-            hospitalized: 0,
-            losSum: 0,
-            losCount: 0,
-            hospitalizedLosSum: 0,
-            hospitalizedLosCount: 0,
-            labSum: 0,
-            labCount: 0,
-          };
-          monthBucket.count += 1;
-          if (dispositionCategory === 'hospitalized') {
-            monthBucket.hospitalized += 1;
-          }
-          if (Number.isFinite(losMinutes)) {
-            monthBucket.losSum += losMinutes;
-            monthBucket.losCount += 1;
-            if (dispositionCategory === 'hospitalized') {
-              monthBucket.hospitalizedLosSum += losMinutes;
-              monthBucket.hospitalizedLosCount += 1;
-            }
-          }
-          if (Number.isFinite(labMinutes)) {
-            monthBucket.labSum += labMinutes;
-            monthBucket.labCount += 1;
-          }
-          monthBuckets.set(monthKey, monthBucket);
-        }
-      });
-
-      summary.uniqueDates = dailyBuckets.size;
-      if (summary.uniqueDates > 0) {
-        summary.avgDailyPatients = summary.totalPatients / summary.uniqueDates;
-      }
-      if (losCount > 0) {
-        summary.avgLosMinutes = losSum / losCount;
-      }
-      if (hospitalizedLosCount > 0) {
-        summary.avgLosHospitalizedMinutes = hospitalizedLosSum / hospitalizedLosCount;
-      }
-      if (doorCount > 0) {
-        summary.avgDoorToProviderMinutes = doorSum / doorCount;
-      }
-      if (decisionCount > 0) {
-        summary.avgDecisionToLeaveMinutes = decisionSum / decisionCount;
-      }
-      if (labCount > 0) {
-        summary.avgLabMinutes = labSum / labCount;
-      }
-      if (summary.totalPatients > 0) {
-        summary.hospitalizedShare = categoryTotals.hospitalized / summary.totalPatients;
-      }
-      summary.generatedAt = new Date();
-
-      const monthlyDayTotals = new Map();
-      dailyBuckets.forEach((bucket) => {
-        if (!bucket || typeof bucket.dateKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(bucket.dateKey)) {
-          return;
-        }
-        const monthKey = bucket.dateKey.slice(0, 7);
-        if (!monthKey || !Number.isFinite(bucket.patients)) {
-          return;
-        }
-        const entry = monthlyDayTotals.get(monthKey) || { patientSum: 0, dayCount: 0 };
-        entry.patientSum += bucket.patients;
-        entry.dayCount += 1;
-        monthlyDayTotals.set(monthKey, entry);
-      });
-
-      if (monthBuckets.size > 0) {
-        const sortedMonthKeys = Array.from(monthBuckets.keys()).sort();
-        const latestMonthKey = sortedMonthKeys[sortedMonthKeys.length - 1];
-        const currentMonth = monthBuckets.get(latestMonthKey);
-        if (currentMonth) {
-          summary.avgLosMonthMinutes = currentMonth.losCount > 0
-            ? currentMonth.losSum / currentMonth.losCount
-            : null;
-          summary.hospitalizedMonthShare = currentMonth.count > 0
-            ? currentMonth.hospitalized / currentMonth.count
-            : null;
-          summary.avgLabMonthMinutes = currentMonth.labCount > 0
-            ? currentMonth.labSum / currentMonth.labCount
-            : null;
-          summary.currentMonthKey = latestMonthKey;
-          const monthDayInfo = monthlyDayTotals.get(latestMonthKey);
-          if (monthDayInfo && monthDayInfo.dayCount > 0) {
-            summary.avgDaytimePatientsMonth = monthDayInfo.patientSum / monthDayInfo.dayCount;
-          }
-          const currentYear = typeof latestMonthKey === 'string' ? latestMonthKey.slice(0, 4) : '';
-          if (currentYear) {
-            const yearTotals = {
-              count: 0,
-              hospitalized: 0,
-              losSum: 0,
-              losCount: 0,
-              hospitalizedLosSum: 0,
-              hospitalizedLosCount: 0,
-              labSum: 0,
-              labCount: 0,
-            };
-            monthBuckets.forEach((bucket, key) => {
-              if (typeof key === 'string' && key.startsWith(currentYear)) {
-                yearTotals.count += bucket.count;
-                yearTotals.hospitalized += bucket.hospitalized;
-                yearTotals.losSum += bucket.losSum;
-                yearTotals.losCount += bucket.losCount;
-                yearTotals.hospitalizedLosSum += bucket.hospitalizedLosSum;
-                yearTotals.hospitalizedLosCount += bucket.hospitalizedLosCount;
-                yearTotals.labSum += bucket.labSum;
-                yearTotals.labCount += bucket.labCount;
-              }
-            });
-            summary.avgLosYearMinutes = yearTotals.losCount > 0
-              ? yearTotals.losSum / yearTotals.losCount
-              : null;
-            summary.hospitalizedYearShare = yearTotals.count > 0
-              ? yearTotals.hospitalized / yearTotals.count
-              : null;
-            if (yearTotals.hospitalizedLosCount > 0) {
-              summary.avgLosHospitalizedMinutes = yearTotals.hospitalizedLosSum / yearTotals.hospitalizedLosCount;
-            }
-            summary.avgLabYearMinutes = yearTotals.labCount > 0
-              ? yearTotals.labSum / yearTotals.labCount
-              : null;
-          }
-        }
-      }
-
-      const topArrivalHours = pickTopHours(arrivalHourCounts, 3);
-      const topDepartureHours = pickTopHours(dischargeHourCounts, 3);
-      if (topArrivalHours.length || topDepartureHours.length) {
-        const arrivalText = topArrivalHours.length
-          ? topArrivalHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
-          : '—';
-        const departureText = topDepartureHours.length
-          ? topDepartureHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
-          : '—';
-        summary.peakWindowText = `Atvykimai: ${arrivalText} / Išvykimai: ${departureText}`;
-        if (topArrivalHours.length && topDepartureHours.length) {
-          const mismatch = topArrivalHours.filter((item) => !topDepartureHours.some((candidate) => candidate.hour === item.hour));
-          if (mismatch.length) {
-            const labels = mismatch.map((item) => formatHourLabel(item.hour)).filter(Boolean);
-            summary.peakWindowRiskNote = labels.length
-              ? `Galima „boarding“ rizika: ${labels.join(', ')}`
-              : 'Galima neatitiktis tarp atvykimų ir išvykimų.';
-          } else {
-            summary.peakWindowRiskNote = 'Pagrindiniai srautai sutampa.';
-          }
-        } else if (topArrivalHours.length) {
-          summary.peakWindowRiskNote = 'Trūksta išvykimų valandų duomenų.';
-        } else {
-          summary.peakWindowRiskNote = 'Trūksta atvykimų valandų duomenų.';
-        }
-      }
-
-      if (summary.uniqueDates > 0 && arrivalsWithHour > 0) {
-        const arrivalsPerHour = arrivalsWithHour / (summary.uniqueDates * 24);
-        if (Number.isFinite(arrivalsPerHour) && arrivalsPerHour > 0) {
-          summary.taktTimeMinutes = 60 / arrivalsPerHour;
-          summary.taktTimeMeta = `~${oneDecimalFormatter.format(arrivalsPerHour)} atv./val.`;
-        }
-      }
-
-      const percentileValues = losPositiveValues.length ? losPositiveValues : losValues;
-      if (percentileValues.length) {
-        const sortedLos = [...percentileValues].sort((a, b) => a - b);
-        const losMedian = computePercentile(sortedLos, 0.5);
-        const losP90 = computePercentile(sortedLos, 0.9);
-        if (Number.isFinite(losMedian)) {
-          summary.losMedianMinutes = losMedian;
-        }
-        if (Number.isFinite(losP90)) {
-          summary.losP90Minutes = losP90;
-        }
-        if (Number.isFinite(losMedian) && Number.isFinite(losP90) && losMedian > 0) {
-          summary.losVariabilityIndex = losP90 / losMedian;
-        }
-        const medianHours = Number.isFinite(losMedian) ? losMedian / 60 : null;
-        const p90Hours = Number.isFinite(losP90) ? losP90 / 60 : null;
-        if (Number.isFinite(medianHours) && Number.isFinite(p90Hours)) {
-          summary.losPercentilesText = `P50: ${oneDecimalFormatter.format(medianHours)} val. • P90: ${oneDecimalFormatter.format(p90Hours)} val.`;
-        }
-        const medianLosDays = Number.isFinite(losMedian) ? losMedian / (60 * 24) : null;
-        if (Number.isFinite(summary.avgDailyPatients) && Number.isFinite(medianLosDays)) {
-          summary.littlesLawEstimate = summary.avgDailyPatients * medianLosDays;
-          if (Number.isFinite(medianHours)) {
-            summary.littlesLawMeta = `Vid. ${oneDecimalFormatter.format(summary.avgDailyPatients)} atv./d. × median ${oneDecimalFormatter.format(medianHours)} val.`;
-          }
-        }
-      }
-
-      const dispositionsList = Array.from(dispositions.values())
-        .map((entry) => ({
-          label: entry.label,
-          count: entry.count,
-          category: entry.category,
-          share: summary.totalPatients > 0 ? entry.count / summary.totalPatients : null,
-        }))
-        .sort((a, b) => {
-          if (b.count !== a.count) {
-            return b.count - a.count;
-          }
-          return a.label.localeCompare(b.label);
-        });
-
-      const daily = Array.from(dailyBuckets.values())
-        .map((bucket) => ({
-          dateKey: bucket.dateKey,
-          patients: bucket.patients,
-          avgLosMinutes: bucket.losCount > 0 ? bucket.losSum / bucket.losCount : null,
-          avgDoorMinutes: bucket.doorCount > 0 ? bucket.doorSum / bucket.doorCount : null,
-          fastCount: bucket.fastCount || 0,
-          slowCount: bucket.slowCount || 0,
-          losCount: bucket.losCount || 0,
-          fastShare: bucket.losCount > 0 ? bucket.fastCount / bucket.losCount : null,
-          slowShare: bucket.losCount > 0 ? bucket.slowCount / bucket.losCount : null,
-        }))
-        .sort((a, b) => (a.dateKey === b.dateKey ? 0 : (a.dateKey > b.dateKey ? -1 : 1)));
-
-      const dailyAsc = [...daily].sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
-      const trendWindowSize = Math.min(30, dailyAsc.length);
-      const recentWindow = trendWindowSize > 0 ? dailyAsc.slice(-trendWindowSize) : [];
-      const previousWindow = trendWindowSize > 0 ? dailyAsc.slice(Math.max(0, dailyAsc.length - trendWindowSize * 2), dailyAsc.length - trendWindowSize) : [];
-      const reduceWindow = (list) => list.reduce((acc, item) => {
-        acc.fast += Number.isFinite(item.fastCount) ? item.fastCount : 0;
-        acc.slow += Number.isFinite(item.slowCount) ? item.slowCount : 0;
-        acc.totalLos += Number.isFinite(item.losCount) ? item.losCount : 0;
-        return acc;
-      }, { fast: 0, slow: 0, totalLos: 0 });
-      const recentAgg = reduceWindow(recentWindow);
-      const previousAgg = reduceWindow(previousWindow);
-      const recentFastShare = recentAgg.totalLos > 0 ? recentAgg.fast / recentAgg.totalLos : (losValidCount > 0 ? fastCount / losValidCount : null);
-      const recentSlowShare = recentAgg.totalLos > 0 ? recentAgg.slow / recentAgg.totalLos : (losValidCount > 0 ? slowCount / losValidCount : null);
-      summary.fastLaneShare = Number.isFinite(recentFastShare) ? recentFastShare : null;
-      summary.slowLaneShare = Number.isFinite(recentSlowShare) ? recentSlowShare : null;
-      if (summary.fastLaneShare != null && summary.slowLaneShare != null) {
-        summary.fastSlowSplitValue = `Greitieji: ${percentFormatter.format(summary.fastLaneShare)} • Lėtieji: ${percentFormatter.format(summary.slowLaneShare)}`;
-      }
-      let fastDelta = null;
-      let slowDelta = null;
-      if (previousAgg.totalLos > 0 && recentAgg.totalLos > 0) {
-        const previousFastShare = previousAgg.fast / previousAgg.totalLos;
-        const previousSlowShare = previousAgg.slow / previousAgg.totalLos;
-        fastDelta = Number.isFinite(previousFastShare) && Number.isFinite(recentFastShare)
-          ? recentFastShare - previousFastShare
-          : null;
-        slowDelta = Number.isFinite(previousSlowShare) && Number.isFinite(recentSlowShare)
-          ? recentSlowShare - previousSlowShare
-          : null;
-      }
-      summary.fastLaneDelta = Number.isFinite(fastDelta) ? fastDelta : null;
-      summary.slowLaneDelta = Number.isFinite(slowDelta) ? slowDelta : null;
-      summary.fastSlowTrendWindowDays = trendWindowSize;
-      if (trendWindowSize > 0) {
-        if (Number.isFinite(fastDelta) || Number.isFinite(slowDelta)) {
-          const fastDeltaText = Number.isFinite(fastDelta) ? formatPercentPointDelta(fastDelta) : '—';
-          const slowDeltaText = Number.isFinite(slowDelta) ? formatPercentPointDelta(slowDelta) : '—';
-          summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Pokytis vs ankst. ${trendWindowSize} d.: ${fastDeltaText} / ${slowDeltaText}`;
-        } else {
-          summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Ankstesnių duomenų palyginimui nepakanka.`;
-        }
-      } else if (losValidCount > 0) {
-        summary.fastSlowSplitValue = summary.fastSlowSplitValue || `Greitieji: ${percentFormatter.format(fastCount / losValidCount)} • Lėtieji: ${percentFormatter.format(slowCount / losValidCount)}`;
-        summary.fastSlowTrendText = 'Langas: visi turimi duomenys • Pokyčiams apskaičiuoti reikia bent 2 langų.';
-      }
-
-      return { summary, dispositions: dispositionsList, daily };
-    }
-
-    function summarizeSnapshotRecords(records) {
-      const result = {
-        entryCount: 0,
-        currentPatients: null,
-        occupiedBeds: null,
-        nursePatientsPerStaff: null,
-        doctorPatientsPerStaff: null,
-        labMinutes: null,
-        latestSnapshotLabel: '',
-        latestSnapshotAt: null,
-        generatedAt: null,
-        dispositions: [],
-        daily: [],
-      };
-      const wrapped = Array.isArray(records)
-        ? records.map((record, index) => ({ record, index })).filter((item) => {
-          if (!item.record) {
-            return false;
-          }
-          const r = item.record;
-          const hasValue = Number.isFinite(r.currentPatients)
-            || Number.isFinite(r.occupiedBeds)
-            || Number.isFinite(r.nurseRatio)
-            || Number.isFinite(r.doctorRatio)
-            || (r.categories && Object.values(r.categories).some((value) => Number.isFinite(value)));
-          return hasValue;
-        })
-        : [];
-      if (!wrapped.length) {
-        return result;
-      }
-
-      result.entryCount = wrapped.length;
-
-      const sortedByTime = [...wrapped].sort((a, b) => {
-        const timeA = a.record.timestamp instanceof Date && !Number.isNaN(a.record.timestamp.getTime())
-          ? a.record.timestamp.getTime()
-          : Number.NEGATIVE_INFINITY;
-        const timeB = b.record.timestamp instanceof Date && !Number.isNaN(b.record.timestamp.getTime())
-          ? b.record.timestamp.getTime()
-          : Number.NEGATIVE_INFINITY;
-        if (timeA !== timeB) {
-          return timeB - timeA;
-        }
-        return b.index - a.index;
-      });
-
-      const latest = sortedByTime[0]?.record || null;
-      if (latest) {
-        result.latestSnapshotAt = latest.timestamp instanceof Date && !Number.isNaN(latest.timestamp.getTime())
-          ? latest.timestamp
-          : null;
-        if (result.latestSnapshotAt) {
-          result.latestSnapshotLabel = result.latestSnapshotAt.toISOString();
-        } else if (latest.rawTimestamp && latest.rawTimestamp.length) {
-          result.latestSnapshotLabel = latest.rawTimestamp;
-        } else {
-          result.latestSnapshotLabel = '';
-        }
-        if (Number.isFinite(latest.currentPatients)) {
-          result.currentPatients = latest.currentPatients;
-        }
-        if (Number.isFinite(latest.occupiedBeds)) {
-          result.occupiedBeds = latest.occupiedBeds;
-        }
-        if (Number.isFinite(latest.nurseRatio)) {
-          result.nursePatientsPerStaff = latest.nurseRatio;
-        }
-        if (Number.isFinite(latest.doctorRatio)) {
-          result.doctorPatientsPerStaff = latest.doctorRatio;
-        }
-        if (Number.isFinite(latest.snapshotLabMinutes)) {
-          result.labMinutes = latest.snapshotLabMinutes;
-        }
-        if (latest.categories && typeof latest.categories === 'object') {
-          const categoryEntries = [];
-          let total = 0;
-          ['1', '2', '3', '4', '5'].forEach((key) => {
-            const value = latest.categories[key];
-            if (Number.isFinite(value) && value >= 0) {
-              const label = TEXT?.ed?.triage?.[`category${key}`] || `${key} kategorija`;
-              categoryEntries.push({ label, count: value, key });
-              total += value;
-            }
-          });
-          result.dispositions = categoryEntries.map((entry) => ({
-            label: entry.label,
-            count: entry.count,
-            share: total > 0 ? entry.count / total : null,
-            categoryKey: entry.key,
-          }));
-        }
-      }
-      result.generatedAt = result.latestSnapshotAt || new Date();
-
-      return result;
-    }
-
-    function summarizeEdRecords(records, meta = {}) {
-      const hasSnapshot = Array.isArray(records)
-        && records.some((record) => record
-          && (Number.isFinite(record.currentPatients)
-            || Number.isFinite(record.occupiedBeds)
-            || Number.isFinite(record.nurseRatio)
-            || Number.isFinite(record.doctorRatio)
-            || (record.categories && Object.values(record.categories).some((value) => Number.isFinite(value)))));
-      const hasLegacy = Array.isArray(records)
-        && records.some((record) => record
-          && (Number.isFinite(record.losMinutes)
-            || Number.isFinite(record.doorToProviderMinutes)
-            || Number.isFinite(record.decisionToLeaveMinutes)
-            || (typeof record.dispositionCategory === 'string' && record.dispositionCategory !== 'unknown')));
-
-      let mode = meta?.type;
-      if (!mode) {
-        if (hasSnapshot && hasLegacy) {
-          mode = 'hybrid';
-        } else if (hasSnapshot) {
-          mode = 'snapshot';
-        } else {
-          mode = 'legacy';
-        }
-      }
-
-      const { startMinutes: nightStartMinutes, endMinutes: nightEndMinutes } = resolveNightBoundsMinutes(settings?.calculations);
-      const daytimeSnapshotBuckets = new Map();
-      let latestSnapshotMonth = '';
-      (Array.isArray(records) ? records : []).forEach((record) => {
-        if (!record || !Number.isFinite(record.currentPatients)) {
-          return;
-        }
-        const timestamp = record.timestamp instanceof Date && !Number.isNaN(record.timestamp.getTime())
-          ? record.timestamp
-          : null;
-        if (!timestamp) {
-          return;
-        }
-        const monthKey = toMonthKeyFromDate(timestamp);
-        if (!monthKey) {
-          return;
-        }
-        const isNight = isNightTimestamp(timestamp, nightStartMinutes, nightEndMinutes);
-        if (isNight === true) {
-          return;
-        }
-        const bucket = daytimeSnapshotBuckets.get(monthKey) || { sum: 0, count: 0 };
-        bucket.sum += record.currentPatients;
-        bucket.count += 1;
-        daytimeSnapshotBuckets.set(monthKey, bucket);
-        if (!latestSnapshotMonth || monthKey > latestSnapshotMonth) {
-          latestSnapshotMonth = monthKey;
-        }
-      });
-
-      const summary = createEmptyEdSummary(mode);
-      if (!Array.isArray(records) || !records.length) {
-        return { summary, dispositions: [], daily: [], meta: { type: mode } };
-      }
-
-      let legacy = { summary: createEmptyEdSummary('legacy'), dispositions: [], daily: [] };
-      if (hasLegacy) {
-        legacy = summarizeLegacyRecords(records);
-        summary.totalPatients = legacy.summary.totalPatients;
-        summary.uniqueDates = legacy.summary.uniqueDates;
-        summary.avgDailyPatients = legacy.summary.avgDailyPatients;
-        summary.avgLosMinutes = legacy.summary.avgLosMinutes;
-        summary.avgLosHospitalizedMinutes = legacy.summary.avgLosHospitalizedMinutes;
-        summary.avgLosMonthMinutes = legacy.summary.avgLosMonthMinutes;
-        summary.avgLosYearMinutes = legacy.summary.avgLosYearMinutes;
-        summary.avgDoorToProviderMinutes = legacy.summary.avgDoorToProviderMinutes;
-        summary.avgDecisionToLeaveMinutes = legacy.summary.avgDecisionToLeaveMinutes;
-        summary.hospitalizedShare = legacy.summary.hospitalizedShare;
-        summary.hospitalizedMonthShare = legacy.summary.hospitalizedMonthShare;
-        summary.hospitalizedYearShare = legacy.summary.hospitalizedYearShare;
-        summary.avgLabMinutes = legacy.summary.avgLabMinutes;
-        summary.avgLabMonthMinutes = legacy.summary.avgLabMonthMinutes;
-        summary.avgLabYearMinutes = legacy.summary.avgLabYearMinutes;
-        summary.currentMonthKey = legacy.summary.currentMonthKey;
-        summary.generatedAt = legacy.summary.generatedAt;
-        summary.peakWindowText = legacy.summary.peakWindowText;
-        summary.peakWindowRiskNote = legacy.summary.peakWindowRiskNote;
-        summary.losMedianMinutes = legacy.summary.losMedianMinutes;
-        summary.losP90Minutes = legacy.summary.losP90Minutes;
-        summary.losVariabilityIndex = legacy.summary.losVariabilityIndex;
-        summary.losPercentilesText = legacy.summary.losPercentilesText;
-        summary.taktTimeMinutes = legacy.summary.taktTimeMinutes;
-        summary.taktTimeMeta = legacy.summary.taktTimeMeta;
-        summary.littlesLawEstimate = legacy.summary.littlesLawEstimate;
-        summary.littlesLawMeta = legacy.summary.littlesLawMeta;
-        summary.fastLaneShare = legacy.summary.fastLaneShare;
-        summary.slowLaneShare = legacy.summary.slowLaneShare;
-        summary.fastLaneDelta = legacy.summary.fastLaneDelta;
-        summary.slowLaneDelta = legacy.summary.slowLaneDelta;
-        summary.fastSlowSplitValue = legacy.summary.fastSlowSplitValue;
-        summary.fastSlowTrendText = legacy.summary.fastSlowTrendText;
-        summary.fastSlowTrendWindowDays = legacy.summary.fastSlowTrendWindowDays;
-      }
-
-      let snapshot = {
-        entryCount: 0,
-        currentPatients: null,
-        occupiedBeds: null,
-        nursePatientsPerStaff: null,
-        doctorPatientsPerStaff: null,
-        labMinutes: null,
-        latestSnapshotLabel: '',
-        latestSnapshotAt: null,
-        generatedAt: null,
-        dispositions: [],
-        daily: [],
-      };
-      if (hasSnapshot) {
-        snapshot = summarizeSnapshotRecords(records);
-        summary.entryCount = snapshot.entryCount;
-        summary.currentPatients = snapshot.currentPatients;
-        summary.occupiedBeds = snapshot.occupiedBeds;
-        summary.nursePatientsPerStaff = snapshot.nursePatientsPerStaff;
-        summary.doctorPatientsPerStaff = snapshot.doctorPatientsPerStaff;
-        if (Number.isFinite(snapshot.labMinutes)) {
-          summary.avgLabMinutes = snapshot.labMinutes;
-          summary.avgLabMonthMinutes = snapshot.labMinutes;
-          summary.avgLabYearMinutes = snapshot.labMinutes;
-        }
-        summary.latestSnapshotLabel = snapshot.latestSnapshotLabel;
-        summary.latestSnapshotAt = snapshot.latestSnapshotAt;
-        if (snapshot.generatedAt) {
-          summary.generatedAt = snapshot.generatedAt;
-        }
-        if (!summary.currentMonthKey && snapshot.latestSnapshotAt instanceof Date && !Number.isNaN(snapshot.latestSnapshotAt.getTime())) {
-          summary.currentMonthKey = toMonthKeyFromDate(snapshot.latestSnapshotAt);
-        }
-      }
-
-      const targetMonth = summary.currentMonthKey || latestSnapshotMonth;
-      if (summary.avgDaytimePatientsMonth == null && targetMonth && daytimeSnapshotBuckets.has(targetMonth)) {
-        const bucket = daytimeSnapshotBuckets.get(targetMonth);
-        summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
-      } else if (
-        summary.avgDaytimePatientsMonth == null
-        && latestSnapshotMonth
-        && daytimeSnapshotBuckets.has(latestSnapshotMonth)
-      ) {
-        const bucket = daytimeSnapshotBuckets.get(latestSnapshotMonth);
-        summary.avgDaytimePatientsMonth = bucket.count > 0 ? bucket.sum / bucket.count : null;
-        if (!summary.currentMonthKey) {
-          summary.currentMonthKey = latestSnapshotMonth;
-        }
-      }
-
-      let dispositions = [];
-      let daily = [];
-      if (mode === 'snapshot') {
-        dispositions = snapshot.dispositions;
-        daily = snapshot.daily;
-      } else if (mode === 'hybrid') {
-        dispositions = snapshot.dispositions.length ? snapshot.dispositions : legacy.dispositions;
-        daily = snapshot.daily.length ? snapshot.daily : legacy.daily;
-      } else {
-        dispositions = legacy.dispositions;
-        daily = legacy.daily;
-      }
-
-      return { summary, dispositions, daily, meta: { type: mode } };
-    }
-
-    function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDailyStats, options = {}) {
-      if (!summary || typeof summary !== 'object') {
-        return summary;
-      }
-      const records = Array.isArray(overviewRecords)
-        ? overviewRecords.filter((record) => record && (record.arrival instanceof Date || record.discharge instanceof Date))
-        : [];
-      if (!records.length) {
-        return summary;
-      }
-
-      const arrivalHourCounts = Array.from({ length: 24 }, () => 0);
-      const dischargeHourCounts = Array.from({ length: 24 }, () => 0);
-      const losValues = [];
-      const losDailyBuckets = new Map();
-      const uniqueDateKeys = new Set();
-      let arrivalsWithHour = 0;
-      let fastCount = 0;
-      let slowCount = 0;
-      let losValidCount = 0;
-
-      records.forEach((record) => {
-        const arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
-        const discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
-        if (!arrival && !discharge) {
-          return;
-        }
-        const reference = arrival || discharge;
-        const dateKey = reference ? formatLocalDateKey(reference) : '';
-        if (dateKey) {
-          uniqueDateKeys.add(dateKey);
-        }
-        if (arrival) {
-          const hour = arrival.getHours();
-          if (Number.isInteger(hour) && hour >= 0 && hour <= 23) {
-            arrivalHourCounts[hour] += 1;
-            arrivalsWithHour += 1;
-          }
-        }
-        if (discharge) {
-          const hour = discharge.getHours();
-          if (Number.isInteger(hour) && hour >= 0 && hour <= 23) {
-            dischargeHourCounts[hour] += 1;
-          }
-        }
-        if (arrival && discharge) {
-          const diffMinutes = (discharge.getTime() - arrival.getTime()) / 60000;
-          if (Number.isFinite(diffMinutes) && diffMinutes >= 0) {
-            losValues.push(diffMinutes);
-            losValidCount += 1;
-            if (diffMinutes < 120) {
-              fastCount += 1;
-            }
-            if (diffMinutes > 480) {
-              slowCount += 1;
-            }
-            if (dateKey) {
-              const bucket = losDailyBuckets.get(dateKey) || { dateKey, fastCount: 0, slowCount: 0, losCount: 0 };
-              bucket.losCount += 1;
-              if (diffMinutes < 120) {
-                bucket.fastCount += 1;
-              }
-              if (diffMinutes > 480) {
-                bucket.slowCount += 1;
-              }
-              losDailyBuckets.set(dateKey, bucket);
-            }
-          }
-        }
-      });
-
-      const hasPeakWindow = typeof summary.peakWindowText === 'string' && summary.peakWindowText.trim().length;
-      if (!hasPeakWindow) {
-        const topArrivalHours = pickTopHours(arrivalHourCounts, 3);
-        const topDepartureHours = pickTopHours(dischargeHourCounts, 3);
-        if (topArrivalHours.length || topDepartureHours.length) {
-          const arrivalText = topArrivalHours.length
-            ? topArrivalHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
-            : '—';
-          const departureText = topDepartureHours.length
-            ? topDepartureHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
-            : '—';
-          summary.peakWindowText = `Atvykimai: ${arrivalText} / Išvykimai: ${departureText}`;
-          const hasRiskNote = typeof summary.peakWindowRiskNote === 'string' && summary.peakWindowRiskNote.trim().length;
-          if (topArrivalHours.length && topDepartureHours.length) {
-            const mismatch = topArrivalHours.filter((item) => !topDepartureHours.some((candidate) => candidate.hour === item.hour));
-            if (mismatch.length) {
-              const labels = mismatch.map((item) => formatHourLabel(item.hour)).filter(Boolean);
-              summary.peakWindowRiskNote = labels.length
-                ? `Galima „boarding“ rizika: ${labels.join(', ')}`
-                : 'Galima neatitiktis tarp atvykimų ir išvykimų.';
-            } else if (!hasRiskNote) {
-              summary.peakWindowRiskNote = 'Pagrindiniai srautai sutampa.';
-            }
-          } else if (!hasRiskNote) {
-            summary.peakWindowRiskNote = topArrivalHours.length
-              ? 'Trūksta išvykimų valandų duomenų.'
-              : 'Trūksta atvykimų valandų duomenų.';
-          }
-        }
-      }
-
-      if (!Number.isFinite(summary.taktTimeMinutes) && uniqueDateKeys.size > 0 && arrivalsWithHour > 0) {
-        const arrivalsPerHour = arrivalsWithHour / (uniqueDateKeys.size * 24);
-        if (Number.isFinite(arrivalsPerHour) && arrivalsPerHour > 0) {
-          summary.taktTimeMinutes = 60 / arrivalsPerHour;
-          summary.taktTimeMeta = `~${oneDecimalFormatter.format(arrivalsPerHour)} atv./val.`;
-        }
-      }
-
-      if (losValues.length) {
-        const sortedLos = losValues.slice().sort((a, b) => a - b);
-        const losMedian = computePercentile(sortedLos, 0.5);
-        const losP90 = computePercentile(sortedLos, 0.9);
-        if (!Number.isFinite(summary.losMedianMinutes) && Number.isFinite(losMedian)) {
-          summary.losMedianMinutes = losMedian;
-        }
-        if (!Number.isFinite(summary.losP90Minutes) && Number.isFinite(losP90)) {
-          summary.losP90Minutes = losP90;
-        }
-        if (!Number.isFinite(summary.losVariabilityIndex)
-          && Number.isFinite(losMedian)
-          && Number.isFinite(losP90)
-          && losMedian > 0) {
-          summary.losVariabilityIndex = losP90 / losMedian;
-        }
-        const medianHours = Number.isFinite(losMedian) ? losMedian / 60 : null;
-        const p90Hours = Number.isFinite(losP90) ? losP90 / 60 : null;
-        if ((!summary.losPercentilesText || !summary.losPercentilesText.trim())
-          && Number.isFinite(medianHours)
-          && Number.isFinite(p90Hours)) {
-          summary.losPercentilesText = `P50: ${oneDecimalFormatter.format(medianHours)} val. • P90: ${oneDecimalFormatter.format(p90Hours)} val.`;
-        }
-        const medianLosDays = Number.isFinite(losMedian) ? losMedian / (60 * 24) : null;
-        let avgDaily = Number.isFinite(summary.avgDailyPatients) ? summary.avgDailyPatients : null;
-        const dailySource = Array.isArray(overviewDailyStats) ? overviewDailyStats : [];
-        if (!Number.isFinite(avgDaily) && dailySource.length) {
-          const windowDays = Number.isFinite(Number(options.windowDays)) && Number(options.windowDays) > 0
-            ? Number(options.windowDays)
-            : 30;
-          const scopedDaily = filterDailyStatsByWindow(dailySource, windowDays);
-          const effectiveDaily = scopedDaily.length ? scopedDaily : dailySource;
-          const totals = effectiveDaily.reduce((acc, entry) => {
-            if (Number.isFinite(entry?.count)) {
-              acc.sum += Number(entry.count);
-              acc.days += 1;
-            }
-            return acc;
-          }, { sum: 0, days: 0 });
-          if (totals.days > 0) {
-            avgDaily = totals.sum / totals.days;
-            if (!Number.isFinite(summary.avgDailyPatients)) {
-              summary.avgDailyPatients = avgDaily;
-            }
-          }
-        }
-        if (!Number.isFinite(summary.littlesLawEstimate)
-          && Number.isFinite(avgDaily)
-          && Number.isFinite(medianLosDays)) {
-          summary.littlesLawEstimate = avgDaily * medianLosDays;
-          if ((!summary.littlesLawMeta || !summary.littlesLawMeta.trim()) && Number.isFinite(medianHours)) {
-            summary.littlesLawMeta = `Vid. ${oneDecimalFormatter.format(avgDaily)} atv./d. × median ${oneDecimalFormatter.format(medianHours)} val.`;
-          }
-        }
-      }
-
-      const needsFastSlow = (!Number.isFinite(summary.fastLaneShare)
-        || !Number.isFinite(summary.slowLaneShare)
-        || !summary.fastSlowSplitValue
-        || !summary.fastSlowSplitValue.trim()
-        || !summary.fastSlowTrendText
-        || !summary.fastSlowTrendText.trim());
-      if (needsFastSlow && (losValidCount > 0 || losDailyBuckets.size > 0)) {
-        const daily = Array.from(losDailyBuckets.values()).sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
-        const trendWindowSize = Math.min(30, daily.length);
-        const recentWindow = trendWindowSize > 0 ? daily.slice(-trendWindowSize) : [];
-        const previousWindow = trendWindowSize > 0
-          ? daily.slice(Math.max(0, daily.length - trendWindowSize * 2), daily.length - trendWindowSize)
-          : [];
-        const reduceWindow = (list) => list.reduce((acc, item) => {
-          acc.fast += Number.isFinite(item.fastCount) ? item.fastCount : 0;
-          acc.slow += Number.isFinite(item.slowCount) ? item.slowCount : 0;
-          acc.totalLos += Number.isFinite(item.losCount) ? item.losCount : 0;
-          return acc;
-        }, { fast: 0, slow: 0, totalLos: 0 });
-        const recentAgg = reduceWindow(recentWindow);
-        const previousAgg = reduceWindow(previousWindow);
-        const recentFastShare = recentAgg.totalLos > 0
-          ? recentAgg.fast / recentAgg.totalLos
-          : (losValidCount > 0 ? fastCount / losValidCount : null);
-        const recentSlowShare = recentAgg.totalLos > 0
-          ? recentAgg.slow / recentAgg.totalLos
-          : (losValidCount > 0 ? slowCount / losValidCount : null);
-        if (!Number.isFinite(summary.fastLaneShare) && Number.isFinite(recentFastShare)) {
-          summary.fastLaneShare = recentFastShare;
-        }
-        if (!Number.isFinite(summary.slowLaneShare) && Number.isFinite(recentSlowShare)) {
-          summary.slowLaneShare = recentSlowShare;
-        }
-        if ((!summary.fastSlowSplitValue || !summary.fastSlowSplitValue.trim())
-          && Number.isFinite(summary.fastLaneShare)
-          && Number.isFinite(summary.slowLaneShare)) {
-          summary.fastSlowSplitValue = `Greitieji: ${percentFormatter.format(summary.fastLaneShare)} • Lėtieji: ${percentFormatter.format(summary.slowLaneShare)}`;
-        }
-        let fastDelta = null;
-        let slowDelta = null;
-        if (previousAgg.totalLos > 0 && recentAgg.totalLos > 0) {
-          const previousFastShare = previousAgg.fast / previousAgg.totalLos;
-          const previousSlowShare = previousAgg.slow / previousAgg.totalLos;
-          fastDelta = Number.isFinite(previousFastShare) && Number.isFinite(recentFastShare)
-            ? recentFastShare - previousFastShare
-            : null;
-          slowDelta = Number.isFinite(previousSlowShare) && Number.isFinite(recentSlowShare)
-            ? recentSlowShare - previousSlowShare
-            : null;
-        }
-        if (!Number.isFinite(summary.fastLaneDelta) && Number.isFinite(fastDelta)) {
-          summary.fastLaneDelta = fastDelta;
-        }
-        if (!Number.isFinite(summary.slowLaneDelta) && Number.isFinite(slowDelta)) {
-          summary.slowLaneDelta = slowDelta;
-        }
-        if (!Number.isFinite(summary.fastSlowTrendWindowDays) && trendWindowSize > 0) {
-          summary.fastSlowTrendWindowDays = trendWindowSize;
-        }
-        if ((!summary.fastSlowTrendText || !summary.fastSlowTrendText.trim()) && trendWindowSize > 0) {
-          if (Number.isFinite(fastDelta) || Number.isFinite(slowDelta)) {
-            const fastDeltaText = Number.isFinite(fastDelta) ? formatPercentPointDelta(fastDelta) : '—';
-            const slowDeltaText = Number.isFinite(slowDelta) ? formatPercentPointDelta(slowDelta) : '—';
-            summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Pokytis vs ankst. ${trendWindowSize} d.: ${fastDeltaText} / ${slowDeltaText}`;
-          } else {
-            summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Ankstesnių duomenų palyginimui nepakanka.`;
-          }
-        }
-        if ((!summary.fastSlowTrendText || !summary.fastSlowTrendText.trim()) && losValidCount > 0) {
-          summary.fastSlowTrendText = 'Langas: visi turimi duomenys • Pokyčiams apskaičiuoti reikia bent 2 langų.';
-        }
-      }
-
-      return summary;
-    }
-
-    function getAvailableYearsFromDaily(dailyStats) {
-      const years = new Set();
-      (Array.isArray(dailyStats) ? dailyStats : []).forEach((entry) => {
-        if (!entry || typeof entry.date !== 'string') {
-          return;
-        }
-        const date = dateKeyToDate(entry.date);
-        if (date instanceof Date && !Number.isNaN(date.getTime())) {
-          years.add(date.getUTCFullYear());
-        }
-      });
-      return Array.from(years).sort((a, b) => b - a);
-    }
-
-    function populateChartYearOptions(dailyStats) {
-      if (!selectors.chartYearSelect) {
-        return;
-      }
-      const years = getAvailableYearsFromDaily(dailyStats);
-      selectors.chartYearSelect.replaceChildren();
-      const defaultOption = document.createElement('option');
-      defaultOption.value = 'all';
-      defaultOption.textContent = TEXT.charts.yearFilterAll;
-      selectors.chartYearSelect.appendChild(defaultOption);
-      years.forEach((year) => {
-        const option = document.createElement('option');
-        option.value = String(year);
-        option.textContent = `${year} m.`;
-        selectors.chartYearSelect.appendChild(option);
-      });
-      const currentYear = Number.isFinite(dashboardState.chartYear) ? dashboardState.chartYear : null;
-      const hasCurrent = Number.isFinite(currentYear) && years.includes(currentYear);
-      if (hasCurrent) {
-        selectors.chartYearSelect.value = String(currentYear);
-      } else {
-        selectors.chartYearSelect.value = 'all';
-        dashboardState.chartYear = null;
-      }
-      syncChartYearControl();
-    }
-
-    function populateHourlyCompareYearOptions(dailyStats) {
-      if (!selectors.hourlyCompareYearA || !selectors.hourlyCompareYearB) {
-        return;
-      }
-      const years = getAvailableYearsFromDaily(dailyStats);
-      const buildOptions = (select) => {
-        select.replaceChildren();
-        const noneOption = document.createElement('option');
-        noneOption.value = 'none';
-        noneOption.textContent = 'Nelyginti';
-        select.appendChild(noneOption);
-        years.forEach((year) => {
-          const option = document.createElement('option');
-          option.value = String(year);
-          option.textContent = `${year} m.`;
-          select.appendChild(option);
-        });
-      };
-      buildOptions(selectors.hourlyCompareYearA);
-      buildOptions(selectors.hourlyCompareYearB);
-      const normalized = normalizeHourlyCompareYears(
-        dashboardState.hourlyCompareYears?.[0],
-        dashboardState.hourlyCompareYears?.[1],
-      );
-      dashboardState.hourlyCompareYears = normalized;
-      syncHourlyCompareControls();
-    }
-
-    function syncChartYearControl() {
-      if (!selectors.chartYearSelect) {
-        return;
-      }
-      const value = Number.isFinite(dashboardState.chartYear) ? String(dashboardState.chartYear) : 'all';
-      if (selectors.chartYearSelect.value !== value) {
-        selectors.chartYearSelect.value = value;
-      }
-    }
-
-    function syncHourlyCompareControls() {
-      if (selectors.hourlyCompareToggle) {
-        selectors.hourlyCompareToggle.checked = Boolean(dashboardState.hourlyCompareEnabled);
-      }
-      if (selectors.hourlyCompareSeriesGroup) {
-        selectors.hourlyCompareSeriesGroup.hidden = !dashboardState.hourlyCompareEnabled;
-      }
-      if (Array.isArray(selectors.hourlyCompareSeriesButtons) && selectors.hourlyCompareSeriesButtons.length) {
-        const current = HOURLY_COMPARE_SERIES.includes(dashboardState.hourlyCompareSeries)
-          ? dashboardState.hourlyCompareSeries
-          : HOURLY_COMPARE_SERIES_ALL;
-        selectors.hourlyCompareSeriesButtons.forEach((button) => {
-          const key = button?.dataset?.hourlyCompareSeries;
-          if (!key) {
-            return;
-          }
-          const isActive = key === current;
-          button.setAttribute('aria-pressed', String(isActive));
-        });
-      }
-      if (selectors.hourlyCompareYearA && selectors.hourlyCompareYearB) {
-        const fieldA = selectors.hourlyCompareYearA.closest('.heatmap-toolbar__field');
-        const fieldB = selectors.hourlyCompareYearB.closest('.heatmap-toolbar__field');
-        if (fieldA) {
-          fieldA.hidden = !dashboardState.hourlyCompareEnabled;
-        }
-        if (fieldB) {
-          fieldB.hidden = !dashboardState.hourlyCompareEnabled;
-        }
-        const normalized = normalizeHourlyCompareYears(
-          dashboardState.hourlyCompareYears?.[0],
-          dashboardState.hourlyCompareYears?.[1],
-        );
-        dashboardState.hourlyCompareYears = normalized;
-        const [yearA, yearB] = normalized;
-        selectors.hourlyCompareYearA.value = Number.isFinite(yearA) ? String(yearA) : 'none';
-        selectors.hourlyCompareYearB.value = Number.isFinite(yearB) ? String(yearB) : 'none';
-      }
-    }
-
-    function handleHourlyCompareToggle(event) {
-      const enabled = Boolean(event?.target?.checked);
-      dashboardState.hourlyCompareEnabled = enabled;
-      if (enabled && selectors.hourlyCompareYearA && selectors.hourlyCompareYearB) {
-        const normalized = normalizeHourlyCompareYears(
-          dashboardState.hourlyCompareYears?.[0],
-          dashboardState.hourlyCompareYears?.[1],
-        );
-        if (!normalized.length) {
-          const availableYears = Array.from(selectors.hourlyCompareYearA.options || [])
-            .map((option) => option.value)
-            .filter((value) => value && value !== 'none')
-            .map((value) => Number.parseInt(value, 10))
-            .filter((value) => Number.isFinite(value));
-          if (availableYears.length) {
-            selectors.hourlyCompareYearA.value = String(availableYears[0]);
-            selectors.hourlyCompareYearB.value = availableYears[1] != null ? String(availableYears[1]) : 'none';
-            dashboardState.hourlyCompareYears = normalizeHourlyCompareYears(
-              selectors.hourlyCompareYearA.value,
-              selectors.hourlyCompareYearB.value,
-            );
-          }
-        }
-      }
-      syncHourlyCompareControls();
-      handleHourlyFilterChange();
-    }
-
-    function handleHourlyCompareYearsChange() {
-      if (!selectors.hourlyCompareYearA || !selectors.hourlyCompareYearB) {
-        return;
-      }
-      const normalized = normalizeHourlyCompareYears(
-        selectors.hourlyCompareYearA.value,
-        selectors.hourlyCompareYearB.value,
-      );
-      dashboardState.hourlyCompareYears = normalized;
-      if (normalized.length === 1) {
-        const only = normalized[0];
-        if (String(selectors.hourlyCompareYearA.value) === String(only)) {
-          selectors.hourlyCompareYearB.value = 'none';
-        } else if (String(selectors.hourlyCompareYearB.value) === String(only)) {
-          selectors.hourlyCompareYearA.value = 'none';
-        }
-      }
-      handleHourlyFilterChange();
-    }
-
-    function handleHourlyCompareSeriesClick(event) {
-      const button = event?.currentTarget;
-      const key = button?.dataset?.hourlyCompareSeries;
-      if (!HOURLY_COMPARE_SERIES.includes(key)) {
-        return;
-      }
-      dashboardState.hourlyCompareSeries = key;
-      syncHourlyCompareControls();
-      if (dashboardState.hourlyCompareEnabled) {
-        handleHourlyFilterChange();
-      }
-    }
-
-    function prepareChartDataForPeriod(period) {
-      const normalized = Number.isFinite(Number(period))
-        ? Math.max(0, Number(period))
-        : 30;
-      const baseDaily = Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
-        ? dashboardState.chartData.baseDaily
-        : dashboardState.dailyStats;
-      const baseRecords = Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
-        ? dashboardState.chartData.baseRecords
-        : dashboardState.rawRecords;
-      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
-      const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-      const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters);
-      dashboardState.chartFilters = { ...sanitizedFilters };
-      const effectiveFilters = sanitizedFilters.compareGmp
-        ? { ...sanitizedFilters, arrival: 'all' }
-        : sanitizedFilters;
-      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, effectiveFilters);
-      const filteredDaily = computeDailyStats(filteredRecords);
-      let scopedDaily = filteredDaily.slice();
-      let scopedRecords = filteredRecords.slice();
-      if (normalized > 0) {
-        const windowKeys = buildDailyWindowKeys(filteredDaily, normalized);
-        scopedDaily = windowKeys.length
-          ? fillDailyStatsWindow(filteredDaily, windowKeys)
-          : filterDailyStatsByWindow(filteredDaily, normalized);
-        scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
-      }
-      const fallbackDaily = filteredDaily.length
-        ? filteredDaily
-        : filterDailyStatsByYear(baseDaily, selectedYear);
-      const funnelData = computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
-      const heatmapData = computeArrivalHeatmap(scopedRecords);
-
-      dashboardState.chartData.filteredRecords = filteredRecords;
-      dashboardState.chartData.filteredDaily = filteredDaily;
-      dashboardState.chartData.filteredWindowRecords = scopedRecords;
-      dashboardState.chartData.dailyWindow = scopedDaily;
-      dashboardState.chartData.funnel = funnelData;
-      dashboardState.chartData.heatmap = heatmapData;
-      updateChartFiltersSummary({ records: filteredRecords, daily: filteredDaily });
-
-      return { daily: scopedDaily, funnel: funnelData, heatmap: heatmapData };
-    }
-
-    function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
-      const primaryEntries = Array.isArray(dailyStats) ? dailyStats : [];
-      const fallbackEntries = Array.isArray(fallbackDailyStats) ? fallbackDailyStats : [];
-      const entries = primaryEntries.length ? primaryEntries : fallbackEntries;
-      const withYear = entries
-        .map((entry) => {
-          const date = typeof entry?.date === 'string' ? dateKeyToDate(entry.date) : null;
-          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-            return null;
-          }
-          return { entry, year: date.getUTCFullYear() };
-        })
-        .filter(Boolean);
-
-      if (!withYear.length) {
-        const totals = entries.reduce(
-          (acc, entry) => ({
-            arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
-            hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
-            discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
-          }),
-          { arrived: 0, hospitalized: 0, discharged: 0 }
-        );
-        const normalizedYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
-        return { ...totals, year: normalizedYear };
-      }
-
-      let effectiveYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
-      if (!Number.isFinite(effectiveYear)) {
-        const uniqueYears = withYear.reduce((acc, item) => {
-          if (!acc.includes(item.year)) {
-            acc.push(item.year);
-          }
-          return acc;
-        }, []);
-        if (uniqueYears.length === 1) {
-          effectiveYear = uniqueYears[0];
-        } else if (!primaryEntries.length && uniqueYears.length) {
-          effectiveYear = uniqueYears.reduce((latest, year) => (year > latest ? year : latest), uniqueYears[0]);
-        }
-      }
-
-      let scoped = withYear;
-      if (Number.isFinite(effectiveYear)) {
-        scoped = withYear.filter((item) => item.year === effectiveYear);
-        if (!scoped.length) {
-          scoped = withYear;
-        }
-      }
-
-      const aggregated = scoped.reduce(
-        (acc, item) => ({
-          arrived: acc.arrived + (Number.isFinite(item.entry?.count) ? item.entry.count : 0),
-          hospitalized: acc.hospitalized + (Number.isFinite(item.entry?.hospitalized) ? item.entry.hospitalized : 0),
-          discharged: acc.discharged + (Number.isFinite(item.entry?.discharged) ? item.entry.discharged : 0),
-        }),
-        { arrived: 0, hospitalized: 0, discharged: 0 }
-      );
-
-      return { ...aggregated, year: Number.isFinite(effectiveYear) ? effectiveYear : null };
-    }
-
-    function computeArrivalHeatmap(records) {
-      const aggregates = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({
-        arrivals: 0,
-        discharges: 0,
-        hospitalized: 0,
-        durationSum: 0,
-        durationCount: 0,
-      })));
-      const weekdayDays = Array.from({ length: 7 }, () => new Set());
-      (Array.isArray(records) ? records : []).forEach((entry) => {
-        if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
-          return;
-        }
-        const rawDay = entry.arrival.getDay();
-        const dayIndex = (rawDay + 6) % 7; // perkeliam, kad pirmadienis būtų pirmas
-        const hour = entry.arrival.getHours();
-        if (hour < 0 || hour > 23) {
-          return;
-        }
-        const cell = aggregates[dayIndex][hour];
-        cell.arrivals += 1;
-        if (entry.hospitalized) {
-          cell.hospitalized += 1;
-        } else {
-          cell.discharges += 1;
-        }
-        if (entry.arrival instanceof Date && entry.discharge instanceof Date) {
-          const duration = (entry.discharge.getTime() - entry.arrival.getTime()) / 3600000;
-          if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
-            cell.durationSum += duration;
-            cell.durationCount += 1;
-          }
-        }
-        const dateKey = formatLocalDateKey(entry.arrival);
-        if (dateKey) {
-          weekdayDays[dayIndex].add(dateKey);
-        }
-      });
-
-      const createMatrix = () => Array.from({ length: 7 }, () => Array(24).fill(0));
-      const metrics = {
-        arrivals: { matrix: createMatrix(), max: 0, hasData: false },
-        discharges: { matrix: createMatrix(), max: 0, hasData: false },
-        hospitalized: { matrix: createMatrix(), max: 0, hasData: false },
-        avgDuration: {
-          matrix: createMatrix(),
-          counts: createMatrix(),
-          max: 0,
-          hasData: false,
-          samples: 0,
-        },
-      };
-
-      aggregates.forEach((row, dayIndex) => {
-        const divisor = weekdayDays[dayIndex].size || 1;
-        row.forEach((cell, hourIndex) => {
-          if (cell.arrivals > 0) {
-            metrics.arrivals.hasData = true;
-          }
-          if (cell.discharges > 0) {
-            metrics.discharges.hasData = true;
-          }
-          if (cell.hospitalized > 0) {
-            metrics.hospitalized.hasData = true;
-          }
-          if (cell.durationCount > 0) {
-            metrics.avgDuration.hasData = true;
-            metrics.avgDuration.samples += cell.durationCount;
-          }
-
-          const arrivalsAvg = divisor ? cell.arrivals / divisor : 0;
-          const dischargesAvg = divisor ? cell.discharges / divisor : 0;
-          const hospitalizedAvg = divisor ? cell.hospitalized / divisor : 0;
-          const averageDuration = cell.durationCount > 0 ? cell.durationSum / cell.durationCount : 0;
-
-          metrics.arrivals.matrix[dayIndex][hourIndex] = arrivalsAvg;
-          metrics.discharges.matrix[dayIndex][hourIndex] = dischargesAvg;
-          metrics.hospitalized.matrix[dayIndex][hourIndex] = hospitalizedAvg;
-          metrics.avgDuration.matrix[dayIndex][hourIndex] = averageDuration;
-          metrics.avgDuration.counts[dayIndex][hourIndex] = cell.durationCount;
-
-          if (arrivalsAvg > metrics.arrivals.max) {
-            metrics.arrivals.max = arrivalsAvg;
-          }
-          if (dischargesAvg > metrics.discharges.max) {
-            metrics.discharges.max = dischargesAvg;
-          }
-          if (hospitalizedAvg > metrics.hospitalized.max) {
-            metrics.hospitalized.max = hospitalizedAvg;
-          }
-          if (averageDuration > metrics.avgDuration.max) {
-            metrics.avgDuration.max = averageDuration;
-          }
-        });
-      });
-
-      return { metrics };
-    }
 
     function normalizeHourlyWeekday(value) {
       if (value === HOURLY_WEEKDAY_ALL) {
@@ -6922,7 +2048,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       return `>${bucket.min} val.`;
     }
 
-    function normalizeHourlyCompareYears(valueA, valueB) {
+    
+function normalizeHourlyCompareYears(valueA, valueB) {
       const raw = [valueA, valueB]
         .map((value) => {
           if (value == null) {
@@ -7532,20 +2659,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       container.appendChild(legend);
     }
 
-    function formatLocalDateKey(date) {
-      if (!(date instanceof Date)) {
-        return '';
-      }
-      const time = date.getTime();
-      if (Number.isNaN(time)) {
-        return '';
-      }
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-
     function resolveShiftStartHour(calculationSettings) {
       const fallback = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
         ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
@@ -7572,144 +2685,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         shiftAnchor.setDate(shiftAnchor.getDate() - 1);
       }
       return formatLocalDateKey(shiftAnchor);
-    }
-
-    function computeDailyStats(data) {
-      const shiftStartHour = resolveShiftStartHour(settings?.calculations);
-      const dailyMap = new Map();
-      data.forEach((record) => {
-        const reference = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-          ? record.arrival
-          : record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-            ? record.discharge
-            : null;
-        const dateKey = computeShiftDateKey(reference, shiftStartHour);
-        if (!dateKey) {
-          return;
-        }
-
-        if (!dailyMap.has(dateKey)) {
-          dailyMap.set(dateKey, {
-            date: dateKey,
-            count: 0,
-            night: 0,
-            ems: 0,
-            discharged: 0,
-            hospitalized: 0,
-            totalTime: 0,
-            durations: 0,
-            hospitalizedTime: 0,
-            hospitalizedDurations: 0,
-          });
-        }
-        const summary = dailyMap.get(dateKey);
-        summary.count += 1;
-        summary.night += record.night ? 1 : 0;
-        summary.ems += record.ems ? 1 : 0;
-        if (record.hospitalized) {
-          summary.hospitalized += 1;
-        } else {
-          summary.discharged += 1;
-        }
-        if (record.arrival instanceof Date && record.discharge instanceof Date) {
-          const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
-          if (Number.isFinite(duration) && duration >= 0 && duration <= 24) { // ignoruojame >24 val. buvimo laikus
-            summary.totalTime += duration;
-            summary.durations += 1;
-            if (record.hospitalized) {
-              summary.hospitalizedTime += duration;
-              summary.hospitalizedDurations += 1;
-            }
-          }
-        }
-      });
-
-      return Array.from(dailyMap.values()).sort((a, b) => (a.date > b.date ? 1 : -1)).map((item) => ({
-        ...item,
-        avgTime: item.durations ? item.totalTime / item.durations : 0,
-        avgHospitalizedTime: item.hospitalizedDurations ? item.hospitalizedTime / item.hospitalizedDurations : 0,
-      }));
-    }
-
-    function computeMonthlyStats(daily) {
-      const monthlyMap = new Map();
-      daily.forEach((entry) => {
-        if (!entry?.date) {
-          return;
-        }
-        const monthKey = entry.date.slice(0, 7);
-        if (!monthlyMap.has(monthKey)) {
-          monthlyMap.set(monthKey, {
-            month: monthKey,
-            count: 0,
-            night: 0,
-            ems: 0,
-            discharged: 0,
-            hospitalized: 0,
-            totalTime: 0,
-            durations: 0,
-            hospitalizedTime: 0,
-            hospitalizedDurations: 0,
-            dayCount: 0,
-          });
-        }
-        const summary = monthlyMap.get(monthKey);
-        summary.count += entry.count;
-        summary.night += entry.night;
-        summary.ems += entry.ems;
-        summary.discharged += entry.discharged;
-        summary.hospitalized += entry.hospitalized;
-        summary.totalTime += entry.totalTime;
-        summary.durations += entry.durations;
-        summary.hospitalizedTime += entry.hospitalizedTime;
-        summary.hospitalizedDurations += entry.hospitalizedDurations;
-        summary.dayCount += 1;
-      });
-
-      return Array.from(monthlyMap.values()).sort((a, b) => (a.month > b.month ? 1 : -1));
-    }
-
-    function computeYearlyStats(monthlyStats) {
-      const yearlyMap = new Map();
-      monthlyStats.forEach((entry) => {
-        if (!entry?.month) {
-          return;
-        }
-        const yearKey = entry.month.slice(0, 4);
-        if (!yearKey) {
-          return;
-        }
-        if (!yearlyMap.has(yearKey)) {
-          yearlyMap.set(yearKey, {
-            year: yearKey,
-            count: 0,
-            night: 0,
-            ems: 0,
-            discharged: 0,
-            hospitalized: 0,
-            totalTime: 0,
-            durations: 0,
-            hospitalizedTime: 0,
-            hospitalizedDurations: 0,
-            dayCount: 0,
-            monthCount: 0,
-          });
-        }
-        const bucket = yearlyMap.get(yearKey);
-        bucket.count += Number.isFinite(entry.count) ? entry.count : 0;
-        bucket.night += Number.isFinite(entry.night) ? entry.night : 0;
-        bucket.ems += Number.isFinite(entry.ems) ? entry.ems : 0;
-        bucket.discharged += Number.isFinite(entry.discharged) ? entry.discharged : 0;
-        bucket.hospitalized += Number.isFinite(entry.hospitalized) ? entry.hospitalized : 0;
-        bucket.totalTime += Number.isFinite(entry.totalTime) ? entry.totalTime : 0;
-        bucket.durations += Number.isFinite(entry.durations) ? entry.durations : 0;
-        bucket.hospitalizedTime += Number.isFinite(entry.hospitalizedTime) ? entry.hospitalizedTime : 0;
-        bucket.hospitalizedDurations += Number.isFinite(entry.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
-        bucket.dayCount += Number.isFinite(entry.dayCount) ? entry.dayCount : 0;
-        bucket.monthCount += 1;
-      });
-
-      return Array.from(yearlyMap.values()).sort((a, b) => (a.year > b.year ? 1 : -1));
     }
 
     function computeFeedbackStats(records) {
@@ -11083,6 +6058,833 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         });
     }
 
+    function prepareChartDataForPeriod(period) {
+      const normalized = Number.isFinite(Number(period))
+        ? Math.max(0, Number(period))
+        : 30;
+      const baseDaily = Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
+        ? dashboardState.chartData.baseDaily
+        : dashboardState.dailyStats;
+      const baseRecords = Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+        ? dashboardState.chartData.baseRecords
+        : dashboardState.rawRecords;
+      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+      const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
+      const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters);
+      dashboardState.chartFilters = { ...sanitizedFilters };
+      const effectiveFilters = sanitizedFilters.compareGmp
+        ? { ...sanitizedFilters, arrival: 'all' }
+        : sanitizedFilters;
+      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, effectiveFilters);
+      const filteredDaily = computeDailyStats(filteredRecords, settings?.calculations, DEFAULT_SETTINGS);
+      let scopedDaily = filteredDaily.slice();
+      let scopedRecords = filteredRecords.slice();
+      if (normalized > 0) {
+        const windowKeys = buildDailyWindowKeys(filteredDaily, normalized);
+        scopedDaily = windowKeys.length
+          ? fillDailyStatsWindow(filteredDaily, windowKeys)
+          : filterDailyStatsByWindow(filteredDaily, normalized);
+        scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
+      }
+      const fallbackDaily = filteredDaily.length
+        ? filteredDaily
+        : filterDailyStatsByYear(baseDaily, selectedYear);
+      const funnelData = computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
+      const heatmapData = computeArrivalHeatmap(scopedRecords);
+
+      dashboardState.chartData.filteredRecords = filteredRecords;
+      dashboardState.chartData.filteredDaily = filteredDaily;
+      dashboardState.chartData.filteredWindowRecords = scopedRecords;
+      dashboardState.chartData.dailyWindow = scopedDaily;
+      dashboardState.chartData.funnel = funnelData;
+      dashboardState.chartData.heatmap = heatmapData;
+      updateChartFiltersSummary({ records: filteredRecords, daily: filteredDaily });
+
+      return { daily: scopedDaily, funnel: funnelData, heatmap: heatmapData };
+    }
+
+    function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
+      const primaryEntries = Array.isArray(dailyStats) ? dailyStats : [];
+      const fallbackEntries = Array.isArray(fallbackDailyStats) ? fallbackDailyStats : [];
+      const entries = primaryEntries.length ? primaryEntries : fallbackEntries;
+      const withYear = entries
+        .map((entry) => {
+          const date = typeof entry?.date === 'string' ? dateKeyToDate(entry.date) : null;
+          if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return null;
+          }
+          return { entry, year: date.getUTCFullYear() };
+        })
+        .filter(Boolean);
+
+      if (!withYear.length) {
+        const totals = entries.reduce(
+          (acc, entry) => ({
+            arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
+            hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
+            discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
+          }),
+          { arrived: 0, hospitalized: 0, discharged: 0 }
+        );
+        const normalizedYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
+        return { ...totals, year: normalizedYear };
+      }
+
+      let effectiveYear = Number.isFinite(targetYear) ? Number(targetYear) : null;
+      if (!Number.isFinite(effectiveYear)) {
+        const uniqueYears = withYear.reduce((acc, item) => {
+          if (!acc.includes(item.year)) {
+            acc.push(item.year);
+          }
+          return acc;
+        }, []);
+        if (uniqueYears.length === 1) {
+          effectiveYear = uniqueYears[0];
+        } else if (!primaryEntries.length && uniqueYears.length) {
+          effectiveYear = uniqueYears.reduce((latest, year) => (year > latest ? year : latest), uniqueYears[0]);
+        }
+      }
+
+      let scoped = withYear;
+      if (Number.isFinite(effectiveYear)) {
+        scoped = withYear.filter((item) => item.year === effectiveYear);
+        if (!scoped.length) {
+          scoped = withYear;
+        }
+      }
+
+      const aggregated = scoped.reduce(
+        (acc, item) => ({
+          arrived: acc.arrived + (Number.isFinite(item.entry?.count) ? item.entry.count : 0),
+          hospitalized: acc.hospitalized + (Number.isFinite(item.entry?.hospitalized) ? item.entry.hospitalized : 0),
+          discharged: acc.discharged + (Number.isFinite(item.entry?.discharged) ? item.entry.discharged : 0),
+        }),
+        { arrived: 0, hospitalized: 0, discharged: 0 }
+      );
+
+      return { ...aggregated, year: Number.isFinite(effectiveYear) ? effectiveYear : null };
+    }
+
+    function computeArrivalHeatmap(records) {
+      const aggregates = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({
+        arrivals: 0,
+        discharges: 0,
+        hospitalized: 0,
+        durationSum: 0,
+        durationCount: 0,
+      })));
+      const weekdayDays = Array.from({ length: 7 }, () => new Set());
+      (Array.isArray(records) ? records : []).forEach((entry) => {
+        if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
+          return;
+        }
+        const rawDay = entry.arrival.getDay();
+        const dayIndex = (rawDay + 6) % 7; // perkeliam, kad pirmadienis būtų pirmas
+        const hour = entry.arrival.getHours();
+        if (hour < 0 || hour > 23) {
+          return;
+        }
+        const cell = aggregates[dayIndex][hour];
+        cell.arrivals += 1;
+        if (entry.hospitalized) {
+          cell.hospitalized += 1;
+        } else {
+          cell.discharges += 1;
+        }
+        if (entry.arrival instanceof Date && entry.discharge instanceof Date) {
+          const duration = (entry.discharge.getTime() - entry.arrival.getTime()) / 3600000;
+          if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
+            cell.durationSum += duration;
+            cell.durationCount += 1;
+          }
+        }
+        const dateKey = formatLocalDateKey(entry.arrival);
+        if (dateKey) {
+          weekdayDays[dayIndex].add(dateKey);
+        }
+      });
+
+      const createMatrix = () => Array.from({ length: 7 }, () => Array(24).fill(0));
+      const metrics = {
+        arrivals: { matrix: createMatrix(), max: 0, hasData: false },
+        discharges: { matrix: createMatrix(), max: 0, hasData: false },
+        hospitalized: { matrix: createMatrix(), max: 0, hasData: false },
+        avgDuration: {
+          matrix: createMatrix(),
+          counts: createMatrix(),
+          max: 0,
+          hasData: false,
+          samples: 0,
+        },
+      };
+
+      aggregates.forEach((row, dayIndex) => {
+        const divisor = weekdayDays[dayIndex].size || 1;
+        row.forEach((cell, hourIndex) => {
+          if (cell.arrivals > 0) {
+            metrics.arrivals.hasData = true;
+          }
+          if (cell.discharges > 0) {
+            metrics.discharges.hasData = true;
+          }
+          if (cell.hospitalized > 0) {
+            metrics.hospitalized.hasData = true;
+          }
+          if (cell.durationCount > 0) {
+            metrics.avgDuration.hasData = true;
+            metrics.avgDuration.samples += cell.durationCount;
+          }
+
+          const arrivalsAvg = divisor ? cell.arrivals / divisor : 0;
+          const dischargesAvg = divisor ? cell.discharges / divisor : 0;
+          const hospitalizedAvg = divisor ? cell.hospitalized / divisor : 0;
+          const averageDuration = cell.durationCount > 0 ? cell.durationSum / cell.durationCount : 0;
+
+          metrics.arrivals.matrix[dayIndex][hourIndex] = arrivalsAvg;
+          metrics.discharges.matrix[dayIndex][hourIndex] = dischargesAvg;
+          metrics.hospitalized.matrix[dayIndex][hourIndex] = hospitalizedAvg;
+          metrics.avgDuration.matrix[dayIndex][hourIndex] = averageDuration;
+          metrics.avgDuration.counts[dayIndex][hourIndex] = cell.durationCount;
+
+          if (arrivalsAvg > metrics.arrivals.max) {
+            metrics.arrivals.max = arrivalsAvg;
+          }
+          if (dischargesAvg > metrics.discharges.max) {
+            metrics.discharges.max = dischargesAvg;
+          }
+          if (hospitalizedAvg > metrics.hospitalized.max) {
+            metrics.hospitalized.max = hospitalizedAvg;
+          }
+          if (averageDuration > metrics.avgDuration.max) {
+            metrics.avgDuration.max = averageDuration;
+          }
+        });
+      });
+
+      return { metrics };
+    }
+
+    function formatHourLabel(hour) {
+      if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+        return '';
+      }
+      return `${String(hour).padStart(2, '0')}:00`;
+    }
+
+    function pickTopHours(hourCounts, limit = 3) {
+      if (!Array.isArray(hourCounts) || !hourCounts.length) {
+        return [];
+      }
+      return hourCounts
+        .map((count, hour) => ({ hour, count }))
+        .filter((entry) => Number.isFinite(entry.count) && entry.count > 0)
+        .sort((a, b) => {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.hour - b.hour;
+        })
+        .slice(0, Math.max(0, limit));
+    }
+
+    function computePercentile(sortedValues, percentile) {
+      if (!Array.isArray(sortedValues) || !sortedValues.length) {
+        return null;
+      }
+      const clamped = Math.min(Math.max(percentile, 0), 1);
+      if (sortedValues.length === 1) {
+        return sortedValues[0];
+      }
+      const index = (sortedValues.length - 1) * clamped;
+      const lower = Math.floor(index);
+      const upper = Math.ceil(index);
+      const weight = index - lower;
+      if (upper >= sortedValues.length) {
+        return sortedValues[sortedValues.length - 1];
+      }
+      if (lower === upper) {
+        return sortedValues[lower];
+      }
+      const lowerValue = sortedValues[lower];
+      const upperValue = sortedValues[upper];
+      if (!Number.isFinite(lowerValue) || !Number.isFinite(upperValue)) {
+        return null;
+      }
+      return lowerValue + (upperValue - lowerValue) * weight;
+    }
+
+    function formatPercentPointDelta(delta) {
+      if (!Number.isFinite(delta)) {
+        return '';
+      }
+      const magnitude = Math.abs(delta) * 100;
+      const rounded = Math.round(magnitude * 10) / 10;
+      if (!rounded) {
+        return '±0 p.p.';
+      }
+      const sign = delta > 0 ? '+' : '−';
+      return `${sign}${oneDecimalFormatter.format(rounded)} p.p.`;
+    }
+
+    function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDailyStats, options = {}) {
+      if (!summary || typeof summary !== 'object') {
+        return summary;
+      }
+      const records = Array.isArray(overviewRecords)
+        ? overviewRecords.filter((record) => record && (record.arrival instanceof Date || record.discharge instanceof Date))
+        : [];
+      if (!records.length) {
+        return summary;
+      }
+
+      const arrivalHourCounts = Array.from({ length: 24 }, () => 0);
+      const dischargeHourCounts = Array.from({ length: 24 }, () => 0);
+      const losValues = [];
+      const losDailyBuckets = new Map();
+      const uniqueDateKeys = new Set();
+      let arrivalsWithHour = 0;
+      let fastCount = 0;
+      let slowCount = 0;
+      let losValidCount = 0;
+
+      records.forEach((record) => {
+        const arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+        const discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
+        if (!arrival && !discharge) {
+          return;
+        }
+        const reference = arrival || discharge;
+        const dateKey = reference ? formatLocalDateKey(reference) : '';
+        if (dateKey) {
+          uniqueDateKeys.add(dateKey);
+        }
+        if (arrival) {
+          const hour = arrival.getHours();
+          if (Number.isInteger(hour) && hour >= 0 && hour <= 23) {
+            arrivalHourCounts[hour] += 1;
+            arrivalsWithHour += 1;
+          }
+        }
+        if (discharge) {
+          const hour = discharge.getHours();
+          if (Number.isInteger(hour) && hour >= 0 && hour <= 23) {
+            dischargeHourCounts[hour] += 1;
+          }
+        }
+        if (arrival && discharge) {
+          const diffMinutes = (discharge.getTime() - arrival.getTime()) / 60000;
+          if (Number.isFinite(diffMinutes) && diffMinutes >= 0) {
+            losValues.push(diffMinutes);
+            losValidCount += 1;
+            if (diffMinutes < 120) {
+              fastCount += 1;
+            }
+            if (diffMinutes > 480) {
+              slowCount += 1;
+            }
+            if (dateKey) {
+              const bucket = losDailyBuckets.get(dateKey) || { dateKey, fastCount: 0, slowCount: 0, losCount: 0 };
+              bucket.losCount += 1;
+              if (diffMinutes < 120) {
+                bucket.fastCount += 1;
+              }
+              if (diffMinutes > 480) {
+                bucket.slowCount += 1;
+              }
+              losDailyBuckets.set(dateKey, bucket);
+            }
+          }
+        }
+      });
+
+      const hasPeakWindow = typeof summary.peakWindowText === 'string' && summary.peakWindowText.trim().length;
+      if (!hasPeakWindow) {
+        const topArrivalHours = pickTopHours(arrivalHourCounts, 3);
+        const topDepartureHours = pickTopHours(dischargeHourCounts, 3);
+        if (topArrivalHours.length || topDepartureHours.length) {
+          const arrivalText = topArrivalHours.length
+            ? topArrivalHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+            : '—';
+          const departureText = topDepartureHours.length
+            ? topDepartureHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+            : '—';
+          summary.peakWindowText = `Atvykimai: ${arrivalText} / Išvykimai: ${departureText}`;
+          const hasRiskNote = typeof summary.peakWindowRiskNote === 'string' && summary.peakWindowRiskNote.trim().length;
+          if (topArrivalHours.length && topDepartureHours.length) {
+            const mismatch = topArrivalHours.filter((item) => !topDepartureHours.some((candidate) => candidate.hour === item.hour));
+            if (mismatch.length) {
+              const labels = mismatch.map((item) => formatHourLabel(item.hour)).filter(Boolean);
+              summary.peakWindowRiskNote = labels.length
+                ? `Galima „boarding“ rizika: ${labels.join(', ')}`
+                : 'Galima neatitiktis tarp atvykimų ir išvykimų.';
+            } else if (!hasRiskNote) {
+              summary.peakWindowRiskNote = 'Pagrindiniai srautai sutampa.';
+            }
+          } else if (!hasRiskNote) {
+            summary.peakWindowRiskNote = topArrivalHours.length
+              ? 'Trūksta išvykimų valandų duomenų.'
+              : 'Trūksta atvykimų valandų duomenų.';
+          }
+        }
+      }
+
+      if (!Number.isFinite(summary.taktTimeMinutes) && uniqueDateKeys.size > 0 && arrivalsWithHour > 0) {
+        const arrivalsPerHour = arrivalsWithHour / (uniqueDateKeys.size * 24);
+        if (Number.isFinite(arrivalsPerHour) && arrivalsPerHour > 0) {
+          summary.taktTimeMinutes = 60 / arrivalsPerHour;
+          summary.taktTimeMeta = `~${oneDecimalFormatter.format(arrivalsPerHour)} atv./val.`;
+        }
+      }
+
+      if (losValues.length) {
+        const sortedLos = losValues.slice().sort((a, b) => a - b);
+        const losMedian = computePercentile(sortedLos, 0.5);
+        const losP90 = computePercentile(sortedLos, 0.9);
+        if (!Number.isFinite(summary.losMedianMinutes) && Number.isFinite(losMedian)) {
+          summary.losMedianMinutes = losMedian;
+        }
+        if (!Number.isFinite(summary.losP90Minutes) && Number.isFinite(losP90)) {
+          summary.losP90Minutes = losP90;
+        }
+        if (!Number.isFinite(summary.losVariabilityIndex)
+          && Number.isFinite(losMedian)
+          && Number.isFinite(losP90)
+          && losMedian > 0) {
+          summary.losVariabilityIndex = losP90 / losMedian;
+        }
+        const medianHours = Number.isFinite(losMedian) ? losMedian / 60 : null;
+        const p90Hours = Number.isFinite(losP90) ? losP90 / 60 : null;
+        if ((!summary.losPercentilesText || !summary.losPercentilesText.trim())
+          && Number.isFinite(medianHours)
+          && Number.isFinite(p90Hours)) {
+          summary.losPercentilesText = `P50: ${oneDecimalFormatter.format(medianHours)} val. • P90: ${oneDecimalFormatter.format(p90Hours)} val.`;
+        }
+        const medianLosDays = Number.isFinite(losMedian) ? losMedian / (60 * 24) : null;
+        let avgDaily = Number.isFinite(summary.avgDailyPatients) ? summary.avgDailyPatients : null;
+        const dailySource = Array.isArray(overviewDailyStats) ? overviewDailyStats : [];
+        if (!Number.isFinite(avgDaily) && dailySource.length) {
+          const windowDays = Number.isFinite(Number(options.windowDays)) && Number(options.windowDays) > 0
+            ? Number(options.windowDays)
+            : 30;
+          const scopedDaily = filterDailyStatsByWindow(dailySource, windowDays);
+          const effectiveDaily = scopedDaily.length ? scopedDaily : dailySource;
+          const totals = effectiveDaily.reduce((acc, entry) => {
+            if (Number.isFinite(entry?.count)) {
+              acc.sum += Number(entry.count);
+              acc.days += 1;
+            }
+            return acc;
+          }, { sum: 0, days: 0 });
+          if (totals.days > 0) {
+            avgDaily = totals.sum / totals.days;
+            if (!Number.isFinite(summary.avgDailyPatients)) {
+              summary.avgDailyPatients = avgDaily;
+            }
+          }
+        }
+        if (!Number.isFinite(summary.littlesLawEstimate)
+          && Number.isFinite(avgDaily)
+          && Number.isFinite(medianLosDays)) {
+          summary.littlesLawEstimate = avgDaily * medianLosDays;
+          if ((!summary.littlesLawMeta || !summary.littlesLawMeta.trim()) && Number.isFinite(medianHours)) {
+            summary.littlesLawMeta = `Vid. ${oneDecimalFormatter.format(avgDaily)} atv./d. × median ${oneDecimalFormatter.format(medianHours)} val.`;
+          }
+        }
+      }
+
+      const needsFastSlow = (!Number.isFinite(summary.fastLaneShare)
+        || !Number.isFinite(summary.slowLaneShare)
+        || !summary.fastSlowSplitValue
+        || !summary.fastSlowSplitValue.trim()
+        || !summary.fastSlowTrendText
+        || !summary.fastSlowTrendText.trim());
+      if (needsFastSlow && (losValidCount > 0 || losDailyBuckets.size > 0)) {
+        const daily = Array.from(losDailyBuckets.values()).sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
+        const trendWindowSize = Math.min(30, daily.length);
+        const recentWindow = trendWindowSize > 0 ? daily.slice(-trendWindowSize) : [];
+        const previousWindow = trendWindowSize > 0
+          ? daily.slice(Math.max(0, daily.length - trendWindowSize * 2), daily.length - trendWindowSize)
+          : [];
+        const reduceWindow = (list) => list.reduce((acc, item) => {
+          acc.fast += Number.isFinite(item.fastCount) ? item.fastCount : 0;
+          acc.slow += Number.isFinite(item.slowCount) ? item.slowCount : 0;
+          acc.totalLos += Number.isFinite(item.losCount) ? item.losCount : 0;
+          return acc;
+        }, { fast: 0, slow: 0, totalLos: 0 });
+        const recentAgg = reduceWindow(recentWindow);
+        const previousAgg = reduceWindow(previousWindow);
+        const recentFastShare = recentAgg.totalLos > 0
+          ? recentAgg.fast / recentAgg.totalLos
+          : (losValidCount > 0 ? fastCount / losValidCount : null);
+        const recentSlowShare = recentAgg.totalLos > 0
+          ? recentAgg.slow / recentAgg.totalLos
+          : (losValidCount > 0 ? slowCount / losValidCount : null);
+        if (!Number.isFinite(summary.fastLaneShare) && Number.isFinite(recentFastShare)) {
+          summary.fastLaneShare = recentFastShare;
+        }
+        if (!Number.isFinite(summary.slowLaneShare) && Number.isFinite(recentSlowShare)) {
+          summary.slowLaneShare = recentSlowShare;
+        }
+        if ((!summary.fastSlowSplitValue || !summary.fastSlowSplitValue.trim())
+          && Number.isFinite(summary.fastLaneShare)
+          && Number.isFinite(summary.slowLaneShare)) {
+          summary.fastSlowSplitValue = `Greitieji: ${percentFormatter.format(summary.fastLaneShare)} • Lėtieji: ${percentFormatter.format(summary.slowLaneShare)}`;
+        }
+        let fastDelta = null;
+        let slowDelta = null;
+        if (previousAgg.totalLos > 0 && recentAgg.totalLos > 0) {
+          const previousFastShare = previousAgg.fast / previousAgg.totalLos;
+          const previousSlowShare = previousAgg.slow / previousAgg.totalLos;
+          fastDelta = Number.isFinite(previousFastShare) && Number.isFinite(recentFastShare)
+            ? recentFastShare - previousFastShare
+            : null;
+          slowDelta = Number.isFinite(previousSlowShare) && Number.isFinite(recentSlowShare)
+            ? recentSlowShare - previousSlowShare
+            : null;
+        }
+        if (!Number.isFinite(summary.fastLaneDelta) && Number.isFinite(fastDelta)) {
+          summary.fastLaneDelta = fastDelta;
+        }
+        if (!Number.isFinite(summary.slowLaneDelta) && Number.isFinite(slowDelta)) {
+          summary.slowLaneDelta = slowDelta;
+        }
+        if (!Number.isFinite(summary.fastSlowTrendWindowDays) && trendWindowSize > 0) {
+          summary.fastSlowTrendWindowDays = trendWindowSize;
+        }
+        if ((!summary.fastSlowTrendText || !summary.fastSlowTrendText.trim()) && trendWindowSize > 0) {
+          if (Number.isFinite(fastDelta) || Number.isFinite(slowDelta)) {
+            const fastDeltaText = Number.isFinite(fastDelta) ? formatPercentPointDelta(fastDelta) : '—';
+            const slowDeltaText = Number.isFinite(slowDelta) ? formatPercentPointDelta(slowDelta) : '—';
+            summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Pokytis vs ankst. ${trendWindowSize} d.: ${fastDeltaText} / ${slowDeltaText}`;
+          } else {
+            summary.fastSlowTrendText = `Langas: ${trendWindowSize} d. • Ankstesnių duomenų palyginimui nepakanka.`;
+          }
+        }
+        if ((!summary.fastSlowTrendText || !summary.fastSlowTrendText.trim()) && losValidCount > 0) {
+          summary.fastSlowTrendText = 'Langas: visi turimi duomenys • Pokyčiams apskaičiuoti reikia bent 2 langų.';
+        }
+      }
+
+      return summary;
+    }
+
+    function getAvailableYearsFromDaily(dailyStats) {
+      const years = new Set();
+      (Array.isArray(dailyStats) ? dailyStats : []).forEach((entry) => {
+        if (!entry || typeof entry.date !== 'string') {
+          return;
+        }
+        const date = dateKeyToDate(entry.date);
+        if (date instanceof Date && !Number.isNaN(date.getTime())) {
+          years.add(date.getUTCFullYear());
+        }
+      });
+      return Array.from(years).sort((a, b) => b - a);
+    }
+
+    function populateChartYearOptions(dailyStats) {
+      if (!selectors.chartYearSelect) {
+        return;
+      }
+      const years = getAvailableYearsFromDaily(dailyStats);
+      selectors.chartYearSelect.replaceChildren();
+      const defaultOption = document.createElement('option');
+      defaultOption.value = 'all';
+      defaultOption.textContent = TEXT.charts.yearFilterAll;
+      selectors.chartYearSelect.appendChild(defaultOption);
+      years.forEach((year) => {
+        const option = document.createElement('option');
+        option.value = String(year);
+        option.textContent = `${year} m.`;
+        selectors.chartYearSelect.appendChild(option);
+      });
+      const currentYear = Number.isFinite(dashboardState.chartYear) ? dashboardState.chartYear : null;
+      const hasCurrent = Number.isFinite(currentYear) && years.includes(currentYear);
+      if (hasCurrent) {
+        selectors.chartYearSelect.value = String(currentYear);
+      } else {
+        selectors.chartYearSelect.value = 'all';
+        dashboardState.chartYear = null;
+      }
+      syncChartYearControl();
+    }
+
+    /**
+     * Grąžina tik paskutines N dienų įrašus (pagal vėliausią turimą datą).
+     * @param {Array<{date: string}>} dailyStats
+     * @param {number} days
+     */
+    function filterDailyStatsByWindow(dailyStats, days) {
+      if (!Array.isArray(dailyStats)) {
+        return [];
+      }
+      if (!Number.isFinite(days) || days <= 0) {
+        return [...dailyStats];
+      }
+      const decorated = dailyStats
+        .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
+        .filter((item) => Number.isFinite(item.utc));
+      if (!decorated.length) {
+        return [];
+      }
+      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+      const startUtc = endUtc - (days - 1) * 86400000;
+      return decorated
+        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
+        .map((item) => item.entry);
+    }
+
+    function buildDailyWindowKeys(dailyStats, days) {
+      if (!Array.isArray(dailyStats) || !Number.isFinite(days) || days <= 0) {
+        return [];
+      }
+      const decorated = dailyStats
+        .map((entry) => ({ utc: dateKeyToUtc(entry?.date) }))
+        .filter((item) => Number.isFinite(item.utc));
+      if (!decorated.length) {
+        return [];
+      }
+      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+      const startUtc = endUtc - (days - 1) * 86400000;
+      const keys = [];
+      for (let i = 0; i < days; i += 1) {
+        const date = new Date(startUtc + i * 86400000);
+        keys.push(formatUtcDateKey(date));
+      }
+      return keys;
+    }
+
+    function fillDailyStatsWindow(dailyStats, windowKeys) {
+      const map = new Map((Array.isArray(dailyStats) ? dailyStats : []).map((entry) => [entry?.date, entry]));
+      return (Array.isArray(windowKeys) ? windowKeys : []).map((dateKey) => {
+        const entry = map.get(dateKey);
+        if (entry) {
+          return entry;
+        }
+        return {
+          date: dateKey,
+          count: 0,
+          night: 0,
+          ems: 0,
+          discharged: 0,
+          hospitalized: 0,
+          totalTime: 0,
+          durations: 0,
+          hospitalizedTime: 0,
+          hospitalizedDurations: 0,
+          avgTime: 0,
+          avgHospitalizedTime: 0,
+        };
+      });
+    }
+
+    function filterRecordsByWindow(records, days) {
+      if (!Array.isArray(records)) {
+        return [];
+      }
+      if (!Number.isFinite(days) || days <= 0) {
+        return records.slice();
+      }
+      const decorated = records
+        .map((entry) => {
+          let reference = null;
+          if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
+            reference = entry.arrival;
+          } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
+            reference = entry.discharge;
+          }
+          if (!reference) {
+            return null;
+          }
+          const utc = Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate());
+          if (!Number.isFinite(utc)) {
+            return null;
+          }
+          return { entry, utc };
+        })
+        .filter(Boolean);
+      if (!decorated.length) {
+        return [];
+      }
+      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+      const startUtc = endUtc - (days - 1) * 86400000;
+      return decorated
+        .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
+        .map((item) => item.entry);
+    }
+
+    function filterDailyStatsByYear(dailyStats, year) {
+      if (!Number.isFinite(year)) {
+        return Array.isArray(dailyStats) ? dailyStats.slice() : [];
+      }
+      const targetYear = Number(year);
+      return (Array.isArray(dailyStats) ? dailyStats : []).filter((entry) => {
+        if (!entry || typeof entry.date !== 'string') {
+          return false;
+        }
+        const date = dateKeyToDate(entry.date);
+        return date instanceof Date
+          && !Number.isNaN(date.getTime())
+          && date.getUTCFullYear() === targetYear;
+      });
+    }
+
+    function filterRecordsByYear(records, year) {
+      if (!Number.isFinite(year)) {
+        return Array.isArray(records) ? records.slice() : [];
+      }
+      const targetYear = Number(year);
+      return (Array.isArray(records) ? records : []).filter((entry) => {
+        const arrivalYear = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())
+          ? entry.arrival.getFullYear()
+          : null;
+        const dischargeYear = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())
+          ? entry.discharge.getFullYear()
+          : null;
+        const referenceYear = Number.isFinite(arrivalYear) ? arrivalYear : dischargeYear;
+        return Number.isFinite(referenceYear) && referenceYear === targetYear;
+      });
+    }
+
+    function populateHourlyCompareYearOptions(dailyStats) {
+      if (!selectors.hourlyCompareYearA || !selectors.hourlyCompareYearB) {
+        return;
+      }
+      const years = getAvailableYearsFromDaily(dailyStats);
+      const buildOptions = (select) => {
+        select.replaceChildren();
+        const noneOption = document.createElement('option');
+        noneOption.value = 'none';
+        noneOption.textContent = 'Nelyginti';
+        select.appendChild(noneOption);
+        years.forEach((year) => {
+          const option = document.createElement('option');
+          option.value = String(year);
+          option.textContent = `${year} m.`;
+          select.appendChild(option);
+        });
+      };
+      buildOptions(selectors.hourlyCompareYearA);
+      buildOptions(selectors.hourlyCompareYearB);
+      const normalized = normalizeHourlyCompareYears(
+        dashboardState.hourlyCompareYears?.[0],
+        dashboardState.hourlyCompareYears?.[1],
+      );
+      dashboardState.hourlyCompareYears = normalized;
+      syncHourlyCompareControls();
+    }
+
+    function syncChartYearControl() {
+      if (!selectors.chartYearSelect) {
+        return;
+      }
+      const value = Number.isFinite(dashboardState.chartYear) ? String(dashboardState.chartYear) : 'all';
+      if (selectors.chartYearSelect.value !== value) {
+        selectors.chartYearSelect.value = value;
+      }
+    }
+
+    function syncHourlyCompareControls() {
+      if (selectors.hourlyCompareToggle) {
+        selectors.hourlyCompareToggle.checked = Boolean(dashboardState.hourlyCompareEnabled);
+      }
+      if (selectors.hourlyCompareSeriesGroup) {
+        selectors.hourlyCompareSeriesGroup.hidden = !dashboardState.hourlyCompareEnabled;
+      }
+      if (Array.isArray(selectors.hourlyCompareSeriesButtons) && selectors.hourlyCompareSeriesButtons.length) {
+        const current = HOURLY_COMPARE_SERIES.includes(dashboardState.hourlyCompareSeries)
+          ? dashboardState.hourlyCompareSeries
+          : HOURLY_COMPARE_SERIES_ALL;
+        selectors.hourlyCompareSeriesButtons.forEach((button) => {
+          const key = button?.dataset?.hourlyCompareSeries;
+          if (!key) {
+            return;
+          }
+          const isActive = key === current;
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+      }
+      if (selectors.hourlyCompareYearA && selectors.hourlyCompareYearB) {
+        const fieldA = selectors.hourlyCompareYearA.closest('.heatmap-toolbar__field');
+        const fieldB = selectors.hourlyCompareYearB.closest('.heatmap-toolbar__field');
+        if (fieldA) {
+          fieldA.hidden = !dashboardState.hourlyCompareEnabled;
+        }
+        if (fieldB) {
+          fieldB.hidden = !dashboardState.hourlyCompareEnabled;
+        }
+        const normalized = normalizeHourlyCompareYears(
+          dashboardState.hourlyCompareYears?.[0],
+          dashboardState.hourlyCompareYears?.[1],
+        );
+        dashboardState.hourlyCompareYears = normalized;
+        const [yearA, yearB] = normalized;
+        selectors.hourlyCompareYearA.value = Number.isFinite(yearA) ? String(yearA) : 'none';
+        selectors.hourlyCompareYearB.value = Number.isFinite(yearB) ? String(yearB) : 'none';
+      }
+    }
+
+    function handleHourlyCompareToggle(event) {
+      const enabled = Boolean(event?.target?.checked);
+      dashboardState.hourlyCompareEnabled = enabled;
+      if (enabled && selectors.hourlyCompareYearA && selectors.hourlyCompareYearB) {
+        const normalized = normalizeHourlyCompareYears(
+          dashboardState.hourlyCompareYears?.[0],
+          dashboardState.hourlyCompareYears?.[1],
+        );
+        if (!normalized.length) {
+          const availableYears = Array.from(selectors.hourlyCompareYearA.options || [])
+            .map((option) => option.value)
+            .filter((value) => value && value !== 'none')
+            .map((value) => Number.parseInt(value, 10))
+            .filter((value) => Number.isFinite(value));
+          if (availableYears.length) {
+            selectors.hourlyCompareYearA.value = String(availableYears[0]);
+            selectors.hourlyCompareYearB.value = availableYears[1] != null ? String(availableYears[1]) : 'none';
+            dashboardState.hourlyCompareYears = normalizeHourlyCompareYears(
+              selectors.hourlyCompareYearA.value,
+              selectors.hourlyCompareYearB.value,
+            );
+          }
+        }
+      }
+      syncHourlyCompareControls();
+      handleHourlyFilterChange();
+    }
+
+    function handleHourlyCompareYearsChange() {
+      if (!selectors.hourlyCompareYearA || !selectors.hourlyCompareYearB) {
+        return;
+      }
+      const normalized = normalizeHourlyCompareYears(
+        selectors.hourlyCompareYearA.value,
+        selectors.hourlyCompareYearB.value,
+      );
+      dashboardState.hourlyCompareYears = normalized;
+      if (normalized.length === 1) {
+        const only = normalized[0];
+        if (String(selectors.hourlyCompareYearA.value) === String(only)) {
+          selectors.hourlyCompareYearB.value = 'none';
+        } else if (String(selectors.hourlyCompareYearB.value) === String(only)) {
+          selectors.hourlyCompareYearA.value = 'none';
+        }
+      }
+      handleHourlyFilterChange();
+    }
+
+    function handleHourlyCompareSeriesClick(event) {
+      const button = event?.currentTarget;
+      const key = button?.dataset?.hourlyCompareSeries;
+      if (!HOURLY_COMPARE_SERIES.includes(key)) {
+        return;
+      }
+      dashboardState.hourlyCompareSeries = key;
+      syncHourlyCompareControls();
+      if (dashboardState.hourlyCompareEnabled) {
+        handleHourlyFilterChange();
+      }
+    }
+
     function clearChartError() {
       if (!Array.isArray(selectors.chartCards)) {
         return;
@@ -11578,6 +7380,1855 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       );
     }
 
+    
+function areStylesheetsLoaded() {
+      const sheets = Array.from(document.styleSheets || []);
+      if (!sheets.length) {
+        return false;
+      }
+      return sheets.every((sheet) => {
+        try {
+          return sheet.cssRules != null;
+        } catch (error) {
+          return true;
+        }
+      });
+    }
+
+    function waitForFontsAndStyles() {
+      if (layoutStylesReadyPromise) {
+        return layoutStylesReadyPromise;
+      }
+
+      const fontsPromise = document.fonts && typeof document.fonts.ready?.then === 'function'
+        ? document.fonts.ready.catch(() => undefined)
+        : Promise.resolve();
+
+      const stylesheetPromise = new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 40;
+        const check = () => {
+          if (areStylesheetsLoaded() || attempts >= maxAttempts) {
+            resolve();
+            return;
+          }
+          attempts += 1;
+          window.setTimeout(check, 50);
+        };
+        check();
+      });
+
+      layoutStylesReadyPromise = Promise.all([fontsPromise, stylesheetPromise]).then(() => {
+        layoutStylesReady = true;
+        return true;
+      });
+
+      return layoutStylesReadyPromise;
+    }
+
+    function computeVisibleRatio(rect) {
+      if (!rect) {
+        return 0;
+      }
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const elementHeight = Math.max(rect.height, 1);
+      if (viewportHeight <= 0 || elementHeight <= 0) {
+        return 0;
+      }
+      const visibleTop = Math.max(rect.top, 0);
+      const visibleBottom = Math.min(rect.bottom, viewportHeight);
+      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+      return Math.max(0, Math.min(1, visibleHeight / elementHeight));
+    }
+
+    function updateLayoutMetrics() {
+      const heroElement = selectors.hero || document.querySelector('header.hero');
+      const navElement = selectors.sectionNav;
+      const heroHeight = heroElement ? heroElement.getBoundingClientRect().height : 0;
+      const navHeight = navElement ? navElement.getBoundingClientRect().height : 0;
+      layoutMetrics.hero = heroHeight;
+      layoutMetrics.nav = navHeight;
+      const rootStyle = document.documentElement.style;
+      rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
+      rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
+    }
+
+    function getScrollOffset() {
+      if (typeof window.scrollY === 'number') {
+        return window.scrollY;
+      }
+      if (typeof window.pageYOffset === 'number') {
+        return window.pageYOffset;
+      }
+      return (document.documentElement && document.documentElement.scrollTop) || (document.body && document.body.scrollTop) || 0;
+    }
+
+    function updateScrollTopButtonVisibility() {
+      const button = selectors.scrollTopBtn;
+      if (!button) {
+        return;
+      }
+      const threshold = Math.max(160, Math.round(layoutMetrics.hero + layoutMetrics.nav + 40));
+      const offset = getScrollOffset();
+      const shouldShow = offset > threshold;
+      if (scrollTopState.visible !== shouldShow) {
+        scrollTopState.visible = shouldShow;
+        button.dataset.visible = shouldShow ? 'true' : 'false';
+      }
+      button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+      button.setAttribute('tabindex', shouldShow ? '0' : '-1');
+    }
+
+    function scheduleScrollTopUpdate() {
+      if (scrollTopState.rafHandle) {
+        return;
+      }
+      const raf = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (cb) => window.setTimeout(cb, 16);
+      scrollTopState.rafHandle = raf(() => {
+        scrollTopState.rafHandle = null;
+        updateScrollTopButtonVisibility();
+      });
+    }
+
+    function initializeScrollTopButton() {
+      const button = selectors.scrollTopBtn;
+      if (!button) {
+        return;
+      }
+      button.setAttribute('aria-hidden', 'true');
+      button.setAttribute('tabindex', '-1');
+      updateScrollTopButtonVisibility();
+      button.addEventListener('click', () => {
+        const prefersReduced = typeof window.matchMedia === 'function'
+          && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof window.scrollTo === 'function') {
+          if (!prefersReduced && 'scrollBehavior' in document.documentElement.style) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo(0, 0);
+          }
+        } else {
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }
+      });
+      window.addEventListener('scroll', scheduleScrollTopUpdate, { passive: true });
+      window.addEventListener('resize', scheduleScrollTopUpdate, { passive: true });
+    }
+
+    function updateActiveNavLink(headingId) {
+      sectionNavState.activeHeadingId = headingId;
+      sectionNavState.items.forEach((item) => {
+        const isActive = Boolean(headingId) && item.headingId === headingId && !item.link.hidden;
+        if (isActive) {
+          item.link.setAttribute('aria-current', 'true');
+        } else {
+          item.link.removeAttribute('aria-current');
+        }
+        item.link.classList.toggle('is-active', isActive);
+      });
+    }
+
+    function evaluateActiveSection() {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      const visibleItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden') && !item.link.hidden);
+      if (!visibleItems.length) {
+        updateActiveNavLink('');
+        return;
+      }
+      const sorted = visibleItems
+        .map((item) => {
+          const data = sectionVisibility.get(item.headingId) || { ratio: 0, top: Number.POSITIVE_INFINITY };
+          return { item, ratio: data.ratio, top: data.top };
+        })
+        .sort((a, b) => {
+          const ratioDiff = b.ratio - a.ratio;
+          if (Math.abs(ratioDiff) > 0.0001) {
+            return ratioDiff;
+          }
+          return a.top - b.top;
+        });
+      const best = sorted.find((candidate) => candidate.ratio > 0)
+        ?? sorted.find((candidate) => candidate.top >= 0)
+        ?? sorted[0];
+      if (best && best.item.headingId !== sectionNavState.activeHeadingId) {
+        updateActiveNavLink(best.item.headingId);
+      }
+    }
+
+    function updateSectionNavCompactState(forceCompact) {
+      if (!selectors.sectionNav) {
+        return;
+      }
+
+      const isCompact = typeof forceCompact === 'boolean'
+        ? forceCompact
+        : Boolean(sectionNavCompactQuery?.matches);
+
+      selectors.sectionNav.classList.toggle('section-nav--compact', isCompact);
+
+      selectors.sectionNavLinks.forEach((link) => {
+        const labelText = (link.querySelector('.section-nav__label')?.textContent || '').trim();
+        if (!labelText) {
+          link.removeAttribute('aria-label');
+          link.removeAttribute('title');
+          return;
+        }
+
+        link.setAttribute('aria-label', labelText);
+        if (isCompact) {
+          link.setAttribute('title', labelText);
+        } else {
+          link.removeAttribute('title');
+        }
+      });
+    }
+
+    function refreshSectionObserver() {
+      const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
+      if (!observedItems.length) {
+        if (sectionObserver) {
+          sectionObserver.disconnect();
+          sectionObserver = null;
+        }
+        evaluateActiveSection();
+        return;
+      }
+      if (sectionObserver) {
+        sectionObserver.disconnect();
+      }
+      const topOffset = Math.max(
+        0,
+        Math.round(Math.max(layoutMetrics.hero || 0, layoutMetrics.nav || 0)),
+      );
+      sectionObserver = new IntersectionObserver(handleSectionIntersection, {
+        rootMargin: `-${topOffset}px 0px -55% 0px`,
+        threshold: [0.1, 0.25, 0.5, 0.75, 1],
+      });
+      observedItems.forEach((item) => {
+        sectionObserver.observe(item.section);
+        const rect = item.section.getBoundingClientRect();
+        sectionVisibility.set(item.headingId, {
+          ratio: computeVisibleRatio(rect),
+          top: rect.top,
+        });
+      });
+      evaluateActiveSection();
+    }
+
+    function scheduleLayoutRefresh() {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      if (!layoutRefreshAllowed || !layoutStylesReady) {
+        pendingLayoutRefresh = true;
+        return;
+      }
+      if (typeof window.requestAnimationFrame !== 'function') {
+        updateLayoutMetrics();
+        refreshSectionObserver();
+        updateScrollTopButtonVisibility();
+        return;
+      }
+      if (layoutRefreshHandle) {
+        window.cancelAnimationFrame(layoutRefreshHandle);
+      }
+      layoutRefreshHandle = window.requestAnimationFrame(() => {
+        layoutRefreshHandle = null;
+        updateLayoutMetrics();
+        refreshSectionObserver();
+        updateScrollTopButtonVisibility();
+      });
+    }
+
+    function flushPendingLayoutRefresh() {
+      if (pendingLayoutRefresh && layoutRefreshAllowed && layoutStylesReady) {
+        pendingLayoutRefresh = false;
+        scheduleLayoutRefresh();
+      }
+    }
+
+    function handleSectionIntersection(entries) {
+      entries.forEach((entry) => {
+        const item = sectionNavState.itemBySection.get(entry.target);
+        if (!item) {
+          return;
+        }
+        if (item.link.hidden || (item.section && item.section.hasAttribute('hidden'))) {
+          sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+          return;
+        }
+        sectionVisibility.set(item.headingId, {
+          ratio: entry.isIntersecting ? entry.intersectionRatio : 0,
+          top: entry.boundingClientRect.top,
+        });
+      });
+      evaluateActiveSection();
+    }
+
+    function handleNavKeydown(event) {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      const controllableKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+      if (!controllableKeys.includes(event.key)) {
+        return;
+      }
+      const target = event.target;
+      if (!(target instanceof HTMLAnchorElement)) {
+        return;
+      }
+      const visibleLinks = sectionNavState.items
+        .map((item) => item.link)
+        .filter((link) => link && !link.hidden && !link.hasAttribute('aria-hidden'));
+      if (!visibleLinks.length) {
+        return;
+      }
+      const currentIndex = visibleLinks.indexOf(target);
+      if (currentIndex === -1) {
+        return;
+      }
+      event.preventDefault();
+      let nextIndex = currentIndex;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        nextIndex = (currentIndex + 1) % visibleLinks.length;
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        nextIndex = (currentIndex - 1 + visibleLinks.length) % visibleLinks.length;
+      } else if (event.key === 'Home') {
+        nextIndex = 0;
+      } else if (event.key === 'End') {
+        nextIndex = visibleLinks.length - 1;
+      }
+      const nextLink = visibleLinks[nextIndex];
+      if (nextLink && typeof nextLink.focus === 'function') {
+        nextLink.focus({ preventScroll: true });
+      }
+    }
+
+    function setupNavKeyboardNavigation() {
+      if (!selectors.sectionNav || selectors.sectionNav.dataset.keyboard === 'bound') {
+        return;
+      }
+      selectors.sectionNav.addEventListener('keydown', handleNavKeydown);
+      selectors.sectionNav.dataset.keyboard = 'bound';
+    }
+
+    function syncSectionNavVisibility() {
+      if (!sectionNavState.initialized) {
+        return;
+      }
+      let hasVisible = false;
+      sectionNavState.items.forEach((item) => {
+        const { link, section } = item;
+        const sectionVisible = Boolean(section) && !section.hasAttribute('hidden');
+        if (sectionVisible) {
+          hasVisible = true;
+          link.hidden = false;
+          link.removeAttribute('aria-hidden');
+          link.removeAttribute('tabindex');
+          const rect = section.getBoundingClientRect();
+          sectionVisibility.set(item.headingId, {
+            ratio: computeVisibleRatio(rect),
+            top: rect.top,
+          });
+        } else {
+          link.hidden = true;
+          link.setAttribute('aria-hidden', 'true');
+          link.setAttribute('tabindex', '-1');
+          sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+          if (sectionObserver && section) {
+            sectionObserver.unobserve(section);
+          }
+        }
+      });
+
+      if (!hasVisible) {
+        updateActiveNavLink('');
+      } else if (!sectionNavState.activeHeadingId) {
+        const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
+        if (firstVisible) {
+          updateActiveNavLink(firstVisible.headingId);
+        }
+      } else {
+        const activeItem = sectionNavState.items.find((item) => item.headingId === sectionNavState.activeHeadingId);
+        if (!activeItem || activeItem.link.hidden) {
+          const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
+          updateActiveNavLink(firstVisible ? firstVisible.headingId : '');
+        }
+      }
+
+      evaluateActiveSection();
+      scheduleLayoutRefresh();
+    }
+
+    function initializeSectionNavigation() {
+      if (sectionNavState.initialized) {
+        scheduleLayoutRefresh();
+        return;
+      }
+      if (!selectors.sectionNav) {
+        return;
+      }
+      layoutRefreshAllowed = true;
+      const links = Array.from(selectors.sectionNav.querySelectorAll('.section-nav__link'));
+      selectors.sectionNavLinks = links;
+      sectionNavState.items = [];
+      sectionNavState.itemBySection = new Map();
+      sectionVisibility.clear();
+
+      links.forEach((link) => {
+        const href = link.getAttribute('href') || '';
+        const headingId = href.startsWith('#') ? href.slice(1) : '';
+        const headingEl = headingId ? document.getElementById(headingId) : null;
+        const sectionEl = headingEl ? headingEl.closest('section[data-section]') : null;
+        if (!headingId || !sectionEl) {
+          link.hidden = true;
+          link.setAttribute('aria-hidden', 'true');
+          link.setAttribute('tabindex', '-1');
+          return;
+        }
+        const item = { link, headingId, section: sectionEl };
+        sectionNavState.items.push(item);
+        sectionNavState.itemBySection.set(sectionEl, item);
+        sectionVisibility.set(headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+      });
+
+      if (!sectionNavState.items.length) {
+        return;
+      }
+
+      selectors.sectionNavLinks = sectionNavState.items.map((item) => item.link);
+
+      updateSectionNavCompactState();
+      if (sectionNavCompactQuery) {
+        const handleCompactChange = (event) => updateSectionNavCompactState(event.matches);
+        if (typeof sectionNavCompactQuery.addEventListener === 'function') {
+          sectionNavCompactQuery.addEventListener('change', handleCompactChange);
+        } else if (typeof sectionNavCompactQuery.addListener === 'function') {
+          sectionNavCompactQuery.addListener(handleCompactChange);
+        }
+      }
+
+      sectionNavState.initialized = true;
+      setupNavKeyboardNavigation();
+
+      if (typeof ResizeObserver === 'function') {
+        if (layoutResizeObserver && typeof layoutResizeObserver.disconnect === 'function') {
+          layoutResizeObserver.disconnect();
+        }
+        layoutResizeObserver = new ResizeObserver(() => {
+          scheduleLayoutRefresh();
+        });
+        if (selectors.hero) {
+          layoutResizeObserver.observe(selectors.hero);
+        }
+        if (selectors.sectionNav) {
+          layoutResizeObserver.observe(selectors.sectionNav);
+        }
+      }
+
+      window.addEventListener('resize', scheduleLayoutRefresh, { passive: true });
+      window.addEventListener('load', scheduleLayoutRefresh);
+
+      syncSectionNavVisibility();
+      waitForFontsAndStyles().then(() => {
+        updateLayoutMetrics();
+        refreshSectionObserver();
+        updateScrollTopButtonVisibility();
+        flushPendingLayoutRefresh();
+      });
+    }
+
+    function cloneSettings(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function deepMerge(target, source) {
+      if (!source || typeof source !== 'object') {
+        return target;
+      }
+      Object.entries(source).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          target[key] = value.slice();
+        } else if (value && typeof value === 'object') {
+          if (!target[key] || typeof target[key] !== 'object') {
+            target[key] = {};
+          }
+          deepMerge(target[key], value);
+        } else if (value !== undefined) {
+          target[key] = value;
+        }
+      });
+      return target;
+    }
+
+    function updateClientConfig(patch = {}) {
+      if (!patch || typeof patch !== 'object') {
+        return clientConfig;
+      }
+      clientConfig = { ...clientConfig, ...patch };
+      clientStore.save(clientConfig);
+      return clientConfig;
+    }
+
+    function clampNumber(value, min, max, fallback) {
+      const parsed = Number.parseInt(value, 10);
+      if (Number.isFinite(parsed)) {
+        let result = parsed;
+        if (Number.isFinite(min) && result < min) {
+          result = min;
+        }
+        if (Number.isFinite(max) && result > max) {
+          result = max;
+        }
+        return result;
+      }
+      return fallback;
+    }
+
+    function normalizeSettings(rawSettings) {
+      const originalSettings = rawSettings && typeof rawSettings === 'object' ? rawSettings : {};
+      let sanitizedSettings = {};
+      if (originalSettings && typeof originalSettings === 'object') {
+        try {
+          sanitizedSettings = cloneSettings(originalSettings);
+        } catch (error) {
+          console.warn('Nepavyko nukopijuoti išsaugotų nustatymų, naudojami tik numatytieji.', error);
+          sanitizedSettings = {};
+        }
+      }
+
+      const merged = deepMerge(cloneSettings(DEFAULT_SETTINGS), sanitizedSettings ?? {});
+      merged.dataSource.url = (merged.dataSource.url ?? '').trim();
+      if (!merged.dataSource.feedback || typeof merged.dataSource.feedback !== 'object') {
+        merged.dataSource.feedback = cloneSettings(DEFAULT_SETTINGS.dataSource.feedback);
+      }
+      merged.dataSource.feedback.url = (merged.dataSource.feedback.url ?? '').trim();
+
+      if (!merged.dataSource.ed || typeof merged.dataSource.ed !== 'object') {
+        merged.dataSource.ed = cloneSettings(DEFAULT_SETTINGS.dataSource.ed);
+      }
+      merged.dataSource.ed.url = (merged.dataSource.ed.url ?? '').trim();
+
+      if (!merged.dataSource.historical || typeof merged.dataSource.historical !== 'object') {
+        merged.dataSource.historical = cloneSettings(DEFAULT_SETTINGS.dataSource.historical);
+      }
+      merged.dataSource.historical.enabled = merged.dataSource.historical.enabled !== false;
+      merged.dataSource.historical.url = (merged.dataSource.historical.url ?? '').trim();
+      merged.dataSource.historical.label = merged.dataSource.historical.label != null
+        ? String(merged.dataSource.historical.label)
+        : DEFAULT_SETTINGS.dataSource.historical.label;
+
+      ['arrival', 'discharge', 'dayNight', 'gmp', 'department', 'number', 'trueValues', 'hospitalizedValues', 'nightKeywords', 'dayKeywords']
+        .forEach((key) => {
+          merged.csv[key] = merged.csv[key] != null
+            ? String(merged.csv[key])
+            : String(DEFAULT_SETTINGS.csv[key] ?? '');
+        });
+
+      merged.calculations.windowDays = clampNumber(
+        merged.calculations.windowDays,
+        7,
+        365,
+        DEFAULT_SETTINGS.calculations.windowDays,
+      );
+      merged.calculations.recentDays = clampNumber(
+        merged.calculations.recentDays,
+        1,
+        60,
+        DEFAULT_SETTINGS.calculations.recentDays,
+      );
+      merged.calculations.nightStartHour = clampNumber(
+        merged.calculations.nightStartHour,
+        0,
+        23,
+        DEFAULT_SETTINGS.calculations.nightStartHour,
+      );
+      merged.calculations.nightEndHour = clampNumber(
+        merged.calculations.nightEndHour,
+        0,
+        23,
+        DEFAULT_SETTINGS.calculations.nightEndHour,
+      );
+
+      merged.output.pageTitle = merged.output.pageTitle != null ? String(merged.output.pageTitle) : DEFAULT_SETTINGS.output.pageTitle;
+      merged.output.title = merged.output.title != null ? String(merged.output.title) : DEFAULT_SETTINGS.output.title;
+      merged.output.subtitle = merged.output.subtitle != null ? String(merged.output.subtitle) : DEFAULT_SETTINGS.output.subtitle;
+      merged.output.kpiTitle = merged.output.kpiTitle != null ? String(merged.output.kpiTitle) : DEFAULT_SETTINGS.output.kpiTitle;
+      merged.output.kpiSubtitle = merged.output.kpiSubtitle != null ? String(merged.output.kpiSubtitle) : DEFAULT_SETTINGS.output.kpiSubtitle;
+      merged.output.chartsTitle = merged.output.chartsTitle != null ? String(merged.output.chartsTitle) : DEFAULT_SETTINGS.output.chartsTitle;
+      merged.output.chartsSubtitle = merged.output.chartsSubtitle != null ? String(merged.output.chartsSubtitle) : DEFAULT_SETTINGS.output.chartsSubtitle;
+      merged.output.recentTitle = merged.output.recentTitle != null ? String(merged.output.recentTitle) : DEFAULT_SETTINGS.output.recentTitle;
+      merged.output.recentSubtitle = merged.output.recentSubtitle != null ? String(merged.output.recentSubtitle) : DEFAULT_SETTINGS.output.recentSubtitle;
+      if (merged.output.monthlyTitle == null && merged.output.weeklyTitle != null) {
+        merged.output.monthlyTitle = merged.output.weeklyTitle;
+      }
+      if (merged.output.monthlySubtitle == null && merged.output.weeklySubtitle != null) {
+        merged.output.monthlySubtitle = merged.output.weeklySubtitle;
+      }
+      if (merged.output.showMonthly == null && merged.output.showWeekly != null) {
+        merged.output.showMonthly = merged.output.showWeekly;
+      }
+      merged.output.monthlyTitle = merged.output.monthlyTitle != null ? String(merged.output.monthlyTitle) : DEFAULT_SETTINGS.output.monthlyTitle;
+      merged.output.monthlySubtitle = merged.output.monthlySubtitle != null ? String(merged.output.monthlySubtitle) : DEFAULT_SETTINGS.output.monthlySubtitle;
+      merged.output.yearlyTitle = merged.output.yearlyTitle != null ? String(merged.output.yearlyTitle) : DEFAULT_SETTINGS.output.yearlyTitle;
+      merged.output.yearlySubtitle = merged.output.yearlySubtitle != null ? String(merged.output.yearlySubtitle) : DEFAULT_SETTINGS.output.yearlySubtitle;
+      merged.output.feedbackTitle = merged.output.feedbackTitle != null ? String(merged.output.feedbackTitle) : DEFAULT_SETTINGS.output.feedbackTitle;
+      merged.output.feedbackSubtitle = merged.output.feedbackSubtitle != null ? String(merged.output.feedbackSubtitle) : DEFAULT_SETTINGS.output.feedbackSubtitle;
+      merged.output.feedbackDescription = merged.output.feedbackDescription != null ? String(merged.output.feedbackDescription) : DEFAULT_SETTINGS.output.feedbackDescription;
+      merged.output.footerSource = merged.output.footerSource != null ? String(merged.output.footerSource) : DEFAULT_SETTINGS.output.footerSource;
+      merged.output.scrollTopLabel = merged.output.scrollTopLabel != null ? String(merged.output.scrollTopLabel) : DEFAULT_SETTINGS.output.scrollTopLabel;
+      merged.output.tabOverviewLabel = merged.output.tabOverviewLabel != null ? String(merged.output.tabOverviewLabel) : DEFAULT_SETTINGS.output.tabOverviewLabel;
+      merged.output.tabEdLabel = merged.output.tabEdLabel != null ? String(merged.output.tabEdLabel) : DEFAULT_SETTINGS.output.tabEdLabel;
+      merged.output.edTitle = merged.output.edTitle != null ? String(merged.output.edTitle) : DEFAULT_SETTINGS.output.edTitle;
+      merged.output.showRecent = Boolean(merged.output.showRecent);
+      merged.output.showMonthly = Boolean(merged.output.showMonthly);
+      merged.output.showYearly = Boolean(merged.output.showYearly);
+      merged.output.showFeedback = Boolean(merged.output.showFeedback);
+
+      return merged;
+    }
+
+    function getRuntimeConfigUrl() {
+      if (typeof window === 'undefined') {
+        return 'config.json';
+      }
+      const params = new URLSearchParams(window.location.search);
+      const paramUrl = params.get('config');
+      if (paramUrl && paramUrl.trim().length) {
+        return paramUrl.trim();
+      }
+      return 'config.json';
+    }
+
+    async function loadSettingsFromConfig() {
+      const configUrl = getRuntimeConfigUrl();
+      try {
+        const response = await fetch(configUrl, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Nepavyko atsisiųsti konfigūracijos (${response.status})`);
+        }
+        const configData = await response.json();
+        return normalizeSettings(configData);
+      } catch (error) {
+        console.warn('Nepavyko įkelti config.json, naudojami numatytieji.', error);
+        return normalizeSettings({});
+      }
+    }
+
+    function applySettingsToText() {
+      TEXT.title = settings.output.title || DEFAULT_SETTINGS.output.title;
+      TEXT.subtitle = settings.output.subtitle || DEFAULT_SETTINGS.output.subtitle;
+      TEXT.tabs.overview = settings.output.tabOverviewLabel || DEFAULT_SETTINGS.output.tabOverviewLabel;
+      TEXT.tabs.ed = settings.output.tabEdLabel || DEFAULT_SETTINGS.output.tabEdLabel;
+      TEXT.ed.title = settings.output.edTitle || DEFAULT_SETTINGS.output.edTitle;
+      TEXT.kpis.title = settings.output.kpiTitle || DEFAULT_SETTINGS.output.kpiTitle;
+      TEXT.kpis.subtitle = settings.output.kpiSubtitle || DEFAULT_SETTINGS.output.kpiSubtitle;
+      TEXT.charts.title = settings.output.chartsTitle || DEFAULT_SETTINGS.output.chartsTitle;
+      TEXT.charts.subtitle = settings.output.chartsSubtitle || DEFAULT_SETTINGS.output.chartsSubtitle;
+      TEXT.recent.title = settings.output.recentTitle || DEFAULT_SETTINGS.output.recentTitle;
+      TEXT.recent.subtitle = settings.output.recentSubtitle || DEFAULT_SETTINGS.output.recentSubtitle;
+      TEXT.monthly.title = settings.output.monthlyTitle || DEFAULT_SETTINGS.output.monthlyTitle;
+      TEXT.monthly.subtitle = settings.output.monthlySubtitle || DEFAULT_SETTINGS.output.monthlySubtitle;
+      TEXT.yearly.title = settings.output.yearlyTitle || DEFAULT_SETTINGS.output.yearlyTitle;
+      TEXT.yearly.subtitle = settings.output.yearlySubtitle || DEFAULT_SETTINGS.output.yearlySubtitle;
+      TEXT.feedback.title = settings.output.feedbackTitle || DEFAULT_SETTINGS.output.feedbackTitle;
+      TEXT.feedback.subtitle = settings.output.feedbackSubtitle || DEFAULT_SETTINGS.output.feedbackSubtitle;
+      TEXT.feedback.description = settings.output.feedbackDescription || DEFAULT_SETTINGS.output.feedbackDescription;
+      TEXT.feedback.trend.title = settings.output.feedbackTrendTitle || DEFAULT_SETTINGS.output.feedbackTrendTitle;
+      TEXT.scrollTop = settings.output.scrollTopLabel || DEFAULT_SETTINGS.output.scrollTopLabel;
+      const pageTitle = settings.output.pageTitle || TEXT.title || DEFAULT_SETTINGS.output.pageTitle;
+      document.title = pageTitle;
+    }
+
+    function applyFooterSource() {
+      if (selectors.footerSource) {
+        selectors.footerSource.textContent = settings.output.footerSource || DEFAULT_FOOTER_SOURCE;
+      }
+    }
+
+    function toggleSectionVisibility(element, isVisible) {
+      if (!element) {
+        return;
+      }
+      if (isVisible) {
+        element.removeAttribute('hidden');
+        element.removeAttribute('aria-hidden');
+      } else {
+        element.setAttribute('hidden', 'hidden');
+        element.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    function applySectionVisibility() {
+      toggleSectionVisibility(selectors.recentSection, settings.output.showRecent);
+      toggleSectionVisibility(selectors.monthlySection, settings.output.showMonthly);
+      toggleSectionVisibility(selectors.yearlySection, settings.output.showYearly);
+      toggleSectionVisibility(selectors.feedbackSection, settings.output.showFeedback);
+      syncSectionNavVisibility();
+    }
+
+    function parseCandidateList(value, fallback = '') {
+      const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
+      return base
+        .replace(/\r\n/g, '\n')
+        .split(/[\n,|;]+/)
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+    }
+
+    function toHeaderCandidates(value, fallback) {
+      return parseCandidateList(value, fallback);
+    }
+
+    function toNormalizedList(value, fallback) {
+      return parseCandidateList(value, fallback).map((token) => token.toLowerCase());
+    }
+
+    function buildCsvRuntime(csvSettings) {
+      const fallback = DEFAULT_SETTINGS.csv;
+      const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
+      const departmentHeaders = departmentHasValue
+        ? toHeaderCandidates(csvSettings.department, '')
+        : [];
+
+      const runtime = {
+        arrivalHeaders: toHeaderCandidates(csvSettings.arrival, fallback.arrival),
+        dischargeHeaders: toHeaderCandidates(csvSettings.discharge, fallback.discharge),
+        dayNightHeaders: toHeaderCandidates(csvSettings.dayNight, fallback.dayNight),
+        gmpHeaders: toHeaderCandidates(csvSettings.gmp, fallback.gmp),
+        departmentHeaders,
+        trueValues: toNormalizedList(csvSettings.trueValues, fallback.trueValues),
+        hospitalizedValues: toNormalizedList(csvSettings.hospitalizedValues, fallback.hospitalizedValues),
+        nightKeywords: toNormalizedList(csvSettings.nightKeywords, fallback.nightKeywords),
+        dayKeywords: toNormalizedList(csvSettings.dayKeywords, fallback.dayKeywords),
+        labels: {
+          arrival: csvSettings.arrival || fallback.arrival,
+          discharge: csvSettings.discharge || fallback.discharge,
+          dayNight: csvSettings.dayNight || fallback.dayNight,
+          gmp: csvSettings.gmp || fallback.gmp,
+          department: departmentHasValue ? csvSettings.department : fallback.department,
+        },
+      };
+      runtime.hasHospitalizedValues = runtime.hospitalizedValues.length > 0;
+      runtime.requireDepartment = departmentHasValue;
+      return runtime;
+    }
+
+    function resolveColumnIndex(headerNormalized, candidates) {
+      if (!Array.isArray(candidates) || !candidates.length) {
+        return -1;
+      }
+      for (const candidate of candidates) {
+        const trimmed = candidate.trim();
+        const match = headerNormalized.find((column) => column.original === trimmed);
+        if (match) {
+          return match.index;
+        }
+      }
+      for (const candidate of candidates) {
+        const normalized = candidate.trim().toLowerCase();
+        const match = headerNormalized.find((column) => column.normalized === normalized);
+        if (match) {
+          return match.index;
+        }
+      }
+      for (const candidate of candidates) {
+        const normalized = candidate.trim().toLowerCase();
+        const match = headerNormalized.find((column) => column.normalized.includes(normalized));
+        if (match) {
+          return match.index;
+        }
+      }
+      return -1;
+    }
+
+    function matchesWildcard(normalized, candidate) {
+      if (!candidate) {
+        return false;
+      }
+      if (candidate === '*') {
+        return normalized.length > 0;
+      }
+      if (!candidate.includes('*')) {
+        return normalized === candidate;
+      }
+      const parts = candidate.split('*').filter((part) => part.length > 0);
+      if (!parts.length) {
+        return normalized.length > 0;
+      }
+      return parts.every((fragment) => normalized.includes(fragment));
+    }
+
+    function detectHospitalized(value, csvRuntime) {
+      const raw = value != null ? String(value).trim() : '';
+      if (!raw) {
+        return false;
+      }
+      if (!csvRuntime.hasHospitalizedValues) {
+        return true;
+      }
+      const normalized = raw.toLowerCase();
+      return csvRuntime.hospitalizedValues.some((candidate) => matchesWildcard(normalized, candidate));
+    }
+
+
+    /**
+     * Čia saugome aktyvius grafikus, kad galėtume juos sunaikinti prieš piešiant naujus.
+     */
+    const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Treč', 'Ketv', 'Penkt', 'Šešt', 'Sekm'];
+    const HEATMAP_WEEKDAY_FULL = [
+      'Pirmadienis',
+      'Antradienis',
+      'Trečiadienis',
+      'Ketvirtadienis',
+      'Penktadienis',
+      'Šeštadienis',
+      'Sekmadienis',
+    ];
+    const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
+    const HOURLY_WEEKDAY_ALL = 'all';
+    const HOURLY_STAY_BUCKET_ALL = 'all';
+    const HOURLY_METRIC_ARRIVALS = 'arrivals';
+    const HOURLY_METRIC_HOSPITALIZED = 'hospitalized';
+    const HOURLY_METRICS = [HOURLY_METRIC_ARRIVALS, HOURLY_METRIC_HOSPITALIZED];
+    const HOURLY_COMPARE_SERIES_ALL = 'all';
+    const HOURLY_COMPARE_SERIES_EMS = 'ems';
+    const HOURLY_COMPARE_SERIES_SELF = 'self';
+    const HOURLY_COMPARE_SERIES = [HOURLY_COMPARE_SERIES_ALL, HOURLY_COMPARE_SERIES_EMS, HOURLY_COMPARE_SERIES_SELF];
+    const HOURLY_STAY_BUCKETS = [
+      { key: 'lt4', min: 0, max: 4 },
+      { key: '4to8', min: 4, max: 8 },
+      { key: '8to16', min: 8, max: 16 },
+      { key: 'gt16', min: 16, max: Number.POSITIVE_INFINITY },
+    ];
+    const HEATMAP_METRIC_KEYS = ['arrivals', 'discharges', 'hospitalized', 'avgDuration'];
+    const DEFAULT_HEATMAP_METRIC = HEATMAP_METRIC_KEYS[0];
+
+    const dashboardState = createDashboardState({
+      defaultChartFilters: getDefaultChartFilters,
+      defaultKpiFilters: getDefaultKpiFilters,
+      defaultFeedbackFilters: getDefaultFeedbackFilters,
+      defaultHeatmapMetric: DEFAULT_HEATMAP_METRIC,
+      hourlyMetricArrivals: HOURLY_METRIC_ARRIVALS,
+      hourlyCompareSeriesAll: HOURLY_COMPARE_SERIES_ALL,
+    });
+
+    function resetMonthlyState() {
+      dashboardState.monthly.all = [];
+      dashboardState.monthly.window = [];
+    }
+
+    function setFullscreenMode(active, options = {}) {
+      const previousState = dashboardState.fullscreen === true;
+      const allowFullscreen = dashboardState.activeTab === 'ed';
+      const requestedActive = Boolean(active);
+      const isActive = requestedActive && allowFullscreen;
+      dashboardState.fullscreen = isActive;
+      if (isActive) {
+        document.body.setAttribute('data-fullscreen', 'true');
+      } else {
+        document.body.removeAttribute('data-fullscreen');
+      }
+      if (selectors.tabSwitcher) {
+        if (isActive) {
+          selectors.tabSwitcher.setAttribute('hidden', 'hidden');
+          selectors.tabSwitcher.setAttribute('aria-hidden', 'true');
+        } else {
+          selectors.tabSwitcher.removeAttribute('hidden');
+          selectors.tabSwitcher.removeAttribute('aria-hidden');
+        }
+      }
+      const shouldRestoreFocus = options.restoreFocus;
+      if (!isActive
+        && previousState
+        && shouldRestoreFocus
+        && selectors.edNavButton
+        && typeof selectors.edNavButton.focus === 'function') {
+        selectors.edNavButton.focus();
+      }
+      updateFullscreenControls();
+    }
+
+    function updateFullscreenControls() {
+      if (!selectors.edNavButton) {
+        return;
+      }
+      const panelLabel = selectors.edNavButton.dataset.panelLabel
+        || settings?.output?.tabEdLabel
+        || TEXT.tabs.ed;
+      const openLabel = selectors.edNavButton.dataset.openLabel
+        || (typeof TEXT.edToggle?.open === 'function'
+          ? TEXT.edToggle.open(panelLabel)
+          : `Atidaryti ${panelLabel}`);
+      const closeLabel = selectors.edNavButton.dataset.closeLabel
+        || (typeof TEXT.edToggle?.close === 'function'
+          ? TEXT.edToggle.close(panelLabel)
+          : `Uždaryti ${panelLabel}`);
+      const isFullscreen = dashboardState.fullscreen === true;
+      const isEdActive = dashboardState.activeTab === 'ed';
+      const activeLabel = isFullscreen && isEdActive ? closeLabel : openLabel;
+      selectors.edNavButton.setAttribute('aria-label', activeLabel);
+      selectors.edNavButton.title = activeLabel;
+      selectors.edNavButton.dataset.fullscreenAvailable = isEdActive ? 'true' : 'false';
+      updateTvToggleControls();
+    }
+
+    function updateTvToggleControls() {
+      if (!selectors.edTvToggleBtn) {
+        return;
+      }
+      const toggleTexts = TEXT.edTv?.toggle || {};
+      const isActive = dashboardState.tvMode === true && dashboardState.activeTab === 'ed';
+      const label = isActive
+        ? (toggleTexts.exit || 'Išjungti ekraną')
+        : (toggleTexts.enter || 'Įjungti ekraną');
+      const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
+      if (labelTarget) {
+        labelTarget.textContent = label;
+      }
+      selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
+      selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
+      selectors.edTvToggleBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+
+    function updateEdTvClock() {
+      if (!selectors.edTvClockTime || !selectors.edTvClockDate) {
+        return;
+      }
+      const now = new Date();
+      selectors.edTvClockTime.textContent = tvTimeFormatter.format(now);
+      selectors.edTvClockDate.textContent = capitalizeSentence(tvDateFormatter.format(now));
+    }
+
+    function startTvClock() {
+      updateEdTvClock();
+      if (tvState.clockHandle != null) {
+        return;
+      }
+      tvState.clockHandle = window.setInterval(updateEdTvClock, 15000);
+    }
+
+    function stopTvClock() {
+      if (tvState.clockHandle != null) {
+        window.clearInterval(tvState.clockHandle);
+        tvState.clockHandle = null;
+      }
+    }
+
+    function setTvMode(active, options = {}) {
+      if (!selectors.edTvPanel) {
+        dashboardState.tvMode = false;
+        document.body.removeAttribute('data-tv-mode');
+        if (selectors.edStandardSection) {
+          selectors.edStandardSection.removeAttribute('hidden');
+          selectors.edStandardSection.removeAttribute('aria-hidden');
+        }
+        stopTvClock();
+        if (!options.silent) {
+          scheduleLayoutRefresh();
+        }
+        return;
+      }
+      const shouldEnable = Boolean(active);
+      const previous = dashboardState.tvMode === true;
+      if (shouldEnable === previous && !options.force) {
+        updateTvToggleControls();
+        return;
+      }
+      dashboardState.tvMode = shouldEnable;
+      if (shouldEnable) {
+        document.body.setAttribute('data-tv-mode', 'true');
+        if (selectors.edStandardSection) {
+          selectors.edStandardSection.setAttribute('hidden', 'hidden');
+          selectors.edStandardSection.setAttribute('aria-hidden', 'true');
+        }
+        if (selectors.edTvPanel) {
+          selectors.edTvPanel.removeAttribute('hidden');
+          selectors.edTvPanel.setAttribute('aria-hidden', 'false');
+        }
+        startTvClock();
+        setFullscreenMode(true);
+        const dataset = dashboardState.ed || {};
+        const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
+        const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
+        const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
+        const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
+          || Number.isFinite(summary?.occupiedBeds)
+          || Number.isFinite(summary?.nursePatientsPerStaff)
+          || Number.isFinite(summary?.doctorPatientsPerStaff);
+        const displayVariant = summaryMode === 'snapshot'
+          || (summaryMode === 'hybrid' && hasSnapshotMetrics)
+          ? 'snapshot'
+          : 'legacy';
+        const statusInfo = buildEdStatus(summary, dataset, displayVariant);
+        updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
+      } else {
+        document.body.removeAttribute('data-tv-mode');
+        if (selectors.edStandardSection) {
+          selectors.edStandardSection.removeAttribute('hidden');
+          selectors.edStandardSection.removeAttribute('aria-hidden');
+        }
+        if (selectors.edTvPanel) {
+          selectors.edTvPanel.setAttribute('hidden', 'hidden');
+          selectors.edTvPanel.setAttribute('aria-hidden', 'true');
+        }
+        stopTvClock();
+      }
+      updateTvToggleControls();
+      if (!options.silent) {
+        scheduleLayoutRefresh();
+      }
+    }
+
+    /**
+     * Pirminis tekstų suleidimas iš konfigūracijos (galima perrašyti iš kitų failų).
+     */
+    function applyTextContent() {
+      selectors.title.textContent = TEXT.title;
+      selectors.subtitle.textContent = TEXT.subtitle;
+      if (selectors.tabOverview) {
+        selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
+      }
+      if (selectors.edNavButton) {
+        const edNavLabel = settings.output.tabEdLabel || TEXT.tabs.ed;
+        const openLabel = typeof TEXT.edToggle?.open === 'function'
+          ? TEXT.edToggle.open(edNavLabel)
+          : `Atidaryti ${edNavLabel}`;
+        const closeLabel = typeof TEXT.edToggle?.close === 'function'
+          ? TEXT.edToggle.close(edNavLabel)
+          : `Uždaryti ${edNavLabel}`;
+        selectors.edNavButton.dataset.panelLabel = edNavLabel;
+        selectors.edNavButton.dataset.openLabel = openLabel;
+        selectors.edNavButton.dataset.closeLabel = closeLabel;
+        const isActive = dashboardState.activeTab === 'ed';
+        const currentLabel = isActive ? closeLabel : openLabel;
+        selectors.edNavButton.setAttribute('aria-label', currentLabel);
+        selectors.edNavButton.title = currentLabel;
+      }
+      if (selectors.closeEdPanelBtn) {
+        const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
+        const closeLabel = typeof TEXT.ed?.closeButton === 'function'
+          ? TEXT.ed.closeButton(overviewLabel)
+          : (TEXT.ed?.closeButton || 'Grįžti');
+        selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
+        selectors.closeEdPanelBtn.title = closeLabel;
+        const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
+        if (labelSpan) {
+          labelSpan.textContent = closeLabel;
+        } else {
+          selectors.closeEdPanelBtn.textContent = closeLabel;
+        }
+      }
+      if (selectors.edTvToggleBtn) {
+        const toggleTexts = TEXT.edTv?.toggle || {};
+        const isActive = dashboardState.tvMode === true;
+        const label = isActive
+          ? (toggleTexts.exit || 'Išjungti ekraną')
+          : (toggleTexts.enter || 'Įjungti ekraną');
+        const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
+        if (labelTarget) {
+          labelTarget.textContent = label;
+        }
+        selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
+        selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
+      }
+      if (selectors.edTvTitle && TEXT.edTv?.title) {
+        selectors.edTvTitle.textContent = TEXT.edTv.title;
+      }
+      if (selectors.edTvSubtitle) {
+        selectors.edTvSubtitle.textContent = TEXT.edTv?.subtitle || selectors.edTvSubtitle.textContent || '';
+      }
+      if (selectors.themeToggleBtn) {
+        selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
+        selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
+      }
+      updateFullscreenControls();
+      selectors.kpiHeading.textContent = TEXT.kpis.title;
+      selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
+      selectors.chartHeading.textContent = TEXT.charts.title;
+      selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+      if (selectors.chartYearLabel) {
+        selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
+      }
+      if (selectors.chartYearSelect) {
+        const firstOption = selectors.chartYearSelect.querySelector('option[value="all"]');
+        if (firstOption) {
+          firstOption.textContent = TEXT.charts.yearFilterAll;
+        }
+      }
+      selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
+      if (selectors.dailyCaptionContext) {
+        selectors.dailyCaptionContext.textContent = '';
+      }
+      selectors.dowCaption.textContent = TEXT.charts.dowCaption;
+      if (selectors.dowStayCaption) {
+        selectors.dowStayCaption.textContent = TEXT.charts.dowStayCaption;
+      }
+      if (selectors.hourlyWeekdayLabel) {
+        const hourlyLabelText = TEXT.charts?.hourlyWeekdayLabel || 'Savaitės diena';
+        selectors.hourlyWeekdayLabel.textContent = hourlyLabelText;
+        if (selectors.hourlyWeekdaySelect) {
+          selectors.hourlyWeekdaySelect.setAttribute('aria-label', hourlyLabelText);
+          selectors.hourlyWeekdaySelect.title = hourlyLabelText;
+        }
+      }
+      if (selectors.hourlyMetricLabel) {
+        syncHourlyMetricButtons();
+      }
+      if (selectors.hourlyDepartmentLabel) {
+        const departmentLabelText = TEXT.charts?.hourlyDepartmentLabel || 'Skyrius';
+        selectors.hourlyDepartmentLabel.textContent = departmentLabelText;
+        if (selectors.hourlyDepartmentInput) {
+          selectors.hourlyDepartmentInput.setAttribute('aria-label', departmentLabelText);
+          selectors.hourlyDepartmentInput.title = departmentLabelText;
+          selectors.hourlyDepartmentInput.placeholder = TEXT.charts?.hourlyDepartmentAll || 'Visi skyriai';
+        }
+      }
+      if (selectors.hourlyStayLabel) {
+        const stayLabelText = TEXT.charts?.hourlyStayLabel || 'Buvimo trukmė';
+        selectors.hourlyStayLabel.textContent = stayLabelText;
+        if (selectors.hourlyStaySelect) {
+          selectors.hourlyStaySelect.setAttribute('aria-label', stayLabelText);
+          selectors.hourlyStaySelect.title = stayLabelText;
+        }
+      }
+      populateHourlyWeekdayOptions();
+      populateHourlyStayOptions();
+      syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
+      updateHourlyCaption(
+        dashboardState.hourlyWeekday,
+        dashboardState.hourlyStayBucket,
+        dashboardState.hourlyMetric,
+        dashboardState.hourlyDepartment,
+      );
+      const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
+        ? TEXT.charts.funnelCaptionWithYear(null)
+        : TEXT.charts.funnelCaption;
+      selectors.funnelCaption.textContent = funnelCaptionText;
+      if (selectors.heatmapMetricLabel) {
+        const heatmapLabelText = TEXT.charts?.heatmapMetricLabel || 'Rodiklis';
+        selectors.heatmapMetricLabel.textContent = heatmapLabelText;
+        if (selectors.heatmapMetricSelect) {
+          selectors.heatmapMetricSelect.setAttribute('aria-label', heatmapLabelText);
+          selectors.heatmapMetricSelect.title = `${heatmapLabelText} (Ctrl+Shift+H)`;
+        }
+      }
+      populateHeatmapMetricOptions();
+      updateHeatmapCaption(dashboardState.heatmapMetric);
+      selectors.recentHeading.textContent = TEXT.recent.title;
+      selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
+      selectors.recentCaption.textContent = TEXT.recent.caption;
+      selectors.monthlyHeading.textContent = TEXT.monthly.title;
+      selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
+      selectors.monthlyCaption.textContent = TEXT.monthly.caption;
+      if (selectors.yearlyHeading) {
+        selectors.yearlyHeading.textContent = TEXT.yearly.title;
+      }
+      if (selectors.yearlySubtitle) {
+        selectors.yearlySubtitle.textContent = TEXT.yearly.subtitle;
+      }
+      if (selectors.yearlyCaption) {
+        selectors.yearlyCaption.textContent = TEXT.yearly.caption;
+      }
+      selectors.feedbackHeading.textContent = TEXT.feedback.title;
+      selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
+      if (selectors.feedbackDescription) {
+        selectors.feedbackDescription.textContent = TEXT.feedback.description;
+      }
+      const feedbackFiltersText = TEXT.feedback?.filters || {};
+      if (selectors.feedbackRespondentLabel) {
+        selectors.feedbackRespondentLabel.textContent = feedbackFiltersText.respondent?.label || 'Kas pildo anketą';
+      }
+      if (selectors.feedbackLocationLabel) {
+        selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Šaltinis';
+      }
+      populateFeedbackFilterControls();
+      syncFeedbackFilterControls();
+      updateFeedbackFiltersSummary();
+      if (selectors.feedbackTrendTitle) {
+        selectors.feedbackTrendTitle.textContent = TEXT.feedback.trend.title;
+      }
+      updateFeedbackTrendSubtitle();
+      if (selectors.feedbackTrendControlsLabel) {
+        selectors.feedbackTrendControlsLabel.textContent = TEXT.feedback.trend.controlsLabel;
+      }
+      if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
+        const periodConfig = Array.isArray(TEXT.feedback.trend.periods) ? TEXT.feedback.trend.periods : [];
+        selectors.feedbackTrendButtons.forEach((button) => {
+          const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+          const config = periodConfig.find((item) => Number.parseInt(item?.months, 10) === months);
+          if (config?.label) {
+            button.textContent = config.label;
+          }
+          if (config?.hint) {
+            button.title = config.hint;
+          } else {
+            button.removeAttribute('title');
+          }
+        });
+      }
+      syncFeedbackTrendControls();
+      if (selectors.feedbackCaption) {
+        selectors.feedbackCaption.textContent = TEXT.feedback.table.caption;
+      }
+      if (selectors.feedbackColumnMonth) {
+        selectors.feedbackColumnMonth.textContent = TEXT.feedback.table.headers.month;
+      }
+      if (selectors.feedbackColumnResponses) {
+        selectors.feedbackColumnResponses.textContent = TEXT.feedback.table.headers.responses;
+      }
+      if (selectors.feedbackColumnOverall) {
+        selectors.feedbackColumnOverall.textContent = TEXT.feedback.table.headers.overall;
+      }
+      if (selectors.feedbackColumnDoctors) {
+        selectors.feedbackColumnDoctors.textContent = TEXT.feedback.table.headers.doctors;
+      }
+      if (selectors.feedbackColumnNurses) {
+        selectors.feedbackColumnNurses.textContent = TEXT.feedback.table.headers.nurses;
+      }
+      if (selectors.feedbackColumnAides) {
+        selectors.feedbackColumnAides.textContent = TEXT.feedback.table.headers.aides;
+      }
+      if (selectors.feedbackColumnWaiting) {
+        selectors.feedbackColumnWaiting.textContent = TEXT.feedback.table.headers.waiting;
+      }
+      if (selectors.feedbackColumnContact) {
+        selectors.feedbackColumnContact.textContent = TEXT.feedback.table.headers.contact;
+      }
+      if (selectors.edHeading) {
+        selectors.edHeading.textContent = settings.output.edTitle || TEXT.ed.title;
+      }
+      if (selectors.edStatus) {
+        selectors.edStatus.textContent = TEXT.ed.status.loading;
+        selectors.edStatus.dataset.tone = 'info';
+      }
+      if (selectors.compareToggle) {
+        selectors.compareToggle.textContent = TEXT.compare.toggle;
+      }
+      if (selectors.scrollTopBtn) {
+        selectors.scrollTopBtn.textContent = TEXT.scrollTop;
+        selectors.scrollTopBtn.setAttribute('aria-label', TEXT.scrollTop);
+        selectors.scrollTopBtn.title = `${TEXT.scrollTop} (Home)`;
+      }
+      if (selectors.compareSummary) {
+        selectors.compareSummary.textContent = TEXT.compare.prompt;
+      }
+      hideStatusNote();
+    }
+
+    const statusDisplay = {
+      base: TEXT.status.loading,
+      note: '',
+      tone: 'info',
+    };
+
+    function applyTone(tone = 'info') {
+      const normalized = tone === 'error' ? 'error' : tone === 'warning' ? 'warning' : 'info';
+      if (normalized === 'error' || statusDisplay.tone === 'error') {
+        statusDisplay.tone = 'error';
+        return;
+      }
+      if (normalized === 'warning' || statusDisplay.tone === 'warning') {
+        statusDisplay.tone = 'warning';
+        return;
+      }
+      statusDisplay.tone = 'info';
+    }
+
+    function renderStatusDisplay() {
+      if (!selectors.status) return;
+      const parts = [statusDisplay.base, statusDisplay.note].filter(Boolean);
+      const message = parts.join(' · ');
+      selectors.status.classList.toggle('status--error', statusDisplay.tone === 'error');
+      selectors.status.dataset.tone = statusDisplay.tone;
+      if (!message) {
+        selectors.status.textContent = '';
+        selectors.status.setAttribute('hidden', 'hidden');
+        return;
+      }
+      selectors.status.textContent = message;
+      selectors.status.removeAttribute('hidden');
+    }
+
+    function hideStatusNote() {
+      statusDisplay.note = '';
+      applyTone('info');
+      renderStatusDisplay();
+    }
+
+    function showStatusNote(message, tone = 'info') {
+      statusDisplay.note = message || '';
+      applyTone(tone);
+      renderStatusDisplay();
+    }
+
+    function createChunkReporter(label) {
+      let lastUpdate = 0;
+      return (payload = {}) => {
+        const now = performance.now();
+        if (now - lastUpdate < 120) {
+          return;
+        }
+        lastUpdate = now;
+        const { receivedBytes = 0, current = 0, total = 0 } = payload;
+        const sizeKb = receivedBytes ? `~${Math.max(1, Math.round(receivedBytes / 1024))} KB` : '';
+        const percent = total > 0 ? `${Math.min(100, Math.round((current / total) * 100))}%` : '';
+        const progressLabel = percent || sizeKb;
+        if (!progressLabel && !label) {
+          return;
+        }
+        const message = label ? `${label}: įkeliama ${progressLabel}`.trim() : `Įkeliama ${progressLabel}`.trim();
+        showStatusNote(message, 'info');
+      };
+    }
+
+    function updateThemeToggleState(theme) {
+      if (!selectors.themeToggleBtn) {
+        return;
+      }
+      const isDark = theme === 'dark';
+      selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
+      selectors.themeToggleBtn.dataset.theme = theme;
+      selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
+    }
+
+    function parseColorValue(value) {
+      if (!value) {
+        return null;
+      }
+      const trimmed = value.trim();
+      if (trimmed.startsWith('#')) {
+        const hex = trimmed.slice(1);
+        if (hex.length === 3) {
+          const r = parseInt(hex[0] + hex[0], 16);
+          const g = parseInt(hex[1] + hex[1], 16);
+          const b = parseInt(hex[2] + hex[2], 16);
+          return { r, g, b };
+        }
+        if (hex.length === 6) {
+          const r = parseInt(hex.slice(0, 2), 16);
+          const g = parseInt(hex.slice(2, 4), 16);
+          const b = parseInt(hex.slice(4, 6), 16);
+          if ([r, g, b].every((component) => Number.isFinite(component))) {
+            return { r, g, b };
+          }
+        }
+        return null;
+      }
+      const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+      if (rgbMatch) {
+        const parts = rgbMatch[1].split(',').map((part) => Number.parseFloat(part.trim()));
+        if (parts.length >= 3 && parts.slice(0, 3).every((component) => Number.isFinite(component))) {
+          return { r: parts[0], g: parts[1], b: parts[2] };
+        }
+      }
+      return null;
+    }
+
+    function computeLuminance(rgb) {
+      if (!rgb) {
+        return null;
+      }
+      const normalize = (channel) => {
+        const c = channel / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      };
+      const r = normalize(rgb.r);
+      const g = normalize(rgb.g);
+      const b = normalize(rgb.b);
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    function checkKpiContrast() {
+      const rootStyles = getComputedStyle(document.body);
+      const surface = parseColorValue(rootStyles.getPropertyValue('--color-surface'));
+      const text = parseColorValue(rootStyles.getPropertyValue('--color-text'));
+      const surfaceLum = computeLuminance(surface);
+      const textLum = computeLuminance(text);
+      if (surfaceLum == null || textLum == null) {
+        dashboardState.contrastWarning = false;
+        return;
+      }
+      const lighter = Math.max(surfaceLum, textLum);
+      const darker = Math.min(surfaceLum, textLum);
+      const ratio = (lighter + 0.05) / (darker + 0.05);
+      if (ratio < 4.5) {
+        dashboardState.contrastWarning = true;
+        const existingMessage = statusDisplay.note || '';
+        if (existingMessage && existingMessage !== TEXT.theme.contrastWarning) {
+          const combined = existingMessage.includes(TEXT.theme.contrastWarning)
+            ? existingMessage
+            : `${existingMessage} ${TEXT.theme.contrastWarning}`;
+          showStatusNote(combined, 'warning');
+        } else {
+          showStatusNote(TEXT.theme.contrastWarning, 'warning');
+        }
+      } else if (dashboardState.contrastWarning) {
+        dashboardState.contrastWarning = false;
+        if (statusDisplay.note) {
+          const cleaned = statusDisplay.note.replace(TEXT.theme.contrastWarning, '').trim();
+          statusDisplay.note = cleaned;
+          renderStatusDisplay();
+        }
+      }
+    }
+
+    function applyTheme(theme, { persist = false } = {}) {
+      const normalized = theme === 'dark' ? 'dark' : 'light';
+      const targets = [document.documentElement, document.body].filter(Boolean);
+      targets.forEach((el) => {
+        el.setAttribute('data-theme', normalized);
+      });
+      dashboardState.theme = normalized;
+      updateThemeToggleState(normalized);
+      if (persist) {
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, normalized);
+        } catch (error) {
+          console.warn('Nepavyko išsaugoti temos nustatymo:', error);
+        }
+      }
+      if (typeof window !== 'undefined') {
+        window.ED_DASHBOARD_THEME = normalized;
+      }
+      checkKpiContrast();
+    }
+
+    function initializeTheme() {
+      const attributeTheme = (() => {
+        const htmlTheme = document.documentElement.getAttribute('data-theme');
+        const bodyTheme = document.body ? document.body.getAttribute('data-theme') : null;
+        const candidate = htmlTheme || bodyTheme;
+        return candidate === 'dark' || candidate === 'light' ? candidate : null;
+      })();
+
+      let storedTheme = null;
+      try {
+        storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      } catch (error) {
+        storedTheme = null;
+      }
+
+      const windowTheme = typeof window !== 'undefined' ? window.ED_DASHBOARD_THEME : null;
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const resolvedTheme = attributeTheme
+        || (windowTheme === 'dark' || windowTheme === 'light'
+          ? windowTheme
+          : storedTheme === 'dark' || storedTheme === 'light'
+            ? storedTheme
+            : prefersDark
+              ? 'dark'
+              : 'light');
+
+      applyTheme(resolvedTheme, { persist: false });
+    }
+
+    function toggleTheme() {
+      const nextTheme = dashboardState.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme, { persist: true });
+      rerenderChartsForTheme();
+    }
+
+    function setStatus(type, details = '') {
+      if (type === 'loading') {
+        statusDisplay.base = TEXT.status.loading;
+        statusDisplay.note = '';
+        statusDisplay.tone = 'info';
+        renderStatusDisplay();
+        return;
+      }
+
+      if (type === 'error') {
+        const message = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
+        statusDisplay.base = message;
+        statusDisplay.note = TEXT.status.errorAdvice;
+        statusDisplay.tone = 'error';
+        renderStatusDisplay();
+        return;
+      }
+
+      const formatted = statusTimeFormatter.format(new Date());
+      if (dashboardState.usingFallback) {
+        statusDisplay.base = TEXT.status.fallbackSuccess(formatted);
+        statusDisplay.tone = 'warning';
+        const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
+          ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
+          : [];
+        const fallbackNote = dashboardState.lastErrorMessage
+          ? TEXT.status.fallbackNote(dashboardState.lastErrorMessage)
+          : TEXT.status.fallbackNote(TEXT.status.error);
+        const combinedNote = warningsList.length
+          ? `${fallbackNote} ${warningsList.join(' ')}`.trim()
+          : fallbackNote;
+        statusDisplay.note = combinedNote;
+        renderStatusDisplay();
+      } else {
+        statusDisplay.base = '';
+        statusDisplay.tone = 'info';
+        const warningsList = Array.isArray(dashboardState.dataMeta?.warnings)
+          ? dashboardState.dataMeta.warnings.filter((item) => typeof item === 'string' && item.trim().length > 0)
+          : [];
+        if (warningsList.length) {
+          statusDisplay.note = warningsList.join(' ');
+          statusDisplay.tone = 'warning';
+          renderStatusDisplay();
+        } else {
+          statusDisplay.note = '';
+          renderStatusDisplay();
+        }
+      }
+    }
+
+    function applyFeedbackStatusNote() {
+      if (dashboardState.usingFallback || !settings.output.showFeedback) {
+        return;
+      }
+      if (dashboardState.feedback.usingFallback) {
+        const reason = dashboardState.feedback.lastErrorMessage || TEXT.status.error;
+        showStatusNote(TEXT.feedback.status.fallback(reason), 'warning');
+        return;
+      }
+      if (dashboardState.feedback.lastErrorMessage) {
+        showStatusNote(TEXT.feedback.status.error(dashboardState.feedback.lastErrorMessage), 'warning');
+      }
+    }
+
+    /**
+     * CSV duomenų apdorojimo pagalbinės funkcijos: diagnostika, atsisiuntimas ir transformacija.
+     */
+    function formatUrlForDiagnostics(rawUrl) {
+      if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
+        return '';
+      }
+      try {
+        const parsed = new URL(rawUrl);
+        const safeParams = new URLSearchParams();
+        parsed.searchParams.forEach((value, key) => {
+          if (/token|key|auth|secret|signature|pass/i.test(key)) {
+            safeParams.append(key, '***');
+            return;
+          }
+          safeParams.append(key, value);
+        });
+        const query = safeParams.toString();
+        return `${parsed.origin}${parsed.pathname}${query ? `?${query}` : ''}`;
+      } catch (parseError) {
+        console.warn('Nepavyko normalizuoti URL diagnostikai:', parseError);
+        return rawUrl;
+      }
+    }
+
+    function describeError(error) {
+      if (!error) {
+        return TEXT.status.error;
+      }
+      const message = typeof error === 'string' ? error : error.message ?? TEXT.status.error;
+      const hints = [];
+      const diagnostic = typeof error === 'object' && error ? error.diagnostic : null;
+
+      if (diagnostic?.url) {
+        hints.push(`URL: ${diagnostic.url}.`);
+      }
+
+      if (diagnostic?.type === 'http') {
+        if (diagnostic.status === 404) {
+          hints.push('Patikrinkite, ar „Google Sheet“ paskelbta per „File → Share → Publish to web → CSV“ ir kad naudojamas publikuotas CSV adresas.');
+        } else if (diagnostic.status === 403) {
+          hints.push('Patikrinkite bendrinimo teises – dokumentas turi būti pasiekiamas be prisijungimo.');
+        } else if (diagnostic.status === 0) {
+          hints.push('Gautas atsakas be statuso – tikėtina tinklo arba CORS klaida.');
+        }
+        if (diagnostic.statusText) {
+          hints.push(`Serverio atsakymas: ${diagnostic.statusText}.`);
+        }
+      }
+
+      if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
+        hints.push('Nepavyko pasiekti šaltinio – patikrinkite interneto ryšį ir ar serveris leidžia CORS užklausas iš šio puslapio.');
+      }
+
+      if (/HTML atsakas/i.test(message)) {
+        hints.push('Gautas HTML vietoje CSV – nuorodoje turi būti „.../pub?output=csv“.');
+      }
+
+      if (diagnostic?.hint) {
+        hints.push(diagnostic.hint);
+      }
+
+      const renderedHints = hints.length ? ` ${hints.join(' ')}` : '';
+      if (/HTTP klaida:\s*404/.test(message)) {
+        return `HTTP 404 – nuoroda nerasta arba dokumentas nepublikuotas.${renderedHints}`;
+      }
+      if (/HTTP klaida:\s*403/.test(message)) {
+        return `HTTP 403 – prieiga uždrausta.${renderedHints}`;
+      }
+      if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
+        return `Nepavyko pasiekti šaltinio.${renderedHints}`;
+      }
+      if (/HTML atsakas/i.test(message)) {
+        return `Gautas HTML atsakas vietoje CSV.${renderedHints}`;
+      }
+      return `${message}${renderedHints}`.trim();
+    }
+
+    function createTextSignature(text) {
+      if (typeof text !== 'string') {
+        return '';
+      }
+      const length = text.length;
+      const head = text.slice(0, 128);
+      return `${length}:${head}`;
+    }
+
+    async function downloadCsv(url, { cacheInfo = null, onChunk } = {}) {
+      const headers = {};
+      if (cacheInfo?.etag) {
+        headers['If-None-Match'] = cacheInfo.etag;
+      }
+      if (cacheInfo?.lastModified) {
+        headers['If-Modified-Since'] = cacheInfo.lastModified;
+      }
+      const response = await fetch(url, { cache: 'no-store', headers });
+      const statusText = response.statusText || '';
+      const cacheStatusHeader = response.headers.get('x-cache-status') || '';
+      if (response.status === 304) {
+        return {
+          status: 304,
+          text: '',
+          contentType: response.headers.get('content-type') ?? '',
+          etag: cacheInfo?.etag || '',
+          lastModified: cacheInfo?.lastModified || '',
+          signature: cacheInfo?.signature || '',
+          cacheStatus: cacheStatusHeader || 'not-modified',
+        };
+      }
+      if (!response.ok) {
+        const error = new Error(`HTTP klaida: ${response.status}`);
+        error.diagnostic = {
+          type: 'http',
+          status: response.status,
+          statusText,
+          url: formatUrlForDiagnostics(url),
+        };
+        throw error;
+      }
+      let textContent = '';
+      if (response.body && typeof response.body.getReader === 'function') {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let receivedBytes = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+          receivedBytes += value.byteLength;
+          textContent += decoder.decode(value, { stream: true });
+          if (typeof onChunk === 'function') {
+            onChunk({ receivedBytes });
+          }
+        }
+        textContent += decoder.decode();
+      } else {
+        textContent = await response.text();
+      }
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('text/html') || /^<!doctype html/i.test(textContent.trim())) {
+        const error = new Error('HTML atsakas vietoje CSV – patikrinkite, ar nuoroda publikuota kaip CSV.');
+        error.diagnostic = {
+          type: 'html',
+          url: formatUrlForDiagnostics(url),
+          hint: 'Google Sheets lange pasirinkite „File → Share → Publish to web → CSV“ ir naudokite gautą CSV nuorodą.',
+        };
+        throw error;
+      }
+      const etag = response.headers.get('etag') ?? '';
+      const lastModified = response.headers.get('last-modified') ?? '';
+      return {
+        status: response.status,
+        text: textContent,
+        contentType,
+        etag,
+        lastModified,
+        cacheStatus: cacheStatusHeader || 'tinklas',
+        signature: etag || lastModified || createTextSignature(textContent),
+      };
+    }
+
+    function describeCacheMeta(meta) {
+      if (!meta) {
+        return 'tinklas';
+      }
+      if (meta.cacheStatus && /hit|revalidated/i.test(meta.cacheStatus)) {
+        return meta.cacheStatus.toLowerCase();
+      }
+      if (meta.fromCache) {
+        return 'talpykla';
+      }
+      return 'tinklas';
+    }
+
+    const { fetchData, runKpiWorkerJob } = createMainDataHandlers({
+      settings,
+      DEFAULT_SETTINGS,
+      dashboardState,
+      downloadCsv,
+      describeError,
+      createTextSignature,
+      formatUrlForDiagnostics,
+    });
+
+    const { fetchFeedbackData } = createFeedbackHandlers({
+      settings,
+      DEFAULT_SETTINGS,
+      TEXT,
+      dashboardState,
+      downloadCsv,
+      describeError,
+      parseCandidateList,
+      matchesWildcard,
+      FEEDBACK_RATING_MIN,
+      FEEDBACK_RATING_MAX,
+      FEEDBACK_LEGACY_MAX,
+    });
+
+    const { createEmptyEdSummary, summarizeEdRecords, fetchEdData } = createEdHandlers({
+      settings,
+      DEFAULT_SETTINGS,
+      TEXT,
+      downloadCsv,
+      describeError,
+      resolveColumnIndex,
+    });
+
+    let kpiWorkerJobToken = 0;
+
+    function toDateKeyFromDate(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function toMonthKeyFromDate(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+    }
+
+    function normalizeHourToMinutes(hour) {
+      const raw = Number(hour);
+      if (!Number.isFinite(raw)) {
+        return null;
+      }
+      const dayMinutes = 24 * 60;
+      const minutes = Math.round(raw * 60);
+      return ((minutes % dayMinutes) + dayMinutes) % dayMinutes;
+    }
+
+    function resolveNightBoundsMinutes(calculationSettings = {}) {
+      const defaultStart = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightStartHour))
+        ? Number(DEFAULT_SETTINGS.calculations.nightStartHour)
+        : 20;
+      const defaultEnd = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
+        ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
+        : 7;
+      const startMinutes = normalizeHourToMinutes(
+        Number.isFinite(Number(calculationSettings?.nightStartHour))
+          ? Number(calculationSettings.nightStartHour)
+          : defaultStart
+      );
+      const endMinutes = normalizeHourToMinutes(
+        Number.isFinite(Number(calculationSettings?.nightEndHour))
+          ? Number(calculationSettings.nightEndHour)
+          : defaultEnd
+      );
+      return {
+        startMinutes: Number.isFinite(startMinutes) ? startMinutes : normalizeHourToMinutes(defaultStart),
+        endMinutes: Number.isFinite(endMinutes) ? endMinutes : normalizeHourToMinutes(defaultEnd),
+      };
+    }
+
+    function isNightTimestamp(date, nightStartMinutes, nightEndMinutes) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return null;
+      }
+      const minutes = date.getHours() * 60 + date.getMinutes();
+      if (!Number.isFinite(nightStartMinutes) || !Number.isFinite(nightEndMinutes)) {
+        return null;
+      }
+      if (nightStartMinutes === nightEndMinutes) {
+        return false;
+      }
+      if (nightStartMinutes < nightEndMinutes) {
+        return minutes >= nightStartMinutes && minutes < nightEndMinutes;
+      }
+      return minutes >= nightStartMinutes || minutes < nightEndMinutes;
+    }
+
+    function dateKeyToUtc(dateKey) {
+      if (typeof dateKey !== 'string') {
+        return Number.NaN;
+      }
+      const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
+      if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
+        return Number.NaN;
+      }
+      const [year, month, day] = parts;
+      return Date.UTC(year, month - 1, day);
+    }
+
+    function dateKeyToDate(dateKey) {
+      const utc = dateKeyToUtc(dateKey);
+      if (!Number.isFinite(utc)) {
+        return null;
+      }
+      return new Date(utc);
+    }
+
+    function formatUtcDateKey(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function isWeekendDateKey(dateKey) {
+      const date = dateKeyToDate(dateKey);
+      if (!(date instanceof Date)) {
+        return false;
+      }
+      const day = date.getUTCDay();
+      return day === 0 || day === 6;
+    }
+
+    function getWeekdayIndexFromDateKey(dateKey) {
+      const date = dateKeyToDate(dateKey);
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return null;
+      }
+      const weekday = date.getUTCDay();
+      return (weekday + 6) % 7;
+    }
+
+
+    /**
+     * CSV duomenų užkrovimas iš Google Sheets (ar kito šaltinio).
+     */
     async function handleHourlyFilterChange() {
       const metricValue = dashboardState.hourlyMetric;
       const departmentValue = selectors.hourlyDepartmentInput?.value ?? dashboardState.hourlyDepartment;
@@ -14655,10 +12306,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           : combinedRecords;
         const dailyStats = Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
           ? dataset.dailyStats
-          : computeDailyStats(combinedRecords);
+          : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
         const primaryDaily = Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
           ? dataset.primaryDaily
-          : computeDailyStats(primaryRecords);
+          : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS);
         dashboardState.rawRecords = combinedRecords;
         dashboardState.dailyStats = dailyStats;
         dashboardState.primaryRecords = primaryRecords.slice();
@@ -15016,3 +12667,23 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         setActiveTab('overview', { restoreFocus: true });
       }
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

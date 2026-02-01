@@ -1,0 +1,430 @@
+import { computeDailyStats, computeMonthlyStats, computeYearlyStats } from './stats.js';
+
+export function createMainDataHandlers(context) {
+  const {
+    settings,
+    DEFAULT_SETTINGS,
+    dashboardState,
+    downloadCsv,
+    describeError,
+    createTextSignature,
+    formatUrlForDiagnostics,
+  } = context;
+
+  const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
+  const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
+  const inMemoryDataCache = new Map();
+  let dataWorkerCounter = 0;
+
+  function getDataCacheKey(url) {
+    if (!url) {
+      return '';
+    }
+    return `${DATA_CACHE_PREFIX}${encodeURIComponent(url)}`;
+  }
+
+  function cloneCacheRecords(records) {
+    if (!Array.isArray(records)) {
+      return [];
+    }
+    return records.map((record) => {
+      const entry = { ...record };
+      if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
+        entry.arrival = new Date(entry.arrival.getTime());
+      }
+      if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
+        entry.discharge = new Date(entry.discharge.getTime());
+      }
+      return entry;
+    });
+  }
+
+  function cloneCacheDailyStats(dailyStats) {
+    if (!Array.isArray(dailyStats)) {
+      return [];
+    }
+    return dailyStats.map((item) => ({ ...item }));
+  }
+
+  function cloneCacheEntry(entry) {
+    const timestamp = typeof entry?.timestamp === 'number' ? entry.timestamp : Date.now();
+    return {
+      etag: entry?.etag || '',
+      lastModified: entry?.lastModified || '',
+      signature: entry?.signature || '',
+      timestamp,
+      records: cloneCacheRecords(entry?.records),
+      dailyStats: cloneCacheDailyStats(entry?.dailyStats),
+    };
+  }
+
+  function rememberCacheEntry(key, entry) {
+    if (!key) {
+      return;
+    }
+    inMemoryDataCache.set(key, cloneCacheEntry(entry));
+  }
+
+  function readDataCache(url) {
+    const key = getDataCacheKey(url);
+    if (!key) {
+      return null;
+    }
+
+    if (inMemoryDataCache.has(key)) {
+      return cloneCacheEntry(inMemoryDataCache.get(key));
+    }
+    return null;
+  }
+
+  function writeDataCache(url, payload) {
+    const key = getDataCacheKey(url);
+    if (!key) {
+      return;
+    }
+
+    const entry = cloneCacheEntry({ ...payload, timestamp: Date.now() });
+    rememberCacheEntry(key, entry);
+  }
+
+  function clearDataCache(url) {
+    const key = getDataCacheKey(url);
+    if (!key) {
+      return;
+    }
+
+    inMemoryDataCache.delete(key);
+  }
+
+  function runWorkerJob(message, { onProgress } = {}) {
+    if (typeof Worker !== 'function') {
+      return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
+    }
+    const jobId = `data-job-${Date.now()}-${dataWorkerCounter += 1}`;
+    const worker = new Worker(DATA_WORKER_URL);
+    return new Promise((resolve, reject) => {
+      const cleanup = () => {
+        try {
+          worker.terminate();
+        } catch (error) {
+          console.warn('Nepavyko uždaryti duomenų workerio:', error);
+        }
+      };
+      worker.addEventListener('message', (event) => {
+        const data = event.data;
+        if (!data || data.id !== jobId) {
+          return;
+        }
+        if (data.status === 'progress') {
+          if (typeof onProgress === 'function') {
+            onProgress(data.payload || {});
+          }
+          return;
+        }
+        cleanup();
+        if (data.status === 'error') {
+          const error = new Error(data.error?.message || 'Worker klaida.');
+          error.name = data.error?.name || error.name;
+          if (data.error?.stack) {
+            error.stack = data.error.stack;
+          }
+          reject(error);
+          return;
+        }
+        resolve(data.payload);
+      });
+      worker.addEventListener('error', (event) => {
+        cleanup();
+        reject(event.error || new Error(event.message || 'Worker klaida.'));
+      });
+      try {
+        worker.postMessage({
+          id: jobId,
+          ...message,
+        });
+      } catch (error) {
+        cleanup();
+        reject(error);
+      }
+    });
+  }
+
+  function runDataWorker(csvText, options, jobOptions = {}) {
+    const message = { type: 'transformCsv', csvText, options };
+    if (Number.isInteger(jobOptions.progressStep) && jobOptions.progressStep > 0) {
+      message.progressStep = jobOptions.progressStep;
+    }
+    return runWorkerJob(message, jobOptions);
+  }
+
+  function runKpiWorkerJob(payload) {
+    return runWorkerJob({ type: 'applyKpiFilters', ...payload });
+  }
+
+  async function loadCsvSource(config, workerOptions, { required = false, sourceId = 'primary', label = '' } = {}) {
+    const trimmedUrl = (config?.url ?? '').trim();
+    const missingMessage = config?.missingMessage || 'Nenurodytas duomenų URL.';
+    const result = {
+      records: [],
+      dailyStats: [],
+      meta: {
+        sourceId,
+        url: trimmedUrl,
+        label: label || sourceId,
+      },
+      usingFallback: false,
+      lastErrorMessage: '',
+      error: null,
+    };
+    const onChunk = typeof config?.onChunk === 'function' ? config.onChunk : null;
+    const onWorkerProgress = typeof config?.onWorkerProgress === 'function'
+      ? config.onWorkerProgress
+      : null;
+    const workerProgressStep = onWorkerProgress
+      ? (Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
+        ? config.workerProgressStep
+        : 400)
+      : null;
+
+    const assignDataset = (dataset, metaOverrides = {}) => {
+      result.records = dataset.records;
+      result.dailyStats = dataset.dailyStats;
+      result.meta = { ...result.meta, ...metaOverrides };
+    };
+
+    if (!trimmedUrl) {
+      result.lastErrorMessage = missingMessage;
+      result.error = missingMessage;
+      if (required) {
+        const error = new Error(missingMessage);
+        error.diagnostic = { type: 'config', sourceId, reason: 'missing-url' };
+        throw error;
+      }
+      return result;
+    }
+
+    const cacheEntry = readDataCache(trimmedUrl);
+
+    try {
+      let download = await downloadCsv(trimmedUrl, { cacheInfo: cacheEntry, onChunk });
+      if (download.status === 304) {
+        if (cacheEntry?.records && cacheEntry?.dailyStats) {
+          assignDataset({
+            records: cacheEntry.records,
+            dailyStats: cacheEntry.dailyStats,
+          }, {
+            etag: cacheEntry.etag,
+            lastModified: cacheEntry.lastModified,
+            signature: cacheEntry.signature,
+            cacheStatus: download.cacheStatus,
+            fromCache: true,
+          });
+          return result;
+        }
+        clearDataCache(trimmedUrl);
+        download = await downloadCsv(trimmedUrl, { onChunk });
+      }
+
+      const dataset = await runDataWorker(download.text, workerOptions, {
+        onProgress: onWorkerProgress,
+        progressStep: workerProgressStep,
+      });
+      assignDataset({
+        records: Array.isArray(dataset?.records) ? dataset.records : [],
+        dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
+      }, {
+        etag: download.etag,
+        lastModified: download.lastModified,
+        signature: download.signature,
+        cacheStatus: download.cacheStatus,
+        fromCache: false,
+      });
+      writeDataCache(trimmedUrl, {
+        etag: download.etag,
+        lastModified: download.lastModified,
+        signature: download.signature,
+        records: result.records,
+        dailyStats: result.dailyStats,
+      });
+      return result;
+    } catch (error) {
+      console.error(`Nepavyko atsisiųsti CSV duomenų (${sourceId}):`, error);
+      const friendly = describeError(error);
+      result.lastErrorMessage = friendly;
+      result.error = friendly;
+      if (cacheEntry?.records && cacheEntry?.dailyStats) {
+        console.warn(`Naudojami talpyklos duomenys dėl klaidos (${sourceId}).`);
+        assignDataset({
+          records: cacheEntry.records,
+          dailyStats: cacheEntry.dailyStats,
+        }, {
+          etag: cacheEntry.etag,
+          lastModified: cacheEntry.lastModified,
+          signature: cacheEntry.signature,
+          fromCache: true,
+          fallbackReason: friendly,
+        });
+        return result;
+      }
+      if (required) {
+        throw error;
+      }
+      return result;
+    }
+  }
+
+  async function fetchData(options = {}) {
+    const csvSettings = settings?.csv || DEFAULT_SETTINGS.csv;
+    const mainConfig = {
+      url: settings?.dataSource?.url || DEFAULT_SETTINGS.dataSource.url,
+      missingMessage: 'Nenurodytas pagrindinis duomenų URL.',
+      onChunk: typeof options?.onPrimaryChunk === 'function' ? options.onPrimaryChunk : null,
+      onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+    };
+    const workerOptions = {
+      csvSettings,
+      trueValues: (csvSettings?.trueValues ?? '').trim() || DEFAULT_SETTINGS.csv.trueValues,
+      hospitalizedValues: (csvSettings?.hospitalizedValues ?? '').trim() || DEFAULT_SETTINGS.csv.hospitalizedValues,
+      nightKeywords: (csvSettings?.nightKeywords ?? '').trim() || DEFAULT_SETTINGS.csv.nightKeywords,
+      dayKeywords: (csvSettings?.dayKeywords ?? '').trim() || DEFAULT_SETTINGS.csv.dayKeywords,
+      calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
+    };
+    const historicalConfig = settings?.dataSource?.historical || DEFAULT_SETTINGS.dataSource.historical;
+    const historicalEnabled = Boolean(historicalConfig?.enabled);
+    const historicalLabel = historicalConfig?.label || 'Istorinis CSV';
+    let historicalMeta = null;
+    const normalizedHistoricalConfig = historicalEnabled && historicalConfig?.url
+      ? {
+        url: historicalConfig.url,
+        missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
+        onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
+        onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+      }
+      : null;
+    const historicalShouldAttempt = Boolean(normalizedHistoricalConfig)
+      && (normalizedHistoricalConfig.url ?? '').trim().length > 0;
+
+    const primaryPromise = loadCsvSource(mainConfig, workerOptions, {
+      required: true,
+      sourceId: 'primary',
+      label: 'Pagrindinis CSV',
+    });
+    const historicalPromise = historicalEnabled && historicalShouldAttempt
+      ? loadCsvSource(normalizedHistoricalConfig, workerOptions, {
+        required: false,
+        sourceId: 'historical',
+        label: historicalLabel,
+      })
+      : Promise.resolve(null);
+
+    const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
+
+    const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
+    const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
+    let combinedRecords = baseRecords.slice();
+    let usingFallback = false;
+    const warnings = [];
+    const primaryUrl = (settings?.dataSource?.url ?? '').trim();
+    const sources = [
+      {
+        id: 'primary',
+        label: 'Pagrindinis CSV',
+        url: primaryResult.meta?.url || primaryUrl,
+        fromCache: Boolean(primaryResult.meta?.fromCache),
+        fromFallback: Boolean(primaryResult.meta?.fromFallback),
+        usingFallback: false,
+        lastErrorMessage: primaryResult.lastErrorMessage || '',
+        error: primaryResult.error || '',
+        used: baseRecords.length > 0,
+        enabled: true,
+      },
+    ];
+
+    if (primaryResult.error && primaryResult.meta?.fromCache) {
+      warnings.push(`Pagrindinis CSV: ${primaryResult.error}`);
+    }
+
+    if (historicalEnabled) {
+      if (historicalShouldAttempt && historicalResult) {
+        historicalMeta = historicalResult.meta || null;
+        const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
+        if (historicalRecords.length) {
+          combinedRecords = combinedRecords.concat(historicalRecords);
+        }
+        if (historicalResult.error) {
+          warnings.push(`${historicalLabel}: ${historicalResult.error}`);
+        }
+        sources.push({
+          id: 'historical',
+          label: historicalLabel,
+          url: historicalResult.meta?.url || (historicalConfig.url ?? ''),
+          fromCache: Boolean(historicalResult.meta?.fromCache),
+          fromFallback: Boolean(historicalResult.meta?.fromFallback),
+          usingFallback: false,
+          lastErrorMessage: historicalResult.lastErrorMessage || '',
+          error: historicalResult.error || '',
+          used: historicalRecords.length > 0,
+          enabled: true,
+        });
+      } else {
+        sources.push({
+          id: 'historical',
+          label: historicalLabel,
+          url: historicalConfig.url || '',
+          fromCache: false,
+          fromFallback: false,
+          usingFallback: false,
+          lastErrorMessage: '',
+          error: '',
+          used: false,
+          enabled: true,
+        });
+        warnings.push(`${historicalLabel}: Nenurodytas papildomo istorinio šaltinio URL.`);
+      }
+    } else {
+      sources.push({
+        id: 'historical',
+        label: historicalLabel,
+        url: historicalConfig.url || '',
+        fromCache: false,
+        fromFallback: false,
+        usingFallback: false,
+        lastErrorMessage: '',
+        error: '',
+        used: false,
+        enabled: false,
+      });
+    }
+
+    dashboardState.usingFallback = usingFallback;
+    dashboardState.lastErrorMessage = '';
+
+    const meta = {
+      primary: { ...(primaryResult.meta || {}), sourceId: 'primary' },
+      historical: historicalMeta ? { ...historicalMeta, sourceId: 'historical' } : null,
+      sources,
+      warnings,
+    };
+
+    const hasBaseDaily = Array.isArray(baseDaily) && baseDaily.length > 0;
+    const combinedDaily = (combinedRecords.length === baseRecords.length && hasBaseDaily)
+      ? baseDaily.slice()
+      : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
+    const combinedYearlyStats = computeYearlyStats(computeMonthlyStats(combinedDaily.slice()));
+
+    return {
+      records: combinedRecords,
+      primaryRecords: baseRecords,
+      dailyStats: combinedDaily,
+      primaryDaily: baseDaily.slice(),
+      yearlyStats: combinedYearlyStats,
+      meta,
+    };
+  }
+
+  return {
+    fetchData,
+    runDataWorker,
+    runKpiWorkerJob,
+  };
+}

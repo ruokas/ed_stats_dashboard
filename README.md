@@ -46,6 +46,7 @@ Skydelis įkelia `config.json` per `fetch`, todėl rekomenduojama jį atverti pe
 - Naršyklės konsolėje matysite lokalizuotą klaidos paaiškinimą (pvz., „HTTP 404 – nuoroda nerasta“). Tai padeda greitai sutaisyti leidimų problemas.
 
 ## Greitas „smoke test“ sąrašas
+Detalesnis refaktorizavimo tikrinimo sarasas: `docs/refactor-safety-net.md`.
 1. Atidarykite `index.html` ir patikrinkite, kad hero blokas rodo pavadinimą, navigacijos nuorodas ir statuso eilutę.
 2. Pakeiskite `config.json` `calculations.windowDays` reikšmę (pvz., į 14) ir perkraukite puslapį – KPI kortelės bei grafikai turi persiskaičiuoti.
 3. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus.
