@@ -16,7 +16,8 @@ body[data-theme="light"] {
   --color-input-placeholder: rgba(16, 20, 32, 0.56);
   --color-success: #2ea07a;
   --color-warning: #d48c35;
-  --color-danger: #c34b55;
+  --color-danger: #e2444c;
+  --color-danger-soft: #e2444c;
   --color-weekend: #c7802c;
   --color-weekend-soft: rgba(199, 128, 44, 0.2);
   --chart-grid: rgba(16, 20, 32, 0.14);
@@ -44,7 +45,8 @@ body[data-theme="dark"] {
   --color-input-placeholder: rgba(232, 236, 246, 0.78);
   --color-success: #5ad29a;
   --color-warning: #efb24f;
-  --color-danger: #ff7b84;
+  --color-danger: #ff4d5d;
+  --color-danger-soft: #ff4d5d;
   --color-weekend: #f0a255;
   --color-weekend-soft: rgba(240, 162, 85, 0.24);
   --chart-grid: rgba(156, 168, 192, 0.26);
@@ -66,11 +68,6 @@ body {
   margin: 0;
   min-height: 100vh;
   background: var(--color-bg);
-  background-image:
-    radial-gradient(circle at 18% 20%, rgba(47, 91, 234, 0.14), transparent 32%),
-    radial-gradient(circle at 78% 18%, rgba(30, 36, 52, 0.4), transparent 36%),
-    radial-gradient(circle at 35% 78%, rgba(47, 91, 234, 0.1), transparent 34%),
-    linear-gradient(145deg, rgba(26, 32, 48, 0.08), rgba(47, 91, 234, 0.05));
   color: var(--color-text);
   display: flex;
   flex-direction: column;
@@ -3077,6 +3074,24 @@ body[data-theme="dark"] select optgroup {
       outline: none;
     }
 
+    .chart-filter--toggle .chart-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      font-size: 0.9rem;
+    }
+
+    .chart-filter--toggle .chart-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--color-accent);
+    }
+
     .chart-period {
       display: flex;
       flex-wrap: wrap;
@@ -4298,6 +4313,22 @@ body[data-theme="dark"] select optgroup {
     .table-flag--weekend {
       background: var(--color-weekend);
       color: #fff;
+    }
+
+    .table-row--summary td {
+      background: var(--color-surface-alt);
+      font-weight: 600;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .table-row--weekend td:first-child {
+      color: var(--color-weekend);
+      font-weight: 600;
+    }
+
+    .table-cell--heat {
+      background-clip: padding-box;
+      border-radius: 10px;
     }
 
     tbody tr:nth-child(even) {

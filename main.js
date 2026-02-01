@@ -430,6 +430,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         dowCaption: 'Vidutinis pacientų skaičius pagal savaitės dieną.',
         dowStayCaption: 'Vidutinė buvimo trukmė pagal savaitės dieną.',
         dowStayLabel: 'Vidutinė trukmė (val.)',
+        compareGmpLabel: 'Palyginti GMP',
+        compareGmpHint: 'GMP / be GMP',
+        compareGmpSummary: 'GMP vs be GMP',
       hourlyCaption: (weekdayLabel) => (weekdayLabel
         ? `Vidutinis pacientų skaičius per valandą (${weekdayLabel}).`
         : 'Vidutinis pacientų skaičius per valandą.'),
@@ -842,6 +845,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         arrival: 'all',
         disposition: 'all',
         cardType: 'all',
+        compareGmp: false,
       };
     }
 
@@ -877,6 +881,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       }
       if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
         normalized.cardType = defaults.cardType;
+      }
+      normalized.compareGmp = normalized.compareGmp === true || normalized.compareGmp === 'true';
+      if (normalized.compareGmp) {
+        normalized.arrival = defaults.arrival;
       }
       return normalized;
     }
@@ -1610,6 +1618,185 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       return triggerDownloadFromBlob(blob, filename);
     }
 
+    function formatExportFilenameWithExt(titleInfo, ext) {
+      const raw = titleInfo?.text || 'lentelė';
+      const normalized = raw
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-')
+        .replace(/[^\p{L}\p{N}-]+/gu, '')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const date = new Date();
+      const dateStamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const suffix = String(ext || '').replace(/^\./, '') || 'csv';
+      return `${normalized || 'lentele'}-${dateStamp}.${suffix}`;
+    }
+
+    function escapeCsvCell(value) {
+      const text = String(value ?? '');
+      if (/[",\n]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+      return text;
+    }
+
+    function buildCsvFromTable(table) {
+      if (!(table instanceof HTMLElement)) {
+        return '';
+      }
+      const rows = Array.from(table.querySelectorAll('tr'));
+      if (!rows.length) {
+        return '';
+      }
+      return rows.map((row) => {
+        const cells = Array.from(row.children);
+        return cells.map((cell) => escapeCsvCell(cell.textContent.trim())).join(',');
+      }).join('\n');
+    }
+
+    function isTransparentColor(color) {
+      if (!color) {
+        return true;
+      }
+      const normalized = color.trim().toLowerCase();
+      if (normalized === 'transparent') {
+        return true;
+      }
+      const rgbaMatch = normalized.match(/^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([0-9.]+)\s*\)$/);
+      return rgbaMatch ? Number.parseFloat(rgbaMatch[1]) === 0 : false;
+    }
+
+    function buildTableExportCanvas(table, titleInfo = null, backgroundColor = null) {
+      if (!(table instanceof HTMLElement)) {
+        return null;
+      }
+      const rows = Array.from(table.querySelectorAll('tr'));
+      if (!rows.length) {
+        return null;
+      }
+      const sampleCell = table.querySelector('th, td');
+      if (!sampleCell) {
+        return null;
+      }
+      const baseStyle = getComputedStyle(sampleCell);
+      const fontFamily = baseStyle.fontFamily || 'sans-serif';
+      const fontSize = Number.parseFloat(baseStyle.fontSize) || 14;
+      const paddingLeft = Number.parseFloat(baseStyle.paddingLeft) || 12;
+      const paddingRight = Number.parseFloat(baseStyle.paddingRight) || 12;
+      const paddingTop = Number.parseFloat(baseStyle.paddingTop) || 8;
+      const paddingBottom = Number.parseFloat(baseStyle.paddingBottom) || 8;
+      const rowHeight = Math.max(28, fontSize + paddingTop + paddingBottom);
+
+      const columnCount = rows.reduce((max, row) => Math.max(max, row.children.length), 0);
+      const colWidths = Array(columnCount).fill(0);
+      const measureCanvas = document.createElement('canvas');
+      const measureCtx = measureCanvas.getContext('2d');
+      if (!measureCtx) {
+        return null;
+      }
+
+      rows.forEach((row) => {
+        Array.from(row.children).forEach((cell, index) => {
+          const cellStyle = getComputedStyle(cell);
+          const cellFontSize = Number.parseFloat(cellStyle.fontSize) || fontSize;
+          const cellFontWeight = cellStyle.fontWeight || '400';
+          measureCtx.font = `${cellFontWeight} ${cellFontSize}px ${fontFamily}`;
+          const text = cell.textContent.trim();
+          const textWidth = measureCtx.measureText(text).width;
+          const cellPaddingLeft = Number.parseFloat(cellStyle.paddingLeft) || paddingLeft;
+          const cellPaddingRight = Number.parseFloat(cellStyle.paddingRight) || paddingRight;
+          const width = textWidth + cellPaddingLeft + cellPaddingRight + 6;
+          if (width > colWidths[index]) {
+            colWidths[index] = width;
+          }
+        });
+      });
+
+      const outerPadding = 24;
+      const tableWidth = colWidths.reduce((sum, value) => sum + value, 0);
+      const titleText = titleInfo?.text || '';
+      const titleFontSize = Math.round(fontSize * 1.1);
+      const titleHeight = titleText ? titleFontSize + 18 : 0;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(tableWidth + outerPadding * 2);
+      canvas.height = Math.ceil(rows.length * rowHeight + outerPadding * 2 + titleHeight);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return null;
+      }
+      const fallbackBg = getComputedStyle(document.body).backgroundColor || '#ffffff';
+      ctx.fillStyle = backgroundColor || fallbackBg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      let cursorY = outerPadding;
+      if (titleText) {
+        ctx.fillStyle = getComputedStyle(document.body).color || '#111';
+        ctx.font = `600 ${titleFontSize}px ${fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(titleText, canvas.width / 2, cursorY);
+        cursorY += titleHeight;
+      }
+
+      rows.forEach((row) => {
+        let cursorX = outerPadding;
+        const rowStyle = getComputedStyle(row);
+        const rowBg = rowStyle.backgroundColor;
+        if (rowBg && !isTransparentColor(rowBg)) {
+          ctx.fillStyle = rowBg;
+          ctx.fillRect(cursorX, cursorY, tableWidth, rowHeight);
+        }
+        Array.from(row.children).forEach((cell, index) => {
+          const cellStyle = getComputedStyle(cell);
+          const cellBg = cellStyle.backgroundColor;
+          const cellColor = cellStyle.color || '#111';
+          const cellFontWeight = cellStyle.fontWeight || '400';
+          const cellFontSize = Number.parseFloat(cellStyle.fontSize) || fontSize;
+          const cellPaddingLeft = Number.parseFloat(cellStyle.paddingLeft) || paddingLeft;
+          const cellPaddingTop = Number.parseFloat(cellStyle.paddingTop) || paddingTop;
+          const cellWidth = colWidths[index] || 120;
+
+          if (cellBg && !isTransparentColor(cellBg)) {
+            ctx.fillStyle = cellBg;
+            ctx.fillRect(cursorX, cursorY, cellWidth, rowHeight);
+          }
+
+          ctx.fillStyle = cellColor;
+          ctx.font = `${cellFontWeight} ${cellFontSize}px ${fontFamily}`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          const text = cell.textContent.trim();
+          const textX = cursorX + cellPaddingLeft;
+          const textY = cursorY + cellPaddingTop + Math.max(0, (rowHeight - cellPaddingTop - paddingBottom - cellFontSize) * 0.2);
+          ctx.fillText(text, textX, textY);
+          cursorX += cellWidth;
+        });
+        cursorY += rowHeight;
+      });
+
+      return canvas;
+    }
+
+    async function downloadTableAsCsv(table, titleInfo) {
+      const csvText = buildCsvFromTable(table);
+      if (!csvText) {
+        return false;
+      }
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const filename = formatExportFilenameWithExt(titleInfo, 'csv');
+      return triggerDownloadFromBlob(blob, filename);
+    }
+
+    async function downloadTableAsPng(table, titleInfo) {
+      const backgroundColor = resolveCopyBackgroundColor(table);
+      const exportCanvas = buildTableExportCanvas(table, titleInfo, backgroundColor);
+      if (!exportCanvas) {
+        return false;
+      }
+      const filename = formatExportFilenameWithExt(titleInfo, 'png');
+      return downloadCanvasPng(exportCanvas, filename);
+    }
+
     async function downloadChartAsPng(source, titleInfo, backgroundColor) {
       const filename = formatExportFilename(titleInfo);
       if (!source) {
@@ -1764,6 +1951,51 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       });
     }
 
+    async function handleTableDownloadClick(event) {
+      const button = event.currentTarget;
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      if (button.dataset.copyBusy === 'true') {
+        return;
+      }
+      const targetSelector = button.dataset.tableTarget || '';
+      const table = targetSelector ? document.querySelector(targetSelector) : null;
+      if (!(table instanceof HTMLElement)) {
+        setCopyButtonFeedback(button, 'Lentelė nerasta', 'error');
+        return;
+      }
+      const titleInfo = { text: button.dataset.tableTitle || 'Lentelė' };
+      button.dataset.copyBusy = 'true';
+      button.setAttribute('aria-busy', 'true');
+      try {
+        const format = button.dataset.tableDownload || 'csv';
+        let ok = false;
+        if (format === 'png') {
+          ok = await downloadTableAsPng(table, titleInfo);
+        } else {
+          ok = await downloadTableAsCsv(table, titleInfo);
+        }
+        setCopyButtonFeedback(button, ok ? 'Lentelė parsisiųsta' : 'Klaida parsisiunčiant', ok ? 'success' : 'error');
+      } catch (error) {
+        console.error('Nepavyko parsisiųsti lentelės:', error);
+        setCopyButtonFeedback(button, 'Klaida parsisiunčiant', 'error');
+      } finally {
+        button.dataset.copyBusy = 'false';
+        button.removeAttribute('aria-busy');
+      }
+    }
+
+    function initializeTableDownloadButtons() {
+      if (!Array.isArray(selectors.tableDownloadButtons) || !selectors.tableDownloadButtons.length) {
+        return;
+      }
+      selectors.tableDownloadButtons.forEach((button) => {
+        storeCopyButtonBaseLabel(button);
+        button.addEventListener('click', handleTableDownloadClick);
+      });
+    }
+
     function restartAutoRefreshTimer() {
       if (autoRefreshTimerId) {
         window.clearInterval(autoRefreshTimerId);
@@ -1797,6 +2029,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       dailyCaptionContext: document.getElementById('dailyChartContext'),
       dowCaption: document.getElementById('dowChartTitle'),
       dowStayCaption: document.getElementById('dowStayChartTitle'),
+      dowCaptionContext: document.getElementById('dowChartContext'),
+      dowStayCaptionContext: document.getElementById('dowStayChartContext'),
       hourlyCaption: document.getElementById('hourlyChartTitle'),
       hourlyMetricLabel: document.getElementById('hourlyMetricLabel'),
       hourlyMetricButtons: Array.from(document.querySelectorAll('[data-hourly-metric]')),
@@ -1827,9 +2061,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       chartFilterArrival: document.getElementById('chartArrival'),
       chartFilterDisposition: document.getElementById('chartDisposition'),
       chartFilterCardType: document.getElementById('chartCardType'),
+      chartFilterCompareGmp: document.getElementById('chartCompareGmp'),
       chartCards: Array.from(document.querySelectorAll('.chart-grid .chart-card')),
       chartCopyButtons: Array.from(document.querySelectorAll('[data-chart-copy]')),
       chartDownloadButtons: Array.from(document.querySelectorAll('[data-chart-download]')),
+      tableDownloadButtons: Array.from(document.querySelectorAll('[data-table-download]')),
       recentHeading: document.getElementById('recentHeading'),
       recentSubtitle: document.getElementById('recentSubtitle'),
       recentCaption: document.getElementById('recentCaption'),
@@ -4100,6 +4336,16 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       return new Date(utc);
     }
 
+    function formatUtcDateKey(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     function isWeekendDateKey(dateKey) {
       const date = dateKeyToDate(dateKey);
       if (!(date instanceof Date)) {
@@ -4717,6 +4963,50 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       return decorated
         .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
         .map((item) => item.entry);
+    }
+
+    function buildDailyWindowKeys(dailyStats, days) {
+      if (!Array.isArray(dailyStats) || !Number.isFinite(days) || days <= 0) {
+        return [];
+      }
+      const decorated = dailyStats
+        .map((entry) => ({ utc: dateKeyToUtc(entry?.date) }))
+        .filter((item) => Number.isFinite(item.utc));
+      if (!decorated.length) {
+        return [];
+      }
+      const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
+      const startUtc = endUtc - (days - 1) * 86400000;
+      const keys = [];
+      for (let i = 0; i < days; i += 1) {
+        const date = new Date(startUtc + i * 86400000);
+        keys.push(formatUtcDateKey(date));
+      }
+      return keys;
+    }
+
+    function fillDailyStatsWindow(dailyStats, windowKeys) {
+      const map = new Map((Array.isArray(dailyStats) ? dailyStats : []).map((entry) => [entry?.date, entry]));
+      return (Array.isArray(windowKeys) ? windowKeys : []).map((dateKey) => {
+        const entry = map.get(dateKey);
+        if (entry) {
+          return entry;
+        }
+        return {
+          date: dateKey,
+          count: 0,
+          night: 0,
+          ems: 0,
+          discharged: 0,
+          hospitalized: 0,
+          totalTime: 0,
+          durations: 0,
+          hospitalizedTime: 0,
+          hospitalizedDurations: 0,
+          avgTime: 0,
+          avgHospitalizedTime: 0,
+        };
+      });
     }
 
     function filterRecordsByWindow(records, days) {
@@ -6331,8 +6621,8 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     }
 
     function prepareChartDataForPeriod(period) {
-      const normalized = Number.isFinite(Number(period)) && Number(period) > 0
-        ? Number(period)
+      const normalized = Number.isFinite(Number(period))
+        ? Math.max(0, Number(period))
         : 30;
       const baseDaily = Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
         ? dashboardState.chartData.baseDaily
@@ -6344,10 +6634,20 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
       const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters);
       dashboardState.chartFilters = { ...sanitizedFilters };
-      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, sanitizedFilters);
+      const effectiveFilters = sanitizedFilters.compareGmp
+        ? { ...sanitizedFilters, arrival: 'all' }
+        : sanitizedFilters;
+      const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, effectiveFilters);
       const filteredDaily = computeDailyStats(filteredRecords);
-      const scopedDaily = filterDailyStatsByWindow(filteredDaily, normalized);
-      const scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
+      let scopedDaily = filteredDaily.slice();
+      let scopedRecords = filteredRecords.slice();
+      if (normalized > 0) {
+        const windowKeys = buildDailyWindowKeys(filteredDaily, normalized);
+        scopedDaily = windowKeys.length
+          ? fillDailyStatsWindow(filteredDaily, windowKeys)
+          : filterDailyStatsByWindow(filteredDaily, normalized);
+        scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
+      }
       const fallbackDaily = filteredDaily.length
         ? filteredDaily
         : filterDailyStatsByYear(baseDaily, selectedYear);
@@ -8091,12 +8391,21 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       dashboardState.chartFilters = { ...filters };
       if (selectors.chartFilterArrival) {
         selectors.chartFilterArrival.value = filters.arrival;
+        selectors.chartFilterArrival.disabled = Boolean(filters.compareGmp);
+        if (filters.compareGmp) {
+          selectors.chartFilterArrival.title = 'Palyginimo režimas: atvykimo tipas fiksuotas';
+        } else {
+          selectors.chartFilterArrival.removeAttribute('title');
+        }
       }
       if (selectors.chartFilterDisposition) {
         selectors.chartFilterDisposition.value = filters.disposition;
       }
       if (selectors.chartFilterCardType) {
         selectors.chartFilterCardType.value = filters.cardType;
+      }
+      if (selectors.chartFilterCompareGmp) {
+        selectors.chartFilterCompareGmp.checked = Boolean(filters.compareGmp);
       }
     }
 
@@ -8107,7 +8416,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const filters = sanitizeChartFilters(dashboardState.chartFilters);
       const defaults = getDefaultChartFilters();
       const summaryParts = [];
-      if (filters.arrival !== defaults.arrival) {
+      if (filters.compareGmp) {
+        summaryParts.push(TEXT.charts?.compareGmpSummary || 'GMP vs be GMP');
+      }
+      if (!filters.compareGmp && filters.arrival !== defaults.arrival) {
         summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.arrival[filters.arrival]));
       }
       if (filters.disposition !== defaults.disposition) {
@@ -8362,6 +8674,11 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         filters.disposition = value;
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
         filters.cardType = value;
+      } else if (name === 'compareGmp') {
+        filters.compareGmp = Boolean(target.checked);
+      }
+      if (filters.compareGmp) {
+        filters.arrival = 'all';
       }
       dashboardState.chartFilters = filters;
       void applyChartFilters();
@@ -9074,12 +9391,16 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     function getThemePalette() {
       const styleTarget = getThemeStyleTarget();
       const rootStyles = getComputedStyle(styleTarget);
+      const danger = rootStyles.getPropertyValue('--color-danger').trim() || '#c34b55';
       return {
         accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
         accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
         weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
         weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
         success: rootStyles.getPropertyValue('--color-success').trim() || '#16a34a',
+        danger,
+        dangerSoft: rootStyles.getPropertyValue('--color-danger-soft').trim()
+          || rgbToRgba(ensureRgb(danger, { r: 195, g: 75, b: 85 }), 0.28),
         textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
         textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
         gridColor: rootStyles.getPropertyValue('--chart-grid').trim() || 'rgba(15, 23, 42, 0.12)',
@@ -9091,8 +9412,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         return;
       }
       selectors.chartPeriodButtons.forEach((button) => {
-        const buttonPeriod = Number.parseInt(button.dataset.chartPeriod, 10);
-        const isActive = Number.isFinite(buttonPeriod) && buttonPeriod === period;
+        const rawValue = button.dataset.chartPeriod;
+        const isAll = rawValue === 'all';
+        const buttonPeriod = Number.parseInt(rawValue || '', 10);
+        const isActive = isAll ? period === 0 : (Number.isFinite(buttonPeriod) && buttonPeriod === period);
         button.setAttribute('aria-pressed', String(isActive));
       });
     }
@@ -9137,14 +9460,21 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
 
     function formatDailyCaption(period) {
       const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientų srautai';
-      if (!Number.isFinite(period) || period <= 0) {
-        return base;
-      }
-      const normalized = Math.max(1, Math.round(period));
-      const formattedDays = numberFormatter.format(normalized);
-      const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
+      const normalized = Number.isFinite(period) ? Math.round(period) : null;
       const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
       const yearFragment = Number.isFinite(selectedYear) ? `, ${selectedYear} m.` : '';
+      if (normalized === 0) {
+        const combinedSuffix = `visas laikotarpis${yearFragment}`;
+        if (base.includes('(')) {
+          return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
+        }
+        return `${base} (${combinedSuffix})`;
+      }
+      if (!Number.isFinite(period) || period < 0) {
+        return base;
+      }
+      const formattedDays = numberFormatter.format(normalized);
+      const suffix = normalized === 1 ? 'paskutinė 1 diena' : `paskutinės ${formattedDays} dienos`;
       const combinedSuffix = `${suffix}${yearFragment}`;
       if (base.includes('(')) {
         return base.replace(/\(.*?\)/, `(${combinedSuffix})`);
@@ -9155,18 +9485,26 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     function renderDailyChart(dailyStats, period, ChartLib, palette) {
       const Chart = ChartLib;
       const themePalette = palette || getThemePalette();
-      const normalizedPeriod = Number.isFinite(Number(period)) && Number(period) > 0 ? Number(period) : 30;
+      const normalizedPeriod = Number.isFinite(Number(period))
+        ? Math.max(0, Number(period))
+        : 30;
       dashboardState.chartPeriod = normalizedPeriod;
       syncChartPeriodButtons(normalizedPeriod);
+      const compareGmp = dashboardState.chartFilters?.compareGmp === true;
       if (selectors.dailyCaption) {
         selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
       }
-      const scopedData = Array.isArray(dailyStats) ? dailyStats.slice(-normalizedPeriod) : [];
+      const scopedData = Array.isArray(dailyStats)
+        ? (normalizedPeriod === 0 ? dailyStats.slice() : dailyStats.slice(-normalizedPeriod))
+        : [];
       if (selectors.dailyCaptionContext) {
         const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
         const dateValue = lastEntry?.date ? dateKeyToDate(lastEntry.date) : null;
         const formatted = dateValue ? shortDateFormatter.format(dateValue) : lastEntry?.date || '';
-        selectors.dailyCaptionContext.textContent = TEXT.charts.dailyContext(formatted);
+        const dayCount = scopedData.length;
+        const dayNote = dayCount ? `n=${numberFormatter.format(dayCount)} d.` : '';
+        const contextText = TEXT.charts.dailyContext(formatted);
+        selectors.dailyCaptionContext.textContent = [contextText, dayNote].filter(Boolean).join(' • ');
       }
 
       const canvas = document.getElementById('dailyChart');
@@ -9199,23 +9537,60 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       const weekendFlags = scopedData.map((entry) => isWeekendDateKey(entry.date));
       // Užtikrina, kad X ašies etiketės nepersidengtų – rodome iki 8 reikšmių.
       const tickEvery = Math.max(1, Math.ceil(scopedData.length / 8));
+      const gmpCounts = scopedData.map((entry) => Number.isFinite(entry?.ems) ? entry.ems : 0);
+      const totalCounts = scopedData.map((entry) => Number.isFinite(entry?.count) ? entry.count : 0);
+      const selfCounts = totalCounts.map((value, index) => Math.max(0, value - gmpCounts[index]));
       dashboardState.charts.daily = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: scopedData.map((entry) => entry.date),
           datasets: [
-            {
-              label: 'Pacientai',
-              data: scopedData.map((entry) => entry.count),
-              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent)),
-              borderRadius: 12,
-            },
-            {
-              label: 'Naktiniai pacientai',
-              data: scopedData.map((entry) => entry.night),
-              backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft)),
-              borderRadius: 12,
-            },
+            ...(compareGmp ? [
+              {
+                label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
+                data: gmpCounts,
+                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.dangerSoft : themePalette.dangerSoft)),
+                borderColor: themePalette.danger,
+                borderRadius: 10,
+                borderWidth: 1,
+                stack: 'daily',
+              },
+              {
+                label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+                data: selfCounts,
+                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.success : themePalette.success)),
+                borderColor: themePalette.success,
+                borderRadius: 10,
+                borderWidth: 1,
+                stack: 'daily',
+              },
+              {
+                type: 'line',
+                label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+                data: totalCounts,
+                borderColor: themePalette.textColor,
+                backgroundColor: themePalette.textColor,
+                borderWidth: 3,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.25,
+                fill: false,
+                order: 0,
+              },
+            ] : [
+              {
+                label: 'Pacientai',
+                data: totalCounts,
+                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent)),
+                borderRadius: 12,
+              },
+              {
+                label: 'Naktiniai pacientai',
+                data: scopedData.map((entry) => entry.night),
+                backgroundColor: weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccentSoft : themePalette.accentSoft)),
+                borderRadius: 12,
+              },
+            ]),
           ],
         },
         options: {
@@ -9240,6 +9615,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           },
           scales: {
             x: {
+              stacked: compareGmp,
               ticks: {
                 autoSkip: false,
                 maxRotation: 0,
@@ -9268,6 +9644,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
             },
             y: {
               beginAtZero: true,
+              stacked: compareGmp,
               ticks: {
                 padding: 6,
                 color: themePalette.textColor,
@@ -9400,6 +9777,18 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           {
             label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
             data: result.averages.ems,
+            borderColor: themePalette.danger,
+            backgroundColor: themePalette.danger,
+            tension: 0.35,
+            fill: false,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+            pointBackgroundColor: themePalette.danger,
+            pointBorderColor: themePalette.danger,
+          },
+          {
+            label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+            data: result.averages.self,
             borderColor: themePalette.success,
             backgroundColor: themePalette.success,
             tension: 0.35,
@@ -9408,18 +9797,6 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
             pointHoverRadius: 4,
             pointBackgroundColor: themePalette.success,
             pointBorderColor: themePalette.success,
-          },
-          {
-            label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-            data: result.averages.self,
-            borderColor: themePalette.weekendAccent,
-            backgroundColor: themePalette.weekendAccent,
-            tension: 0.35,
-            fill: false,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-            pointBackgroundColor: themePalette.weekendAccent,
-            pointBorderColor: themePalette.weekendAccent,
           },
         ];
       }
@@ -10586,14 +10963,16 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     }
 
     function updateChartPeriod(period) {
-      const numeric = Number.parseInt(period, 10);
-      if (!Number.isFinite(numeric) || numeric <= 0) {
+      const rawValue = String(period);
+      const isAll = rawValue === 'all';
+      const numeric = Number.parseInt(rawValue, 10);
+      if (!isAll && (!Number.isFinite(numeric) || numeric < 0)) {
         return;
       }
-      dashboardState.chartPeriod = numeric;
-      syncChartPeriodButtons(numeric);
+      dashboardState.chartPeriod = isAll ? 0 : numeric;
+      syncChartPeriodButtons(dashboardState.chartPeriod);
       if (selectors.dailyCaption) {
-        selectors.dailyCaption.textContent = formatDailyCaption(numeric);
+        selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
       }
       const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
         || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
@@ -10605,7 +10984,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         updateChartFiltersSummary({ records: [], daily: [] });
         return;
       }
-      const scoped = prepareChartDataForPeriod(numeric);
+      const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
       renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
         .catch((error) => {
           console.error('Nepavyko atnaujinti grafiko laikotarpio:', error);
@@ -10758,7 +11137,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
         Chart.defaults.borderColor = palette.gridColor;
 
-        if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod <= 0) {
+        if (!Number.isFinite(dashboardState.chartPeriod) || dashboardState.chartPeriod < 0) {
           dashboardState.chartPeriod = 30;
         }
 
@@ -10804,7 +11183,10 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         renderDailyChart(scopedDaily, dashboardState.chartPeriod, Chart, palette);
 
         const dowLabels = ['Pir', 'Ant', 'Tre', 'Ket', 'Pen', 'Šeš', 'Sek'];
+        const compareGmp = dashboardState.chartFilters?.compareGmp === true;
         const dowCounts = Array(7).fill(0);
+        const dowEmsCounts = Array(7).fill(0);
+        const dowSelfCounts = Array(7).fill(0);
         const dowTotals = Array(7).fill(0);
         const dowStayTotals = Array(7).fill(0);
         const dowStayCounts = Array(7).fill(0);
@@ -10815,6 +11197,9 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           }
           const patientCount = Number.isFinite(entry?.count) ? entry.count : 0;
           dowCounts[dayIndex] += patientCount;
+          const emsCount = Number.isFinite(entry?.ems) ? entry.ems : 0;
+          dowEmsCounts[dayIndex] += emsCount;
+          dowSelfCounts[dayIndex] += Math.max(0, patientCount - emsCount);
           dowTotals[dayIndex] += 1;
           const totalTime = Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
           const durations = Number.isFinite(entry?.durations) ? entry.durations : 0;
@@ -10824,10 +11209,22 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           }
         });
         const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
+        const dowEmsAverages = dowEmsCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
+        const dowSelfAverages = dowSelfCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
         const dowStayAverages = dowStayTotals.map((value, index) => (dowStayCounts[index] ? value / dowStayCounts[index] : 0));
         const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
         const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
         const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
+        const totalDays = dowTotals.reduce((sum, value) => sum + value, 0);
+        const totalStaySamples = dowStayCounts.reduce((sum, value) => sum + value, 0);
+        if (selectors.dowCaptionContext) {
+          selectors.dowCaptionContext.textContent = totalDays ? `n=${numberFormatter.format(totalDays)} d.` : '';
+        }
+        if (selectors.dowStayCaptionContext) {
+          selectors.dowStayCaptionContext.textContent = totalStaySamples
+            ? `n=${numberFormatter.format(totalStaySamples)} viz.`
+            : '';
+        }
 
         const dowCanvas = document.getElementById('dowChart');
         if (dowCanvas && dowCanvas.getContext) {
@@ -10843,29 +11240,61 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
             const ctxDow = dowCanvas.getContext('2d');
             const isWeekendIndex = (index) => index >= 5;
             dashboardState.charts.dow = new Chart(ctxDow, {
-              type: 'line',
+              type: compareGmp ? 'bar' : 'line',
               data: {
                 labels: dowLabels,
                 datasets: [
-                  {
-                    label: 'Vidutinis pacientų skaičius',
-                    data: dowAverages,
-                    fill: true,
-                    tension: 0.35,
-                    borderColor: palette.accent,
-                    backgroundColor: palette.accentSoft,
-                    pointBackgroundColor: dowPointColors,
-                    pointBorderColor: dowPointColors,
-                    pointRadius: dowPointRadii,
-                    pointHoverRadius: dowHoverRadii,
-                  },
+                  ...(compareGmp ? [
+                    {
+                      label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
+                      data: dowEmsAverages,
+                      backgroundColor: palette.dangerSoft,
+                      borderColor: palette.danger,
+                      borderWidth: 1,
+                      borderRadius: 10,
+                    },
+                    {
+                      label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+                      data: dowSelfAverages,
+                      backgroundColor: palette.success,
+                      borderColor: palette.success,
+                      borderWidth: 1,
+                      borderRadius: 10,
+                    },
+                    {
+                      type: 'line',
+                      label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+                      data: dowAverages,
+                      fill: false,
+                      tension: 0.2,
+                      borderColor: palette.textColor,
+                      backgroundColor: palette.textColor,
+                      borderDash: [6, 6],
+                      borderWidth: 2,
+                      pointRadius: 2,
+                      pointHoverRadius: 4,
+                    },
+                  ] : [
+                    {
+                      label: 'Vidutinis pacientų skaičius',
+                      data: dowAverages,
+                      fill: true,
+                      tension: 0.35,
+                      borderColor: palette.accent,
+                      backgroundColor: palette.accentSoft,
+                      pointBackgroundColor: dowPointColors,
+                      pointBorderColor: dowPointColors,
+                      pointRadius: dowPointRadii,
+                      pointHoverRadius: dowHoverRadii,
+                    },
+                  ]),
                 ],
               },
               options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                  legend: { display: false },
+                  legend: { display: compareGmp },
                   tooltip: {
                     callbacks: {
                       label(context) {
@@ -10915,24 +11344,88 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
           } else {
             setChartCardMessage(dowStayCanvas, null);
             const ctxDowStay = dowStayCanvas.getContext('2d');
+            let compareStay = null;
+            if (compareGmp) {
+              const stayTotals = {
+                ems: Array(7).fill(0),
+                self: Array(7).fill(0),
+                emsCounts: Array(7).fill(0),
+                selfCounts: Array(7).fill(0),
+              };
+              const windowKeySet = new Set(scopedDaily.map((entry) => entry?.date).filter(Boolean));
+              const shiftStartHour = resolveShiftStartHour(settings?.calculations);
+              const stayRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
+                ? dashboardState.chartData.filteredWindowRecords
+                : [];
+              stayRecords.forEach((record) => {
+                const reference = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+                  ? record.arrival
+                  : record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+                    ? record.discharge
+                    : null;
+                const dateKey = computeShiftDateKey(reference, shiftStartHour);
+                if (!dateKey || !windowKeySet.has(dateKey)) {
+                  return;
+                }
+                const dayIndex = getWeekdayIndexFromDateKey(dateKey);
+                if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex > 6) {
+                  return;
+                }
+                if (!(record.arrival instanceof Date) || !(record.discharge instanceof Date)) {
+                  return;
+                }
+                const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
+                if (!Number.isFinite(duration) || duration < 0 || duration > 24) {
+                  return;
+                }
+                if (record.ems) {
+                  stayTotals.ems[dayIndex] += duration;
+                  stayTotals.emsCounts[dayIndex] += 1;
+                } else {
+                  stayTotals.self[dayIndex] += duration;
+                  stayTotals.selfCounts[dayIndex] += 1;
+                }
+              });
+              compareStay = {
+                ems: stayTotals.ems.map((value, index) => (stayTotals.emsCounts[index] ? value / stayTotals.emsCounts[index] : 0)),
+                self: stayTotals.self.map((value, index) => (stayTotals.selfCounts[index] ? value / stayTotals.selfCounts[index] : 0)),
+              };
+            }
             dashboardState.charts.dowStay = new Chart(ctxDowStay, {
               type: 'bar',
               data: {
                 labels: dowLabels,
                 datasets: [
-                  {
-                    label: TEXT.charts?.dowStayLabel || 'Vidutinė trukmė (val.)',
-                    data: dowStayAverages,
-                    backgroundColor: dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent)),
-                    borderRadius: 12,
-                  },
+                  ...(compareGmp && compareStay ? [
+                    {
+                      label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
+                      data: compareStay.ems,
+                      backgroundColor: palette.dangerSoft,
+                      borderColor: palette.danger,
+                      borderRadius: 10,
+                    },
+                    {
+                      label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+                      data: compareStay.self,
+                      backgroundColor: palette.success,
+                      borderColor: palette.success,
+                      borderRadius: 10,
+                    },
+                  ] : [
+                    {
+                      label: TEXT.charts?.dowStayLabel || 'Vidutinė trukmė (val.)',
+                      data: dowStayAverages,
+                      backgroundColor: dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent)),
+                      borderRadius: 12,
+                    },
+                  ]),
                 ],
               },
               options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                  legend: { display: false },
+                  legend: { display: compareGmp },
                   tooltip: {
                     callbacks: {
                       label(context) {
@@ -11708,35 +12201,131 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
         return;
       }
 
-      [...recentDailyStats]
-        .sort((a, b) => (a.date > b.date ? -1 : 1))
-        .forEach((entry) => {
-          const row = document.createElement('tr');
-          const dateValue = dateKeyToDate(entry.date);
-          const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
-          const total = Number.isFinite(entry.count) ? entry.count : 0;
-          row.innerHTML = `
-            <td>${displayDate}</td>
-            <td>${numberFormatter.format(total)}</td>
-            <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
-            <td>${formatValueWithShare(entry.night, total)}</td>
-            <td>${formatValueWithShare(entry.ems, total)}</td>
-            <td>${formatValueWithShare(entry.hospitalized, total)}</td>
-            <td>${formatValueWithShare(entry.discharged, total)}</td>
-          `;
-          const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
-          const emsShare = total > 0 ? entry.ems / total : 0;
-          const hospShare = total > 0 ? entry.hospitalized / total : 0;
-          row.dataset.compareId = `recent-${entry.date}`;
-          row.dataset.compareGroup = 'recent';
-          row.dataset.compareLabel = displayDate;
-          row.dataset.compareSort = entry.date;
-          row.dataset.total = String(total);
-          row.dataset.avgStay = String(avgStay);
-          row.dataset.emsShare = String(emsShare);
-          row.dataset.hospShare = String(hospShare);
-          selectors.recentTable.appendChild(row);
-        });
+      const sorted = [...recentDailyStats].sort((a, b) => (a.date > b.date ? -1 : 1));
+      const daysCount = sorted.length;
+      const totals = sorted.reduce((acc, entry) => {
+        const total = Number.isFinite(entry?.count) ? entry.count : 0;
+        acc.total += total;
+        acc.night += Number.isFinite(entry?.night) ? entry.night : 0;
+        acc.ems += Number.isFinite(entry?.ems) ? entry.ems : 0;
+        acc.hospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+        acc.discharged += Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+        acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
+        acc.durations += Number.isFinite(entry?.durations) ? entry.durations : 0;
+        return acc;
+      }, {
+        total: 0,
+        night: 0,
+        ems: 0,
+        hospitalized: 0,
+        discharged: 0,
+        totalTime: 0,
+        durations: 0,
+      });
+
+      const summaryRow = document.createElement('tr');
+      summaryRow.classList.add('table-row--summary');
+      const avgTotal = daysCount ? totals.total / daysCount : 0;
+      const avgNight = daysCount ? totals.night / daysCount : 0;
+      const avgEms = daysCount ? totals.ems / daysCount : 0;
+      const avgHosp = daysCount ? totals.hospitalized / daysCount : 0;
+      const avgDis = daysCount ? totals.discharged / daysCount : 0;
+      const avgStay = totals.durations ? totals.totalTime / totals.durations : 0;
+      summaryRow.innerHTML = `
+        <td>7 d. vidurkis</td>
+        <td>${numberFormatter.format(avgTotal)}</td>
+        <td>${decimalFormatter.format(avgStay)}</td>
+        <td>${formatValueWithShare(avgNight, avgTotal)}</td>
+        <td>${formatValueWithShare(avgEms, avgTotal)}</td>
+        <td>${formatValueWithShare(avgHosp, avgTotal)}</td>
+        <td>${formatValueWithShare(avgDis, avgTotal)}</td>
+      `;
+      selectors.recentTable.appendChild(summaryRow);
+
+      const totalsList = sorted.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
+      const staysList = sorted.map((entry) => (entry?.durations ? entry.totalTime / entry.durations : 0));
+      const hospShareList = sorted.map((entry) => {
+        const total = Number.isFinite(entry?.count) ? entry.count : 0;
+        return total > 0 ? entry.hospitalized / total : 0;
+      });
+      const range = (list) => {
+        const values = list.filter((value) => Number.isFinite(value));
+        if (!values.length) {
+          return { min: 0, max: 0 };
+        }
+        return { min: Math.min(...values), max: Math.max(...values) };
+      };
+      const totalsRange = range(totalsList);
+      const staysRange = range(staysList);
+      const hospRange = range(hospShareList);
+      const palette = getThemePalette();
+
+      sorted.forEach((entry) => {
+        const row = document.createElement('tr');
+        const dateValue = dateKeyToDate(entry.date);
+        const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
+        const total = Number.isFinite(entry.count) ? entry.count : 0;
+        const avgStayEntry = entry.durations ? entry.totalTime / entry.durations : 0;
+        const hospShare = total > 0 ? entry.hospitalized / total : 0;
+        const isWeekend = dateValue instanceof Date
+          && !Number.isNaN(dateValue.getTime())
+          && (dateValue.getUTCDay() === 0 || dateValue.getUTCDay() === 6);
+        if (isWeekend) {
+          row.classList.add('table-row--weekend');
+        }
+
+        const makeHeat = (value, { min, max }) => {
+          if (!Number.isFinite(value) || max <= min) {
+            return '';
+          }
+          const intensity = Math.max(0, Math.min(1, (value - min) / (max - min)));
+          return computeHeatmapColor(palette.accent, intensity);
+        };
+
+        const dateCell = document.createElement('td');
+        dateCell.textContent = displayDate;
+        const totalCell = document.createElement('td');
+        totalCell.textContent = numberFormatter.format(total);
+        const stayCell = document.createElement('td');
+        stayCell.textContent = decimalFormatter.format(avgStayEntry);
+        const nightCell = document.createElement('td');
+        nightCell.innerHTML = formatValueWithShare(entry.night, total);
+        const emsCell = document.createElement('td');
+        emsCell.innerHTML = formatValueWithShare(entry.ems, total);
+        const hospCell = document.createElement('td');
+        hospCell.innerHTML = formatValueWithShare(entry.hospitalized, total);
+        const disCell = document.createElement('td');
+        disCell.innerHTML = formatValueWithShare(entry.discharged, total);
+
+        const totalHeat = makeHeat(total, totalsRange);
+        if (totalHeat) {
+          totalCell.classList.add('table-cell--heat');
+          totalCell.style.backgroundColor = totalHeat;
+        }
+        const stayHeat = makeHeat(avgStayEntry, staysRange);
+        if (stayHeat) {
+          stayCell.classList.add('table-cell--heat');
+          stayCell.style.backgroundColor = stayHeat;
+        }
+        const hospHeat = makeHeat(hospShare, hospRange);
+        if (hospHeat) {
+          hospCell.classList.add('table-cell--heat');
+          hospCell.style.backgroundColor = hospHeat;
+        }
+
+        row.append(dateCell, totalCell, stayCell, nightCell, emsCell, hospCell, disCell);
+
+        const emsShare = total > 0 ? entry.ems / total : 0;
+        row.dataset.compareId = `recent-${entry.date}`;
+        row.dataset.compareGroup = 'recent';
+        row.dataset.compareLabel = displayDate;
+        row.dataset.compareSort = entry.date;
+        row.dataset.total = String(total);
+        row.dataset.avgStay = String(avgStayEntry);
+        row.dataset.emsShare = String(emsShare);
+        row.dataset.hospShare = String(hospShare);
+        selectors.recentTable.appendChild(row);
+      });
       syncCompareActivation();
     }
 
@@ -14127,6 +14716,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
       initializeFeedbackTrendControls();
       initializeChartCopyButtons();
       initializeChartDownloadButtons();
+      initializeTableDownloadButtons();
       initializeTabSwitcher();
       initializeTvMode();
       scheduleInitialLoad();
@@ -14147,7 +14737,7 @@ import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js'
     if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
       selectors.chartPeriodButtons.forEach((button) => {
         button.addEventListener('click', () => {
-          const period = Number.parseInt(button.dataset.chartPeriod || '', 10);
+          const period = button.dataset.chartPeriod || '';
           updateChartPeriod(period);
         });
       });

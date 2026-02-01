@@ -339,6 +339,7 @@
             <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
             <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
             <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
+            <button type="button" class="chip-button" data-chart-period="all" aria-pressed="false">Visas laikotarpis</button>
           </div>
           <label class="chart-year-filter" for="chartYear">
             <span id="chartYearLabel">Metai</span>
@@ -372,6 +373,13 @@
                 <option value="tr">TR kortelės</option>
                 <option value="ch">CH kortelės</option>
               </select>
+            </label>
+            <label class="chart-filter chart-filter--toggle" for="chartCompareGmp">
+              <span>Palyginti GMP</span>
+              <div class="chart-toggle">
+                <input id="chartCompareGmp" name="compareGmp" type="checkbox" aria-label="Palyginti GMP ir be GMP">
+                <span>GMP / be GMP</span>
+              </div>
             </label>
           </form>
         </div>
@@ -458,7 +466,10 @@
             </button>
           </div>
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
-          <figcaption id="dowChartTitle">Vidutinis pacientų skaičius pagal savaitės dieną</figcaption>
+          <figcaption id="dowChartTitle">
+            Vidutinis pacientų skaičius pagal savaitės dieną
+            <span id="dowChartContext" class="chart-caption__context"></span>
+          </figcaption>
         </figure>
         <figure class="chart-card chart-card--tall">
           <div class="chart-card__skeleton" aria-hidden="true" hidden>
@@ -498,7 +509,10 @@
             </button>
           </div>
           <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
-          <figcaption id="dowStayChartTitle">Vidutinė buvimo trukmė pagal savaitės dieną</figcaption>
+          <figcaption id="dowStayChartTitle">
+            Vidutinė buvimo trukmė pagal savaitės dieną
+            <span id="dowStayChartContext" class="chart-caption__context"></span>
+          </figcaption>
         </figure>
         <figure class="chart-card chart-card--tall chart-card--full chart-card--hourly">
           <div class="chart-card__skeleton" aria-hidden="true" hidden>
@@ -726,6 +740,24 @@
           <p id="recentSubtitle" class="section__subtitle">Kasdienė suvestinė pagal naujausius duomenis</p>
         </div>
         <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#recentTableRoot"
+            data-table-title="Paskutinės 7 dienos"
+            aria-label="Parsisiųsti paskutinių 7 dienų lentelę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#recentTableRoot"
+            data-table-title="Paskutinės 7 dienos"
+            aria-label="Parsisiųsti paskutinių 7 dienų lentelę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
           <button id="compareToggle" type="button" class="btn btn-secondary btn-small">Palyginti</button>
         </div>
       </div>
@@ -737,7 +769,7 @@
         <p id="compareSummary" class="compare-card__body">Pasirinkite dvi eilutes lentelėje.</p>
       </article>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
-        <table aria-describedby="recentSubtitle">
+        <table id="recentTableRoot" aria-describedby="recentSubtitle">
           <caption id="recentCaption" class="sr-only">Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė</caption>
           <thead>
             <tr>
@@ -777,9 +809,29 @@
           </h2>
           <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
         </div>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#monthlyTableRoot"
+            data-table-title="Mėnesinė suvestinė"
+            aria-label="Parsisiųsti mėnesinę suvestinę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#monthlyTableRoot"
+            data-table-title="Mėnesinė suvestinė"
+            aria-label="Parsisiųsti mėnesinę suvestinę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
+        </div>
       </div>
       <div class="table-wrapper table-wrapper--full-height" role="region" aria-live="polite" aria-labelledby="monthlyHeading">
-        <table aria-describedby="monthlySubtitle">
+        <table id="monthlyTableRoot" aria-describedby="monthlySubtitle">
           <caption id="monthlyCaption" class="sr-only">Mėnesių pacientų suvestinė: sumos ir vidurkiai</caption>
           <thead>
             <tr>
@@ -814,9 +866,29 @@
           </h2>
           <p id="yearlySubtitle" class="section__subtitle">Kalendoriniai metai (paskutiniai 5 metai)</p>
         </div>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#yearlyTableRoot"
+            data-table-title="Metinė suvestinė"
+            aria-label="Parsisiųsti metinę suvestinę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#yearlyTableRoot"
+            data-table-title="Metinė suvestinė"
+            aria-label="Parsisiųsti metinę suvestinę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
+        </div>
       </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="yearlyHeading">
-        <table aria-describedby="yearlySubtitle">
+        <table id="yearlyTableRoot" aria-describedby="yearlySubtitle">
           <caption id="yearlyCaption" class="sr-only">Metinių pacientų suvestinė: sumos ir vidurkiai</caption>
           <thead>
             <tr>
@@ -852,6 +924,26 @@
           </h2>
           <p id="feedbackSubtitle" class="section__subtitle">Apibendrinti apklausos rezultatai</p>
           <p id="feedbackDescription" class="section__description">Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.</p>
+        </div>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#feedbackTableRoot"
+            data-table-title="Pacientų atsiliepimai"
+            aria-label="Parsisiųsti atsiliepimų lentelę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#feedbackTableRoot"
+            data-table-title="Pacientų atsiliepimai"
+            aria-label="Parsisiųsti atsiliepimų lentelę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
         </div>
       </div>
       <div class="feedback-controls" role="region" aria-labelledby="feedbackFiltersTitle">
@@ -920,7 +1012,7 @@
         </div>
       </div>
       <div class="table-wrapper table-wrapper--feedback" role="region" aria-live="polite" aria-labelledby="feedbackHeading">
-        <table aria-describedby="feedbackSubtitle feedbackDescription">
+        <table id="feedbackTableRoot" aria-describedby="feedbackSubtitle feedbackDescription">
           <caption id="feedbackCaption" class="sr-only">Mėnesio atsiliepimų suvestinė pagal apklausos vertinimus.</caption>
           <thead>
             <tr>
