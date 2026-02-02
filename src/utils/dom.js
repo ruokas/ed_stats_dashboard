@@ -28,3 +28,22 @@ export function enableLazyLoading() {
     frame.loading = 'lazy';
   });
 }
+
+export function getDatasetValue(element, key, fallback = '') {
+  if (!element || !element.dataset || !key) {
+    return fallback;
+  }
+  const value = element.dataset[key];
+  return value == null ? fallback : value;
+}
+
+export function setDatasetValue(element, key, value) {
+  if (!element || !element.dataset || !key) {
+    return;
+  }
+  if (value == null) {
+    delete element.dataset[key];
+    return;
+  }
+  element.dataset[key] = String(value);
+}

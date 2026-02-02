@@ -250,9 +250,9 @@ export function createFeedbackHandlers(context) {
       dashboardState.feedback.lastErrorMessage = '';
       return dataset;
     } catch (error) {
-      console.error('Nepavyko atsisiųsti atsiliepimų CSV:', error);
-      const friendly = describeError(error);
-      dashboardState.feedback.lastErrorMessage = friendly;
+      const errorInfo = describeError(error, { code: 'FEEDBACK_FETCH' });
+      console.error(errorInfo.log, error);
+      dashboardState.feedback.lastErrorMessage = errorInfo.userMessage;
       dashboardState.feedback.usingFallback = false;
       return [];
     }

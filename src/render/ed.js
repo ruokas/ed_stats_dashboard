@@ -1,3 +1,5 @@
+import { setDatasetValue } from '../utils/dom.js';
+
 export function createEdRenderer(env) {
   const {
     selectors,
@@ -246,7 +248,7 @@ export function createEdRenderer(env) {
           sectionEl.className = 'ed-dashboard__section';
           sectionEl.setAttribute('role', 'region');
           if (section.key) {
-            sectionEl.dataset.sectionKey = section.key;
+            setDatasetValue(sectionEl, 'sectionKey', section.key);
           }
 
           const shouldRenderHeader = Boolean(section.title || section.description || groupedSections.length > 1);
@@ -437,7 +439,7 @@ export function createEdRenderer(env) {
           ? (statusInfo.timestamp || statusInfo.message || TEXT.ed.status.loading)
           : (statusInfo.message || TEXT.ed.status.loading);
         selectors.edStatus.textContent = pillText;
-        selectors.edStatus.dataset.tone = tone;
+        setDatasetValue(selectors.edStatus, 'tone', tone);
       }
       updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
     }

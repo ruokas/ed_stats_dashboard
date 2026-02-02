@@ -248,10 +248,10 @@ export function createMainDataHandlers(context) {
       });
       return result;
     } catch (error) {
-      console.error(`Nepavyko atsisiųsti CSV duomenų (${sourceId}):`, error);
-      const friendly = describeError(error);
-      result.lastErrorMessage = friendly;
-      result.error = friendly;
+      const errorInfo = describeError(error, { code: 'DATA_FETCH' });
+      console.error(errorInfo.log, error);
+      result.lastErrorMessage = errorInfo.userMessage;
+      result.error = errorInfo.userMessage;
       if (cacheEntry?.records && cacheEntry?.dailyStats) {
         console.warn(`Naudojami talpyklos duomenys dėl klaidos (${sourceId}).`);
         assignDataset({

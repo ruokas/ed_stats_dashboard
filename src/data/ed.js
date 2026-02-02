@@ -1035,11 +1035,11 @@ export function createEdHandlers(context) {
       const result = transformEdCsv(download.text);
       return finalize(result);
     } catch (error) {
-      const friendly = describeError(error);
+      const errorInfo = describeError(error, { code: 'ED_FETCH' });
       return {
         ...empty,
-        lastErrorMessage: friendly,
-        error: friendly,
+        lastErrorMessage: errorInfo.userMessage,
+        error: errorInfo.userMessage,
       };
     }
   }

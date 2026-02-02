@@ -1,6 +1,6 @@
 import { createClientStore, registerServiceWorker, PerfMonitor } from './app.js';
 import { loadChartJs } from './src/utils/chart-loader.js';
-import { runAfterDomAndIdle, enableLazyLoading } from './src/utils/dom.js';
+import { runAfterDomAndIdle, enableLazyLoading, getDatasetValue, setDatasetValue } from './src/utils/dom.js';
 import { debounce } from './src/utils/debounce.js';
 import { createSelectors } from './src/state/selectors.js';
 import { createDashboardState } from './src/state/dashboardState.js';
@@ -869,13 +869,13 @@ import {
     }
 
     function storeCopyButtonBaseLabel(button) {
-      if (!button || button.dataset.copyLabelBase) {
+      if (!button || getDatasetValue(button, 'copyLabelBase')) {
         return;
       }
       const fallback = button.getAttribute('aria-label') || button.title || 'Kopijuoti grafiką';
-      button.dataset.copyLabelBase = fallback;
-      if (!button.dataset.tooltip) {
-        button.dataset.tooltip = fallback;
+      setDatasetValue(button, 'copyLabelBase', fallback);
+      if (!getDatasetValue(button, 'tooltip')) {
+        setDatasetValue(button, 'tooltip', fallback);
       }
     }
 
@@ -884,8 +884,8 @@ import {
         return;
       }
       storeCopyButtonBaseLabel(button);
-      const base = button.dataset.copyLabelBase || 'Kopijuoti grafiką';
-      button.dataset.tooltip = message;
+      const base = getDatasetValue(button, 'copyLabelBase', 'Kopijuoti grafiką');
+      setDatasetValue(button, 'tooltip', message);
       button.setAttribute('aria-label', message);
       button.title = message;
       button.classList.add('is-feedback');
@@ -898,7 +898,7 @@ import {
         window.clearTimeout(button.__copyResetTimeout);
       }
       button.__copyResetTimeout = window.setTimeout(() => {
-        button.dataset.tooltip = base;
+        setDatasetValue(button, 'tooltip', base);
         button.setAttribute('aria-label', base);
         button.title = base;
         button.classList.remove('is-feedback');
@@ -937,7 +937,7 @@ import {
       if (!button) {
         return null;
       }
-      const selector = button.dataset.chartTarget;
+      const selector = getDatasetValue(button, 'chartTarget');
       if (selector) {
         const target = document.querySelector(selector);
         if (target) {
@@ -1762,10 +1762,10 @@ import {
       if (!(button instanceof HTMLElement)) {
         return;
       }
-      if (button.dataset.copyBusy === 'true') {
+      if (getDatasetValue(button, 'copyBusy') === 'true') {
         return;
       }
-      button.dataset.copyBusy = 'true';
+      setDatasetValue(button, 'copyBusy', 'true');
       button.setAttribute('aria-busy', 'true');
       try {
         const target = resolveChartCopyTarget(button);
@@ -1815,10 +1815,11 @@ import {
           }
         }
       } catch (error) {
-        console.error('Nepavyko nukopijuoti grafiko:', error);
+        const errorInfo = describeError(error, { code: 'CHART_COPY', message: 'Nepavyko nukopijuoti grafiko' });
+        console.error(errorInfo.log, error);
         setCopyButtonFeedback(button, 'Nepavyko nukopijuoti', 'error');
       } finally {
-        button.dataset.copyBusy = 'false';
+        setDatasetValue(button, 'copyBusy', 'false');
         button.removeAttribute('aria-busy');
       }
     }
@@ -1828,10 +1829,10 @@ import {
       if (!(button instanceof HTMLElement)) {
         return;
       }
-      if (button.dataset.copyBusy === 'true') {
+      if (getDatasetValue(button, 'copyBusy') === 'true') {
         return;
       }
-      button.dataset.copyBusy = 'true';
+      setDatasetValue(button, 'copyBusy', 'true');
       button.setAttribute('aria-busy', 'true');
       try {
         const target = resolveChartCopyTarget(button);
@@ -1850,10 +1851,11 @@ import {
           setCopyButtonFeedback(button, message, 'error');
         }
       } catch (error) {
-        console.error('Nepavyko parsisiųsti grafiko:', error);
+        const errorInfo = describeError(error, { code: 'CHART_DOWNLOAD', message: 'Nepavyko parsisiųsti grafiko' });
+        console.error(errorInfo.log, error);
         setCopyButtonFeedback(button, 'Klaida parsisiunčiant', 'error');
       } finally {
-        button.dataset.copyBusy = 'false';
+        setDatasetValue(button, 'copyBusy', 'false');
         button.removeAttribute('aria-busy');
       }
     }
@@ -1863,20 +1865,20 @@ import {
       if (!(button instanceof HTMLElement)) {
         return;
       }
-      if (button.dataset.copyBusy === 'true') {
+      if (getDatasetValue(button, 'copyBusy') === 'true') {
         return;
       }
-      const targetSelector = button.dataset.tableTarget || '';
+      const targetSelector = getDatasetValue(button, 'tableTarget', '');
       const table = targetSelector ? document.querySelector(targetSelector) : null;
       if (!(table instanceof HTMLElement)) {
         setCopyButtonFeedback(button, 'Lentelė nerasta', 'error');
         return;
       }
-      const titleInfo = { text: button.dataset.tableTitle || 'Lentelė' };
-      button.dataset.copyBusy = 'true';
+      const titleInfo = { text: getDatasetValue(button, 'tableTitle', 'Lentelė') };
+      setDatasetValue(button, 'copyBusy', 'true');
       button.setAttribute('aria-busy', 'true');
       try {
-        const format = button.dataset.tableDownload || 'csv';
+        const format = getDatasetValue(button, 'tableDownload', 'csv');
         let ok = false;
         if (format === 'png') {
           ok = await downloadTableAsPng(table, titleInfo);
@@ -1885,10 +1887,11 @@ import {
         }
         setCopyButtonFeedback(button, ok ? 'Lentelė parsisiųsta' : 'Klaida parsisiunčiant', ok ? 'success' : 'error');
       } catch (error) {
-        console.error('Nepavyko parsisiųsti lentelės:', error);
+        const errorInfo = describeError(error, { code: 'TABLE_DOWNLOAD', message: 'Nepavyko parsisiųsti lentelės' });
+        console.error(errorInfo.log, error);
         setCopyButtonFeedback(button, 'Klaida parsisiunčiant', 'error');
       } finally {
-        button.dataset.copyBusy = 'false';
+        setDatasetValue(button, 'copyBusy', 'false');
         button.removeAttribute('aria-busy');
       }
     }
@@ -2139,7 +2142,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       }
       const current = normalizeHourlyMetric(dashboardState.hourlyMetric);
       selectors.hourlyMetricButtons.forEach((button) => {
-        const metric = button?.dataset?.hourlyMetric;
+        const metric = getDatasetValue(button, 'hourlyMetric');
         if (!metric) {
           return;
         }
@@ -2567,7 +2570,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       } else {
         container.removeAttribute('aria-label');
       }
-      container.dataset.metric = selectedMetric;
+      setDatasetValue(container, 'metric', selectedMetric);
 
       if (!hasData) {
         const empty = document.createElement('p');
@@ -3043,7 +3046,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       const finalText = baseText && countText ? `${baseText} • ${countText}` : (baseText || countText || filtersText.summaryDefault || '');
       summaryElement.textContent = finalText;
       const isDefault = filters.respondent === FEEDBACK_FILTER_ALL && filters.location === FEEDBACK_FILTER_ALL;
-      summaryElement.dataset.default = isDefault ? 'true' : 'false';
+      setDatasetValue(summaryElement, 'default', isDefault ? 'true' : 'false');
     }
 
     function filterFeedbackRecords(records, filters) {
@@ -3385,11 +3388,11 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       }
       if (!text) {
         selectors.chartFiltersSummary.textContent = 'Numatytieji filtrai';
-        selectors.chartFiltersSummary.dataset.default = 'true';
+        setDatasetValue(selectors.chartFiltersSummary, 'default', 'true');
         return;
       }
       selectors.chartFiltersSummary.textContent = text;
-      selectors.chartFiltersSummary.dataset.default = 'false';
+      setDatasetValue(selectors.chartFiltersSummary, 'default', 'false');
     }
 
     function matchesSharedPatientFilters(record, filters = {}) {
@@ -3496,11 +3499,11 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       }
       if (!text) {
         selectors.kpiActiveInfo.textContent = 'Numatytieji filtrai';
-        selectors.kpiActiveInfo.dataset.default = 'true';
+        setDatasetValue(selectors.kpiActiveInfo, 'default', 'true');
         return;
       }
       selectors.kpiActiveInfo.textContent = text;
-      selectors.kpiActiveInfo.dataset.default = 'false';
+      setDatasetValue(selectors.kpiActiveInfo, 'default', 'false');
     }
 
     function applyKpiFiltersLocally(filters) {
@@ -3567,7 +3570,8 @@ function normalizeHourlyCompareYears(valueA, valueB) {
           windowDays: effectiveWindow,
         });
       } catch (error) {
-        console.error('Nepavyko pritaikyti KPI filtrų worker\'yje:', error);
+        const errorInfo = describeError(error, { code: 'KPI_WORKER', message: 'Nepavyko pritaikyti KPI filtrų worker\'yje' });
+        console.error(errorInfo.log, error);
         if (jobToken !== kpiWorkerJobToken) {
           return;
         }
@@ -3646,7 +3650,8 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
       return renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
         .catch((error) => {
-          console.error('Nepavyko pritaikyti grafiko filtrų:', error);
+          const errorInfo = describeError(error, { code: 'CHART_FILTERS', message: 'Nepavyko pritaikyti grafiko filtrų' });
+          console.error(errorInfo.log, error);
           showChartError(TEXT.charts?.errorLoading);
         });
     }
@@ -3775,12 +3780,12 @@ function normalizeHourlyCompareYears(valueA, valueB) {
 
 function showKpiSkeleton() {
       const grid = selectors.kpiGrid;
-      if (!grid || grid.dataset.skeleton === 'true') {
+      if (!grid || getDatasetValue(grid, 'skeleton') === 'true') {
         return;
       }
       const template = document.getElementById('kpiSkeleton');
       grid.setAttribute('aria-busy', 'true');
-      grid.dataset.skeleton = 'true';
+      setDatasetValue(grid, 'skeleton', 'true');
       if (template instanceof HTMLTemplateElement) {
         const skeletonFragment = template.content.cloneNode(true);
         grid.replaceChildren(skeletonFragment);
@@ -3795,22 +3800,22 @@ function showKpiSkeleton() {
         return;
       }
       grid.removeAttribute('aria-busy');
-      if (grid.dataset.skeleton === 'true') {
+      if (getDatasetValue(grid, 'skeleton') === 'true') {
         grid.replaceChildren();
       }
-      delete grid.dataset.skeleton;
+      setDatasetValue(grid, 'skeleton', null);
     }
 
     function showEdSkeleton() {
       const container = selectors.edCards;
-      if (!container || container.dataset.skeleton === 'true') {
+      if (!container || getDatasetValue(container, 'skeleton') === 'true') {
         return;
       }
       const template = document.getElementById('edSkeleton');
       if (selectors.edStandardSection) {
         selectors.edStandardSection.setAttribute('aria-busy', 'true');
       }
-      container.dataset.skeleton = 'true';
+      setDatasetValue(container, 'skeleton', 'true');
       if (template instanceof HTMLTemplateElement) {
         const skeletonFragment = template.content.cloneNode(true);
         container.replaceChildren(skeletonFragment);
@@ -3827,10 +3832,10 @@ function showKpiSkeleton() {
       if (selectors.edStandardSection) {
         selectors.edStandardSection.removeAttribute('aria-busy');
       }
-      if (container.dataset.skeleton === 'true') {
+      if (getDatasetValue(container, 'skeleton') === 'true') {
         container.replaceChildren();
       }
-      delete container.dataset.skeleton;
+      setDatasetValue(container, 'skeleton', null);
     }
 
     function renderKpis(dailyStats) {
@@ -4191,11 +4196,11 @@ function showKpiSkeleton() {
           metaElement.textContent = metaParts.join(' • ');
           nodes.push(metaElement);
         }
-        if (card.trendKey && summaryData[card.trendKey]) {
-          const trendInfo = summaryData[card.trendKey];
-          const trendElement = document.createElement('p');
-          trendElement.className = 'feedback-card__trend';
-          trendElement.dataset.trend = trendInfo.trend || 'neutral';
+          if (card.trendKey && summaryData[card.trendKey]) {
+            const trendInfo = summaryData[card.trendKey];
+            const trendElement = document.createElement('p');
+            trendElement.className = 'feedback-card__trend';
+            setDatasetValue(trendElement, 'trend', trendInfo.trend || 'neutral');
           if (trendInfo.ariaLabel) {
             trendElement.setAttribute('aria-label', trendInfo.ariaLabel);
           }
@@ -4287,7 +4292,8 @@ function showKpiSkeleton() {
       renderFeedbackTable(monthly);
 
       renderFeedbackTrendChart(monthly).catch((error) => {
-        console.error('Nepavyko atvaizduoti atsiliepimų trendo:', error);
+        const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_RENDER', message: 'Nepavyko atvaizduoti atsiliepimų trendo' });
+        console.error(errorInfo.log, error);
       });
     }
 
@@ -4322,10 +4328,10 @@ function showKpiSkeleton() {
       }
       const activeWindow = getActiveFeedbackTrendWindow();
       selectors.feedbackTrendButtons.forEach((button) => {
-        const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+        const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
         const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
         button.setAttribute('aria-pressed', String(Boolean(isActive)));
-        button.dataset.active = String(Boolean(isActive));
+        setDatasetValue(button, 'active', String(Boolean(isActive)));
       });
     }
 
@@ -4349,7 +4355,8 @@ function showKpiSkeleton() {
         ? dashboardState.feedback.monthly
         : [];
       renderFeedbackTrendChart(monthly).catch((error) => {
-        console.error('Nepavyko atnaujinti atsiliepimų trendo laikotarpio:', error);
+        const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_WINDOW', message: 'Nepavyko atnaujinti atsiliepimų trendo laikotarpio' });
+        console.error(errorInfo.log, error);
       });
     }
 
@@ -4386,7 +4393,7 @@ function showKpiSkeleton() {
       }
       const nextButton = buttons[nextIndex];
       if (nextButton) {
-        setActiveTab(nextButton.dataset.tabTarget, { focusPanel: true });
+        setActiveTab(getDatasetValue(nextButton, 'tabTarget', 'overview'), { focusPanel: true });
         if (typeof nextButton.focus === 'function') {
           nextButton.focus();
         }
@@ -4401,8 +4408,9 @@ function showKpiSkeleton() {
           if (!button) {
             return;
           }
-          const isActive = button.dataset.tabTarget === normalized;
-          const allowFocus = isActive || (button.dataset.tabTarget === 'overview' && normalized === 'ed');
+          const tabTarget = getDatasetValue(button, 'tabTarget', 'overview');
+          const isActive = tabTarget === normalized;
+          const allowFocus = isActive || (tabTarget === 'overview' && normalized === 'ed');
           button.setAttribute('aria-selected', String(isActive));
           button.setAttribute('tabindex', allowFocus ? '0' : '-1');
           button.classList.toggle('is-active', isActive);
@@ -4413,7 +4421,7 @@ function showKpiSkeleton() {
           if (!panel) {
             return;
           }
-          const isActive = panel.dataset.tabPanel === normalized;
+          const isActive = getDatasetValue(panel, 'tabPanel', 'overview') === normalized;
           if (isActive) {
             panel.removeAttribute('hidden');
             panel.removeAttribute('aria-hidden');
@@ -4439,14 +4447,14 @@ function showKpiSkeleton() {
         const edActive = normalized === 'ed';
         selectors.edNavButton.setAttribute('aria-pressed', edActive ? 'true' : 'false');
         selectors.edNavButton.classList.toggle('is-active', edActive);
-        const panelLabel = selectors.edNavButton.dataset.panelLabel
+        const panelLabel = getDatasetValue(selectors.edNavButton, 'panelLabel')
           || settings?.output?.tabEdLabel
           || TEXT.tabs.ed;
-        const openLabel = selectors.edNavButton.dataset.openLabel
+        const openLabel = getDatasetValue(selectors.edNavButton, 'openLabel')
           || (typeof TEXT.edToggle?.open === 'function'
             ? TEXT.edToggle.open(panelLabel)
             : `Atidaryti ${panelLabel}`);
-        const closeLabel = selectors.edNavButton.dataset.closeLabel
+        const closeLabel = getDatasetValue(selectors.edNavButton, 'closeLabel')
           || (typeof TEXT.edToggle?.close === 'function'
             ? TEXT.edToggle.close(panelLabel)
             : `Uždaryti ${panelLabel}`);
@@ -4501,7 +4509,8 @@ function showKpiSkeleton() {
       const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
       renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
         .catch((error) => {
-          console.error('Nepavyko atnaujinti grafiko laikotarpio:', error);
+          const errorInfo = describeError(error, { code: 'CHART_PERIOD', message: 'Nepavyko atnaujinti grafiko laikotarpio' });
+          console.error(errorInfo.log, error);
           showChartError(TEXT.charts?.errorLoading);
         });
     }
@@ -4527,7 +4536,8 @@ function showKpiSkeleton() {
       const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
       renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
         .catch((error) => {
-          console.error('Nepavyko atnaujinti grafiko metų filtro:', error);
+          const errorInfo = describeError(error, { code: 'CHART_YEAR', message: 'Nepavyko atnaujinti grafiko metų filtro' });
+          console.error(errorInfo.log, error);
           showChartError(TEXT.charts?.errorLoading);
         });
     }
@@ -5270,7 +5280,7 @@ function showKpiSkeleton() {
           ? dashboardState.hourlyCompareSeries
           : HOURLY_COMPARE_SERIES_ALL;
         selectors.hourlyCompareSeriesButtons.forEach((button) => {
-          const key = button?.dataset?.hourlyCompareSeries;
+          const key = getDatasetValue(button, 'hourlyCompareSeries');
           if (!key) {
             return;
           }
@@ -5348,7 +5358,7 @@ function showKpiSkeleton() {
 
     function handleHourlyCompareSeriesClick(event) {
       const button = event?.currentTarget;
-      const key = button?.dataset?.hourlyCompareSeries;
+      const key = getDatasetValue(button, 'hourlyCompareSeries');
       if (!HOURLY_COMPARE_SERIES.includes(key)) {
         return;
       }
@@ -5384,7 +5394,7 @@ function showKpiSkeleton() {
         if (!card) {
           return;
         }
-        card.dataset.loading = 'true';
+        setDatasetValue(card, 'loading', 'true');
         const skeleton = card.querySelector('.chart-card__skeleton');
         if (skeleton) {
           skeleton.hidden = false;
@@ -5400,7 +5410,7 @@ function showKpiSkeleton() {
         if (!card) {
           return;
         }
-        delete card.dataset.loading;
+        setDatasetValue(card, 'loading', null);
         const skeleton = card.querySelector('.chart-card__skeleton');
         if (skeleton) {
           skeleton.hidden = true;
@@ -5423,7 +5433,7 @@ function showKpiSkeleton() {
         if (!card) {
           return;
         }
-        card.dataset.error = 'true';
+        setDatasetValue(card, 'error', 'true');
         let messageEl = card.querySelector('.chart-card__message');
         if (!messageEl) {
           messageEl = document.createElement('div');
@@ -5574,7 +5584,7 @@ function areStylesheetsLoaded() {
       const shouldShow = offset > threshold;
       if (scrollTopState.visible !== shouldShow) {
         scrollTopState.visible = shouldShow;
-        button.dataset.visible = shouldShow ? 'true' : 'false';
+        setDatasetValue(button, 'visible', shouldShow ? 'true' : 'false');
       }
       button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
       button.setAttribute('tabindex', shouldShow ? '0' : '-1');
@@ -5785,10 +5795,10 @@ function areStylesheetsLoaded() {
     }
 
     function setupNavKeyboardNavigation() {
-      if (!selectors.sectionNav || selectors.sectionNav.dataset.keyboard === 'bound') {
+      if (!selectors.sectionNav || getDatasetValue(selectors.sectionNav, 'keyboard') === 'bound') {
         return;
       }
-      selectors.sectionNav.dataset.keyboard = 'bound';
+      setDatasetValue(selectors.sectionNav, 'keyboard', 'bound');
     }
 
     function syncSectionNavVisibility() {
@@ -6254,14 +6264,14 @@ function areStylesheetsLoaded() {
       if (!selectors.edNavButton) {
         return;
       }
-      const panelLabel = selectors.edNavButton.dataset.panelLabel
+      const panelLabel = getDatasetValue(selectors.edNavButton, 'panelLabel')
         || settings?.output?.tabEdLabel
         || TEXT.tabs.ed;
-      const openLabel = selectors.edNavButton.dataset.openLabel
+      const openLabel = getDatasetValue(selectors.edNavButton, 'openLabel')
         || (typeof TEXT.edToggle?.open === 'function'
           ? TEXT.edToggle.open(panelLabel)
           : `Atidaryti ${panelLabel}`);
-      const closeLabel = selectors.edNavButton.dataset.closeLabel
+      const closeLabel = getDatasetValue(selectors.edNavButton, 'closeLabel')
         || (typeof TEXT.edToggle?.close === 'function'
           ? TEXT.edToggle.close(panelLabel)
           : `Uždaryti ${panelLabel}`);
@@ -6270,7 +6280,7 @@ function areStylesheetsLoaded() {
       const activeLabel = isFullscreen && isEdActive ? closeLabel : openLabel;
       selectors.edNavButton.setAttribute('aria-label', activeLabel);
       selectors.edNavButton.title = activeLabel;
-      selectors.edNavButton.dataset.fullscreenAvailable = isEdActive ? 'true' : 'false';
+      setDatasetValue(selectors.edNavButton, 'fullscreenAvailable', isEdActive ? 'true' : 'false');
       updateTvToggleControls();
     }
 
@@ -6398,9 +6408,9 @@ function areStylesheetsLoaded() {
         const closeLabel = typeof TEXT.edToggle?.close === 'function'
           ? TEXT.edToggle.close(edNavLabel)
           : `Uždaryti ${edNavLabel}`;
-        selectors.edNavButton.dataset.panelLabel = edNavLabel;
-        selectors.edNavButton.dataset.openLabel = openLabel;
-        selectors.edNavButton.dataset.closeLabel = closeLabel;
+        setDatasetValue(selectors.edNavButton, 'panelLabel', edNavLabel);
+        setDatasetValue(selectors.edNavButton, 'openLabel', openLabel);
+        setDatasetValue(selectors.edNavButton, 'closeLabel', closeLabel);
         const isActive = dashboardState.activeTab === 'ed';
         const currentLabel = isActive ? closeLabel : openLabel;
         selectors.edNavButton.setAttribute('aria-label', currentLabel);
@@ -6556,7 +6566,7 @@ function areStylesheetsLoaded() {
       if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
         const periodConfig = Array.isArray(TEXT.feedback.trend.periods) ? TEXT.feedback.trend.periods : [];
         selectors.feedbackTrendButtons.forEach((button) => {
-          const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+          const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
           const config = periodConfig.find((item) => Number.parseInt(item?.months, 10) === months);
           if (config?.label) {
             button.textContent = config.label;
@@ -6601,7 +6611,7 @@ function areStylesheetsLoaded() {
       }
       if (selectors.edStatus) {
         selectors.edStatus.textContent = TEXT.ed.status.loading;
-        selectors.edStatus.dataset.tone = 'info';
+        setDatasetValue(selectors.edStatus, 'tone', 'info');
       }
       if (selectors.compareToggle) {
         selectors.compareToggle.textContent = TEXT.compare.toggle;
@@ -6641,7 +6651,7 @@ function areStylesheetsLoaded() {
       const parts = [statusDisplay.base, statusDisplay.note].filter(Boolean);
       const message = parts.join(' · ');
       selectors.status.classList.toggle('status--error', statusDisplay.tone === 'error');
-      selectors.status.dataset.tone = statusDisplay.tone;
+      setDatasetValue(selectors.status, 'tone', statusDisplay.tone);
       if (!message) {
         selectors.status.textContent = '';
         selectors.status.setAttribute('hidden', 'hidden');
@@ -6689,7 +6699,7 @@ function areStylesheetsLoaded() {
       }
       const isDark = theme === 'dark';
       selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
-      selectors.themeToggleBtn.dataset.theme = theme;
+      setDatasetValue(selectors.themeToggleBtn, 'theme', theme);
       selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
     }
 
@@ -6919,11 +6929,14 @@ function areStylesheetsLoaded() {
       }
     }
 
-    function describeError(error) {
-      if (!error) {
-        return TEXT.status.error;
-      }
-      const message = typeof error === 'string' ? error : error.message ?? TEXT.status.error;
+    function describeError(error, { code = 'UNKNOWN', message } = {}) {
+      const normalizedCode = typeof code === 'string' && code.trim()
+        ? code.trim().toUpperCase()
+        : 'UNKNOWN';
+      const baseMessage = message
+        || (typeof error === 'string'
+          ? error
+          : error?.message ?? TEXT.status.error);
       const hints = [];
       const diagnostic = typeof error === 'object' && error ? error.diagnostic : null;
 
@@ -6944,11 +6957,11 @@ function areStylesheetsLoaded() {
         }
       }
 
-      if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
+      if (/Failed to fetch/i.test(baseMessage) || /NetworkError/i.test(baseMessage)) {
         hints.push('Nepavyko pasiekti šaltinio – patikrinkite interneto ryšį ir ar serveris leidžia CORS užklausas iš šio puslapio.');
       }
 
-      if (/HTML atsakas/i.test(message)) {
+      if (/HTML atsakas/i.test(baseMessage)) {
         hints.push('Gautas HTML vietoje CSV – nuorodoje turi būti „.../pub?output=csv“.');
       }
 
@@ -6957,19 +6970,25 @@ function areStylesheetsLoaded() {
       }
 
       const renderedHints = hints.length ? ` ${hints.join(' ')}` : '';
-      if (/HTTP klaida:\s*404/.test(message)) {
-        return `HTTP 404 – nuoroda nerasta arba dokumentas nepublikuotas.${renderedHints}`;
+      let userMessage = `${baseMessage}${renderedHints}`.trim();
+      if (/HTTP klaida:\s*404/.test(baseMessage)) {
+        userMessage = `HTTP 404 – nuoroda nerasta arba dokumentas nepublikuotas.${renderedHints}`;
+      } else if (/HTTP klaida:\s*403/.test(baseMessage)) {
+        userMessage = `HTTP 403 – prieiga uždrausta.${renderedHints}`;
+      } else if (/Failed to fetch/i.test(baseMessage) || /NetworkError/i.test(baseMessage)) {
+        userMessage = `Nepavyko pasiekti šaltinio.${renderedHints}`;
+      } else if (/HTML atsakas/i.test(baseMessage)) {
+        userMessage = `Gautas HTML atsakas vietoje CSV.${renderedHints}`;
       }
-      if (/HTTP klaida:\s*403/.test(message)) {
-        return `HTTP 403 – prieiga uždrausta.${renderedHints}`;
-      }
-      if (/Failed to fetch/i.test(message) || /NetworkError/i.test(message)) {
-        return `Nepavyko pasiekti šaltinio.${renderedHints}`;
-      }
-      if (/HTML atsakas/i.test(message)) {
-        return `Gautas HTML atsakas vietoje CSV.${renderedHints}`;
-      }
-      return `${message}${renderedHints}`.trim();
+
+      return {
+        code: normalizedCode,
+        message: baseMessage,
+        detail: typeof error === 'string' ? '' : (error?.message ?? ''),
+        diagnostic,
+        userMessage,
+        log: `[${normalizedCode}] ${userMessage}`,
+      };
     }
 
     function createTextSignature(text) {
@@ -7264,14 +7283,15 @@ function areStylesheetsLoaded() {
         dashboardState.chartPeriod,
       );
       chartRenderers.renderHourlyChartWithTheme(hourlyRecords).catch((error) => {
-        console.error('Nepavyko atnaujinti valandinio grafiko:', error);
+        const errorInfo = describeError(error, { code: 'HOURLY_CHART', message: 'Nepavyko atnaujinti valandinio grafiko' });
+        console.error(errorInfo.log, error);
         showChartError(TEXT.charts?.errorLoading);
       });
     }
 
     function handleHourlyMetricClick(event) {
       const button = event?.currentTarget;
-      const metric = button?.dataset?.hourlyMetric;
+      const metric = getDatasetValue(button, 'hourlyMetric');
       if (!metric) {
         return;
       }
@@ -7386,7 +7406,8 @@ function areStylesheetsLoaded() {
         ? dashboardState.feedback.monthly
         : [];
       renderFeedbackTrendChart(feedbackMonthly).catch((error) => {
-        console.error('Nepavyko perpiešti atsiliepimų trendo grafiko pakeitus temą:', error);
+        const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_THEME', message: 'Nepavyko perpiešti atsiliepimų trendo grafiko pakeitus temą' });
+        console.error(errorInfo.log, error);
       });
       const edData = dashboardState.ed || {};
       const edSummary = edData.summary || createEmptyEdSummary(edData.meta?.type);
@@ -7405,7 +7426,8 @@ function areStylesheetsLoaded() {
         edDispositionsText,
         edVariant,
       ).catch((error) => {
-        console.error('Nepavyko perpiešti pacientų kategorijų grafiko pakeitus temą:', error);
+        const errorInfo = describeError(error, { code: 'ED_DISPOSITIONS_THEME', message: 'Nepavyko perpiešti pacientų kategorijų grafiko pakeitus temą' });
+        console.error(errorInfo.log, error);
       });
       const hasAnyData = (dashboardState.chartData.dailyWindow && dashboardState.chartData.dailyWindow.length)
         || dashboardState.chartData.funnel
@@ -7416,7 +7438,8 @@ function areStylesheetsLoaded() {
       }
       renderCharts(dashboardState.chartData.dailyWindow, dashboardState.chartData.funnel, dashboardState.chartData.heatmap)
         .catch((error) => {
-          console.error('Nepavyko perpiešti grafikų pakeitus temą:', error);
+          const errorInfo = describeError(error, { code: 'CHARTS_THEME', message: 'Nepavyko perpiešti grafikų pakeitus temą' });
+          console.error(errorInfo.log, error);
           showChartError(TEXT.charts?.errorLoading);
         });
     }
@@ -7501,19 +7524,19 @@ function areStylesheetsLoaded() {
     }
 
     function extractCompareMetricsFromRow(row) {
-      if (!row || !row.dataset || !row.dataset.compareId) {
+      const compareId = getDatasetValue(row, 'compareId');
+      if (!row || !compareId) {
         return null;
       }
-      const id = row.dataset.compareId;
-      const label = row.dataset.compareLabel || row.cells?.[0]?.textContent?.trim() || id;
-      const sortKey = row.dataset.compareSort || label;
-      const total = Number.parseFloat(row.dataset.total || '0');
-      const avgStay = Number.parseFloat(row.dataset.avgStay || '0');
-      const emsShare = Number.parseFloat(row.dataset.emsShare || '0');
-      const hospShare = Number.parseFloat(row.dataset.hospShare || '0');
+      const label = getDatasetValue(row, 'compareLabel') || row.cells?.[0]?.textContent?.trim() || compareId;
+      const sortKey = getDatasetValue(row, 'compareSort') || label;
+      const total = Number.parseFloat(getDatasetValue(row, 'total', '0'));
+      const avgStay = Number.parseFloat(getDatasetValue(row, 'avgStay', '0'));
+      const emsShare = Number.parseFloat(getDatasetValue(row, 'emsShare', '0'));
+      const hospShare = Number.parseFloat(getDatasetValue(row, 'hospShare', '0'));
       return {
-        id,
-        group: row.dataset.compareGroup || 'unknown',
+        id: compareId,
+        group: getDatasetValue(row, 'compareGroup', 'unknown'),
         label,
         sortKey,
         total: Number.isFinite(total) ? total : 0,
@@ -8020,14 +8043,14 @@ function areStylesheetsLoaded() {
         row.append(dateCell, totalCell, stayCell, nightCell, emsCell, hospCell, disCell);
 
         const emsShare = total > 0 ? entry.ems / total : 0;
-        row.dataset.compareId = `recent-${entry.date}`;
-        row.dataset.compareGroup = 'recent';
-        row.dataset.compareLabel = displayDate;
-        row.dataset.compareSort = entry.date;
-        row.dataset.total = String(total);
-        row.dataset.avgStay = String(avgStayEntry);
-        row.dataset.emsShare = String(emsShare);
-        row.dataset.hospShare = String(hospShare);
+        setDatasetValue(row, 'compareId', `recent-${entry.date}`);
+        setDatasetValue(row, 'compareGroup', 'recent');
+        setDatasetValue(row, 'compareLabel', displayDate);
+        setDatasetValue(row, 'compareSort', entry.date);
+        setDatasetValue(row, 'total', String(total));
+        setDatasetValue(row, 'avgStay', String(avgStayEntry));
+        setDatasetValue(row, 'emsShare', String(emsShare));
+        setDatasetValue(row, 'hospShare', String(hospShare));
         selectors.recentTable.appendChild(row);
       });
       syncCompareActivation();
@@ -8117,16 +8140,16 @@ function areStylesheetsLoaded() {
         const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
         const emsShare = total > 0 ? entry.ems / total : 0;
         const hospShare = total > 0 ? entry.hospitalized / total : 0;
-        row.dataset.compareId = `monthly-${entry.month}`;
-        row.dataset.compareGroup = 'monthly';
-        row.dataset.compareLabel = formatMonthLabel(entry.month);
-        row.dataset.compareSort = entry.month;
-        row.dataset.total = String(total);
-        row.dataset.avgStay = String(avgStay);
-        row.dataset.emsShare = String(emsShare);
-        row.dataset.hospShare = String(hospShare);
-        row.dataset.change = Number.isFinite(diff) ? String(diff) : '';
-        row.dataset.changePercent = Number.isFinite(percentChange) ? String(percentChange) : '';
+        setDatasetValue(row, 'compareId', `monthly-${entry.month}`);
+        setDatasetValue(row, 'compareGroup', 'monthly');
+        setDatasetValue(row, 'compareLabel', formatMonthLabel(entry.month));
+        setDatasetValue(row, 'compareSort', entry.month);
+        setDatasetValue(row, 'total', String(total));
+        setDatasetValue(row, 'avgStay', String(avgStay));
+        setDatasetValue(row, 'emsShare', String(emsShare));
+        setDatasetValue(row, 'hospShare', String(hospShare));
+        setDatasetValue(row, 'change', Number.isFinite(diff) ? String(diff) : '');
+        setDatasetValue(row, 'changePercent', Number.isFinite(percentChange) ? String(percentChange) : '');
         selectors.monthlyTable.appendChild(row);
       });
       syncCompareActivation();
@@ -8240,16 +8263,16 @@ function areStylesheetsLoaded() {
         `;
         const emsShare = total > 0 ? entry.ems / total : 0;
         const hospShare = total > 0 ? entry.hospitalized / total : 0;
-        row.dataset.compareId = `yearly-${entry.year}`;
-        row.dataset.compareGroup = 'yearly';
-        row.dataset.compareLabel = formatYearLabel(entry.year);
-        row.dataset.compareSort = entry.year;
-        row.dataset.total = String(total);
-        row.dataset.avgStay = String(avgStay);
-        row.dataset.emsShare = String(emsShare);
-        row.dataset.hospShare = String(hospShare);
-        row.dataset.change = Number.isFinite(diff) ? String(diff) : '';
-        row.dataset.changePercent = Number.isFinite(percentChange) ? String(percentChange) : '';
+        setDatasetValue(row, 'compareId', `yearly-${entry.year}`);
+        setDatasetValue(row, 'compareGroup', 'yearly');
+        setDatasetValue(row, 'compareLabel', formatYearLabel(entry.year));
+        setDatasetValue(row, 'compareSort', entry.year);
+        setDatasetValue(row, 'total', String(total));
+        setDatasetValue(row, 'avgStay', String(avgStay));
+        setDatasetValue(row, 'emsShare', String(emsShare));
+        setDatasetValue(row, 'hospShare', String(hospShare));
+        setDatasetValue(row, 'change', Number.isFinite(diff) ? String(diff) : '');
+        setDatasetValue(row, 'changePercent', Number.isFinite(percentChange) ? String(percentChange) : '');
         selectors.yearlyTable.appendChild(row);
       });
       syncCompareActivation();
@@ -8519,11 +8542,11 @@ function areStylesheetsLoaded() {
           const progress = document.createElement('div');
           progress.className = 'ed-dashboard__card-progress';
           progress.setAttribute('aria-hidden', 'true');
-          progress.dataset.occupancyLevel = occupancyLevel;
+          setDatasetValue(progress, 'occupancyLevel', occupancyLevel);
           const fill = document.createElement('div');
           fill.className = 'ed-dashboard__card-progress-fill';
           fill.setAttribute('aria-hidden', 'true');
-          fill.dataset.occupancyLevel = occupancyLevel;
+          setDatasetValue(fill, 'occupancyLevel', occupancyLevel);
           const width = `${Math.round(occupancyShare * 1000) / 10}%`;
           fill.style.setProperty('--progress-width', width);
           const occupancyText = percentFormatter.format(occupancyShare);
@@ -8535,10 +8558,10 @@ function areStylesheetsLoaded() {
 
       if (config.secondaryKey) {
         const deltaInfo = getEdCardDeltaInfo(primaryRaw, secondaryRaw, config.format);
-        if (deltaInfo) {
-          const delta = document.createElement('p');
-          delta.className = 'ed-dashboard__card-delta';
-          delta.dataset.trend = deltaInfo.trend;
+          if (deltaInfo) {
+            const delta = document.createElement('p');
+            delta.className = 'ed-dashboard__card-delta';
+            setDatasetValue(delta, 'trend', deltaInfo.trend);
           delta.setAttribute('aria-label', deltaInfo.ariaLabel);
           const arrowSpan = document.createElement('span');
           arrowSpan.className = 'ed-dashboard__card-delta-arrow';
@@ -8559,7 +8582,7 @@ function areStylesheetsLoaded() {
         const trendInfo = summary[config.trendKey];
         const delta = document.createElement('p');
         delta.className = 'ed-dashboard__card-delta';
-        delta.dataset.trend = trendInfo.trend || 'neutral';
+        setDatasetValue(delta, 'trend', trendInfo.trend || 'neutral');
         if (trendInfo.ariaLabel) {
           delta.setAttribute('aria-label', trendInfo.ariaLabel);
         }
@@ -8643,7 +8666,7 @@ function areStylesheetsLoaded() {
       const toneValue = dataset?.error
         ? 'error'
         : (dataset?.usingFallback ? 'warning' : (statusInfo?.tone || 'info'));
-      selectors.edTvPanel.dataset.tone = toneValue;
+      setDatasetValue(selectors.edTvPanel, 'tone', toneValue);
       if (selectors.edTvStatusText) {
         selectors.edTvStatusText.textContent = statusInfo?.message || TEXT.ed.status.loading;
       }
@@ -8671,7 +8694,7 @@ function areStylesheetsLoaded() {
         }
         if (noticeText) {
           selectors.edTvNotice.textContent = noticeText;
-          selectors.edTvNotice.dataset.tone = noticeTone || 'info';
+          setDatasetValue(selectors.edTvNotice, 'tone', noticeTone || 'info');
           selectors.edTvNotice.hidden = false;
         } else {
           selectors.edTvNotice.hidden = true;
@@ -9331,10 +9354,10 @@ function areStylesheetsLoaded() {
         return;
       }
       selectors.chartPeriodButtons.forEach((button) => {
-        const value = Number.parseInt(button.dataset.chartPeriod || '', 10);
+        const value = Number.parseInt(getDatasetValue(button, 'chartPeriod', ''), 10);
         const isActive = Number.isFinite(value) && value === period;
         button.setAttribute('aria-pressed', String(isActive));
-        button.dataset.active = String(isActive);
+        setDatasetValue(button, 'active', String(isActive));
       });
     }
 
@@ -9563,7 +9586,7 @@ function areStylesheetsLoaded() {
         setStatus('loading');
         if (selectors.edStatus) {
           selectors.edStatus.textContent = TEXT.ed.status.loading;
-          selectors.edStatus.dataset.tone = 'info';
+          setDatasetValue(selectors.edStatus, 'tone', 'info');
         }
         const primaryChunkReporter = createChunkReporter('Pagrindinis CSV');
         const historicalChunkReporter = createChunkReporter('Istorinis CSV');
@@ -9600,8 +9623,11 @@ function areStylesheetsLoaded() {
         if (edResult.status === 'fulfilled') {
           dashboardState.ed = edResult.value;
         } else {
-          const reason = edResult.reason ? describeError(edResult.reason) : TEXT.ed.status.error(TEXT.status.error);
-          console.error('Nepavyko įkelti ED duomenų:', edResult.reason);
+          const fallbackMessage = TEXT.ed.status.error(TEXT.status.error);
+          const errorInfo = edResult.reason
+            ? describeError(edResult.reason, { code: 'ED_DATA_LOAD', message: fallbackMessage })
+            : { userMessage: fallbackMessage, log: `[ED_DATA_LOAD] ${fallbackMessage}` };
+          console.error(errorInfo.log, edResult.reason);
           const fallbackSummary = createEmptyEdSummary();
           dashboardState.ed = {
             records: [],
@@ -9609,8 +9635,8 @@ function areStylesheetsLoaded() {
             dispositions: [],
             daily: [],
             usingFallback: false,
-            lastErrorMessage: reason,
-            error: reason,
+            lastErrorMessage: errorInfo.userMessage,
+            error: errorInfo.userMessage,
             updatedAt: new Date(),
           };
         }
@@ -9621,9 +9647,10 @@ function areStylesheetsLoaded() {
         const dataset = dataResult.value || {};
         const feedbackRecords = feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
         if (feedbackResult.status === 'rejected') {
-          console.error('Nepavyko apdoroti atsiliepimų duomenų:', feedbackResult.reason);
+          const errorInfo = describeError(feedbackResult.reason, { code: 'FEEDBACK_DATA', message: TEXT.status.error });
+          console.error(errorInfo.log, feedbackResult.reason);
           if (!dashboardState.feedback.lastErrorMessage) {
-            dashboardState.feedback.lastErrorMessage = describeError(feedbackResult.reason);
+            dashboardState.feedback.lastErrorMessage = errorInfo.userMessage;
           }
           dashboardState.feedback.usingFallback = false;
         }
@@ -9700,11 +9727,11 @@ function areStylesheetsLoaded() {
         applyFeedbackStatusNote();
         await renderEdDashboard(dashboardState.ed);
       } catch (error) {
-        console.error('Nepavyko apdoroti duomenų:', error);
+        const errorInfo = describeError(error, { code: 'DATA_PROCESS', message: 'Nepavyko apdoroti duomenų' });
+        console.error(errorInfo.log, error);
         dashboardState.usingFallback = false;
-        const friendlyMessage = describeError(error);
-        dashboardState.lastErrorMessage = friendlyMessage;
-        setStatus('error', friendlyMessage);
+        dashboardState.lastErrorMessage = errorInfo.userMessage;
+        setStatus('error', errorInfo.userMessage);
         await renderEdDashboard(dashboardState.ed);
       } finally {
         dashboardState.loading = false;

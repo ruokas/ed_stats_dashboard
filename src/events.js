@@ -1,3 +1,5 @@
+import { getDatasetValue, setDatasetValue } from './utils/dom.js';
+
 export function createUIEvents(env) {
   const {
     selectors,
@@ -124,7 +126,7 @@ export function createUIEvents(env) {
 
       const setExpandedState = (expanded) => {
         const label = expanded ? KPI_FILTER_TOGGLE_LABELS.hide : KPI_FILTER_TOGGLE_LABELS.show;
-        controlsWrapper.dataset.expanded = expanded ? 'true' : 'false';
+        setDatasetValue(controlsWrapper, 'expanded', expanded ? 'true' : 'false');
         toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         toggleButton.textContent = label;
         toggleButton.setAttribute('aria-label', label);
@@ -134,7 +136,7 @@ export function createUIEvents(env) {
       };
 
       toggleButton.addEventListener('click', () => {
-        const expanded = controlsWrapper.dataset.expanded !== 'false';
+        const expanded = getDatasetValue(controlsWrapper, 'expanded', 'true') !== 'false';
         const nextState = !expanded;
         setExpandedState(nextState);
         if (nextState && selectors.kpiFiltersForm) {
@@ -154,7 +156,7 @@ export function createUIEvents(env) {
         }
       });
 
-      setExpandedState(controlsWrapper.dataset.expanded !== 'false');
+      setExpandedState(getDatasetValue(controlsWrapper, 'expanded', 'true') !== 'false');
     }
     if ((dashboardState.kpi.records && dashboardState.kpi.records.length) || (dashboardState.kpi.daily && dashboardState.kpi.daily.length)) {
       updateKpiSummary({
@@ -171,7 +173,7 @@ export function createUIEvents(env) {
     }
     selectors.feedbackTrendButtons.forEach((button) => {
       button.addEventListener('click', () => {
-        const months = Number.parseInt(button.dataset.trendMonths || '', 10);
+        const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
         if (Number.isFinite(months) && months > 0) {
           setFeedbackTrendWindow(months);
         } else {
@@ -191,7 +193,7 @@ export function createUIEvents(env) {
         return;
       }
       button.addEventListener('click', () => {
-        setActiveTab(button.dataset.tabTarget, { focusPanel: true });
+        setActiveTab(getDatasetValue(button, 'tabTarget', 'overview'), { focusPanel: true });
       });
       button.addEventListener('keydown', handleTabKeydown);
     });
@@ -301,9 +303,9 @@ export function createUIEvents(env) {
     }
 
     sectionNavState.initialized = true;
-    if (selectors.sectionNav && selectors.sectionNav.dataset.keyboard !== 'bound') {
+    if (selectors.sectionNav && getDatasetValue(selectors.sectionNav, 'keyboard', '') !== 'bound') {
       selectors.sectionNav.addEventListener('keydown', handleNavKeydown);
-      selectors.sectionNav.dataset.keyboard = 'bound';
+      setDatasetValue(selectors.sectionNav, 'keyboard', 'bound');
     }
 
     if (typeof ResizeObserver === 'function') {
@@ -339,7 +341,7 @@ export function createUIEvents(env) {
     if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
       selectors.chartPeriodButtons.forEach((button) => {
         button.addEventListener('click', () => {
-          const period = button.dataset.chartPeriod || '';
+          const period = getDatasetValue(button, 'chartPeriod', '');
           updateChartPeriod(period);
         });
       });
