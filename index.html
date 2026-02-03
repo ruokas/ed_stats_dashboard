@@ -191,21 +191,24 @@
   </header>
   <main class="container" role="main">
     <div id="panelOverview" class="tab-panel" data-tab-panel="overview" role="tabpanel" aria-labelledby="kpiHeading">
+    <div class="section-band section-band--overview">
     <section class="section" aria-labelledby="kpiHeading" data-section="kpi">
       <div class="section__header">
-        <div>
-          <h2 id="kpiHeading" class="section__title">
-            <span class="section-title__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12v7" />
-                <path d="M12 5v14" />
-                <path d="M19 9v10" />
-                <path d="M3 19h18" />
-              </svg>
-            </span>
-            <span class="section-title__text">Pagrindiniai rodikliai</span>
-          </h2>
-          <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="kpiHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12v7" />
+                  <path d="M12 5v14" />
+                  <path d="M19 9v10" />
+                  <path d="M3 19h18" />
+                </svg>
+              </span>
+              <span class="section-title__text">Pagrindiniai rodikliai</span>
+            </h2>
+            <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
+          </div>
         </div>
         <div class="section__actions kpi-header-actions">
           <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
@@ -335,20 +338,24 @@
         </article>
       </template>
     </section>
+    </div>
 
+    <div class="section-band section-band--trends">
     <section class="section" aria-labelledby="chartHeading" data-section="chart">
       <div class="section__header">
-        <div>
-          <h2 id="chartHeading" class="section__title">
-            <span class="section-title__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 16.5L8.5 12L12 15.5L18 7.5L21 10" />
-                <path d="M4 19h16" />
-              </svg>
-            </span>
-            <span class="section-title__text">Pacientų srautai</span>
-          </h2>
-          <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="chartHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 16.5L8.5 12L12 15.5L18 7.5L21 10" />
+                  <path d="M4 19h16" />
+                </svg>
+              </span>
+              <span class="section-title__text">Pacientų srautai</span>
+            </h2>
+            <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
+          </div>
         </div>
         <div class="section__actions chart-controls">
           <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
@@ -758,21 +765,23 @@
 
     <section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
       <div class="section__header">
-        <div>
-          <h2 id="recentHeading" class="section__title">
-            <span class="section-title__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3.5" y="4" width="17" height="17" rx="2" />
-                <path d="M8 2.5v3" />
-                <path d="M16 2.5v3" />
-                <path d="M3.5 9h17" />
-                <path d="M12 13v4" />
-                <path d="M12 13h3" />
-              </svg>
-            </span>
-            <span class="section-title__text">Paskutinės 7 dienos</span>
-          </h2>
-          <p id="recentSubtitle" class="section__subtitle">Kasdienė suvestinė pagal naujausius duomenis</p>
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="recentHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="4" width="17" height="17" rx="2" />
+                  <path d="M8 2.5v3" />
+                  <path d="M16 2.5v3" />
+                  <path d="M3.5 9h17" />
+                  <path d="M12 13v4" />
+                  <path d="M12 13h3" />
+                </svg>
+              </span>
+              <span class="section-title__text">Paskutinės 7 dienos</span>
+            </h2>
+            <p id="recentSubtitle" class="section__subtitle">Kasdienė suvestinė pagal naujausius duomenis</p>
+          </div>
         </div>
         <div class="section__actions">
           <button
@@ -821,28 +830,32 @@
         </table>
       </div>
     </section>
+    </div>
 
+    <div class="section-band section-band--time-scale">
     <section class="section section--compact" aria-labelledby="monthlyHeading" data-section="monthly">
       <div class="section__header">
-        <div>
-          <h2 id="monthlyHeading" class="section__title">
-            <span class="section-title__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="17" rx="2" />
-                <path d="M3 9h18" />
-                <path d="M7 2.5v3" />
-                <path d="M17 2.5v3" />
-                <path d="M7 13h3" />
-                <path d="M11.5 13h3" />
-                <path d="M16 13h3" />
-                <path d="M7 17h3" />
-                <path d="M11.5 17h3" />
-                <path d="M16 17h3" />
-              </svg>
-            </span>
-            <span class="section-title__text">Mėnesinė suvestinė</span>
-          </h2>
-          <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="monthlyHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="17" rx="2" />
+                  <path d="M3 9h18" />
+                  <path d="M7 2.5v3" />
+                  <path d="M17 2.5v3" />
+                  <path d="M7 13h3" />
+                  <path d="M11.5 13h3" />
+                  <path d="M16 13h3" />
+                  <path d="M7 17h3" />
+                  <path d="M11.5 17h3" />
+                  <path d="M16 17h3" />
+                </svg>
+              </span>
+              <span class="section-title__text">Mėnesinė suvestinė</span>
+            </h2>
+            <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
+          </div>
         </div>
         <div class="section__actions">
           <button
@@ -891,18 +904,20 @@
 
     <section class="section section--compact" aria-labelledby="yearlyHeading" data-section="yearly">
       <div class="section__header">
-        <div>
-          <h2 id="yearlyHeading" class="section__title">
-            <span class="section-title__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 18h16" />
-                <path d="M6 15L10 11L13 14L18 7" />
-                <path d="M18 7h3v3" />
-              </svg>
-            </span>
-            <span class="section-title__text">Metinė suvestinė</span>
-          </h2>
-          <p id="yearlySubtitle" class="section__subtitle">Kalendoriniai metai (paskutiniai 5 metai)</p>
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="yearlyHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 18h16" />
+                  <path d="M6 15L10 11L13 14L18 7" />
+                  <path d="M18 7h3v3" />
+                </svg>
+              </span>
+              <span class="section-title__text">Metinė suvestinė</span>
+            </h2>
+            <p id="yearlySubtitle" class="section__subtitle">Kalendoriniai metai (paskutiniai 5 metai)</p>
+          </div>
         </div>
         <div class="section__actions">
           <button
@@ -945,22 +960,26 @@
         </table>
       </div>
     </section>
+    </div>
 
+    <div class="section-band section-band--feedback">
     <section class="section section--compact" aria-labelledby="feedbackHeading" data-section="feedback">
       <div class="section__header">
-        <div>
-          <h2 id="feedbackHeading" class="section__title">
-            <span class="section-title__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 11.5c0 4.142-3.463 7.5-7.735 7.5a8.4 8.4 0 0 1-2.828-.49L6 21.5l1.19-3.572C5.415 16.738 4 14.267 4 11.5 4 7.358 7.463 4 11.735 4 16.007 4 21 7.358 21 11.5Z" />
-                <path d="M9.5 11.5h.01" />
-                <path d="M12 11.5h.01" />
-                <path d="M14.5 11.5h.01" />
-              </svg>
-            </span>
-            <span class="section-title__text">Pacientų atsiliepimai</span>
-          </h2>
-          <p id="feedbackSubtitle" class="section__subtitle">Apibendrinti apklausos rezultatai</p>
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="feedbackHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 11.5c0 4.142-3.463 7.5-7.735 7.5a8.4 8.4 0 0 1-2.828-.49L6 21.5l1.19-3.572C5.415 16.738 4 14.267 4 11.5 4 7.358 7.463 4 11.735 4 16.007 4 21 7.358 21 11.5Z" />
+                  <path d="M9.5 11.5h.01" />
+                  <path d="M12 11.5h.01" />
+                  <path d="M14.5 11.5h.01" />
+                </svg>
+              </span>
+              <span class="section-title__text">Pacientų atsiliepimai</span>
+            </h2>
+            <p id="feedbackSubtitle" class="section__subtitle">Apibendrinti apklausos rezultatai</p>
+          </div>
           <p id="feedbackDescription" class="section__description">Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.</p>
         </div>
         <div class="section__actions">
@@ -990,11 +1009,13 @@
           <h3 id="feedbackFiltersTitle" class="sr-only">Atsiliepimų filtrai</h3>
           <div class="feedback-filters__field">
             <label id="feedbackRespondentLabel" for="feedbackRespondentFilter">Kas pildo anketą</label>
-            <select id="feedbackRespondentFilter" name="respondent"></select>
+            <div id="feedbackRespondentChips" class="feedback-chip-group" role="group" aria-labelledby="feedbackRespondentLabel"></div>
+            <select id="feedbackRespondentFilter" name="respondent" class="feedback-filter-select"></select>
           </div>
           <div class="feedback-filters__field">
             <label id="feedbackLocationLabel" for="feedbackLocationFilter">Šaltinis</label>
-            <select id="feedbackLocationFilter" name="location"></select>
+            <div id="feedbackLocationChips" class="feedback-chip-group" role="group" aria-labelledby="feedbackLocationLabel"></div>
+            <select id="feedbackLocationFilter" name="location" class="feedback-filter-select"></select>
           </div>
         </div>
       </div>

@@ -2937,6 +2937,41 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       return label;
     }
 
+    function buildFeedbackChipButtons(type, config, groupEl) {
+      if (!groupEl) {
+        return;
+      }
+      const filtersText = TEXT.feedback?.filters || {};
+      const allLabel = type === 'respondent'
+        ? (filtersText.respondent?.all || 'Visi dalyviai')
+        : (filtersText.location?.all || 'Visos vietos');
+      const items = [{ value: FEEDBACK_FILTER_ALL, label: allLabel }];
+      (Array.isArray(config) ? config : []).forEach((option) => {
+        if (!option || typeof option.value !== 'string') {
+          return;
+        }
+        items.push({
+          value: option.value,
+          label: formatFeedbackFilterOption(option),
+        });
+      });
+      const currentFilters = dashboardState.feedback.filters || getDefaultFeedbackFilters();
+      const activeValue = type === 'respondent'
+        ? (currentFilters.respondent || FEEDBACK_FILTER_ALL)
+        : (currentFilters.location || FEEDBACK_FILTER_ALL);
+      const buttons = items.map((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'chip-button';
+        setDatasetValue(button, 'feedbackFilter', type);
+        setDatasetValue(button, 'feedbackValue', item.value);
+        button.textContent = item.label;
+        button.setAttribute('aria-pressed', item.value === activeValue ? 'true' : 'false');
+        return button;
+      });
+      groupEl.replaceChildren(...buttons);
+    }
+
     function populateFeedbackFilterControls(options = dashboardState.feedback.filterOptions) {
       const config = options || { respondent: [], location: [] };
       const filtersText = TEXT.feedback?.filters || {};
@@ -2958,6 +2993,9 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         });
         select.replaceChildren(...items);
       }
+      if (selectors.feedbackRespondentChips) {
+        buildFeedbackChipButtons('respondent', config.respondent, selectors.feedbackRespondentChips);
+      }
       if (selectors.feedbackLocationFilter) {
         const select = selectors.feedbackLocationFilter;
         const items = [];
@@ -2976,6 +3014,10 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         });
         select.replaceChildren(...items);
       }
+      if (selectors.feedbackLocationChips) {
+        buildFeedbackChipButtons('location', config.location, selectors.feedbackLocationChips);
+      }
+      selectors.feedbackFilterButtons = Array.from(document.querySelectorAll('[data-feedback-filter]'));
     }
 
     function syncFeedbackFilterControls() {
@@ -2991,6 +3033,22 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         const value = typeof filters.location === 'string' ? filters.location : FEEDBACK_FILTER_ALL;
         const hasOption = Array.from(select.options).some((option) => option.value === value);
         select.value = hasOption ? value : FEEDBACK_FILTER_ALL;
+      }
+      if (Array.isArray(selectors.feedbackFilterButtons) && selectors.feedbackFilterButtons.length) {
+        selectors.feedbackFilterButtons.forEach((button) => {
+          if (!(button instanceof HTMLElement)) {
+            return;
+          }
+          const type = getDatasetValue(button, 'feedbackFilter', '');
+          const value = getDatasetValue(button, 'feedbackValue', FEEDBACK_FILTER_ALL);
+          if (type !== 'respondent' && type !== 'location') {
+            return;
+          }
+          const activeValue = type === 'respondent'
+            ? (filters.respondent || FEEDBACK_FILTER_ALL)
+            : (filters.location || FEEDBACK_FILTER_ALL);
+          button.setAttribute('aria-pressed', value === activeValue ? 'true' : 'false');
+        });
       }
     }
 
@@ -3107,6 +3165,27 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         };
         applyFeedbackFiltersAndRender();
       }
+    }
+
+    function handleFeedbackFilterChipClick(event) {
+      const target = event?.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const button = target.closest('button[data-feedback-filter][data-feedback-value]');
+      if (!button) {
+        return;
+      }
+      const type = getDatasetValue(button, 'feedbackFilter', '');
+      if (type !== 'respondent' && type !== 'location') {
+        return;
+      }
+      const value = getDatasetValue(button, 'feedbackValue', FEEDBACK_FILTER_ALL);
+      dashboardState.feedback.filters = {
+        ...dashboardState.feedback.filters,
+        [type]: typeof value === 'string' ? value : FEEDBACK_FILTER_ALL,
+      };
+      applyFeedbackFiltersAndRender();
     }
 
     function updateFeedbackFilterOptions(records) {
@@ -10101,6 +10180,7 @@ function areStylesheetsLoaded() {
       syncFeedbackFilterControls,
       updateFeedbackFiltersSummary,
       handleFeedbackFilterChange,
+      handleFeedbackFilterChipClick,
       setFeedbackTrendWindow,
       storeCopyButtonBaseLabel,
       handleChartCopyClick,

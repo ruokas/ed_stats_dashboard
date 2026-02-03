@@ -604,17 +604,34 @@ export function createChartRenderers(env) {
       return index;
     };
 
+    const startHour = 7;
+    const rotateSeries = (values = []) => {
+      if (!Array.isArray(values) || values.length === 0) {
+        return [];
+      }
+      const length = values.length;
+      const shift = ((startHour % length) + length) % length;
+      return values.slice(shift).concat(values.slice(0, shift));
+    };
+
+    const rotatedSeries = {
+      total: rotateSeries(seriesInfo.series?.total),
+      t: rotateSeries(seriesInfo.series?.t),
+      tr: rotateSeries(seriesInfo.series?.tr),
+      ch: rotateSeries(seriesInfo.series?.ch),
+    };
+
     const peakIndices = {
-      total: toPeakIndex(seriesInfo.series?.total),
-      t: toPeakIndex(seriesInfo.series?.t),
-      tr: toPeakIndex(seriesInfo.series?.tr),
-      ch: toPeakIndex(seriesInfo.series?.ch),
+      total: toPeakIndex(rotatedSeries.total),
+      t: toPeakIndex(rotatedSeries.t),
+      tr: toPeakIndex(rotatedSeries.tr),
+      ch: toPeakIndex(rotatedSeries.ch),
     };
 
     const datasets = [
       {
         label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-        data: seriesInfo.series?.total || [],
+        data: rotatedSeries.total || [],
         borderColor: palette.textColor,
         backgroundColor: palette.textColor,
         tension: 0.35,
@@ -628,7 +645,7 @@ export function createChartRenderers(env) {
       },
       {
         label: 'T',
-        data: seriesInfo.series?.t || [],
+        data: rotatedSeries.t || [],
         borderColor: '#f2c94c',
         backgroundColor: '#f2c94c',
         tension: 0.35,
@@ -642,7 +659,7 @@ export function createChartRenderers(env) {
       },
       {
         label: 'TR',
-        data: seriesInfo.series?.tr || [],
+        data: rotatedSeries.tr || [],
         borderColor: '#27ae60',
         backgroundColor: '#27ae60',
         tension: 0.35,
@@ -656,7 +673,7 @@ export function createChartRenderers(env) {
       },
       {
         label: 'CH',
-        data: seriesInfo.series?.ch || [],
+        data: rotatedSeries.ch || [],
         borderColor: '#2f80ed',
         backgroundColor: '#2f80ed',
         tension: 0.35,
@@ -673,7 +690,7 @@ export function createChartRenderers(env) {
     const lastShiftChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: HEATMAP_HOURS,
+        labels: rotateSeries(HEATMAP_HOURS),
         datasets,
       },
       options: {

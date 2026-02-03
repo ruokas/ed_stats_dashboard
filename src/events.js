@@ -15,6 +15,7 @@ export function createUIEvents(env) {
     syncFeedbackFilterControls,
     updateFeedbackFiltersSummary,
     handleFeedbackFilterChange,
+    handleFeedbackFilterChipClick,
     setFeedbackTrendWindow,
     storeCopyButtonBaseLabel,
     handleChartCopyClick,
@@ -105,6 +106,12 @@ export function createUIEvents(env) {
     }
     if (selectors.feedbackLocationFilter) {
       selectors.feedbackLocationFilter.addEventListener('change', handleFeedbackFilterChange);
+    }
+    if (selectors.feedbackRespondentChips) {
+      selectors.feedbackRespondentChips.addEventListener('click', handleFeedbackFilterChipClick);
+    }
+    if (selectors.feedbackLocationChips) {
+      selectors.feedbackLocationChips.addEventListener('click', handleFeedbackFilterChipClick);
     }
   }
 
