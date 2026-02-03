@@ -8278,6 +8278,16 @@ function areStylesheetsLoaded() {
       return `${year} m.`;
     }
 
+    function formatMonthlyYoYComparison(total, previousTotal, canCompare) {
+      if (!canCompare || !Number.isFinite(total) || !Number.isFinite(previousTotal) || previousTotal === 0) {
+        return '';
+      }
+      const change = (total - previousTotal) / previousTotal;
+      const absText = percentFormatter.format(Math.abs(change));
+      const sign = change > 0 ? '+' : (change < 0 ? '−' : '');
+      return ` (${sign}${absText})`;
+    }
+
     function renderMonthlyTable(monthlyStats) {
       const scopedMonthly = Array.isArray(monthlyStats) ? monthlyStats : [];
       dashboardState.monthly.window = scopedMonthly;
@@ -8295,6 +8305,7 @@ function areStylesheetsLoaded() {
 
       const totals = scopedMonthly.map((entry) => (Number.isFinite(entry?.count) ? entry.count : 0));
       const completeness = scopedMonthly.map((entry) => isCompleteMonthEntry(entry));
+      const allMonthly = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
       const diffValues = totals.map((total, index) => {
         if (index === 0) {
           return Number.NaN;
@@ -8317,6 +8328,13 @@ function areStylesheetsLoaded() {
         const avgPerDay = entry.dayCount > 0 ? entry.count / entry.dayCount : 0;
         const total = Number.isFinite(entry.count) ? entry.count : 0;
         const previousTotal = index > 0 ? totals[index - 1] : Number.NaN;
+        const [yearStr, monthStr] = typeof entry.month === 'string' ? entry.month.split('-') : [];
+        const year = Number.parseInt(yearStr, 10);
+        const previousYearKey = Number.isFinite(year) && monthStr ? `${year - 1}-${monthStr}` : '';
+        const previousYearEntry = previousYearKey
+          ? allMonthly.find((item) => item && item.month === previousYearKey)
+          : null;
+        const previousYearTotal = Number.isFinite(previousYearEntry?.count) ? previousYearEntry.count : Number.NaN;
         const isComplete = completeness[index];
         const previousComplete = index > 0 ? completeness[index - 1] : false;
         const canCompare = isComplete && previousComplete && Number.isFinite(previousTotal);
@@ -8324,9 +8342,11 @@ function areStylesheetsLoaded() {
         const percentChange = canCompare && previousTotal !== 0
           ? diff / previousTotal
           : Number.NaN;
+        const previousYearComplete = previousYearEntry ? isCompleteMonthEntry(previousYearEntry) : false;
+        const yoyComparison = formatMonthlyYoYComparison(total, previousYearTotal, isComplete && previousYearComplete);
         row.innerHTML = `
           <td>${formatMonthLabel(entry.month)}</td>
-          <td>${numberFormatter.format(total)}</td>
+          <td>${numberFormatter.format(total)}${yoyComparison}</td>
           <td>${oneDecimalFormatter.format(avgPerDay)}</td>
           <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
           <td>${formatValueWithShare(entry.night, total)}</td>

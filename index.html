@@ -459,7 +459,7 @@
           </div>
           <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
           <figcaption id="dailyChartTitle">
-            <span id="dailyChartLabel">Kasdieniai pacientai (paskutinės 30 dienų)</span>
+            <span id="dailyChartLabel" class="chart-caption__label">Kasdieniai pacientai (paskutinės 30 dienų)</span>
             <span id="dailyChartContext" class="chart-caption__context"></span>
           </figcaption>
         </figure>
@@ -502,7 +502,7 @@
           </div>
           <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
           <figcaption id="dowChartTitle">
-            Vidutinis pacientų skaičius pagal savaitės dieną
+            <span id="dowChartLabel" class="chart-caption__label">Vidutinis pacientų skaičius pagal savaitės dieną</span>
             <span id="dowChartContext" class="chart-caption__context"></span>
           </figcaption>
         </figure>
@@ -545,7 +545,7 @@
           </div>
           <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
           <figcaption id="dowStayChartTitle">
-            Vidutinė buvimo trukmė pagal savaitės dieną
+            <span id="dowStayChartLabel" class="chart-caption__label">Vidutinė buvimo trukmė pagal savaitės dieną</span>
             <span id="dowStayChartContext" class="chart-caption__context"></span>
           </figcaption>
         </figure>
@@ -871,7 +871,10 @@
           <thead>
             <tr>
               <th scope="col">Mėnuo</th>
-              <th scope="col">Pacientai (suma)</th>
+              <th scope="col">
+                Pacientai (suma)
+                <span class="table-tooltip" data-tooltip="Palyginama su tuo pačiu mėnesiu prieš metus." aria-label="Palyginama su tuo pačiu mėnesiu prieš metus." role="img">ⓘ</span>
+              </th>
               <th scope="col">Vid. per dieną</th>
               <th scope="col">Vid. buvimo laikas (val.)</th>
               <th scope="col">Naktiniai pacientai</th>

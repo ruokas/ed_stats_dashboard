@@ -3083,6 +3083,49 @@ body[data-theme="dark"] select optgroup {
       width: 100%;
     }
 
+    .table-tooltip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-left: 6px;
+      border-radius: 50%;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      position: relative;
+      cursor: help;
+    }
+
+    .table-tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.45);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 6;
+      top: calc(100% + 6px);
+      left: 0;
+    }
+
+    .table-tooltip:hover::after,
+    .table-tooltip:focus-visible::after {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .chart-filters__summary {
       margin: 0;
       font-size: 0.82rem;
@@ -3289,6 +3332,23 @@ body[data-theme="dark"] select optgroup {
     .chart-card figcaption {
       font-size: 0.95rem;
       color: var(--color-text-muted);
+      line-height: 1.6;
+      white-space: normal;
+    }
+
+    .chart-card figcaption span {
+      display: block;
+      line-height: 1.6;
+    }
+
+    .chart-card figcaption span + span {
+      margin-top: 4px;
+    }
+
+    .chart-caption__label {
+      display: block;
+      line-height: 1.6;
+      margin-bottom: 4px;
     }
 
     .chart-card--funnel {
