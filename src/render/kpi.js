@@ -161,15 +161,14 @@ export function createKpiRenderer(env) {
         const shareBadge = shareValue != null
           ? `<span class="kpi-mainline__share">(${percentFormatter.format(shareValue)})</span>`
           : '';
+        const unitHtml = config.unitLabel
+          ? `<span class="kpi-unit">${escapeHtml(config.unitLabel)}</span>`
+          : '';
         const mainValueHtml = Number.isFinite(rawValue)
-          ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>${shareBadge}`
+          ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>${unitHtml}${shareBadge}`
           : `<span class="kpi-empty">${TEXT.kpis.primaryNoData || TEXT.kpis.noYearData}</span>`;
 
         const details = [];
-        const unitContext = config.unitLabel
-          ? `<span class="kpi-detail__context">${escapeHtml(config.unitLabel)}</span>`
-          : '';
-
         if (Number.isFinite(rawValue) && Number.isFinite(averageValue)) {
           const diff = rawValue - averageValue;
           let trend = 'neutral';
@@ -196,7 +195,7 @@ export function createKpiRenderer(env) {
               : `Skirtumo nėra lyginant su ${referenceText}.`;
           const deltaValueHtml = `
             <span class="kpi-detail__icon" aria-hidden="true">${arrow}</span>
-            <strong>${sign}${formattedDiff}</strong>${unitContext}${contextHtml}
+            <strong>${sign}${formattedDiff}</strong>${contextHtml}
           `;
           details.push(detailWrapper(
             TEXT.kpis.detailLabels?.delta || 'Skirtumas',
@@ -225,7 +224,7 @@ export function createKpiRenderer(env) {
           const averageShareHtml = averageShareValue != null
             ? `<span class="kpi-detail__share">(${percentFormatter.format(averageShareValue)})</span>`
             : '';
-          const averageValueHtml = `<strong>${formatKpiValue(averageValue, valueFormat)}</strong>${unitContext}${averageContextHtml}${averageShareHtml}`;
+          const averageValueHtml = `<strong>${formatKpiValue(averageValue, valueFormat)}</strong>${averageContextHtml}${averageShareHtml}`;
           details.push(detailWrapper(averageLabel, averageValueHtml));
         } else {
           details.push(detailWrapper(
@@ -247,210 +246,6 @@ export function createKpiRenderer(env) {
         `;
         selectors.kpiGrid.appendChild(card);
       });
-
-      const monthlySettings = TEXT.kpis.monthly || {};
-      const monthlyCardsConfig = Array.isArray(monthlySettings.cards) ? monthlySettings.cards : [];
-      const hasPeriodMetrics = periodMetrics && typeof periodMetrics === 'object';
-      const monthMetrics = hasPeriodMetrics ? periodMetrics.monthMetrics : null;
-      const yearMetrics = hasPeriodMetrics ? periodMetrics.yearMetrics : null;
-      const monthHasData = Number.isFinite(monthMetrics?.days) && monthMetrics.days > 0;
-
-      if (monthlyCardsConfig.length) {
-        if (monthlySettings.title || monthlySettings.subtitle) {
-          const sectionLabel = document.createElement('p');
-          sectionLabel.className = 'kpi-grid__section-label';
-          sectionLabel.setAttribute('role', 'presentation');
-          sectionLabel.setAttribute('aria-hidden', 'true');
-          sectionLabel.textContent = monthlySettings.title || 'Šio mėnesio vidurkiai';
-          if (monthlySettings.subtitle) {
-            const subtitleEl = document.createElement('span');
-            subtitleEl.textContent = monthlySettings.subtitle;
-            sectionLabel.appendChild(subtitleEl);
-          }
-          selectors.kpiGrid.appendChild(sectionLabel);
-        }
-
-        if (!monthHasData || !monthMetrics) {
-          const emptyCard = document.createElement('article');
-          emptyCard.className = 'kpi-card kpi-card--monthly';
-          emptyCard.setAttribute('role', 'listitem');
-          const emptyTitle = monthlySettings.emptyTitle || monthlySettings.title || TEXT.kpis.monthPrefix || 'Šio mėnesio vidurkiai';
-          const emptyMessage = monthlySettings.empty || TEXT.kpis.monthNoData;
-          emptyCard.innerHTML = `
-            <header class="kpi-card__header">
-              <h3 class="kpi-card__title">${escapeHtml(emptyTitle)}</h3>
-            </header>
-            <p class="kpi-mainline">
-              <span class="kpi-mainline__value"><span class="kpi-empty">${escapeHtml(emptyMessage || '')}</span></span>
-            </p>
-          `;
-          selectors.kpiGrid.appendChild(emptyCard);
-          return;
-        }
-
-        const monthLabel = typeof periodMetrics?.monthLabel === 'string' ? periodMetrics.monthLabel : '';
-        const monthPrefixShort = TEXT.kpis.monthPrefixShort || TEXT.kpis.monthPrefix || '';
-        const monthMetaText = monthLabel
-          ? `${monthPrefixShort ? `${monthPrefixShort}: ` : ''}${monthLabel}`
-          : '';
-        const resolvedReferenceLabel = typeof monthlySettings.referenceLabel === 'function'
-          ? monthlySettings.referenceLabel(periodMetrics?.referenceLabel, periodMetrics?.yearLabel)
-          : (monthlySettings.referenceLabel
-            || periodMetrics?.referenceLabel
-            || TEXT.kpis.summary.referenceFallback
-            || TEXT.kpis.summary.reference
-            || 'Metinis vidurkis');
-        const accessibleReference = resolvedReferenceLabel
-          || TEXT.kpis.summary.referenceFallback
-          || TEXT.kpis.summary.reference
-          || 'Metinis vidurkis';
-
-        monthlyCardsConfig.forEach((config) => {
-          if (!config || typeof config !== 'object' || !config.metricKey) {
-            return;
-          }
-          const valueFormat = config.format || 'oneDecimal';
-          const monthValueRaw = monthMetrics?.[config.metricKey];
-          const monthValue = Number.isFinite(monthValueRaw) ? monthValueRaw : null;
-          const compareKey = config.compareKey || config.metricKey;
-          const yearValueRaw = yearMetrics?.[compareKey];
-          const yearValue = Number.isFinite(yearValueRaw) ? yearValueRaw : null;
-          const shareKey = typeof config.shareKey === 'string' ? config.shareKey : null;
-          const monthShareValue = shareKey && Number.isFinite(monthMetrics?.[shareKey])
-            ? monthMetrics[shareKey]
-            : null;
-          const yearShareValue = shareKey && Number.isFinite(yearMetrics?.[shareKey])
-            ? yearMetrics[shareKey]
-            : null;
-          const card = document.createElement('article');
-          card.className = 'kpi-card kpi-card--monthly';
-          card.setAttribute('role', 'listitem');
-
-          const titleText = config.label ? escapeHtml(config.label) : '';
-          const metaHtml = monthMetaText
-            ? `<span class="kpi-card__meta">${escapeHtml(monthMetaText)}</span>`
-            : '';
-          const mainLabel = typeof config.mainLabel === 'string'
-            ? config.mainLabel
-            : (typeof monthlySettings.mainLabel === 'string' ? monthlySettings.mainLabel : '');
-          const mainLabelHtml = mainLabel
-            ? `<span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>`
-            : '';
-          const unitLabel = config.unitLabel ? String(config.unitLabel) : '';
-          const mainUnitHtml = unitLabel
-            ? `<span class="kpi-unit">${escapeHtml(unitLabel)}</span>`
-            : '';
-          const noDataText = monthlySettings.primaryNoData
-            || TEXT.kpis.primaryNoData
-            || TEXT.kpis.monthNoDataShort
-            || TEXT.kpis.monthNoData
-            || 'Nėra duomenų';
-          const mainShareHtml = monthShareValue != null
-            ? `<span class="kpi-mainline__share">(${percentFormatter.format(monthShareValue)})</span>`
-            : '';
-          const mainValueHtml = Number.isFinite(monthValue)
-            ? `<strong class="kpi-main-value">${formatKpiValue(monthValue, valueFormat)}</strong>${mainUnitHtml}${mainShareHtml}`
-            : `<span class="kpi-empty">${escapeHtml(noDataText)}</span>`;
-
-          const details = [];
-          const unitContext = unitLabel
-            ? `<span class="kpi-detail__context">${escapeHtml(unitLabel)}</span>`
-            : '';
-
-          if (Number.isFinite(monthValue) && Number.isFinite(yearValue)) {
-            const diff = monthValue - yearValue;
-            let trend = 'neutral';
-            let arrow = '→';
-            if (diff > 0) {
-              trend = 'up';
-              arrow = '↑';
-            } else if (diff < 0) {
-              trend = 'down';
-              arrow = '↓';
-            }
-            const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
-            const formattedDiff = formatKpiValue(Math.abs(diff), valueFormat);
-            const deltaContextRaw = typeof config.deltaContext === 'function'
-              ? config.deltaContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-              : (config.deltaContext
-                ?? (typeof monthlySettings.deltaContext === 'function'
-                  ? monthlySettings.deltaContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-                  : monthlySettings.deltaContext));
-            const deltaContextHtml = deltaContextRaw
-              ? `<span class="kpi-detail__context">${escapeHtml(deltaContextRaw)}</span>`
-              : '';
-            const deltaAriaReference = accessibleReference || 'metiniu vidurkiu';
-            const deltaAria = diff > 0
-              ? `Skirtumas lyginant su ${deltaAriaReference}: padidėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}.`
-              : diff < 0
-                ? `Skirtumas lyginant su ${deltaAriaReference}: sumažėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}.`
-                : `Skirtumo nėra lyginant su ${deltaAriaReference}.`;
-            const deltaLabel = typeof config.deltaLabel === 'string'
-              ? config.deltaLabel
-              : (monthlySettings.deltaLabel || TEXT.kpis.detailLabels?.delta || 'Skirtumas');
-            const deltaValueHtml = `
-              <span class="kpi-detail__icon" aria-hidden="true">${arrow}</span>
-              <strong>${sign}${formattedDiff}</strong>${unitContext}${deltaContextHtml}
-            `;
-            details.push(detailWrapper(
-              deltaLabel,
-              deltaValueHtml,
-              `kpi-detail--delta-${trend}`,
-              deltaAria,
-            ));
-          } else {
-            const deltaLabel = typeof config.deltaLabel === 'string'
-              ? config.deltaLabel
-              : (monthlySettings.deltaLabel || TEXT.kpis.detailLabels?.delta || 'Skirtumas');
-            details.push(detailWrapper(
-              deltaLabel,
-              `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
-              'kpi-detail--muted',
-            ));
-          }
-
-          const averageLabel = typeof config.averageLabel === 'string'
-            ? config.averageLabel
-            : (typeof monthlySettings.averageLabel === 'function'
-              ? monthlySettings.averageLabel(resolvedReferenceLabel, periodMetrics?.yearLabel)
-              : (monthlySettings.averageLabel || TEXT.kpis.detailLabels?.average || 'Vidurkis'));
-          const averageContextRaw = typeof config.averageContext === 'function'
-            ? config.averageContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-            : (config.averageContext ?? (typeof monthlySettings.averageContext === 'function'
-              ? monthlySettings.averageContext(resolvedReferenceLabel, periodMetrics?.yearLabel)
-              : monthlySettings.averageContext));
-          const averageContextHtml = averageContextRaw
-            ? `<span class="kpi-detail__context">${escapeHtml(averageContextRaw)}</span>`
-            : '';
-
-          if (Number.isFinite(yearValue)) {
-            const averageShareHtml = yearShareValue != null
-              ? `<span class="kpi-detail__share">(${percentFormatter.format(yearShareValue)})</span>`
-              : '';
-            const averageValueHtml = `<strong>${formatKpiValue(yearValue, valueFormat)}</strong>${unitContext}${averageContextHtml}${averageShareHtml}`;
-            details.push(detailWrapper(averageLabel, averageValueHtml));
-          } else {
-            details.push(detailWrapper(
-              averageLabel,
-              `<span class="kpi-empty">${TEXT.kpis.averageNoData}</span>`,
-              'kpi-detail--muted',
-            ));
-          }
-
-          card.innerHTML = `
-            <header class="kpi-card__header">
-              <h3 class="kpi-card__title">${titleText}</h3>
-              ${metaHtml}
-            </header>
-            <p class="kpi-mainline">
-              ${mainLabelHtml}
-              <span class="kpi-mainline__value">${mainValueHtml}</span>
-            </p>
-            <div class="kpi-card__details" role="list">${details.join('')}</div>
-          `;
-          selectors.kpiGrid.appendChild(card);
-        });
-      }
     }
     return { renderKpiPeriodSummary, renderKpis };
 }

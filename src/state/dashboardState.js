@@ -15,6 +15,7 @@ export function createDashboardState({
       dow: null,
       dowStay: null,
       hourly: null,
+      lastShiftHourly: null,
       funnel: null,
       feedbackTrend: null,
       edDispositions: null,
@@ -69,6 +70,7 @@ export function createDashboardState({
       filters: defaultKpiFilters(),
       records: [],
       daily: [],
+      lastShiftHourly: null,
     },
     feedback: {
       summary: null,

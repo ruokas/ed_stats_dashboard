@@ -538,6 +538,232 @@ export function createChartRenderers(env) {
     renderHourlyChart(records, Chart, palette);
   }
 
+  async function renderLastShiftHourlyChartWithTheme(seriesInfo) {
+    const canvas = selectors.lastShiftHourlyChart || document.getElementById('lastShiftHourlyChart');
+    if (!canvas || !canvas.getContext) {
+      return;
+    }
+    const Chart = dashboardState.chartLib ?? await loadChartJs();
+    if (!Chart) {
+      throw new Error('Chart.js biblioteka nepasiekiama');
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
+    }
+    const palette = getThemePalette();
+    const styleTarget = getThemeStyleTarget();
+    Chart.defaults.color = palette.textColor;
+    Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
+    Chart.defaults.borderColor = palette.gridColor;
+    dashboardState.chartLib = Chart;
+
+    if (dashboardState.charts.lastShiftHourly) {
+      dashboardState.charts.lastShiftHourly.destroy();
+    }
+
+    if (!seriesInfo?.hasData) {
+      setChartCardMessage(canvas, TEXT.charts?.empty);
+      if (selectors.lastShiftHourlyContext) {
+        selectors.lastShiftHourlyContext.textContent = '';
+      }
+      dashboardState.charts.lastShiftHourly = null;
+      return;
+    }
+
+    setChartCardMessage(canvas, null);
+    if (selectors.lastShiftHourlyContext) {
+      const shiftStart = Number.isFinite(seriesInfo?.shiftStartHour)
+        ? `${String(Math.floor(seriesInfo.shiftStartHour)).padStart(2, '0')}:00`
+        : '';
+      const shiftWindowText = shiftStart ? `Pamainos langas: ${shiftStart}–${shiftStart}` : '';
+      const contextParts = [];
+      if (seriesInfo?.dateLabel) {
+        contextParts.push(`Pamaina: ${seriesInfo.dateLabel}`);
+      }
+      if (shiftWindowText) {
+        contextParts.push(shiftWindowText);
+      }
+      contextParts.push('Legenda: spustelėkite, kad paslėptumėte/rodytumėte kreives.');
+      selectors.lastShiftHourlyContext.textContent = contextParts.join(' • ');
+    }
+
+    if (selectors.lastShiftHourlyLegend) {
+      selectors.lastShiftHourlyLegend.replaceChildren();
+    }
+
+    const toPeakIndex = (values = []) => {
+      let max = -Infinity;
+      let index = -1;
+      values.forEach((value, idx) => {
+        if (Number.isFinite(value) && value > max) {
+          max = value;
+          index = idx;
+        }
+      });
+      return index;
+    };
+
+    const peakIndices = {
+      total: toPeakIndex(seriesInfo.series?.total),
+      t: toPeakIndex(seriesInfo.series?.t),
+      tr: toPeakIndex(seriesInfo.series?.tr),
+      ch: toPeakIndex(seriesInfo.series?.ch),
+    };
+
+    const datasets = [
+      {
+        label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+        data: seriesInfo.series?.total || [],
+        borderColor: palette.textColor,
+        backgroundColor: palette.textColor,
+        tension: 0.35,
+        fill: false,
+        pointRadius(context) {
+          return context.dataIndex === peakIndices.total ? 5 : 2;
+        },
+        pointHoverRadius: 4,
+        pointBackgroundColor: palette.textColor,
+        pointBorderColor: palette.textColor,
+      },
+      {
+        label: 'T',
+        data: seriesInfo.series?.t || [],
+        borderColor: '#f2c94c',
+        backgroundColor: '#f2c94c',
+        tension: 0.35,
+        fill: false,
+        pointRadius(context) {
+          return context.dataIndex === peakIndices.t ? 5 : 2;
+        },
+        pointHoverRadius: 4,
+        pointBackgroundColor: '#f2c94c',
+        pointBorderColor: '#f2c94c',
+      },
+      {
+        label: 'TR',
+        data: seriesInfo.series?.tr || [],
+        borderColor: '#27ae60',
+        backgroundColor: '#27ae60',
+        tension: 0.35,
+        fill: false,
+        pointRadius(context) {
+          return context.dataIndex === peakIndices.tr ? 5 : 2;
+        },
+        pointHoverRadius: 4,
+        pointBackgroundColor: '#27ae60',
+        pointBorderColor: '#27ae60',
+      },
+      {
+        label: 'CH',
+        data: seriesInfo.series?.ch || [],
+        borderColor: '#2f80ed',
+        backgroundColor: '#2f80ed',
+        tension: 0.35,
+        fill: false,
+        pointRadius(context) {
+          return context.dataIndex === peakIndices.ch ? 5 : 2;
+        },
+        pointHoverRadius: 4,
+        pointBackgroundColor: '#2f80ed',
+        pointBorderColor: '#2f80ed',
+      },
+    ];
+
+    const lastShiftChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: HEATMAP_HOURS,
+        datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        layout: {
+          padding: {
+            top: 6,
+            bottom: 6,
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label(context) {
+                return `${context.dataset.label}: ${numberFormatter.format(context.parsed.y)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: palette.textColor,
+              autoSkip: true,
+              maxTicksLimit: 12,
+              maxRotation: 0,
+              minRotation: 0,
+              padding: 10,
+              font: { size: 10 },
+            },
+            grid: {
+              color: palette.gridColor,
+              drawBorder: false,
+            },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: palette.textColor,
+              padding: 8,
+              callback(value) {
+                return numberFormatter.format(value);
+              },
+            },
+            grid: {
+              color: palette.gridColor,
+              drawBorder: false,
+            },
+          },
+        },
+      },
+    });
+
+    dashboardState.charts.lastShiftHourly = lastShiftChart;
+
+    if (selectors.lastShiftHourlyLegend) {
+      datasets.forEach((dataset, index) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'chart-legend__item';
+        item.setAttribute('role', 'listitem');
+        item.setAttribute('aria-pressed', 'true');
+        item.title = 'Spustelėkite, kad paslėptumėte/rodytumėte kreivę';
+
+        const dot = document.createElement('span');
+        dot.className = 'chart-legend__dot';
+        dot.style.color = dataset.borderColor;
+
+        const label = document.createElement('span');
+        label.textContent = dataset.label;
+
+        item.append(dot, label);
+        item.addEventListener('click', () => {
+          const isVisible = lastShiftChart.isDatasetVisible(index);
+          lastShiftChart.setDatasetVisibility(index, !isVisible);
+          lastShiftChart.update();
+          item.classList.toggle('is-hidden', isVisible);
+          item.setAttribute('aria-pressed', String(!isVisible));
+        });
+
+        selectors.lastShiftHourlyLegend.appendChild(item);
+      });
+    }
+  }
+
   async function renderCharts(dailyStats, funnelTotals, heatmapData) {
     showChartSkeletons();
     const Chart = await loadChartJs();
@@ -1529,6 +1755,7 @@ export function createChartRenderers(env) {
     renderDailyChart,
     renderHourlyChart,
     renderHourlyChartWithTheme,
+    renderLastShiftHourlyChartWithTheme,
     renderFeedbackTrendChart,
     renderEdDispositionsChart,
   };

@@ -209,38 +209,17 @@
         </div>
         <div class="section__actions kpi-header-actions">
           <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true">Numatytieji filtrai</p>
-          <button type="button" id="kpiFiltersToggle" class="kpi-controls__toggle" aria-controls="kpiFiltersForm" aria-expanded="false">Filtrai</button>
         </div>
       </div>
-      <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle" data-expanded="false" hidden aria-hidden="true">
+      <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle" data-expanded="true">
         <h3 id="kpiFiltersTitle" class="sr-only">KPI filtrai</h3>
         <form id="kpiFiltersForm" class="kpi-controls__form">
-          <label class="kpi-filter" for="kpiWindow">
-            <span>Laikotarpis</span>
-            <select id="kpiWindow" name="window" aria-label="Pasirinkite KPI laikotarpį dienomis"></select>
-          </label>
-          <label class="kpi-filter" for="kpiShift">
-            <span>Pamaina</span>
-            <select id="kpiShift" name="shift" aria-label="Filtruoti pagal pamainą">
-              <option value="all">Visos</option>
-              <option value="day">Dieninės</option>
-              <option value="night">Naktinės</option>
-            </select>
-          </label>
           <label class="kpi-filter" for="kpiArrival">
             <span>Atvykimo tipas</span>
             <select id="kpiArrival" name="arrival" aria-label="Filtruoti pagal atvykimo tipą">
               <option value="all">Visi</option>
               <option value="ems">Tik GMP</option>
               <option value="self">Be GMP</option>
-            </select>
-          </label>
-          <label class="kpi-filter" for="kpiDisposition">
-            <span>Būsena išvykstant</span>
-            <select id="kpiDisposition" name="disposition" aria-label="Filtruoti pagal išvykimo sprendimą">
-              <option value="all">Visi</option>
-              <option value="hospitalized">Hospitalizuoti</option>
-              <option value="discharged">Išleisti</option>
             </select>
           </label>
           <label class="kpi-filter" for="kpiCardType">
@@ -257,7 +236,36 @@
       </div>
       <div id="kpiSummary" class="kpi-summary" role="status" aria-live="polite" hidden></div>
       <div id="kpiGrid" class="kpi-grid" role="list"></div>
+      <figure class="chart-card chart-card--compact chart-card--kpi-hourly kpi-hourly-chart">
+        <div class="chart-card__skeleton" aria-hidden="true" hidden>
+          <span class="skeleton skeleton--title"></span>
+          <span class="skeleton skeleton--chart-area"></span>
+          <span class="skeleton skeleton--caption"></span>
+        </div>
+        <div class="chart-card__canvas chart-card__canvas--kpi-hourly">
+          <canvas id="lastShiftHourlyChart" aria-labelledby="lastShiftHourlyTitle"></canvas>
+        </div>
+        <div id="lastShiftHourlyLegend" class="chart-legend" role="list" aria-label="Kreivių legenda"></div>
+        <figcaption id="lastShiftHourlyTitle">
+          <span>Paskutinės pamainos atvykimai per valandą</span>
+          <span id="lastShiftHourlyContext" class="chart-caption__context"></span>
+        </figcaption>
+      </figure>
       <template id="kpiSkeleton">
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
         <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
           <header class="kpi-card__header">
             <div class="skeleton skeleton--chip"></div>

@@ -120,43 +120,10 @@ export function createUIEvents(env) {
         resetKpiFilters();
       });
     }
-    if (selectors.kpiFiltersToggle && selectors.kpiControls) {
-      const toggleButton = selectors.kpiFiltersToggle;
-      const controlsWrapper = selectors.kpiControls;
-
-      const setExpandedState = (expanded) => {
-        const label = expanded ? KPI_FILTER_TOGGLE_LABELS.hide : KPI_FILTER_TOGGLE_LABELS.show;
-        setDatasetValue(controlsWrapper, 'expanded', expanded ? 'true' : 'false');
-        toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        toggleButton.textContent = label;
-        toggleButton.setAttribute('aria-label', label);
-        toggleButton.setAttribute('title', label);
-        controlsWrapper.hidden = !expanded;
-        controlsWrapper.setAttribute('aria-hidden', expanded ? 'false' : 'true');
-      };
-
-      toggleButton.addEventListener('click', () => {
-        const expanded = getDatasetValue(controlsWrapper, 'expanded', 'true') !== 'false';
-        const nextState = !expanded;
-        setExpandedState(nextState);
-        if (nextState && selectors.kpiFiltersForm) {
-          const firstField = selectors.kpiFiltersForm.querySelector('select, button, [tabindex]');
-          if (firstField && typeof firstField.focus === 'function') {
-            window.requestAnimationFrame(() => {
-              try {
-                firstField.focus({ preventScroll: true });
-              } catch (error) {
-                firstField.focus();
-              }
-            });
-          }
-        }
-        if (!nextState) {
-          toggleButton.focus();
-        }
-      });
-
-      setExpandedState(getDatasetValue(controlsWrapper, 'expanded', 'true') !== 'false');
+    if (selectors.kpiControls) {
+      setDatasetValue(selectors.kpiControls, 'expanded', 'true');
+      selectors.kpiControls.hidden = false;
+      selectors.kpiControls.setAttribute('aria-hidden', 'false');
     }
     if ((dashboardState.kpi.records && dashboardState.kpi.records.length) || (dashboardState.kpi.daily && dashboardState.kpi.daily.length)) {
       updateKpiSummary({

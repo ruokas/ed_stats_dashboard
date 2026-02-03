@@ -329,7 +329,7 @@ import {
       },
       kpis: {
         title: 'Pagrindiniai rodikliai',
-        subtitle: 'Paskutinė pamaina ir palyginimas su metiniu vidurkiu',
+        subtitle: 'Paskutinė pamaina ir palyginimas su tos savaitės dienos vidurkiu',
         windowAllLabel: 'Visas laikotarpis',
         windowAllShortLabel: 'viso laik.',
         windowYearSuffix: 'metai',
@@ -345,17 +345,18 @@ import {
           period: 'Pamaina',
           periodFallback: 'Pamainos data nenustatyta.',
           reference: 'Lyginama su',
-          referenceFallback: 'Metinis vidurkis',
-          weekdayReference: (weekday) => `Metinis vidurkis (${weekday})`,
+          referenceFallback: 'Vidurkis',
+          weekdayReference: (weekday) => `Vidurkis (${weekday})`,
           month: 'Šio mėnesio duomenys',
           noMonth: 'Šio mėnesio duomenų nėra.',
           unknownPeriod: 'Nenurodytas laikotarpis',
         },
         cards: [
-          { metricKey: 'total', label: 'Pacientai', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'night', label: 'Naktiniai pacientai', format: 'integer', unitLabel: 'pac.' },
-          { metricKey: 'hospitalized', label: 'Hospitalizuoti', format: 'integer', unitLabel: 'pac.' },
+          { metricKey: 'total', label: 'Atvykę', format: 'integer', unitLabel: 'pac.' },
+          { metricKey: 'night', label: 'Naktiniai', format: 'integer', unitLabel: 'pac.' },
+          { metricKey: 'avgTime', label: 'Vid. trukmė', format: 'oneDecimal', unitLabel: 'val.' },
           { metricKey: 'discharged', label: 'Išleisti', format: 'integer', unitLabel: 'pac.' },
+          { metricKey: 'hospitalized', label: 'Hospitalizuoti', format: 'integer', unitLabel: 'pac.' },
         ],
         monthly: {
           title: 'Šio mėnesio vidurkiai',
@@ -377,7 +378,7 @@ import {
         },
         detailLabels: {
           delta: 'Δ',
-          average: 'Vidurkis',
+          average: 'Vid.',
           averageContext: (weekday) => (weekday ? `(${weekday})` : ''),
         },
         deltaNoData: 'Nėra duomenų palyginimui.',
@@ -386,7 +387,9 @@ import {
           if (!reference) {
             return '';
           }
-          const normalized = reference.replace(/^Metinis vidurkis/i, 'vid.');
+          const normalized = reference
+            .replace(/^Metinis vidurkis/i, 'vid.')
+            .replace(/^Vidurkis/i, 'vid.');
           return `vs ${normalized}`;
         },
         mainValueLabel: '',
@@ -821,18 +824,12 @@ import {
     function sanitizeKpiFilters(filters) {
       const defaults = getDefaultKpiFilters();
       const normalized = { ...defaults, ...(filters || {}) };
-      if (!Number.isFinite(normalized.window) || normalized.window < 0) {
-        normalized.window = defaults.window;
-      }
-      if (!(normalized.shift in KPI_FILTER_LABELS.shift)) {
-        normalized.shift = defaults.shift;
-      }
+      normalized.window = defaults.window;
+      normalized.shift = defaults.shift;
       if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
         normalized.arrival = defaults.arrival;
       }
-      if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
-        normalized.disposition = defaults.disposition;
-      }
+      normalized.disposition = defaults.disposition;
       if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
         normalized.cardType = defaults.cardType;
       }
@@ -3564,6 +3561,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         dashboardState.kpi.records = filteredRecords;
         dashboardState.kpi.daily = filteredDailyStats;
         renderKpis(filteredDailyStats);
+        renderLastShiftHourlyChart(filteredRecords, filteredDailyStats);
         updateKpiSummary({
           records: filteredRecords,
           dailyStats: filteredDailyStats,
@@ -3579,6 +3577,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         dashboardState.kpi.records = fallback.records;
         dashboardState.kpi.daily = fallback.dailyStats;
         renderKpis(fallback.dailyStats);
+        renderLastShiftHourlyChart(fallback.records, fallback.dailyStats);
         updateKpiSummary({
           records: fallback.records,
           dailyStats: fallback.dailyStats,
@@ -3721,11 +3720,14 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       const weekdayLabel = capitalizeSentence(weekdayLongFormatter.format(lastDate));
       const sameWeekdayEntries = decorated.filter((item) => item.date.getDay() === weekdayIndex).map((item) => item.entry);
 
-      const averageFor = (key) => {
+      const averageFor = (key, predicate) => {
         if (!sameWeekdayEntries.length) {
           return null;
         }
         const totals = sameWeekdayEntries.reduce((acc, item) => {
+          if (typeof predicate === 'function' && !predicate(item)) {
+            return acc;
+          }
           const value = Number.isFinite(item?.[key]) ? item[key] : null;
           if (Number.isFinite(value)) {
             acc.sum += value;
@@ -3739,7 +3741,12 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         return totals.sum / totals.count;
       };
 
-      const valueFor = (key) => (Number.isFinite(lastEntry?.[key]) ? lastEntry[key] : null);
+      const valueFor = (key, predicate) => {
+        if (typeof predicate === 'function' && !predicate(lastEntry)) {
+          return null;
+        }
+        return Number.isFinite(lastEntry?.[key]) ? lastEntry[key] : null;
+      };
 
       const totalValue = valueFor('count');
       const totalAverage = averageFor('count');
@@ -3757,6 +3764,10 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         weekdayLabel,
         metrics: {
           total: { value: totalValue, average: totalAverage },
+          avgTime: {
+            value: valueFor('avgTime', (entry) => Number.isFinite(entry?.durations) && entry.durations > 0),
+            average: averageFor('avgTime', (entry) => Number.isFinite(entry?.durations) && entry.durations > 0),
+          },
           night: { value: valueFor('night'), average: averageFor('night') },
           hospitalized: {
             value: valueFor('hospitalized'),
@@ -3771,6 +3782,67 @@ function normalizeHourlyCompareYears(valueA, valueB) {
             averageShare: shareOf(averageFor('discharged'), totalAverage),
           },
         },
+      };
+    }
+
+    function computeShiftDateKeyForArrival(date, shiftStartHour) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const dayMinutes = 24 * 60;
+      const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
+      const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
+      const arrivalMinutes = date.getHours() * 60 + date.getMinutes();
+      const shiftAnchor = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      if (arrivalMinutes < startMinutes) {
+        shiftAnchor.setDate(shiftAnchor.getDate() - 1);
+      }
+      return formatLocalDateKey(shiftAnchor);
+    }
+
+    function buildLastShiftHourlySeries(records, dailyStats) {
+      const lastShiftSummary = buildLastShiftSummary(dailyStats);
+      if (!lastShiftSummary?.dateKey) {
+        return null;
+      }
+      const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
+      const targetDateKey = lastShiftSummary.dateKey;
+      const series = {
+        total: Array(24).fill(0),
+        t: Array(24).fill(0),
+        tr: Array(24).fill(0),
+        ch: Array(24).fill(0),
+      };
+      (Array.isArray(records) ? records : []).forEach((record) => {
+        const arrival = record?.arrival;
+        if (!(arrival instanceof Date) || Number.isNaN(arrival.getTime())) {
+          return;
+        }
+        const dateKey = computeShiftDateKeyForArrival(arrival, shiftStartHour);
+        if (dateKey !== targetDateKey) {
+          return;
+        }
+        const hour = arrival.getHours();
+        if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
+          return;
+        }
+        series.total[hour] += 1;
+        const rawType = typeof record.cardType === 'string' ? record.cardType.trim().toLowerCase() : '';
+        if (rawType === 't') {
+          series.t[hour] += 1;
+        } else if (rawType === 'tr') {
+          series.tr[hour] += 1;
+        } else if (rawType === 'ch') {
+          series.ch[hour] += 1;
+        }
+      });
+      const hasData = series.total.some((value) => value > 0);
+      return {
+        dateKey: targetDateKey,
+        dateLabel: lastShiftSummary.dateLabel || targetDateKey,
+        shiftStartHour,
+        series,
+        hasData,
       };
     }
 
@@ -3840,6 +3912,16 @@ function showKpiSkeleton() {
 
     function renderKpis(dailyStats) {
       return kpiRenderer.renderKpis(dailyStats);
+    }
+
+    function renderLastShiftHourlyChart(records, dailyStats) {
+      const seriesInfo = buildLastShiftHourlySeries(records, dailyStats);
+      dashboardState.kpi.lastShiftHourly = seriesInfo;
+      chartRenderers.renderLastShiftHourlyChartWithTheme(seriesInfo).catch((error) => {
+        const errorInfo = describeError(error, { code: 'LAST_SHIFT_HOURLY', message: 'Nepavyko atnaujinti paskutinės pamainos grafiko' });
+        console.error(errorInfo.log, error);
+        setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
+      });
     }
 
     function renderDailyChart(dailyStats, period, ChartLib, palette) {
@@ -7429,6 +7511,12 @@ function areStylesheetsLoaded() {
         const errorInfo = describeError(error, { code: 'ED_DISPOSITIONS_THEME', message: 'Nepavyko perpiešti pacientų kategorijų grafiko pakeitus temą' });
         console.error(errorInfo.log, error);
       });
+      if (dashboardState.kpi?.lastShiftHourly) {
+        chartRenderers.renderLastShiftHourlyChartWithTheme(dashboardState.kpi.lastShiftHourly).catch((error) => {
+          const errorInfo = describeError(error, { code: 'LAST_SHIFT_THEME', message: 'Nepavyko perpiešti paskutinės pamainos grafiko pakeitus temą' });
+          console.error(errorInfo.log, error);
+        });
+      }
       const hasAnyData = (dashboardState.chartData.dailyWindow && dashboardState.chartData.dailyWindow.length)
         || dashboardState.chartData.funnel
         || (dashboardState.chartData.heatmap && Object.keys(dashboardState.chartData.heatmap).length);
