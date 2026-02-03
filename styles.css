@@ -2454,6 +2454,16 @@ body[data-theme="dark"] select optgroup {
       box-shadow: 0 0 0 3px var(--color-accent-soft);
     }
 
+    .kpi-filter__segmented {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .kpi-filter__segmented .segmented-control__button {
+      flex: 1 1 0;
+      padding-inline: 10px;
+    }
+
     .kpi-controls__reset {
       justify-self: end;
       align-self: center;
@@ -3135,6 +3145,16 @@ body[data-theme="dark"] select optgroup {
       outline: none;
     }
 
+    .chart-filter__segmented {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .chart-filter__segmented .segmented-control__button {
+      flex: 1 1 0;
+      padding-inline: 10px;
+    }
+
     .chart-filter--toggle .chart-toggle {
       display: flex;
       align-items: center;
@@ -3773,6 +3793,11 @@ body[data-theme="dark"] select optgroup {
     .segmented-control__button[aria-pressed="true"] {
       background: var(--color-accent);
       color: #fff;
+    }
+
+    .segmented-control__button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
     .chip-button--ghost {

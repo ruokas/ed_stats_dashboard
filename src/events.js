@@ -7,6 +7,7 @@ export function createUIEvents(env) {
     refreshKpiWindowOptions,
     syncKpiFilterControls,
     handleKpiFilterInput,
+    handleKpiSegmentedClick,
     resetKpiFilters,
     KPI_FILTER_TOGGLE_LABELS,
     updateKpiSummary,
@@ -38,6 +39,7 @@ export function createUIEvents(env) {
     handleHourlyCompareSeriesClick,
     handleHourlyResetFilters,
     handleChartFilterChange,
+    handleChartSegmentedClick,
     toggleTheme,
     setCompareMode,
     clearCompareSelection,
@@ -118,6 +120,16 @@ export function createUIEvents(env) {
       selectors.kpiFiltersReset.addEventListener('click', (event) => {
         event.preventDefault();
         resetKpiFilters();
+      });
+    }
+    if (Array.isArray(selectors.kpiArrivalButtons)) {
+      selectors.kpiArrivalButtons.forEach((button) => {
+        button.addEventListener('click', handleKpiSegmentedClick);
+      });
+    }
+    if (Array.isArray(selectors.kpiCardTypeButtons)) {
+      selectors.kpiCardTypeButtons.forEach((button) => {
+        button.addEventListener('click', handleKpiSegmentedClick);
       });
     }
     if (selectors.kpiControls) {
@@ -397,6 +409,21 @@ export function createUIEvents(env) {
     if (selectors.chartFiltersForm) {
       selectors.chartFiltersForm.addEventListener('change', handleChartFilterChange);
       selectors.chartFiltersForm.addEventListener('submit', (event) => event.preventDefault());
+    }
+    if (Array.isArray(selectors.chartFilterArrivalButtons)) {
+      selectors.chartFilterArrivalButtons.forEach((button) => {
+        button.addEventListener('click', handleChartSegmentedClick);
+      });
+    }
+    if (Array.isArray(selectors.chartFilterDispositionButtons)) {
+      selectors.chartFilterDispositionButtons.forEach((button) => {
+        button.addEventListener('click', handleChartSegmentedClick);
+      });
+    }
+    if (Array.isArray(selectors.chartFilterCardTypeButtons)) {
+      selectors.chartFilterCardTypeButtons.forEach((button) => {
+        button.addEventListener('click', handleChartSegmentedClick);
+      });
     }
   }
 

@@ -216,7 +216,12 @@
         <form id="kpiFiltersForm" class="kpi-controls__form">
           <label class="kpi-filter" for="kpiArrival">
             <span>Atvykimo tipas</span>
-            <select id="kpiArrival" name="arrival" aria-label="Filtruoti pagal atvykimo tipą">
+            <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Atvykimo tipas">
+              <button type="button" class="segmented-control__button" data-kpi-arrival="all" aria-pressed="true">Visi</button>
+              <button type="button" class="segmented-control__button" data-kpi-arrival="ems" aria-pressed="false">Tik GMP</button>
+              <button type="button" class="segmented-control__button" data-kpi-arrival="self" aria-pressed="false">Be GMP</button>
+            </div>
+            <select id="kpiArrival" name="arrival" class="sr-only" aria-label="Filtruoti pagal atvykimo tipą">
               <option value="all">Visi</option>
               <option value="ems">Tik GMP</option>
               <option value="self">Be GMP</option>
@@ -224,7 +229,13 @@
           </label>
           <label class="kpi-filter" for="kpiCardType">
             <span>Kortelės tipas</span>
-            <select id="kpiCardType" name="cardType" aria-label="Filtruoti pagal kortelės tipą">
+            <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Kortelės tipas">
+              <button type="button" class="segmented-control__button" data-kpi-card-type="all" aria-pressed="true">Visos</button>
+              <button type="button" class="segmented-control__button" data-kpi-card-type="t" aria-pressed="false">T</button>
+              <button type="button" class="segmented-control__button" data-kpi-card-type="tr" aria-pressed="false">TR</button>
+              <button type="button" class="segmented-control__button" data-kpi-card-type="ch" aria-pressed="false">CH</button>
+            </div>
+            <select id="kpiCardType" name="cardType" class="sr-only" aria-label="Filtruoti pagal kortelės tipą">
               <option value="all">Visos kortelės</option>
               <option value="t">T kortelės</option>
               <option value="tr">TR kortelės</option>
@@ -359,7 +370,12 @@
           <form id="chartFiltersForm" class="chart-filters" aria-label="Filtruoti grafikus">
             <label class="chart-filter" for="chartArrival">
               <span>Atvykimo tipas</span>
-              <select id="chartArrival" name="arrival" aria-label="Filtruoti grafikus pagal atvykimo tipą">
+              <div class="segmented-control chart-filter__segmented" role="group" aria-label="Atvykimo tipas">
+                <button type="button" class="segmented-control__button" data-chart-arrival="all" aria-pressed="true">Visi</button>
+                <button type="button" class="segmented-control__button" data-chart-arrival="ems" aria-pressed="false">Tik GMP</button>
+                <button type="button" class="segmented-control__button" data-chart-arrival="self" aria-pressed="false">Be GMP</button>
+              </div>
+              <select id="chartArrival" name="arrival" class="sr-only" aria-label="Filtruoti grafikus pagal atvykimo tipą">
                 <option value="all">Visi</option>
                 <option value="ems">Tik GMP</option>
                 <option value="self">Be GMP</option>
@@ -367,7 +383,12 @@
             </label>
             <label class="chart-filter" for="chartDisposition">
               <span>Būsena išvykstant</span>
-              <select id="chartDisposition" name="disposition" aria-label="Filtruoti grafikus pagal išvykimo sprendimą">
+              <div class="segmented-control chart-filter__segmented" role="group" aria-label="Būsena išvykstant">
+                <button type="button" class="segmented-control__button" data-chart-disposition="all" aria-pressed="true">Visi</button>
+                <button type="button" class="segmented-control__button" data-chart-disposition="hospitalized" aria-pressed="false">Hospitalizuoti</button>
+                <button type="button" class="segmented-control__button" data-chart-disposition="discharged" aria-pressed="false">Išleisti</button>
+              </div>
+              <select id="chartDisposition" name="disposition" class="sr-only" aria-label="Filtruoti grafikus pagal išvykimo sprendimą">
                 <option value="all">Visi</option>
                 <option value="hospitalized">Hospitalizuoti</option>
                 <option value="discharged">Išleisti</option>
@@ -375,7 +396,13 @@
             </label>
             <label class="chart-filter" for="chartCardType">
               <span>Kortelės tipas</span>
-              <select id="chartCardType" name="cardType" aria-label="Filtruoti grafikus pagal kortelės tipą">
+              <div class="segmented-control chart-filter__segmented" role="group" aria-label="Kortelės tipas">
+                <button type="button" class="segmented-control__button" data-chart-card-type="all" aria-pressed="true">Visos</button>
+                <button type="button" class="segmented-control__button" data-chart-card-type="t" aria-pressed="false">T</button>
+                <button type="button" class="segmented-control__button" data-chart-card-type="tr" aria-pressed="false">TR</button>
+                <button type="button" class="segmented-control__button" data-chart-card-type="ch" aria-pressed="false">CH</button>
+              </div>
+              <select id="chartCardType" name="cardType" class="sr-only" aria-label="Filtruoti grafikus pagal kortelės tipą">
                 <option value="all">Visos kortelės</option>
                 <option value="t">T kortelės</option>
                 <option value="tr">TR kortelės</option>

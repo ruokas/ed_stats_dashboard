@@ -3305,6 +3305,28 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       select.replaceChildren(...options);
     }
 
+    function syncKpiSegmentedButtons() {
+      const filters = dashboardState.kpi?.filters || getDefaultKpiFilters();
+      if (Array.isArray(selectors.kpiArrivalButtons) && selectors.kpiArrivalButtons.length) {
+        selectors.kpiArrivalButtons.forEach((button) => {
+          const value = getDatasetValue(button, 'kpiArrival');
+          if (!value) {
+            return;
+          }
+          button.setAttribute('aria-pressed', String(value === filters.arrival));
+        });
+      }
+      if (Array.isArray(selectors.kpiCardTypeButtons) && selectors.kpiCardTypeButtons.length) {
+        selectors.kpiCardTypeButtons.forEach((button) => {
+          const value = getDatasetValue(button, 'kpiCardType');
+          if (!value) {
+            return;
+          }
+          button.setAttribute('aria-pressed', String(value === filters.cardType));
+        });
+      }
+    }
+
     function syncKpiFilterControls() {
       const filters = dashboardState.kpi.filters;
       if (selectors.kpiWindow && Number.isFinite(filters.window)) {
@@ -3330,15 +3352,17 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       if (selectors.kpiCardType) {
         selectors.kpiCardType.value = filters.cardType;
       }
+      syncKpiSegmentedButtons();
     }
 
     function syncChartFilterControls() {
       const filters = sanitizeChartFilters(dashboardState.chartFilters);
       dashboardState.chartFilters = { ...filters };
+      const compareActive = Boolean(filters.compareGmp);
       if (selectors.chartFilterArrival) {
         selectors.chartFilterArrival.value = filters.arrival;
-        selectors.chartFilterArrival.disabled = Boolean(filters.compareGmp);
-        if (filters.compareGmp) {
+        selectors.chartFilterArrival.disabled = compareActive;
+        if (compareActive) {
           selectors.chartFilterArrival.title = 'Palyginimo režimas: atvykimo tipas fiksuotas';
         } else {
           selectors.chartFilterArrival.removeAttribute('title');
@@ -3351,7 +3375,47 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         selectors.chartFilterCardType.value = filters.cardType;
       }
       if (selectors.chartFilterCompareGmp) {
-        selectors.chartFilterCompareGmp.checked = Boolean(filters.compareGmp);
+        selectors.chartFilterCompareGmp.checked = compareActive;
+      }
+      syncChartSegmentedButtons(compareActive);
+    }
+
+    function syncChartSegmentedButtons(compareActive = false) {
+      const filters = sanitizeChartFilters(dashboardState.chartFilters);
+      if (Array.isArray(selectors.chartFilterArrivalButtons) && selectors.chartFilterArrivalButtons.length) {
+        selectors.chartFilterArrivalButtons.forEach((button) => {
+          const value = getDatasetValue(button, 'chartArrival');
+          if (!value) {
+            return;
+          }
+          const isActive = value === filters.arrival;
+          button.setAttribute('aria-pressed', String(isActive));
+          button.disabled = compareActive;
+          button.setAttribute('aria-disabled', String(compareActive));
+          if (compareActive) {
+            button.title = 'Palyginimo režimas: atvykimo tipas fiksuotas';
+          } else {
+            button.removeAttribute('title');
+          }
+        });
+      }
+      if (Array.isArray(selectors.chartFilterDispositionButtons) && selectors.chartFilterDispositionButtons.length) {
+        selectors.chartFilterDispositionButtons.forEach((button) => {
+          const value = getDatasetValue(button, 'chartDisposition');
+          if (!value) {
+            return;
+          }
+          button.setAttribute('aria-pressed', String(value === filters.disposition));
+        });
+      }
+      if (Array.isArray(selectors.chartFilterCardTypeButtons) && selectors.chartFilterCardTypeButtons.length) {
+        selectors.chartFilterCardTypeButtons.forEach((button) => {
+          const value = getDatasetValue(button, 'chartCardType');
+          if (!value) {
+            return;
+          }
+          button.setAttribute('aria-pressed', String(value === filters.cardType));
+        });
       }
     }
 
@@ -3607,7 +3671,26 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
         filters.cardType = value;
       }
+      syncKpiSegmentedButtons();
       void applyKpiFiltersAndRender();
+    }
+
+    function handleKpiSegmentedClick(event) {
+      const button = event.currentTarget;
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const arrival = getDatasetValue(button, 'kpiArrival');
+      if (arrival && selectors.kpiArrival) {
+        selectors.kpiArrival.value = arrival;
+        selectors.kpiArrival.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      const cardType = getDatasetValue(button, 'kpiCardType');
+      if (cardType && selectors.kpiCardType) {
+        selectors.kpiCardType.value = cardType;
+        selectors.kpiCardType.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     }
 
     function handleChartFilterChange(event) {
@@ -3631,6 +3714,33 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       }
       dashboardState.chartFilters = filters;
       void applyChartFilters();
+    }
+
+    function handleChartSegmentedClick(event) {
+      const button = event.currentTarget;
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      if (button.disabled) {
+        return;
+      }
+      const arrival = getDatasetValue(button, 'chartArrival');
+      if (arrival && selectors.chartFilterArrival) {
+        selectors.chartFilterArrival.value = arrival;
+        selectors.chartFilterArrival.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      const disposition = getDatasetValue(button, 'chartDisposition');
+      if (disposition && selectors.chartFilterDisposition) {
+        selectors.chartFilterDisposition.value = disposition;
+        selectors.chartFilterDisposition.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      const cardType = getDatasetValue(button, 'chartCardType');
+      if (cardType && selectors.chartFilterCardType) {
+        selectors.chartFilterCardType.value = cardType;
+        selectors.chartFilterCardType.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     }
 
     function applyChartFilters() {
@@ -9963,6 +10073,7 @@ function areStylesheetsLoaded() {
       refreshKpiWindowOptions,
       syncKpiFilterControls,
       handleKpiFilterInput,
+      handleKpiSegmentedClick,
       resetKpiFilters,
       KPI_FILTER_TOGGLE_LABELS,
       updateKpiSummary,
@@ -9994,6 +10105,7 @@ function areStylesheetsLoaded() {
       handleHourlyCompareSeriesClick,
       handleHourlyResetFilters,
       handleChartFilterChange,
+      handleChartSegmentedClick,
       toggleTheme,
       setCompareMode,
       clearCompareSelection,
