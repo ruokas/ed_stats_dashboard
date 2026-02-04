@@ -2451,7 +2451,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         if (metric === HOURLY_METRIC_ARRIVALS) {
           reference = arrival;
         } else if (metric === HOURLY_METRIC_DISCHARGES) {
-          reference = discharge;
+          reference = entry?.hospitalized ? null : discharge;
         } else if (metric === HOURLY_METRIC_HOSPITALIZED) {
           reference = entry?.hospitalized ? arrival : null;
         } else {
