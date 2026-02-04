@@ -8,6 +8,8 @@ export function createUIEvents(env) {
     syncKpiFilterControls,
     handleKpiFilterInput,
     handleKpiSegmentedClick,
+    handleLastShiftMetricClick,
+    syncLastShiftHourlyMetricButtons,
     resetKpiFilters,
     KPI_FILTER_TOGGLE_LABELS,
     updateKpiSummary,
@@ -140,6 +142,12 @@ export function createUIEvents(env) {
         button.addEventListener('click', handleKpiSegmentedClick);
       });
     }
+    if (Array.isArray(selectors.lastShiftHourlyMetricButtons)) {
+      selectors.lastShiftHourlyMetricButtons.forEach((button) => {
+        button.addEventListener('click', handleLastShiftMetricClick);
+      });
+    }
+    syncLastShiftHourlyMetricButtons();
     if (selectors.kpiControls) {
       setDatasetValue(selectors.kpiControls, 'expanded', 'true');
       selectors.kpiControls.hidden = false;

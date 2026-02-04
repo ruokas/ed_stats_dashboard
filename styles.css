@@ -3397,6 +3397,13 @@ body[data-theme="dark"] select optgroup {
       gap: 6px;
     }
 
+    .kpi-hourly-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 4px 0 6px;
+    }
+
     .chart-card--compact canvas {
       min-height: 180px;
       height: clamp(180px, 22vh, 260px) !important;

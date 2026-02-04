@@ -584,6 +584,9 @@ export function createChartRenderers(env) {
       if (shiftWindowText) {
         contextParts.push(shiftWindowText);
       }
+      if (seriesInfo?.metricLabel) {
+        contextParts.push(`Rodiklis: ${seriesInfo.metricLabel}`);
+      }
       contextParts.push('Legenda: spustelėkite, kad paslėptumėte/rodytumėte kreives.');
       selectors.lastShiftHourlyContext.textContent = contextParts.join(' • ');
     }

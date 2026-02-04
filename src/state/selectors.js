@@ -20,6 +20,7 @@ export function createSelectors() {
     lastShiftHourlyChart: document.getElementById('lastShiftHourlyChart'),
     lastShiftHourlyContext: document.getElementById('lastShiftHourlyContext'),
     lastShiftHourlyLegend: document.getElementById('lastShiftHourlyLegend'),
+    lastShiftHourlyMetricButtons: Array.from(document.querySelectorAll('[data-last-shift-metric]')),
     chartHeading: document.getElementById('chartHeading'),
     chartSubtitle: document.getElementById('chartSubtitle'),
     dailyCaption: document.getElementById('dailyChartLabel'),

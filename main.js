@@ -3785,6 +3785,28 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       }
     }
 
+    function handleLastShiftMetricClick(event) {
+      const button = event.currentTarget;
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const metric = normalizeLastShiftMetric(getDatasetValue(button, 'lastShiftMetric'));
+      dashboardState.kpi.lastShiftHourlyMetric = metric;
+      syncLastShiftHourlyMetricButtons();
+      renderLastShiftHourlyChart(dashboardState.primaryRecords, dashboardState.primaryDaily);
+    }
+
+    function syncLastShiftHourlyMetricButtons() {
+      if (!Array.isArray(selectors.lastShiftHourlyMetricButtons)) {
+        return;
+      }
+      const metric = normalizeLastShiftMetric(dashboardState.kpi.lastShiftHourlyMetric);
+      selectors.lastShiftHourlyMetricButtons.forEach((btn) => {
+        const btnMetric = normalizeLastShiftMetric(getDatasetValue(btn, 'lastShiftMetric'));
+        btn.setAttribute('aria-pressed', btnMetric === metric ? 'true' : 'false');
+      });
+    }
+
     function handleChartFilterChange(event) {
       const target = event.target;
       if (!target || !('name' in target)) {
@@ -4002,11 +4024,31 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       return formatLocalDateKey(shiftAnchor);
     }
 
-    function buildLastShiftHourlySeries(records, dailyStats) {
+    function getLastShiftMetricLabel(metric) {
+      switch (metric) {
+        case LAST_SHIFT_METRIC_DISCHARGES:
+          return 'Išleidimai';
+        case LAST_SHIFT_METRIC_HOSPITALIZED:
+          return 'Hospitalizacijos';
+        default:
+          return 'Atvykimai';
+      }
+    }
+
+    function normalizeLastShiftMetric(value) {
+      const raw = typeof value === 'string' ? value : String(value ?? '');
+      if (LAST_SHIFT_METRICS.includes(raw)) {
+        return raw;
+      }
+      return LAST_SHIFT_METRIC_ARRIVALS;
+    }
+
+    function buildLastShiftHourlySeries(records, dailyStats, metricKey = LAST_SHIFT_METRIC_ARRIVALS) {
       const lastShiftSummary = buildLastShiftSummary(dailyStats);
       if (!lastShiftSummary?.dateKey) {
         return null;
       }
+      const metric = normalizeLastShiftMetric(metricKey);
       const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
       const targetDateKey = lastShiftSummary.dateKey;
       const series = {
@@ -4017,14 +4059,25 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       };
       (Array.isArray(records) ? records : []).forEach((record) => {
         const arrival = record?.arrival;
-        if (!(arrival instanceof Date) || Number.isNaN(arrival.getTime())) {
+        const discharge = record?.discharge;
+        let reference = null;
+        if (metric === LAST_SHIFT_METRIC_ARRIVALS) {
+          reference = arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
+        } else if (metric === LAST_SHIFT_METRIC_DISCHARGES) {
+          reference = discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
+        } else if (metric === LAST_SHIFT_METRIC_HOSPITALIZED) {
+          if (record?.hospitalized) {
+            reference = discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
+          }
+        }
+        if (!reference) {
           return;
         }
-        const dateKey = computeShiftDateKeyForArrival(arrival, shiftStartHour);
+        const dateKey = computeShiftDateKeyForArrival(reference, shiftStartHour);
         if (dateKey !== targetDateKey) {
           return;
         }
-        const hour = arrival.getHours();
+        const hour = reference.getHours();
         if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
           return;
         }
@@ -4043,6 +4096,8 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         dateKey: targetDateKey,
         dateLabel: lastShiftSummary.dateLabel || targetDateKey,
         shiftStartHour,
+        metric,
+        metricLabel: getLastShiftMetricLabel(metric),
         series,
         hasData,
       };
@@ -4117,7 +4172,8 @@ function showKpiSkeleton() {
     }
 
     function renderLastShiftHourlyChart(records, dailyStats) {
-      const seriesInfo = buildLastShiftHourlySeries(records, dailyStats);
+      const metricKey = dashboardState.kpi?.lastShiftHourlyMetric || LAST_SHIFT_METRIC_ARRIVALS;
+      const seriesInfo = buildLastShiftHourlySeries(records, dailyStats, metricKey);
       dashboardState.kpi.lastShiftHourly = seriesInfo;
       chartRenderers.renderLastShiftHourlyChartWithTheme(seriesInfo).catch((error) => {
         const errorInfo = describeError(error, { code: 'LAST_SHIFT_HOURLY', message: 'Nepavyko atnaujinti paskutinės pamainos grafiko' });
@@ -6481,6 +6537,10 @@ function areStylesheetsLoaded() {
       'Sekmadienis',
     ];
     const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
+    const LAST_SHIFT_METRIC_ARRIVALS = 'arrivals';
+    const LAST_SHIFT_METRIC_DISCHARGES = 'discharges';
+    const LAST_SHIFT_METRIC_HOSPITALIZED = 'hospitalized';
+    const LAST_SHIFT_METRICS = [LAST_SHIFT_METRIC_ARRIVALS, LAST_SHIFT_METRIC_DISCHARGES, LAST_SHIFT_METRIC_HOSPITALIZED];
     const HOURLY_WEEKDAY_ALL = 'all';
     const HOURLY_STAY_BUCKET_ALL = 'all';
     const HOURLY_METRIC_ARRIVALS = 'arrivals';
@@ -10330,6 +10390,8 @@ function areStylesheetsLoaded() {
       syncKpiFilterControls,
       handleKpiFilterInput,
       handleKpiSegmentedClick,
+      handleLastShiftMetricClick,
+      syncLastShiftHourlyMetricButtons,
       resetKpiFilters,
       KPI_FILTER_TOGGLE_LABELS,
       updateKpiSummary,
