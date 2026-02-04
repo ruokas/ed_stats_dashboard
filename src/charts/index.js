@@ -624,71 +624,104 @@ export function createChartRenderers(env) {
       ch: rotateSeries(seriesInfo.series?.ch),
     };
 
+    const isBalance = seriesInfo?.metric === 'balance';
     const peakIndices = {
       total: toPeakIndex(rotatedSeries.total),
       t: toPeakIndex(rotatedSeries.t),
       tr: toPeakIndex(rotatedSeries.tr),
       ch: toPeakIndex(rotatedSeries.ch),
+      outflow: toPeakIndex(rotateSeries(seriesInfo.series?.outflow)),
     };
 
-    const datasets = [
-      {
-        label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-        data: rotatedSeries.total || [],
-        borderColor: palette.textColor,
-        backgroundColor: palette.textColor,
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.total ? 5 : 2;
+    const datasets = isBalance
+      ? [
+        {
+          label: 'Atvykimai',
+          data: rotatedSeries.total || [],
+          borderColor: palette.textColor,
+          backgroundColor: palette.textColor,
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.total ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: palette.textColor,
+          pointBorderColor: palette.textColor,
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: palette.textColor,
-        pointBorderColor: palette.textColor,
-      },
-      {
-        label: 'T',
-        data: rotatedSeries.t || [],
-        borderColor: '#f2c94c',
-        backgroundColor: '#f2c94c',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.t ? 5 : 2;
+        {
+          label: 'Išvykimai',
+          data: rotateSeries(seriesInfo.series?.outflow),
+          borderColor: '#f97316',
+          backgroundColor: '#f97316',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.outflow ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#f97316',
+          pointBorderColor: '#f97316',
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#f2c94c',
-        pointBorderColor: '#f2c94c',
-      },
-      {
-        label: 'TR',
-        data: rotatedSeries.tr || [],
-        borderColor: '#27ae60',
-        backgroundColor: '#27ae60',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.tr ? 5 : 2;
+      ]
+      : [
+        {
+          label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+          data: rotatedSeries.total || [],
+          borderColor: palette.textColor,
+          backgroundColor: palette.textColor,
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.total ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: palette.textColor,
+          pointBorderColor: palette.textColor,
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#27ae60',
-        pointBorderColor: '#27ae60',
-      },
-      {
-        label: 'CH',
-        data: rotatedSeries.ch || [],
-        borderColor: '#2f80ed',
-        backgroundColor: '#2f80ed',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.ch ? 5 : 2;
+        {
+          label: 'T',
+          data: rotatedSeries.t || [],
+          borderColor: '#f2c94c',
+          backgroundColor: '#f2c94c',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.t ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#f2c94c',
+          pointBorderColor: '#f2c94c',
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#2f80ed',
-        pointBorderColor: '#2f80ed',
-      },
-    ];
+        {
+          label: 'TR',
+          data: rotatedSeries.tr || [],
+          borderColor: '#27ae60',
+          backgroundColor: '#27ae60',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.tr ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#27ae60',
+          pointBorderColor: '#27ae60',
+        },
+        {
+          label: 'CH',
+          data: rotatedSeries.ch || [],
+          borderColor: '#2f80ed',
+          backgroundColor: '#2f80ed',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.ch ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#2f80ed',
+          pointBorderColor: '#2f80ed',
+        },
+      ];
 
     const lastShiftChart = new Chart(ctx, {
       type: 'line',

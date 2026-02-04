@@ -4030,6 +4030,8 @@ function normalizeHourlyCompareYears(valueA, valueB) {
           return 'Išleidimai';
         case LAST_SHIFT_METRIC_HOSPITALIZED:
           return 'Hospitalizacijos';
+        case LAST_SHIFT_METRIC_BALANCE:
+          return 'Srautų balansas';
         default:
           return 'Atvykimai';
       }
@@ -4056,6 +4058,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         t: Array(24).fill(0),
         tr: Array(24).fill(0),
         ch: Array(24).fill(0),
+        outflow: Array(24).fill(0),
       };
       (Array.isArray(records) ? records : []).forEach((record) => {
         const arrival = record?.arrival;
@@ -4069,6 +4072,8 @@ function normalizeHourlyCompareYears(valueA, valueB) {
           if (record?.hospitalized) {
             reference = discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
           }
+        } else if (metric === LAST_SHIFT_METRIC_BALANCE) {
+          reference = arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
         }
         if (!reference) {
           return;
@@ -4091,6 +4096,23 @@ function normalizeHourlyCompareYears(valueA, valueB) {
           series.ch[hour] += 1;
         }
       });
+      if (metric === LAST_SHIFT_METRIC_BALANCE) {
+        (Array.isArray(records) ? records : []).forEach((record) => {
+          const discharge = record?.discharge;
+          if (!(discharge instanceof Date) || Number.isNaN(discharge.getTime())) {
+            return;
+          }
+          const dateKey = computeShiftDateKeyForArrival(discharge, shiftStartHour);
+          if (dateKey !== targetDateKey) {
+            return;
+          }
+          const hour = discharge.getHours();
+          if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
+            return;
+          }
+          series.outflow[hour] += 1;
+        });
+      }
       const hasData = series.total.some((value) => value > 0);
       return {
         dateKey: targetDateKey,
@@ -4099,7 +4121,9 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         metric,
         metricLabel: getLastShiftMetricLabel(metric),
         series,
-        hasData,
+        hasData: metric === LAST_SHIFT_METRIC_BALANCE
+          ? (series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0))
+          : hasData,
       };
     }
 
@@ -6540,7 +6564,13 @@ function areStylesheetsLoaded() {
     const LAST_SHIFT_METRIC_ARRIVALS = 'arrivals';
     const LAST_SHIFT_METRIC_DISCHARGES = 'discharges';
     const LAST_SHIFT_METRIC_HOSPITALIZED = 'hospitalized';
-    const LAST_SHIFT_METRICS = [LAST_SHIFT_METRIC_ARRIVALS, LAST_SHIFT_METRIC_DISCHARGES, LAST_SHIFT_METRIC_HOSPITALIZED];
+    const LAST_SHIFT_METRIC_BALANCE = 'balance';
+    const LAST_SHIFT_METRICS = [
+      LAST_SHIFT_METRIC_ARRIVALS,
+      LAST_SHIFT_METRIC_DISCHARGES,
+      LAST_SHIFT_METRIC_HOSPITALIZED,
+      LAST_SHIFT_METRIC_BALANCE,
+    ];
     const HOURLY_WEEKDAY_ALL = 'all';
     const HOURLY_STAY_BUCKET_ALL = 'all';
     const HOURLY_METRIC_ARRIVALS = 'arrivals';
