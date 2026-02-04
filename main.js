@@ -6813,9 +6813,15 @@ function areStylesheetsLoaded() {
       selectors.recentHeading.textContent = TEXT.recent.title;
       selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
       selectors.recentCaption.textContent = TEXT.recent.caption;
-      selectors.monthlyHeading.textContent = TEXT.monthly.title;
-      selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
-      selectors.monthlyCaption.textContent = TEXT.monthly.caption;
+      if (selectors.monthlyHeading) {
+        selectors.monthlyHeading.textContent = TEXT.monthly.title;
+      }
+      if (selectors.monthlySubtitle) {
+        selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
+      }
+      if (selectors.monthlyCaption) {
+        selectors.monthlyCaption.textContent = TEXT.monthly.caption;
+      }
       if (selectors.yearlyHeading) {
         selectors.yearlyHeading.textContent = TEXT.yearly.title;
       }
@@ -8383,6 +8389,9 @@ function areStylesheetsLoaded() {
     function renderMonthlyTable(monthlyStats) {
       const scopedMonthly = Array.isArray(monthlyStats) ? monthlyStats : [];
       dashboardState.monthly.window = scopedMonthly;
+      if (!selectors.monthlyTable) {
+        return;
+      }
       selectors.monthlyTable.replaceChildren();
       if (!scopedMonthly.length) {
         const row = document.createElement('tr');

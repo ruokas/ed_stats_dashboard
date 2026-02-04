@@ -127,23 +127,6 @@
               </span>
               <span class="section-nav__label">Paskutinės dienos</span>
             </a>
-            <a class="section-nav__link" href="#monthlyHeading">
-              <span class="section-nav__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="17" rx="2" />
-                  <path d="M3 9h18" />
-                  <path d="M7 2.5v3" />
-                  <path d="M17 2.5v3" />
-                  <path d="M7 13h3" />
-                  <path d="M11.5 13h3" />
-                  <path d="M16 13h3" />
-                  <path d="M7 17h3" />
-                  <path d="M11.5 17h3" />
-                  <path d="M16 17h3" />
-                </svg>
-              </span>
-              <span class="section-nav__label">Mėnesiai</span>
-            </a>
             <a class="section-nav__link" href="#feedbackHeading">
               <span class="section-nav__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -833,76 +816,7 @@
     </div>
 
     <div class="section-band section-band--time-scale">
-    <section class="section section--compact" aria-labelledby="monthlyHeading" data-section="monthly">
-      <div class="section__header">
-        <div class="section__heading">
-          <div class="section__title-row">
-            <h2 id="monthlyHeading" class="section__title">
-              <span class="section-title__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="17" rx="2" />
-                  <path d="M3 9h18" />
-                  <path d="M7 2.5v3" />
-                  <path d="M17 2.5v3" />
-                  <path d="M7 13h3" />
-                  <path d="M11.5 13h3" />
-                  <path d="M16 13h3" />
-                  <path d="M7 17h3" />
-                  <path d="M11.5 17h3" />
-                  <path d="M16 17h3" />
-                </svg>
-              </span>
-              <span class="section-title__text">Mėnesinė suvestinė</span>
-            </h2>
-            <p id="monthlySubtitle" class="section__subtitle">Kalendoriniai mėnesiai (paskutiniai 12 mėnesių)</p>
-          </div>
-        </div>
-        <div class="section__actions">
-          <button
-            type="button"
-            class="btn btn-tertiary btn-small"
-            data-table-download="csv"
-            data-table-target="#monthlyTableRoot"
-            data-table-title="Mėnesinė suvestinė"
-            aria-label="Parsisiųsti mėnesinę suvestinę CSV formatu"
-            title="Parsisiųsti CSV"
-          >CSV</button>
-          <button
-            type="button"
-            class="btn btn-tertiary btn-small"
-            data-table-download="png"
-            data-table-target="#monthlyTableRoot"
-            data-table-title="Mėnesinė suvestinė"
-            aria-label="Parsisiųsti mėnesinę suvestinę PNG formatu"
-            title="Parsisiųsti PNG"
-          >PNG</button>
-        </div>
-      </div>
-      <div class="table-wrapper table-wrapper--full-height" role="region" aria-live="polite" aria-labelledby="monthlyHeading">
-        <table id="monthlyTableRoot" aria-describedby="monthlySubtitle">
-          <caption id="monthlyCaption" class="sr-only">Mėnesių pacientų suvestinė: sumos ir vidurkiai</caption>
-          <thead>
-            <tr>
-              <th scope="col">Mėnuo</th>
-              <th scope="col">
-                Pacientai (suma)
-                <span class="table-tooltip" data-tooltip="Palyginama su tuo pačiu mėnesiu prieš metus." aria-label="Palyginama su tuo pačiu mėnesiu prieš metus." role="img">ⓘ</span>
-              </th>
-              <th scope="col">Vid. per dieną</th>
-              <th scope="col">Vid. buvimo laikas (val.)</th>
-              <th scope="col">Naktiniai pacientai</th>
-              <th scope="col">GMP</th>
-              <th scope="col">Hospitalizuoti</th>
-              <th scope="col">Išleisti</th>
-              <th scope="col">Pokytis nuo ankstesnio mėnesio</th>
-            </tr>
-          </thead>
-          <tbody id="monthlyTable"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section section--compact" aria-labelledby="yearlyHeading" data-section="yearly">
+      <section class="section section--compact" aria-labelledby="yearlyHeading" data-section="yearly">
       <div class="section__header">
         <div class="section__heading">
           <div class="section__title-row">
