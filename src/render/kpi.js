@@ -79,12 +79,12 @@ export function createKpiRenderer(env) {
       summaryEl.hidden = false;
     }
 
-  function renderKpis(dailyStats) {
+  function renderKpis(dailyStats, referenceDailyStats = null) {
       hideKpiSkeleton();
       selectors.kpiGrid.replaceChildren();
       const windowDays = dashboardState.kpi?.filters?.window;
       const periodMetrics = buildYearMonthMetrics(dailyStats, windowDays);
-      const lastShiftSummary = buildLastShiftSummary(dailyStats);
+      const lastShiftSummary = buildLastShiftSummary(dailyStats, referenceDailyStats);
       renderKpiPeriodSummary(lastShiftSummary, periodMetrics);
 
       if (!lastShiftSummary) {

@@ -29,7 +29,7 @@ export function createEdRenderer(env) {
   } = env;
 
   async function renderEdDashboard(edData) {
-      if (!selectors.edPanel) {
+      if (!selectors.edCards) {
         return;
       }
       hideEdSkeleton();

@@ -31,6 +31,7 @@ export function createDashboardState({
       all: [],
       window: [],
     },
+    yearlyExpandedYears: [],
     dataMeta: null,
     loadCounter: 0,
     chartPeriod: 30,
@@ -44,6 +45,7 @@ export function createDashboardState({
     hourlyCompareYears: [],
     hourlyCompareSeries: hourlyCompareSeriesAll,
     hourlyYAxisSuggestedMax: null,
+    hourlyYAxisSuggestedMin: null,
     hourlyDepartmentOptions: [],
     hourlyDepartmentSuggestIndex: -1,
     chartData: {
@@ -71,6 +73,8 @@ export function createDashboardState({
       records: [],
       daily: [],
       lastShiftHourly: null,
+      lastShiftHourlyMetric: 'arrivals',
+      selectedDate: null,
     },
     feedback: {
       summary: null,

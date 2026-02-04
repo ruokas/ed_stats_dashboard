@@ -7,7 +7,11 @@ export function createUIEvents(env) {
     refreshKpiWindowOptions,
     syncKpiFilterControls,
     handleKpiFilterInput,
+    handleKpiDateClear,
+    handleKpiDateInput,
     handleKpiSegmentedClick,
+    handleLastShiftMetricClick,
+    syncLastShiftHourlyMetricButtons,
     resetKpiFilters,
     KPI_FILTER_TOGGLE_LABELS,
     updateKpiSummary,
@@ -15,6 +19,8 @@ export function createUIEvents(env) {
     syncFeedbackFilterControls,
     updateFeedbackFiltersSummary,
     handleFeedbackFilterChange,
+    handleFeedbackFilterChipClick,
+    handleYearlyToggle,
     setFeedbackTrendWindow,
     storeCopyButtonBaseLabel,
     handleChartCopyClick,
@@ -106,6 +112,12 @@ export function createUIEvents(env) {
     if (selectors.feedbackLocationFilter) {
       selectors.feedbackLocationFilter.addEventListener('change', handleFeedbackFilterChange);
     }
+    if (selectors.feedbackRespondentChips) {
+      selectors.feedbackRespondentChips.addEventListener('click', handleFeedbackFilterChipClick);
+    }
+    if (selectors.feedbackLocationChips) {
+      selectors.feedbackLocationChips.addEventListener('click', handleFeedbackFilterChipClick);
+    }
   }
 
   function initKpiFilters() {
@@ -116,6 +128,15 @@ export function createUIEvents(env) {
     syncKpiFilterControls();
     selectors.kpiFiltersForm.addEventListener('change', handleKpiFilterInput);
     selectors.kpiFiltersForm.addEventListener('submit', (event) => event.preventDefault());
+    if (selectors.kpiDateInput) {
+      selectors.kpiDateInput.addEventListener('change', handleKpiDateInput);
+    }
+    if (selectors.kpiDateClear) {
+      selectors.kpiDateClear.addEventListener('click', (event) => {
+        event.preventDefault();
+        handleKpiDateClear();
+      });
+    }
     if (selectors.kpiFiltersReset) {
       selectors.kpiFiltersReset.addEventListener('click', (event) => {
         event.preventDefault();
@@ -132,6 +153,12 @@ export function createUIEvents(env) {
         button.addEventListener('click', handleKpiSegmentedClick);
       });
     }
+    if (Array.isArray(selectors.lastShiftHourlyMetricButtons)) {
+      selectors.lastShiftHourlyMetricButtons.forEach((button) => {
+        button.addEventListener('click', handleLastShiftMetricClick);
+      });
+    }
+    syncLastShiftHourlyMetricButtons();
     if (selectors.kpiControls) {
       setDatasetValue(selectors.kpiControls, 'expanded', 'true');
       selectors.kpiControls.hidden = false;
@@ -160,6 +187,13 @@ export function createUIEvents(env) {
         }
       });
     });
+  }
+
+  function initYearlyExpand() {
+    if (!selectors.yearlyTable) {
+      return;
+    }
+    selectors.yearlyTable.addEventListener('click', handleYearlyToggle);
   }
 
   function initTabSwitcher() {
@@ -578,6 +612,7 @@ export function createUIEvents(env) {
     initKpiFilters();
     initFeedbackFilters();
     initFeedbackTrendControls();
+    initYearlyExpand();
     initChartCopyButtons();
     initChartDownloadButtons();
     initTableDownloadButtons();

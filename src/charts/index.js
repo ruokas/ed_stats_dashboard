@@ -342,7 +342,9 @@ export function createChartRenderers(env) {
 
     let datasets = [];
     let suggestedMax = undefined;
+    let suggestedMin = undefined;
     let hasData = false;
+    const isBalanceMetric = metricValue === 'balance';
 
     if (compareEnabled && compareYears.length) {
       const colorPalette = [themePalette.accent, themePalette.weekendAccent, themePalette.success];
@@ -361,8 +363,10 @@ export function createChartRenderers(env) {
         );
         if (yearResult?.hasData) {
           hasData = true;
-          const localMax = Math.max(0, ...(yearResult.averages?.[seriesKey] || []));
-          compareMaxes.push(localMax);
+          const values = yearResult.averages?.[seriesKey] || [];
+          const localMax = Math.max(0, ...values);
+          const localAbsMax = values.length ? Math.max(...values.map((value) => Math.abs(value))) : 0;
+          compareMaxes.push(isBalanceMetric ? localAbsMax : localMax);
         }
         const lineColor = colorPalette[index % colorPalette.length] || themePalette.accent;
         return {
@@ -379,7 +383,13 @@ export function createChartRenderers(env) {
         };
       });
       const maxValue = compareMaxes.length ? Math.max(...compareMaxes) : 0;
-      suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
+      if (isBalanceMetric) {
+        const absMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
+        suggestedMax = absMax;
+        suggestedMin = absMax != null ? -absMax : undefined;
+      } else {
+        suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
+      }
     } else {
       const result = computeHourlySeries(records, weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
       if (result?.hasData) {
@@ -389,9 +399,18 @@ export function createChartRenderers(env) {
       const baseMax = baseSeries?.averages?.all
         ? Math.max(0, ...baseSeries.averages.all)
         : 0;
-      suggestedMax = baseMax > 0
-        ? Math.ceil(baseMax * 1.1 * 10) / 10
-        : undefined;
+      if (isBalanceMetric) {
+        const absMax = baseSeries?.averages?.all
+          ? Math.max(...baseSeries.averages.all.map((value) => Math.abs(value)))
+          : 0;
+        const rounded = absMax > 0 ? Math.ceil(absMax * 1.1 * 10) / 10 : undefined;
+        suggestedMax = rounded;
+        suggestedMin = rounded != null ? -rounded : undefined;
+      } else {
+        suggestedMax = baseMax > 0
+          ? Math.ceil(baseMax * 1.1 * 10) / 10
+          : undefined;
+      }
 
       datasets = [
         {
@@ -441,6 +460,7 @@ export function createChartRenderers(env) {
     setChartCardMessage(canvas, null);
 
     dashboardState.hourlyYAxisSuggestedMax = suggestedMax ?? null;
+    dashboardState.hourlyYAxisSuggestedMin = suggestedMin ?? null;
 
     const labels = HEATMAP_HOURS;
     dashboardState.charts.hourly = new Chart(ctx, {
@@ -502,8 +522,9 @@ export function createChartRenderers(env) {
             },
           },
           y: {
-            beginAtZero: true,
+            beginAtZero: !isBalanceMetric,
             suggestedMax,
+            suggestedMin,
             ticks: {
               color: themePalette.textColor,
               padding: 8,
@@ -584,6 +605,9 @@ export function createChartRenderers(env) {
       if (shiftWindowText) {
         contextParts.push(shiftWindowText);
       }
+      if (seriesInfo?.metricLabel) {
+        contextParts.push(`Rodiklis: ${seriesInfo.metricLabel}`);
+      }
       contextParts.push('Legenda: spustelėkite, kad paslėptumėte/rodytumėte kreives.');
       selectors.lastShiftHourlyContext.textContent = contextParts.join(' • ');
     }
@@ -604,76 +628,147 @@ export function createChartRenderers(env) {
       return index;
     };
 
-    const peakIndices = {
-      total: toPeakIndex(seriesInfo.series?.total),
-      t: toPeakIndex(seriesInfo.series?.t),
-      tr: toPeakIndex(seriesInfo.series?.tr),
-      ch: toPeakIndex(seriesInfo.series?.ch),
+    const startHour = 7;
+    const rotateSeries = (values = []) => {
+      if (!Array.isArray(values) || values.length === 0) {
+        return [];
+      }
+      const length = values.length;
+      const shift = ((startHour % length) + length) % length;
+      return values.slice(shift).concat(values.slice(0, shift));
     };
 
-    const datasets = [
-      {
-        label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-        data: seriesInfo.series?.total || [],
-        borderColor: palette.textColor,
-        backgroundColor: palette.textColor,
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.total ? 5 : 2;
+    const rotatedSeries = {
+      total: rotateSeries(seriesInfo.series?.total),
+      t: rotateSeries(seriesInfo.series?.t),
+      tr: rotateSeries(seriesInfo.series?.tr),
+      ch: rotateSeries(seriesInfo.series?.ch),
+    };
+
+    const isBalance = seriesInfo?.metric === 'balance';
+    const rotatedOutflow = rotateSeries(seriesInfo.series?.outflow);
+    const rotatedNet = rotateSeries(seriesInfo.series?.net);
+    const peakIndices = {
+      total: toPeakIndex(rotatedSeries.total),
+      t: toPeakIndex(rotatedSeries.t),
+      tr: toPeakIndex(rotatedSeries.tr),
+      ch: toPeakIndex(rotatedSeries.ch),
+      outflow: toPeakIndex(rotatedOutflow),
+      net: toPeakIndex(rotatedNet),
+    };
+
+    const datasets = isBalance
+      ? [
+        {
+          label: 'Atvykimai',
+          data: rotatedSeries.total || [],
+          borderColor: palette.textColor,
+          backgroundColor: palette.textColor,
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.total ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: palette.textColor,
+          pointBorderColor: palette.textColor,
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: palette.textColor,
-        pointBorderColor: palette.textColor,
-      },
-      {
-        label: 'T',
-        data: seriesInfo.series?.t || [],
-        borderColor: '#f2c94c',
-        backgroundColor: '#f2c94c',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.t ? 5 : 2;
+        {
+          label: 'Išvykimai',
+          data: rotatedOutflow,
+          borderColor: '#f97316',
+          backgroundColor: '#f97316',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.outflow ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#f97316',
+          pointBorderColor: '#f97316',
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#f2c94c',
-        pointBorderColor: '#f2c94c',
-      },
-      {
-        label: 'TR',
-        data: seriesInfo.series?.tr || [],
-        borderColor: '#27ae60',
-        backgroundColor: '#27ae60',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.tr ? 5 : 2;
+        {
+          label: 'Neto srautas',
+          data: rotatedNet,
+          borderColor: '#22c55e',
+          backgroundColor: '#22c55e',
+          fill: {
+            target: 'origin',
+            above: 'rgba(34, 197, 94, 0.18)',
+            below: 'rgba(239, 68, 68, 0.18)',
+          },
+          tension: 0.35,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.net ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#22c55e',
+          pointBorderColor: '#22c55e',
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#27ae60',
-        pointBorderColor: '#27ae60',
-      },
-      {
-        label: 'CH',
-        data: seriesInfo.series?.ch || [],
-        borderColor: '#2f80ed',
-        backgroundColor: '#2f80ed',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.ch ? 5 : 2;
+      ]
+      : [
+        {
+          label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+          data: rotatedSeries.total || [],
+          borderColor: palette.textColor,
+          backgroundColor: palette.textColor,
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.total ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: palette.textColor,
+          pointBorderColor: palette.textColor,
         },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#2f80ed',
-        pointBorderColor: '#2f80ed',
-      },
-    ];
+        {
+          label: 'T',
+          data: rotatedSeries.t || [],
+          borderColor: '#f2c94c',
+          backgroundColor: '#f2c94c',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.t ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#f2c94c',
+          pointBorderColor: '#f2c94c',
+        },
+        {
+          label: 'TR',
+          data: rotatedSeries.tr || [],
+          borderColor: '#27ae60',
+          backgroundColor: '#27ae60',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.tr ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#27ae60',
+          pointBorderColor: '#27ae60',
+        },
+        {
+          label: 'CH',
+          data: rotatedSeries.ch || [],
+          borderColor: '#2f80ed',
+          backgroundColor: '#2f80ed',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.ch ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#2f80ed',
+          pointBorderColor: '#2f80ed',
+        },
+      ];
 
     const lastShiftChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: HEATMAP_HOURS,
+        labels: rotateSeries(HEATMAP_HOURS),
         datasets,
       },
       options: {
@@ -724,7 +819,12 @@ export function createChartRenderers(env) {
               },
             },
             grid: {
-              color: palette.gridColor,
+              color(context) {
+                if (isBalance && context.tick && context.tick.value === 0) {
+                  return 'rgba(239, 68, 68, 0.65)';
+                }
+                return palette.gridColor;
+              },
               drawBorder: false,
             },
           },
