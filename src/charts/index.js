@@ -1175,12 +1175,17 @@ export function createChartRenderers(env) {
                   {
                     label: TEXT.charts?.dowStayLabel || 'Vid. trukmė (val.)',
                     data: dowStayAverages,
-                    borderColor: palette.weekendAccent,
-                    backgroundColor: palette.weekendAccent,
+                    borderColor: palette.accent,
+                    backgroundColor: palette.accent,
                     tension: 0.35,
                     fill: false,
                     pointRadius: dowPointRadii,
                     pointHoverRadius: dowHoverRadii,
+                    pointBackgroundColor: dowPointColors,
+                    pointBorderColor: dowPointColors,
+                    segment: {
+                      borderColor: (ctx) => (ctx.p1DataIndex >= 5 ? palette.weekendAccent : palette.accent),
+                    },
                   },
                 ],
               },
@@ -1513,12 +1518,29 @@ export function createChartRenderers(env) {
       canvas.setAttribute('aria-label', `${chartTitle}: ${firstLabel}${lastLabel && firstLabel !== lastLabel ? ` – ${lastLabel}` : ''}`);
     }
 
-    const ratingMin = Math.min(...numericRatings);
-    const ratingMax = Math.max(...numericRatings);
-    const ratingRange = ratingMax - ratingMin;
-    const padding = numericRatings.length > 1 ? Math.max(0.2, ratingRange * 0.25) : 0.2;
-    const yMin = Math.max(1, Math.floor((ratingMin - padding) * 10) / 10);
-    const yMax = Math.min(5, Math.ceil((ratingMax + padding) * 10) / 10);
+    const ratingBandsPlugin = {
+      id: 'feedbackRatingBands',
+      beforeDraw(chart) {
+        const { chartArea, scales, ctx } = chart;
+        if (!chartArea || !scales?.y) {
+          return;
+        }
+        const yScale = scales.y;
+        const bands = [
+          { from: 4, to: 5, color: 'rgba(34, 197, 94, 0.12)' },
+          { from: 3, to: 4, color: 'rgba(148, 163, 184, 0.12)' },
+          { from: 1, to: 3, color: 'rgba(239, 68, 68, 0.1)' },
+        ];
+        ctx.save();
+        bands.forEach((band) => {
+          const top = yScale.getPixelForValue(band.to);
+          const bottom = yScale.getPixelForValue(band.from);
+          ctx.fillStyle = band.color;
+          ctx.fillRect(chartArea.left, top, chartArea.right - chartArea.left, bottom - top);
+        });
+        ctx.restore();
+      },
+    };
 
     const pointColors = ratingValues.map((_, index) => {
       if (bestIndex === index) {
@@ -1543,18 +1565,20 @@ export function createChartRenderers(env) {
       pointBorderColor: pointColors,
       pointBorderWidth: 1,
       pointStyle: 'circle',
+      order: 2,
     };
 
     const responseDataset = hasResponses ? {
       label: responsesLabel,
+      type: 'bar',
       data: responsesValues,
-      borderColor: palette.accentSoft,
-      backgroundColor: palette.accentSoft,
-      tension: 0.35,
-      fill: false,
-      pointRadius: 0,
-      pointHoverRadius: 0,
+      borderColor: 'rgba(148, 163, 184, 0.35)',
+      backgroundColor: 'rgba(148, 163, 184, 0.35)',
+      borderWidth: 0,
+      barPercentage: 0.6,
+      categoryPercentage: 0.8,
       yAxisID: 'y1',
+      order: 1,
     } : null;
 
     dashboardState.charts.feedbackTrend = new Chart(ctx, {
@@ -1563,6 +1587,7 @@ export function createChartRenderers(env) {
         labels,
         datasets: responseDataset ? [ratingDataset, responseDataset] : [ratingDataset],
       },
+      plugins: [ratingBandsPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -1608,12 +1633,13 @@ export function createChartRenderers(env) {
             },
           },
           y: {
-            min: yMin,
-            max: yMax,
+            min: 1,
+            max: 5,
             ticks: {
               color: palette.textColor,
+              stepSize: 1,
               callback(value) {
-                return oneDecimalFormatter.format(value);
+                return Number(value).toFixed(0);
               },
             },
             grid: {
