@@ -1965,7 +1965,7 @@ body[data-theme="dark"] select optgroup {
     #kpiHeading,
     #chartHeading,
     #recentHeading,
-    #monthlyHeading,
+    #yearlyHeading,
     #feedbackHeading {
       scroll-margin-top: calc(var(--hero-height, 0px) + 16px);
     }
