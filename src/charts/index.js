@@ -671,8 +671,12 @@ export function createChartRenderers(env) {
           data: rotatedNet,
           borderColor: '#22c55e',
           backgroundColor: '#22c55e',
+          fill: {
+            target: 'origin',
+            above: 'rgba(34, 197, 94, 0.18)',
+            below: 'rgba(239, 68, 68, 0.18)',
+          },
           tension: 0.35,
-          fill: false,
           pointRadius(context) {
             return context.dataIndex === peakIndices.net ? 5 : 2;
           },
@@ -794,7 +798,12 @@ export function createChartRenderers(env) {
               },
             },
             grid: {
-              color: palette.gridColor,
+              color(context) {
+                if (isBalance && context.tick && context.tick.value === 0) {
+                  return 'rgba(239, 68, 68, 0.65)';
+                }
+                return palette.gridColor;
+              },
               drawBorder: false,
             },
           },
