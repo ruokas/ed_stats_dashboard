@@ -5165,6 +5165,10 @@ function showKpiSkeleton() {
       const normalized = Number.isFinite(numeric) ? numeric : null;
       dashboardState.chartYear = normalized;
       syncChartYearControl();
+      if (normalized != null) {
+        dashboardState.chartPeriod = 0;
+        syncChartPeriodButtons(dashboardState.chartPeriod);
+      }
       if (selectors.dailyCaption) {
         selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
       }
