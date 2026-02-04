@@ -181,14 +181,20 @@ export function createEdRenderer(env) {
       const feedbackComments = Array.isArray(dashboardState?.feedback?.summary?.comments)
         ? dashboardState.feedback.summary.comments
         : [];
-      summary.feedbackComments = feedbackComments;
-      const existingCommentsMeta = typeof summary.feedbackCommentsMeta === 'string'
-        ? summary.feedbackCommentsMeta.trim()
+      const now = new Date();
+      const cutoff = new Date(now);
+      cutoff.setDate(cutoff.getDate() - 30);
+      const recentFeedbackComments = feedbackComments.filter((entry) => {
+        if (!(entry?.receivedAt instanceof Date) || Number.isNaN(entry.receivedAt.getTime())) {
+          return false;
+        }
+        return entry.receivedAt >= cutoff;
+      });
+      summary.feedbackComments = recentFeedbackComments;
+      const commentsMeta = recentFeedbackComments.length
+        ? `Komentarai (30 d.): ${numberFormatter.format(recentFeedbackComments.length)}`
         : '';
-      const commentsMeta = feedbackComments.length
-        ? `Komentarai: ${numberFormatter.format(feedbackComments.length)}`
-        : '';
-      summary.feedbackCommentsMeta = existingCommentsMeta || commentsMeta;
+      summary.feedbackCommentsMeta = commentsMeta;
 
       if (selectors.edCards) {
         selectors.edCards.replaceChildren();

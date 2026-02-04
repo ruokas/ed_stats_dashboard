@@ -287,7 +287,7 @@ import {
             description: 'Naujausi atsiliepimai (rodymai rotuojasi kas kelias sekundes).',
             empty: 'Kol kas nėra komentarų.',
             type: 'comments',
-            rotateMs: 10000,
+            rotateMs: 20000,
             metaKey: 'feedbackCommentsMeta',
             section: 'staffing',
           },
@@ -608,47 +608,47 @@ import {
           {
             key: 'overallAverage',
             title: 'Bendra patirtis',
-            description: 'Vidurkis (1–5) pagal bendros patirties klausimą.',
+            description: '',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
-            countKey: 'overallCount',
+            countKey: '',
           },
           {
             key: 'doctorsAverage',
             title: 'Gydytojų darbas',
-            description: 'Vidurkis (1–5) apie gydytojų darbą.',
+            description: '',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
-            countKey: 'doctorsCount',
+            countKey: '',
           },
           {
             key: 'nursesAverage',
             title: 'Slaugytojų darbas',
-            description: 'Vidurkis (1–5) apie slaugytojų darbą.',
+            description: '',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
-            countKey: 'nursesCount',
+            countKey: '',
           },
           {
             key: 'aidesAverage',
             title: 'Slaugytojų padėjėjų darbas',
-            description: 'Vidurkis (1–5) iš pacientų, bendravusių su padėjėjais.',
+            description: '',
             empty: 'Nėra duomenų.',
             format: 'decimal',
-            countKey: 'aidesResponses',
+            countKey: '',
           },
           {
             key: 'waitingAverage',
             title: 'Laukimo laikas',
-            description: 'Vidutinis laukimo vertinimas (1–5).',
+            description: '',
             empty: 'Nėra vertinimų.',
             format: 'decimal',
-            countKey: 'waitingCount',
+            countKey: '',
           },
           {
             key: 'totalResponses',
             title: 'Užpildytos formos',
-            description: 'Bendras gautų atsakymų skaičius.',
+            description: '',
             empty: '0',
             format: 'integer',
           },
@@ -7296,9 +7296,14 @@ function areStylesheetsLoaded() {
     }
 
     const statusDisplay = {
-      base: TEXT.status.loading,
+      base: '',
       note: '',
       tone: 'info',
+      loading: true,
+      progress: null,
+      progressSmooth: null,
+      progressTarget: null,
+      progressFrame: null,
     };
 
     function applyTone(tone = 'info') {
@@ -7316,6 +7321,27 @@ function areStylesheetsLoaded() {
 
     function renderStatusDisplay() {
       if (!selectors.status) return;
+      if (statusDisplay.loading) {
+        selectors.status.textContent = '';
+        selectors.status.classList.add('status--loading');
+        const determinate = Number.isFinite(statusDisplay.progress);
+        selectors.status.classList.toggle('status--determinate', determinate);
+        if (determinate) {
+          const clamped = Math.max(0, Math.min(1, statusDisplay.progress));
+          selectors.status.style.setProperty('--status-progress', clamped.toFixed(4));
+        } else {
+          selectors.status.style.removeProperty('--status-progress');
+        }
+        selectors.status.classList.toggle('status--error', statusDisplay.tone === 'error');
+        setDatasetValue(selectors.status, 'tone', statusDisplay.tone);
+        selectors.status.setAttribute('aria-label', TEXT.status.loading);
+        selectors.status.removeAttribute('hidden');
+        return;
+      }
+      selectors.status.classList.remove('status--loading');
+      selectors.status.classList.remove('status--determinate');
+      selectors.status.style.removeProperty('--status-progress');
+      selectors.status.removeAttribute('aria-label');
       const parts = [statusDisplay.base, statusDisplay.note].filter(Boolean);
       const message = parts.join(' · ');
       selectors.status.classList.toggle('status--error', statusDisplay.tone === 'error');
@@ -7341,15 +7367,80 @@ function areStylesheetsLoaded() {
       renderStatusDisplay();
     }
 
+    function stepSmoothProgress() {
+      if (!statusDisplay.loading) {
+        statusDisplay.progressFrame = null;
+        return;
+      }
+      const target = Number.isFinite(statusDisplay.progressTarget) ? statusDisplay.progressTarget : null;
+      if (target == null) {
+        statusDisplay.progressSmooth = null;
+        statusDisplay.progress = null;
+        statusDisplay.progressFrame = null;
+        renderStatusDisplay();
+        return;
+      }
+      const current = Number.isFinite(statusDisplay.progressSmooth) ? statusDisplay.progressSmooth : 0;
+      const delta = target - current;
+      if (Math.abs(delta) < 0.002) {
+        statusDisplay.progressSmooth = target;
+      } else {
+        statusDisplay.progressSmooth = current + delta * 0.18;
+      }
+      statusDisplay.progress = statusDisplay.progressSmooth;
+      renderStatusDisplay();
+      statusDisplay.progressFrame = window.requestAnimationFrame(stepSmoothProgress);
+    }
+
+    function setLoadingProgress(progress) {
+      if (!statusDisplay.loading) {
+        return;
+      }
+      if (!Number.isFinite(progress)) {
+        statusDisplay.progress = null;
+        statusDisplay.progressSmooth = null;
+        statusDisplay.progressTarget = null;
+        if (statusDisplay.progressFrame) {
+          window.cancelAnimationFrame(statusDisplay.progressFrame);
+          statusDisplay.progressFrame = null;
+        }
+        renderStatusDisplay();
+        return;
+      }
+      const clamped = Math.max(0, Math.min(1, progress));
+      statusDisplay.progressTarget = clamped;
+      if (!Number.isFinite(statusDisplay.progressSmooth)) {
+        statusDisplay.progressSmooth = clamped;
+        statusDisplay.progress = clamped;
+        renderStatusDisplay();
+      }
+      if (!statusDisplay.progressFrame) {
+        statusDisplay.progressFrame = window.requestAnimationFrame(stepSmoothProgress);
+      }
+    }
+
     function createChunkReporter(label) {
       let lastUpdate = 0;
       return (payload = {}) => {
+        if (statusDisplay.loading) {
+          const total = Number.isFinite(payload.total)
+            ? payload.total
+            : (Number.isFinite(payload.totalBytes) ? payload.totalBytes : 0);
+          const current = Number.isFinite(payload.current)
+            ? payload.current
+            : (Number.isFinite(payload.receivedBytes) ? payload.receivedBytes : 0);
+          if (total > 0 && current >= 0) {
+            setLoadingProgress(current / total);
+          }
+        }
         const now = performance.now();
         if (now - lastUpdate < 120) {
           return;
         }
         lastUpdate = now;
-        const { receivedBytes = 0, current = 0, total = 0 } = payload;
+        const receivedBytes = Number.isFinite(payload.receivedBytes) ? payload.receivedBytes : 0;
+        const current = Number.isFinite(payload.current) ? payload.current : 0;
+        const total = Number.isFinite(payload.total) ? payload.total : 0;
         const sizeKb = receivedBytes ? `~${Math.max(1, Math.round(receivedBytes / 1024))} KB` : '';
         const percent = total > 0 ? `${Math.min(100, Math.round((current / total) * 100))}%` : '';
         const progressLabel = percent || sizeKb;
@@ -7510,13 +7601,29 @@ function areStylesheetsLoaded() {
 
     function setStatus(type, details = '') {
       if (type === 'loading') {
-        statusDisplay.base = TEXT.status.loading;
+        statusDisplay.base = '';
         statusDisplay.note = '';
         statusDisplay.tone = 'info';
+        statusDisplay.loading = true;
+        statusDisplay.progress = null;
+        statusDisplay.progressSmooth = null;
+        statusDisplay.progressTarget = null;
+        if (statusDisplay.progressFrame) {
+          window.cancelAnimationFrame(statusDisplay.progressFrame);
+          statusDisplay.progressFrame = null;
+        }
         renderStatusDisplay();
         return;
       }
 
+      statusDisplay.loading = false;
+      statusDisplay.progress = null;
+      statusDisplay.progressSmooth = null;
+      statusDisplay.progressTarget = null;
+      if (statusDisplay.progressFrame) {
+        window.cancelAnimationFrame(statusDisplay.progressFrame);
+        statusDisplay.progressFrame = null;
+      }
       if (type === 'error') {
         const message = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
         statusDisplay.base = message;
@@ -7701,6 +7808,8 @@ function areStylesheetsLoaded() {
         throw error;
       }
       let textContent = '';
+      const totalBytesHeader = response.headers.get('content-length');
+      const totalBytes = totalBytesHeader ? Number.parseInt(totalBytesHeader, 10) : 0;
       if (response.body && typeof response.body.getReader === 'function') {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -7713,7 +7822,7 @@ function areStylesheetsLoaded() {
           receivedBytes += value.byteLength;
           textContent += decoder.decode(value, { stream: true });
           if (typeof onChunk === 'function') {
-            onChunk({ receivedBytes });
+            onChunk({ receivedBytes, totalBytes });
           }
         }
         textContent += decoder.decode();
@@ -9866,54 +9975,28 @@ function areStylesheetsLoaded() {
 
   const edSectionIconDefinitions = {
     flow(svg) {
-      [
-        ['3', '3'],
-        ['15', '3'],
-        ['3', '15'],
-        ['15', '15'],
-      ].forEach(([x, y]) => {
-        svg.appendChild(createSvgElement('rect', {
-          x,
-          y,
-          width: '6',
-          height: '6',
-          rx: '1.6',
-          fill: 'none',
-        }));
-      });
-      svg.appendChild(createSvgElement('path', { d: 'M9 6h6' }));
-      svg.appendChild(createSvgElement('path', { d: 'M12 9v6' }));
-      svg.appendChild(createSvgElement('path', { d: 'M18 9v6' }));
-      svg.appendChild(createSvgElement('path', { d: 'M9 18h6' }));
+      svg.appendChild(createSvgElement('path', { d: 'M6 6C10 6 13 9 18 12C13 15 10 18 6 18' }));
     },
     efficiency(svg) {
-      svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '9' }));
-      svg.appendChild(createSvgElement('polyline', { points: '12 7 12 12 15 15' }));
+      svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '8.5' }));
+      svg.appendChild(createSvgElement('path', { d: 'M12 8v4.8l3 2.2' }));
     },
     feedback(svg) {
       svg.appendChild(createSvgElement('path', {
-        d: 'M5 5h11a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3h-5l-4 3v-3H5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z',
-        fill: 'none',
+        d: 'M6 6.5h10a3 3 0 0 1 3 3v4.5a3 3 0 0 1-3 3H10l-3 2.5v-2.5H6a3 3 0 0 1-3-3V9.5a3 3 0 0 1 3-3z',
       }));
-      svg.appendChild(createSvgElement('path', { d: 'M8.5 10.5h7' }));
-      svg.appendChild(createSvgElement('path', { d: 'M8.5 13h4.5' }));
-      svg.appendChild(createSvgElement('circle', {
-        cx: '16.5',
-        cy: '8.2',
-        r: '0.8',
-        fill: 'currentColor',
-        stroke: 'none',
-      }));
+      svg.appendChild(createSvgElement('path', { d: 'M8.5 12h7' }));
     },
     insights(svg) {
-      svg.appendChild(createSvgElement('path', { d: 'M12 3a5 5 0 0 1 5 5c0 1.7-.8 3.2-2.1 4.1-.6.4-.9 1-.9 1.7V16h-4v-2.2c0-.7-.3-1.3-.9-1.7A5 5 0 0 1 7 8a5 5 0 0 1 5-5z' }));
-      svg.appendChild(createSvgElement('path', { d: 'M10 18h4' }));
-      svg.appendChild(createSvgElement('path', { d: 'M9 21h6' }));
+      svg.appendChild(createSvgElement('path', { d: 'M5 17V7' }));
+      svg.appendChild(createSvgElement('path', { d: 'M9 17V11' }));
+      svg.appendChild(createSvgElement('path', { d: 'M13 17V9' }));
+      svg.appendChild(createSvgElement('path', { d: 'M17 17V6' }));
     },
     default(svg) {
       svg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '9' }));
-      svg.appendChild(createSvgElement('path', { d: 'M12 7v10' }));
-      svg.appendChild(createSvgElement('path', { d: 'M7 12h10' }));
+      svg.appendChild(createSvgElement('path', { d: 'M9 12h6' }));
+      svg.appendChild(createSvgElement('path', { d: 'M12 9v6' }));
     },
   };
 
@@ -9932,7 +10015,7 @@ function areStylesheetsLoaded() {
     svg.setAttribute('viewBox', '0 0 24 24');
     svg.setAttribute('fill', 'none');
     svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '1.8');
+    svg.setAttribute('stroke-width', '1.5');
     svg.setAttribute('role', 'img');
     svg.setAttribute('aria-hidden', 'true');
     svg.setAttribute('focusable', 'false');
@@ -10543,17 +10626,23 @@ function areStylesheetsLoaded() {
         updateFeedbackFilterOptions(dashboardState.feedback.records);
         const feedbackStats = applyFeedbackFiltersAndRender();
         const edSummaryForComments = dashboardState.ed.summary || createEmptyEdSummary(dashboardState.ed?.meta?.type);
-        edSummaryForComments.feedbackComments = Array.isArray(feedbackStats?.summary?.comments)
+        const feedbackComments = Array.isArray(feedbackStats?.summary?.comments)
           ? feedbackStats.summary.comments
           : [];
-        const commentsMeta = edSummaryForComments.feedbackCommentsMeta
-          && typeof edSummaryForComments.feedbackCommentsMeta === 'string'
-          ? edSummaryForComments.feedbackCommentsMeta.trim()
+        const now = new Date();
+        const cutoff = new Date(now);
+        cutoff.setDate(cutoff.getDate() - 30);
+        const recentFeedbackComments = feedbackComments.filter((entry) => {
+          if (!(entry?.receivedAt instanceof Date) || Number.isNaN(entry.receivedAt.getTime())) {
+            return false;
+          }
+          return entry.receivedAt >= cutoff;
+        });
+        edSummaryForComments.feedbackComments = recentFeedbackComments;
+        const commentsMeta = recentFeedbackComments.length
+          ? `Komentarai (30 d.): ${numberFormatter.format(recentFeedbackComments.length)}`
           : '';
-        const fallbackCommentsMeta = edSummaryForComments.feedbackComments.length
-          ? `Komentarai: ${numberFormatter.format(edSummaryForComments.feedbackComments.length)}`
-          : '';
-        edSummaryForComments.feedbackCommentsMeta = commentsMeta || fallbackCommentsMeta;
+        edSummaryForComments.feedbackCommentsMeta = commentsMeta;
         dashboardState.ed.summary = edSummaryForComments;
         setStatus('success');
         applyFeedbackStatusNote();

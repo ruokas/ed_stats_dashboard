@@ -1584,11 +1584,22 @@ body[data-theme="dark"] select optgroup {
       border: 1px solid rgba(255, 255, 255, 0.3);
       color: #fff;
       box-shadow: 0 12px 24px -20px rgba(15, 23, 42, 0.8);
+      width: auto;
+      height: 36px;
+      padding: 0 14px 0 10px;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
 
     .ed-panel-toggle__icon {
       width: 22px;
       height: 22px;
+    }
+
+    .ed-panel-toggle__label {
+      white-space: nowrap;
     }
 
     button.ed-panel-toggle:hover,
@@ -1692,8 +1703,52 @@ body[data-theme="dark"] select optgroup {
       color: rgba(255, 255, 255, 0.82);
     }
 
-    .status:empty {
+    .status:empty:not(.status--loading) {
       display: none;
+    }
+
+    .status--loading {
+      position: relative;
+      display: inline-block;
+      width: clamp(110px, 20vw, 160px);
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(47, 91, 234, 0.22));
+      overflow: hidden;
+    }
+
+    .status--loading::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -55%;
+      width: 45%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(127, 164, 255, 0), var(--color-accent-strong), var(--color-accent));
+      animation: status-loading 2.4s ease-in-out infinite;
+    }
+
+    .status--loading.status--determinate::before {
+      animation: none;
+      opacity: 0;
+    }
+
+    .status--loading::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: calc(var(--status-progress, 0) * 100%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--color-accent-strong), var(--color-accent));
+      opacity: 0;
+      transition: width 0.3s ease;
+    }
+
+    .status--loading.status--determinate::after {
+      opacity: 1;
     }
 
     .status--error {
@@ -1703,6 +1758,20 @@ body[data-theme="dark"] select optgroup {
 
     .status[data-tone="warning"] {
       color: #f9d977;
+    }
+
+    @keyframes status-loading {
+      0% {
+        transform: translateX(0);
+        opacity: 0.35;
+      }
+      50% {
+        opacity: 0.9;
+      }
+      100% {
+        transform: translateX(320%);
+        opacity: 0.35;
+      }
     }
 
     @media (max-width: 1200px) {
