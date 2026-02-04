@@ -625,12 +625,15 @@ export function createChartRenderers(env) {
     };
 
     const isBalance = seriesInfo?.metric === 'balance';
+    const rotatedOutflow = rotateSeries(seriesInfo.series?.outflow);
+    const rotatedNet = rotateSeries(seriesInfo.series?.net);
     const peakIndices = {
       total: toPeakIndex(rotatedSeries.total),
       t: toPeakIndex(rotatedSeries.t),
       tr: toPeakIndex(rotatedSeries.tr),
       ch: toPeakIndex(rotatedSeries.ch),
-      outflow: toPeakIndex(rotateSeries(seriesInfo.series?.outflow)),
+      outflow: toPeakIndex(rotatedOutflow),
+      net: toPeakIndex(rotatedNet),
     };
 
     const datasets = isBalance
@@ -651,7 +654,7 @@ export function createChartRenderers(env) {
         },
         {
           label: 'Išvykimai',
-          data: rotateSeries(seriesInfo.series?.outflow),
+          data: rotatedOutflow,
           borderColor: '#f97316',
           backgroundColor: '#f97316',
           tension: 0.35,
@@ -662,6 +665,20 @@ export function createChartRenderers(env) {
           pointHoverRadius: 4,
           pointBackgroundColor: '#f97316',
           pointBorderColor: '#f97316',
+        },
+        {
+          label: 'Neto srautas',
+          data: rotatedNet,
+          borderColor: '#22c55e',
+          backgroundColor: '#22c55e',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.net ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#22c55e',
+          pointBorderColor: '#22c55e',
         },
       ]
       : [

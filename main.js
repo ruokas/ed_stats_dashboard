@@ -4059,6 +4059,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         tr: Array(24).fill(0),
         ch: Array(24).fill(0),
         outflow: Array(24).fill(0),
+        net: Array(24).fill(0),
       };
       (Array.isArray(records) ? records : []).forEach((record) => {
         const arrival = record?.arrival;
@@ -4112,6 +4113,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
           }
           series.outflow[hour] += 1;
         });
+        series.net = series.total.map((value, index) => value - (series.outflow[index] || 0));
       }
       const hasData = series.total.some((value) => value > 0);
       return {
