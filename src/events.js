@@ -7,6 +7,8 @@ export function createUIEvents(env) {
     refreshKpiWindowOptions,
     syncKpiFilterControls,
     handleKpiFilterInput,
+    handleKpiDateClear,
+    handleKpiDateInput,
     handleKpiSegmentedClick,
     handleLastShiftMetricClick,
     syncLastShiftHourlyMetricButtons,
@@ -126,6 +128,15 @@ export function createUIEvents(env) {
     syncKpiFilterControls();
     selectors.kpiFiltersForm.addEventListener('change', handleKpiFilterInput);
     selectors.kpiFiltersForm.addEventListener('submit', (event) => event.preventDefault());
+    if (selectors.kpiDateInput) {
+      selectors.kpiDateInput.addEventListener('change', handleKpiDateInput);
+    }
+    if (selectors.kpiDateClear) {
+      selectors.kpiDateClear.addEventListener('click', (event) => {
+        event.preventDefault();
+        handleKpiDateClear();
+      });
+    }
     if (selectors.kpiFiltersReset) {
       selectors.kpiFiltersReset.addEventListener('click', (event) => {
         event.preventDefault();

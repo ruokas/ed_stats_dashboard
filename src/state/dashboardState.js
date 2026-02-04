@@ -74,6 +74,7 @@ export function createDashboardState({
       daily: [],
       lastShiftHourly: null,
       lastShiftHourlyMetric: 'arrivals',
+      selectedDate: null,
     },
     feedback: {
       summary: null,

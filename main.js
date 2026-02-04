@@ -3521,7 +3521,11 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       if (selectors.kpiCardType) {
         selectors.kpiCardType.value = filters.cardType;
       }
+      if (selectors.kpiDateInput) {
+        selectors.kpiDateInput.value = normalizeKpiDateValue(dashboardState.kpi?.selectedDate) || '';
+      }
       syncKpiSegmentedButtons();
+      updateKpiSubtitle();
     }
 
     function syncChartFilterControls() {
@@ -3693,6 +3697,8 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         return;
       }
       const filters = dashboardState.kpi.filters;
+      const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+      const isDateFiltered = Boolean(selectedDate);
       const defaultFilters = getDefaultKpiFilters();
       const totalRecords = Array.isArray(records) ? records.length : 0;
       const hasAggregatedData = Array.isArray(dailyStats)
@@ -3708,7 +3714,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       const isDispositionDefault = filters.disposition === defaultFilters.disposition;
       const isCardTypeDefault = filters.cardType === defaultFilters.cardType;
 
-      if (Number.isFinite(windowDays) && windowDays > 0 && !isWindowDefault) {
+      if (!isDateFiltered && Number.isFinite(windowDays) && windowDays > 0 && !isWindowDefault) {
         summaryParts.push(`${windowDays} d.`);
       }
       if (!isShiftDefault) {
@@ -3793,13 +3799,24 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
         dashboardState.kpi.records = filteredRecords;
         dashboardState.kpi.daily = filteredDailyStats;
-        renderKpis(filteredDailyStats);
-        renderLastShiftHourlyChart(filteredRecords, filteredDailyStats);
+        const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+        const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
+        const dateFilteredRecords = selectedDate
+          ? filterKpiRecordsByDate(filteredRecords, selectedDate, shiftStartHour)
+          : filteredRecords;
+        const dateFilteredDailyStats = selectedDate
+          ? computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS)
+          : filteredDailyStats;
+        renderKpis(dateFilteredDailyStats, filteredDailyStats);
+        const lastShiftRecords = selectedDate ? dateFilteredRecords : filteredRecords;
+        const lastShiftDaily = selectedDate ? dateFilteredDailyStats : filteredDailyStats;
+        renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
         updateKpiSummary({
-          records: filteredRecords,
-          dailyStats: filteredDailyStats,
-          windowDays: effectiveWindow,
+          records: dateFilteredRecords,
+          dailyStats: dateFilteredDailyStats,
+          windowDays: selectedDate ? null : effectiveWindow,
         });
+        updateKpiSubtitle();
       } catch (error) {
         const errorInfo = describeError(error, { code: 'KPI_WORKER', message: 'Nepavyko pritaikyti KPI filtrų worker\'yje' });
         console.error(errorInfo.log, error);
@@ -3809,13 +3826,24 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         const fallback = applyKpiFiltersLocally(normalizedFilters);
         dashboardState.kpi.records = fallback.records;
         dashboardState.kpi.daily = fallback.dailyStats;
-        renderKpis(fallback.dailyStats);
-        renderLastShiftHourlyChart(fallback.records, fallback.dailyStats);
+        const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+        const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
+        const dateFilteredRecords = selectedDate
+          ? filterKpiRecordsByDate(fallback.records, selectedDate, shiftStartHour)
+          : fallback.records;
+        const dateFilteredDailyStats = selectedDate
+          ? computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS)
+          : fallback.dailyStats;
+        renderKpis(dateFilteredDailyStats, fallback.dailyStats);
+        const lastShiftRecords = selectedDate ? dateFilteredRecords : fallback.records;
+        const lastShiftDaily = selectedDate ? dateFilteredDailyStats : fallback.dailyStats;
+        renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
         updateKpiSummary({
-          records: fallback.records,
-          dailyStats: fallback.dailyStats,
-          windowDays: fallback.windowDays,
+          records: dateFilteredRecords,
+          dailyStats: dateFilteredDailyStats,
+          windowDays: selectedDate ? null : fallback.windowDays,
         });
+        updateKpiSubtitle();
       }
     }
 
@@ -3841,6 +3869,26 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         filters.cardType = value;
       }
       syncKpiSegmentedButtons();
+      void applyKpiFiltersAndRender();
+    }
+
+    function handleKpiDateInput(event) {
+      const target = event.target;
+      if (!target || !('value' in target)) {
+        return;
+      }
+      const normalized = normalizeKpiDateValue(target.value);
+      dashboardState.kpi.selectedDate = normalized;
+      updateKpiSubtitle();
+      void applyKpiFiltersAndRender();
+    }
+
+    function handleKpiDateClear() {
+      dashboardState.kpi.selectedDate = null;
+      if (selectors.kpiDateInput) {
+        selectors.kpiDateInput.value = '';
+      }
+      updateKpiSubtitle();
       void applyKpiFiltersAndRender();
     }
 
@@ -3870,7 +3918,17 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       const metric = normalizeLastShiftMetric(getDatasetValue(button, 'lastShiftMetric'));
       dashboardState.kpi.lastShiftHourlyMetric = metric;
       syncLastShiftHourlyMetricButtons();
-      renderLastShiftHourlyChart(dashboardState.primaryRecords, dashboardState.primaryDaily);
+      const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+      const baseRecords = Array.isArray(dashboardState.kpi?.records) ? dashboardState.kpi.records : [];
+      const baseDaily = Array.isArray(dashboardState.kpi?.daily) ? dashboardState.kpi.daily : [];
+      if (selectedDate) {
+        const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
+        const dateFilteredRecords = filterKpiRecordsByDate(baseRecords, selectedDate, shiftStartHour);
+        const dateFilteredDailyStats = computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS);
+        renderLastShiftHourlyChart(dateFilteredRecords, dateFilteredDailyStats);
+        return;
+      }
+      renderLastShiftHourlyChart(baseRecords, baseDaily);
     }
 
     function syncLastShiftHourlyMetricButtons() {
@@ -3994,7 +4052,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
     }
 
 
-    function buildLastShiftSummary(dailyStats) {
+    function buildLastShiftSummaryBase(dailyStats) {
       const entries = Array.isArray(dailyStats) ? dailyStats.filter((entry) => entry && typeof entry.date === 'string') : [];
       if (!entries.length) {
         return null;
@@ -4086,6 +4144,90 @@ function normalizeHourlyCompareYears(valueA, valueB) {
       };
     }
 
+    function buildLastShiftSummary(dailyStats, referenceDailyStats = null) {
+      const baseSummary = buildLastShiftSummaryBase(dailyStats);
+      if (!baseSummary) {
+        return null;
+      }
+      if (!Array.isArray(referenceDailyStats) || !referenceDailyStats.length) {
+        return baseSummary;
+      }
+      const baseDate = dateKeyToDate(baseSummary.dateKey);
+      if (!(baseDate instanceof Date) || Number.isNaN(baseDate.getTime())) {
+        return baseSummary;
+      }
+      const weekdayIndex = baseDate.getDay();
+      const referenceEntries = referenceDailyStats
+        .filter((entry) => entry && typeof entry.date === 'string')
+        .map((entry) => ({ entry, date: dateKeyToDate(entry.date) }))
+        .filter((item) => item.date instanceof Date && !Number.isNaN(item.date.getTime()))
+        .filter((item) => item.date.getDay() === weekdayIndex)
+        .map((item) => item.entry);
+      if (!referenceEntries.length) {
+        return baseSummary;
+      }
+
+      const averageFor = (key, predicate) => {
+        const totals = referenceEntries.reduce((acc, item) => {
+          if (typeof predicate === 'function' && !predicate(item)) {
+            return acc;
+          }
+          const value = Number.isFinite(item?.[key]) ? item[key] : null;
+          if (Number.isFinite(value)) {
+            acc.sum += value;
+            acc.count += 1;
+          }
+          return acc;
+        }, { sum: 0, count: 0 });
+        if (!totals.count) {
+          return null;
+        }
+        return totals.sum / totals.count;
+      };
+
+      const shareOf = (value, total) => {
+        if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
+          return null;
+        }
+        return value / total;
+      };
+
+      const totalAverage = averageFor('count');
+      const avgTimeAverage = averageFor('avgTime', (entry) => Number.isFinite(entry?.durations) && entry.durations > 0);
+      const nightAverage = averageFor('night');
+      const hospitalizedAverage = averageFor('hospitalized');
+      const dischargedAverage = averageFor('discharged');
+
+      return {
+        ...baseSummary,
+        metrics: {
+          ...baseSummary.metrics,
+          total: {
+            ...baseSummary.metrics.total,
+            average: totalAverage,
+          },
+          avgTime: {
+            ...baseSummary.metrics.avgTime,
+            average: avgTimeAverage,
+          },
+          night: {
+            ...baseSummary.metrics.night,
+            average: nightAverage,
+          },
+          hospitalized: {
+            ...baseSummary.metrics.hospitalized,
+            average: hospitalizedAverage,
+            averageShare: shareOf(hospitalizedAverage, totalAverage),
+          },
+          discharged: {
+            ...baseSummary.metrics.discharged,
+            average: dischargedAverage,
+            averageShare: shareOf(dischargedAverage, totalAverage),
+          },
+        },
+      };
+    }
+
     function computeShiftDateKeyForArrival(date, shiftStartHour) {
       if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
         return '';
@@ -4099,6 +4241,66 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         shiftAnchor.setDate(shiftAnchor.getDate() - 1);
       }
       return formatLocalDateKey(shiftAnchor);
+    }
+
+    function normalizeKpiDateValue(value) {
+      if (typeof value !== 'string') {
+        return null;
+      }
+      const trimmed = value.trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return null;
+      }
+      return trimmed;
+    }
+
+    function formatKpiDateLabel(dateKey) {
+      const normalized = normalizeKpiDateValue(dateKey);
+      if (!normalized) {
+        return '';
+      }
+      const date = dateKeyToDate(normalized);
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        return '';
+      }
+      const weekday = weekdayLongFormatter.format(date).toLowerCase();
+      return `${normalized} (${weekday})`;
+    }
+
+    function getRecordShiftDateKey(record, shiftStartHour) {
+      if (!record) {
+        return '';
+      }
+      const arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+        ? record.arrival
+        : null;
+      const discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+        ? record.discharge
+        : null;
+      const reference = arrival || discharge;
+      return reference ? computeShiftDateKeyForArrival(reference, shiftStartHour) : '';
+    }
+
+    function filterKpiRecordsByDate(records, dateKey, shiftStartHour) {
+      const list = Array.isArray(records) ? records : [];
+      const normalized = normalizeKpiDateValue(dateKey);
+      if (!normalized) {
+        return list;
+      }
+      return list.filter((record) => getRecordShiftDateKey(record, shiftStartHour) === normalized);
+    }
+
+    function updateKpiSubtitle() {
+      if (!selectors.kpiSubtitle) {
+        return;
+      }
+      const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+      if (selectedDate) {
+        const label = formatKpiDateLabel(selectedDate);
+        selectors.kpiSubtitle.textContent = label || selectedDate;
+        return;
+      }
+      selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
     }
 
     function getLastShiftMetricLabel(metric) {
@@ -4270,8 +4472,8 @@ function showKpiSkeleton() {
       setDatasetValue(container, 'skeleton', null);
     }
 
-    function renderKpis(dailyStats) {
-      return kpiRenderer.renderKpis(dailyStats);
+    function renderKpis(dailyStats, referenceDailyStats = null) {
+      return kpiRenderer.renderKpis(dailyStats, referenceDailyStats);
     }
 
     function renderLastShiftHourlyChart(records, dailyStats) {
@@ -10505,6 +10707,8 @@ function areStylesheetsLoaded() {
       refreshKpiWindowOptions,
       syncKpiFilterControls,
       handleKpiFilterInput,
+      handleKpiDateClear,
+      handleKpiDateInput,
       handleKpiSegmentedClick,
       handleLastShiftMetricClick,
       syncLastShiftHourlyMetricButtons,

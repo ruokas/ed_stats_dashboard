@@ -15,6 +15,8 @@ export function createSelectors() {
     footerSource: document.getElementById('footerSource'),
     kpiHeading: document.getElementById('kpiHeading'),
     kpiSubtitle: document.getElementById('kpiSubtitle'),
+    kpiDateInput: document.getElementById('kpiDateInput'),
+    kpiDateClear: document.getElementById('kpiDateClear'),
     kpiSummary: document.getElementById('kpiSummary'),
     kpiGrid: document.getElementById('kpiGrid'),
     lastShiftHourlyChart: document.getElementById('lastShiftHourlyChart'),
