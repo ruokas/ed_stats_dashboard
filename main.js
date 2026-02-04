@@ -3540,7 +3540,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         text = text ? `Įrašų nerasta • ${text}` : 'Įrašų nerasta';
       }
       if (!text) {
-        selectors.chartFiltersSummary.textContent = 'Numatytieji filtrai';
+      selectors.chartFiltersSummary.textContent = '';
         setDatasetValue(selectors.chartFiltersSummary, 'default', 'true');
         return;
       }
@@ -3651,7 +3651,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         text = text ? `Įrašų nerasta • ${text}` : 'Įrašų nerasta';
       }
       if (!text) {
-        selectors.kpiActiveInfo.textContent = 'Numatytieji filtrai';
+      selectors.kpiActiveInfo.textContent = '';
         setDatasetValue(selectors.kpiActiveInfo, 'default', 'true');
         return;
       }
