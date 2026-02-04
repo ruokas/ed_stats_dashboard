@@ -16,6 +16,7 @@ export function createUIEvents(env) {
     updateFeedbackFiltersSummary,
     handleFeedbackFilterChange,
     handleFeedbackFilterChipClick,
+    handleYearlyToggle,
     setFeedbackTrendWindow,
     storeCopyButtonBaseLabel,
     handleChartCopyClick,
@@ -167,6 +168,13 @@ export function createUIEvents(env) {
         }
       });
     });
+  }
+
+  function initYearlyExpand() {
+    if (!selectors.yearlyTable) {
+      return;
+    }
+    selectors.yearlyTable.addEventListener('click', handleYearlyToggle);
   }
 
   function initTabSwitcher() {
@@ -585,6 +593,7 @@ export function createUIEvents(env) {
     initKpiFilters();
     initFeedbackFilters();
     initFeedbackTrendControls();
+    initYearlyExpand();
     initChartCopyButtons();
     initChartDownloadButtons();
     initTableDownloadButtons();

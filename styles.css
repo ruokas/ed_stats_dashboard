@@ -387,6 +387,7 @@ body[data-theme="dark"] select optgroup {
       gap: clamp(16px, 2.5vw, 26px);
       overflow: hidden;
       isolation: isolate;
+      min-height: 320px;
     }
 
     .ed-dashboard::before {
@@ -661,6 +662,7 @@ body[data-theme="dark"] select optgroup {
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       align-content: start;
     }
+
 
     .ed-dashboard__section {
       display: flex;
@@ -4563,6 +4565,60 @@ body[data-theme="dark"] select optgroup {
 
     body[data-theme="dark"] tbody tr:hover {
       background: rgba(96, 165, 250, 0.16);
+    }
+
+    .yearly-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .yearly-toggle__icon {
+      display: inline-flex;
+      width: 14px;
+      height: 14px;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+      color: var(--color-text-muted);
+    }
+
+    .yearly-toggle[aria-expanded="true"] .yearly-toggle__icon {
+      transform: rotate(90deg);
+      color: var(--color-accent);
+    }
+
+    .yearly-child-row td {
+      background: rgba(37, 99, 235, 0.04);
+      font-size: 0.92rem;
+    }
+
+    .yearly-child-row td:first-child {
+      padding-left: 36px;
+      color: var(--color-text-muted);
+    }
+
+    .yearly-month-label {
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    body[data-theme="dark"] .yearly-child-row td {
+      background: rgba(96, 165, 250, 0.12);
+    }
+
+    .yearly-incomplete {
+      margin-left: 6px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--color-warning);
+      text-transform: none;
     }
 
     .table-row--selectable {

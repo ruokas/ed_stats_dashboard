@@ -31,6 +31,7 @@ export function createDashboardState({
       all: [],
       window: [],
     },
+    yearlyExpandedYears: [],
     dataMeta: null,
     loadCounter: 0,
     chartPeriod: 30,

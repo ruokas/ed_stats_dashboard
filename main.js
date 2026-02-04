@@ -1564,11 +1564,24 @@ import {
       return text;
     }
 
+    function getVisibleTableRows(table) {
+      if (!(table instanceof HTMLElement)) {
+        return [];
+      }
+      return Array.from(table.querySelectorAll('tr')).filter((row) => {
+        if (row.hidden) {
+          return false;
+        }
+        const style = getComputedStyle(row);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+      });
+    }
+
     function buildCsvFromTable(table) {
       if (!(table instanceof HTMLElement)) {
         return '';
       }
-      const rows = Array.from(table.querySelectorAll('tr'));
+      const rows = getVisibleTableRows(table);
       if (!rows.length) {
         return '';
       }
@@ -1594,7 +1607,7 @@ import {
       if (!(table instanceof HTMLElement)) {
         return null;
       }
-      const rows = Array.from(table.querySelectorAll('tr'));
+      const rows = getVisibleTableRows(table);
       if (!rows.length) {
         return null;
       }
@@ -8497,23 +8510,21 @@ function areStylesheetsLoaded() {
         return;
       }
 
-      const completeEntries = yearlyStats.filter((entry) => isCompleteYearEntry(entry));
+      const displayLimit = 5;
+      const entriesToRender = Number.isFinite(displayLimit) && displayLimit > 0
+        ? yearlyStats.slice(-displayLimit)
+        : yearlyStats;
 
-      if (!completeEntries.length) {
+      if (!entriesToRender.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
         cell.colSpan = 9;
-        cell.textContent = TEXT.yearly.noCompleteYears || TEXT.yearly.empty;
+        cell.textContent = TEXT.yearly.empty;
         row.appendChild(cell);
         selectors.yearlyTable.appendChild(row);
         syncCompareActivation();
         return;
       }
-
-      const displayLimit = 5;
-      const entriesToRender = Number.isFinite(displayLimit) && displayLimit > 0
-        ? completeEntries.slice(-displayLimit)
-        : completeEntries;
 
       const totals = entriesToRender.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
       const completeness = entriesToRender.map((entry) => isCompleteYearEntry(entry));
@@ -8534,8 +8545,55 @@ function areStylesheetsLoaded() {
         ? Math.max(acc, Math.abs(value))
         : acc), 0);
 
+      const latestYear = entriesToRender.length
+        ? entriesToRender[entriesToRender.length - 1].year
+        : null;
+      if (!Array.isArray(dashboardState.yearlyExpandedYears) || !dashboardState.yearlyExpandedYears.length) {
+        dashboardState.yearlyExpandedYears = Number.isFinite(latestYear) ? [latestYear] : [];
+      }
+      const expandedYears = new Set(dashboardState.yearlyExpandedYears);
+      const monthlyAll = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
+
+      const renderMonthlyRow = (entry, index, totals, completeness, maxAbsDiff, parentYear, allMonthly) => {
+        const row = document.createElement('tr');
+        row.className = 'yearly-child-row';
+        setDatasetValue(row, 'parentYear', parentYear);
+        const avgPerDay = entry.dayCount > 0 ? entry.count / entry.dayCount : 0;
+        const total = Number.isFinite(entry.count) ? entry.count : 0;
+        const previousTotal = index > 0 ? totals[index - 1] : Number.NaN;
+        const [yearStr, monthStr] = typeof entry.month === 'string' ? entry.month.split('-') : [];
+        const year = Number.parseInt(yearStr, 10);
+        const previousYearKey = Number.isFinite(year) && monthStr ? `${year - 1}-${monthStr}` : '';
+        const previousYearEntry = previousYearKey
+          ? allMonthly.find((item) => item && item.month === previousYearKey)
+          : null;
+        const previousYearTotal = Number.isFinite(previousYearEntry?.count) ? previousYearEntry.count : Number.NaN;
+        const isComplete = completeness[index];
+        const previousComplete = index > 0 ? completeness[index - 1] : false;
+        const canCompare = isComplete && previousComplete && Number.isFinite(previousTotal);
+        const diff = canCompare ? total - previousTotal : Number.NaN;
+        const percentChange = canCompare && previousTotal !== 0
+          ? diff / previousTotal
+          : Number.NaN;
+        const previousYearComplete = previousYearEntry ? isCompleteMonthEntry(previousYearEntry) : false;
+        const yoyComparison = formatMonthlyYoYComparison(total, previousYearTotal, isComplete && previousYearComplete);
+        row.innerHTML = `
+          <td><span class="yearly-month-label">${formatMonthLabel(entry.month)}</span></td>
+          <td>${numberFormatter.format(total)}${yoyComparison}</td>
+          <td>${oneDecimalFormatter.format(avgPerDay)}</td>
+          <td>${decimalFormatter.format(entry.durations ? entry.totalTime / entry.durations : 0)}</td>
+          <td>${formatValueWithShare(entry.night, total)}</td>
+          <td>${formatValueWithShare(entry.ems, total)}</td>
+          <td>${formatValueWithShare(entry.hospitalized, total)}</td>
+          <td>${formatValueWithShare(entry.discharged, total)}</td>
+          <td>${createMonthlyChangeCell(diff, percentChange, maxAbsDiff, canCompare)}</td>
+        `;
+        return row;
+      };
+
       entriesToRender.forEach((entry, index) => {
         const row = document.createElement('tr');
+        row.className = 'yearly-row';
         const total = Number.isFinite(entry.count) ? entry.count : 0;
         const avgPerDay = entry.dayCount > 0 ? total / entry.dayCount : 0;
         const avgStay = entry.durations ? entry.totalTime / entry.durations : 0;
@@ -8547,8 +8605,18 @@ function areStylesheetsLoaded() {
         const percentChange = canCompare && previousTotal !== 0
           ? diff / previousTotal
           : Number.NaN;
+        const isExpanded = expandedYears.has(entry.year);
+        const yearLabel = formatYearLabel(entry.year);
+        const yearDisplay = isComplete
+          ? yearLabel
+          : `${yearLabel} <span class="yearly-incomplete">(nepilni)</span>`;
         row.innerHTML = `
-          <td>${formatYearLabel(entry.year)}</td>
+          <td>
+            <button type="button" class="yearly-toggle" data-year-toggle="${entry.year}" aria-expanded="${isExpanded}">
+              <span class="yearly-toggle__icon" aria-hidden="true">▸</span>
+              <span class="yearly-toggle__label">${yearDisplay}</span>
+            </button>
+          </td>
           <td>${numberFormatter.format(total)}</td>
           <td>${oneDecimalFormatter.format(avgPerDay)}</td>
           <td>${decimalFormatter.format(avgStay)}</td>
@@ -8570,9 +8638,89 @@ function areStylesheetsLoaded() {
         setDatasetValue(row, 'hospShare', String(hospShare));
         setDatasetValue(row, 'change', Number.isFinite(diff) ? String(diff) : '');
         setDatasetValue(row, 'changePercent', Number.isFinite(percentChange) ? String(percentChange) : '');
+        setDatasetValue(row, 'year', entry.year);
+        setDatasetValue(row, 'expanded', isExpanded ? 'true' : 'false');
         selectors.yearlyTable.appendChild(row);
+
+        const monthlyForYear = monthlyAll.filter((item) => {
+          if (!item || typeof item.month !== 'string') {
+            return false;
+          }
+          return item.month.startsWith(`${entry.year}-`);
+        });
+        if (!monthlyForYear.length) {
+          return;
+        }
+        const monthTotals = monthlyForYear.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
+        const monthCompleteness = monthlyForYear.map((item) => isCompleteMonthEntry(item));
+        const monthDiffs = monthTotals.map((value, idx) => {
+          if (idx === 0) {
+            return Number.NaN;
+          }
+          if (!monthCompleteness[idx] || !monthCompleteness[idx - 1]) {
+            return Number.NaN;
+          }
+          const prev = monthTotals[idx - 1];
+          if (!Number.isFinite(prev)) {
+            return Number.NaN;
+          }
+          return value - prev;
+        });
+        const monthMaxAbsDiff = monthDiffs.reduce((acc, value) => (Number.isFinite(value)
+          ? Math.max(acc, Math.abs(value))
+          : acc), 0);
+        monthlyForYear.forEach((monthEntry, monthIndex) => {
+          const monthRow = renderMonthlyRow(
+            monthEntry,
+            monthIndex,
+            monthTotals,
+            monthCompleteness,
+            monthMaxAbsDiff,
+            entry.year,
+            monthlyAll,
+          );
+          monthRow.hidden = !isExpanded;
+          selectors.yearlyTable.appendChild(monthRow);
+        });
       });
       syncCompareActivation();
+    }
+
+    function handleYearlyToggle(event) {
+      const target = event?.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const button = target.closest('button[data-year-toggle]');
+      if (!button) {
+        return;
+      }
+      const yearValue = Number.parseInt(button.getAttribute('data-year-toggle') || '', 10);
+      if (!Number.isFinite(yearValue)) {
+        return;
+      }
+      const row = button.closest('tr');
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+      const nextExpanded = !isExpanded;
+      button.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+      if (row) {
+        setDatasetValue(row, 'expanded', nextExpanded ? 'true' : 'false');
+      }
+      const rows = selectors.yearlyTable
+        ? selectors.yearlyTable.querySelectorAll(`tr[data-parent-year="${yearValue}"]`)
+        : [];
+      rows.forEach((child) => {
+        child.hidden = !nextExpanded;
+      });
+      const expandedSet = new Set(Array.isArray(dashboardState.yearlyExpandedYears)
+        ? dashboardState.yearlyExpandedYears
+        : []);
+      if (nextExpanded) {
+        expandedSet.add(yearValue);
+      } else {
+        expandedSet.delete(yearValue);
+      }
+      dashboardState.yearlyExpandedYears = Array.from(expandedSet);
     }
 
     function formatEdCardValue(rawValue, format) {
@@ -10181,6 +10329,7 @@ function areStylesheetsLoaded() {
       updateFeedbackFiltersSummary,
       handleFeedbackFilterChange,
       handleFeedbackFilterChipClick,
+      handleYearlyToggle,
       setFeedbackTrendWindow,
       storeCopyButtonBaseLabel,
       handleChartCopyClick,
