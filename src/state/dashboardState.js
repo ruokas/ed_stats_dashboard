@@ -45,6 +45,7 @@ export function createDashboardState({
     hourlyCompareYears: [],
     hourlyCompareSeries: hourlyCompareSeriesAll,
     hourlyYAxisSuggestedMax: null,
+    hourlyYAxisSuggestedMin: null,
     hourlyDepartmentOptions: [],
     hourlyDepartmentSuggestIndex: -1,
     chartData: {

@@ -342,7 +342,9 @@ export function createChartRenderers(env) {
 
     let datasets = [];
     let suggestedMax = undefined;
+    let suggestedMin = undefined;
     let hasData = false;
+    const isBalanceMetric = metricValue === 'balance';
 
     if (compareEnabled && compareYears.length) {
       const colorPalette = [themePalette.accent, themePalette.weekendAccent, themePalette.success];
@@ -361,8 +363,10 @@ export function createChartRenderers(env) {
         );
         if (yearResult?.hasData) {
           hasData = true;
-          const localMax = Math.max(0, ...(yearResult.averages?.[seriesKey] || []));
-          compareMaxes.push(localMax);
+          const values = yearResult.averages?.[seriesKey] || [];
+          const localMax = Math.max(0, ...values);
+          const localAbsMax = values.length ? Math.max(...values.map((value) => Math.abs(value))) : 0;
+          compareMaxes.push(isBalanceMetric ? localAbsMax : localMax);
         }
         const lineColor = colorPalette[index % colorPalette.length] || themePalette.accent;
         return {
@@ -379,7 +383,13 @@ export function createChartRenderers(env) {
         };
       });
       const maxValue = compareMaxes.length ? Math.max(...compareMaxes) : 0;
-      suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
+      if (isBalanceMetric) {
+        const absMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
+        suggestedMax = absMax;
+        suggestedMin = absMax != null ? -absMax : undefined;
+      } else {
+        suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
+      }
     } else {
       const result = computeHourlySeries(records, weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
       if (result?.hasData) {
@@ -389,9 +399,18 @@ export function createChartRenderers(env) {
       const baseMax = baseSeries?.averages?.all
         ? Math.max(0, ...baseSeries.averages.all)
         : 0;
-      suggestedMax = baseMax > 0
-        ? Math.ceil(baseMax * 1.1 * 10) / 10
-        : undefined;
+      if (isBalanceMetric) {
+        const absMax = baseSeries?.averages?.all
+          ? Math.max(...baseSeries.averages.all.map((value) => Math.abs(value)))
+          : 0;
+        const rounded = absMax > 0 ? Math.ceil(absMax * 1.1 * 10) / 10 : undefined;
+        suggestedMax = rounded;
+        suggestedMin = rounded != null ? -rounded : undefined;
+      } else {
+        suggestedMax = baseMax > 0
+          ? Math.ceil(baseMax * 1.1 * 10) / 10
+          : undefined;
+      }
 
       datasets = [
         {
@@ -441,6 +460,7 @@ export function createChartRenderers(env) {
     setChartCardMessage(canvas, null);
 
     dashboardState.hourlyYAxisSuggestedMax = suggestedMax ?? null;
+    dashboardState.hourlyYAxisSuggestedMin = suggestedMin ?? null;
 
     const labels = HEATMAP_HOURS;
     dashboardState.charts.hourly = new Chart(ctx, {
@@ -502,8 +522,9 @@ export function createChartRenderers(env) {
             },
           },
           y: {
-            beginAtZero: true,
+            beginAtZero: !isBalanceMetric,
             suggestedMax,
+            suggestedMin,
             ticks: {
               color: themePalette.textColor,
               padding: 8,

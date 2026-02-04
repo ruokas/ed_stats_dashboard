@@ -414,6 +414,8 @@ import {
         hourlyMetricLabel: 'Rodiklis',
         hourlyMetricOptions: {
           arrivals: 'Atvykimų skaičius',
+          discharges: 'Išleidimų skaičius',
+          balance: 'Srautų balansas',
           hospitalized: 'Hospitalizacijų skaičius',
         },
         hourlyDepartmentLabel: 'Skyrius',
@@ -2014,6 +2016,7 @@ import {
       if (chart?.options?.scales?.y) {
         chart.options.scales.y.max = undefined;
         chart.options.scales.y.suggestedMax = dashboardState.hourlyYAxisSuggestedMax ?? undefined;
+        chart.options.scales.y.suggestedMin = dashboardState.hourlyYAxisSuggestedMin ?? undefined;
       }
     }
 
@@ -2357,7 +2360,7 @@ function normalizeHourlyCompareYears(valueA, valueB) {
 
     function matchesHourlyMetric(record, metricValue, departmentValue) {
       const metric = normalizeHourlyMetric(metricValue);
-      if (metric === HOURLY_METRIC_ARRIVALS) {
+      if (metric === HOURLY_METRIC_ARRIVALS || metric === HOURLY_METRIC_DISCHARGES || metric === HOURLY_METRIC_BALANCE) {
         return true;
       }
       if (!record?.hospitalized) {
@@ -2380,23 +2383,17 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         ems: Array(24).fill(0),
         self: Array(24).fill(0),
       };
+      const outflowTotals = {
+        all: Array(24).fill(0),
+        ems: Array(24).fill(0),
+        self: Array(24).fill(0),
+      };
       const weekdayDays = Array.from({ length: 7 }, () => new Set());
       const allDays = new Set();
+      const metric = normalizeHourlyMetric(metricValue);
       (Array.isArray(records) ? records : []).forEach((entry) => {
-        if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
-          return;
-        }
-        const hour = entry.arrival.getHours();
-        if (hour < 0 || hour > 23) {
-          return;
-        }
-        const rawDay = entry.arrival.getDay();
-        const dayIndex = (rawDay + 6) % 7;
-        const dateKey = formatLocalDateKey(entry.arrival);
-        if (dateKey) {
-          weekdayDays[dayIndex].add(dateKey);
-          allDays.add(dateKey);
-        }
+        const arrival = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
+        const discharge = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
         const normalizedWeekday = normalizeHourlyWeekday(weekdayValue);
         if (!matchesHourlyStayBucket(entry, stayBucket)) {
           return;
@@ -2404,6 +2401,70 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         if (!matchesHourlyMetric(entry, metricValue, departmentValue)) {
           return;
         }
+
+        const addDay = (reference) => {
+          const rawDay = reference.getDay();
+          const dayIndex = (rawDay + 6) % 7;
+          const dateKey = formatLocalDateKey(reference);
+          if (dateKey) {
+            weekdayDays[dayIndex].add(dateKey);
+            allDays.add(dateKey);
+          }
+          return dayIndex;
+        };
+
+        if (metric === HOURLY_METRIC_BALANCE) {
+          if (arrival) {
+            const dayIndex = addDay(arrival);
+            const hour = arrival.getHours();
+            if (hour < 0 || hour > 23) {
+              return;
+            }
+            if (normalizedWeekday === HOURLY_WEEKDAY_ALL || normalizedWeekday === dayIndex) {
+              totals.all[hour] += 1;
+              if (entry.ems) {
+                totals.ems[hour] += 1;
+              } else {
+                totals.self[hour] += 1;
+              }
+            }
+          }
+          if (discharge) {
+            const dayIndex = addDay(discharge);
+            const hour = discharge.getHours();
+            if (hour < 0 || hour > 23) {
+              return;
+            }
+            if (normalizedWeekday === HOURLY_WEEKDAY_ALL || normalizedWeekday === dayIndex) {
+              outflowTotals.all[hour] += 1;
+              if (entry.ems) {
+                outflowTotals.ems[hour] += 1;
+              } else {
+                outflowTotals.self[hour] += 1;
+              }
+            }
+          }
+          return;
+        }
+
+        let reference = null;
+        if (metric === HOURLY_METRIC_ARRIVALS) {
+          reference = arrival;
+        } else if (metric === HOURLY_METRIC_DISCHARGES) {
+          reference = discharge;
+        } else if (metric === HOURLY_METRIC_HOSPITALIZED) {
+          reference = entry?.hospitalized ? arrival : null;
+        } else {
+          reference = arrival;
+        }
+        if (!reference) {
+          return;
+        }
+        const hour = reference.getHours();
+        if (hour < 0 || hour > 23) {
+          return;
+        }
+        const dayIndex = addDay(reference);
         if (normalizedWeekday === HOURLY_WEEKDAY_ALL || normalizedWeekday === dayIndex) {
           totals.all[hour] += 1;
           if (entry.ems) {
@@ -2418,12 +2479,28 @@ function normalizeHourlyCompareYears(valueA, valueB) {
         ? allDays.size
         : weekdayDays[normalizedWeekday]?.size || 0;
       const toAverage = (values) => values.map((value) => (divisor > 0 ? value / divisor : 0));
-      const averages = {
-        all: toAverage(totals.all),
-        ems: toAverage(totals.ems),
-        self: toAverage(totals.self),
-      };
-      const hasData = totals.all.some((value) => value > 0);
+      const toNet = (values, outflow) => values.map((value, index) => value - (outflow[index] || 0));
+      const netTotals = metric === HOURLY_METRIC_BALANCE
+        ? {
+          all: toNet(totals.all, outflowTotals.all),
+          ems: toNet(totals.ems, outflowTotals.ems),
+          self: toNet(totals.self, outflowTotals.self),
+        }
+        : null;
+      const averages = metric === HOURLY_METRIC_BALANCE && netTotals
+        ? {
+          all: toAverage(netTotals.all),
+          ems: toAverage(netTotals.ems),
+          self: toAverage(netTotals.self),
+        }
+        : {
+          all: toAverage(totals.all),
+          ems: toAverage(totals.ems),
+          self: toAverage(totals.self),
+        };
+      const hasData = metric === HOURLY_METRIC_BALANCE
+        ? (totals.all.some((value) => value > 0) || outflowTotals.all.some((value) => value > 0))
+        : totals.all.some((value) => value > 0);
       return { averages, hasData, divisor };
     }
 
@@ -6576,8 +6653,15 @@ function areStylesheetsLoaded() {
     const HOURLY_WEEKDAY_ALL = 'all';
     const HOURLY_STAY_BUCKET_ALL = 'all';
     const HOURLY_METRIC_ARRIVALS = 'arrivals';
+    const HOURLY_METRIC_DISCHARGES = 'discharges';
+    const HOURLY_METRIC_BALANCE = 'balance';
     const HOURLY_METRIC_HOSPITALIZED = 'hospitalized';
-    const HOURLY_METRICS = [HOURLY_METRIC_ARRIVALS, HOURLY_METRIC_HOSPITALIZED];
+    const HOURLY_METRICS = [
+      HOURLY_METRIC_ARRIVALS,
+      HOURLY_METRIC_DISCHARGES,
+      HOURLY_METRIC_BALANCE,
+      HOURLY_METRIC_HOSPITALIZED,
+    ];
     const HOURLY_COMPARE_SERIES_ALL = 'all';
     const HOURLY_COMPARE_SERIES_EMS = 'ems';
     const HOURLY_COMPARE_SERIES_SELF = 'self';
