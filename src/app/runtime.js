@@ -16,6 +16,7 @@ import { createUIEvents } from '../events/index.js';
 import { createLayoutTools } from './runtime/layout.js';
 import { createDataFlow } from './runtime/data-flow.js';
 import { createChartFlow } from './runtime/chart-flow.js';
+import { createKpiFlow } from './runtime/kpi-flow.js';
 import {
   FEEDBACK_FILTER_ALL,
   FEEDBACK_FILTER_MISSING,
@@ -84,6 +85,11 @@ export function startApp() {
       const getDefaultKpiFilters = () => createDefaultKpiFilters({ settings, DEFAULT_SETTINGS, DEFAULT_KPI_WINDOW_DAYS });
       const getDefaultChartFilters = () => createDefaultChartFilters();
       const getDefaultFeedbackFilters = () => createDefaultFeedbackFilters();
+      const getDefaultHeatmapFilters = () => ({
+        arrival: 'all',
+        disposition: 'all',
+        cardType: 'all',
+      });
 
 
 
@@ -1532,6 +1538,10 @@ export function startApp() {
         (Array.isArray(records) ? records : []).forEach((entry) => {
           const arrival = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
           const discharge = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
+          const arrivalHasTime = entry?.arrivalHasTime === true
+            || (entry?.arrivalHasTime == null && arrival && (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+          const dischargeHasTime = entry?.dischargeHasTime === true
+            || (entry?.dischargeHasTime == null && discharge && (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
           const normalizedWeekday = normalizeHourlyWeekday(weekdayValue);
           if (!matchesHourlyStayBucket(entry, stayBucket)) {
             return;
@@ -1552,7 +1562,7 @@ export function startApp() {
           };
 
           if (metric === HOURLY_METRIC_BALANCE) {
-            if (arrival) {
+            if (arrival && arrivalHasTime) {
               const dayIndex = addDay(arrival);
               const hour = arrival.getHours();
               if (hour < 0 || hour > 23) {
@@ -1567,7 +1577,7 @@ export function startApp() {
                 }
               }
             }
-            if (discharge) {
+            if (discharge && dischargeHasTime) {
               const dayIndex = addDay(discharge);
               const hour = discharge.getHours();
               if (hour < 0 || hour > 23) {
@@ -1587,11 +1597,11 @@ export function startApp() {
 
           let reference = null;
           if (metric === HOURLY_METRIC_ARRIVALS) {
-            reference = arrival;
+            reference = arrivalHasTime ? arrival : null;
           } else if (metric === HOURLY_METRIC_DISCHARGES) {
-            reference = entry?.hospitalized ? null : discharge;
+            reference = entry?.hospitalized ? null : (dischargeHasTime ? discharge : null);
           } else if (metric === HOURLY_METRIC_HOSPITALIZED) {
-            reference = entry?.hospitalized ? arrival : null;
+            reference = entry?.hospitalized ? (arrivalHasTime ? arrival : null) : null;
           } else {
             reference = arrival;
           }
@@ -1749,6 +1759,28 @@ export function startApp() {
         select.value = normalizeHeatmapMetricKey(current);
       }
 
+      function populateHeatmapYearOptions(dailyStats) {
+        if (!selectors.heatmapYearSelect) {
+          return;
+        }
+        const years = getAvailableYearsFromDaily(dailyStats);
+        selectors.heatmapYearSelect.replaceChildren();
+        const defaultOption = document.createElement('option');
+        defaultOption.value = 'all';
+        defaultOption.textContent = TEXT.charts?.heatmapYearAll || 'Visi metai';
+        selectors.heatmapYearSelect.appendChild(defaultOption);
+        years.forEach((year) => {
+          const option = document.createElement('option');
+          option.value = String(year);
+          option.textContent = String(year);
+          selectors.heatmapYearSelect.appendChild(option);
+        });
+        const current = Number.isFinite(dashboardState.heatmapYear)
+          ? String(dashboardState.heatmapYear)
+          : 'all';
+        selectors.heatmapYearSelect.value = current;
+      }
+
       function computeHeatmapColor(accentColor, intensity) {
         const alpha = Math.min(0.85, Math.max(0.08, 0.08 + intensity * 0.75));
         const hexMatch = /^#?([a-f\d]{6})$/i.exec(accentColor.trim());
@@ -1869,17 +1901,46 @@ export function startApp() {
         container.appendChild(legend);
       }
 
-      function resolveShiftStartHour(calculationSettings) {
-        const fallback = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
-          ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
-          : 7;
-        if (Number.isFinite(Number(calculationSettings?.shiftStartHour))) {
-          return Number(calculationSettings.shiftStartHour);
+      function syncHeatmapFilterControls() {
+        const filters = sanitizeHeatmapFilters(dashboardState.heatmapFilters);
+        dashboardState.heatmapFilters = { ...filters };
+        if (selectors.heatmapFilterArrival) {
+          selectors.heatmapFilterArrival.value = filters.arrival;
         }
-        if (Number.isFinite(Number(calculationSettings?.nightEndHour))) {
-          return Number(calculationSettings.nightEndHour);
+        if (selectors.heatmapFilterDisposition) {
+          selectors.heatmapFilterDisposition.value = filters.disposition;
         }
-        return fallback;
+        if (selectors.heatmapFilterCardType) {
+          selectors.heatmapFilterCardType.value = filters.cardType;
+        }
+        if (selectors.heatmapYearSelect) {
+          selectors.heatmapYearSelect.value = Number.isFinite(dashboardState.heatmapYear)
+            ? String(dashboardState.heatmapYear)
+            : 'all';
+        }
+      }
+
+      function computeHeatmapDataForFilters() {
+        const baseRecords = Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+          ? dashboardState.chartData.baseRecords
+          : dashboardState.rawRecords;
+        const selectedYear = Number.isFinite(dashboardState.heatmapYear) ? Number(dashboardState.heatmapYear) : null;
+        const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
+        const filteredRecords = filterRecordsByHeatmapFilters(yearScopedRecords, dashboardState.heatmapFilters);
+        const heatmapData = computeArrivalHeatmap(filteredRecords);
+        dashboardState.chartData.heatmap = heatmapData;
+        return heatmapData;
+      }
+
+      function applyHeatmapFiltersAndRender() {
+        const palette = getThemePalette();
+        const heatmapData = computeHeatmapDataForFilters();
+        renderArrivalHeatmap(
+          selectors.heatmapContainer,
+          heatmapData,
+          palette.accent,
+          dashboardState.heatmapMetric,
+        );
       }
 
       function computeShiftDateKey(referenceDate, shiftStartHour) {
@@ -2573,99 +2634,6 @@ export function startApp() {
         };
       }
 
-      function refreshKpiWindowOptions() {
-        const select = selectors.kpiWindow;
-        if (!select) {
-          return;
-        }
-        const configuredWindowRaw = Number.isFinite(Number(settings?.calculations?.windowDays))
-          ? Number(settings.calculations.windowDays)
-          : DEFAULT_SETTINGS.calculations.windowDays;
-        const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
-          ? configuredWindowRaw
-          : DEFAULT_KPI_WINDOW_DAYS;
-        const currentWindowRaw = Number.isFinite(Number(dashboardState.kpi?.filters?.window))
-          ? Number(dashboardState.kpi.filters.window)
-          : configuredWindow;
-        const currentWindow = Number.isFinite(currentWindowRaw) && currentWindowRaw > 0
-          ? currentWindowRaw
-          : configuredWindow;
-        const uniqueValues = [...new Set([...KPI_WINDOW_OPTION_BASE, configuredWindow, currentWindow])]
-          .filter((value) => Number.isFinite(value) && value >= 0)
-          .sort((a, b) => {
-            if (a === 0) return 1;
-            if (b === 0) return -1;
-            return a - b;
-          });
-        const options = uniqueValues.map((value) => {
-          const option = document.createElement('option');
-          option.value = String(value);
-          if (value === 0) {
-            option.textContent = TEXT.kpis.windowAllLabel;
-          } else if (value === 365) {
-            option.textContent = `${value} d. (${TEXT.kpis.windowYearSuffix})`;
-          } else {
-            option.textContent = `${value} d.`;
-          }
-          return option;
-        });
-        select.replaceChildren(...options);
-      }
-
-      function syncKpiSegmentedButtons() {
-        const filters = dashboardState.kpi?.filters || getDefaultKpiFilters();
-        if (Array.isArray(selectors.kpiArrivalButtons) && selectors.kpiArrivalButtons.length) {
-          selectors.kpiArrivalButtons.forEach((button) => {
-            const value = getDatasetValue(button, 'kpiArrival');
-            if (!value) {
-              return;
-            }
-            button.setAttribute('aria-pressed', String(value === filters.arrival));
-          });
-        }
-        if (Array.isArray(selectors.kpiCardTypeButtons) && selectors.kpiCardTypeButtons.length) {
-          selectors.kpiCardTypeButtons.forEach((button) => {
-            const value = getDatasetValue(button, 'kpiCardType');
-            if (!value) {
-              return;
-            }
-            button.setAttribute('aria-pressed', String(value === filters.cardType));
-          });
-        }
-      }
-
-      function syncKpiFilterControls() {
-        const filters = dashboardState.kpi.filters;
-        if (selectors.kpiWindow && Number.isFinite(filters.window)) {
-          const windowValue = String(filters.window);
-          const existing = Array.from(selectors.kpiWindow.options).some((option) => option.value === windowValue);
-          if (!existing) {
-            const option = document.createElement('option');
-            option.value = windowValue;
-            option.textContent = `${filters.window} d.`;
-            selectors.kpiWindow.appendChild(option);
-          }
-          selectors.kpiWindow.value = windowValue;
-        }
-        if (selectors.kpiShift) {
-          selectors.kpiShift.value = filters.shift;
-        }
-        if (selectors.kpiArrival) {
-          selectors.kpiArrival.value = filters.arrival;
-        }
-        if (selectors.kpiDisposition) {
-          selectors.kpiDisposition.value = filters.disposition;
-        }
-        if (selectors.kpiCardType) {
-          selectors.kpiCardType.value = filters.cardType;
-        }
-        if (selectors.kpiDateInput) {
-          selectors.kpiDateInput.value = normalizeKpiDateValue(dashboardState.kpi?.selectedDate) || '';
-        }
-        syncKpiSegmentedButtons();
-        updateKpiSubtitle();
-      }
-
       function matchesSharedPatientFilters(record, filters = {}) {
         const arrivalFilter = filters.arrival;
         if (arrivalFilter === 'ems' && !record.ems) {
@@ -2697,19 +2665,6 @@ export function startApp() {
         return true;
       }
 
-      function recordMatchesKpiFilters(record, filters) {
-        if (!record) {
-          return false;
-        }
-        if (filters.shift === 'day' && record.night) {
-          return false;
-        }
-        if (filters.shift === 'night' && !record.night) {
-          return false;
-        }
-        return matchesSharedPatientFilters(record, filters);
-      }
-
       function recordMatchesChartFilters(record, filters) {
         if (!record) {
           return false;
@@ -2720,6 +2675,26 @@ export function startApp() {
       function filterRecordsByChartFilters(records, filters) {
         const normalized = sanitizeChartFilters(filters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         return (Array.isArray(records) ? records : []).filter((record) => recordMatchesChartFilters(record, normalized));
+      }
+
+      function sanitizeHeatmapFilters(filters) {
+        const defaults = getDefaultHeatmapFilters();
+        const normalized = { ...defaults, ...(filters || {}) };
+        if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
+          normalized.arrival = defaults.arrival;
+        }
+        if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
+          normalized.disposition = defaults.disposition;
+        }
+        if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
+          normalized.cardType = defaults.cardType;
+        }
+        return normalized;
+      }
+
+      function filterRecordsByHeatmapFilters(records, filters) {
+        const normalized = sanitizeHeatmapFilters(filters);
+        return (Array.isArray(records) ? records : []).filter((record) => matchesSharedPatientFilters(record, normalized));
       }
 
       function toSentenceCase(label) {
@@ -2754,266 +2729,6 @@ export function startApp() {
         selectors.dailyCaptionContext.textContent = startLabel === endLabel
           ? startLabel
           : `${startLabel} – ${endLabel}`;
-      }
-
-      function updateKpiSummary({ records, dailyStats, windowDays }) {
-        if (!selectors.kpiActiveInfo) {
-          return;
-        }
-        const filters = dashboardState.kpi.filters;
-        const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-        const isDateFiltered = Boolean(selectedDate);
-        const defaultFilters = getDefaultKpiFilters();
-        const totalRecords = Array.isArray(records) ? records.length : 0;
-        const hasAggregatedData = Array.isArray(dailyStats)
-          ? dailyStats.some((entry) => Number.isFinite(entry?.count) && entry.count > 0)
-          : false;
-        const hasData = totalRecords > 0 || hasAggregatedData;
-        const summaryParts = [];
-        const isWindowDefault = Number.isFinite(windowDays)
-          ? windowDays === defaultFilters.window
-          : false;
-        const isShiftDefault = filters.shift === defaultFilters.shift;
-        const isArrivalDefault = filters.arrival === defaultFilters.arrival;
-        const isDispositionDefault = filters.disposition === defaultFilters.disposition;
-        const isCardTypeDefault = filters.cardType === defaultFilters.cardType;
-
-        if (!isDateFiltered && Number.isFinite(windowDays) && windowDays > 0 && !isWindowDefault) {
-          summaryParts.push(`${windowDays} d.`);
-        }
-        if (!isShiftDefault) {
-          summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.shift[filters.shift]));
-        }
-        if (!isArrivalDefault) {
-          summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.arrival[filters.arrival]));
-        }
-        if (!isDispositionDefault) {
-          summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.disposition[filters.disposition]));
-        }
-        if (!isCardTypeDefault) {
-          summaryParts.push(toSentenceCase(KPI_FILTER_LABELS.cardType[filters.cardType]));
-        }
-        let text = summaryParts.join(' • ');
-        if (!hasData) {
-          text = text ? `Įrašų nerasta • ${text}` : 'Įrašų nerasta';
-        }
-        if (!text) {
-        selectors.kpiActiveInfo.textContent = '';
-          setDatasetValue(selectors.kpiActiveInfo, 'default', 'true');
-          return;
-        }
-        selectors.kpiActiveInfo.textContent = text;
-        setDatasetValue(selectors.kpiActiveInfo, 'default', 'false');
-      }
-
-      function applyKpiFiltersLocally(filters) {
-        const normalizedFilters = sanitizeKpiFilters(filters, { getDefaultKpiFilters, KPI_FILTER_LABELS });
-        const windowDays = Number.isFinite(normalizedFilters.window)
-          ? normalizedFilters.window
-          : DEFAULT_SETTINGS.calculations.windowDays;
-        const hasPrimaryRecords = Array.isArray(dashboardState.primaryRecords)
-          && dashboardState.primaryRecords.length > 0;
-        const primaryDailyStats = Array.isArray(dashboardState.primaryDaily)
-          ? dashboardState.primaryDaily
-          : [];
-        let filteredRecords = [];
-        let filteredDailyStats = [];
-
-        if (hasPrimaryRecords) {
-          const scopedRecords = filterRecordsByShiftWindow(dashboardState.primaryRecords, windowDays);
-          filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, normalizedFilters));
-          filteredDailyStats = computeDailyStats(filteredRecords);
-        } else {
-          const scopedDaily = filterDailyStatsByWindow(primaryDailyStats, windowDays);
-          filteredDailyStats = scopedDaily.slice();
-        }
-
-        return {
-          filters: normalizedFilters,
-          records: filteredRecords,
-          dailyStats: filteredDailyStats,
-          windowDays,
-        };
-      }
-
-      async function applyKpiFiltersAndRender() {
-        const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters, { getDefaultKpiFilters, KPI_FILTER_LABELS });
-        dashboardState.kpi.filters = { ...normalizedFilters };
-        const defaultFilters = getDefaultKpiFilters();
-        const windowDays = normalizedFilters.window;
-        const workerPayload = {
-          filters: normalizedFilters,
-          defaultFilters,
-          windowDays,
-          records: Array.isArray(dashboardState.primaryRecords) ? dashboardState.primaryRecords : [],
-          dailyStats: Array.isArray(dashboardState.primaryDaily) ? dashboardState.primaryDaily : [],
-          calculations: settings?.calculations || {},
-          calculationDefaults: DEFAULT_SETTINGS.calculations,
-        };
-        const jobToken = ++kpiWorkerJobToken;
-
-        showKpiSkeleton();
-        try {
-          const result = await runKpiWorkerJob(workerPayload);
-          if (jobToken !== kpiWorkerJobToken) {
-            return;
-          }
-          const filteredRecords = Array.isArray(result?.records) ? result.records : [];
-          const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
-          const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
-          dashboardState.kpi.records = filteredRecords;
-          dashboardState.kpi.daily = filteredDailyStats;
-          const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-          const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-          const dateFilteredRecords = selectedDate
-            ? filterKpiRecordsByDate(filteredRecords, selectedDate, shiftStartHour)
-            : filteredRecords;
-          const dateFilteredDailyStats = selectedDate
-            ? computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS)
-            : filteredDailyStats;
-          renderKpis(dateFilteredDailyStats, filteredDailyStats);
-          const lastShiftRecords = selectedDate ? dateFilteredRecords : filteredRecords;
-          const lastShiftDaily = selectedDate ? dateFilteredDailyStats : filteredDailyStats;
-          renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
-          updateKpiSummary({
-            records: dateFilteredRecords,
-            dailyStats: dateFilteredDailyStats,
-            windowDays: selectedDate ? null : effectiveWindow,
-          });
-          updateKpiSubtitle();
-        } catch (error) {
-          const errorInfo = describeError(error, { code: 'KPI_WORKER', message: 'Nepavyko pritaikyti KPI filtrų worker\'yje' });
-          console.error(errorInfo.log, error);
-          if (jobToken !== kpiWorkerJobToken) {
-            return;
-          }
-          const fallback = applyKpiFiltersLocally(normalizedFilters);
-          dashboardState.kpi.records = fallback.records;
-          dashboardState.kpi.daily = fallback.dailyStats;
-          const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-          const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-          const dateFilteredRecords = selectedDate
-            ? filterKpiRecordsByDate(fallback.records, selectedDate, shiftStartHour)
-            : fallback.records;
-          const dateFilteredDailyStats = selectedDate
-            ? computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS)
-            : fallback.dailyStats;
-          renderKpis(dateFilteredDailyStats, fallback.dailyStats);
-          const lastShiftRecords = selectedDate ? dateFilteredRecords : fallback.records;
-          const lastShiftDaily = selectedDate ? dateFilteredDailyStats : fallback.dailyStats;
-          renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
-          updateKpiSummary({
-            records: dateFilteredRecords,
-            dailyStats: dateFilteredDailyStats,
-            windowDays: selectedDate ? null : fallback.windowDays,
-          });
-          updateKpiSubtitle();
-        }
-      }
-
-      function handleKpiFilterInput(event) {
-        const target = event.target;
-        if (!target || !('name' in target)) {
-          return;
-        }
-        const { name, value } = target;
-        const filters = dashboardState.kpi.filters;
-        if (name === 'window') {
-          const numeric = Number.parseInt(value, 10);
-          if (Number.isFinite(numeric) && numeric >= 0) {
-            filters.window = numeric;
-          }
-        } else if (name === 'shift' && value in KPI_FILTER_LABELS.shift) {
-          filters.shift = value;
-        } else if (name === 'arrival' && value in KPI_FILTER_LABELS.arrival) {
-          filters.arrival = value;
-        } else if (name === 'disposition' && value in KPI_FILTER_LABELS.disposition) {
-          filters.disposition = value;
-        } else if (name === 'cardType' && value in KPI_FILTER_LABELS.cardType) {
-          filters.cardType = value;
-        }
-        syncKpiSegmentedButtons();
-        void applyKpiFiltersAndRender();
-      }
-
-      function handleKpiDateInput(event) {
-        const target = event.target;
-        if (!target || !('value' in target)) {
-          return;
-        }
-        const normalized = normalizeKpiDateValue(target.value);
-        dashboardState.kpi.selectedDate = normalized;
-        updateKpiSubtitle();
-        void applyKpiFiltersAndRender();
-      }
-
-      function handleKpiDateClear() {
-        dashboardState.kpi.selectedDate = null;
-        if (selectors.kpiDateInput) {
-          selectors.kpiDateInput.value = '';
-        }
-        updateKpiSubtitle();
-        void applyKpiFiltersAndRender();
-      }
-
-      function handleKpiSegmentedClick(event) {
-        const button = event.currentTarget;
-        if (!(button instanceof HTMLElement)) {
-          return;
-        }
-        const arrival = getDatasetValue(button, 'kpiArrival');
-        if (arrival && selectors.kpiArrival) {
-          selectors.kpiArrival.value = arrival;
-          selectors.kpiArrival.dispatchEvent(new Event('change', { bubbles: true }));
-          return;
-        }
-        const cardType = getDatasetValue(button, 'kpiCardType');
-        if (cardType && selectors.kpiCardType) {
-          selectors.kpiCardType.value = cardType;
-          selectors.kpiCardType.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      }
-
-      function handleLastShiftMetricClick(event) {
-        const button = event.currentTarget;
-        if (!(button instanceof HTMLElement)) {
-          return;
-        }
-        const metric = normalizeLastShiftMetric(getDatasetValue(button, 'lastShiftMetric'));
-        dashboardState.kpi.lastShiftHourlyMetric = metric;
-        syncLastShiftHourlyMetricButtons();
-        const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-        const baseRecords = Array.isArray(dashboardState.kpi?.records) ? dashboardState.kpi.records : [];
-        const baseDaily = Array.isArray(dashboardState.kpi?.daily) ? dashboardState.kpi.daily : [];
-        if (selectedDate) {
-          const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-          const dateFilteredRecords = filterKpiRecordsByDate(baseRecords, selectedDate, shiftStartHour);
-          const dateFilteredDailyStats = computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS);
-          renderLastShiftHourlyChart(dateFilteredRecords, dateFilteredDailyStats);
-          return;
-        }
-        renderLastShiftHourlyChart(baseRecords, baseDaily);
-      }
-
-      function syncLastShiftHourlyMetricButtons() {
-        if (!Array.isArray(selectors.lastShiftHourlyMetricButtons)) {
-          return;
-        }
-        const metric = normalizeLastShiftMetric(dashboardState.kpi.lastShiftHourlyMetric);
-        selectors.lastShiftHourlyMetricButtons.forEach((btn) => {
-          const btnMetric = normalizeLastShiftMetric(getDatasetValue(btn, 'lastShiftMetric'));
-          btn.setAttribute('aria-pressed', btnMetric === metric ? 'true' : 'false');
-        });
-      }
-
-      function resetKpiFilters({ fromKeyboard } = {}) {
-        dashboardState.kpi.filters = getDefaultKpiFilters();
-        refreshKpiWindowOptions();
-        syncKpiFilterControls();
-        void applyKpiFiltersAndRender();
-        if (fromKeyboard && selectors.kpiFiltersReset) {
-          selectors.kpiFiltersReset.focus();
-        }
       }
 
       function formatKpiValue(value, format) {
@@ -3220,186 +2935,6 @@ export function startApp() {
         };
       }
 
-      function computeShiftDateKeyForArrival(date, shiftStartHour) {
-        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-          return '';
-        }
-        const dayMinutes = 24 * 60;
-        const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
-        const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
-        const arrivalMinutes = date.getHours() * 60 + date.getMinutes();
-        const shiftAnchor = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        if (arrivalMinutes < startMinutes) {
-          shiftAnchor.setDate(shiftAnchor.getDate() - 1);
-        }
-        return formatLocalDateKey(shiftAnchor);
-      }
-
-      function normalizeKpiDateValue(value) {
-        if (typeof value !== 'string') {
-          return null;
-        }
-        const trimmed = value.trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-          return null;
-        }
-        return trimmed;
-      }
-
-      function formatKpiDateLabel(dateKey) {
-        const normalized = normalizeKpiDateValue(dateKey);
-        if (!normalized) {
-          return '';
-        }
-        const date = dateKeyToDate(normalized);
-        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-          return '';
-        }
-        const weekday = weekdayLongFormatter.format(date).toLowerCase();
-        return `${normalized} (${weekday})`;
-      }
-
-      function getRecordShiftDateKey(record, shiftStartHour) {
-        if (!record) {
-          return '';
-        }
-        const arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-          ? record.arrival
-          : null;
-        const discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-          ? record.discharge
-          : null;
-        const reference = arrival || discharge;
-        return reference ? computeShiftDateKeyForArrival(reference, shiftStartHour) : '';
-      }
-
-      function filterKpiRecordsByDate(records, dateKey, shiftStartHour) {
-        const list = Array.isArray(records) ? records : [];
-        const normalized = normalizeKpiDateValue(dateKey);
-        if (!normalized) {
-          return list;
-        }
-        return list.filter((record) => getRecordShiftDateKey(record, shiftStartHour) === normalized);
-      }
-
-      function updateKpiSubtitle() {
-        if (!selectors.kpiSubtitle) {
-          return;
-        }
-        const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-        if (selectedDate) {
-          const label = formatKpiDateLabel(selectedDate);
-          selectors.kpiSubtitle.textContent = label || selectedDate;
-          return;
-        }
-        selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
-      }
-
-      function getLastShiftMetricLabel(metric) {
-        switch (metric) {
-          case LAST_SHIFT_METRIC_DISCHARGES:
-            return 'Išleidimai';
-          case LAST_SHIFT_METRIC_HOSPITALIZED:
-            return 'Hospitalizacijos';
-          case LAST_SHIFT_METRIC_BALANCE:
-            return 'Srautų balansas';
-          default:
-            return 'Atvykimai';
-        }
-      }
-
-      function normalizeLastShiftMetric(value) {
-        const raw = typeof value === 'string' ? value : String(value ?? '');
-        if (LAST_SHIFT_METRICS.includes(raw)) {
-          return raw;
-        }
-        return LAST_SHIFT_METRIC_ARRIVALS;
-      }
-
-      function buildLastShiftHourlySeries(records, dailyStats, metricKey = LAST_SHIFT_METRIC_ARRIVALS) {
-        const lastShiftSummary = buildLastShiftSummary(dailyStats);
-        if (!lastShiftSummary?.dateKey) {
-          return null;
-        }
-        const metric = normalizeLastShiftMetric(metricKey);
-        const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-        const targetDateKey = lastShiftSummary.dateKey;
-        const series = {
-          total: Array(24).fill(0),
-          t: Array(24).fill(0),
-          tr: Array(24).fill(0),
-          ch: Array(24).fill(0),
-          outflow: Array(24).fill(0),
-          net: Array(24).fill(0),
-        };
-        (Array.isArray(records) ? records : []).forEach((record) => {
-          const arrival = record?.arrival;
-          const discharge = record?.discharge;
-          let reference = null;
-          if (metric === LAST_SHIFT_METRIC_ARRIVALS) {
-            reference = arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
-          } else if (metric === LAST_SHIFT_METRIC_DISCHARGES) {
-            reference = discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
-          } else if (metric === LAST_SHIFT_METRIC_HOSPITALIZED) {
-            if (record?.hospitalized) {
-              reference = discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
-            }
-          } else if (metric === LAST_SHIFT_METRIC_BALANCE) {
-            reference = arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
-          }
-          if (!reference) {
-            return;
-          }
-          const dateKey = computeShiftDateKeyForArrival(reference, shiftStartHour);
-          if (dateKey !== targetDateKey) {
-            return;
-          }
-          const hour = reference.getHours();
-          if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
-            return;
-          }
-          series.total[hour] += 1;
-          const rawType = typeof record.cardType === 'string' ? record.cardType.trim().toLowerCase() : '';
-          if (rawType === 't') {
-            series.t[hour] += 1;
-          } else if (rawType === 'tr') {
-            series.tr[hour] += 1;
-          } else if (rawType === 'ch') {
-            series.ch[hour] += 1;
-          }
-        });
-        if (metric === LAST_SHIFT_METRIC_BALANCE) {
-          (Array.isArray(records) ? records : []).forEach((record) => {
-            const discharge = record?.discharge;
-            if (!(discharge instanceof Date) || Number.isNaN(discharge.getTime())) {
-              return;
-            }
-            const dateKey = computeShiftDateKeyForArrival(discharge, shiftStartHour);
-            if (dateKey !== targetDateKey) {
-              return;
-            }
-            const hour = discharge.getHours();
-            if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
-              return;
-            }
-            series.outflow[hour] += 1;
-          });
-          series.net = series.total.map((value, index) => value - (series.outflow[index] || 0));
-        }
-        const hasData = series.total.some((value) => value > 0);
-        return {
-          dateKey: targetDateKey,
-          dateLabel: lastShiftSummary.dateLabel || targetDateKey,
-          shiftStartHour,
-          metric,
-          metricLabel: getLastShiftMetricLabel(metric),
-          series,
-          hasData: metric === LAST_SHIFT_METRIC_BALANCE
-            ? (series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0))
-            : hasData,
-        };
-      }
-
       function renderKpiPeriodSummary(lastShiftSummary, periodMetrics) {
         return kpiRenderer.renderKpiPeriodSummary(lastShiftSummary, periodMetrics);
       }
@@ -3466,17 +3001,6 @@ export function startApp() {
 
       function renderKpis(dailyStats, referenceDailyStats = null) {
         return kpiRenderer.renderKpis(dailyStats, referenceDailyStats);
-      }
-
-      function renderLastShiftHourlyChart(records, dailyStats) {
-        const metricKey = dashboardState.kpi?.lastShiftHourlyMetric || LAST_SHIFT_METRIC_ARRIVALS;
-        const seriesInfo = buildLastShiftHourlySeries(records, dailyStats, metricKey);
-        dashboardState.kpi.lastShiftHourly = seriesInfo;
-        chartRenderers.renderLastShiftHourlyChartWithTheme(seriesInfo).catch((error) => {
-          const errorInfo = describeError(error, { code: 'LAST_SHIFT_HOURLY', message: 'Nepavyko atnaujinti paskutinės pamainos grafiko' });
-          console.error(errorInfo.log, error);
-          setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
-        });
       }
 
       function renderDailyChart(dailyStats, period, ChartLib, palette) {
@@ -4191,34 +3715,67 @@ export function startApp() {
           durationSum: 0,
           durationCount: 0,
         })));
-        const weekdayDays = Array.from({ length: 7 }, () => new Set());
+        const weekdayDays = {
+          arrivals: Array.from({ length: 7 }, () => new Set()),
+          discharges: Array.from({ length: 7 }, () => new Set()),
+          hospitalized: Array.from({ length: 7 }, () => new Set()),
+          avgDuration: Array.from({ length: 7 }, () => new Set()),
+        };
+
         (Array.isArray(records) ? records : []).forEach((entry) => {
-          if (!(entry.arrival instanceof Date) || Number.isNaN(entry.arrival.getTime())) {
-            return;
-          }
-          const rawDay = entry.arrival.getDay();
-          const dayIndex = (rawDay + 6) % 7; // perkeliam, kad pirmadienis būtų pirmas
-          const hour = entry.arrival.getHours();
-          if (hour < 0 || hour > 23) {
-            return;
-          }
-          const cell = aggregates[dayIndex][hour];
-          cell.arrivals += 1;
-          if (entry.hospitalized) {
-            cell.hospitalized += 1;
-          } else {
-            cell.discharges += 1;
-          }
-          if (entry.arrival instanceof Date && entry.discharge instanceof Date) {
-            const duration = (entry.discharge.getTime() - entry.arrival.getTime()) / 3600000;
-            if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
-              cell.durationSum += duration;
-              cell.durationCount += 1;
+          const arrival = entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())
+            ? entry.arrival
+            : null;
+          const discharge = entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())
+            ? entry.discharge
+            : null;
+          const arrivalHasTime = entry?.arrivalHasTime === true
+            || (entry?.arrivalHasTime == null && arrival && (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+          const dischargeHasTime = entry?.dischargeHasTime === true
+            || (entry?.dischargeHasTime == null && discharge && (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
+
+          if (arrival && arrivalHasTime) {
+            const rawDay = arrival.getDay();
+            const dayIndex = (rawDay + 6) % 7; // perkeliam, kad pirmadienis būtų pirmas
+            const hour = arrival.getHours();
+            if (hour >= 0 && hour <= 23) {
+              const cell = aggregates[dayIndex][hour];
+              cell.arrivals += 1;
+              const dateKey = formatLocalDateKey(arrival);
+              if (dateKey) {
+                weekdayDays.arrivals[dayIndex].add(dateKey);
+                weekdayDays.avgDuration[dayIndex].add(dateKey);
+              }
+              if (discharge) {
+                const duration = (discharge.getTime() - arrival.getTime()) / 3600000;
+                if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
+                  cell.durationSum += duration;
+                  cell.durationCount += 1;
+                }
+              }
             }
           }
-          const dateKey = formatLocalDateKey(entry.arrival);
-          if (dateKey) {
-            weekdayDays[dayIndex].add(dateKey);
+
+          if (discharge && dischargeHasTime) {
+            const rawDay = discharge.getDay();
+            const dayIndex = (rawDay + 6) % 7;
+            const hour = discharge.getHours();
+            if (hour >= 0 && hour <= 23) {
+              const cell = aggregates[dayIndex][hour];
+              if (entry.hospitalized) {
+                cell.hospitalized += 1;
+                const dateKey = formatLocalDateKey(discharge);
+                if (dateKey) {
+                  weekdayDays.hospitalized[dayIndex].add(dateKey);
+                }
+              } else {
+                cell.discharges += 1;
+                const dateKey = formatLocalDateKey(discharge);
+                if (dateKey) {
+                  weekdayDays.discharges[dayIndex].add(dateKey);
+                }
+              }
+            }
           }
         });
 
@@ -4237,7 +3794,11 @@ export function startApp() {
         };
 
         aggregates.forEach((row, dayIndex) => {
-          const divisor = weekdayDays[dayIndex].size || 1;
+          const arrivalsDiv = weekdayDays.arrivals[dayIndex].size || 1;
+          const dischargesDiv = weekdayDays.discharges[dayIndex].size || 1;
+          const hospitalizedDiv = weekdayDays.hospitalized[dayIndex].size || 1;
+          const durationDiv = weekdayDays.avgDuration[dayIndex].size || 1;
+
           row.forEach((cell, hourIndex) => {
             if (cell.arrivals > 0) {
               metrics.arrivals.hasData = true;
@@ -4253,9 +3814,9 @@ export function startApp() {
               metrics.avgDuration.samples += cell.durationCount;
             }
 
-            const arrivalsAvg = divisor ? cell.arrivals / divisor : 0;
-            const dischargesAvg = divisor ? cell.discharges / divisor : 0;
-            const hospitalizedAvg = divisor ? cell.hospitalized / divisor : 0;
+            const arrivalsAvg = arrivalsDiv ? cell.arrivals / arrivalsDiv : 0;
+            const dischargesAvg = dischargesDiv ? cell.discharges / dischargesDiv : 0;
+            const hospitalizedAvg = hospitalizedDiv ? cell.hospitalized / hospitalizedDiv : 0;
             const averageDuration = cell.durationCount > 0 ? cell.durationSum / cell.durationCount : 0;
 
             metrics.arrivals.matrix[dayIndex][hourIndex] = arrivalsAvg;
@@ -5021,6 +4582,27 @@ export function startApp() {
         );
       }
 
+      function handleHeatmapFilterChange(event) {
+        const target = event?.target;
+        if (!target || !('name' in target)) {
+          return;
+        }
+        const { name, value } = target;
+        const filters = { ...dashboardState.heatmapFilters };
+        if (name === 'heatmapArrival' && value in KPI_FILTER_LABELS.arrival) {
+          filters.arrival = value;
+        } else if (name === 'heatmapDisposition' && value in KPI_FILTER_LABELS.disposition) {
+          filters.disposition = value;
+        } else if (name === 'heatmapCardType' && value in KPI_FILTER_LABELS.cardType) {
+          filters.cardType = value;
+        } else if (name === 'heatmapYear') {
+          dashboardState.heatmapYear = value === 'all' ? null : Number.parseInt(value, 10);
+        }
+        dashboardState.heatmapFilters = sanitizeHeatmapFilters(filters);
+        syncHeatmapFilterControls();
+        applyHeatmapFiltersAndRender();
+      }
+
 
   function areStylesheetsLoaded() {
         const sheets = Array.from(document.styleSheets || []);
@@ -5453,6 +5035,7 @@ export function startApp() {
         defaultChartFilters: getDefaultChartFilters,
         defaultKpiFilters: getDefaultKpiFilters,
         defaultFeedbackFilters: getDefaultFeedbackFilters,
+        defaultHeatmapFilters: getDefaultHeatmapFilters,
         defaultHeatmapMetric: DEFAULT_HEATMAP_METRIC,
         hourlyMetricArrivals: HOURLY_METRIC_ARRIVALS,
         hourlyCompareSeriesAll: HOURLY_COMPARE_SERIES_ALL,
@@ -5499,6 +5082,13 @@ export function startApp() {
         handleChartFilterChange,
         handleChartSegmentedClick,
       } = chartFlow;
+
+      const heatmapFlow = {
+        populateHeatmapYearOptions,
+        syncHeatmapFilterControls,
+        applyHeatmapFiltersAndRender,
+        computeHeatmapDataForFilters,
+      };
 
       function resetMonthlyState() {
         dashboardState.monthly.all = [];
@@ -5799,6 +5389,18 @@ export function startApp() {
             selectors.heatmapMetricSelect.setAttribute('aria-label', heatmapLabelText);
             selectors.heatmapMetricSelect.title = `${heatmapLabelText} (Ctrl+Shift+H)`;
           }
+        }
+        if (selectors.heatmapFilterArrival) {
+          selectors.heatmapFilterArrival.setAttribute('aria-label', 'Atvykimas');
+        }
+        if (selectors.heatmapFilterDisposition) {
+          selectors.heatmapFilterDisposition.setAttribute('aria-label', 'Sprendimas');
+        }
+        if (selectors.heatmapFilterCardType) {
+          selectors.heatmapFilterCardType.setAttribute('aria-label', 'Kortelė');
+        }
+        if (selectors.heatmapYearSelect) {
+          selectors.heatmapYearSelect.setAttribute('aria-label', 'Metai');
         }
         populateHeatmapMetricOptions();
         updateHeatmapCaption(dashboardState.heatmapMetric);
@@ -6512,7 +6114,50 @@ export function startApp() {
         resolveColumnIndex,
       });
 
-      let kpiWorkerJobToken = 0;
+      const kpiFlow = createKpiFlow({
+        selectors,
+        dashboardState,
+        TEXT,
+        DEFAULT_SETTINGS,
+        DEFAULT_KPI_WINDOW_DAYS,
+        KPI_FILTER_LABELS,
+        KPI_WINDOW_OPTION_BASE,
+        getDefaultKpiFilters,
+        sanitizeKpiFilters,
+        getDatasetValue,
+        setDatasetValue,
+        weekdayLongFormatter,
+        dateKeyToDate,
+        formatLocalDateKey,
+        computeDailyStats,
+        filterDailyStatsByWindow,
+        matchesSharedPatientFilters,
+        describeError,
+        showKpiSkeleton,
+        renderKpis,
+        renderLastShiftHourlyChartWithTheme: (seriesInfo) => chartRenderers.renderLastShiftHourlyChartWithTheme(seriesInfo),
+        setChartCardMessage,
+        getSettings: () => settings,
+        runKpiWorkerJob: (...args) => runKpiWorkerJob(...args),
+        buildLastShiftSummary,
+        toSentenceCase,
+      });
+
+      const {
+        refreshKpiWindowOptions,
+        syncKpiFilterControls,
+        handleKpiFilterInput,
+        handleKpiDateInput,
+        handleKpiDateClear,
+        handleKpiSegmentedClick,
+        handleLastShiftMetricClick,
+        syncLastShiftHourlyMetricButtons,
+        resetKpiFilters,
+        applyKpiFiltersAndRender,
+        updateKpiSummary,
+        updateKpiSubtitle,
+      } = kpiFlow;
+
 
       function toDateKeyFromDate(date) {
         if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -7372,17 +7017,17 @@ export function startApp() {
           const total = Number.isFinite(entry?.count) ? entry.count : 0;
           return total > 0 ? entry.hospitalized / total : 0;
         });
-        const range = (list) => {
-          const values = list.filter((value) => Number.isFinite(value));
-          if (!values.length) {
-            return { min: 0, max: 0 };
-          }
-          return { min: Math.min(...values), max: Math.max(...values) };
-        };
-        const totalsRange = range(totalsList);
-        const staysRange = range(staysList);
-        const hospRange = range(hospShareList);
-        const palette = getThemePalette();
+          const range = (list) => {
+            const values = list.filter((value) => Number.isFinite(value));
+            if (!values.length) {
+              return { min: 0, max: 0 };
+            }
+            return { min: Math.min(...values), max: Math.max(...values) };
+          };
+          const totalsRange = range(totalsList);
+          const staysRange = range(staysList);
+          const markTotals = totalsRange.max > totalsRange.min;
+          const markStays = staysRange.max > staysRange.min;
 
         sorted.forEach((entry) => {
           const row = document.createElement('tr');
@@ -7398,20 +7043,12 @@ export function startApp() {
             row.classList.add('table-row--weekend');
           }
 
-          const makeHeat = (value, { min, max }) => {
-            if (!Number.isFinite(value) || max <= min) {
-              return '';
-            }
-            const intensity = Math.max(0, Math.min(1, (value - min) / (max - min)));
-            return computeHeatmapColor(palette.accent, intensity);
-          };
-
-          const dateCell = document.createElement('td');
-          dateCell.textContent = displayDate;
-          const totalCell = document.createElement('td');
-          totalCell.textContent = numberFormatter.format(total);
-          const stayCell = document.createElement('td');
-          stayCell.textContent = decimalFormatter.format(avgStayEntry);
+            const dateCell = document.createElement('td');
+            dateCell.textContent = displayDate;
+            const totalCell = document.createElement('td');
+            totalCell.textContent = numberFormatter.format(total);
+            const stayCell = document.createElement('td');
+            stayCell.textContent = decimalFormatter.format(avgStayEntry);
           const nightCell = document.createElement('td');
           nightCell.innerHTML = formatValueWithShare(entry.night, total);
           const emsCell = document.createElement('td');
@@ -7421,21 +7058,20 @@ export function startApp() {
           const disCell = document.createElement('td');
           disCell.innerHTML = formatValueWithShare(entry.discharged, total);
 
-          const totalHeat = makeHeat(total, totalsRange);
-          if (totalHeat) {
-            totalCell.classList.add('table-cell--heat');
-            totalCell.style.backgroundColor = totalHeat;
-          }
-          const stayHeat = makeHeat(avgStayEntry, staysRange);
-          if (stayHeat) {
-            stayCell.classList.add('table-cell--heat');
-            stayCell.style.backgroundColor = stayHeat;
-          }
-          const hospHeat = makeHeat(hospShare, hospRange);
-          if (hospHeat) {
-            hospCell.classList.add('table-cell--heat');
-            hospCell.style.backgroundColor = hospHeat;
-          }
+            if (markTotals && Number.isFinite(total)) {
+              if (total === totalsRange.max) {
+                totalCell.classList.add('table-cell--max');
+              } else if (total === totalsRange.min) {
+                totalCell.classList.add('table-cell--min');
+              }
+            }
+            if (markStays && Number.isFinite(avgStayEntry)) {
+              if (avgStayEntry === staysRange.max) {
+                stayCell.classList.add('table-cell--max');
+              } else if (avgStayEntry === staysRange.min) {
+                stayCell.classList.add('table-cell--min');
+              }
+            }
 
           row.append(dateCell, totalCell, stayCell, nightCell, emsCell, hospCell, disCell);
 
@@ -9102,13 +8738,16 @@ export function startApp() {
         filterDailyStatsByWindow,
         populateChartYearOptions,
         populateHourlyCompareYearOptions,
+        populateHeatmapYearOptions,
         getDefaultChartFilters,
         sanitizeChartFilters,
         KPI_FILTER_LABELS,
         syncChartFilterControls,
+        syncHeatmapFilterControls,
         prepareChartDataForPeriod,
         applyKpiFiltersAndRender,
         renderCharts,
+        getHeatmapData: heatmapFlow.computeHeatmapDataForFilters,
         renderRecentTable,
         computeMonthlyStats,
         renderMonthlyTable,
@@ -9258,6 +8897,7 @@ export function startApp() {
         updateChartPeriod,
         updateChartYear,
         handleHeatmapMetricChange,
+        handleHeatmapFilterChange,
         handleHourlyMetricClick,
         handleHourlyDepartmentInput,
         handleHourlyDepartmentBlur,
@@ -9301,9 +8941,12 @@ export function startApp() {
         dashboardState.kpi.filters = getDefaultKpiFilters();
         dashboardState.chartFilters = getDefaultChartFilters();
         dashboardState.feedback.filters = getDefaultFeedbackFilters();
+        dashboardState.heatmapFilters = getDefaultHeatmapFilters();
+        dashboardState.heatmapYear = null;
         applySettingsToText();
         applyTextContent();
         applyFooterSource();
+        syncHeatmapFilterControls();
         uiEvents.initUI();
         applySectionVisibility();
         scheduleInitialLoad();
