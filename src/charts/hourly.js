@@ -311,6 +311,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     setChartCardMessage,
     TEXT,
     HEATMAP_HOURS,
+    decimalFormatter,
     numberFormatter,
   } = env;
 
