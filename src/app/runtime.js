@@ -5260,12 +5260,23 @@ export function startApp() {
       /**
        * Pirminis tekstų suleidimas iš konfigūracijos (galima perrašyti iš kitų failų).
        */
-      function applyTextContent() {
-        selectors.title.textContent = TEXT.title;
-        selectors.subtitle.textContent = TEXT.subtitle;
-        if (selectors.tabOverview) {
-          selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
-        }
+        function applyTextContent() {
+          selectors.title.textContent = TEXT.title;
+          selectors.subtitle.textContent = TEXT.subtitle;
+          const setSectionTitle = (heading, text) => {
+            if (!heading) {
+              return;
+            }
+            const textNode = heading.querySelector('.section-title__text');
+            if (textNode) {
+              textNode.textContent = text;
+            } else {
+              heading.textContent = text;
+            }
+          };
+          if (selectors.tabOverview) {
+            selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
+          }
         if (selectors.edNavButton) {
           const edNavLabel = settings.output.tabEdLabel || TEXT.tabs.ed;
           const openLabel = typeof TEXT.edToggle?.open === 'function'
@@ -5320,10 +5331,10 @@ export function startApp() {
           selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
         }
         updateFullscreenControls();
-        selectors.kpiHeading.textContent = TEXT.kpis.title;
-        selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
-        selectors.chartHeading.textContent = TEXT.charts.title;
-        selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
+          setSectionTitle(selectors.kpiHeading, TEXT.kpis.title);
+          selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
+          setSectionTitle(selectors.chartHeading, TEXT.charts.title);
+          selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
         if (selectors.chartYearLabel) {
           selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
         }
@@ -5404,29 +5415,29 @@ export function startApp() {
         }
         populateHeatmapMetricOptions();
         updateHeatmapCaption(dashboardState.heatmapMetric);
-        selectors.recentHeading.textContent = TEXT.recent.title;
-        selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
-        selectors.recentCaption.textContent = TEXT.recent.caption;
-        if (selectors.monthlyHeading) {
-          selectors.monthlyHeading.textContent = TEXT.monthly.title;
-        }
+          setSectionTitle(selectors.recentHeading, TEXT.recent.title);
+          selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
+          selectors.recentCaption.textContent = TEXT.recent.caption;
+          if (selectors.monthlyHeading) {
+            setSectionTitle(selectors.monthlyHeading, TEXT.monthly.title);
+          }
         if (selectors.monthlySubtitle) {
           selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
         }
         if (selectors.monthlyCaption) {
           selectors.monthlyCaption.textContent = TEXT.monthly.caption;
         }
-        if (selectors.yearlyHeading) {
-          selectors.yearlyHeading.textContent = TEXT.yearly.title;
-        }
+          if (selectors.yearlyHeading) {
+            setSectionTitle(selectors.yearlyHeading, TEXT.yearly.title);
+          }
         if (selectors.yearlySubtitle) {
           selectors.yearlySubtitle.textContent = TEXT.yearly.subtitle;
         }
         if (selectors.yearlyCaption) {
           selectors.yearlyCaption.textContent = TEXT.yearly.caption;
         }
-        selectors.feedbackHeading.textContent = TEXT.feedback.title;
-        selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
+          setSectionTitle(selectors.feedbackHeading, TEXT.feedback.title);
+          selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
         if (selectors.feedbackDescription) {
           selectors.feedbackDescription.textContent = TEXT.feedback.description;
         }
@@ -5490,9 +5501,9 @@ export function startApp() {
         if (selectors.feedbackColumnContact) {
           selectors.feedbackColumnContact.textContent = TEXT.feedback.table.headers.contact;
         }
-        if (selectors.edHeading) {
-          selectors.edHeading.textContent = settings.output.edTitle || TEXT.ed.title;
-        }
+          if (selectors.edHeading) {
+            setSectionTitle(selectors.edHeading, settings.output.edTitle || TEXT.ed.title);
+          }
         if (selectors.edStatus) {
           selectors.edStatus.textContent = TEXT.ed.status.loading;
           setDatasetValue(selectors.edStatus, 'tone', 'info');
