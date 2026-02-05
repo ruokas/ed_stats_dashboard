@@ -1,0 +1,65 @@
+import { DEFAULT_ED_SOURCE_URL, DEFAULT_FOOTER_SOURCE, DEFAULT_KPI_WINDOW_DAYS, DEFAULT_PAGE_TITLE, TEXT } from './constants.js';
+
+export const DEFAULT_SETTINGS = {
+  dataSource: {
+    // Pagrindinis operatyvinių duomenų šaltinis (Google Sheets → Publish to CSV)
+    url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8xfS3FxpD5pT6rm-ClSf9DjV3usXjvJG4uKj7aC3_QtThtXidQZaN0ZQe9SEMOXB94XeLshwwLUSW/pub?gid=706041848&single=true&output=csv',
+    feedback: {
+      url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTr4ghdkkUJw5pYjb7nTDgoGdaTIUjLT7bD_8q05QyBNR4Z-tTVqhWMvXGemJUIneXyyUF_8-O-EftK/pub?gid=369777093&single=true&output=csv',
+    },
+    ed: {
+      url: DEFAULT_ED_SOURCE_URL,
+    },
+    historical: {
+      enabled: true,
+      label: 'Papildomas istorinis (5 metai)',
+      url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?output=csv',
+    },
+  },
+  csv: {
+    arrival: 'Atvykimo data',
+    discharge: 'Išrašymo data',
+    dayNight: 'Diena/naktis',
+    gmp: 'GMP',
+    department: 'Nukreiptas į padalinį',
+    number: 'Numeris',
+    trueValues: '1,true,taip,t,yes,y,GMP,su GMP,GMP (su GMP)',
+    hospitalizedValues: '',
+    nightKeywords: 'nakt,night',
+    dayKeywords: 'dien,ryt,vak,day',
+  },
+  calculations: {
+    windowDays: DEFAULT_KPI_WINDOW_DAYS,
+    recentDays: 7,
+    nightStartHour: 20,
+    nightEndHour: 7,
+  },
+  output: {
+    pageTitle: DEFAULT_PAGE_TITLE,
+    title: TEXT.title,
+    subtitle: TEXT.subtitle,
+    kpiTitle: TEXT.kpis.title,
+    kpiSubtitle: TEXT.kpis.subtitle,
+    chartsTitle: TEXT.charts.title,
+    chartsSubtitle: TEXT.charts.subtitle,
+    recentTitle: TEXT.recent.title,
+    recentSubtitle: TEXT.recent.subtitle,
+    monthlyTitle: TEXT.monthly.title,
+    monthlySubtitle: TEXT.monthly.subtitle,
+    yearlyTitle: TEXT.yearly.title,
+    yearlySubtitle: TEXT.yearly.subtitle,
+    feedbackTitle: TEXT.feedback.title,
+    feedbackSubtitle: TEXT.feedback.subtitle,
+    feedbackDescription: TEXT.feedback.description,
+    feedbackTrendTitle: TEXT.feedback.trend.title,
+    footerSource: DEFAULT_FOOTER_SOURCE,
+    scrollTopLabel: TEXT.scrollTop,
+    tabOverviewLabel: TEXT.tabs.overview,
+    tabEdLabel: TEXT.tabs.ed,
+    edTitle: TEXT.ed.title,
+    showRecent: true,
+    showMonthly: true,
+    showYearly: true,
+    showFeedback: true,
+  },
+};

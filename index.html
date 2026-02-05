@@ -693,6 +693,37 @@
                 <option value="arrivals">Atvykimų skaičius / d.</option>
               </select>
             </label>
+            <label class="heatmap-toolbar__field" for="heatmapArrival">
+              <span class="heatmap-toolbar__label">Atvykimas</span>
+              <select id="heatmapArrival" name="heatmapArrival">
+                <option value="all">Visi</option>
+                <option value="ems">Tik GMP</option>
+                <option value="self">Be GMP</option>
+              </select>
+            </label>
+            <label class="heatmap-toolbar__field" for="heatmapDisposition">
+              <span class="heatmap-toolbar__label">Sprendimas</span>
+              <select id="heatmapDisposition" name="heatmapDisposition">
+                <option value="all">Visi</option>
+                <option value="hospitalized">Hospitalizuoti</option>
+                <option value="discharged">Išleisti</option>
+              </select>
+            </label>
+            <label class="heatmap-toolbar__field" for="heatmapCardType">
+              <span class="heatmap-toolbar__label">Kortelė</span>
+              <select id="heatmapCardType" name="heatmapCardType">
+                <option value="all">Visos</option>
+                <option value="t">T</option>
+                <option value="tr">TR</option>
+                <option value="ch">CH</option>
+              </select>
+            </label>
+            <label class="heatmap-toolbar__field" for="heatmapYear">
+              <span class="heatmap-toolbar__label">Metai</span>
+              <select id="heatmapYear" name="heatmapYear">
+                <option value="all">Visi metai</option>
+              </select>
+            </label>
             <button
               type="button"
               class="chart-copy-btn"
