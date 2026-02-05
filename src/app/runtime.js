@@ -13,6 +13,24 @@ import { createChartRenderers } from '../charts/index.js';
 import { createKpiRenderer } from '../render/kpi.js';
 import { createEdRenderer } from '../render/ed.js';
 import { createUIEvents } from '../events/index.js';
+import { createLayoutTools } from './runtime/layout.js';
+import {
+  FEEDBACK_FILTER_ALL,
+  FEEDBACK_FILTER_MISSING,
+  KPI_FILTER_LABELS,
+  KPI_FILTER_TOGGLE_LABELS,
+  KPI_WINDOW_OPTION_BASE,
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+} from './runtime/state.js';
+import { sanitizeChartFilters, sanitizeKpiFilters } from './runtime/filters.js';
+import {
+  setCopyButtonFeedback,
+  storeCopyButtonBaseLabel,
+  writeBlobToClipboard,
+  writeTextToClipboard,
+} from './runtime/clipboard.js';
 import {
   numberFormatter,
   decimalFormatter,
@@ -58,169 +76,13 @@ export function startApp() {
 
       let settings = normalizeSettings({});
 
-      const KPI_WINDOW_OPTION_BASE = [7, 14, 30, 60, 90, 180, 365];
-      const KPI_FILTER_LABELS = {
-        shift: {
-          all: 'visos pamainos',
-          day: 'dieninės pamainos',
-          night: 'naktinės pamainos',
-        },
-        arrival: {
-          all: 'visi atvykimai',
-          ems: 'tik GMP',
-          self: 'be GMP',
-        },
-        disposition: {
-          all: 'visos būsenos',
-          hospitalized: 'hospitalizuoti',
-          discharged: 'išleisti',
-        },
-        cardType: {
-          all: 'visos kortelės',
-          t: 'T kortelės',
-          tr: 'TR kortelės',
-          ch: 'CH kortelės',
-        },
-      };
+      const getDefaultKpiFilters = () => createDefaultKpiFilters({ settings, DEFAULT_SETTINGS, DEFAULT_KPI_WINDOW_DAYS });
+      const getDefaultChartFilters = () => createDefaultChartFilters();
+      const getDefaultFeedbackFilters = () => createDefaultFeedbackFilters();
 
-      const KPI_FILTER_TOGGLE_LABELS = {
-        show: 'Išskleisti filtrus',
-        hide: 'Sutraukti filtrus',
-      };
 
-      function getDefaultKpiFilters() {
-        const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
-          ? Number(settings.calculations.windowDays)
-          : DEFAULT_SETTINGS.calculations.windowDays;
-        const defaultWindow = Number.isFinite(configuredWindow) && configuredWindow > 0
-          ? configuredWindow
-          : DEFAULT_KPI_WINDOW_DAYS;
-        return {
-          window: defaultWindow,
-          shift: 'all',
-          arrival: 'all',
-          disposition: 'all',
-          cardType: 'all',
-        };
-      }
 
-      function getDefaultChartFilters() {
-        return {
-          arrival: 'all',
-          disposition: 'all',
-          cardType: 'all',
-          compareGmp: false,
-        };
-      }
 
-      function sanitizeKpiFilters(filters) {
-        const defaults = getDefaultKpiFilters();
-        const normalized = { ...defaults, ...(filters || {}) };
-        normalized.window = defaults.window;
-        normalized.shift = defaults.shift;
-        if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
-          normalized.arrival = defaults.arrival;
-        }
-        normalized.disposition = defaults.disposition;
-        if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
-          normalized.cardType = defaults.cardType;
-        }
-        return normalized;
-      }
-
-      function sanitizeChartFilters(filters) {
-        const defaults = getDefaultChartFilters();
-        const normalized = { ...defaults, ...(filters || {}) };
-        if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) {
-          normalized.arrival = defaults.arrival;
-        }
-        if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) {
-          normalized.disposition = defaults.disposition;
-        }
-        if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) {
-          normalized.cardType = defaults.cardType;
-        }
-        normalized.compareGmp = normalized.compareGmp === true || normalized.compareGmp === 'true';
-        if (normalized.compareGmp) {
-          normalized.arrival = defaults.arrival;
-        }
-        return normalized;
-      }
-
-      const FEEDBACK_FILTER_ALL = 'all';
-      const FEEDBACK_FILTER_MISSING = '__missing__';
-
-      function getDefaultFeedbackFilters() {
-        return {
-          respondent: FEEDBACK_FILTER_ALL,
-          location: FEEDBACK_FILTER_ALL,
-        };
-      }
-
-      function storeCopyButtonBaseLabel(button) {
-        if (!button || getDatasetValue(button, 'copyLabelBase')) {
-          return;
-        }
-        const fallback = button.getAttribute('aria-label') || button.title || 'Kopijuoti grafiką';
-        setDatasetValue(button, 'copyLabelBase', fallback);
-        if (!getDatasetValue(button, 'tooltip')) {
-          setDatasetValue(button, 'tooltip', fallback);
-        }
-      }
-
-      function setCopyButtonFeedback(button, message, tone = 'success') {
-        if (!button) {
-          return;
-        }
-        storeCopyButtonBaseLabel(button);
-        const base = getDatasetValue(button, 'copyLabelBase', 'Kopijuoti grafiką');
-        setDatasetValue(button, 'tooltip', message);
-        button.setAttribute('aria-label', message);
-        button.title = message;
-        button.classList.add('is-feedback');
-        if (tone === 'error') {
-          button.classList.add('is-error');
-        } else {
-          button.classList.remove('is-error');
-        }
-        if (button.__copyResetTimeout) {
-          window.clearTimeout(button.__copyResetTimeout);
-        }
-        button.__copyResetTimeout = window.setTimeout(() => {
-          setDatasetValue(button, 'tooltip', base);
-          button.setAttribute('aria-label', base);
-          button.title = base;
-          button.classList.remove('is-feedback');
-          button.classList.remove('is-error');
-        }, 2200);
-      }
-
-      async function writeTextToClipboard(text) {
-        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-          await navigator.clipboard.writeText(text);
-          return true;
-        }
-        const fallback = document.createElement('textarea');
-        fallback.value = text;
-        fallback.setAttribute('readonly', 'readonly');
-        fallback.style.position = 'fixed';
-        fallback.style.opacity = '0';
-        fallback.style.pointerEvents = 'none';
-        document.body.appendChild(fallback);
-        fallback.select();
-        const success = document.execCommand('copy');
-        document.body.removeChild(fallback);
-        return success;
-      }
-
-      async function writeBlobToClipboard(blob, mimeType) {
-        if (!navigator.clipboard || typeof navigator.clipboard.write !== 'function' || typeof window.ClipboardItem !== 'function') {
-          return false;
-        }
-        const item = new ClipboardItem({ [mimeType]: blob });
-        await navigator.clipboard.write([item]);
-        return true;
-      }
 
       function resolveChartCopyTarget(button) {
         if (!button) {
@@ -1209,40 +1071,30 @@ export function startApp() {
 
       const selectors = createSelectors();
 
-      const sectionNavState = {
-        initialized: false,
-        items: [],
-        itemBySection: new Map(),
-        activeHeadingId: '',
-      };
+      const layoutTools = createLayoutTools({ selectors, getDatasetValue, setDatasetValue });
+      const {
+        sectionNavState,
+        sectionVisibility,
+        sectionNavCompactQuery,
+        setLayoutRefreshAllowed,
+        getLayoutResizeObserver,
+        setLayoutResizeObserver,
+        updateSectionNavCompactState,
+        handleNavKeydown,
+        scheduleLayoutRefresh,
+        syncSectionNavVisibility,
+        waitForFontsAndStyles,
+        updateLayoutMetrics,
+        refreshSectionObserver,
+        flushPendingLayoutRefresh,
+        updateScrollTopButtonVisibility,
+        scheduleScrollTopUpdate,
+      } = layoutTools;
 
-      const sectionNavCompactQuery = typeof window.matchMedia === 'function'
-        ? window.matchMedia('(max-width: 640px)')
-        : null;
-
-      const sectionVisibility = new Map();
-      const layoutMetrics = { hero: 0, nav: 0 };
-      let sectionObserver = null;
-      let layoutRefreshHandle = null;
-      let layoutResizeObserver = null;
-      let layoutStylesReady = false;
-      let layoutStylesReadyPromise = null;
-      let layoutRefreshAllowed = false;
-      let pendingLayoutRefresh = false;
-      const scrollTopState = { visible: false, rafHandle: null };
       const tvState = { clockHandle: null };
 
-      function setLayoutRefreshAllowed(value) {
-        layoutRefreshAllowed = Boolean(value);
-      }
 
-      function getLayoutResizeObserver() {
-        return layoutResizeObserver;
-      }
 
-      function setLayoutResizeObserver(observer) {
-        layoutResizeObserver = observer;
-      }
 
       function normalizeHourlyWeekday(value) {
         if (value === HOURLY_WEEKDAY_ALL) {
@@ -1795,7 +1647,7 @@ export function startApp() {
       }
 
       function getHourlyChartRecords(baseRecords, selectedYear, filters, period) {
-        const sanitized = sanitizeChartFilters(filters);
+        const sanitized = sanitizeChartFilters(filters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         sanitized.arrival = 'all';
         const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
         const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, sanitized);
@@ -2819,7 +2671,7 @@ export function startApp() {
       }
 
       function syncChartFilterControls() {
-        const filters = sanitizeChartFilters(dashboardState.chartFilters);
+        const filters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         dashboardState.chartFilters = { ...filters };
         const compareActive = Boolean(filters.compareGmp);
         if (selectors.chartFilterArrival) {
@@ -2844,7 +2696,7 @@ export function startApp() {
       }
 
       function syncChartSegmentedButtons(compareActive = false) {
-        const filters = sanitizeChartFilters(dashboardState.chartFilters);
+        const filters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         if (Array.isArray(selectors.chartFilterArrivalButtons) && selectors.chartFilterArrivalButtons.length) {
           selectors.chartFilterArrivalButtons.forEach((button) => {
             const value = getDatasetValue(button, 'chartArrival');
@@ -2886,7 +2738,7 @@ export function startApp() {
         if (!selectors.chartFiltersSummary) {
           return;
         }
-        const filters = sanitizeChartFilters(dashboardState.chartFilters);
+        const filters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         const defaults = getDefaultChartFilters();
         const summaryParts = [];
         if (filters.compareGmp) {
@@ -2971,7 +2823,7 @@ export function startApp() {
       }
 
       function filterRecordsByChartFilters(records, filters) {
-        const normalized = sanitizeChartFilters(filters);
+        const normalized = sanitizeChartFilters(filters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         return (Array.isArray(records) ? records : []).filter((record) => recordMatchesChartFilters(record, normalized));
       }
 
@@ -3033,7 +2885,7 @@ export function startApp() {
       }
 
       function applyKpiFiltersLocally(filters) {
-        const normalizedFilters = sanitizeKpiFilters(filters);
+        const normalizedFilters = sanitizeKpiFilters(filters, { getDefaultKpiFilters, KPI_FILTER_LABELS });
         const windowDays = Number.isFinite(normalizedFilters.window)
           ? normalizedFilters.window
           : DEFAULT_SETTINGS.calculations.windowDays;
@@ -3063,7 +2915,7 @@ export function startApp() {
       }
 
       async function applyKpiFiltersAndRender() {
-        const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters);
+        const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters, { getDefaultKpiFilters, KPI_FILTER_LABELS });
         dashboardState.kpi.filters = { ...normalizedFilters };
         const defaultFilters = getDefaultKpiFilters();
         const windowDays = normalizedFilters.window;
@@ -3283,7 +3135,7 @@ export function startApp() {
       }
 
       function applyChartFilters() {
-        const sanitized = sanitizeChartFilters(dashboardState.chartFilters);
+        const sanitized = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         dashboardState.chartFilters = { ...sanitized };
         syncChartFilterControls();
         const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
@@ -4493,7 +4345,7 @@ export function startApp() {
           : dashboardState.rawRecords;
         const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
         const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-        const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters);
+        const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         dashboardState.chartFilters = { ...sanitizedFilters };
         const effectiveFilters = sanitizedFilters.compareGmp
           ? { ...sanitizedFilters, arrival: 'all' }
@@ -5445,36 +5297,6 @@ export function startApp() {
         });
       }
 
-      function waitForFontsAndStyles() {
-        if (layoutStylesReadyPromise) {
-          return layoutStylesReadyPromise;
-        }
-
-        const fontsPromise = document.fonts && typeof document.fonts.ready?.then === 'function'
-          ? document.fonts.ready.catch(() => undefined)
-          : Promise.resolve();
-
-        const stylesheetPromise = new Promise((resolve) => {
-          let attempts = 0;
-          const maxAttempts = 40;
-          const check = () => {
-            if (areStylesheetsLoaded() || attempts >= maxAttempts) {
-              resolve();
-              return;
-            }
-            attempts += 1;
-            window.setTimeout(check, 50);
-          };
-          check();
-        });
-
-        layoutStylesReadyPromise = Promise.all([fontsPromise, stylesheetPromise]).then(() => {
-          layoutStylesReady = true;
-          return true;
-        });
-
-        return layoutStylesReadyPromise;
-      }
 
       function computeVisibleRatio(rect) {
         if (!rect) {
@@ -5491,302 +5313,19 @@ export function startApp() {
         return Math.max(0, Math.min(1, visibleHeight / elementHeight));
       }
 
-      function updateLayoutMetrics() {
-        const heroElement = selectors.hero || document.querySelector('header.hero');
-        const navElement = selectors.sectionNav;
-        const heroHeight = heroElement ? heroElement.getBoundingClientRect().height : 0;
-        const navHeight = navElement ? navElement.getBoundingClientRect().height : 0;
-        layoutMetrics.hero = heroHeight;
-        layoutMetrics.nav = navHeight;
-        const rootStyle = document.documentElement.style;
-        rootStyle.setProperty('--hero-height', `${Math.max(0, heroHeight).toFixed(2)}px`);
-        rootStyle.setProperty('--section-nav-height', `${Math.max(0, navHeight).toFixed(2)}px`);
-      }
 
-      function getScrollOffset() {
-        if (typeof window.scrollY === 'number') {
-          return window.scrollY;
-        }
-        if (typeof window.pageYOffset === 'number') {
-          return window.pageYOffset;
-        }
-        return (document.documentElement && document.documentElement.scrollTop) || (document.body && document.body.scrollTop) || 0;
-      }
 
-      function updateScrollTopButtonVisibility() {
-        const button = selectors.scrollTopBtn;
-        if (!button) {
-          return;
-        }
-        const threshold = Math.max(160, Math.round(layoutMetrics.hero + layoutMetrics.nav + 40));
-        const offset = getScrollOffset();
-        const shouldShow = offset > threshold;
-        if (scrollTopState.visible !== shouldShow) {
-          scrollTopState.visible = shouldShow;
-          setDatasetValue(button, 'visible', shouldShow ? 'true' : 'false');
-        }
-        button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-        button.setAttribute('tabindex', shouldShow ? '0' : '-1');
-      }
 
-      function scheduleScrollTopUpdate() {
-        if (scrollTopState.rafHandle) {
-          return;
-        }
-        const raf = typeof window.requestAnimationFrame === 'function'
-          ? window.requestAnimationFrame.bind(window)
-          : (cb) => window.setTimeout(cb, 16);
-        scrollTopState.rafHandle = raf(() => {
-          scrollTopState.rafHandle = null;
-          updateScrollTopButtonVisibility();
-        });
-      }
 
-      function updateActiveNavLink(headingId) {
-        sectionNavState.activeHeadingId = headingId;
-        sectionNavState.items.forEach((item) => {
-          const isActive = Boolean(headingId) && item.headingId === headingId && !item.link.hidden;
-          if (isActive) {
-            item.link.setAttribute('aria-current', 'true');
-          } else {
-            item.link.removeAttribute('aria-current');
-          }
-          item.link.classList.toggle('is-active', isActive);
-        });
-      }
 
-      function evaluateActiveSection() {
-        if (!sectionNavState.initialized) {
-          return;
-        }
-        const visibleItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden') && !item.link.hidden);
-        if (!visibleItems.length) {
-          updateActiveNavLink('');
-          return;
-        }
-        const sorted = visibleItems
-          .map((item) => {
-            const data = sectionVisibility.get(item.headingId) || { ratio: 0, top: Number.POSITIVE_INFINITY };
-            return { item, ratio: data.ratio, top: data.top };
-          })
-          .sort((a, b) => {
-            const ratioDiff = b.ratio - a.ratio;
-            if (Math.abs(ratioDiff) > 0.0001) {
-              return ratioDiff;
-            }
-            return a.top - b.top;
-          });
-        const best = sorted.find((candidate) => candidate.ratio > 0)
-          ?? sorted.find((candidate) => candidate.top >= 0)
-          ?? sorted[0];
-        if (best && best.item.headingId !== sectionNavState.activeHeadingId) {
-          updateActiveNavLink(best.item.headingId);
-        }
-      }
 
-      function updateSectionNavCompactState(forceCompact) {
-        if (!selectors.sectionNav) {
-          return;
-        }
 
-        const isCompact = typeof forceCompact === 'boolean'
-          ? forceCompact
-          : Boolean(sectionNavCompactQuery?.matches);
 
-        selectors.sectionNav.classList.toggle('section-nav--compact', isCompact);
 
-        selectors.sectionNavLinks.forEach((link) => {
-          const labelText = (link.querySelector('.section-nav__label')?.textContent || '').trim();
-          if (!labelText) {
-            link.removeAttribute('aria-label');
-            link.removeAttribute('title');
-            return;
-          }
 
-          link.setAttribute('aria-label', labelText);
-          if (isCompact) {
-            link.setAttribute('title', labelText);
-          } else {
-            link.removeAttribute('title');
-          }
-        });
-      }
 
-      function refreshSectionObserver() {
-        const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
-        if (!observedItems.length) {
-          if (sectionObserver) {
-            sectionObserver.disconnect();
-            sectionObserver = null;
-          }
-          evaluateActiveSection();
-          return;
-        }
-        if (sectionObserver) {
-          sectionObserver.disconnect();
-        }
-        const topOffset = Math.max(
-          0,
-          Math.round(Math.max(layoutMetrics.hero || 0, layoutMetrics.nav || 0)),
-        );
-        sectionObserver = new IntersectionObserver(handleSectionIntersection, {
-          rootMargin: `-${topOffset}px 0px -55% 0px`,
-          threshold: [0.1, 0.25, 0.5, 0.75, 1],
-        });
-        observedItems.forEach((item) => {
-          sectionObserver.observe(item.section);
-          const rect = item.section.getBoundingClientRect();
-          sectionVisibility.set(item.headingId, {
-            ratio: computeVisibleRatio(rect),
-            top: rect.top,
-          });
-        });
-        evaluateActiveSection();
-      }
 
-      function scheduleLayoutRefresh() {
-        if (!sectionNavState.initialized) {
-          return;
-        }
-        if (!layoutRefreshAllowed || !layoutStylesReady) {
-          pendingLayoutRefresh = true;
-          return;
-        }
-        if (typeof window.requestAnimationFrame !== 'function') {
-          updateLayoutMetrics();
-          refreshSectionObserver();
-          updateScrollTopButtonVisibility();
-          return;
-        }
-        if (layoutRefreshHandle) {
-          window.cancelAnimationFrame(layoutRefreshHandle);
-        }
-        layoutRefreshHandle = window.requestAnimationFrame(() => {
-          layoutRefreshHandle = null;
-          updateLayoutMetrics();
-          refreshSectionObserver();
-          updateScrollTopButtonVisibility();
-        });
-      }
 
-      function flushPendingLayoutRefresh() {
-        if (pendingLayoutRefresh && layoutRefreshAllowed && layoutStylesReady) {
-          pendingLayoutRefresh = false;
-          scheduleLayoutRefresh();
-        }
-      }
-
-      function handleSectionIntersection(entries) {
-        entries.forEach((entry) => {
-          const item = sectionNavState.itemBySection.get(entry.target);
-          if (!item) {
-            return;
-          }
-          if (item.link.hidden || (item.section && item.section.hasAttribute('hidden'))) {
-            sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
-            return;
-          }
-          sectionVisibility.set(item.headingId, {
-            ratio: entry.isIntersecting ? entry.intersectionRatio : 0,
-            top: entry.boundingClientRect.top,
-          });
-        });
-        evaluateActiveSection();
-      }
-
-      function handleNavKeydown(event) {
-        if (!sectionNavState.initialized) {
-          return;
-        }
-        const controllableKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
-        if (!controllableKeys.includes(event.key)) {
-          return;
-        }
-        const target = event.target;
-        if (!(target instanceof HTMLAnchorElement)) {
-          return;
-        }
-        const visibleLinks = sectionNavState.items
-          .map((item) => item.link)
-          .filter((link) => link && !link.hidden && !link.hasAttribute('aria-hidden'));
-        if (!visibleLinks.length) {
-          return;
-        }
-        const currentIndex = visibleLinks.indexOf(target);
-        if (currentIndex === -1) {
-          return;
-        }
-        event.preventDefault();
-        let nextIndex = currentIndex;
-        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-          nextIndex = (currentIndex + 1) % visibleLinks.length;
-        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-          nextIndex = (currentIndex - 1 + visibleLinks.length) % visibleLinks.length;
-        } else if (event.key === 'Home') {
-          nextIndex = 0;
-        } else if (event.key === 'End') {
-          nextIndex = visibleLinks.length - 1;
-        }
-        const nextLink = visibleLinks[nextIndex];
-        if (nextLink && typeof nextLink.focus === 'function') {
-          nextLink.focus({ preventScroll: true });
-        }
-      }
-
-      function setupNavKeyboardNavigation() {
-        if (!selectors.sectionNav || getDatasetValue(selectors.sectionNav, 'keyboard') === 'bound') {
-          return;
-        }
-        setDatasetValue(selectors.sectionNav, 'keyboard', 'bound');
-      }
-
-      function syncSectionNavVisibility() {
-        if (!sectionNavState.initialized) {
-          return;
-        }
-        let hasVisible = false;
-        sectionNavState.items.forEach((item) => {
-          const { link, section } = item;
-          const sectionVisible = Boolean(section) && !section.hasAttribute('hidden');
-          if (sectionVisible) {
-            hasVisible = true;
-            link.hidden = false;
-            link.removeAttribute('aria-hidden');
-            link.removeAttribute('tabindex');
-            const rect = section.getBoundingClientRect();
-            sectionVisibility.set(item.headingId, {
-              ratio: computeVisibleRatio(rect),
-              top: rect.top,
-            });
-          } else {
-            link.hidden = true;
-            link.setAttribute('aria-hidden', 'true');
-            link.setAttribute('tabindex', '-1');
-            sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
-            if (sectionObserver && section) {
-              sectionObserver.unobserve(section);
-            }
-          }
-        });
-
-        if (!hasVisible) {
-          updateActiveNavLink('');
-        } else if (!sectionNavState.activeHeadingId) {
-          const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
-          if (firstVisible) {
-            updateActiveNavLink(firstVisible.headingId);
-          }
-        } else {
-          const activeItem = sectionNavState.items.find((item) => item.headingId === sectionNavState.activeHeadingId);
-          if (!activeItem || activeItem.link.hidden) {
-            const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
-            updateActiveNavLink(firstVisible ? firstVisible.headingId : '');
-          }
-        }
-
-        evaluateActiveSection();
-        scheduleLayoutRefresh();
-      }
 
       function cloneSettings(value) {
         return JSON.parse(JSON.stringify(value));
@@ -9896,7 +9435,7 @@ export function startApp() {
           const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
           dashboardState.chartData.baseDaily = dailyStats.slice();
           dashboardState.chartData.baseRecords = combinedRecords.slice();
-          dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters);
+          dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
           syncChartFilterControls();
           const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
           await applyKpiFiltersAndRender();
@@ -10190,4 +9729,7 @@ export function startApp() {
 
 
 }
+
+
+
 
