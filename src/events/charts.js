@@ -42,6 +42,7 @@ export function initChartControls(env) {
     updateChartPeriod,
     updateChartYear,
     handleHeatmapMetricChange,
+    handleHeatmapFilterChange,
     handleHourlyMetricClick,
     handleHourlyDepartmentInput,
     handleHourlyDepartmentBlur,
@@ -79,6 +80,18 @@ export function initChartControls(env) {
 
   if (selectors.heatmapMetricSelect) {
     selectors.heatmapMetricSelect.addEventListener('change', handleHeatmapMetricChange);
+  }
+  if (selectors.heatmapFilterArrival) {
+    selectors.heatmapFilterArrival.addEventListener('change', handleHeatmapFilterChange);
+  }
+  if (selectors.heatmapFilterDisposition) {
+    selectors.heatmapFilterDisposition.addEventListener('change', handleHeatmapFilterChange);
+  }
+  if (selectors.heatmapFilterCardType) {
+    selectors.heatmapFilterCardType.addEventListener('change', handleHeatmapFilterChange);
+  }
+  if (selectors.heatmapYearSelect) {
+    selectors.heatmapYearSelect.addEventListener('change', handleHeatmapFilterChange);
   }
 
   if (Array.isArray(selectors.hourlyMetricButtons)) {

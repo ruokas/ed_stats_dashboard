@@ -651,6 +651,31 @@ function parseDate(value) {
   return null;
 }
 
+function detectHasTime(value) {
+  if (value == null) {
+    return false;
+  }
+  const raw = String(value).trim();
+  if (!raw) {
+    return false;
+  }
+  const match = raw.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) {
+    return false;
+  }
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const seconds = match[3] ? Number(match[3]) : 0;
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || !Number.isFinite(seconds)) {
+    return false;
+  }
+  // 00:00(:00) dažnai reiškia "nežinomas laikas"
+  if (hours === 0 && minutes === 0 && seconds === 0) {
+    return false;
+  }
+  return true;
+}
+
 function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calculationDefaults) {
   const normalized = [...cols];
   if (normalized.length < header.length) {
@@ -671,6 +696,8 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   const cardNumberRaw = indices.cardNumber >= 0 ? normalized[indices.cardNumber] ?? '' : '';
   entry.arrival = parseDate(arrivalRaw);
   entry.discharge = parseDate(dischargeRaw);
+  entry.arrivalHasTime = detectHasTime(arrivalRaw);
+  entry.dischargeHasTime = detectHasTime(dischargeRaw);
   entry.night = detectNight(dayNightRaw, entry.arrival, csvRuntime, calculations, calculationDefaults);
   entry.ems = parseBoolean(gmpRaw, csvRuntime.trueValues, csvRuntime.fallbackTrueValues);
   entry.department = departmentRaw != null ? String(departmentRaw).trim() : '';

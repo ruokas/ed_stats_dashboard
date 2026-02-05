@@ -22,6 +22,8 @@ export function createDataFlow({
   filterDailyStatsByWindow,
   populateChartYearOptions,
   populateHourlyCompareYearOptions,
+  populateHeatmapYearOptions,
+  syncHeatmapFilterControls,
   getDefaultChartFilters,
   sanitizeChartFilters,
   KPI_FILTER_LABELS,
@@ -29,6 +31,7 @@ export function createDataFlow({
   prepareChartDataForPeriod,
   applyKpiFiltersAndRender,
   renderCharts,
+  getHeatmapData,
   renderRecentTable,
   computeMonthlyStats,
   renderMonthlyTable,
@@ -181,6 +184,12 @@ export function createDataFlow({
       dashboardState.dataMeta = dataset.meta || null;
       populateChartYearOptions(dailyStats);
       populateHourlyCompareYearOptions(dailyStats);
+      if (typeof populateHeatmapYearOptions === 'function') {
+        populateHeatmapYearOptions(dailyStats);
+        if (typeof syncHeatmapFilterControls === 'function') {
+          syncHeatmapFilterControls();
+        }
+      }
       const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
         ? Number(settings.calculations.windowDays)
         : DEFAULT_SETTINGS.calculations.windowDays;
@@ -199,8 +208,9 @@ export function createDataFlow({
       dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
       syncChartFilterControls();
       const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
+      const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
       await applyKpiFiltersAndRender();
-      await renderCharts(scopedCharts.daily, scopedCharts.funnel, scopedCharts.heatmap);
+      await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
       renderRecentTable(recentDailyStats);
       const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
       dashboardState.monthly.all = monthlyStats;
