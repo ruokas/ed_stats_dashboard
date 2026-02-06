@@ -243,7 +243,23 @@
           </div>
         </div>
       </div>
-      <div id="feedbackCards" class="feedback-cards" role="list"></div>
+      <div id="feedbackCards" class="feedback-cards" role="list">
+        <article class="feedback-card feedback-card--skeleton" role="listitem" aria-hidden="true">
+          <p class="skeleton skeleton--title"></p>
+          <p class="skeleton skeleton--value"></p>
+          <p class="skeleton skeleton--detail"></p>
+        </article>
+        <article class="feedback-card feedback-card--skeleton" role="listitem" aria-hidden="true">
+          <p class="skeleton skeleton--title"></p>
+          <p class="skeleton skeleton--value"></p>
+          <p class="skeleton skeleton--detail"></p>
+        </article>
+        <article class="feedback-card feedback-card--skeleton" role="listitem" aria-hidden="true">
+          <p class="skeleton skeleton--title"></p>
+          <p class="skeleton skeleton--value"></p>
+          <p class="skeleton skeleton--detail"></p>
+        </article>
+      </div>
       <div class="feedback-graphs feedback-trend-card" role="presentation">
         <div class="feedback-trend-card__header">
           <div class="feedback-trend-card__titles">
@@ -290,6 +306,9 @@
         </div>
         <p id="feedbackTrendSummary" class="feedback-trend-summary" hidden></p>
         <div class="feedback-trend-card__body">
+          <div id="feedbackTrendSkeleton" class="feedback-trend-skeleton" aria-hidden="true">
+            <span class="skeleton skeleton--chart-area"></span>
+          </div>
           <canvas id="feedbackTrendChart" role="img" aria-describedby="feedbackTrendSubtitle feedbackTrendSummary" hidden></canvas>
           <p id="feedbackTrendMessage" class="feedback-trend-message" role="status" aria-live="polite" hidden></p>
         </div>
@@ -309,7 +328,38 @@
               <th scope="col" id="feedbackColumnContact">Bendravo su padėjėjais</th>
             </tr>
           </thead>
-          <tbody id="feedbackTable"></tbody>
+          <tbody id="feedbackTable">
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </section>

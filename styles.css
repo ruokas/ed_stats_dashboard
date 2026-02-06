@@ -13,6 +13,15 @@ body[data-theme="light"] {
   --color-accent-soft: rgba(47, 91, 234, 0.12);
   --color-input-bg: rgba(47, 91, 234, 0.08);
   --color-input-bg-hover: rgba(47, 91, 234, 0.15);
+  --filter-height: 38px;
+  --filter-radius: 12px;
+  --filter-font-size: 0.9rem;
+  --filter-label-size: 0.82rem;
+  --filter-padding-x: 12px;
+  --filter-bg: var(--color-input-bg);
+  --filter-bg-hover: var(--color-input-bg-hover);
+  --filter-border: var(--color-border);
+  --filter-focus-ring: 0 0 0 3px var(--color-accent-soft);
   --color-input-placeholder: rgba(16, 20, 32, 0.56);
   --color-success: #2ea07a;
   --color-warning: #d48c35;
@@ -60,6 +69,15 @@ body[data-theme="dark"] {
   --color-accent-soft: rgba(109, 141, 255, 0.16);
   --color-input-bg: rgba(109, 141, 255, 0.14);
   --color-input-bg-hover: rgba(109, 141, 255, 0.24);
+  --filter-height: 38px;
+  --filter-radius: 12px;
+  --filter-font-size: 0.9rem;
+  --filter-label-size: 0.82rem;
+  --filter-padding-x: 12px;
+  --filter-bg: var(--color-input-bg);
+  --filter-bg-hover: var(--color-input-bg-hover);
+  --filter-border: var(--color-border);
+  --filter-focus-ring: 0 0 0 3px var(--color-accent-soft);
   --color-input-placeholder: rgba(232, 236, 246, 0.78);
   --color-success: #5ad29a;
   --color-warning: #efb24f;
@@ -204,6 +222,12 @@ body[data-theme="dark"] select optgroup {
 .skeleton--caption {
   height: 14px;
   max-width: 80%;
+}
+
+.skeleton--table-cell {
+  width: 100%;
+  min-width: 70px;
+  max-width: none;
 }
 
     .section-nav {
@@ -2141,15 +2165,7 @@ body[data-theme="dark"] select optgroup {
     }
 
     .section-title__icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--color-accent-soft);
-      color: var(--color-accent);
-      flex: 0 0 auto;
+      display: none;
     }
 
     .section-title__icon svg {
@@ -2384,6 +2400,19 @@ body[data-theme="dark"] select optgroup {
       min-height: clamp(240px, 35vw, 360px);
     }
 
+    .feedback-trend-skeleton {
+      width: 100%;
+      min-height: clamp(220px, 30vw, 340px);
+      display: flex;
+      align-items: stretch;
+    }
+
+    .feedback-trend-skeleton .skeleton--chart-area {
+      width: 100%;
+      height: 100%;
+      min-height: clamp(220px, 30vw, 340px);
+    }
+
     .feedback-graphs canvas {
       flex: 1 1 auto;
       width: 100%;
@@ -2428,6 +2457,10 @@ body[data-theme="dark"] select optgroup {
       flex-direction: column;
       gap: 6px;
       width: 100%;
+    }
+
+    .feedback-card--skeleton {
+      pointer-events: none;
     }
 
     .feedback-card__title {
@@ -3643,6 +3676,22 @@ body[data-theme="dark"] select optgroup {
       flex-wrap: wrap;
       gap: 8px;
       margin: 4px 0 6px;
+      padding: 6px;
+      border: 1px solid var(--filter-border);
+      border-radius: var(--filter-radius);
+      background: var(--color-surface-alt);
+    }
+
+    .kpi-hourly-controls .chip-button {
+      border: 1px solid transparent;
+      border-radius: calc(var(--filter-radius) - 2px);
+      background: transparent;
+    }
+
+    .kpi-hourly-controls .chip-button:hover,
+    .kpi-hourly-controls .chip-button:focus-visible {
+      background: var(--filter-bg-hover);
+      border-color: color-mix(in srgb, var(--color-accent) 30%, var(--filter-border));
     }
 
     .chart-card--compact canvas {
@@ -4388,15 +4437,222 @@ body[data-theme="dark"] select optgroup {
       color: #0f172a;
     }
 
+    /* Filter system: shared utility classes + mapped legacy selectors */
+    .filter-field,
+    .kpi-filter,
+    .chart-filter,
+    .feedback-filters__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-label,
+    .kpi-filter span,
+    .chart-filter span,
+    .chart-year-filter span,
+    .feedback-filters__field label,
+    .heatmap-toolbar__label {
+      font-weight: 600;
+      font-size: var(--filter-label-size);
+      color: var(--color-text-muted);
+      letter-spacing: 0.01em;
+    }
+
+    .filter-select,
+    .kpi-filter select,
+    .chart-filter select,
+    .feedback-filter-select,
+    .chart-year-filter select,
+    .heatmap-toolbar select,
+    .hourly-toolbar select {
+      border-radius: var(--filter-radius);
+      border: 1px solid var(--filter-border);
+      background: var(--filter-bg);
+      color: var(--color-text);
+      min-height: var(--filter-height);
+      height: var(--filter-height);
+      padding: 0 var(--filter-padding-x);
+      font-size: var(--filter-font-size);
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .filter-select:hover,
+    .filter-select:focus-visible,
+    .kpi-filter select:hover,
+    .kpi-filter select:focus-visible,
+    .chart-filter select:hover,
+    .chart-filter select:focus-visible,
+    .feedback-filter-select:hover,
+    .feedback-filter-select:focus-visible,
+    .chart-year-filter select:hover,
+    .chart-year-filter select:focus-visible,
+    .heatmap-toolbar select:hover,
+    .heatmap-toolbar select:focus-visible,
+    .hourly-toolbar select:hover,
+    .hourly-toolbar select:focus-visible {
+      background: var(--filter-bg-hover);
+      border-color: color-mix(in srgb, var(--color-accent) 35%, var(--filter-border));
+    }
+
+    .filter-select:focus-visible,
+    .kpi-filter select:focus-visible,
+    .chart-filter select:focus-visible,
+    .feedback-filter-select:focus-visible,
+    .chart-year-filter select:focus-visible,
+    .heatmap-toolbar select:focus-visible,
+    .hourly-toolbar select:focus-visible {
+      outline: none;
+      box-shadow: var(--filter-focus-ring);
+    }
+
+    .filter-summary,
+    .kpi-controls__summary,
+    .chart-filters__summary,
+    .feedback-filters__summary {
+      margin: 0;
+      font-size: var(--filter-label-size);
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border-radius: 999px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+    }
+
+    .filter-chip-group,
+    .feedback-chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .feedback-chip-group {
+      padding: 6px;
+      border: 1px solid var(--filter-border);
+      border-radius: var(--filter-radius);
+      background: var(--color-surface-alt);
+    }
+
+    .feedback-chip-group .chip-button {
+      border: 1px solid transparent;
+      border-radius: calc(var(--filter-radius) - 2px);
+      background: transparent;
+    }
+
+    .feedback-chip-group .chip-button:hover,
+    .feedback-chip-group .chip-button:focus-visible {
+      background: var(--filter-bg-hover);
+      border-color: color-mix(in srgb, var(--color-accent) 30%, var(--filter-border));
+    }
+
+    .segmented-control,
+    .chip-button,
+    .chart-year-filter,
+    .heatmap-toolbar__field,
+    .chart-filter--toggle .chart-toggle,
+    .hourly-compare-toggle {
+      border-radius: var(--filter-radius);
+      border-color: var(--filter-border);
+    }
+
+    .segmented-control {
+      min-height: var(--filter-height);
+      align-items: stretch;
+    }
+
+    .segmented-control__button,
+    .chip-button {
+      min-height: var(--filter-height);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.1;
+      padding: 0 var(--filter-padding-x);
+      font-size: var(--filter-font-size);
+    }
+
+    .hourly-toolbar .chip-button,
+    .hourly-toolbar .segmented-control__button,
+    .hourly-toolbar select {
+      min-height: var(--filter-height);
+      height: var(--filter-height);
+      line-height: 1.1;
+    }
+
+    .chip-button--ghost {
+      min-height: var(--filter-height);
+    }
+
+    .chart-year-filter,
+    .heatmap-toolbar__field,
+    .chart-filter--toggle .chart-toggle,
+    .hourly-compare-toggle {
+      min-height: var(--filter-height);
+      font-size: var(--filter-font-size);
+      padding: 0 10px;
+      background: var(--color-surface-alt);
+    }
+
+    .hourly-compare-toggle:hover,
+    .hourly-compare-toggle:focus-within,
+    .chart-filter--toggle .chart-toggle:hover,
+    .chart-filter--toggle .chart-toggle:focus-within,
+    .chart-year-filter:hover,
+    .heatmap-toolbar__field:focus-within {
+      border-color: color-mix(in srgb, var(--color-accent) 35%, var(--filter-border));
+    }
+
+    .hourly-department {
+      border: 1px solid var(--filter-border);
+      border-radius: var(--filter-radius);
+      background: var(--filter-bg);
+      min-height: var(--filter-height);
+    }
+
+    .hourly-department:focus-within {
+      border-color: color-mix(in srgb, var(--color-accent) 35%, var(--filter-border));
+      box-shadow: var(--filter-focus-ring);
+    }
+
+    .chart-card--hourly #hourlyDepartment {
+      border: none;
+      background: transparent;
+      color: var(--color-text);
+      min-height: var(--filter-height);
+      height: var(--filter-height);
+    }
+
+    @media (max-width: 768px) {
+      .kpi-controls__form,
+      .feedback-filters {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .chart-filters {
+        width: 100%;
+        flex-basis: 100%;
+      }
+
+      .chart-filter,
+      .kpi-filter,
+      .feedback-filters__field {
+        min-width: 0;
+      }
+    }
+
     body[data-theme="dark"] .chart-card--hourly #hourlyDepartment {
-      background: rgba(30, 41, 59, 0.7);
-      border-color: rgba(96, 165, 250, 0.25);
+      background: transparent;
+      border-color: transparent;
       color: var(--color-text);
     }
 
     body[data-theme="dark"] .hourly-department {
-      background: rgba(30, 41, 59, 0.7);
-      border-color: rgba(96, 165, 250, 0.25);
+      background: var(--filter-bg);
+      border-color: var(--filter-border);
     }
 
     .hourly-action {
@@ -4463,8 +4719,8 @@ body[data-theme="dark"] select optgroup {
 
     body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:hover,
     body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:focus-visible {
-      background: rgba(37, 99, 235, 0.25);
-      border-color: rgba(96, 165, 250, 0.5);
+      background: transparent;
+      border-color: transparent;
     }
 
     .heatmap-scroll {

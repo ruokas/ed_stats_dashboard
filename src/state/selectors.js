@@ -103,6 +103,7 @@ export function createSelectors() {
     feedbackTrendControlsLabel: document.getElementById('feedbackTrendControlsLabel'),
     feedbackTrendButtons: Array.from(document.querySelectorAll('[data-trend-months]')),
     feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
+    feedbackTrendSkeleton: document.getElementById('feedbackTrendSkeleton'),
     feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
     feedbackTrendChart: document.getElementById('feedbackTrendChart'),
     feedbackTable: document.getElementById('feedbackTable'),

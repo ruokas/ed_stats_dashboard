@@ -17,6 +17,7 @@ export async function renderFeedbackTrendChart(env, monthlyStats) {
   const canvas = selectors.feedbackTrendChart || document.getElementById('feedbackTrendChart');
   const messageElement = selectors.feedbackTrendMessage || document.getElementById('feedbackTrendMessage');
   const summaryElement = selectors.feedbackTrendSummary || document.getElementById('feedbackTrendSummary');
+  const skeletonElement = selectors.feedbackTrendSkeleton || document.getElementById('feedbackTrendSkeleton');
 
   const updateSummary = (text) => {
     if (!summaryElement) {
@@ -32,6 +33,9 @@ export async function renderFeedbackTrendChart(env, monthlyStats) {
   };
 
   const setTrendMessage = (text) => {
+    if (skeletonElement) {
+      skeletonElement.hidden = true;
+    }
     if (messageElement) {
       if (text) {
         messageElement.textContent = text;
