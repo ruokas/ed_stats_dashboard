@@ -88,7 +88,7 @@
   <link rel="stylesheet" href="styles.css">
 
 </head>
-<body data-page="kpi">
+<body data-page="feedback">
 <header class="hero" role="banner">
     <div class="container hero__content">
       <div class="hero__identity">
@@ -186,166 +186,134 @@
     </div>
   </header>
 <main class="container" role="main">
-<div class="section-band section-band--overview">
-    <section class="section" aria-labelledby="kpiHeading" data-section="kpi">
+<div class="section-band section-band--feedback">
+    <section class="section section--compact" aria-labelledby="feedbackHeading" data-section="feedback">
       <div class="section__header">
         <div class="section__heading">
           <div class="section__title-row">
-            <h2 id="kpiHeading" class="section__title">
+            <h2 id="feedbackHeading" class="section__title">
               <span class="section-title__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12v7" />
-                  <path d="M12 5v14" />
-                  <path d="M19 9v10" />
-                  <path d="M3 19h18" />
+                  <path d="M21 11.5c0 4.142-3.463 7.5-7.735 7.5a8.4 8.4 0 0 1-2.828-.49L6 21.5l1.19-3.572C5.415 16.738 4 14.267 4 11.5 4 7.358 7.463 4 11.735 4 16.007 4 21 7.358 21 11.5Z" />
+                  <path d="M9.5 11.5h.01" />
+                  <path d="M12 11.5h.01" />
+                  <path d="M14.5 11.5h.01" />
                 </svg>
               </span>
-              <span class="section-title__text">Pagrindiniai rodikliai</span>
+              <span class="section-title__text">Pacientų atsiliepimai</span>
             </h2>
-            <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
+            <p id="feedbackSubtitle" class="section__subtitle">Apibendrinti apklausos rezultatai</p>
           </div>
+          <p id="feedbackDescription" class="section__description"></p>
         </div>
-        <div class="section__actions kpi-header-actions">
-          <div class="kpi-date-control">
-            <input id="kpiDateInput" class="kpi-date-input" type="date" aria-label="Pasirinkti datą KPI rodikliams">
-            <button id="kpiDateClear" type="button" class="btn btn-secondary btn-small kpi-date-clear">Išvalyti datą</button>
-          </div>
-          <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true"></p>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#feedbackTableRoot"
+            data-table-title="Pacientų atsiliepimai"
+            aria-label="Parsisiųsti atsiliepimų lentelę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#feedbackTableRoot"
+            data-table-title="Pacientų atsiliepimai"
+            aria-label="Parsisiųsti atsiliepimų lentelę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
         </div>
       </div>
-      <div id="kpiSummary" class="kpi-summary" role="status" aria-live="polite" hidden></div>
-      <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle" data-expanded="true">
-        <h3 id="kpiFiltersTitle" class="sr-only">KPI filtrai</h3>
-        <form id="kpiFiltersForm" class="kpi-controls__form">
-          <label class="kpi-filter" for="kpiArrival">
-            <span>Atvykimo tipas</span>
-            <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Atvykimo tipas">
-              <button type="button" class="segmented-control__button" data-kpi-arrival="all" aria-pressed="true">Visi</button>
-              <button type="button" class="segmented-control__button" data-kpi-arrival="ems" aria-pressed="false">Tik GMP</button>
-              <button type="button" class="segmented-control__button" data-kpi-arrival="self" aria-pressed="false">Be GMP</button>
-            </div>
-            <select id="kpiArrival" name="arrival" class="sr-only" aria-label="Filtruoti pagal atvykimo tipą">
-              <option value="all">Visi</option>
-              <option value="ems">Tik GMP</option>
-              <option value="self">Be GMP</option>
-            </select>
-          </label>
-          <label class="kpi-filter" for="kpiCardType">
-            <span>Kortelės tipas</span>
-            <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Kortelės tipas">
-              <button type="button" class="segmented-control__button" data-kpi-card-type="all" aria-pressed="true">Visos</button>
-              <button type="button" class="segmented-control__button" data-kpi-card-type="t" aria-pressed="false">T</button>
-              <button type="button" class="segmented-control__button" data-kpi-card-type="tr" aria-pressed="false">TR</button>
-              <button type="button" class="segmented-control__button" data-kpi-card-type="ch" aria-pressed="false">CH</button>
-            </div>
-            <select id="kpiCardType" name="cardType" class="sr-only" aria-label="Filtruoti pagal kortelės tipą">
-              <option value="all">Visos kortelės</option>
-              <option value="t">T kortelės</option>
-              <option value="tr">TR kortelės</option>
-              <option value="ch">CH kortelės</option>
-            </select>
-          </label>
-          <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small kpi-controls__reset" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
-        </form>
+      <div class="feedback-controls" role="region" aria-labelledby="feedbackFiltersTitle">
+        <p id="feedbackFiltersSummary" class="feedback-filters__summary" aria-live="polite" data-default="true">Rodomi visi atsakymai</p>
+        <div id="feedbackFilters" class="feedback-filters" role="group" aria-labelledby="feedbackFiltersTitle">
+          <h3 id="feedbackFiltersTitle" class="sr-only">Atsiliepimų filtrai</h3>
+          <div class="feedback-filters__field">
+            <label id="feedbackRespondentLabel" for="feedbackRespondentFilter">Kas pildo anketą</label>
+            <div id="feedbackRespondentChips" class="feedback-chip-group" role="group" aria-labelledby="feedbackRespondentLabel"></div>
+            <select id="feedbackRespondentFilter" name="respondent" class="feedback-filter-select"></select>
+          </div>
+          <div class="feedback-filters__field">
+            <label id="feedbackLocationLabel" for="feedbackLocationFilter">Šaltinis</label>
+            <div id="feedbackLocationChips" class="feedback-chip-group" role="group" aria-labelledby="feedbackLocationLabel"></div>
+            <select id="feedbackLocationFilter" name="location" class="feedback-filter-select"></select>
+          </div>
+        </div>
       </div>
-      <div id="kpiGrid" class="kpi-grid" role="list"></div>
-      <figure class="chart-card chart-card--compact chart-card--kpi-hourly kpi-hourly-chart">
-        <div class="chart-card__skeleton" aria-hidden="true" hidden>
-          <span class="skeleton skeleton--title"></span>
-          <span class="skeleton skeleton--chart-area"></span>
-          <span class="skeleton skeleton--caption"></span>
+      <div id="feedbackCards" class="feedback-cards" role="list"></div>
+      <div class="feedback-graphs feedback-trend-card" role="presentation">
+        <div class="feedback-trend-card__header">
+          <div class="feedback-trend-card__titles">
+            <h3 id="feedbackTrendTitle" class="feedback-trend-card__title">Bendro vertinimo dinamika</h3>
+            <p id="feedbackTrendSubtitle" class="feedback-trend-card__subtitle">—</p>
+          </div>
+          <div class="feedback-trend-card__controls">
+            <span id="feedbackTrendControlsLabel" class="feedback-trend-card__controls-label">Laikotarpis</span>
+            <div id="feedbackTrendControls" class="feedback-trend-card__buttons" role="group" aria-labelledby="feedbackTrendControlsLabel">
+              <button type="button" class="feedback-trend-card__button" data-trend-months="3" aria-pressed="false">3 mėn.</button>
+              <button type="button" class="feedback-trend-card__button" data-trend-months="6" aria-pressed="false">6 mėn.</button>
+              <button type="button" class="feedback-trend-card__button" data-trend-months="12" aria-pressed="false">12 mėn.</button>
+            </div>
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#feedbackTrendChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#feedbackTrendChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="kpi-hourly-controls" role="group" aria-label="Paskutinės pamainos rodiklis">
-          <button type="button" class="chip-button" data-last-shift-metric="arrivals" aria-pressed="true">Atvykimai</button>
-          <button type="button" class="chip-button" data-last-shift-metric="discharges" aria-pressed="false">Išleidimai</button>
-          <button type="button" class="chip-button" data-last-shift-metric="hospitalized" aria-pressed="false">Hospitalizacijos</button>
-          <button type="button" class="chip-button" data-last-shift-metric="balance" aria-pressed="false">Srautų balansas</button>
+        <p id="feedbackTrendSummary" class="feedback-trend-summary" hidden></p>
+        <div class="feedback-trend-card__body">
+          <canvas id="feedbackTrendChart" role="img" aria-describedby="feedbackTrendSubtitle feedbackTrendSummary" hidden></canvas>
+          <p id="feedbackTrendMessage" class="feedback-trend-message" role="status" aria-live="polite" hidden></p>
         </div>
-        <div class="chart-card__canvas chart-card__canvas--kpi-hourly">
-          <canvas id="lastShiftHourlyChart" aria-labelledby="lastShiftHourlyTitle"></canvas>
-        </div>
-        <div id="lastShiftHourlyLegend" class="chart-legend" role="list" aria-label="Kreivių legenda"></div>
-        <figcaption id="lastShiftHourlyTitle">
-          <span>Paskutinės pamainos atvykimai per valandą</span>
-          <span id="lastShiftHourlyContext" class="chart-caption__context"></span>
-        </figcaption>
-      </figure>
-      <template id="kpiSkeleton">
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-      </template>
+      </div>
+      <div class="table-wrapper table-wrapper--feedback" role="region" aria-live="polite" aria-labelledby="feedbackHeading">
+        <table id="feedbackTableRoot" aria-describedby="feedbackSubtitle feedbackDescription">
+          <caption id="feedbackCaption" class="sr-only">Mėnesio atsiliepimų suvestinė pagal apklausos vertinimus.</caption>
+          <thead>
+            <tr>
+              <th scope="col" id="feedbackColumnMonth">Mėnuo</th>
+              <th scope="col" id="feedbackColumnResponses">Atsakymai</th>
+              <th scope="col" id="feedbackColumnOverall">Bendra patirtis (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnDoctors">Gydytojų darbas (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnNurses">Slaugytojų darbas (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnAides">Padėjėjų darbas (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnWaiting">Laukimo vertinimas (vid. 1–5)</th>
+              <th scope="col" id="feedbackColumnContact">Bendravo su padėjėjais</th>
+            </tr>
+          </thead>
+          <tbody id="feedbackTable"></tbody>
+        </table>
+      </div>
     </section>
     </div>
-
-    
 </main>
 
   <button type="button"

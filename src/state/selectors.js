@@ -2,7 +2,6 @@ export function createSelectors() {
   return {
     hero: document.querySelector('header.hero'),
     title: document.getElementById('pageTitle'),
-    subtitle: document.getElementById('pageSubtitle'),
     tabSwitcher: document.getElementById('tabSwitcher'),
     tabButtons: Array.from(document.querySelectorAll('[data-tab-target]')),
     tabPanels: Array.from(document.querySelectorAll('[data-tab-panel]')),

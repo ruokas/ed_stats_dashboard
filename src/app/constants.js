@@ -490,7 +490,7 @@ export const TEXT = {
   feedback: {
     title: 'Pacientų atsiliepimai',
     subtitle: 'Apibendrinti apklausos rezultatai.',
-    description: 'Kortelės rodo bendras įžvalgas, lentelė – mėnesines suvestines.',
+    description: '',
     empty: 'Kol kas nėra apibendrintų atsiliepimų.',
     trend: {
       title: 'Bendro vertinimo dinamika',

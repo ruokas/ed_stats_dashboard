@@ -277,6 +277,11 @@ export function createLayoutTools({ selectors }) {
     if (!sectionNavState.initialized) {
       return;
     }
+    if (selectors.sectionNav && getDatasetValue(selectors.sectionNav, 'navMode') === 'mpa') {
+      selectors.sectionNav.removeAttribute('hidden');
+      selectors.sectionNav.removeAttribute('aria-hidden');
+      return;
+    }
     sectionNavState.items.forEach((item) => {
       if (!item.section || item.section.hasAttribute('hidden')) {
         item.link.hidden = true;

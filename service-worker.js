@@ -1,9 +1,14 @@
-const STATIC_CACHE = 'ed-static-v1';
+const STATIC_CACHE = 'ed-static-v3';
 const API_CACHE = 'ed-api-v1';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [
   new URL('./', self.location).pathname,
   new URL('./index.html', self.location).pathname,
+  new URL('./charts.html', self.location).pathname,
+  new URL('./recent.html', self.location).pathname,
+  new URL('./summaries.html', self.location).pathname,
+  new URL('./feedback.html', self.location).pathname,
+  new URL('./ed.html', self.location).pathname,
   new URL('./styles.css', self.location).pathname,
   new URL('./data-worker.js', self.location).pathname,
   new URL('./app.js', self.location).pathname,

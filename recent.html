@@ -88,7 +88,7 @@
   <link rel="stylesheet" href="styles.css">
 
 </head>
-<body data-page="kpi">
+<body data-page="recent">
 <header class="hero" role="banner">
     <div class="container hero__content">
       <div class="hero__identity">
@@ -186,166 +186,75 @@
     </div>
   </header>
 <main class="container" role="main">
-<div class="section-band section-band--overview">
-    <section class="section" aria-labelledby="kpiHeading" data-section="kpi">
+<div class="section-band section-band--trends">
+<section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
       <div class="section__header">
         <div class="section__heading">
           <div class="section__title-row">
-            <h2 id="kpiHeading" class="section__title">
+            <h2 id="recentHeading" class="section__title">
               <span class="section-title__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12v7" />
-                  <path d="M12 5v14" />
-                  <path d="M19 9v10" />
-                  <path d="M3 19h18" />
+                  <rect x="3.5" y="4" width="17" height="17" rx="2" />
+                  <path d="M8 2.5v3" />
+                  <path d="M16 2.5v3" />
+                  <path d="M3.5 9h17" />
+                  <path d="M12 13v4" />
+                  <path d="M12 13h3" />
                 </svg>
               </span>
-              <span class="section-title__text">Pagrindiniai rodikliai</span>
+              <span class="section-title__text">Paskutinės 7 dienos</span>
             </h2>
-            <p id="kpiSubtitle" class="section__subtitle">Pastarųjų 30 dienų dinamika</p>
+            <p id="recentSubtitle" class="section__subtitle">Kasdienė suvestinė pagal naujausius duomenis</p>
           </div>
         </div>
-        <div class="section__actions kpi-header-actions">
-          <div class="kpi-date-control">
-            <input id="kpiDateInput" class="kpi-date-input" type="date" aria-label="Pasirinkti datą KPI rodikliams">
-            <button id="kpiDateClear" type="button" class="btn btn-secondary btn-small kpi-date-clear">Išvalyti datą</button>
-          </div>
-          <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true"></p>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#recentTableRoot"
+            data-table-title="Paskutinės 7 dienos"
+            aria-label="Parsisiųsti paskutinių 7 dienų lentelę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#recentTableRoot"
+            data-table-title="Paskutinės 7 dienos"
+            aria-label="Parsisiųsti paskutinių 7 dienų lentelę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
+          <button id="compareToggle" type="button" class="btn btn-secondary btn-small">Palyginti</button>
         </div>
       </div>
-      <div id="kpiSummary" class="kpi-summary" role="status" aria-live="polite" hidden></div>
-      <div class="kpi-controls" role="region" aria-labelledby="kpiFiltersTitle" data-expanded="true">
-        <h3 id="kpiFiltersTitle" class="sr-only">KPI filtrai</h3>
-        <form id="kpiFiltersForm" class="kpi-controls__form">
-          <label class="kpi-filter" for="kpiArrival">
-            <span>Atvykimo tipas</span>
-            <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Atvykimo tipas">
-              <button type="button" class="segmented-control__button" data-kpi-arrival="all" aria-pressed="true">Visi</button>
-              <button type="button" class="segmented-control__button" data-kpi-arrival="ems" aria-pressed="false">Tik GMP</button>
-              <button type="button" class="segmented-control__button" data-kpi-arrival="self" aria-pressed="false">Be GMP</button>
-            </div>
-            <select id="kpiArrival" name="arrival" class="sr-only" aria-label="Filtruoti pagal atvykimo tipą">
-              <option value="all">Visi</option>
-              <option value="ems">Tik GMP</option>
-              <option value="self">Be GMP</option>
-            </select>
-          </label>
-          <label class="kpi-filter" for="kpiCardType">
-            <span>Kortelės tipas</span>
-            <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Kortelės tipas">
-              <button type="button" class="segmented-control__button" data-kpi-card-type="all" aria-pressed="true">Visos</button>
-              <button type="button" class="segmented-control__button" data-kpi-card-type="t" aria-pressed="false">T</button>
-              <button type="button" class="segmented-control__button" data-kpi-card-type="tr" aria-pressed="false">TR</button>
-              <button type="button" class="segmented-control__button" data-kpi-card-type="ch" aria-pressed="false">CH</button>
-            </div>
-            <select id="kpiCardType" name="cardType" class="sr-only" aria-label="Filtruoti pagal kortelės tipą">
-              <option value="all">Visos kortelės</option>
-              <option value="t">T kortelės</option>
-              <option value="tr">TR kortelės</option>
-              <option value="ch">CH kortelės</option>
-            </select>
-          </label>
-          <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small kpi-controls__reset" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
-        </form>
+      <article id="compareCard" class="compare-card" hidden aria-live="polite">
+        <div class="compare-card__header">
+          <h3>Greitas palyginimas</h3>
+          <button id="compareClear" type="button" class="btn btn-tertiary btn-small">Išvalyti</button>
+        </div>
+        <p id="compareSummary" class="compare-card__body">Pasirinkite dvi eilutes lentelėje.</p>
+      </article>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
+        <table id="recentTableRoot" aria-describedby="recentSubtitle">
+          <caption id="recentCaption" class="sr-only">Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė</caption>
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Pacientai</th>
+              <th scope="col">Vid. laikas (val.)</th>
+              <th scope="col">Naktiniai pacientai</th>
+              <th scope="col">GMP</th>
+              <th scope="col">Hospitalizuoti</th>
+              <th scope="col">Išleisti</th>
+            </tr>
+          </thead>
+          <tbody id="recentTable"></tbody>
+        </table>
       </div>
-      <div id="kpiGrid" class="kpi-grid" role="list"></div>
-      <figure class="chart-card chart-card--compact chart-card--kpi-hourly kpi-hourly-chart">
-        <div class="chart-card__skeleton" aria-hidden="true" hidden>
-          <span class="skeleton skeleton--title"></span>
-          <span class="skeleton skeleton--chart-area"></span>
-          <span class="skeleton skeleton--caption"></span>
-        </div>
-        <div class="kpi-hourly-controls" role="group" aria-label="Paskutinės pamainos rodiklis">
-          <button type="button" class="chip-button" data-last-shift-metric="arrivals" aria-pressed="true">Atvykimai</button>
-          <button type="button" class="chip-button" data-last-shift-metric="discharges" aria-pressed="false">Išleidimai</button>
-          <button type="button" class="chip-button" data-last-shift-metric="hospitalized" aria-pressed="false">Hospitalizacijos</button>
-          <button type="button" class="chip-button" data-last-shift-metric="balance" aria-pressed="false">Srautų balansas</button>
-        </div>
-        <div class="chart-card__canvas chart-card__canvas--kpi-hourly">
-          <canvas id="lastShiftHourlyChart" aria-labelledby="lastShiftHourlyTitle"></canvas>
-        </div>
-        <div id="lastShiftHourlyLegend" class="chart-legend" role="list" aria-label="Kreivių legenda"></div>
-        <figcaption id="lastShiftHourlyTitle">
-          <span>Paskutinės pamainos atvykimai per valandą</span>
-          <span id="lastShiftHourlyContext" class="chart-caption__context"></span>
-        </figcaption>
-      </figure>
-      <template id="kpiSkeleton">
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
-          <header class="kpi-card__header">
-            <div class="skeleton skeleton--chip"></div>
-            <div class="skeleton skeleton--title"></div>
-          </header>
-          <p class="kpi-mainline">
-            <span class="skeleton skeleton--value"></span>
-          </p>
-          <div class="kpi-card__details">
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-            <span class="skeleton skeleton--detail"></span>
-          </div>
-        </article>
-      </template>
     </section>
-    </div>
-
-    
+</div>
 </main>
 
   <button type="button"

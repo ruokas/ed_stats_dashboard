@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RŠL SMPS statistika</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet">
+    <style>
+      :root {
+        --color-bg: #eaedf3;
+        --color-text: #101420;
+      }
+
+      [data-theme="dark"] {
+        --color-bg: #0a0d14;
+        --color-text: #e8ecf6;
+      }
+
+      body {
+        background: var(--color-bg);
+        color: var(--color-text);
+      }
+    </style>
+  <style id="theme-transition-blocker">
+    .theme-transition-block *,
+    .theme-transition-block *::before,
+    .theme-transition-block *::after {
+      transition: none !important;
+    }
+  </style>
+  <script>
+    (() => {
+      const storageKey = 'edDashboardTheme';
+      const root = document.documentElement;
+      const preferDark = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      const getStoredTheme = () => {
+        try {
+          const value = localStorage.getItem(storageKey);
+          return value === 'dark' || value === 'light' ? value : null;
+        } catch (error) {
+          return null;
+        }
+      };
+
+      const setThemeAttributes = (theme) => {
+        if (!theme) return;
+        root.setAttribute('data-theme', theme);
+        if (document.body) {
+          document.body.setAttribute('data-theme', theme);
+        } else {
+          document.addEventListener(
+            'DOMContentLoaded',
+            () => document.body && document.body.setAttribute('data-theme', theme),
+            { once: true }
+          );
+        }
+      };
+
+      const initialTheme = getStoredTheme() || (preferDark() ? 'dark' : 'light');
+      setThemeAttributes(initialTheme);
+      root.classList.add('theme-transition-block');
+      window.ED_DASHBOARD_THEME = initialTheme;
+
+      const removeBlocker = () => {
+        root.classList.remove('theme-transition-block');
+        const blocker = document.getElementById('theme-transition-blocker');
+        if (blocker) blocker.remove();
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removeBlocker, { once: true });
+      } else {
+        removeBlocker();
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+
+</head>
+<body data-page="charts">
+<header class="hero" role="banner">
+    <div class="container hero__content">
+      <div class="hero__identity">
+        <h1 id="pageTitle" class="hero__title">RŠL SMPS statistika</h1>
+      </div>
+      <nav class="section-nav hero__nav" aria-label="Pagrindinės sekcijos">
+        <div class="section-nav__bar">
+          <div class="section-nav__inner">
+            <a class="section-nav__link" data-nav-link href="index.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12v7" />
+                  <path d="M12 5v14" />
+                  <path d="M19 9v10" />
+                  <path d="M3 19h18" />
+                </svg>
+              </span>
+              <span class="section-nav__label">Rodikliai</span>
+            </a>
+            <a class="section-nav__link" data-nav-link href="charts.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 16.5L8.5 12L12 15.5L18 7.5L21 10" />
+                  <path d="M4 19h16" />
+                </svg>
+              </span>
+              <span class="section-nav__label">Grafikai</span>
+            </a>
+            <a class="section-nav__link" data-nav-link href="recent.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="4" width="17" height="17" rx="2" />
+                  <path d="M8 2.5v3" />
+                  <path d="M16 2.5v3" />
+                  <path d="M3.5 9h17" />
+                  <path d="M8 13h4" />
+                  <path d="M8 17h8" />
+                </svg>
+              </span>
+              <span class="section-nav__label">Paskutinės dienos</span>
+            </a>
+            <a class="section-nav__link" data-nav-link href="summaries.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 18h16" />
+                  <path d="M6 15L10 11L13 14L18 7" />
+                  <path d="M18 7h3v3" />
+                </svg>
+              </span>
+              <span class="section-nav__label">Suvestinės</span>
+            </a>
+            <a class="section-nav__link" data-nav-link href="feedback.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 11.5c0 4.142-3.463 7.5-7.735 7.5a8.4 8.4 0 0 1-2.828-.49L6 21.5l1.19-3.572C5.415 16.738 4 14.267 4 11.5 4 7.358 7.463 4 11.735 4 16.007 4 21 7.358 21 11.5Z" />
+                  <path d="M9.5 11.5h.01" />
+                  <path d="M12 11.5h.01" />
+                  <path d="M14.5 11.5h.01" />
+                </svg>
+              </span>
+              <span class="section-nav__label">Atsiliepimai</span>
+            </a>
+            <a class="section-nav__link" data-nav-link href="ed.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2.5" y="5" width="19" height="13" rx="2.5" />
+                  <path d="M12 18v3" />
+                  <path d="M8 21h8" />
+                  <path d="m9 3 3 3 3-3" />
+                </svg>
+              </span>
+              <span class="section-nav__label">SMPS skydelis</span>
+            </a>
+          </div>
+        </div>
+      </nav>
+      <div class="hero__actions">
+        <div class="hero__status" aria-live="polite">
+          <p id="status" class="status status--loading" role="status" aria-live="polite" aria-label="Kraunama..."></p>
+        </div>
+        <div class="hero__buttons">
+          
+          <button id="themeToggleBtn" type="button" class="icon-button theme-toggle" aria-pressed="false" aria-label="Perjungti šviesią/tamsią temą" title="Perjungti šviesią/tamsią temą (Ctrl+Shift+L)" data-theme="light">
+            <!-- Saulės ir mėnulio ikonų keitimas pagal aktyvią temą -->
+            <svg class="theme-icon icon--sun" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="4" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m0 13.5V21m9-9h-2.25M5.25 12H3m15.364 6.364-1.59-1.59M7.227 7.227 5.636 5.636m12.728 0-1.59 1.59M7.227 16.773l-1.59 1.59" />
+            </svg>
+            <svg class="theme-icon icon--moon" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 0 1 11.21 3 7.5 7.5 0 1 0 21 12.79Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+<main class="container" role="main">
+<div class="section-band section-band--trends">
+<section class="section" aria-labelledby="chartHeading" data-section="chart">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="chartHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 16.5L8.5 12L12 15.5L18 7.5L21 10" />
+                  <path d="M4 19h16" />
+                </svg>
+              </span>
+              <span class="section-title__text">Pacientų srautai</span>
+            </h2>
+            <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
+          </div>
+        </div>
+        <div class="section__actions chart-controls">
+          <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
+            <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
+            <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
+            <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
+            <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
+            <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
+            <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
+            <button type="button" class="chip-button" data-chart-period="all" aria-pressed="false">Visas laikotarpis</button>
+          </div>
+          <label class="chart-year-filter" for="chartYear">
+            <span id="chartYearLabel">Metai</span>
+            <select id="chartYear" aria-label="Filtruoti grafikus pagal kalendorinius metus">
+              <option value="all">Visi metai</option>
+            </select>
+          </label>
+          <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true"></p>
+          <form id="chartFiltersForm" class="chart-filters" aria-label="Filtruoti grafikus">
+            <label class="chart-filter" for="chartArrival">
+              <span>Atvykimo tipas</span>
+              <div class="segmented-control chart-filter__segmented" role="group" aria-label="Atvykimo tipas">
+                <button type="button" class="segmented-control__button" data-chart-arrival="all" aria-pressed="true">Visi</button>
+                <button type="button" class="segmented-control__button" data-chart-arrival="ems" aria-pressed="false">Tik GMP</button>
+                <button type="button" class="segmented-control__button" data-chart-arrival="self" aria-pressed="false">Be GMP</button>
+              </div>
+              <select id="chartArrival" name="arrival" class="sr-only" aria-label="Filtruoti grafikus pagal atvykimo tipą">
+                <option value="all">Visi</option>
+                <option value="ems">Tik GMP</option>
+                <option value="self">Be GMP</option>
+              </select>
+            </label>
+            <label class="chart-filter" for="chartDisposition">
+              <span>Būsena išvykstant</span>
+              <div class="segmented-control chart-filter__segmented" role="group" aria-label="Būsena išvykstant">
+                <button type="button" class="segmented-control__button" data-chart-disposition="all" aria-pressed="true">Visi</button>
+                <button type="button" class="segmented-control__button" data-chart-disposition="hospitalized" aria-pressed="false">Hospitalizuoti</button>
+                <button type="button" class="segmented-control__button" data-chart-disposition="discharged" aria-pressed="false">Išleisti</button>
+              </div>
+              <select id="chartDisposition" name="disposition" class="sr-only" aria-label="Filtruoti grafikus pagal išvykimo sprendimą">
+                <option value="all">Visi</option>
+                <option value="hospitalized">Hospitalizuoti</option>
+                <option value="discharged">Išleisti</option>
+              </select>
+            </label>
+            <label class="chart-filter" for="chartCardType">
+              <span>Kortelės tipas</span>
+              <div class="segmented-control chart-filter__segmented" role="group" aria-label="Kortelės tipas">
+                <button type="button" class="segmented-control__button" data-chart-card-type="all" aria-pressed="true">Visos</button>
+                <button type="button" class="segmented-control__button" data-chart-card-type="t" aria-pressed="false">T</button>
+                <button type="button" class="segmented-control__button" data-chart-card-type="tr" aria-pressed="false">TR</button>
+                <button type="button" class="segmented-control__button" data-chart-card-type="ch" aria-pressed="false">CH</button>
+              </div>
+              <select id="chartCardType" name="cardType" class="sr-only" aria-label="Filtruoti grafikus pagal kortelės tipą">
+                <option value="all">Visos kortelės</option>
+                <option value="t">T kortelės</option>
+                <option value="tr">TR kortelės</option>
+                <option value="ch">CH kortelės</option>
+              </select>
+            </label>
+            <label class="chart-filter chart-filter--toggle" for="chartCompareGmp">
+              <span>Palyginti GMP</span>
+              <div class="chart-toggle">
+                <input id="chartCompareGmp" name="compareGmp" type="checkbox" aria-label="Palyginti GMP ir be GMP">
+                <span>GMP / be GMP</span>
+              </div>
+            </label>
+          </form>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <figure class="chart-card chart-card--tall">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#dailyChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#dailyChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
+          <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
+          <figcaption id="dailyChartTitle">
+            <span id="dailyChartLabel" class="chart-caption__label">Kasdieniai pacientai (paskutinės 30 dienų)</span>
+            <span id="dailyChartContext" class="chart-caption__context"></span>
+          </figcaption>
+        </figure>
+        <figure class="chart-card chart-card--tall">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#dowChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#dowChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
+          <canvas id="dowChart" aria-labelledby="dowChartTitle"></canvas>
+          <figcaption id="dowChartTitle">
+            <span id="dowChartLabel" class="chart-caption__label">Vidutinis pacientų skaičius pagal savaitės dieną</span>
+            <span id="dowChartContext" class="chart-caption__context"></span>
+          </figcaption>
+        </figure>
+        <figure class="chart-card chart-card--tall">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#dowStayChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#dowStayChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
+          <canvas id="dowStayChart" aria-labelledby="dowStayChartTitle"></canvas>
+          <figcaption id="dowStayChartTitle">
+            <span id="dowStayChartLabel" class="chart-caption__label">Vidutinė buvimo trukmė pagal savaitės dieną</span>
+            <span id="dowStayChartContext" class="chart-caption__context"></span>
+          </figcaption>
+        </figure>
+        <figure class="chart-card chart-card--tall chart-card--full chart-card--hourly">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar hourly-toolbar" aria-label="Filtruoti valandinį grafiką">
+            <div class="hourly-toolbar__row" role="group" aria-label="Rodiklio ir skyriaus filtrai">
+              <div class="hourly-toolbar__field hourly-toolbar__field--metric">
+                <div class="segmented-control" role="group" aria-label="Pasirinkti rodiklį">
+                  <button type="button" class="segmented-control__button" data-hourly-metric="arrivals" aria-pressed="true">Atvykimai</button>
+                  <button type="button" class="segmented-control__button" data-hourly-metric="discharges" aria-pressed="false">Išleidimai</button>
+                  <button type="button" class="segmented-control__button" data-hourly-metric="balance" aria-pressed="false">Srautų balansas</button>
+                  <button type="button" class="segmented-control__button" data-hourly-metric="hospitalized" aria-pressed="false">Hospitalizacijos</button>
+                </div>
+              </div>
+              <label class="heatmap-toolbar__field" for="hourlyDepartment" hidden>
+                <span id="hourlyDepartmentLabel" class="heatmap-toolbar__label">Skyrius</span>
+                <div class="hourly-department" role="group" aria-label="Skyrių paieška">
+                  <input
+                    id="hourlyDepartment"
+                    name="hourlyDepartment"
+                    placeholder="Visi skyriai"
+                    aria-label="Filtruoti grafiką pagal skyrių"
+                    autocomplete="off"
+                    aria-expanded="false"
+                    aria-controls="hourlyDepartmentSuggestions"
+                  />
+                    <button type="button" id="hourlyDepartmentToggle" class="hourly-department__toggle" aria-label="Atverti skyrių sąrašą" aria-expanded="false">
+                      ▾
+                    </button>
+                    <div id="hourlyDepartmentSuggestions" class="hourly-suggestions" role="listbox" hidden></div>
+                  </div>
+              </label>
+            </div>
+            <div class="hourly-toolbar__row" role="group" aria-label="Laiko ir mastelio filtrai">
+              <label class="heatmap-toolbar__field" for="hourlyWeekday">
+                <span id="hourlyWeekdayLabel" class="heatmap-toolbar__label">Savaitės diena</span>
+                <select id="hourlyWeekday" name="hourlyWeekday" aria-label="Filtruoti grafiką pagal savaitės dieną">
+                  <option value="all">Visos dienos</option>
+                  <option value="0">Pirmadienis</option>
+                  <option value="1">Antradienis</option>
+                  <option value="2">Trečiadienis</option>
+                  <option value="3">Ketvirtadienis</option>
+                  <option value="4">Penktadienis</option>
+                  <option value="5">Šeštadienis</option>
+                  <option value="6">Sekmadienis</option>
+                </select>
+              </label>
+              <label class="heatmap-toolbar__field" for="hourlyStayBucket">
+                <span id="hourlyStayLabel" class="heatmap-toolbar__label">Buvimo trukmė</span>
+                <select id="hourlyStayBucket" name="hourlyStayBucket" aria-label="Filtruoti grafiką pagal buvimo trukmę">
+                  <option value="all">Visi laikai</option>
+                  <option value="lt4">&lt;4 val.</option>
+                  <option value="4to8">4–8 val.</option>
+                  <option value="8to16">8–16 val.</option>
+                  <option value="gt16">&gt;16 val.</option>
+                </select>
+              </label>
+              <button type="button" id="hourlyResetFilters" class="chip-button chip-button--ghost hourly-action" aria-label="Išvalyti šio grafiko filtrus">Išvalyti filtrus</button>
+            </div>
+            <div class="hourly-toolbar__row" role="group" aria-label="Metų palyginimas">
+              <label class="hourly-compare-toggle" for="hourlyCompareToggle">
+                <input type="checkbox" id="hourlyCompareToggle" aria-controls="hourlyCompareYearA hourlyCompareYearB">
+                <span>Palyginti metus</span>
+              </label>
+              <div class="hourly-compare-series" role="group" aria-label="Palyginimo srautas" hidden>
+                <div class="segmented-control">
+                  <button type="button" class="segmented-control__button" data-hourly-compare-series="all" aria-pressed="true">Visi</button>
+                  <button type="button" class="segmented-control__button" data-hourly-compare-series="ems" aria-pressed="false">GMP</button>
+                  <button type="button" class="segmented-control__button" data-hourly-compare-series="self" aria-pressed="false">Ne GMP</button>
+                </div>
+              </div>
+              <label class="heatmap-toolbar__field" for="hourlyCompareYearA" hidden>
+                <span class="heatmap-toolbar__label">Metai A</span>
+                <select id="hourlyCompareYearA" name="hourlyCompareYearA" aria-label="Pasirinkti pirmus metus palyginimui"></select>
+              </label>
+              <label class="heatmap-toolbar__field" for="hourlyCompareYearB" hidden>
+                <span class="heatmap-toolbar__label">Metai B</span>
+                <select id="hourlyCompareYearB" name="hourlyCompareYearB" aria-label="Pasirinkti antrus metus palyginimui"></select>
+              </label>
+              <div class="hourly-toolbar__actions-inline">
+                <button
+                  type="button"
+                  class="chart-copy-btn"
+                  data-chart-copy
+                  data-chart-target="#hourlyChart"
+                  data-tooltip="Kopijuoti grafiką"
+                  aria-label="Kopijuoti grafiką"
+                  title="Kopijuoti grafiką"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                    <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="chart-download-btn"
+                  data-chart-download
+                  data-chart-target="#hourlyChart"
+                  data-tooltip="Parsisiųsti PNG"
+                  aria-label="Parsisiųsti grafiką PNG formatu"
+                  title="Parsisiųsti PNG"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v12"></path>
+                    <path d="M8 11l4 4 4-4"></path>
+                    <path d="M4 21h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="hourly-toolbar__row hourly-toolbar__row--actions"></div>
+          </div>
+          <div class="chart-card__canvas chart-card__canvas--hourly">
+            <canvas id="hourlyChart" aria-labelledby="hourlyChartTitle"></canvas>
+          </div>
+          <figcaption id="hourlyChartTitle">Vidutinis pacientų skaičius per valandą</figcaption>
+        </figure>
+        <figure class="chart-card chart-card--heatmap">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area skeleton--chart-area--heatmap"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar heatmap-toolbar" role="group" aria-label="Pasirinkti rodiklį">
+            <label class="heatmap-toolbar__field" for="heatmapMetric">
+              <span id="heatmapMetricLabel" class="heatmap-toolbar__label">Rodiklis</span>
+              <select id="heatmapMetric" name="heatmapMetric">
+                <option value="arrivals">Atvykimų skaičius / d.</option>
+              </select>
+            </label>
+            <label class="heatmap-toolbar__field" for="heatmapArrival">
+              <span class="heatmap-toolbar__label">Atvykimas</span>
+              <select id="heatmapArrival" name="heatmapArrival">
+                <option value="all">Visi</option>
+                <option value="ems">Tik GMP</option>
+                <option value="self">Be GMP</option>
+              </select>
+            </label>
+            <label class="heatmap-toolbar__field" for="heatmapDisposition">
+              <span class="heatmap-toolbar__label">Sprendimas</span>
+              <select id="heatmapDisposition" name="heatmapDisposition">
+                <option value="all">Visi</option>
+                <option value="hospitalized">Hospitalizuoti</option>
+                <option value="discharged">Išleisti</option>
+              </select>
+            </label>
+            <label class="heatmap-toolbar__field" for="heatmapCardType">
+              <span class="heatmap-toolbar__label">Kortelė</span>
+              <select id="heatmapCardType" name="heatmapCardType">
+                <option value="all">Visos</option>
+                <option value="t">T</option>
+                <option value="tr">TR</option>
+                <option value="ch">CH</option>
+              </select>
+            </label>
+            <label class="heatmap-toolbar__field" for="heatmapYear">
+              <span class="heatmap-toolbar__label">Metai</span>
+              <select id="heatmapYear" name="heatmapYear">
+                <option value="all">Visi metai</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#arrivalHeatmap"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#arrivalHeatmap"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
+          <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
+        </figure>
+        <figure class="chart-card chart-card--funnel">
+          <div class="chart-card__skeleton" aria-hidden="true" hidden>
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton skeleton--chart-area"></span>
+            <span class="skeleton skeleton--caption"></span>
+          </div>
+          <div class="chart-card__toolbar chart-card__toolbar--actions">
+            <button
+              type="button"
+              class="chart-copy-btn"
+              data-chart-copy
+              data-chart-target="#funnelChart"
+              data-tooltip="Kopijuoti grafiką"
+              aria-label="Kopijuoti grafiką"
+              title="Kopijuoti grafiką"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="chart-download-btn"
+              data-chart-download
+              data-chart-target="#funnelChart"
+              data-tooltip="Parsisiųsti PNG"
+              aria-label="Parsisiųsti grafiką PNG formatu"
+              title="Parsisiųsti PNG"
+            >
+              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"></path>
+                <path d="M8 11l4 4 4-4"></path>
+                <path d="M4 21h16"></path>
+              </svg>
+            </button>
+          </div>
+          <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
+          <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    
+</div>
+</main>
+
+  <button type="button"
+          id="scrollTopBtn"
+          class="scroll-top-btn"
+          aria-label="Grįžti į puslapio pradžią"
+          title="Grįžti į puslapio pradžią (Home)"
+          aria-hidden="true"
+          data-visible="false">
+    Grįžti į pradžią
+  </button>
+
+  
+
+  <footer>
+    <div class="container footer__meta">
+      <span id="footerSource"></span>
+    </div>
+  </footer>
+
+    <script type="module" src="main.js"></script>
+
+
+</body>
+</html>
