@@ -25,6 +25,7 @@ export function createDataFlow({
   populateHourlyCompareYearOptions,
   populateHeatmapYearOptions,
   syncHeatmapFilterControls,
+  syncKpiFilterControls,
   getDefaultChartFilters,
   sanitizeChartFilters,
   KPI_FILTER_LABELS,
@@ -48,6 +49,9 @@ export function createDataFlow({
   getAutoRefreshTimerId,
   setAutoRefreshTimerId,
 }) {
+  const syncKpiFilterControlsSafe = typeof syncKpiFilterControls === 'function'
+    ? syncKpiFilterControls
+    : () => {};
   const DAILY_STATS_SESSION_KEY = 'ed-dashboard:daily-stats:v1';
   const DAILY_STATS_CACHE_TTL_MS = 5 * 60 * 1000;
   const activeConfig = pageConfig || {};
@@ -87,8 +91,7 @@ export function createDataFlow({
   );
   const canUseDailyStatsCache = Boolean(
     canUseDailyStatsCacheOnly
-    || isChartsOnlyPage
-    || isKpiOnlyPage,
+    || isChartsOnlyPage,
   );
   let historicalHydrationInFlight = false;
   let historicalHydrated = false;
@@ -435,7 +438,7 @@ export function createDataFlow({
           : DEFAULT_SETTINGS.calculations.windowDays;
         if (activeConfig.kpi && (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0)) {
           dashboardState.kpi.filters.window = windowDays;
-          syncKpiFilterControls();
+          syncKpiFilterControlsSafe();
         }
         const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
         const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))

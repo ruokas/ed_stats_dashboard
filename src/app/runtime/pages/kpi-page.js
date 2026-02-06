@@ -694,6 +694,7 @@ export async function runKpiPage(core) {
     populateHourlyCompareYearOptions: () => {},
     populateHeatmapYearOptions: () => {},
     syncHeatmapFilterControls: () => {},
+    syncKpiFilterControls: kpiFlow.syncKpiFilterControls,
     getDefaultChartFilters,
     sanitizeChartFilters: (value) => value,
     KPI_FILTER_LABELS,
