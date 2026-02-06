@@ -63,15 +63,68 @@ export function getRuntimeConfigUrl() {
   return paramUrl && paramUrl.trim() ? paramUrl.trim() : 'config.json';
 }
 
-export async function loadSettingsFromConfig(DEFAULT_SETTINGS) {
+const SETTINGS_SESSION_KEY = 'edDashboard:settings:v1';
+const SETTINGS_CACHE_TTL_MS = 2 * 60 * 1000;
+
+function readSettingsFromSessionCache(configUrl) {
   try {
-    const response = await fetch(getRuntimeConfigUrl(), { cache: 'no-store' });
+    const raw = window.sessionStorage.getItem(SETTINGS_SESSION_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+    if (parsed.configUrl !== configUrl) {
+      return null;
+    }
+    if (!Number.isFinite(parsed.savedAt) || (Date.now() - parsed.savedAt) > SETTINGS_CACHE_TTL_MS) {
+      return null;
+    }
+    if (!parsed.settings || typeof parsed.settings !== 'object') {
+      return null;
+    }
+    return parsed.settings;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeSettingsToSessionCache(configUrl, settings) {
+  try {
+    if (!settings || typeof settings !== 'object') {
+      return;
+    }
+    window.sessionStorage.setItem(SETTINGS_SESSION_KEY, JSON.stringify({
+      configUrl,
+      savedAt: Date.now(),
+      settings,
+    }));
+  } catch (error) {
+    // Ignore storage quota and serialization issues.
+  }
+}
+
+export async function loadSettingsFromConfig(DEFAULT_SETTINGS) {
+  const configUrl = getRuntimeConfigUrl();
+  const cachedSettings = readSettingsFromSessionCache(configUrl);
+  if (cachedSettings) {
+    return normalizeSettings(cachedSettings, DEFAULT_SETTINGS);
+  }
+  try {
+    const response = await fetch(configUrl, { cache: 'default' });
     if (!response.ok) {
       throw new Error(`Nepavyko atsisiųsti konfigūracijos (${response.status})`);
     }
     const configData = await response.json();
+    writeSettingsToSessionCache(configUrl, configData);
     return normalizeSettings(configData, DEFAULT_SETTINGS);
   } catch (error) {
+    const fallbackCached = readSettingsFromSessionCache(configUrl);
+    if (fallbackCached) {
+      return normalizeSettings(fallbackCached, DEFAULT_SETTINGS);
+    }
     console.warn('Nepavyko įkelti config.json, naudojami numatytieji.', error);
     return normalizeSettings({}, DEFAULT_SETTINGS);
   }

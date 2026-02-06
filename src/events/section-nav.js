@@ -1,13 +1,4 @@
 import { getDatasetValue, setDatasetValue } from '../utils/dom.js';
-
-const PAGE_RUNTIME_MODULE_BY_PATH = {
-  '/index.html': '/src/app/runtime/pages/kpi-page.js',
-  '/charts.html': '/src/app/runtime/pages/charts-page.js',
-  '/recent.html': '/src/app/runtime/pages/recent-page.js',
-  '/summaries.html': '/src/app/runtime/pages/summaries-page.js',
-  '/feedback.html': '/src/app/runtime/pages/feedback-page.js',
-  '/ed.html': '/src/app/runtime/pages/ed-page.js',
-};
 const APP_READY_EVENT = 'app:runtime-ready';
 
 export function initSectionNavigation(env) {
@@ -48,7 +39,6 @@ export function initSectionNavigation(env) {
   if (isMpa) {
     setDatasetValue(selectors.sectionNav, 'navMode', 'mpa');
     const prefetched = new Set();
-    const preloadedModules = new Set();
     const canPrefetch = () => {
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       if (connection && connection.saveData) {
@@ -105,32 +95,6 @@ export function initSectionNavigation(env) {
       document.head.appendChild(link);
       prefetched.add(normalized);
     };
-    const preloadModule = (href) => {
-      if (!href) {
-        return;
-      }
-      const targetUrl = new URL(href, window.location.href);
-      const normalizedPath = normalizePath(targetUrl.pathname);
-      const modulePath = PAGE_RUNTIME_MODULE_BY_PATH[normalizedPath];
-      if (!modulePath) {
-        return;
-      }
-      const moduleUrl = new URL(modulePath, window.location.href).pathname;
-      if (preloadedModules.has(moduleUrl)) {
-        // Continue to shared modules check below.
-      } else {
-        const existing = document.head.querySelector(`link[rel="modulepreload"][href="${moduleUrl}"]`);
-        if (existing) {
-          preloadedModules.add(moduleUrl);
-        } else {
-          const link = document.createElement('link');
-          link.rel = 'modulepreload';
-          link.href = moduleUrl;
-          document.head.appendChild(link);
-          preloadedModules.add(moduleUrl);
-        }
-      }
-    };
     const normalizePath = (value) => {
       if (!value || value === '/') {
         return '/index.html';
@@ -156,11 +120,9 @@ export function initSectionNavigation(env) {
       if (canPrefetch() && !isActive) {
         const prefetchOnIntent = () => {
           prefetchPage(linkUrl);
-          preloadModule(linkHref);
         };
         link.addEventListener('mouseenter', prefetchOnIntent, { passive: true });
         link.addEventListener('focus', prefetchOnIntent, { passive: true });
-        link.addEventListener('touchstart', prefetchOnIntent, { passive: true });
       }
     });
     syncNavScrollable();
@@ -177,11 +139,14 @@ export function initSectionNavigation(env) {
       const cpuCount = typeof navigator.hardwareConcurrency === 'number'
         ? navigator.hardwareConcurrency
         : 8;
-      const idlePrefetchLimit = cpuCount <= 4 ? 1 : 2;
+      const idlePrefetchLimit = cpuCount <= 4 ? 0 : 1;
       const idle = typeof window.requestIdleCallback === 'function'
         ? window.requestIdleCallback.bind(window)
         : (cb) => window.setTimeout(cb, 250);
       const runIdlePrefetch = () => {
+        if (idlePrefetchLimit <= 0) {
+          return;
+        }
         idle(() => {
           links
             .filter((link) => link.getAttribute('aria-current') !== 'page')
@@ -212,7 +177,7 @@ export function initSectionNavigation(env) {
           }
           setDatasetValue(selectors.sectionNav, 'appReady', 'true');
           runIdlePrefetch();
-        }, 2500);
+        }, 4500);
       }
     }
     sectionNavState.initialized = true;

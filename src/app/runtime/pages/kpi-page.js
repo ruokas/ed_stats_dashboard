@@ -28,7 +28,6 @@ import {
   oneDecimalFormatter,
   percentFormatter,
   shortDateFormatter,
-  statusTimeFormatter,
   weekdayLongFormatter,
 } from '../../../utils/format.js';
 import { renderLastShiftHourlyChartWithTheme } from '../../../charts/hourly.js';
@@ -516,25 +515,26 @@ function setStatus(selectors, dashboardState, type, details = '') {
   if (!statusEl) {
     return;
   }
+  statusEl.textContent = '';
   statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
   if (type === 'loading') {
     statusEl.classList.add('status--loading');
-    statusEl.textContent = TEXT.status.loading;
+    statusEl.setAttribute('aria-label', TEXT.status.loading);
     return;
   }
+  statusEl.removeAttribute('aria-label');
   if (type === 'error') {
     statusEl.classList.add('status--error');
     statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
     return;
   }
-  const formatted = statusTimeFormatter.format(new Date());
   if (dashboardState.usingFallback) {
     statusEl.classList.add('status--warning');
-    statusEl.textContent = TEXT.status.fallbackSuccess(formatted);
+    statusEl.textContent = TEXT.status.fallbackSuccess();
     return;
   }
   statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success(formatted);
+  statusEl.textContent = TEXT.status.success();
 }
 
 function updateThemeToggleState(selectors, theme) {

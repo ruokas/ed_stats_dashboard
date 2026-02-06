@@ -47,7 +47,8 @@ export function createUIEvents(env) {
       initTvMode(env);
     }
     if (pageConfig.charts) {
-      initChartControls(env);
+      // Chart controls are interaction-only; defer to reduce startup main-thread contention.
+      runNonCritical(() => initChartControls(env));
     }
     initThemeToggle(env);
     if (pageConfig.recent || pageConfig.monthly || pageConfig.yearly) {

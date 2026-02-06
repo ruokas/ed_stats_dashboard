@@ -5597,7 +5597,7 @@ export function startLegacyApp(options = {}) {
             setSectionTitle(selectors.edHeading, settings.output.edTitle || TEXT.ed.title);
           }
         if (selectors.edStatus) {
-          selectors.edStatus.textContent = TEXT.ed.status.loading;
+          selectors.edStatus.textContent = '';
           setDatasetValue(selectors.edStatus, 'tone', 'info');
         }
         if (selectors.compareToggle) {
@@ -7778,16 +7778,12 @@ export function startLegacyApp(options = {}) {
           : (dataset?.usingFallback ? 'warning' : (statusInfo?.tone || 'info'));
         setDatasetValue(selectors.edTvPanel, 'tone', toneValue);
         if (selectors.edTvStatusText) {
-          selectors.edTvStatusText.textContent = statusInfo?.message || TEXT.ed.status.loading;
+          selectors.edTvStatusText.textContent = statusInfo?.tone === 'error'
+            ? (statusInfo?.message || '')
+            : '';
         }
         if (selectors.edTvUpdated) {
-          const timestampText = statusInfo?.timestamp;
-          const updatedText = timestampText
-            ? (typeof tvTexts.updated === 'function'
-              ? tvTexts.updated(timestampText)
-              : `Atnaujinta ${timestampText}`)
-            : (tvTexts.updatedUnknown || TEXT.status.loading);
-          selectors.edTvUpdated.textContent = updatedText;
+          selectors.edTvUpdated.textContent = '';
         }
         if (selectors.edTvNotice) {
           let noticeText = '';

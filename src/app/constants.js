@@ -31,8 +31,8 @@ export const TEXT = {
   status: {
     loading: 'Kraunama...',
     error: 'Nepavyko įkelti duomenų. Patikrinkite ryšį ir bandykite dar kartą.',
-    success: (timestamp) => `Atnaujinta ${timestamp}`,
-    fallbackSuccess: (timestamp) => `Rodomi talpyklos duomenys (bandyta ${timestamp})`,
+    success: () => 'Duomenys atnaujinti',
+    fallbackSuccess: () => 'Rodomi talpyklos duomenys',
     fallbackNote: (reason) => `Nepavyko pasiekti nuotolinio šaltinio: ${reason}.`,
     errorDetails: (details) => `Nepavyko įkelti duomenų${details ? ` (${details})` : ''}.`,
     errorAdvice: 'Patikrinkite, ar „Google Sheet“ paskelbta pasirinkus „File → Share → Publish to web → CSV“.',
@@ -45,8 +45,8 @@ export const TEXT = {
     status: {
       loading: 'Kraunama...',
       empty: 'ED duomenų nerasta.',
-      success: (timestamp) => (timestamp ? `Atnaujinta ${timestamp}` : 'Duomenys sėkmingai atnaujinti'),
-      fallback: (reason, timestamp) => `Rodomi ED talpyklos duomenys${timestamp ? ` (${timestamp})` : ''}. Priežastis: ${reason}`,
+      success: () => 'Duomenys sėkmingai atnaujinti',
+      fallback: (reason) => `Rodomi ED talpyklos duomenys. Priežastis: ${reason}`,
       error: (reason) => `Nepavyko įkelti ED duomenų: ${reason}`,
       noUrl: 'Nenurodytas ED duomenų URL.',
     },

@@ -57,12 +57,15 @@ export function createDataFlow({
     || activeConfig.monthly
     || activeConfig.yearly
     || activeConfig.ed);
+  const shouldAutoRefresh = Boolean(activeConfig.kpi || activeConfig.ed);
   const needsFeedbackData = Boolean(activeConfig.feedback || activeConfig.ed);
   const needsEdData = Boolean(activeConfig.ed);
   const canUseDailyStatsCacheOnly = Boolean(
-    (activeConfig.recent || activeConfig.monthly || activeConfig.yearly)
+    activeConfig.recent
     && !activeConfig.kpi
-    && !activeConfig.charts,
+    && !activeConfig.charts
+    && !activeConfig.monthly
+    && !activeConfig.yearly,
   );
   const isChartsOnlyPage = Boolean(
     activeConfig.charts
@@ -89,6 +92,8 @@ export function createDataFlow({
   );
   let historicalHydrationInFlight = false;
   let historicalHydrated = false;
+  let visibilityHandlersBound = false;
+  let deferredHydrationQueued = false;
 
   function readDailyStatsFromSessionCache() {
     if (!canUseDailyStatsCache) {
@@ -138,7 +143,32 @@ export function createDataFlow({
     if (currentTimerId) {
       window.clearInterval(currentTimerId);
     }
+    if (!shouldAutoRefresh) {
+      setAutoRefreshTimerId(null);
+      return;
+    }
+    if (!visibilityHandlersBound && typeof document !== 'undefined') {
+      visibilityHandlersBound = true;
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && !dashboardState.loading) {
+          loadDashboard();
+        }
+      };
+      const onPageHide = () => {
+        const activeTimerId = getAutoRefreshTimerId();
+        if (activeTimerId) {
+          window.clearInterval(activeTimerId);
+          setAutoRefreshTimerId(null);
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibilityChange, { passive: true });
+      window.addEventListener('pageshow', onVisibilityChange, { passive: true });
+      window.addEventListener('pagehide', onPageHide, { passive: true });
+    }
     const nextTimerId = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
       loadDashboard();
     }, AUTO_REFRESH_INTERVAL_MS);
     setAutoRefreshTimerId(nextTimerId);
@@ -211,6 +241,35 @@ export function createDataFlow({
     }
   }
 
+  function scheduleDeferredHydration({
+    runNumber,
+    settings,
+    workerProgressReporter,
+    primaryChunkReporter,
+    historicalChunkReporter,
+  }) {
+    if (deferredHydrationQueued || historicalHydrationInFlight || historicalHydrated) {
+      return;
+    }
+    deferredHydrationQueued = true;
+
+    const execute = () => {
+      deferredHydrationQueued = false;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
+      hydrateWithHistoricalData({
+        runNumber,
+        settings,
+        workerProgressReporter,
+        primaryChunkReporter,
+        historicalChunkReporter,
+      });
+    };
+
+    runAfterDomAndIdle(execute, { timeout: 1800 });
+  }
+
   async function loadDashboard() {
     if (dashboardState.loading) {
       dashboardState.queuedReload = true;
@@ -250,7 +309,7 @@ export function createDataFlow({
     try {
       setStatus('loading');
       if (selectors.edStatus) {
-        selectors.edStatus.textContent = TEXT.ed.status.loading;
+        selectors.edStatus.textContent = '';
         setDatasetValue(selectors.edStatus, 'tone', 'info');
       }
       const cachedDailyStats = readDailyStatsFromSessionCache();
@@ -404,10 +463,10 @@ export function createDataFlow({
         }
 
         if (activeConfig.monthly || activeConfig.yearly) {
-          // Suvestinėms visada perskaičiuojame iš pilno įrašų rinkinio,
-          // kad metinė lentelė nebūtų netyčia apribota tik naujausiais duomenimis.
-          const summaryDailyStats = Array.isArray(combinedRecords) && combinedRecords.length
-            ? computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS)
+          // Naudojame jau paruoštus pilnus dailyStats iš workerio,
+          // kad išvengtume perteklinio perskaičiavimo kiekvieno atnaujinimo metu.
+          const summaryDailyStats = Array.isArray(dailyStats) && dailyStats.length
+            ? dailyStats
             : dashboardState.dailyStats;
           const monthlyStats = computeMonthlyStats(summaryDailyStats);
           dashboardState.monthly.all = monthlyStats;
@@ -436,26 +495,22 @@ export function createDataFlow({
 
       setStatus('success');
       if (shouldFetchMainData && shouldDeferHistoricalOnThisLoad) {
-        window.setTimeout(() => {
-          hydrateWithHistoricalData({
-            runNumber,
-            settings,
-            workerProgressReporter,
-            primaryChunkReporter: null,
-            historicalChunkReporter: null,
-          });
-        }, 0);
+        scheduleDeferredHydration({
+          runNumber,
+          settings,
+          workerProgressReporter,
+          primaryChunkReporter: null,
+          historicalChunkReporter: null,
+        });
       }
       if (cachedDailyStats && (isChartsOnlyPage || isKpiOnlyPage)) {
-        window.setTimeout(() => {
-          hydrateWithHistoricalData({
-            runNumber,
-            settings,
-            workerProgressReporter: null,
-            primaryChunkReporter: null,
-            historicalChunkReporter: null,
-          });
-        }, 0);
+        scheduleDeferredHydration({
+          runNumber,
+          settings,
+          workerProgressReporter: null,
+          primaryChunkReporter: null,
+          historicalChunkReporter: null,
+        });
       }
       if (needsEdData) {
         await renderEdDashboard(dashboardState.ed);
@@ -500,11 +555,12 @@ export function createDataFlow({
   }
 
   function scheduleInitialLoad() {
+    const initialTimeout = (activeConfig.kpi || activeConfig.charts || activeConfig.ed) ? 250 : 500;
     runAfterDomAndIdle(() => {
       if (!dashboardState.loading) {
         loadDashboard();
       }
-    }, { timeout: 800 });
+    }, { timeout: initialTimeout });
   }
 
   return { loadDashboard, scheduleInitialLoad };
