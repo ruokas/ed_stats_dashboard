@@ -1,5 +1,5 @@
-import { startLegacyApp } from '../../runtime-legacy.js';
+import { runLegacyPage } from './legacy-runner.js';
 
 export function runSummariesPage(core) {
-  return startLegacyApp({ forcePageId: core?.pageId || 'summaries', skipGlobalInit: true });
+  return runLegacyPage(core?.pageId || 'summaries');
 }

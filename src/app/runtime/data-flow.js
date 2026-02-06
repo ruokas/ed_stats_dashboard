@@ -82,11 +82,16 @@ export function createDataFlow({
     && !activeConfig.feedback
     && !activeConfig.ed,
   );
+  const canUseDailyStatsCache = Boolean(
+    canUseDailyStatsCacheOnly
+    || isChartsOnlyPage
+    || isKpiOnlyPage,
+  );
   let historicalHydrationInFlight = false;
   let historicalHydrated = false;
 
   function readDailyStatsFromSessionCache() {
-    if (!canUseDailyStatsCacheOnly) {
+    if (!canUseDailyStatsCache) {
       return null;
     }
     try {
@@ -98,6 +103,9 @@ export function createDataFlow({
       if (!parsed || !Array.isArray(parsed.dailyStats) || !Number.isFinite(parsed.savedAt)) {
         return null;
       }
+      if (parsed.scope !== 'full') {
+        return null;
+      }
       if ((Date.now() - parsed.savedAt) > DAILY_STATS_CACHE_TTL_MS) {
         return null;
       }
@@ -107,7 +115,7 @@ export function createDataFlow({
     }
   }
 
-  function writeDailyStatsToSessionCache(dailyStats) {
+  function writeDailyStatsToSessionCache(dailyStats, { scope = 'full' } = {}) {
     if (!Array.isArray(dailyStats) || !dailyStats.length) {
       return;
     }
@@ -116,6 +124,7 @@ export function createDataFlow({
         DAILY_STATS_SESSION_KEY,
         JSON.stringify({
           savedAt: Date.now(),
+          scope,
           dailyStats,
         }),
       );
@@ -192,6 +201,7 @@ export function createDataFlow({
       if (activeConfig.kpi) {
         await applyKpiFiltersAndRender();
       }
+      writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
       historicalHydrated = true;
     } catch (error) {
       const errorInfo = describeError(error, { code: 'CHART_HISTORICAL_HYDRATE' });
@@ -249,7 +259,7 @@ export function createDataFlow({
       const historicalChunkReporter = needsMainData ? createChunkReporter('Istorinis CSV') : null;
       const workerProgressReporter = shouldFetchMainData ? createChunkReporter('Apdorojama CSV') : null;
       const edChunkReporter = needsEdData ? createChunkReporter('ED CSV') : null;
-      const shouldDeferHistoricalOnThisLoad = false;
+      const shouldDeferHistoricalOnThisLoad = Boolean(isChartsOnlyPage || isKpiOnlyPage);
       const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
         shouldFetchMainData
           ? fetchData({
@@ -346,8 +356,8 @@ export function createDataFlow({
         dashboardState.primaryRecords = primaryRecords.slice();
         dashboardState.primaryDaily = primaryDaily.slice();
         dashboardState.dataMeta = dataset.meta || null;
-        if (!cachedDailyStats) {
-          writeDailyStatsToSessionCache(dailyStats);
+        if (!cachedDailyStats && !shouldDeferHistoricalOnThisLoad) {
+          writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
         }
 
         if (activeConfig.charts) {
@@ -394,7 +404,12 @@ export function createDataFlow({
         }
 
         if (activeConfig.monthly || activeConfig.yearly) {
-          const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
+          // Suvestinėms visada perskaičiuojame iš pilno įrašų rinkinio,
+          // kad metinė lentelė nebūtų netyčia apribota tik naujausiais duomenimis.
+          const summaryDailyStats = Array.isArray(combinedRecords) && combinedRecords.length
+            ? computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS)
+            : dashboardState.dailyStats;
+          const monthlyStats = computeMonthlyStats(summaryDailyStats);
           dashboardState.monthly.all = monthlyStats;
           // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
           const monthsLimit = 12;
@@ -405,10 +420,7 @@ export function createDataFlow({
             renderMonthlyTable(limitedMonthlyStats);
           }
           dashboardState.monthly.window = limitedMonthlyStats;
-          const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
-          const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
-            ? datasetYearlyStats
-            : computeYearlyStats(monthlyStats);
+          const yearlyStats = computeYearlyStats(monthlyStats);
           if (activeConfig.yearly) {
             renderYearlyTable(yearlyStats);
           }
@@ -429,6 +441,17 @@ export function createDataFlow({
             runNumber,
             settings,
             workerProgressReporter,
+            primaryChunkReporter: null,
+            historicalChunkReporter: null,
+          });
+        }, 0);
+      }
+      if (cachedDailyStats && (isChartsOnlyPage || isKpiOnlyPage)) {
+        window.setTimeout(() => {
+          hydrateWithHistoricalData({
+            runNumber,
+            settings,
+            workerProgressReporter: null,
             primaryChunkReporter: null,
             historicalChunkReporter: null,
           });

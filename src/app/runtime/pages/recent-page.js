@@ -1,5 +1,5 @@
-import { startLegacyApp } from '../../runtime-legacy.js';
+import { runLegacyPage } from './legacy-runner.js';
 
 export function runRecentPage(core) {
-  return startLegacyApp({ forcePageId: core?.pageId || 'recent', skipGlobalInit: true });
+  return runLegacyPage(core?.pageId || 'recent');
 }

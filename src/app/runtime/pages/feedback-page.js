@@ -1,5 +1,5 @@
-import { startLegacyApp } from '../../runtime-legacy.js';
+import { runLegacyPage } from './legacy-runner.js';
 
 export function runFeedbackPage(core) {
-  return startLegacyApp({ forcePageId: core?.pageId || 'feedback', skipGlobalInit: true });
+  return runLegacyPage(core?.pageId || 'feedback');
 }

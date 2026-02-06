@@ -9,6 +9,17 @@ import { initSectionNavigation } from './section-nav.js';
 import { initTvMode } from './tv.js';
 import { initThemeToggle } from './theme.js';
 import { initYearlyExpand } from './yearly.js';
+import { runAfterDomAndIdle } from '../utils/dom.js';
+
+function runNonCritical(task) {
+  runAfterDomAndIdle(() => {
+    try {
+      task();
+    } catch (error) {
+      console.warn('[UI_EVENTS] Non-critical init failed', error);
+    }
+  }, { timeout: 500 });
+}
 
 export function createUIEvents(env) {
   function initUI() {
@@ -26,11 +37,11 @@ export function createUIEvents(env) {
       initYearlyExpand(env);
     }
     if (pageConfig.charts || pageConfig.feedback) {
-      initChartCopyButtons(env);
-      initChartDownloadButtons(env);
+      runNonCritical(() => initChartCopyButtons(env));
+      runNonCritical(() => initChartDownloadButtons(env));
     }
     if (pageConfig.recent || pageConfig.monthly || pageConfig.yearly || pageConfig.feedback) {
-      initTableDownloadButtons(env);
+      runNonCritical(() => initTableDownloadButtons(env));
     }
     if (pageConfig.tv) {
       initTvMode(env);
@@ -45,7 +56,7 @@ export function createUIEvents(env) {
     if (pageConfig.ed) {
       initEdPanelControls(env);
     }
-    initGlobalShortcuts(env);
+    runNonCritical(() => initGlobalShortcuts(env));
   }
 
   return {

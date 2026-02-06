@@ -16,6 +16,13 @@ export const RUNTIME_MODULE_BY_PAGE = {
   ed: './runtime/pages/ed-page.js',
 };
 
+const CHART_PRELOAD_PAGES = new Set(['charts', 'ed']);
+
+export function shouldPreloadChartJs(pageId) {
+  const normalized = typeof pageId === 'string' ? pageId.trim().toLowerCase() : '';
+  return CHART_PRELOAD_PAGES.has(normalized);
+}
+
 export function resolvePageId(rawPageId) {
   const normalized = typeof rawPageId === 'string' ? rawPageId.trim().toLowerCase() : '';
   return Object.prototype.hasOwnProperty.call(PAGE_CONFIG, normalized) ? normalized : 'kpi';

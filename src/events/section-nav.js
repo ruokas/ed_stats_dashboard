@@ -1,5 +1,15 @@
 import { getDatasetValue, setDatasetValue } from '../utils/dom.js';
 
+const PAGE_RUNTIME_MODULE_BY_PATH = {
+  '/index.html': '/src/app/runtime/pages/kpi-page.js',
+  '/charts.html': '/src/app/runtime/pages/charts-page.js',
+  '/recent.html': '/src/app/runtime/pages/recent-page.js',
+  '/summaries.html': '/src/app/runtime/pages/summaries-page.js',
+  '/feedback.html': '/src/app/runtime/pages/feedback-page.js',
+  '/ed.html': '/src/app/runtime/pages/ed-page.js',
+};
+const APP_READY_EVENT = 'app:runtime-ready';
+
 export function initSectionNavigation(env) {
   const {
     selectors,
@@ -38,6 +48,7 @@ export function initSectionNavigation(env) {
   if (isMpa) {
     setDatasetValue(selectors.sectionNav, 'navMode', 'mpa');
     const prefetched = new Set();
+    const preloadedModules = new Set();
     const canPrefetch = () => {
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       if (connection && connection.saveData) {
@@ -94,6 +105,32 @@ export function initSectionNavigation(env) {
       document.head.appendChild(link);
       prefetched.add(normalized);
     };
+    const preloadModule = (href) => {
+      if (!href) {
+        return;
+      }
+      const targetUrl = new URL(href, window.location.href);
+      const normalizedPath = normalizePath(targetUrl.pathname);
+      const modulePath = PAGE_RUNTIME_MODULE_BY_PATH[normalizedPath];
+      if (!modulePath) {
+        return;
+      }
+      const moduleUrl = new URL(modulePath, window.location.href).pathname;
+      if (preloadedModules.has(moduleUrl)) {
+        // Continue to shared modules check below.
+      } else {
+        const existing = document.head.querySelector(`link[rel="modulepreload"][href="${moduleUrl}"]`);
+        if (existing) {
+          preloadedModules.add(moduleUrl);
+        } else {
+          const link = document.createElement('link');
+          link.rel = 'modulepreload';
+          link.href = moduleUrl;
+          document.head.appendChild(link);
+          preloadedModules.add(moduleUrl);
+        }
+      }
+    };
     const normalizePath = (value) => {
       if (!value || value === '/') {
         return '/index.html';
@@ -117,7 +154,10 @@ export function initSectionNavigation(env) {
         link.removeAttribute('aria-current');
       }
       if (canPrefetch() && !isActive) {
-        const prefetchOnIntent = () => prefetchPage(linkUrl);
+        const prefetchOnIntent = () => {
+          prefetchPage(linkUrl);
+          preloadModule(linkHref);
+        };
         link.addEventListener('mouseenter', prefetchOnIntent, { passive: true });
         link.addEventListener('focus', prefetchOnIntent, { passive: true });
         link.addEventListener('touchstart', prefetchOnIntent, { passive: true });
@@ -141,18 +181,39 @@ export function initSectionNavigation(env) {
       const idle = typeof window.requestIdleCallback === 'function'
         ? window.requestIdleCallback.bind(window)
         : (cb) => window.setTimeout(cb, 250);
-      idle(() => {
-        links
-          .filter((link) => link.getAttribute('aria-current') !== 'page')
-          .slice(0, idlePrefetchLimit)
-          .forEach((link) => {
-            const href = link.getAttribute('href');
-            if (!href) {
-              return;
-            }
-            prefetchPage(new URL(href, window.location.href));
-          });
-      });
+      const runIdlePrefetch = () => {
+        idle(() => {
+          links
+            .filter((link) => link.getAttribute('aria-current') !== 'page')
+            .slice(0, idlePrefetchLimit)
+            .forEach((link) => {
+              const href = link.getAttribute('href');
+              if (!href) {
+                return;
+              }
+              prefetchPage(new URL(href, window.location.href));
+            });
+        });
+      };
+      const ready = getDatasetValue(selectors.sectionNav, 'appReady', '') === 'true'
+        || Boolean(window.__edRuntimeReady);
+      if (ready) {
+        runIdlePrefetch();
+      } else {
+        const onReady = () => {
+          window.removeEventListener(APP_READY_EVENT, onReady);
+          setDatasetValue(selectors.sectionNav, 'appReady', 'true');
+          runIdlePrefetch();
+        };
+        window.addEventListener(APP_READY_EVENT, onReady, { once: true });
+        window.setTimeout(() => {
+          if (getDatasetValue(selectors.sectionNav, 'appReady', '') === 'true') {
+            return;
+          }
+          setDatasetValue(selectors.sectionNav, 'appReady', 'true');
+          runIdlePrefetch();
+        }, 2500);
+      }
     }
     sectionNavState.initialized = true;
     return;
