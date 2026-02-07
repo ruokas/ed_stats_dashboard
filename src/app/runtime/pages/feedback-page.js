@@ -1,5 +1,5 @@
-import { runLegacyPage } from './legacy-runner.js';
+import { startFullPageApp } from '../../runtime-full.js';
 
 export function runFeedbackPage(core) {
-  return runLegacyPage(core?.pageId || 'feedback');
+  return startFullPageApp({ forcePageId: core?.pageId || 'feedback', skipGlobalInit: true });
 }

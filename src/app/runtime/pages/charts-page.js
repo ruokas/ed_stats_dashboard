@@ -1,5 +1,5 @@
-import { runLegacyPage } from './legacy-runner.js';
+import { startFullPageApp } from '../../runtime-full.js';
 
 export function runChartsPage(core) {
-  return runLegacyPage(core?.pageId || 'charts');
+  return startFullPageApp({ forcePageId: core?.pageId || 'charts', skipGlobalInit: true });
 }

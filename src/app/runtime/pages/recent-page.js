@@ -1,5 +1,5 @@
-import { runLegacyPage } from './legacy-runner.js';
+import { startFullPageApp } from '../../runtime-full.js';
 
 export function runRecentPage(core) {
-  return runLegacyPage(core?.pageId || 'recent');
+  return startFullPageApp({ forcePageId: core?.pageId || 'recent', skipGlobalInit: true });
 }

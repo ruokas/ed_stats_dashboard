@@ -15,76 +15,8 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet">
-    <style>
-      :root {
-        --color-bg: #eaedf3;
-        --color-text: #101420;
-      }
-
-      [data-theme="dark"] {
-        --color-bg: #0a0d14;
-        --color-text: #e8ecf6;
-      }
-
-      body {
-        background: var(--color-bg);
-        color: var(--color-text);
-      }
-    </style>
-  <style id="theme-transition-blocker">
-    .theme-transition-block *,
-    .theme-transition-block *::before,
-    .theme-transition-block *::after {
-      transition: none !important;
-    }
-  </style>
-  <script>
-    (() => {
-      const storageKey = 'edDashboardTheme';
-      const root = document.documentElement;
-      const preferDark = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-      const getStoredTheme = () => {
-        try {
-          const value = localStorage.getItem(storageKey);
-          return value === 'dark' || value === 'light' ? value : null;
-        } catch (error) {
-          return null;
-        }
-      };
-
-      const setThemeAttributes = (theme) => {
-        if (!theme) return;
-        root.setAttribute('data-theme', theme);
-        if (document.body) {
-          document.body.setAttribute('data-theme', theme);
-        } else {
-          document.addEventListener(
-            'DOMContentLoaded',
-            () => document.body && document.body.setAttribute('data-theme', theme),
-            { once: true }
-          );
-        }
-      };
-
-      const initialTheme = getStoredTheme() || (preferDark() ? 'dark' : 'light');
-      setThemeAttributes(initialTheme);
-      root.classList.add('theme-transition-block');
-      window.ED_DASHBOARD_THEME = initialTheme;
-
-      const removeBlocker = () => {
-        root.classList.remove('theme-transition-block');
-        const blocker = document.getElementById('theme-transition-blocker');
-        if (blocker) blocker.remove();
-      };
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', removeBlocker, { once: true });
-      } else {
-        removeBlocker();
-      }
-    })();
-  </script>
+  <link rel="stylesheet" href="theme-init.css">
+  <script src="theme-init.js"></script>
   <link rel="stylesheet" href="styles.css">
 
 </head>

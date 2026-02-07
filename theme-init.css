@@ -1,0 +1,20 @@
+:root {
+  --color-bg: #eaedf3;
+  --color-text: #101420;
+}
+
+[data-theme="dark"] {
+  --color-bg: #0a0d14;
+  --color-text: #e8ecf6;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.theme-transition-block *,
+.theme-transition-block *::before,
+.theme-transition-block *::after {
+  transition: none !important;
+}

@@ -11,6 +11,7 @@
 - JS parse/eval time (Performance panel)
 - Transferred JS bytes (Network panel)
 - Console errors/warnings
+- Runtime entrypoints used per page (`kpi/charts/recent/summaries/feedback/ed`)
 
 ## Steps
 1. Open DevTools `Network` + `Performance`.
@@ -23,11 +24,16 @@
 - transferred JS total
 5. Repeat 3 times, calculate median.
 6. Disable `Disable cache`, repeat warm runs.
+7. Save architecture snapshot:
+- active runtime files
+- removed legacy paths/files
+- service worker static cache version
 
 ## Acceptance Targets
 - `index.html`: JS parse/eval reduced by at least ~30% from baseline.
 - `charts.html`: first content render improved by at least ~20%.
 - Console errors: `0`.
+- No references to `runtime-legacy`/`legacy-runner`.
 
 ## Functional Sanity
 - Navigation links between pages work.

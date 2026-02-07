@@ -16,9 +16,20 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 📺 TV režimas su stambiais rodikliais (Ctrl+Shift+T) ir gyvu laikrodžiu greitam skydo rodymui monitoriuje ar televizoriuje.
 - 🛡️ Aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
-- ⚡ Našumo optimizavimas: kritinis CSS paliekamas inline, o likęs įkeliami su `media="print"`/`onload` triuku; trečiųjų šalių skriptai žymimi `defer`; visiems `<img>`/`<iframe>` taikomas `loading="lazy"`.
+- ⚡ Našumo optimizavimas: bendras temos bootstrap iškeltas į `theme-init.js`/`theme-init.css`, trečiųjų šalių skriptai žymimi `defer`, visiems `<img>`/`<iframe>` taikomas `loading="lazy"`.
 - 📦 Service worker talpina statinius failus ir CSV atsakymus („stale-while-revalidate“), suteikia HTML atsarginę kopiją be papildomų bibliotekų.
 - ⏱️ `performance.mark/measure` ir `console.table` matavimai leidžia greitai palyginti įkėlimus su ir be talpyklos.
+
+## Dabartinė architektūra
+- Įėjimo taškas: `main.js` -> `src/main.js` -> `src/app/runtime.js`.
+- Puslapių runtime:
+- `kpi`: `src/app/runtime/pages/kpi-page.js`
+- `charts`: `src/app/runtime/pages/charts-page.js`
+- `recent`: `src/app/runtime/pages/recent-page.js`
+- `summaries`: `src/app/runtime/pages/summaries-page.js`
+- `feedback`: `src/app/runtime/pages/feedback-page.js`
+- `ed`: `src/app/runtime/pages/ed-page.js`
+- Legacy runner kelias pašalintas: nebenaudojami `runtime-legacy` ir `legacy-runner`.
 
 ## Diegimas
 1. Atsisiųskite saugomą saugyklą arba jos ZIP: `git clone https://example.com/ed_stats_dashboard.git`.

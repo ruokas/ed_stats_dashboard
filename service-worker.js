@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'ed-static-v8';
+const STATIC_CACHE = 'ed-static-v9';
 const API_CACHE = 'ed-api-v1';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [
@@ -10,11 +10,14 @@ const STATIC_ASSETS = [
   new URL('./feedback.html', self.location).pathname,
   new URL('./ed.html', self.location).pathname,
   new URL('./styles.css', self.location).pathname,
+  new URL('./theme-init.css', self.location).pathname,
+  new URL('./theme-init.js', self.location).pathname,
   new URL('./data-worker.js', self.location).pathname,
   new URL('./app.js', self.location).pathname,
   new URL('./main.js', self.location).pathname,
   new URL('./src/main.js', self.location).pathname,
   new URL('./src/app/runtime.js', self.location).pathname,
+  new URL('./src/app/runtime-full.js', self.location).pathname,
 ];
 
 self.addEventListener('install', (event) => {
