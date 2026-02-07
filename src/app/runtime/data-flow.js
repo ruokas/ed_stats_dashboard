@@ -1,4 +1,5 @@
 export function createDataFlow({
+  pageConfig,
   selectors,
   dashboardState,
   TEXT,
@@ -24,6 +25,7 @@ export function createDataFlow({
   populateHourlyCompareYearOptions,
   populateHeatmapYearOptions,
   syncHeatmapFilterControls,
+  syncKpiFilterControls,
   getDefaultChartFilters,
   sanitizeChartFilters,
   KPI_FILTER_LABELS,
@@ -47,15 +49,228 @@ export function createDataFlow({
   getAutoRefreshTimerId,
   setAutoRefreshTimerId,
 }) {
+  const syncKpiFilterControlsSafe = typeof syncKpiFilterControls === 'function'
+    ? syncKpiFilterControls
+    : () => {};
+  const DAILY_STATS_SESSION_KEY = 'ed-dashboard:daily-stats:v1';
+  const DAILY_STATS_CACHE_TTL_MS = 5 * 60 * 1000;
+  const activeConfig = pageConfig || {};
+  const needsMainData = Boolean(activeConfig.kpi
+    || activeConfig.charts
+    || activeConfig.recent
+    || activeConfig.monthly
+    || activeConfig.yearly
+    || activeConfig.ed);
+  const shouldAutoRefresh = Boolean(activeConfig.kpi || activeConfig.ed);
+  const needsFeedbackData = Boolean(activeConfig.feedback || activeConfig.ed);
+  const needsEdData = Boolean(activeConfig.ed);
+  const canUseDailyStatsCacheOnly = Boolean(
+    activeConfig.recent
+    && !activeConfig.kpi
+    && !activeConfig.charts
+    && !activeConfig.monthly
+    && !activeConfig.yearly,
+  );
+  const isChartsOnlyPage = Boolean(
+    activeConfig.charts
+    && !activeConfig.kpi
+    && !activeConfig.recent
+    && !activeConfig.monthly
+    && !activeConfig.yearly
+    && !activeConfig.feedback
+    && !activeConfig.ed,
+  );
+  const isKpiOnlyPage = Boolean(
+    activeConfig.kpi
+    && !activeConfig.charts
+    && !activeConfig.recent
+    && !activeConfig.monthly
+    && !activeConfig.yearly
+    && !activeConfig.feedback
+    && !activeConfig.ed,
+  );
+  const canUseDailyStatsCache = Boolean(
+    canUseDailyStatsCacheOnly
+    || isChartsOnlyPage,
+  );
+  let historicalHydrationInFlight = false;
+  let historicalHydrated = false;
+  let visibilityHandlersBound = false;
+  let deferredHydrationQueued = false;
+
+  function readDailyStatsFromSessionCache() {
+    if (!canUseDailyStatsCache) {
+      return null;
+    }
+    try {
+      const raw = window.sessionStorage.getItem(DAILY_STATS_SESSION_KEY);
+      if (!raw) {
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.dailyStats) || !Number.isFinite(parsed.savedAt)) {
+        return null;
+      }
+      if (parsed.scope !== 'full') {
+        return null;
+      }
+      if ((Date.now() - parsed.savedAt) > DAILY_STATS_CACHE_TTL_MS) {
+        return null;
+      }
+      return parsed.dailyStats;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeDailyStatsToSessionCache(dailyStats, { scope = 'full' } = {}) {
+    if (!Array.isArray(dailyStats) || !dailyStats.length) {
+      return;
+    }
+    try {
+      window.sessionStorage.setItem(
+        DAILY_STATS_SESSION_KEY,
+        JSON.stringify({
+          savedAt: Date.now(),
+          scope,
+          dailyStats,
+        }),
+      );
+    } catch (error) {
+      // Ignore storage quota and serialization errors.
+    }
+  }
+
   function restartAutoRefreshTimer() {
     const currentTimerId = getAutoRefreshTimerId();
     if (currentTimerId) {
       window.clearInterval(currentTimerId);
     }
+    if (!shouldAutoRefresh) {
+      setAutoRefreshTimerId(null);
+      return;
+    }
+    if (!visibilityHandlersBound && typeof document !== 'undefined') {
+      visibilityHandlersBound = true;
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && !dashboardState.loading) {
+          loadDashboard();
+        }
+      };
+      const onPageHide = () => {
+        const activeTimerId = getAutoRefreshTimerId();
+        if (activeTimerId) {
+          window.clearInterval(activeTimerId);
+          setAutoRefreshTimerId(null);
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibilityChange, { passive: true });
+      window.addEventListener('pageshow', onVisibilityChange, { passive: true });
+      window.addEventListener('pagehide', onPageHide, { passive: true });
+    }
     const nextTimerId = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
       loadDashboard();
     }, AUTO_REFRESH_INTERVAL_MS);
     setAutoRefreshTimerId(nextTimerId);
+  }
+
+  async function hydrateWithHistoricalData({
+    runNumber,
+    settings,
+    workerProgressReporter,
+    primaryChunkReporter,
+    historicalChunkReporter,
+  }) {
+    const supportsDeferredHistorical = isChartsOnlyPage || isKpiOnlyPage;
+    if (!supportsDeferredHistorical || historicalHydrationInFlight || historicalHydrated) {
+      return;
+    }
+    historicalHydrationInFlight = true;
+    try {
+      const dataset = await fetchData({
+        onPrimaryChunk: primaryChunkReporter,
+        onHistoricalChunk: historicalChunkReporter,
+        onWorkerProgress: workerProgressReporter,
+        skipHistorical: false,
+      });
+      if (!dataset || dashboardState.loading || runNumber !== dashboardState.loadCounter) {
+        return;
+      }
+      const combinedRecords = Array.isArray(dataset.records) ? dataset.records : [];
+      const primaryRecords = Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
+        ? dataset.primaryRecords
+        : combinedRecords;
+      const dailyStats = Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
+        ? dataset.dailyStats
+        : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
+      const primaryDaily = Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
+        ? dataset.primaryDaily
+        : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS);
+      dashboardState.rawRecords = combinedRecords;
+      dashboardState.dailyStats = dailyStats;
+      dashboardState.primaryRecords = primaryRecords.slice();
+      dashboardState.primaryDaily = primaryDaily.slice();
+      dashboardState.dataMeta = dataset.meta || null;
+      if (activeConfig.charts) {
+        dashboardState.chartData.baseDaily = dailyStats.slice();
+        dashboardState.chartData.baseRecords = combinedRecords.slice();
+        dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
+        syncChartFilterControls();
+        populateChartYearOptions(dailyStats);
+        populateHourlyCompareYearOptions(dailyStats);
+        if (typeof populateHeatmapYearOptions === 'function') {
+          populateHeatmapYearOptions(dailyStats);
+          if (typeof syncHeatmapFilterControls === 'function') {
+            syncHeatmapFilterControls();
+          }
+        }
+        const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
+        const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
+        await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
+      }
+      if (activeConfig.kpi) {
+        await applyKpiFiltersAndRender();
+      }
+      writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
+      historicalHydrated = true;
+    } catch (error) {
+      const errorInfo = describeError(error, { code: 'CHART_HISTORICAL_HYDRATE' });
+      console.warn(errorInfo.log, error);
+    } finally {
+      historicalHydrationInFlight = false;
+    }
+  }
+
+  function scheduleDeferredHydration({
+    runNumber,
+    settings,
+    workerProgressReporter,
+    primaryChunkReporter,
+    historicalChunkReporter,
+  }) {
+    if (deferredHydrationQueued || historicalHydrationInFlight || historicalHydrated) {
+      return;
+    }
+    deferredHydrationQueued = true;
+
+    const execute = () => {
+      deferredHydrationQueued = false;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
+      hydrateWithHistoricalData({
+        runNumber,
+        settings,
+        workerProgressReporter,
+        primaryChunkReporter,
+        historicalChunkReporter,
+      });
+    };
+
+    runAfterDomAndIdle(execute, { timeout: 1800 });
   }
 
   async function loadDashboard() {
@@ -80,85 +295,99 @@ export function createDataFlow({
 
     dashboardState.loading = true;
     const shouldShowSkeletons = !dashboardState.hasLoadedOnce;
-    if (shouldShowSkeletons && (!selectors.kpiGrid || !selectors.kpiGrid.children.length)) {
+    if (shouldShowSkeletons && activeConfig.kpi && (!selectors.kpiGrid || !selectors.kpiGrid.children.length)) {
       showKpiSkeleton();
     }
     const chartsInitialized = dashboardState.charts.daily
       || dashboardState.charts.dow
       || dashboardState.charts.dowStay
       || dashboardState.charts.funnel;
-    if (shouldShowSkeletons && !chartsInitialized) {
+    if (shouldShowSkeletons && activeConfig.charts && !chartsInitialized) {
       showChartSkeletons();
     }
-    if (shouldShowSkeletons && (!selectors.edCards || !selectors.edCards.children.length)) {
+    if (shouldShowSkeletons && activeConfig.ed && (!selectors.edCards || !selectors.edCards.children.length)) {
       showEdSkeleton();
     }
 
     try {
       setStatus('loading');
       if (selectors.edStatus) {
-        selectors.edStatus.textContent = TEXT.ed.status.loading;
+        selectors.edStatus.textContent = '';
         setDatasetValue(selectors.edStatus, 'tone', 'info');
       }
-      const primaryChunkReporter = createChunkReporter('Pagrindinis CSV');
-      const historicalChunkReporter = createChunkReporter('Istorinis CSV');
-      const workerProgressReporter = createChunkReporter('Apdorojama CSV');
-      const edChunkReporter = createChunkReporter('ED CSV');
+      const cachedDailyStats = readDailyStatsFromSessionCache();
+      const shouldFetchMainData = Boolean(needsMainData && !cachedDailyStats);
+      const primaryChunkReporter = shouldFetchMainData ? createChunkReporter('Pagrindinis CSV') : null;
+      const historicalChunkReporter = needsMainData ? createChunkReporter('Istorinis CSV') : null;
+      const workerProgressReporter = shouldFetchMainData ? createChunkReporter('Apdorojama CSV') : null;
+      const edChunkReporter = needsEdData ? createChunkReporter('ED CSV') : null;
+      const shouldDeferHistoricalOnThisLoad = Boolean(isChartsOnlyPage || isKpiOnlyPage);
       const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
-        fetchData({
-          onPrimaryChunk: primaryChunkReporter,
-          onHistoricalChunk: historicalChunkReporter,
-          onWorkerProgress: workerProgressReporter,
-        }),
-        fetchFeedbackData(),
-        fetchEdData({ onChunk: edChunkReporter }),
+        shouldFetchMainData
+          ? fetchData({
+              onPrimaryChunk: primaryChunkReporter,
+              onHistoricalChunk: historicalChunkReporter,
+              onWorkerProgress: workerProgressReporter,
+              skipHistorical: shouldDeferHistoricalOnThisLoad,
+            })
+          : Promise.resolve(null),
+        needsFeedbackData ? fetchFeedbackData() : Promise.resolve([]),
+        needsEdData ? fetchEdData({ onChunk: edChunkReporter }) : Promise.resolve(null),
       ]);
 
       if (clientConfig.profilingEnabled && fetchHandle) {
-        const primaryCache = dataResult.status === 'fulfilled'
-          ? describeCacheMeta(dataResult.value?.meta?.primary)
-          : 'klaida';
-        const historicalCache = dataResult.status === 'fulfilled'
+        const primaryCache = cachedDailyStats
+          ? 'session-cache'
+          : (needsMainData && dataResult.status === 'fulfilled'
+            ? describeCacheMeta(dataResult.value?.meta?.primary)
+            : 'klaida');
+        const historicalCache = cachedDailyStats
+          ? 'session-cache'
+          : (needsMainData && dataResult.status === 'fulfilled'
           ? describeCacheMeta(dataResult.value?.meta?.historical)
-          : 'klaida';
+          : 'klaida');
         fetchSummary.pagrindinis = primaryCache;
         fetchSummary.istorinis = historicalCache;
         perfMonitor.finish(fetchHandle, {
           pagrindinis: primaryCache,
           istorinis: historicalCache,
           fallbackas: dashboardState.usingFallback,
-          šaltiniai: dataResult.status === 'fulfilled' ? dataResult.value?.meta?.sources?.length || 0 : 0,
+          šaltiniai: cachedDailyStats
+            ? 0
+            : (needsMainData && dataResult.status === 'fulfilled' ? dataResult.value?.meta?.sources?.length || 0 : 0),
         });
         fetchMeasured = true;
       }
 
-      if (edResult.status === 'fulfilled') {
-        dashboardState.ed = edResult.value;
-      } else {
-        const fallbackMessage = TEXT.ed.status.error(TEXT.status.error);
-        const errorInfo = edResult.reason
-          ? describeError(edResult.reason, { code: 'ED_DATA_LOAD', message: fallbackMessage })
-          : { userMessage: fallbackMessage, log: `[ED_DATA_LOAD] ${fallbackMessage}` };
-        console.error(errorInfo.log, edResult.reason);
-        const fallbackSummary = createEmptyEdSummary();
-        dashboardState.ed = {
-          records: [],
-          summary: fallbackSummary,
-          dispositions: [],
-          daily: [],
-          usingFallback: false,
-          lastErrorMessage: errorInfo.userMessage,
-          error: errorInfo.userMessage,
-          updatedAt: new Date(),
-        };
+      if (needsEdData) {
+        if (edResult.status === 'fulfilled') {
+          dashboardState.ed = edResult.value;
+        } else {
+          const fallbackMessage = TEXT.ed.status.error(TEXT.status.error);
+          const errorInfo = edResult.reason
+            ? describeError(edResult.reason, { code: 'ED_DATA_LOAD', message: fallbackMessage })
+            : { userMessage: fallbackMessage, log: `[ED_DATA_LOAD] ${fallbackMessage}` };
+          console.error(errorInfo.log, edResult.reason);
+          const fallbackSummary = createEmptyEdSummary();
+          dashboardState.ed = {
+            records: [],
+            summary: fallbackSummary,
+            dispositions: [],
+            daily: [],
+            usingFallback: false,
+            lastErrorMessage: errorInfo.userMessage,
+            error: errorInfo.userMessage,
+            updatedAt: new Date(),
+          };
+        }
       }
-      if (dataResult.status !== 'fulfilled') {
+      if (needsMainData && !cachedDailyStats && dataResult.status !== 'fulfilled') {
         throw dataResult.reason;
       }
 
-      const dataset = dataResult.value || {};
-      const feedbackRecords = feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
-      if (feedbackResult.status === 'rejected') {
+      const dataset = needsMainData && !cachedDailyStats ? (dataResult.value || {}) : {};
+      const feedbackRecords = needsFeedbackData && feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
+      if (needsFeedbackData && feedbackResult.status === 'rejected') {
         const errorInfo = describeError(feedbackResult.reason, { code: 'FEEDBACK_DATA', message: TEXT.status.error });
         console.error(errorInfo.log, feedbackResult.reason);
         if (!dashboardState.feedback.lastErrorMessage) {
@@ -167,97 +396,137 @@ export function createDataFlow({
         dashboardState.feedback.usingFallback = false;
       }
 
-      const combinedRecords = Array.isArray(dataset.records) ? dataset.records : [];
-      const primaryRecords = Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
-        ? dataset.primaryRecords
-        : combinedRecords;
-      const dailyStats = Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
-        ? dataset.dailyStats
-        : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
-      const primaryDaily = Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
-        ? dataset.primaryDaily
-        : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS);
-      dashboardState.rawRecords = combinedRecords;
-      dashboardState.dailyStats = dailyStats;
-      dashboardState.primaryRecords = primaryRecords.slice();
-      dashboardState.primaryDaily = primaryDaily.slice();
-      dashboardState.dataMeta = dataset.meta || null;
-      populateChartYearOptions(dailyStats);
-      populateHourlyCompareYearOptions(dailyStats);
-      if (typeof populateHeatmapYearOptions === 'function') {
-        populateHeatmapYearOptions(dailyStats);
-        if (typeof syncHeatmapFilterControls === 'function') {
-          syncHeatmapFilterControls();
+      let dailyStats = [];
+      if (needsMainData) {
+        const combinedRecords = cachedDailyStats ? [] : (Array.isArray(dataset.records) ? dataset.records : []);
+        const primaryRecords = cachedDailyStats
+          ? []
+          : (Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
+            ? dataset.primaryRecords
+            : combinedRecords);
+        dailyStats = cachedDailyStats
+          || (Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
+            ? dataset.dailyStats
+            : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS));
+        const primaryDaily = cachedDailyStats
+          ? dailyStats.slice()
+          : (Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
+            ? dataset.primaryDaily
+            : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS));
+        dashboardState.rawRecords = combinedRecords;
+        dashboardState.dailyStats = dailyStats;
+        dashboardState.primaryRecords = primaryRecords.slice();
+        dashboardState.primaryDaily = primaryDaily.slice();
+        dashboardState.dataMeta = dataset.meta || null;
+        if (!cachedDailyStats && !shouldDeferHistoricalOnThisLoad) {
+          writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
+        }
+
+        if (activeConfig.charts) {
+          populateChartYearOptions(dailyStats);
+          populateHourlyCompareYearOptions(dailyStats);
+          if (typeof populateHeatmapYearOptions === 'function') {
+            populateHeatmapYearOptions(dailyStats);
+            if (typeof syncHeatmapFilterControls === 'function') {
+              syncHeatmapFilterControls();
+            }
+          }
+        }
+
+        const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
+          ? Number(settings.calculations.windowDays)
+          : DEFAULT_SETTINGS.calculations.windowDays;
+        if (activeConfig.kpi && (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0)) {
+          dashboardState.kpi.filters.window = windowDays;
+          syncKpiFilterControlsSafe();
+        }
+        const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
+        const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
+          ? Number(settings.calculations.recentDays)
+          : DEFAULT_SETTINGS.calculations.recentDays;
+        const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
+        const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
+
+        if (activeConfig.charts) {
+          dashboardState.chartData.baseDaily = dailyStats.slice();
+          dashboardState.chartData.baseRecords = combinedRecords.slice();
+          dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
+          syncChartFilterControls();
+          const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
+          const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
+          await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
+        }
+
+        if (activeConfig.kpi) {
+          await applyKpiFiltersAndRender();
+        }
+
+        if (activeConfig.recent) {
+          renderRecentTable(recentDailyStats);
+        }
+
+        if (activeConfig.monthly || activeConfig.yearly) {
+          // Naudojame jau paruoštus pilnus dailyStats iš workerio,
+          // kad išvengtume perteklinio perskaičiavimo kiekvieno atnaujinimo metu.
+          const summaryDailyStats = Array.isArray(dailyStats) && dailyStats.length
+            ? dailyStats
+            : dashboardState.dailyStats;
+          const monthlyStats = computeMonthlyStats(summaryDailyStats);
+          dashboardState.monthly.all = monthlyStats;
+          // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
+          const monthsLimit = 12;
+          const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
+            ? monthlyStats.slice(-monthsLimit)
+            : monthlyStats;
+          if (activeConfig.monthly) {
+            renderMonthlyTable(limitedMonthlyStats);
+          }
+          dashboardState.monthly.window = limitedMonthlyStats;
+          const yearlyStats = computeYearlyStats(monthlyStats);
+          if (activeConfig.yearly) {
+            renderYearlyTable(yearlyStats);
+          }
         }
       }
-      const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
-        ? Number(settings.calculations.windowDays)
-        : DEFAULT_SETTINGS.calculations.windowDays;
-      if (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0) {
-        dashboardState.kpi.filters.window = windowDays;
-        syncKpiFilterControls();
+
+      if (needsFeedbackData) {
+        dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
+        updateFeedbackFilterOptions(dashboardState.feedback.records);
+        applyFeedbackFiltersAndRender();
+        applyFeedbackStatusNote();
       }
-      const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
-      const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
-        ? Number(settings.calculations.recentDays)
-        : DEFAULT_SETTINGS.calculations.recentDays;
-      const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
-      const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
-      dashboardState.chartData.baseDaily = dailyStats.slice();
-      dashboardState.chartData.baseRecords = combinedRecords.slice();
-      dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
-      syncChartFilterControls();
-      const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-      const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
-      await applyKpiFiltersAndRender();
-      await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
-      renderRecentTable(recentDailyStats);
-      const monthlyStats = computeMonthlyStats(dashboardState.dailyStats);
-      dashboardState.monthly.all = monthlyStats;
-      // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
-      const monthsLimit = 12;
-      const limitedMonthlyStats = Number.isFinite(monthsLimit) && monthsLimit > 0
-        ? monthlyStats.slice(-monthsLimit)
-        : monthlyStats;
-      renderMonthlyTable(limitedMonthlyStats);
-      dashboardState.monthly.window = limitedMonthlyStats;
-      const datasetYearlyStats = Array.isArray(dataset.yearlyStats) ? dataset.yearlyStats : null;
-      const yearlyStats = datasetYearlyStats && datasetYearlyStats.length
-        ? datasetYearlyStats
-        : computeYearlyStats(monthlyStats);
-      renderYearlyTable(yearlyStats);
-      dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
-      updateFeedbackFilterOptions(dashboardState.feedback.records);
-      const feedbackStats = applyFeedbackFiltersAndRender();
-      const edSummaryForComments = dashboardState.ed.summary || createEmptyEdSummary(dashboardState.ed?.meta?.type);
-      const feedbackComments = Array.isArray(feedbackStats?.summary?.comments)
-        ? feedbackStats.summary.comments
-        : [];
-      const now = new Date();
-      const cutoff = new Date(now);
-      cutoff.setDate(cutoff.getDate() - 30);
-      const recentFeedbackComments = feedbackComments.filter((entry) => {
-        if (!(entry?.receivedAt instanceof Date) || Number.isNaN(entry.receivedAt.getTime())) {
-          return false;
-        }
-        return entry.receivedAt >= cutoff;
-      });
-      edSummaryForComments.feedbackComments = recentFeedbackComments;
-      const commentsMeta = recentFeedbackComments.length
-        ? `Komentarai (30 d.): ${numberFormatter.format(recentFeedbackComments.length)}`
-        : '';
-      edSummaryForComments.feedbackCommentsMeta = commentsMeta;
-      dashboardState.ed.summary = edSummaryForComments;
+
       setStatus('success');
-      applyFeedbackStatusNote();
-      await renderEdDashboard(dashboardState.ed);
+      if (shouldFetchMainData && shouldDeferHistoricalOnThisLoad) {
+        scheduleDeferredHydration({
+          runNumber,
+          settings,
+          workerProgressReporter,
+          primaryChunkReporter: null,
+          historicalChunkReporter: null,
+        });
+      }
+      if (cachedDailyStats && (isChartsOnlyPage || isKpiOnlyPage)) {
+        scheduleDeferredHydration({
+          runNumber,
+          settings,
+          workerProgressReporter: null,
+          primaryChunkReporter: null,
+          historicalChunkReporter: null,
+        });
+      }
+      if (needsEdData) {
+        await renderEdDashboard(dashboardState.ed);
+      }
     } catch (error) {
       const errorInfo = describeError(error, { code: 'DATA_PROCESS', message: 'Nepavyko apdoroti duomenų' });
       console.error(errorInfo.log, error);
       dashboardState.usingFallback = false;
       dashboardState.lastErrorMessage = errorInfo.userMessage;
       setStatus('error', errorInfo.userMessage);
-      await renderEdDashboard(dashboardState.ed);
+      if (needsEdData) {
+        await renderEdDashboard(dashboardState.ed);
+      }
     } finally {
       dashboardState.loading = false;
       dashboardState.hasLoadedOnce = true;
@@ -289,11 +558,12 @@ export function createDataFlow({
   }
 
   function scheduleInitialLoad() {
+    const initialTimeout = (activeConfig.kpi || activeConfig.charts || activeConfig.ed) ? 250 : 500;
     runAfterDomAndIdle(() => {
       if (!dashboardState.loading) {
         loadDashboard();
       }
-    }, { timeout: 800 });
+    }, { timeout: initialTimeout });
   }
 
   return { loadDashboard, scheduleInitialLoad };

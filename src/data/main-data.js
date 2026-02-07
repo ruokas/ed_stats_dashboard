@@ -274,6 +274,7 @@ export function createMainDataHandlers(context) {
   }
 
   async function fetchData(options = {}) {
+    const skipHistorical = options?.skipHistorical === true;
     const csvSettings = settings?.csv || DEFAULT_SETTINGS.csv;
     const mainConfig = {
       url: settings?.dataSource?.url || DEFAULT_SETTINGS.dataSource.url,
@@ -290,7 +291,7 @@ export function createMainDataHandlers(context) {
       calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
     };
     const historicalConfig = settings?.dataSource?.historical || DEFAULT_SETTINGS.dataSource.historical;
-    const historicalEnabled = Boolean(historicalConfig?.enabled);
+    const historicalEnabled = !skipHistorical && Boolean(historicalConfig?.enabled);
     const historicalLabel = historicalConfig?.label || 'Istorinis CSV';
     let historicalMeta = null;
     const normalizedHistoricalConfig = historicalEnabled && historicalConfig?.url

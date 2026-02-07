@@ -260,9 +260,7 @@ export function createEdRenderer(env) {
       const statusInfo = buildEdStatus(summary, dataset, displayVariant);
       if (selectors.edStatus) {
         const tone = statusInfo.tone || 'info';
-        const pillText = tone === 'success'
-          ? (statusInfo.timestamp || statusInfo.message || TEXT.ed.status.loading)
-          : (statusInfo.message || TEXT.ed.status.loading);
+        const pillText = tone === 'error' ? (statusInfo.message || '') : '';
         selectors.edStatus.textContent = pillText;
         setDatasetValue(selectors.edStatus, 'tone', tone);
       }

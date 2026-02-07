@@ -2,7 +2,6 @@ export function createSelectors() {
   return {
     hero: document.querySelector('header.hero'),
     title: document.getElementById('pageTitle'),
-    subtitle: document.getElementById('pageSubtitle'),
     tabSwitcher: document.getElementById('tabSwitcher'),
     tabButtons: Array.from(document.querySelectorAll('[data-tab-target]')),
     tabPanels: Array.from(document.querySelectorAll('[data-tab-panel]')),
@@ -104,6 +103,7 @@ export function createSelectors() {
     feedbackTrendControlsLabel: document.getElementById('feedbackTrendControlsLabel'),
     feedbackTrendButtons: Array.from(document.querySelectorAll('[data-trend-months]')),
     feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
+    feedbackTrendSkeleton: document.getElementById('feedbackTrendSkeleton'),
     feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
     feedbackTrendChart: document.getElementById('feedbackTrendChart'),
     feedbackTable: document.getElementById('feedbackTable'),

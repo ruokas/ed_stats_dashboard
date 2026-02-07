@@ -1,12 +1,20 @@
-const STATIC_CACHE = 'ed-static-v1';
+const STATIC_CACHE = 'ed-static-v8';
 const API_CACHE = 'ed-api-v1';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [
   new URL('./', self.location).pathname,
   new URL('./index.html', self.location).pathname,
+  new URL('./charts.html', self.location).pathname,
+  new URL('./recent.html', self.location).pathname,
+  new URL('./summaries.html', self.location).pathname,
+  new URL('./feedback.html', self.location).pathname,
+  new URL('./ed.html', self.location).pathname,
   new URL('./styles.css', self.location).pathname,
   new URL('./data-worker.js', self.location).pathname,
   new URL('./app.js', self.location).pathname,
+  new URL('./main.js', self.location).pathname,
+  new URL('./src/main.js', self.location).pathname,
+  new URL('./src/app/runtime.js', self.location).pathname,
 ];
 
 self.addEventListener('install', (event) => {
@@ -23,7 +31,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-function cacheFirst(request) {
+function cacheFirst(request, { useOfflineFallback = false } = {}) {
   return caches.match(request).then((cached) => {
     if (cached) {
       return cached;
@@ -33,7 +41,12 @@ function cacheFirst(request) {
       caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
       return response;
     });
-  }).catch(() => caches.match(OFFLINE_FALLBACK));
+  }).catch(() => {
+    if (useOfflineFallback) {
+      return caches.match(OFFLINE_FALLBACK);
+    }
+    return Response.error();
+  });
 }
 
 async function staleWhileRevalidate(request, event) {
@@ -85,11 +98,16 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (request.mode === 'navigate') {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(cacheFirst(request, { useOfflineFallback: true }));
     return;
   }
 
   if (STATIC_ASSETS.includes(url.pathname)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  if (/\.js($|\?)/i.test(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
   }
