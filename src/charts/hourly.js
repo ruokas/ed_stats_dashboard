@@ -320,6 +320,23 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     return;
   }
 
+  const titleEl = document.getElementById('lastShiftHourlyTitle');
+  const titleMainEl = titleEl?.querySelector('span');
+  const metric = seriesInfo?.metric;
+  if (titleMainEl) {
+    if (metric === 'balance') {
+      titleMainEl.textContent = 'Paskutinės pamainos srautų balansas per valandą';
+    } else if (metric === 'discharges') {
+      titleMainEl.textContent = 'Paskutinės pamainos išleidimai per valandą';
+    } else if (metric === 'hospitalized') {
+      titleMainEl.textContent = 'Paskutinės pamainos hospitalizacijos per valandą';
+    } else if (metric === 'census') {
+      titleMainEl.textContent = 'Paskutinės pamainos pacientų kiekis skyriuje per valandą';
+    } else {
+      titleMainEl.textContent = 'Paskutinės pamainos atvykimai per valandą';
+    }
+  }
+
   const Chart = dashboardState.chartLib ?? await loadChartJs();
   if (!Chart) {
     throw new Error('Chart.js biblioteka nepasiekiama');
@@ -401,9 +418,11 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     ch: rotateSeries(seriesInfo.series?.ch),
   };
 
-  const isBalance = seriesInfo?.metric === 'balance';
+  const isBalance = metric === 'balance';
+  const isCensus = metric === 'census';
   const rotatedOutflow = rotateSeries(seriesInfo.series?.outflow);
   const rotatedNet = rotateSeries(seriesInfo.series?.net);
+  const rotatedCensus = rotateSeries(seriesInfo.series?.census);
   const peakIndices = {
     total: toPeakIndex(rotatedSeries.total),
     t: toPeakIndex(rotatedSeries.t),
@@ -411,6 +430,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     ch: toPeakIndex(rotatedSeries.ch),
     outflow: toPeakIndex(rotatedOutflow),
     net: toPeakIndex(rotatedNet),
+    census: toPeakIndex(rotatedCensus),
   };
 
   const datasets = isBalance
@@ -462,6 +482,51 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
         pointBorderColor: '#22c55e',
       },
     ]
+    : isCensus
+      ? [
+        {
+          label: 'Atvykimai',
+          data: rotatedSeries.total || [],
+          borderColor: palette.textColor,
+          backgroundColor: palette.textColor,
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.total ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: palette.textColor,
+          pointBorderColor: palette.textColor,
+        },
+        {
+          label: 'Išvykimai',
+          data: rotatedOutflow || [],
+          borderColor: '#f97316',
+          backgroundColor: '#f97316',
+          tension: 0.35,
+          fill: false,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.outflow ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#f97316',
+          pointBorderColor: '#f97316',
+        },
+        {
+          label: 'Pacientų kiekis skyriuje',
+          data: rotatedCensus || [],
+          borderColor: palette.accent,
+          backgroundColor: palette.accentSoft,
+          tension: 0.35,
+          fill: true,
+          pointRadius(context) {
+            return context.dataIndex === peakIndices.census ? 5 : 2;
+          },
+          pointHoverRadius: 4,
+          pointBackgroundColor: palette.accent,
+          pointBorderColor: palette.accent,
+        },
+      ]
     : [
       {
         label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',

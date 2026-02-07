@@ -139,7 +139,9 @@
         </div>
         <div class="section__actions kpi-header-actions">
           <div class="kpi-date-control">
+            <button id="kpiDatePrev" type="button" class="btn btn-secondary btn-small kpi-date-nav" aria-label="Ankstesnė data" title="Ankstesnė data">←</button>
             <input id="kpiDateInput" class="kpi-date-input" type="date" aria-label="Pasirinkti datą KPI rodikliams">
+            <button id="kpiDateNext" type="button" class="btn btn-secondary btn-small kpi-date-nav" aria-label="Kita data" title="Kita data">→</button>
             <button id="kpiDateClear" type="button" class="btn btn-secondary btn-small kpi-date-clear">Išvalyti datą</button>
           </div>
           <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true"></p>
@@ -192,6 +194,7 @@
           <button type="button" class="chip-button" data-last-shift-metric="discharges" aria-pressed="false">Išleidimai</button>
           <button type="button" class="chip-button" data-last-shift-metric="hospitalized" aria-pressed="false">Hospitalizacijos</button>
           <button type="button" class="chip-button" data-last-shift-metric="balance" aria-pressed="false">Srautų balansas</button>
+          <button type="button" class="chip-button" data-last-shift-metric="census" aria-pressed="false">Pacientų kiekis</button>
         </div>
         <div class="chart-card__canvas chart-card__canvas--kpi-hourly">
           <canvas id="lastShiftHourlyChart" aria-labelledby="lastShiftHourlyTitle"></canvas>

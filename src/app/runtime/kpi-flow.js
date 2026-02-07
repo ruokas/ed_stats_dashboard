@@ -96,6 +96,61 @@ export function createKpiFlow(env) {
     return reference ? computeShiftDateKeyForArrival(reference, shiftStartHour) : '';
   }
 
+  function collectAvailableShiftDateKeys(records) {
+    const settings = getSettings();
+    const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
+    const keys = new Set();
+    (Array.isArray(records) ? records : []).forEach((record) => {
+      const key = normalizeKpiDateValue(getRecordShiftDateKey(record, shiftStartHour));
+      if (key) {
+        keys.add(key);
+      }
+    });
+    return Array.from(keys).sort((a, b) => a.localeCompare(b));
+  }
+
+  function syncKpiDateNavigation(records = dashboardState.kpi?.records) {
+    const hasPrev = selectors.kpiDatePrev instanceof HTMLButtonElement;
+    const hasNext = selectors.kpiDateNext instanceof HTMLButtonElement;
+    if (!hasPrev && !hasNext) {
+      return;
+    }
+    const available = collectAvailableShiftDateKeys(records);
+    const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+    const selectedIndex = selectedDate ? available.indexOf(selectedDate) : -1;
+    const hasAny = available.length > 0;
+
+    const prevDisabled = !hasAny || (selectedIndex >= 0 && selectedIndex <= 0);
+    const nextDisabled = !hasAny || (selectedIndex >= 0 && selectedIndex >= available.length - 1);
+
+    if (hasPrev) {
+      selectors.kpiDatePrev.disabled = prevDisabled;
+      selectors.kpiDatePrev.setAttribute('aria-disabled', prevDisabled ? 'true' : 'false');
+    }
+    if (hasNext) {
+      selectors.kpiDateNext.disabled = nextDisabled;
+      selectors.kpiDateNext.setAttribute('aria-disabled', nextDisabled ? 'true' : 'false');
+    }
+  }
+
+  function ensureDefaultKpiDateSelection(records) {
+    const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+    if (selectedDate) {
+      return;
+    }
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = normalizeKpiDateValue(formatLocalDateKey(yesterday));
+    if (!yesterdayKey) {
+      return;
+    }
+    dashboardState.kpi.selectedDate = yesterdayKey;
+    if (selectors.kpiDateInput) {
+      selectors.kpiDateInput.value = yesterdayKey;
+    }
+    syncKpiDateNavigation(records);
+  }
+
   function filterKpiRecordsByDate(records, dateKey, shiftStartHour) {
     const list = Array.isArray(records) ? records : [];
     const normalized = normalizeKpiDateValue(dateKey);
@@ -356,6 +411,8 @@ export function createKpiFlow(env) {
         return 'Hospitalizacijos';
       case 'balance':
         return 'Srautų balansas';
+      case 'census':
+        return 'Pacientų kiekis skyriuje';
       default:
         return 'Atvykimai';
     }
@@ -363,7 +420,7 @@ export function createKpiFlow(env) {
 
   function normalizeLastShiftMetric(value) {
     const raw = typeof value === 'string' ? value : String(value ?? '');
-    const allowed = ['arrivals', 'discharges', 'hospitalized', 'balance'];
+    const allowed = ['arrivals', 'discharges', 'hospitalized', 'balance', 'census'];
     if (allowed.includes(raw)) {
       return raw;
     }
@@ -386,6 +443,7 @@ export function createKpiFlow(env) {
       ch: Array(24).fill(0),
       outflow: Array(24).fill(0),
       net: Array(24).fill(0),
+      census: Array(24).fill(0),
     };
     (Array.isArray(records) ? records : []).forEach((record) => {
       const arrival = record?.arrival;
@@ -403,7 +461,7 @@ export function createKpiFlow(env) {
         if (record?.hospitalized) {
           reference = dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
         }
-      } else if (metric === 'balance') {
+      } else if (metric === 'balance' || metric === 'census') {
         reference = arrivalHasTime && arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
       }
       if (!reference) {
@@ -427,7 +485,7 @@ export function createKpiFlow(env) {
         series.ch[hour] += 1;
       }
     });
-    if (metric === 'balance') {
+    if (metric === 'balance' || metric === 'census') {
       (Array.isArray(records) ? records : []).forEach((record) => {
         const discharge = record?.discharge;
         const dischargeHasTime = record?.dischargeHasTime === true
@@ -445,7 +503,16 @@ export function createKpiFlow(env) {
         }
         series.outflow[hour] += 1;
       });
-      series.net = series.total.map((value, index) => value - (series.outflow[index] || 0));
+      if (metric === 'balance') {
+        series.net = series.total.map((value, index) => value - (series.outflow[index] || 0));
+      } else {
+        const orderedHours = Array.from({ length: 24 }, (_, offset) => ((shiftStartHour + offset) % 24 + 24) % 24);
+        let running = 0;
+        orderedHours.forEach((hour) => {
+          running = Math.max(0, running + (series.total[hour] || 0) - (series.outflow[hour] || 0));
+          series.census[hour] = running;
+        });
+      }
     }
     const hasData = series.total.some((value) => value > 0);
     return {
@@ -457,6 +524,8 @@ export function createKpiFlow(env) {
       series,
       hasData: metric === 'balance'
         ? (series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0))
+        : metric === 'census'
+          ? (series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0))
         : hasData,
     };
   }
@@ -502,6 +571,8 @@ export function createKpiFlow(env) {
       const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
       dashboardState.kpi.records = filteredRecords;
       dashboardState.kpi.daily = filteredDailyStats;
+      ensureDefaultKpiDateSelection(filteredRecords);
+      syncKpiDateNavigation(filteredRecords);
       const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
       const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
       const dateFilteredRecords = selectedDate
@@ -529,6 +600,8 @@ export function createKpiFlow(env) {
       const fallback = applyKpiFiltersLocally(normalizedFilters);
       dashboardState.kpi.records = fallback.records;
       dashboardState.kpi.daily = fallback.dailyStats;
+      ensureDefaultKpiDateSelection(fallback.records);
+      syncKpiDateNavigation(fallback.records);
       const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
       const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
       const dateFilteredRecords = selectedDate
@@ -582,6 +655,7 @@ export function createKpiFlow(env) {
     }
     const normalized = normalizeKpiDateValue(target.value);
     dashboardState.kpi.selectedDate = normalized;
+    syncKpiDateNavigation();
     updateKpiSubtitle();
     void applyKpiFiltersAndRender();
   }
@@ -591,6 +665,36 @@ export function createKpiFlow(env) {
     if (selectors.kpiDateInput) {
       selectors.kpiDateInput.value = '';
     }
+    syncKpiDateNavigation();
+    updateKpiSubtitle();
+    void applyKpiFiltersAndRender();
+  }
+
+  function handleKpiDateStep(step) {
+    const direction = Number(step) < 0 ? -1 : 1;
+    const available = collectAvailableShiftDateKeys(dashboardState.kpi?.records);
+    if (!available.length) {
+      syncKpiDateNavigation(dashboardState.kpi?.records);
+      return;
+    }
+    const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+    const selectedIndex = selectedDate ? available.indexOf(selectedDate) : -1;
+    let nextIndex;
+    if (selectedIndex < 0) {
+      nextIndex = direction < 0 ? available.length - 1 : 0;
+    } else {
+      nextIndex = Math.min(Math.max(selectedIndex + direction, 0), available.length - 1);
+    }
+    if (nextIndex === selectedIndex) {
+      syncKpiDateNavigation(dashboardState.kpi?.records);
+      return;
+    }
+    const nextDate = available[nextIndex];
+    dashboardState.kpi.selectedDate = nextDate;
+    if (selectors.kpiDateInput) {
+      selectors.kpiDateInput.value = nextDate;
+    }
+    syncKpiDateNavigation(dashboardState.kpi?.records);
     updateKpiSubtitle();
     void applyKpiFiltersAndRender();
   }
@@ -662,6 +766,7 @@ export function createKpiFlow(env) {
     handleKpiFilterInput,
     handleKpiDateInput,
     handleKpiDateClear,
+    handleKpiDateStep,
     handleKpiSegmentedClick,
     handleLastShiftMetricClick,
     syncLastShiftHourlyMetricButtons,
@@ -669,5 +774,6 @@ export function createKpiFlow(env) {
     applyKpiFiltersAndRender,
     updateKpiSummary,
     updateKpiSubtitle,
+    syncKpiDateNavigation,
   };
 }
