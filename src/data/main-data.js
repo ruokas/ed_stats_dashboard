@@ -11,7 +11,7 @@ export function createMainDataHandlers(context) {
     formatUrlForDiagnostics,
   } = context;
 
-  const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
+  const DATA_WORKER_URL = new URL('data-worker.js?v=2026-02-07-2', window.location.href).toString();
   const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
   const inMemoryDataCache = new Map();
   let dataWorkerCounter = 0;
@@ -320,7 +320,8 @@ export function createMainDataHandlers(context) {
 
     const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
 
-    const baseRecords = Array.isArray(primaryResult.records) ? primaryResult.records : [];
+    const baseRecordsRaw = Array.isArray(primaryResult.records) ? primaryResult.records : [];
+    const baseRecords = baseRecordsRaw.map((record) => ({ ...record, sourceId: 'primary' }));
     const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
     let combinedRecords = baseRecords.slice();
     let usingFallback = false;
@@ -348,7 +349,8 @@ export function createMainDataHandlers(context) {
     if (historicalEnabled) {
       if (historicalShouldAttempt && historicalResult) {
         historicalMeta = historicalResult.meta || null;
-        const historicalRecords = Array.isArray(historicalResult.records) ? historicalResult.records : [];
+        const historicalRecordsRaw = Array.isArray(historicalResult.records) ? historicalResult.records : [];
+        const historicalRecords = historicalRecordsRaw.map((record) => ({ ...record, sourceId: 'historical' }));
         if (historicalRecords.length) {
           combinedRecords = combinedRecords.concat(historicalRecords);
         }

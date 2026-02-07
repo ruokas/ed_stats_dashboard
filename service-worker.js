@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'ed-static-v10';
+const STATIC_CACHE = 'ed-static-v13';
 const API_CACHE = 'ed-api-v1';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [

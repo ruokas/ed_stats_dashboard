@@ -96,6 +96,12 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
     gmp: resolveColumnIndex(headerNormalized, csvRuntime.gmpHeaders),
     department: resolveColumnIndex(headerNormalized, csvRuntime.departmentHeaders),
     cardNumber: resolveColumnIndex(headerNormalized, csvRuntime.cardNumberHeaders),
+    age: resolveColumnIndex(headerNormalized, csvRuntime.ageHeaders),
+    sex: resolveColumnIndex(headerNormalized, csvRuntime.sexHeaders),
+    address: resolveColumnIndex(headerNormalized, csvRuntime.addressHeaders),
+    pspc: resolveColumnIndex(headerNormalized, csvRuntime.pspcHeaders),
+    diagnosis: resolveColumnIndex(headerNormalized, csvRuntime.diagnosisHeaders),
+    referral: resolveColumnIndex(headerNormalized, csvRuntime.referralHeaders),
   };
   const missing = Object.entries(columnIndices)
     .filter(([key, index]) => {
@@ -109,6 +115,9 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
         return false;
       }
       if (key === 'cardNumber') {
+        return false;
+      }
+      if (key === 'age' || key === 'sex' || key === 'address' || key === 'pspc' || key === 'diagnosis' || key === 'referral') {
         return false;
       }
       return true;
@@ -400,8 +409,31 @@ function toNormalizedList(value, fallback) {
   return parseCandidateList(value, fallback).map((token) => token.toLowerCase());
 }
 
+function normalizeHeaderToken(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
   const fallback = csvDefaults || {};
+  const hardDefaults = {
+    arrival: 'Atvykimo data',
+    discharge: 'Išrašymo data',
+    dayNight: 'Diena/naktis',
+    gmp: 'GMP',
+    department: 'Nukreiptas į padalinį',
+    number: 'Numeris',
+    age: 'Amžius;Amzius',
+    sex: 'Lytis;Litis',
+    address: 'Adresas;Miestas;Gyvenamoji vieta',
+    pspc: 'PSPC įstaiga;PSPC istaiga;PSPC',
+    diagnosis: 'Galutinės diagnozės;Galutines diagnozes;Galutinė diagnozė;Galutine diagnoze',
+    referral: 'Siuntimas;Siuntimas iš;Siuntimo tipas',
+  };
   const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
   const cardNumberHasValue = csvSettings.number && csvSettings.number.trim().length > 0;
   const departmentHeaders = departmentHasValue
@@ -411,24 +443,36 @@ function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
     ? toHeaderCandidates(csvSettings.number, '')
     : toHeaderCandidates('', fallback.number);
   const runtime = {
-    arrivalHeaders: toHeaderCandidates(csvSettings.arrival, fallback.arrival),
-    dischargeHeaders: toHeaderCandidates(csvSettings.discharge, fallback.discharge),
-    dayNightHeaders: toHeaderCandidates(csvSettings.dayNight, fallback.dayNight),
-    gmpHeaders: toHeaderCandidates(csvSettings.gmp, fallback.gmp),
+    arrivalHeaders: toHeaderCandidates(csvSettings.arrival, fallback.arrival || hardDefaults.arrival),
+    dischargeHeaders: toHeaderCandidates(csvSettings.discharge, fallback.discharge || hardDefaults.discharge),
+    dayNightHeaders: toHeaderCandidates(csvSettings.dayNight, fallback.dayNight || hardDefaults.dayNight),
+    gmpHeaders: toHeaderCandidates(csvSettings.gmp, fallback.gmp || hardDefaults.gmp),
     departmentHeaders,
     cardNumberHeaders,
+    ageHeaders: toHeaderCandidates(csvSettings.age, fallback.age || hardDefaults.age),
+    sexHeaders: toHeaderCandidates(csvSettings.sex, fallback.sex || hardDefaults.sex),
+    addressHeaders: toHeaderCandidates(csvSettings.address, fallback.address || hardDefaults.address),
+    pspcHeaders: toHeaderCandidates(csvSettings.pspc, fallback.pspc || hardDefaults.pspc),
+    diagnosisHeaders: toHeaderCandidates(csvSettings.diagnosis, fallback.diagnosis || hardDefaults.diagnosis),
+    referralHeaders: toHeaderCandidates(csvSettings.referral, fallback.referral || hardDefaults.referral),
     trueValues: toNormalizedList(csvSettings.trueValues, fallback.trueValues),
     fallbackTrueValues: toNormalizedList(fallback.trueValues, fallback.trueValues),
     hospitalizedValues: toNormalizedList(csvSettings.hospitalizedValues, fallback.hospitalizedValues),
     nightKeywords: toNormalizedList(csvSettings.nightKeywords, fallback.nightKeywords),
     dayKeywords: toNormalizedList(csvSettings.dayKeywords, fallback.dayKeywords),
     labels: {
-      arrival: csvSettings.arrival || fallback.arrival || 'Atvykimo data',
-      discharge: csvSettings.discharge || fallback.discharge || 'Išvykimo data',
-      dayNight: csvSettings.dayNight || fallback.dayNight || 'Paros metas',
-      gmp: csvSettings.gmp || fallback.gmp || 'GMP',
-      department: departmentHasValue ? csvSettings.department : (fallback.department || 'Skyrius'),
-      cardNumber: cardNumberHasValue ? csvSettings.number : (fallback.number || 'Numeris'),
+      arrival: csvSettings.arrival || fallback.arrival || hardDefaults.arrival,
+      discharge: csvSettings.discharge || fallback.discharge || hardDefaults.discharge,
+      dayNight: csvSettings.dayNight || fallback.dayNight || hardDefaults.dayNight,
+      gmp: csvSettings.gmp || fallback.gmp || hardDefaults.gmp,
+      department: departmentHasValue ? csvSettings.department : (fallback.department || hardDefaults.department),
+      cardNumber: cardNumberHasValue ? csvSettings.number : (fallback.number || hardDefaults.number),
+      age: csvSettings.age || fallback.age || hardDefaults.age,
+      sex: csvSettings.sex || fallback.sex || hardDefaults.sex,
+      address: csvSettings.address || fallback.address || hardDefaults.address,
+      pspc: csvSettings.pspc || fallback.pspc || hardDefaults.pspc,
+      diagnosis: csvSettings.diagnosis || fallback.diagnosis || hardDefaults.diagnosis,
+      referral: csvSettings.referral || fallback.referral || hardDefaults.referral,
     },
   };
   runtime.hasHospitalizedValues = runtime.hospitalizedValues.length > 0;
@@ -440,23 +484,42 @@ function resolveColumnIndex(headerNormalized, candidates) {
   if (!Array.isArray(candidates) || !candidates.length) {
     return -1;
   }
+  const normalizedHeader = headerNormalized.map((column) => ({
+    ...column,
+    foldedOriginal: normalizeHeaderToken(column.original),
+    foldedNormalized: normalizeHeaderToken(column.normalized),
+  }));
   for (const candidate of candidates) {
     const trimmed = candidate.trim();
-    const match = headerNormalized.find((column) => column.original === trimmed);
+    const match = normalizedHeader.find((column) => column.original === trimmed);
     if (match) {
       return match.index;
     }
   }
   for (const candidate of candidates) {
     const normalized = candidate.trim().toLowerCase();
-    const match = headerNormalized.find((column) => column.normalized === normalized);
+    const match = normalizedHeader.find((column) => column.normalized === normalized);
+    if (match) {
+      return match.index;
+    }
+  }
+  for (const candidate of candidates) {
+    const foldedCandidate = normalizeHeaderToken(candidate);
+    const match = normalizedHeader.find((column) => column.foldedOriginal === foldedCandidate || column.foldedNormalized === foldedCandidate);
     if (match) {
       return match.index;
     }
   }
   for (const candidate of candidates) {
     const normalized = candidate.trim().toLowerCase();
-    const match = headerNormalized.find((column) => column.normalized.includes(normalized));
+    const match = normalizedHeader.find((column) => column.normalized.includes(normalized));
+    if (match) {
+      return match.index;
+    }
+  }
+  for (const candidate of candidates) {
+    const foldedCandidate = normalizeHeaderToken(candidate);
+    const match = normalizedHeader.find((column) => column.foldedOriginal.includes(foldedCandidate) || column.foldedNormalized.includes(foldedCandidate));
     if (match) {
       return match.index;
     }
@@ -505,6 +568,232 @@ function parseBoolean(value, trueValues, fallbackTrueValues) {
     ? trueValues
     : Array.isArray(fallbackTrueValues) ? fallbackTrueValues : [];
   return candidates.some((candidate) => matchesWildcard(normalized, candidate));
+}
+
+function parseAgeYears(value) {
+  if (value == null) {
+    return null;
+  }
+  const normalized = String(value).trim().replace(',', '.');
+  if (!normalized) {
+    return null;
+  }
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 120) {
+    return null;
+  }
+  return Math.round(parsed);
+}
+
+function resolveAgeBand(ageYears) {
+  if (!Number.isFinite(ageYears)) {
+    return 'Nenurodyta';
+  }
+  if (ageYears <= 17) {
+    return '0-17';
+  }
+  if (ageYears <= 34) {
+    return '18-34';
+  }
+  if (ageYears <= 49) {
+    return '35-49';
+  }
+  if (ageYears <= 64) {
+    return '50-64';
+  }
+  if (ageYears <= 79) {
+    return '65-79';
+  }
+  return '80+';
+}
+
+function normalizeSexValue(value) {
+  if (value == null) {
+    return 'Kita/Nenurodyta';
+  }
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized) {
+    return 'Kita/Nenurodyta';
+  }
+  if (['f', 'female', 'moteris', 'motr', 'mot'].includes(normalized)) {
+    return 'Moteris';
+  }
+  if (['m', 'male', 'vyras', 'vyr'].includes(normalized)) {
+    return 'Vyras';
+  }
+  return 'Kita/Nenurodyta';
+}
+
+function normalizeAddressArea(value) {
+  if (value == null) {
+    return '';
+  }
+  const raw = String(value).trim();
+  if (!raw) {
+    return '';
+  }
+  const firstPart = raw.split(/[,;]+/)[0] || raw;
+  return firstPart.replace(/\s+/g, ' ').trim();
+}
+
+function normalizeSimpleText(value) {
+  if (value == null) {
+    return '';
+  }
+  return String(value).trim().replace(/\s+/g, ' ');
+}
+
+function normalizeDiacritics(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function normalizeCityToken(value) {
+  return normalizeDiacritics(String(value ?? ''))
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeCityName(value) {
+  const raw = normalizeSimpleText(value);
+  if (!raw) {
+    return '';
+  }
+  const parts = raw.split(/[,;]+/).map((part) => normalizeSimpleText(part)).filter(Boolean);
+  const candidates = parts.length ? parts : [raw];
+  const stopWords = ['g.', 'gatve', 'gatvė', 'pr.', 'prospektas', 'al.', 'aleja', 'raj.', 'rajonas'];
+  let chosen = candidates[candidates.length - 1];
+  for (let i = candidates.length - 1; i >= 0; i -= 1) {
+    const token = candidates[i];
+    const normalized = normalizeCityToken(token);
+    const hasStop = stopWords.some((word) => normalized.includes(word));
+    if (!hasStop && /[A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]/.test(token)) {
+      chosen = token;
+      break;
+    }
+  }
+  const cleaned = chosen
+    .replace(/\b(LT-?\d{3,5}|Lietuva|Lithuania)\b/gi, '')
+    .replace(/\b(m\.?|miestas|m\.)\b/gi, '')
+    .replace(/\d+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) {
+    return '';
+  }
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function parseReferralValue(value) {
+  const normalized = normalizeSimpleText(value).toLowerCase();
+  if (!normalized) {
+    return 'Nenurodyta';
+  }
+  if (normalized === 'su siuntimu') {
+    return 'su siuntimu';
+  }
+  if (normalized === 'be siuntimo') {
+    return 'be siuntimo';
+  }
+  if (normalized.includes('su') && normalized.includes('siunt')) {
+    return 'su siuntimu';
+  }
+  if (normalized.includes('be') && normalized.includes('siunt')) {
+    return 'be siuntimo';
+  }
+  return 'Nenurodyta';
+}
+
+function extractDiagnosisCodes(value) {
+  const raw = normalizeSimpleText(value).toUpperCase();
+  if (!raw) {
+    return [];
+  }
+  const regex = /[A-Z]\d{2}(?:\.\d{1,2})?/g;
+  const matches = raw.match(regex) || [];
+  const unique = [];
+  const seen = new Set();
+  matches.forEach((code) => {
+    const normalized = String(code || '').trim();
+    if (!normalized || seen.has(normalized)) {
+      return;
+    }
+    seen.add(normalized);
+    unique.push(normalized);
+  });
+  return unique;
+}
+
+function resolveDiagnosisGroup(code) {
+  if (!code) {
+    return '';
+  }
+  const match = code.match(/^([A-Z])(\d{2})/);
+  if (!match) {
+    return '';
+  }
+  const letter = match[1];
+  if (letter >= 'A' && letter <= 'B') {
+    return 'A-B';
+  }
+  if (letter >= 'C' && letter <= 'D') {
+    return 'C-D';
+  }
+  if (letter === 'E') {
+    return 'E';
+  }
+  if (letter >= 'F' && letter <= 'F') {
+    return 'F';
+  }
+  if (letter >= 'G' && letter <= 'G') {
+    return 'G';
+  }
+  if (letter >= 'H' && letter <= 'H') {
+    return 'H';
+  }
+  if (letter >= 'I' && letter <= 'I') {
+    return 'I';
+  }
+  if (letter >= 'J' && letter <= 'J') {
+    return 'J';
+  }
+  if (letter >= 'K' && letter <= 'K') {
+    return 'K';
+  }
+  if (letter >= 'L' && letter <= 'L') {
+    return 'L';
+  }
+  if (letter >= 'M' && letter <= 'M') {
+    return 'M';
+  }
+  if (letter >= 'N' && letter <= 'N') {
+    return 'N';
+  }
+  if (letter >= 'O' && letter <= 'O') {
+    return 'O';
+  }
+  if (letter >= 'P' && letter <= 'P') {
+    return 'P';
+  }
+  if (letter >= 'Q' && letter <= 'Q') {
+    return 'Q';
+  }
+  if (letter >= 'R' && letter <= 'R') {
+    return 'R';
+  }
+  if (letter >= 'S' && letter <= 'T') {
+    return 'S-T';
+  }
+  if (letter >= 'V' && letter <= 'Y') {
+    return 'V-Y';
+  }
+  if (letter >= 'Z' && letter <= 'Z') {
+    return 'Z';
+  }
+  return letter;
 }
 
 function detectCardTypeFromNumber(value) {
@@ -694,6 +983,18 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   const gmpRaw = normalized[indices.gmp] ?? '';
   const departmentRaw = normalized[indices.department] ?? '';
   const cardNumberRaw = indices.cardNumber >= 0 ? normalized[indices.cardNumber] ?? '' : '';
+  const ageRaw = indices.age >= 0 ? normalized[indices.age] ?? '' : '';
+  const sexRaw = indices.sex >= 0 ? normalized[indices.sex] ?? '' : '';
+  const addressRaw = indices.address >= 0 ? normalized[indices.address] ?? '' : '';
+  const pspcRaw = indices.pspc >= 0 ? normalized[indices.pspc] ?? '' : '';
+  const diagnosisRaw = indices.diagnosis >= 0 ? normalized[indices.diagnosis] ?? '' : '';
+  const referralRaw = indices.referral >= 0 ? normalized[indices.referral] ?? '' : '';
+  const hasExtendedColumns = indices.age >= 0
+    || indices.sex >= 0
+    || indices.address >= 0
+    || indices.pspc >= 0
+    || indices.diagnosis >= 0
+    || indices.referral >= 0;
   entry.arrival = parseDate(arrivalRaw);
   entry.discharge = parseDate(dischargeRaw);
   entry.arrivalHasTime = detectHasTime(arrivalRaw);
@@ -703,6 +1004,22 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   entry.department = departmentRaw != null ? String(departmentRaw).trim() : '';
   entry.hospitalized = detectHospitalized(departmentRaw, csvRuntime);
   entry.cardType = detectCardTypeFromNumber(cardNumberRaw);
+  entry.ageYears = parseAgeYears(ageRaw);
+  entry.ageBand = resolveAgeBand(entry.ageYears);
+  entry.sex = normalizeSexValue(sexRaw);
+  entry.cityRaw = normalizeSimpleText(addressRaw);
+  entry.cityNorm = normalizeCityName(addressRaw);
+  entry.addressArea = entry.cityNorm || normalizeAddressArea(addressRaw);
+  entry.pspc = normalizeSimpleText(pspcRaw);
+  entry.diagnosisCodes = extractDiagnosisCodes(diagnosisRaw);
+  entry.diagnosisCode = entry.diagnosisCodes[0] || '';
+  entry.diagnosisGroups = entry.diagnosisCodes
+    .map((code) => resolveDiagnosisGroup(code))
+    .filter((group, index, list) => group && list.indexOf(group) === index);
+  entry.diagnosisGroup = entry.diagnosisGroups[0] || 'Nenurodyta';
+  entry.referral = parseReferralValue(referralRaw);
+  entry.referred = entry.referral === 'su siuntimu';
+  entry.hasExtendedHistoricalFields = hasExtendedColumns;
   return entry;
 }
 
