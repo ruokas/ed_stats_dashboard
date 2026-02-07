@@ -245,7 +245,11 @@ export function initSectionNavigation(env) {
   }
 
   window.addEventListener('resize', scheduleLayoutRefresh, { passive: true });
+  window.addEventListener('orientationchange', scheduleLayoutRefresh, { passive: true });
   window.addEventListener('load', scheduleLayoutRefresh);
+  if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
+    window.visualViewport.addEventListener('resize', scheduleLayoutRefresh, { passive: true });
+  }
 
   syncSectionNavVisibility();
   waitForFontsAndStyles().then(() => {

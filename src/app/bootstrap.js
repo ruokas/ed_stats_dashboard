@@ -2,13 +2,9 @@ import { loadChartJs } from '../utils/chart-loader.js';
 import { runAfterDomAndIdle, enableLazyLoading } from '../utils/dom.js';
 import { registerServiceWorker } from '../../app.js';
 
-const SW_INIT_SESSION_KEY = 'edDashboard:sw-init:v1';
+const SW_INIT_SESSION_KEY = 'edDashboard:sw-init:v2';
 
 export function initializeServiceWorker({ updateClientConfig }) {
-  if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
-    return;
-  }
-
   const initDone = (() => {
     try {
       return window.sessionStorage.getItem(SW_INIT_SESSION_KEY) === 'true';

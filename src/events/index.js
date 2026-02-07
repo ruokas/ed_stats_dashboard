@@ -1,7 +1,7 @@
 import { initChartControls, initChartCopyButtons, initChartDownloadButtons, initTableDownloadButtons } from './charts.js';
 import { initCompareControls } from './compare.js';
 import { initEdPanelControls } from './ed.js';
-import { initFeedbackFilters, initFeedbackTrendControls } from './feedback.js';
+import * as feedbackEvents from './feedback.js';
 import { initGlobalShortcuts } from './global.js';
 import { initKpiFilters } from './kpi.js';
 import { initScrollTopButton } from './scroll.js';
@@ -30,8 +30,11 @@ export function createUIEvents(env) {
       initKpiFilters(env);
     }
     if (pageConfig.feedback) {
-      initFeedbackFilters(env);
-      initFeedbackTrendControls(env);
+      feedbackEvents.initFeedbackFilters(env);
+      feedbackEvents.initFeedbackTrendControls(env);
+      if (typeof feedbackEvents.initFeedbackTableScrollAffordance === 'function') {
+        feedbackEvents.initFeedbackTableScrollAffordance(env);
+      }
     }
     if (pageConfig.monthly || pageConfig.yearly) {
       initYearlyExpand(env);

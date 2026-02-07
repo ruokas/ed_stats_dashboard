@@ -1,4 +1,4 @@
-import { getDatasetValue } from '../utils/dom.js';
+import { getDatasetValue, setDatasetValue } from '../utils/dom.js';
 
 export function initFeedbackFilters(env) {
   const {
@@ -44,4 +44,36 @@ export function initFeedbackTrendControls(env) {
       }
     });
   });
+}
+
+export function initFeedbackTableScrollAffordance(env) {
+  const { selectors } = env;
+  const wrapper = selectors.feedbackTableWrapper;
+  const table = wrapper ? wrapper.querySelector('table') : null;
+
+  if (!wrapper || !table) {
+    return;
+  }
+
+  const syncState = () => {
+    const maxScrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
+    const isScrollable = maxScrollLeft > 2;
+    const isAtStart = wrapper.scrollLeft <= 2;
+    const isAtEnd = wrapper.scrollLeft >= maxScrollLeft - 2;
+
+    setDatasetValue(wrapper, 'scrollable', isScrollable ? 'true' : 'false');
+    setDatasetValue(wrapper, 'scrollStart', isAtStart ? 'true' : 'false');
+    setDatasetValue(wrapper, 'scrollEnd', isAtEnd ? 'true' : 'false');
+  };
+
+  wrapper.addEventListener('scroll', syncState, { passive: true });
+  window.addEventListener('resize', syncState, { passive: true });
+
+  if (typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(syncState);
+    observer.observe(wrapper);
+    observer.observe(table);
+  }
+
+  syncState();
 }

@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'ed-static-v9';
+const STATIC_CACHE = 'ed-static-v10';
 const API_CACHE = 'ed-api-v1';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [
@@ -50,6 +50,29 @@ function cacheFirst(request, { useOfflineFallback = false } = {}) {
     }
     return Response.error();
   });
+}
+
+async function networkFirst(request, { useOfflineFallback = false } = {}) {
+  const cache = await caches.open(STATIC_CACHE);
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await cache.match(request);
+    if (cached) {
+      return cached;
+    }
+    if (useOfflineFallback) {
+      const fallback = await cache.match(OFFLINE_FALLBACK);
+      if (fallback) {
+        return fallback;
+      }
+    }
+    return Response.error();
+  }
 }
 
 async function staleWhileRevalidate(request, event) {
@@ -105,12 +128,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (STATIC_ASSETS.includes(url.pathname)) {
-    event.respondWith(cacheFirst(request));
+  if (/\.js($|\?)/i.test(url.pathname)) {
+    event.respondWith(networkFirst(request));
     return;
   }
 
-  if (/\.js($|\?)/i.test(url.pathname)) {
+  if (STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
   }
