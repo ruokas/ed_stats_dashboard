@@ -402,8 +402,98 @@ async function handleTableDownloadClick(event) {
 
 function extractHistoricalRecords(dashboardState) {
   const allRecords = Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : [];
+  const cache = dashboardState.summariesHistoricalRecordsCache || {};
+  if (cache.recordsRef === allRecords && Array.isArray(cache.records)) {
+    return cache.records;
+  }
   const byTag = allRecords.filter((record) => record?.sourceId === 'historical');
-  return byTag.length ? byTag : allRecords.filter((record) => record?.hasExtendedHistoricalFields === true);
+  const records = byTag.length ? byTag : allRecords.filter((record) => record?.hasExtendedHistoricalFields === true);
+  dashboardState.summariesHistoricalRecordsCache = {
+    recordsRef: allRecords,
+    records,
+  };
+  return records;
+}
+
+function buildReportsComputationKey(dashboardState, settings, scopeMeta) {
+  return [
+    String(dashboardState.summariesReportsYear ?? 'all'),
+    Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
+    Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 10), 10) || 10,
+    String(dashboardState.summariesReferralPspcSort || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc',
+    Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
+    Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
+  ].join('|');
+}
+
+function getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta) {
+  const key = buildReportsComputationKey(dashboardState, settings, scopeMeta);
+  const cache = dashboardState.summariesReportsComputationCache || {};
+  if (cache.recordsRef === historicalRecords && cache.key === key && cache.value) {
+    return cache.value;
+  }
+  const scopedMeta = {
+    scoped: scopeMeta.records,
+    yearOptions: scopeMeta.yearOptions,
+    yearFilter: scopeMeta.yearFilter,
+    shiftStartHour: scopeMeta.shiftStartHour,
+    coverage: scopeMeta.coverage,
+  };
+  const baseOptions = {
+    yearFilter: dashboardState.summariesReportsYear,
+    topN: dashboardState.summariesReportsTopN,
+    minGroupSize: dashboardState.summariesReportsMinGroupSize,
+    sortDirection: dashboardState.summariesReferralPspcSort,
+    calculations: settings?.calculations,
+    defaultSettings: DEFAULT_SETTINGS,
+    scopedMeta,
+  };
+  const value = {
+    diagnosis: computeDiagnosisFrequency(historicalRecords, {
+      ...baseOptions,
+      excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
+    }),
+    ageDiagnosisHeatmap: computeAgeDiagnosisHeatmap(historicalRecords, {
+      ...baseOptions,
+      excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
+    }),
+    z769Trend: computeDiagnosisCodeYearlyShare(historicalRecords, 'Z76.9', baseOptions),
+    referralTrend: computeReferralYearlyTrend(historicalRecords, baseOptions),
+    referralDispositionYearly: computeReferralDispositionYearlyTrend(historicalRecords, baseOptions),
+    referralMonthlyHeatmap: computeReferralMonthlyHeatmap(historicalRecords, baseOptions),
+    referralHospitalizedByPspc: computeReferralHospitalizedShareByPspc(historicalRecords, baseOptions),
+    pspcCorrelation: computePspcReferralHospitalizationCorrelation(historicalRecords, baseOptions),
+    ageDistribution: computeAgeDistribution(historicalRecords, baseOptions),
+    pspcDistribution: computePspcDistribution(historicalRecords, baseOptions),
+    sexDistribution: computeSexDistribution(historicalRecords, baseOptions),
+  };
+  dashboardState.summariesReportsComputationCache = {
+    recordsRef: historicalRecords,
+    key,
+    value,
+  };
+  return value;
+}
+
+function getScopedReportsMeta(dashboardState, settings, historicalRecords, yearFilter) {
+  const cache = dashboardState.summariesReportsScopeCache || {};
+  const normalizedYearFilter = yearFilter == null ? 'all' : String(yearFilter);
+  if (cache.recordsRef !== historicalRecords || !(cache.byYear instanceof Map)) {
+    dashboardState.summariesReportsScopeCache = {
+      recordsRef: historicalRecords,
+      byYear: new Map(),
+    };
+  }
+  const activeCache = dashboardState.summariesReportsScopeCache.byYear;
+  if (activeCache.has(normalizedYearFilter)) {
+    return activeCache.get(normalizedYearFilter);
+  }
+  const scoped = scopeExtendedHistoricalRecords(historicalRecords, yearFilter, {
+    calculations: settings?.calculations,
+    defaultSettings: DEFAULT_SETTINGS,
+  });
+  activeCache.set(normalizedYearFilter, scoped);
+  return scoped;
 }
 
 function syncReportsControls(selectors, dashboardState, yearOptions) {
@@ -1483,18 +1573,12 @@ function renderPspcCorrelationChart(slot, dashboardState, chartLib, canvas, rows
 
 async function renderReports(selectors, dashboardState, settings, exportState) {
   const historicalRecords = extractHistoricalRecords(dashboardState);
-  const options = {
-    yearFilter: dashboardState.summariesReportsYear,
-    topN: dashboardState.summariesReportsTopN,
-    minGroupSize: dashboardState.summariesReportsMinGroupSize,
-    sortDirection: dashboardState.summariesReferralPspcSort,
-    calculations: settings?.calculations,
-    defaultSettings: DEFAULT_SETTINGS,
-  };
-  const scopeMeta = scopeExtendedHistoricalRecords(historicalRecords, dashboardState.summariesReportsYear, {
-    calculations: settings?.calculations,
-    defaultSettings: DEFAULT_SETTINGS,
-  });
+  const scopeMeta = getScopedReportsMeta(
+    dashboardState,
+    settings,
+    historicalRecords,
+    dashboardState.summariesReportsYear,
+  );
   ensureCoverage(selectors, dashboardState, scopeMeta.coverage);
   syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions);
   if (!scopeMeta.records.length) {
@@ -1504,23 +1588,18 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     }
     return;
   }
-  const diagnosis = computeDiagnosisFrequency(historicalRecords, {
-    ...options,
-    excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
-  });
-  const ageDiagnosisHeatmap = computeAgeDiagnosisHeatmap(historicalRecords, {
-    ...options,
-    excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
-  });
-  const z769Trend = computeDiagnosisCodeYearlyShare(historicalRecords, 'Z76.9', options);
-  const referralTrend = computeReferralYearlyTrend(historicalRecords, options);
-  const referralDispositionYearly = computeReferralDispositionYearlyTrend(historicalRecords, options);
-  const referralMonthlyHeatmap = computeReferralMonthlyHeatmap(historicalRecords, options);
-  const referralHospitalizedByPspc = computeReferralHospitalizedShareByPspc(historicalRecords, options);
-  const pspcCorrelation = computePspcReferralHospitalizationCorrelation(historicalRecords, options);
-  const ageDistribution = computeAgeDistribution(historicalRecords, options);
-  const pspcDistribution = computePspcDistribution(historicalRecords, options);
-  const sexDistribution = computeSexDistribution(historicalRecords, options);
+  const reports = getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta);
+  const diagnosis = reports.diagnosis;
+  const ageDiagnosisHeatmap = reports.ageDiagnosisHeatmap;
+  const z769Trend = reports.z769Trend;
+  const referralTrend = reports.referralTrend;
+  const referralDispositionYearly = reports.referralDispositionYearly;
+  const referralMonthlyHeatmap = reports.referralMonthlyHeatmap;
+  const referralHospitalizedByPspc = reports.referralHospitalizedByPspc;
+  const pspcCorrelation = reports.pspcCorrelation;
+  const ageDistribution = reports.ageDistribution;
+  const pspcDistribution = reports.pspcDistribution;
+  const sexDistribution = reports.sexDistribution;
   const chartLib = dashboardState.chartLib || await loadChartJs();
   if (chartLib && !dashboardState.chartLib) {
     dashboardState.chartLib = chartLib;

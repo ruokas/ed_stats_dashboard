@@ -38,6 +38,19 @@ export function createDashboardState({
     summariesReportsMinGroupSize: 10,
     summariesReferralPspcSort: 'desc',
     summariesReportsCoverage: { total: 0, extended: 0, percent: 0 },
+    summariesHistoricalRecordsCache: {
+      recordsRef: null,
+      records: [],
+    },
+    summariesReportsScopeCache: {
+      recordsRef: null,
+      byYear: new Map(),
+    },
+    summariesReportsComputationCache: {
+      recordsRef: null,
+      key: '',
+      value: null,
+    },
     summariesReportCharts: {
       diagnosisFrequency: null,
       ageDiagnosisHeatmap: null,
@@ -55,6 +68,17 @@ export function createDashboardState({
     loadCounter: 0,
     chartPeriod: 30,
     chartYear: null,
+    chartsHospitalTableYear: 'all',
+    chartsHospitalTableSort: 'total_desc',
+    chartsHospitalTableSearch: '',
+    chartsHospitalTableDepartment: '',
+    chartsHospitalDeptTrendChart: null,
+    chartsHospitalDeptTrendKey: '',
+    chartsHospitalTableStatsCache: {
+      recordsRef: null,
+      byYear: new Map(),
+    },
+    chartsHospitalTableWorkerAgg: null,
     heatmapMetric: defaultHeatmapMetric,
     heatmapFilters: defaultHeatmapFilters ? defaultHeatmapFilters() : { arrival: 'all', disposition: 'all', cardType: 'all' },
     heatmapYear: null,
