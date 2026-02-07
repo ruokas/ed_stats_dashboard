@@ -31,7 +31,7 @@ export const TEXT = {
   status: {
     loading: 'Kraunama...',
     error: 'Nepavyko įkelti duomenų. Patikrinkite ryšį ir bandykite dar kartą.',
-    success: () => 'Duomenys atnaujinti',
+    success: () => '',
     fallbackSuccess: () => 'Rodomi talpyklos duomenys',
     fallbackNote: (reason) => `Nepavyko pasiekti nuotolinio šaltinio: ${reason}.`,
     errorDetails: (details) => `Nepavyko įkelti duomenų${details ? ` (${details})` : ''}.`,
