@@ -34,23 +34,6 @@ export function buildKpiSummaryModel({
     },
   ];
 
-  if (periodMetrics) {
-    const monthLabel = typeof periodMetrics.monthLabel === 'string'
-      ? periodMetrics.monthLabel
-      : '';
-    const hasMonthData = Number.isFinite(periodMetrics?.monthMetrics?.days)
-      && periodMetrics.monthMetrics.days > 0;
-    if (monthLabel || hasMonthData) {
-      const monthContent = monthLabel
-        ? escapeHtml(monthLabel)
-        : `<span class="kpi-summary__muted">${escapeHtml(TEXT.kpis.summary.noMonth)}</span>`;
-      summaryItems.push({
-        label: TEXT.kpis.summary.month,
-        value: monthContent,
-      });
-    }
-  }
-
   const summaryRows = summaryItems.map((item) => `
       <div class="kpi-summary__item">
         <dt>${escapeHtml(item.label)}</dt>
