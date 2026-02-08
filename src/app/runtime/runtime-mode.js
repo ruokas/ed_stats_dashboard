@@ -13,6 +13,11 @@ export function resolveRuntimeMode(pageId) {
   if (fromQuery === 'legacy' || fromQuery === 'modular') {
     return fromQuery;
   }
+  // ED puslapyje numatytai naudojame modular runtime,
+  // kad veiktų naujas page-scoped loading/render kelias.
+  if (normalizedPage === 'ed') {
+    return 'modular';
+  }
   const fromStorage = (() => {
     try {
       const mode = window.localStorage.getItem(RUNTIME_MODE_STORAGE_KEY);

@@ -91,6 +91,17 @@ export function createDataFlow({
     && !activeConfig.feedback
     && !activeConfig.ed,
   );
+  const isEdOnlyPage = Boolean(
+    activeConfig.ed
+    && !activeConfig.kpi
+    && !activeConfig.charts
+    && !activeConfig.recent
+    && !activeConfig.monthly
+    && !activeConfig.yearly
+    && !activeConfig.feedback,
+  );
+  const supportsDeferredMainHydration = Boolean(isKpiOnlyPage || isEdOnlyPage);
+  const disableHistoricalForPage = Boolean(isEdOnlyPage);
   const canUseDailyStatsCache = Boolean(canUseDailyStatsCacheOnly);
   let historicalHydrationInFlight = false;
   let historicalHydrated = false;
@@ -197,17 +208,17 @@ export function createDataFlow({
     primaryChunkReporter,
     historicalChunkReporter,
   }) {
-    const supportsDeferredHistorical = isKpiOnlyPage;
-    if (!supportsDeferredHistorical || historicalHydrationInFlight || historicalHydrated) {
+    if (!supportsDeferredMainHydration || historicalHydrationInFlight || historicalHydrated) {
       return;
     }
     historicalHydrationInFlight = true;
     try {
+      const skipHistoricalForHydration = Boolean(isEdOnlyPage);
       const dataset = await fetchData({
         onPrimaryChunk: primaryChunkReporter,
         onHistoricalChunk: historicalChunkReporter,
         onWorkerProgress: workerProgressReporter,
-        skipHistorical: false,
+        skipHistorical: skipHistoricalForHydration,
       });
       if (!dataset || dashboardState.loading || runNumber !== dashboardState.loadCounter) {
         return;
@@ -253,6 +264,9 @@ export function createDataFlow({
       }
       if (activeConfig.kpi) {
         await applyKpiFiltersAndRender();
+      }
+      if (activeConfig.ed && dashboardState.ed) {
+        await renderEdDashboard(dashboardState.ed);
       }
       writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
       historicalHydrated = true;
@@ -338,19 +352,21 @@ export function createDataFlow({
         setDatasetValue(selectors.edStatus, 'tone', 'info');
       }
       const cachedDailyStats = readDailyStatsFromSessionCache();
-      const shouldFetchMainData = Boolean(needsMainData && !cachedDailyStats);
+      const shouldDeferAllMainDataOnThisLoad = Boolean(isEdOnlyPage && !historicalHydrated);
+      const shouldFetchMainData = Boolean(needsMainData && !cachedDailyStats && !shouldDeferAllMainDataOnThisLoad);
       const primaryChunkReporter = shouldFetchMainData ? createChunkReporter('Pagrindinis CSV') : null;
       const historicalChunkReporter = needsMainData ? createChunkReporter('Istorinis CSV') : null;
       const workerProgressReporter = shouldFetchMainData ? createChunkReporter('Apdorojama CSV') : null;
       const edChunkReporter = needsEdData ? createChunkReporter('ED CSV') : null;
       const shouldDeferHistoricalOnThisLoad = Boolean(isKpiOnlyPage);
+      const shouldSkipHistoricalOnMainFetch = Boolean(shouldDeferHistoricalOnThisLoad || disableHistoricalForPage);
       const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
         shouldFetchMainData
           ? fetchData({
               onPrimaryChunk: primaryChunkReporter,
               onHistoricalChunk: historicalChunkReporter,
               onWorkerProgress: workerProgressReporter,
-              skipHistorical: shouldDeferHistoricalOnThisLoad,
+              skipHistorical: shouldSkipHistoricalOnMainFetch,
             })
           : Promise.resolve(null),
         needsFeedbackData ? fetchFeedbackData() : Promise.resolve([]),
@@ -406,13 +422,19 @@ export function createDataFlow({
           };
         }
       }
-      if (needsMainData && !cachedDailyStats && dataResult.status !== 'fulfilled') {
+      if (shouldFetchMainData && dataResult.status !== 'fulfilled') {
         throw dataResult.reason;
       }
 
-      const dataset = needsMainData && !cachedDailyStats ? (dataResult.value || {}) : {};
+      const hasMainDataPayload = Boolean(
+        cachedDailyStats
+        || (shouldFetchMainData && dataResult.status === 'fulfilled'),
+      );
+      const dataset = hasMainDataPayload && !cachedDailyStats ? (dataResult.value || {}) : {};
       const feedbackRecords = needsFeedbackData && feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
-      const currentMainSignature = needsMainData ? computeMainDataSignature(dataset, cachedDailyStats) : '';
+      const currentMainSignature = (needsMainData && hasMainDataPayload)
+        ? computeMainDataSignature(dataset, cachedDailyStats)
+        : '';
       const currentEdSignature = needsEdData ? (dashboardState.ed?.meta?.signature || '') : '';
       const skipMainRender = Boolean(
         shouldAutoRefresh
@@ -436,7 +458,7 @@ export function createDataFlow({
       }
 
       let dailyStats = [];
-      if (needsMainData) {
+      if (needsMainData && hasMainDataPayload) {
         const combinedRecords = cachedDailyStats ? [] : (Array.isArray(dataset.records) ? dataset.records : []);
         const primaryRecords = cachedDailyStats
           ? []
@@ -552,7 +574,10 @@ export function createDataFlow({
       }
 
       setStatus('success');
-      if (shouldFetchMainData && shouldDeferHistoricalOnThisLoad) {
+      if (
+        (shouldFetchMainData && shouldDeferHistoricalOnThisLoad)
+        || shouldDeferAllMainDataOnThisLoad
+      ) {
         scheduleDeferredHydration({
           runNumber,
           settings,
@@ -561,7 +586,7 @@ export function createDataFlow({
           historicalChunkReporter: null,
         });
       }
-      if (cachedDailyStats && isKpiOnlyPage) {
+      if (cachedDailyStats && supportsDeferredMainHydration) {
         scheduleDeferredHydration({
           runNumber,
           settings,

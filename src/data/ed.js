@@ -22,7 +22,7 @@ export function createEdHandlers(context) {
     describeError,
     resolveColumnIndex,
   } = context;
-  const ED_WORKER_URL = new URL('data-worker.js?v=2026-02-08-ed-worker-1', window.location.href).toString();
+  const ED_WORKER_URL = new URL('data-worker.js?v=2026-02-08-ed-worker-2', window.location.href).toString();
   const edDataCache = new Map();
   const edSignatureCache = new Map();
   let edWorkerCounter = 0;
@@ -191,6 +191,21 @@ export function createEdHandlers(context) {
       feedbackComments: [],
       feedbackCommentsMeta: '',
     };
+  }
+
+  function hasEdSummaryShape(summary) {
+    if (!summary || typeof summary !== 'object') {
+      return false;
+    }
+    const requiredKeys = [
+      'avgDailyPatients',
+      'avgLosMinutes',
+      'avgLosMonthMinutes',
+      'avgLabMonthMinutes',
+      'hospitalizedMonthShare',
+      'generatedAt',
+    ];
+    return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(summary, key));
   }
 
   function transformEdCsv(text) {
@@ -996,7 +1011,7 @@ export function createEdHandlers(context) {
           }
           : { records: [], meta: {}, summary: null, dispositions: null, daily: null });
       const hasWorkerAggregates = payload.summary && payload.dispositions && payload.daily;
-      const aggregates = hasWorkerAggregates
+      let aggregates = hasWorkerAggregates
         ? {
           summary: payload.summary,
           dispositions: payload.dispositions,
@@ -1004,6 +1019,21 @@ export function createEdHandlers(context) {
           meta: payload.meta,
         }
         : summarizeEdRecords(payload.records, payload.meta);
+      // Worker aggregate shape can lag behind UI card requirements; keep worker fast-path
+      // but rebuild locally when required summary keys are missing.
+      if (hasWorkerAggregates && !hasEdSummaryShape(aggregates.summary)) {
+        const rebuilt = summarizeEdRecords(payload.records, payload.meta);
+        aggregates = {
+          summary: rebuilt.summary,
+          dispositions: Array.isArray(payload.dispositions) && payload.dispositions.length
+            ? payload.dispositions
+            : rebuilt.dispositions,
+          daily: Array.isArray(payload.daily) && payload.daily.length
+            ? payload.daily
+            : rebuilt.daily,
+          meta: { ...(rebuilt.meta || {}), ...(payload.meta || {}) },
+        };
+      }
       return {
         records: payload.records,
         summary: aggregates.summary,

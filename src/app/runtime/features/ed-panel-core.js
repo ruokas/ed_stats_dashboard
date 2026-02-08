@@ -82,15 +82,13 @@ export function createEdPanelCoreFeature(deps) {
       message = TEXT.ed.status.error(dataset.error);
       tone = 'error';
     } else if (dataset?.usingFallback) {
-      const reason = dataset.lastErrorMessage || TEXT.ed.status.noUrl;
-      message = TEXT.ed.status.fallback(reason, timestampText);
+      message = timestampText || statusTimeFormatter.format(new Date());
       tone = 'warning';
     } else if (!hasEntries) {
-      message = TEXT.ed.status.empty;
+      message = timestampText || statusTimeFormatter.format(new Date());
       tone = 'warning';
     } else {
-      const successTimestamp = timestampText || statusTimeFormatter.format(new Date());
-      message = TEXT.ed.status.success(successTimestamp);
+      message = timestampText || statusTimeFormatter.format(new Date());
       tone = 'success';
     }
     return {

@@ -319,7 +319,12 @@ function transformEdCsvWithSummary(text, options = {}) {
       arrivalHour: arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
       departureHour: departureDate instanceof Date && !Number.isNaN(departureDate.getTime()) ? departureDate.getHours() : null,
     };
-    if (datasetType !== 'snapshot' || Number.isFinite(record.currentPatients) || Number.isFinite(record.occupiedBeds)) {
+    if (
+      datasetType !== 'snapshot'
+      || Number.isFinite(record.currentPatients)
+      || Number.isFinite(record.occupiedBeds)
+      || Number.isFinite(record.snapshotLabMinutes)
+    ) {
       records.push(record);
     }
   }
@@ -359,18 +364,41 @@ function summarizeEdRecordsWorker(records, mode = 'legacy') {
 
 function summarizeLegacyWorker(records) {
   const dailyMap = new Map();
+  const monthMap = new Map();
   const dispositionMap = new Map();
   let totalPatients = 0;
+  let labSum = 0;
+  let labCount = 0;
   records.forEach((record) => {
     if (!record || !record.dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(record.dateKey)) {
       return;
     }
     totalPatients += 1;
-    const existing = dailyMap.get(record.dateKey) || { dateKey: record.dateKey, patients: 0, losSum: 0, losCount: 0 };
+    const existing = dailyMap.get(record.dateKey) || {
+      dateKey: record.dateKey,
+      patients: 0,
+      losSum: 0,
+      losCount: 0,
+      labSum: 0,
+      labCount: 0,
+    };
     existing.patients += 1;
     if (Number.isFinite(record.losMinutes) && record.losMinutes >= 0) {
       existing.losSum += record.losMinutes;
       existing.losCount += 1;
+    }
+    if (Number.isFinite(record.labMinutes) && record.labMinutes >= 0) {
+      existing.labSum += record.labMinutes;
+      existing.labCount += 1;
+      labSum += record.labMinutes;
+      labCount += 1;
+      const monthKey = String(record.dateKey).slice(0, 7);
+      if (/^\d{4}-\d{2}$/.test(monthKey)) {
+        const monthExisting = monthMap.get(monthKey) || { labSum: 0, labCount: 0 };
+        monthExisting.labSum += record.labMinutes;
+        monthExisting.labCount += 1;
+        monthMap.set(monthKey, monthExisting);
+      }
     }
     dailyMap.set(record.dateKey, existing);
     const label = record.disposition || 'Nežinoma';
@@ -382,7 +410,10 @@ function summarizeLegacyWorker(records) {
     dateKey: entry.dateKey,
     patients: entry.patients,
     avgLosMinutes: entry.losCount > 0 ? entry.losSum / entry.losCount : null,
+    avgLabMinutes: entry.labCount > 0 ? entry.labSum / entry.labCount : null,
   }));
+  const latestMonthKey = Array.from(monthMap.keys()).sort((a, b) => a.localeCompare(b)).pop() || '';
+  const latestMonth = latestMonthKey ? monthMap.get(latestMonthKey) : null;
   const dispositions = Array.from(dispositionMap.values()).sort((a, b) => b.count - a.count).map((entry) => ({
     ...entry,
     share: totalPatients > 0 ? entry.count / totalPatients : null,
@@ -394,6 +425,8 @@ function summarizeLegacyWorker(records) {
       totalPatients,
       uniqueDates: dailyMap.size,
       avgDailyPatients: dailyMap.size > 0 ? totalPatients / dailyMap.size : null,
+      avgLabMinutes: labCount > 0 ? labSum / labCount : null,
+      avgLabMonthMinutes: latestMonth && latestMonth.labCount > 0 ? latestMonth.labSum / latestMonth.labCount : null,
       generatedAt: new Date(),
     },
     dispositions,
@@ -408,6 +441,21 @@ function summarizeSnapshotWorker(records) {
   }
   const sorted = valid.slice().sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
   const latest = sorted[sorted.length - 1];
+  const dailyMap = new Map();
+  valid.forEach((record) => {
+    const key = String(record.dateKey || '');
+    if (!key) {
+      return;
+    }
+    const bucket = dailyMap.get(key) || { dateKey: key, labSum: 0, labCount: 0 };
+    if (Number.isFinite(record.snapshotLabMinutes) && record.snapshotLabMinutes >= 0) {
+      bucket.labSum += record.snapshotLabMinutes;
+      bucket.labCount += 1;
+    }
+    dailyMap.set(key, bucket);
+  });
+  const dailySorted = Array.from(dailyMap.values()).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+  const latestBucket = dailySorted.length ? dailySorted[dailySorted.length - 1] : null;
   const categoryTotals = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   let categorySum = 0;
   ['1', '2', '3', '4', '5'].forEach((key) => {
@@ -434,12 +482,16 @@ function summarizeSnapshotWorker(records) {
       occupiedBeds: Number.isFinite(latest?.occupiedBeds) ? latest.occupiedBeds : null,
       nursePatientsPerStaff: Number.isFinite(latest?.nurseRatio) ? latest.nurseRatio : null,
       doctorPatientsPerStaff: Number.isFinite(latest?.doctorRatio) ? latest.doctorRatio : null,
+      avgLabMonthMinutes: latestBucket && latestBucket.labCount > 0 ? latestBucket.labSum / latestBucket.labCount : null,
       latestSnapshotLabel: latest?.dateKey || '',
       latestSnapshotAt: latest?.timestamp || null,
       generatedAt: new Date(),
     },
     dispositions,
-    daily: [],
+    daily: dailySorted.map((entry) => ({
+      dateKey: entry.dateKey,
+      avgLabMinutes: entry.labCount > 0 ? entry.labSum / entry.labCount : null,
+    })),
   };
 }
 
