@@ -16,8 +16,8 @@ self.addEventListener('message', (event) => {
         : null;
       payload = transformCsvWithStats(csvText, options, { reportProgress, progressStep });
     } else if (type === 'transformEdCsv') {
-      const { csvText } = event.data;
-      payload = transformEdCsvWithSummary(csvText);
+      const { csvText, options } = event.data;
+      payload = transformEdCsvWithSummary(csvText, options || {});
     } else if (type === 'applyKpiFilters') {
       payload = applyKpiFiltersInWorker(event.data);
     } else {
@@ -196,7 +196,8 @@ function applyKpiFiltersInWorker(data = {}) {
   };
 }
 
-function transformEdCsvWithSummary(text) {
+function transformEdCsvWithSummary(text, options = {}) {
+  void options;
   if (!text) {
     throw new Error('ED CSV turinys tuščias.');
   }

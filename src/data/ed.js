@@ -24,6 +24,7 @@ export function createEdHandlers(context) {
   } = context;
   const ED_WORKER_URL = new URL('data-worker.js?v=2026-02-08-ed-worker-1', window.location.href).toString();
   const edDataCache = new Map();
+  const edSignatureCache = new Map();
   let edWorkerCounter = 0;
 
   function getCacheEntry(url) {
@@ -68,7 +69,41 @@ export function createEdHandlers(context) {
     });
   }
 
-  function runEdWorkerJob(csvText) {
+  function readSignatureCache(signature) {
+    const key = String(signature || '').trim();
+    if (!key || !edSignatureCache.has(key)) {
+      return null;
+    }
+    const cached = edSignatureCache.get(key);
+    if (!cached || typeof cached !== 'object') {
+      return null;
+    }
+    return {
+      records: Array.isArray(cached.records) ? cached.records : [],
+      summary: cached.summary || createEmptyEdSummary(),
+      dispositions: Array.isArray(cached.dispositions) ? cached.dispositions : [],
+      daily: Array.isArray(cached.daily) ? cached.daily : [],
+      meta: cached.meta && typeof cached.meta === 'object' ? cached.meta : { type: 'legacy', signature: key },
+    };
+  }
+
+  function writeSignatureCache(signature, payload) {
+    const key = String(signature || '').trim();
+    if (!key || !payload || typeof payload !== 'object') {
+      return;
+    }
+    edSignatureCache.set(key, {
+      records: Array.isArray(payload.records) ? payload.records : [],
+      summary: payload.summary || createEmptyEdSummary(),
+      dispositions: Array.isArray(payload.dispositions) ? payload.dispositions : [],
+      daily: Array.isArray(payload.daily) ? payload.daily : [],
+      meta: payload.meta && typeof payload.meta === 'object'
+        ? payload.meta
+        : { type: 'legacy', signature: key },
+    });
+  }
+
+  function runEdWorkerJob(csvText, workerOptions = {}) {
     if (typeof Worker !== 'function') {
       return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
     }
@@ -99,7 +134,7 @@ export function createEdHandlers(context) {
         reject(event?.error || new Error(event?.message || 'ED worker klaida.'));
       });
       try {
-        worker.postMessage({ id: jobId, type: 'transformEdCsv', csvText });
+        worker.postMessage({ id: jobId, type: 'transformEdCsv', csvText, options: workerOptions });
       } catch (error) {
         cleanup();
         reject(error);
@@ -948,21 +983,33 @@ export function createEdHandlers(context) {
     };
 
     const finalize = (result, options = {}) => {
+      const signature = String(options.signature || '').trim();
       const payload = Array.isArray(result)
         ? { records: result, meta: {} }
         : (result && typeof result === 'object'
           ? {
             records: Array.isArray(result.records) ? result.records : [],
             meta: result.meta && typeof result.meta === 'object' ? result.meta : {},
+            summary: result.summary && typeof result.summary === 'object' ? result.summary : null,
+            dispositions: Array.isArray(result.dispositions) ? result.dispositions : null,
+            daily: Array.isArray(result.daily) ? result.daily : null,
           }
-          : { records: [], meta: {} });
-      const aggregates = summarizeEdRecords(payload.records, payload.meta);
+          : { records: [], meta: {}, summary: null, dispositions: null, daily: null });
+      const hasWorkerAggregates = payload.summary && payload.dispositions && payload.daily;
+      const aggregates = hasWorkerAggregates
+        ? {
+          summary: payload.summary,
+          dispositions: payload.dispositions,
+          daily: payload.daily,
+          meta: payload.meta,
+        }
+        : summarizeEdRecords(payload.records, payload.meta);
       return {
         records: payload.records,
         summary: aggregates.summary,
         dispositions: aggregates.dispositions,
         daily: aggregates.daily,
-        meta: { ...payload.meta, ...(aggregates.meta || {}), signature: options.signature || payload?.meta?.signature || '' },
+        meta: { ...payload.meta, ...(aggregates.meta || {}), signature: signature || payload?.meta?.signature || '' },
         usingFallback: Boolean(options.usingFallback),
         lastErrorMessage: options.lastErrorMessage || '',
         error: options.error || null,
@@ -991,17 +1038,35 @@ export function createEdHandlers(context) {
         onChunk: options?.onChunk,
       });
       if (download.status === 304 && cachedEntry?.payload) {
-        return {
+        const fromCache = {
           ...cachedEntry.payload,
           usingFallback: false,
           lastErrorMessage: '',
           error: null,
           updatedAt: new Date(),
         };
+        if (fromCache?.meta?.signature) {
+          writeSignatureCache(fromCache.meta.signature, fromCache);
+        }
+        return fromCache;
+      }
+      const downloadSignature = String(download.signature || download.etag || download.lastModified || '').trim();
+      const signatureCached = readSignatureCache(downloadSignature);
+      if (signatureCached) {
+        const fromSignatureCache = {
+          ...signatureCached,
+          meta: { ...(signatureCached.meta || {}), signature: downloadSignature || signatureCached?.meta?.signature || '' },
+          usingFallback: false,
+          lastErrorMessage: '',
+          error: null,
+          updatedAt: new Date(),
+        };
+        writeCacheEntry(url, fromSignatureCache, download);
+        return fromSignatureCache;
       }
       let workerPayload = null;
       try {
-        workerPayload = await runEdWorkerJob(download.text);
+        workerPayload = await runEdWorkerJob(download.text, options?.workerOptions || {});
       } catch (workerError) {
         const workerInfo = describeError(workerError, { code: 'ED_WORKER' });
         console.warn(workerInfo.log, workerError);
@@ -1009,7 +1074,10 @@ export function createEdHandlers(context) {
       const result = workerPayload && typeof workerPayload === 'object'
         ? workerPayload
         : transformEdCsv(download.text);
-      const finalized = finalize(result, { signature: download.signature || download.etag || download.lastModified || '' });
+      const finalized = finalize(result, { signature: downloadSignature });
+      if (finalized?.meta?.signature) {
+        writeSignatureCache(finalized.meta.signature, finalized);
+      }
       writeCacheEntry(url, finalized, download);
       return finalized;
     } catch (error) {
