@@ -902,9 +902,7 @@ export async function runChartsRuntime(core) {
       stack: 'stay',
       _countKey: def.countKey,
     }));
-    destroyChartsHospitalDeptTrendChart();
-    const ctx = selectors.chartsHospitalDeptTrendCanvas.getContext('2d');
-    dashboardState.chartsHospitalDeptTrendChart = new ChartLib(ctx, {
+    const config = {
       type: 'bar',
       data: {
         labels: years,
@@ -960,7 +958,28 @@ export async function runChartsRuntime(core) {
           },
         },
       },
-    });
+    };
+    const existing = dashboardState.chartsHospitalDeptTrendChart;
+    const existingType = String(existing?.config?.type || existing?.constructor?.id || '');
+    if (
+      existing
+      && typeof existing.update === 'function'
+      && existing.canvas === selectors.chartsHospitalDeptTrendCanvas
+      && existingType === String(config.type)
+    ) {
+      existing.data = config.data;
+      existing.options = config.options;
+      existing.update('none');
+    } else {
+      if (existing && typeof existing.destroy === 'function') {
+        existing.destroy();
+      }
+      const ctx = selectors.chartsHospitalDeptTrendCanvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+      dashboardState.chartsHospitalDeptTrendChart = new ChartLib(ctx, config);
+    }
     dashboardState.chartsHospitalDeptTrendKey = trendKey;
     selectors.chartsHospitalDeptTrendCanvas.hidden = false;
     selectors.chartsHospitalDeptTrendEmpty.hidden = true;

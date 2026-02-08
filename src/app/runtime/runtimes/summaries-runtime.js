@@ -497,6 +497,51 @@ function destroyReportCharts(dashboardState) {
   });
 }
 
+function destroyReportChartSlot(dashboardState, slot) {
+  const charts = dashboardState?.summariesReportCharts || {};
+  const existing = charts[slot];
+  if (existing && typeof existing.destroy === 'function') {
+    existing.destroy();
+  }
+  charts[slot] = null;
+}
+
+function updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, config, options = {}) {
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    return null;
+  }
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return null;
+  }
+  const forceRecreate = options?.forceRecreate === true;
+  const existing = dashboardState?.summariesReportCharts?.[slot];
+  const incomingType = String(config?.type || '');
+  const existingType = String(existing?.config?.type || existing?.constructor?.id || '');
+  const canUpdate = (
+    !forceRecreate
+    && existing
+    && typeof existing.update === 'function'
+    && existing.canvas === canvas
+    && existingType === incomingType
+  );
+  if (canUpdate) {
+    existing.data = config?.data || { labels: [], datasets: [] };
+    existing.options = config?.options || {};
+    if ('plugins' in (config || {})) {
+      existing.config.plugins = config.plugins;
+    }
+    existing.update('none');
+    return existing;
+  }
+  if (existing && typeof existing.destroy === 'function') {
+    existing.destroy();
+  }
+  const created = new chartLib(ctx, config);
+  dashboardState.summariesReportCharts[slot] = created;
+  return created;
+}
+
 function ensureCoverage(selectors, dashboardState, coverage) {
   const total = Number.isFinite(coverage?.total) ? coverage.total : 0;
   const extended = Number.isFinite(coverage?.extended) ? coverage.extended : 0;
@@ -644,13 +689,6 @@ function renderBarChart(slot, dashboardState, chartLib, canvas, rows, color, opt
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
   const dynamicYAxis = options?.dynamicYAxis === true;
   const values = rows.map((row) => Number(row?.percent ?? 0)).filter((value) => Number.isFinite(value));
   const minValue = values.length ? Math.min(...values) : 0;
@@ -659,7 +697,7 @@ function renderBarChart(slot, dashboardState, chartLib, canvas, rows, color, opt
   const padding = Math.max(0.25, span * 0.2);
   const dynamicMin = Math.max(0, minValue - padding);
   const dynamicMax = Math.min(100, maxValue + padding);
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bar',
     data: {
       labels: rows.map((row) => row.label),
@@ -702,14 +740,7 @@ function renderPieChart(slot, dashboardState, chartLib, canvas, rows, palette) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'pie',
     data: {
       labels: rows.map((row) => row.label),
@@ -749,15 +780,8 @@ async function renderDiagnosisTreemap(dashboardState, chartLib, canvas, rows) {
   if (!hasPlugin) {
     return false;
   }
-  if (dashboardState.summariesReportCharts.diagnosisFrequency) {
-    dashboardState.summariesReportCharts.diagnosisFrequency.destroy();
-  }
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return false;
-  }
   const tree = rows.map((row) => ({ code: row.label, percent: row.percent, count: row.count }));
-  dashboardState.summariesReportCharts.diagnosisFrequency = new chartLib(ctx, {
+  updateOrCreateReportChart('diagnosisFrequency', dashboardState, chartLib, canvas, {
     type: 'treemap',
     data: {
       datasets: [{
@@ -819,7 +843,7 @@ async function renderDiagnosisTreemap(dashboardState, chartLib, canvas, rows) {
         },
       },
     },
-  });
+  }, { forceRecreate: true });
   return true;
 }
 
@@ -827,27 +851,21 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
   if (!(canvas instanceof HTMLCanvasElement)) {
     return false;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
   const rows = Array.isArray(model?.rows) ? model.rows : [];
   const ageBands = Array.isArray(model?.ageBands) ? model.ageBands : [];
   const diagnosisGroups = Array.isArray(model?.diagnosisGroups) ? model.diagnosisGroups : [];
   if (!rows.length || !ageBands.length || !diagnosisGroups.length) {
+    destroyReportChartSlot(dashboardState, slot);
     return false;
   }
   const height = Math.max(280, Math.min(760, 120 + ageBands.length * 40));
   canvas.style.setProperty('height', `${height}px`, 'important');
   canvas.style.setProperty('min-height', `${height}px`, 'important');
   canvas.style.setProperty('max-height', `${height}px`, 'important');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return false;
-  }
   const maxPercent = Math.max(...rows.map((row) => Number(row?.percent || 0)), 0);
   const hasMatrix = await ensureMatrixPlugin(chartLib);
   if (hasMatrix) {
-    dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+    updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
       type: 'matrix',
       data: {
         datasets: [{
@@ -945,7 +963,7 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
     count: row.count,
     ageTotal: row.ageTotal,
   }));
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bubble',
     data: {
       datasets: [{
@@ -1005,15 +1023,8 @@ function renderStackedTrend(slot, dashboardState, chartLib, canvas, trend) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
   const palette = ['#0284c7', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#d946ef'];
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bar',
     data: {
       labels: trend.rows.map((row) => String(row.year)),
@@ -1061,13 +1072,6 @@ function renderPercentLineTrend(slot, dashboardState, chartLib, canvas, rows, la
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
   const values = rows.map((row) => Number(row.percent || 0)).filter((value) => Number.isFinite(value));
   const minValue = values.length ? Math.min(...values) : 0;
   const maxValue = values.length ? Math.max(...values) : 0;
@@ -1075,7 +1079,7 @@ function renderPercentLineTrend(slot, dashboardState, chartLib, canvas, rows, la
   const padding = Math.max(0.25, spread * 0.25);
   const suggestedMin = Math.max(0, minValue - padding);
   const suggestedMax = Math.min(100, maxValue + padding);
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'line',
     data: {
       labels: rows.map((row) => String(row.year)),
@@ -1125,14 +1129,7 @@ function renderReferralDispositionYearlyChart(slot, dashboardState, chartLib, ca
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
   const rows = Array.isArray(trend?.rows) ? trend.rows : [];
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
   const labelFor = (referral, disposition) => {
     if (referral === 'su siuntimu' && disposition === 'hospitalizuoti') return 'Su siuntimu: hospitalizuoti';
     if (referral === 'su siuntimu' && disposition === 'isleisti') return 'Su siuntimu: išleisti';
@@ -1144,7 +1141,7 @@ function renderReferralDispositionYearlyChart(slot, dashboardState, chartLib, ca
     const count = Number(row?.values?.[referral]?.[disposition] || 0);
     return groupTotal > 0 ? (count / groupTotal) * 100 : 0;
   });
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bar',
     data: {
       labels: rows.map((row) => String(row.year)),
@@ -1219,29 +1216,24 @@ async function renderReferralMonthlyHeatmapChart(slot, dashboardState, chartLib,
   if (!(canvas instanceof HTMLCanvasElement)) {
     return false;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
   const rows = Array.isArray(model?.rows) ? model.rows : [];
   const years = Array.isArray(model?.years) ? model.years : [];
   const months = Array.isArray(model?.months) ? model.months : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   if (!rows.length || !years.length) {
+    destroyReportChartSlot(dashboardState, slot);
     return false;
   }
   const height = Math.max(260, Math.min(820, 120 + years.length * 36));
   canvas.style.setProperty('height', `${height}px`, 'important');
   canvas.style.setProperty('min-height', `${height}px`, 'important');
   canvas.style.setProperty('max-height', `${height}px`, 'important');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return false;
-  }
   const values = rows.map((row) => Number((row?.share || 0) * 100)).filter((value) => Number.isFinite(value));
   const minPercent = values.length ? Math.min(...values) : 0;
   const maxPercent = values.length ? Math.max(...values) : 0;
   const percentRange = Math.max(0.5, maxPercent - minPercent);
   const hasMatrix = await ensureMatrixPlugin(chartLib);
   if (!hasMatrix) {
+    destroyReportChartSlot(dashboardState, slot);
     return false;
   }
   const baseColor = parseHexColor(getCssVar('--report-referral', '#ef4444'), { r: 239, g: 68, b: 68 });
@@ -1253,7 +1245,7 @@ async function renderReferralMonthlyHeatmapChart(slot, dashboardState, chartLib,
     }
     return capitalizeSentence(monthFormatter.format(new Date(2020, Math.max(0, value - 1), 1)));
   };
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'matrix',
     data: {
       datasets: [{
@@ -1342,17 +1334,10 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
   const height = Math.max(260, Math.min(760, 90 + rows.length * 28));
   canvas.style.setProperty('height', `${height}px`, 'important');
   canvas.style.setProperty('min-height', `${height}px`, 'important');
   canvas.style.setProperty('max-height', `${height}px`, 'important');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
   const truncateLabel = (value, max = 32) => {
     const text = String(value || '');
     return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -1383,7 +1368,7 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
       c.restore();
     },
   };
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bar',
     data: {
       labels: rows.map((row) => row.label),
@@ -1432,18 +1417,11 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
         },
       },
     },
-  });
+  }, { forceRecreate: true });
 }
 
 function renderPspcCorrelationChart(slot, dashboardState, chartLib, canvas, rows) {
   if (!(canvas instanceof HTMLCanvasElement)) {
-    return;
-  }
-  if (dashboardState.summariesReportCharts[slot]) {
-    dashboardState.summariesReportCharts[slot].destroy();
-  }
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
     return;
   }
   const valuesX = rows.map((row) => Number(row.referralPercent || 0)).filter((value) => Number.isFinite(value));
@@ -1464,7 +1442,7 @@ function renderPspcCorrelationChart(slot, dashboardState, chartLib, canvas, rows
   };
   const fillColor = getCssVar('--report-correlation-fill', 'rgba(37, 99, 235, 0.38)');
   const strokeColor = getCssVar('--report-correlation-stroke', 'rgba(37, 99, 235, 0.9)');
-  dashboardState.summariesReportCharts[slot] = new chartLib(ctx, {
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bubble',
     data: {
       datasets: [{
