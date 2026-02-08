@@ -201,10 +201,29 @@ function byQueryAll(selector) {
   return Array.from(document.querySelectorAll(selector));
 }
 
+function byQueryIn(root, selector) {
+  if (!root || !selector) {
+    return null;
+  }
+  return root.querySelector(selector);
+}
+
+function byQueryAllIn(root, selector) {
+  if (!root || !selector) {
+    return [];
+  }
+  return Array.from(root.querySelectorAll(selector));
+}
+
 export function createSelectorsForPage(pageId) {
   const normalizedPage = typeof pageId === 'string' ? pageId.trim().toLowerCase() : '';
 
   if (normalizedPage === 'kpi') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    const kpiSection = byQuery('[data-section="kpi"]');
+    const kpiFiltersForm = byId('kpiFiltersForm');
+    const kpiHourlyControls = byQueryIn(kpiSection, '.kpi-hourly-controls');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -212,8 +231,8 @@ export function createSelectorsForPage(pageId) {
       footerSource: byId('footerSource'),
       themeToggleBtn: byId('themeToggleBtn'),
       scrollTopBtn: byId('scrollTopBtn'),
-      sectionNav: byQuery('.section-nav'),
-      sectionNavLinks: byQueryAll('.section-nav__link'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
       kpiHeading: byId('kpiHeading'),
       kpiSubtitle: byId('kpiSubtitle'),
       kpiDatePrev: byId('kpiDatePrev'),
@@ -222,26 +241,34 @@ export function createSelectorsForPage(pageId) {
       kpiDateClear: byId('kpiDateClear'),
       kpiSummary: byId('kpiSummary'),
       kpiGrid: byId('kpiGrid'),
-      kpiControls: byQuery('.kpi-controls'),
-      kpiFiltersForm: byId('kpiFiltersForm'),
+      kpiControls: byQueryIn(kpiSection, '.kpi-controls'),
+      kpiFiltersForm,
       kpiWindow: byId('kpiWindow'),
       kpiShift: byId('kpiShift'),
       kpiArrival: byId('kpiArrival'),
-      kpiArrivalButtons: byQueryAll('[data-kpi-arrival]'),
+      kpiArrivalButtons: byQueryAllIn(kpiFiltersForm, '[data-kpi-arrival]'),
       kpiDisposition: byId('kpiDisposition'),
       kpiCardType: byId('kpiCardType'),
-      kpiCardTypeButtons: byQueryAll('[data-kpi-card-type]'),
+      kpiCardTypeButtons: byQueryAllIn(kpiFiltersForm, '[data-kpi-card-type]'),
       kpiFiltersReset: byId('kpiFiltersReset'),
       kpiFiltersToggle: byId('kpiFiltersToggle'),
       kpiActiveInfo: byId('kpiActiveFilters'),
       lastShiftHourlyChart: byId('lastShiftHourlyChart'),
       lastShiftHourlyContext: byId('lastShiftHourlyContext'),
       lastShiftHourlyLegend: byId('lastShiftHourlyLegend'),
-      lastShiftHourlyMetricButtons: byQueryAll('[data-last-shift-metric]'),
+      lastShiftHourlyMetricButtons: byQueryAllIn(kpiHourlyControls, '[data-last-shift-metric]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
     };
   }
 
   if (normalizedPage === 'charts') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    const chartSection = byQuery('[data-section="chart"]');
+    const chartPeriodGroup = byId('chartPeriodGroup');
+    const chartFiltersForm = byId('chartFiltersForm');
+    const hourlyCompareSeriesGroup = byQueryIn(chartSection, '.hourly-compare-series');
+    const chartsHospitalTableRoot = byId('chartsHospitalTableRoot');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -249,8 +276,8 @@ export function createSelectorsForPage(pageId) {
       footerSource: byId('footerSource'),
       themeToggleBtn: byId('themeToggleBtn'),
       scrollTopBtn: byId('scrollTopBtn'),
-      sectionNav: byQuery('.section-nav'),
-      sectionNavLinks: byQueryAll('.section-nav__link'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
       chartHeading: byId('chartHeading'),
       chartSubtitle: byId('chartSubtitle'),
       dailyCaption: byId('dailyChartLabel'),
@@ -261,7 +288,7 @@ export function createSelectorsForPage(pageId) {
       dowStayCaptionContext: byId('dowStayChartContext'),
       hourlyCaption: byId('hourlyChartTitle'),
       hourlyMetricLabel: byId('hourlyMetricLabel'),
-      hourlyMetricButtons: byQueryAll('[data-hourly-metric]'),
+      hourlyMetricButtons: byQueryAllIn(chartSection, '[data-hourly-metric]'),
       hourlyDepartmentLabel: byId('hourlyDepartmentLabel'),
       hourlyDepartmentInput: byId('hourlyDepartment'),
       hourlyDepartmentSuggestions: byId('hourlyDepartmentSuggestions'),
@@ -269,8 +296,8 @@ export function createSelectorsForPage(pageId) {
       hourlyCompareToggle: byId('hourlyCompareToggle'),
       hourlyCompareYearA: byId('hourlyCompareYearA'),
       hourlyCompareYearB: byId('hourlyCompareYearB'),
-      hourlyCompareSeriesGroup: byQuery('.hourly-compare-series'),
-      hourlyCompareSeriesButtons: byQueryAll('[data-hourly-compare-series]'),
+      hourlyCompareSeriesGroup,
+      hourlyCompareSeriesButtons: byQueryAllIn(hourlyCompareSeriesGroup, '[data-hourly-compare-series]'),
       hourlyWeekdayLabel: byId('hourlyWeekdayLabel'),
       hourlyWeekdaySelect: byId('hourlyWeekday'),
       hourlyStayLabel: byId('hourlyStayLabel'),
@@ -287,15 +314,15 @@ export function createSelectorsForPage(pageId) {
       heatmapYearSelect: byId('heatmapYear'),
       chartYearLabel: byId('chartYearLabel'),
       chartYearSelect: byId('chartYear'),
-      chartPeriodButtons: byQueryAll('[data-chart-period]'),
+      chartPeriodButtons: byQueryAllIn(chartPeriodGroup, '[data-chart-period]'),
       chartFiltersSummary: byId('chartFiltersSummary'),
-      chartFiltersForm: byId('chartFiltersForm'),
+      chartFiltersForm,
       chartFilterArrival: byId('chartArrival'),
-      chartFilterArrivalButtons: byQueryAll('[data-chart-arrival]'),
+      chartFilterArrivalButtons: byQueryAllIn(chartFiltersForm, '[data-chart-arrival]'),
       chartFilterDisposition: byId('chartDisposition'),
-      chartFilterDispositionButtons: byQueryAll('[data-chart-disposition]'),
+      chartFilterDispositionButtons: byQueryAllIn(chartFiltersForm, '[data-chart-disposition]'),
       chartFilterCardType: byId('chartCardType'),
-      chartFilterCardTypeButtons: byQueryAll('[data-chart-card-type]'),
+      chartFilterCardTypeButtons: byQueryAllIn(chartFiltersForm, '[data-chart-card-type]'),
       chartFilterCompareGmp: byId('chartCompareGmp'),
       chartsHospitalTableHeading: byId('chartsHospitalTableHeading'),
       chartsHospitalTableSubtitle: byId('chartsHospitalTableSubtitle'),
@@ -305,21 +332,25 @@ export function createSelectorsForPage(pageId) {
       chartsHospitalTableSearchLabel: byId('chartsHospitalTableSearchLabel'),
       chartsHospitalTableSearch: byId('chartsHospitalTableSearch'),
       chartsHospitalTableHint: byId('chartsHospitalTableHint'),
-      chartsHospitalTableRoot: byId('chartsHospitalTableRoot'),
+      chartsHospitalTableRoot,
+      chartsHospitalTableHeaders: byQueryAllIn(chartsHospitalTableRoot, 'thead th'),
+      chartsHospitalSortableHeaders: byQueryAllIn(chartsHospitalTableRoot, 'thead th[data-charts-hospital-sort]'),
       chartsHospitalTableBody: byId('chartsHospitalTableBody'),
       chartsHospitalDeptTrendCard: byId('chartsHospitalDeptTrendCard'),
       chartsHospitalDeptTrendTitle: byId('chartsHospitalDeptTrendTitle'),
       chartsHospitalDeptTrendSubtitle: byId('chartsHospitalDeptTrendSubtitle'),
       chartsHospitalDeptTrendCanvas: byId('chartsHospitalDeptTrendCanvas'),
       chartsHospitalDeptTrendEmpty: byId('chartsHospitalDeptTrendEmpty'),
-      chartCards: byQueryAll('.chart-grid .chart-card'),
-      chartCopyButtons: byQueryAll('[data-chart-copy]'),
-      chartDownloadButtons: byQueryAll('[data-chart-download]'),
-      tableDownloadButtons: byQueryAll('[data-table-download]'),
+      chartCards: byQueryAllIn(main, '.chart-grid .chart-card'),
+      chartCopyButtons: byQueryAllIn(main, '[data-chart-copy]'),
+      chartDownloadButtons: byQueryAllIn(main, '[data-chart-download]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
     };
   }
 
   if (normalizedPage === 'summaries') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -327,8 +358,8 @@ export function createSelectorsForPage(pageId) {
       footerSource: byId('footerSource'),
       themeToggleBtn: byId('themeToggleBtn'),
       scrollTopBtn: byId('scrollTopBtn'),
-      sectionNav: byQuery('.section-nav'),
-      sectionNavLinks: byQueryAll('.section-nav__link'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
       yearlyTable: byId('yearlyTable'),
       summariesReportsHeading: byId('summariesReportsHeading'),
       summariesReportsSubtitle: byId('summariesReportsSubtitle'),
@@ -349,8 +380,8 @@ export function createSelectorsForPage(pageId) {
       ageDistributionChart: byId('ageDistributionChart'),
       pspcDistributionChart: byId('pspcDistributionChart'),
       sexDistributionChart: byId('sexDistributionChart'),
-      reportExportButtons: byQueryAll('[data-report-export]'),
-      tableDownloadButtons: byQueryAll('[data-table-download]'),
+      reportExportButtons: byQueryAllIn(main, '[data-report-export]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
       monthlyHeading: byId('monthlyHeading'),
       monthlySubtitle: byId('monthlySubtitle'),
       monthlyCaption: byId('monthlyCaption'),
@@ -362,6 +393,8 @@ export function createSelectorsForPage(pageId) {
   }
 
   if (normalizedPage === 'recent') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -369,9 +402,9 @@ export function createSelectorsForPage(pageId) {
       footerSource: byId('footerSource'),
       themeToggleBtn: byId('themeToggleBtn'),
       scrollTopBtn: byId('scrollTopBtn'),
-      sectionNav: byQuery('.section-nav'),
-      sectionNavLinks: byQueryAll('.section-nav__link'),
-      tableDownloadButtons: byQueryAll('[data-table-download]'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
       recentHeading: byId('recentHeading'),
       recentSubtitle: byId('recentSubtitle'),
       recentCaption: byId('recentCaption'),
@@ -386,6 +419,10 @@ export function createSelectorsForPage(pageId) {
   }
 
   if (normalizedPage === 'feedback') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    const feedbackFilters = byId('feedbackFilters');
+    const feedbackTrendControls = byId('feedbackTrendControls');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -393,8 +430,8 @@ export function createSelectorsForPage(pageId) {
       footerSource: byId('footerSource'),
       themeToggleBtn: byId('themeToggleBtn'),
       scrollTopBtn: byId('scrollTopBtn'),
-      sectionNav: byQuery('.section-nav'),
-      sectionNavLinks: byQueryAll('.section-nav__link'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
       feedbackHeading: byId('feedbackHeading'),
       feedbackSubtitle: byId('feedbackSubtitle'),
       feedbackDescription: byId('feedbackDescription'),
@@ -405,27 +442,28 @@ export function createSelectorsForPage(pageId) {
       feedbackLocationFilter: byId('feedbackLocationFilter'),
       feedbackLocationLabel: byId('feedbackLocationLabel'),
       feedbackLocationChips: byId('feedbackLocationChips'),
-      feedbackFilterButtons: byQueryAll('[data-feedback-filter]'),
+      feedbackFilterButtons: byQueryAllIn(feedbackFilters, '[data-feedback-filter]'),
       feedbackCaption: byId('feedbackCaption'),
       feedbackCards: byId('feedbackCards'),
       feedbackTrendTitle: byId('feedbackTrendTitle'),
       feedbackTrendSubtitle: byId('feedbackTrendSubtitle'),
-      feedbackTrendControls: byId('feedbackTrendControls'),
+      feedbackTrendControls,
       feedbackTrendControlsLabel: byId('feedbackTrendControlsLabel'),
-      feedbackTrendButtons: byQueryAll('[data-trend-months]'),
+      feedbackTrendButtons: byQueryAllIn(feedbackTrendControls, '[data-trend-months]'),
       feedbackTrendSummary: byId('feedbackTrendSummary'),
       feedbackTrendSkeleton: byId('feedbackTrendSkeleton'),
       feedbackTrendMessage: byId('feedbackTrendMessage'),
       feedbackTrendChart: byId('feedbackTrendChart'),
       feedbackTableWrapper: byQuery('.table-wrapper--feedback'),
       feedbackTable: byId('feedbackTable'),
-      chartCopyButtons: byQueryAll('[data-chart-copy]'),
-      chartDownloadButtons: byQueryAll('[data-chart-download]'),
-      tableDownloadButtons: byQueryAll('[data-table-download]'),
+      chartCopyButtons: byQueryAllIn(main, '[data-chart-copy]'),
+      chartDownloadButtons: byQueryAllIn(main, '[data-chart-download]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
     };
   }
 
   if (normalizedPage === 'ed') {
+    const sectionNav = byQuery('.section-nav');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -433,8 +471,8 @@ export function createSelectorsForPage(pageId) {
       footerSource: byId('footerSource'),
       themeToggleBtn: byId('themeToggleBtn'),
       scrollTopBtn: byId('scrollTopBtn'),
-      sectionNav: byQuery('.section-nav'),
-      sectionNavLinks: byQueryAll('.section-nav__link'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
       edHeading: byId('edHeading'),
       edStatus: byId('edStatus'),
       edSearchInput: byId('edSearchInput'),
@@ -447,6 +485,14 @@ export function createSelectorsForPage(pageId) {
     };
   }
 
-  // Fallback for pages still migrating to page-scoped selectors.
-  return createSelectors();
+  return {
+    hero: byQuery('header.hero'),
+    title: byId('pageTitle'),
+    status: byId('status'),
+    footerSource: byId('footerSource'),
+    themeToggleBtn: byId('themeToggleBtn'),
+    scrollTopBtn: byId('scrollTopBtn'),
+    sectionNav: byQuery('.section-nav'),
+    sectionNavLinks: byQueryAll('.section-nav__link'),
+  };
 }

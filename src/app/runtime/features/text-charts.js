@@ -64,7 +64,9 @@ export function applyChartsText({
     selectors.chartsHospitalTableSearch.title = placeholder;
   }
   if (selectors.chartsHospitalTableRoot && hospitalTableText.columns) {
-    const headers = selectors.chartsHospitalTableRoot.querySelectorAll('thead th');
+    const headers = Array.isArray(selectors.chartsHospitalTableHeaders)
+      ? selectors.chartsHospitalTableHeaders
+      : [];
     const columns = hospitalTableText.columns;
     const values = [
       columns.department,

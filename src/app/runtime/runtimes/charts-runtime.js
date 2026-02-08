@@ -623,10 +623,12 @@ export async function runChartsRuntime(core) {
   const normalizeChartsHospitalTableDepartment = (value) => String(value || '').trim();
 
   const updateChartsHospitalTableHeaderSortIndicators = () => {
-    if (!selectors.chartsHospitalTableRoot) {
+    const headers = Array.isArray(selectors.chartsHospitalSortableHeaders)
+      ? selectors.chartsHospitalSortableHeaders
+      : [];
+    if (!headers.length) {
       return;
     }
-    const headers = selectors.chartsHospitalTableRoot.querySelectorAll('thead th[data-charts-hospital-sort]');
     const current = getChartsHospitalSortParts(dashboardState.chartsHospitalTableSort);
     headers.forEach((header) => {
       const key = String(header.getAttribute('data-charts-hospital-sort') || '').trim();

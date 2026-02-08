@@ -191,7 +191,13 @@ export function createFeedbackPanelFeature(deps) {
     if (selectors.feedbackLocationChips) {
       buildFeedbackChipButtons('location', config.location, selectors.feedbackLocationChips);
     }
-    selectors.feedbackFilterButtons = Array.from(document.querySelectorAll('[data-feedback-filter]'));
+    const respondentButtons = selectors.feedbackRespondentChips
+      ? Array.from(selectors.feedbackRespondentChips.querySelectorAll('[data-feedback-filter]'))
+      : [];
+    const locationButtons = selectors.feedbackLocationChips
+      ? Array.from(selectors.feedbackLocationChips.querySelectorAll('[data-feedback-filter]'))
+      : [];
+    selectors.feedbackFilterButtons = respondentButtons.concat(locationButtons);
   }
 
   function syncFeedbackFilterControls() {
