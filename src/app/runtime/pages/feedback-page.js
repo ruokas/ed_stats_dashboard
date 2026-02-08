@@ -1,5 +1,5 @@
-import { startFullPageApp } from '../../full-page-app.js?v=2026-02-08-fullpage-refresh-2';
+import { runFeedbackRuntime } from '../runtimes/feedback-runtime.js';
 
 export function runFeedbackPage(core) {
-  return startFullPageApp({ forcePageId: core?.pageId || 'feedback', skipGlobalInit: true });
+  return runFeedbackRuntime(core);
 }

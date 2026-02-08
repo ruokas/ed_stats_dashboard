@@ -22,6 +22,90 @@ export function createEdHandlers(context) {
     describeError,
     resolveColumnIndex,
   } = context;
+  const ED_WORKER_URL = new URL('data-worker.js?v=2026-02-08-ed-worker-1', window.location.href).toString();
+  const edDataCache = new Map();
+  let edWorkerCounter = 0;
+
+  function getCacheEntry(url) {
+    if (!url || !edDataCache.has(url)) {
+      return null;
+    }
+    const cached = edDataCache.get(url);
+    if (!cached || typeof cached !== 'object') {
+      return null;
+    }
+    return {
+      etag: cached.etag || '',
+      lastModified: cached.lastModified || '',
+      signature: cached.signature || '',
+      payload: cached.payload && typeof cached.payload === 'object'
+        ? {
+          records: Array.isArray(cached.payload.records) ? cached.payload.records : [],
+          summary: cached.payload.summary || createEmptyEdSummary(),
+          dispositions: Array.isArray(cached.payload.dispositions) ? cached.payload.dispositions : [],
+          daily: Array.isArray(cached.payload.daily) ? cached.payload.daily : [],
+          meta: cached.payload.meta && typeof cached.payload.meta === 'object' ? cached.payload.meta : { type: 'legacy' },
+        }
+        : null,
+    };
+  }
+
+  function writeCacheEntry(url, payload, downloadMeta = {}) {
+    if (!url || !payload || typeof payload !== 'object') {
+      return;
+    }
+    edDataCache.set(url, {
+      etag: downloadMeta.etag || '',
+      lastModified: downloadMeta.lastModified || '',
+      signature: downloadMeta.signature || '',
+      payload: {
+        records: Array.isArray(payload.records) ? payload.records : [],
+        summary: payload.summary || createEmptyEdSummary(),
+        dispositions: Array.isArray(payload.dispositions) ? payload.dispositions : [],
+        daily: Array.isArray(payload.daily) ? payload.daily : [],
+        meta: payload.meta && typeof payload.meta === 'object' ? payload.meta : { type: 'legacy' },
+      },
+    });
+  }
+
+  function runEdWorkerJob(csvText) {
+    if (typeof Worker !== 'function') {
+      return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
+    }
+    const jobId = `ed-job-${Date.now()}-${edWorkerCounter += 1}`;
+    const worker = new Worker(ED_WORKER_URL);
+    return new Promise((resolve, reject) => {
+      const cleanup = () => {
+        try {
+          worker.terminate();
+        } catch (error) {
+          console.warn('Nepavyko uždaryti ED workerio:', error);
+        }
+      };
+      worker.addEventListener('message', (event) => {
+        const data = event.data || {};
+        if (data.id !== jobId) {
+          return;
+        }
+        cleanup();
+        if (data.status === 'error') {
+          reject(new Error(data?.error?.message || 'ED worker klaida.'));
+          return;
+        }
+        resolve(data.payload || null);
+      });
+      worker.addEventListener('error', (event) => {
+        cleanup();
+        reject(event?.error || new Error(event?.message || 'ED worker klaida.'));
+      });
+      try {
+        worker.postMessage({ id: jobId, type: 'transformEdCsv', csvText });
+      } catch (error) {
+        cleanup();
+        reject(error);
+      }
+    });
+  }
 
 
   function createEmptyEdSummary(mode = 'legacy') {
@@ -878,7 +962,7 @@ export function createEdHandlers(context) {
         summary: aggregates.summary,
         dispositions: aggregates.dispositions,
         daily: aggregates.daily,
-        meta: { ...payload.meta, ...(aggregates.meta || {}) },
+        meta: { ...payload.meta, ...(aggregates.meta || {}), signature: options.signature || payload?.meta?.signature || '' },
         usingFallback: Boolean(options.usingFallback),
         lastErrorMessage: options.lastErrorMessage || '',
         error: options.error || null,
@@ -895,9 +979,39 @@ export function createEdHandlers(context) {
     }
 
     try {
-      const download = await downloadCsv(url, { onChunk: options?.onChunk });
-      const result = transformEdCsv(download.text);
-      return finalize(result);
+      const cachedEntry = getCacheEntry(url);
+      const download = await downloadCsv(url, {
+        cacheInfo: cachedEntry
+          ? {
+            etag: cachedEntry.etag,
+            lastModified: cachedEntry.lastModified,
+            signature: cachedEntry.signature,
+          }
+          : null,
+        onChunk: options?.onChunk,
+      });
+      if (download.status === 304 && cachedEntry?.payload) {
+        return {
+          ...cachedEntry.payload,
+          usingFallback: false,
+          lastErrorMessage: '',
+          error: null,
+          updatedAt: new Date(),
+        };
+      }
+      let workerPayload = null;
+      try {
+        workerPayload = await runEdWorkerJob(download.text);
+      } catch (workerError) {
+        const workerInfo = describeError(workerError, { code: 'ED_WORKER' });
+        console.warn(workerInfo.log, workerError);
+      }
+      const result = workerPayload && typeof workerPayload === 'object'
+        ? workerPayload
+        : transformEdCsv(download.text);
+      const finalized = finalize(result, { signature: download.signature || download.etag || download.lastModified || '' });
+      writeCacheEntry(url, finalized, download);
+      return finalized;
     } catch (error) {
       const errorInfo = describeError(error, { code: 'ED_FETCH' });
       return {

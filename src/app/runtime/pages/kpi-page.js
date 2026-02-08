@@ -1,7 +1,7 @@
 import { createClientStore, PerfMonitor } from '../../../../app.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
-import { createSelectors } from '../../../state/selectors.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import { computeDailyStats } from '../../../data/stats.js';
@@ -524,7 +524,7 @@ function setStatus(selectors, dashboardState, type, details = '') {
 export async function runKpiPage(core) {
   const pageId = core?.pageId || 'kpi';
   const pageConfig = core?.pageConfig || { kpi: true };
-  const selectors = createSelectors();
+  const selectors = createSelectorsForPage(pageId);
   const settings = await loadSettingsFromConfig(DEFAULT_SETTINGS);
   const getDefaultKpiFilters = () => createDefaultKpiFilters({ settings, DEFAULT_SETTINGS, DEFAULT_KPI_WINDOW_DAYS });
   const getDefaultChartFilters = () => createDefaultChartFilters();

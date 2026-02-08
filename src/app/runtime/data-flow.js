@@ -96,6 +96,20 @@ export function createDataFlow({
   let historicalHydrated = false;
   let visibilityHandlersBound = false;
   let deferredHydrationQueued = false;
+  let lastIssuedLoadToken = 0;
+
+  function isLoadTokenCurrent(token) {
+    return Number.isFinite(token) && token === lastIssuedLoadToken;
+  }
+
+  function computeMainDataSignature(dataset, cachedDailyStats) {
+    if (cachedDailyStats) {
+      return `session:${Array.isArray(cachedDailyStats) ? cachedDailyStats.length : 0}`;
+    }
+    const primarySignature = dataset?.meta?.primary?.signature || dataset?.meta?.primary?.etag || dataset?.meta?.primary?.lastModified || '';
+    const historicalSignature = dataset?.meta?.historical?.signature || dataset?.meta?.historical?.etag || dataset?.meta?.historical?.lastModified || '';
+    return `${primarySignature}|${historicalSignature}`;
+  }
 
   function readDailyStatsFromSessionCache() {
     if (!canUseDailyStatsCache) {
@@ -290,6 +304,8 @@ export function createDataFlow({
 
     dashboardState.loadCounter += 1;
     const runNumber = dashboardState.loadCounter;
+    const loadToken = (lastIssuedLoadToken += 1);
+    dashboardState.activeLoadToken = loadToken;
     const loadHandle = clientConfig.profilingEnabled
       ? perfMonitor.start('dashboard-load', { seansas: runNumber })
       : null;
@@ -340,6 +356,9 @@ export function createDataFlow({
         needsFeedbackData ? fetchFeedbackData() : Promise.resolve([]),
         needsEdData ? fetchEdData({ onChunk: edChunkReporter }) : Promise.resolve(null),
       ]);
+      if (!isLoadTokenCurrent(loadToken)) {
+        return;
+      }
 
       if (clientConfig.profilingEnabled && fetchHandle) {
         const primaryCache = cachedDailyStats
@@ -393,6 +412,20 @@ export function createDataFlow({
 
       const dataset = needsMainData && !cachedDailyStats ? (dataResult.value || {}) : {};
       const feedbackRecords = needsFeedbackData && feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
+      const currentMainSignature = needsMainData ? computeMainDataSignature(dataset, cachedDailyStats) : '';
+      const currentEdSignature = needsEdData ? (dashboardState.ed?.meta?.signature || '') : '';
+      const skipMainRender = Boolean(
+        shouldAutoRefresh
+        && dashboardState.hasLoadedOnce
+        && currentMainSignature
+        && dashboardState.lastMainDataSignature === currentMainSignature,
+      );
+      const skipEdRender = Boolean(
+        shouldAutoRefresh
+        && dashboardState.hasLoadedOnce
+        && currentEdSignature
+        && dashboardState.lastEdDataSignature === currentEdSignature,
+      );
       if (needsFeedbackData && feedbackResult.status === 'rejected') {
         const errorInfo = describeError(feedbackResult.reason, { code: 'FEEDBACK_DATA', message: TEXT.status.error });
         console.error(errorInfo.log, feedbackResult.reason);
@@ -429,7 +462,7 @@ export function createDataFlow({
           writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
         }
 
-        if (activeConfig.charts) {
+        if (activeConfig.charts && !skipMainRender) {
           populateChartYearOptions(dailyStats);
           if (typeof populateChartsHospitalTableYearOptions === 'function') {
             populateChartsHospitalTableYearOptions(combinedRecords);
@@ -469,16 +502,22 @@ export function createDataFlow({
             renderChartsHospitalTable(combinedRecords);
           }
         }
-
-        if (activeConfig.kpi) {
-          await applyKpiFiltersAndRender();
+        if (!isLoadTokenCurrent(loadToken)) {
+          return;
         }
 
-        if (activeConfig.recent) {
+        if (activeConfig.kpi && !skipMainRender) {
+          await applyKpiFiltersAndRender();
+        }
+        if (!isLoadTokenCurrent(loadToken)) {
+          return;
+        }
+
+        if (activeConfig.recent && !skipMainRender) {
           renderRecentTable(recentDailyStats);
         }
 
-        if (activeConfig.monthly || activeConfig.yearly) {
+        if ((activeConfig.monthly || activeConfig.yearly) && !skipMainRender) {
           // Naudojame jau paruoštus pilnus dailyStats iš workerio,
           // kad išvengtume perteklinio perskaičiavimo kiekvieno atnaujinimo metu.
           const summaryDailyStats = Array.isArray(dailyStats) && dailyStats.length
@@ -508,6 +547,9 @@ export function createDataFlow({
         applyFeedbackFiltersAndRender();
         applyFeedbackStatusNote();
       }
+      if (!isLoadTokenCurrent(loadToken)) {
+        return;
+      }
 
       setStatus('success');
       if (shouldFetchMainData && shouldDeferHistoricalOnThisLoad) {
@@ -528,8 +570,17 @@ export function createDataFlow({
           historicalChunkReporter: null,
         });
       }
-      if (needsEdData) {
+      if (needsEdData && !skipEdRender) {
         await renderEdDashboard(dashboardState.ed);
+      }
+      if (currentMainSignature) {
+        dashboardState.lastMainDataSignature = currentMainSignature;
+      }
+      if (currentEdSignature) {
+        dashboardState.lastEdDataSignature = currentEdSignature;
+      }
+      if (!isLoadTokenCurrent(loadToken)) {
+        return;
       }
     } catch (error) {
       const errorInfo = describeError(error, { code: 'DATA_PROCESS', message: 'Nepavyko apdoroti duomenų' });
@@ -550,10 +601,13 @@ export function createDataFlow({
         await renderEdDashboard(dashboardState.ed);
       }
     } finally {
-      dashboardState.loading = false;
-      dashboardState.hasLoadedOnce = true;
-      restartAutoRefreshTimer();
-      if (dashboardState.queuedReload) {
+      const isCurrentRun = isLoadTokenCurrent(loadToken);
+      if (isCurrentRun) {
+        dashboardState.loading = false;
+        dashboardState.hasLoadedOnce = true;
+        restartAutoRefreshTimer();
+      }
+      if (isCurrentRun && dashboardState.queuedReload) {
         dashboardState.queuedReload = false;
         window.setTimeout(() => {
           loadDashboard();

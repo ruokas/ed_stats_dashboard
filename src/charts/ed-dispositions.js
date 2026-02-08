@@ -24,11 +24,6 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
     messageEl.hidden = true;
   }
 
-  if (dashboardState.charts.edDispositions && typeof dashboardState.charts.edDispositions.destroy === 'function') {
-    dashboardState.charts.edDispositions.destroy();
-  }
-  dashboardState.charts.edDispositions = null;
-
   const validEntries = Array.isArray(dispositions)
     ? dispositions
       .filter((entry) => Number.isFinite(entry?.count) && entry.count >= 0)
@@ -145,6 +140,10 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
       if (!dataset) {
         return;
       }
+      const labelState = chart.$edLabelState || {};
+      const runtimeEntries = Array.isArray(labelState.validEntries) ? labelState.validEntries : [];
+      const runtimeColors = Array.isArray(labelState.colors) ? labelState.colors : [];
+      const runtimeTotal = Number.isFinite(labelState.total) ? labelState.total : 0;
       const meta = chart.getDatasetMeta(0);
       if (!meta?.data) {
         return;
@@ -159,11 +158,11 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
         if (!value) {
           return;
         }
-        const share = total > 0 ? value / total : null;
+        const share = runtimeTotal > 0 ? value / runtimeTotal : null;
         const percent = Number.isFinite(share) ? percentFormatter.format(share) : '';
         const pos = element.tooltipPosition();
-        const fill = labelTextColor(colors[index], '#ffffff', '#0f172a');
-        const categoryLabel = validEntries[index]?.categoryKey || String(index + 1);
+        const fill = labelTextColor(runtimeColors[index], '#ffffff', '#0f172a');
+        const categoryLabel = runtimeEntries[index]?.categoryKey || String(index + 1);
         ctx.fillStyle = fill;
         ctx.font = `800 24px ${computedStyles.fontFamily}`;
         ctx.fillText(String(categoryLabel), pos.x, pos.y - (percent ? 12 : 0));
@@ -176,21 +175,34 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
     },
   };
 
+  const existingChart = dashboardState.charts.edDispositions;
+  if (existingChart && existingChart.canvas !== canvas && typeof existingChart.destroy === 'function') {
+    existingChart.destroy();
+    dashboardState.charts.edDispositions = null;
+  }
+  const activeChart = dashboardState.charts.edDispositions;
+  const targetData = {
+    labels: legendLabels.map((item) => legendFormatter(item)),
+    datasets: [{
+      label: datasetLabel,
+      data: validEntries.map((entry) => entry.count),
+      backgroundColor: colors,
+      borderColor: theme === 'dark' ? palette.surface : '#ffffff',
+      borderWidth: 2,
+      hoverOffset: 12,
+    }],
+  };
+  if (activeChart && typeof activeChart.update === 'function') {
+    activeChart.data.labels = targetData.labels;
+    activeChart.data.datasets[0] = targetData.datasets[0];
+    activeChart.$edLabelState = { validEntries, colors, total };
+    activeChart.update('none');
+    return;
+  }
+
   dashboardState.charts.edDispositions = new Chart(ctx, {
     type: 'doughnut',
-    data: {
-      labels: legendLabels.map((item) => legendFormatter(item)),
-      datasets: [
-        {
-          label: datasetLabel,
-          data: validEntries.map((entry) => entry.count),
-          backgroundColor: colors,
-          borderColor: theme === 'dark' ? palette.surface : '#ffffff',
-          borderWidth: 2,
-          hoverOffset: 12,
-        },
-      ],
-    },
+    data: targetData,
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -214,4 +226,5 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
     },
     plugins: [categoryLabelPlugin],
   });
+  dashboardState.charts.edDispositions.$edLabelState = { validEntries, colors, total };
 }

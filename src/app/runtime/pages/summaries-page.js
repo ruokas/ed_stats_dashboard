@@ -1,5 +1,5 @@
 import { createClientStore, PerfMonitor } from '../../../../app.js';
-import { createSelectors } from '../../../state/selectors.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import {
@@ -1816,7 +1816,7 @@ async function handleReportExportClick(event, exportState) {
 
 export async function runSummariesPage(core) {
   const pageConfig = core?.pageConfig || { yearly: true };
-  const selectors = createSelectors();
+  const selectors = createSelectorsForPage(core?.pageId || 'summaries');
   const settings = await loadSettingsFromConfig(DEFAULT_SETTINGS);
   const dashboardState = createDashboardState({
     defaultChartFilters: createDefaultChartFilters,
