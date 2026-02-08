@@ -55,57 +55,98 @@ function upsertCard(card, config, summary, {
   card.className = 'ed-dashboard__card';
   card.setAttribute('role', 'listitem');
   setDatasetValue(card, 'cardKey', config.key || config.type || 'unknown');
-  card.classList.toggle('ed-dashboard__card--donut', config.type === 'donut');
-  card.classList.toggle('ed-dashboard__card--comments', config.type === 'comments');
-  card.replaceChildren();
-
-  const title = document.createElement('p');
-  title.className = 'ed-dashboard__card-title';
-  title.textContent = config.title;
-  if (config.type === 'donut') {
-    title.id = 'edDispositionsTitle';
+  const nextType = config.type === 'donut' ? 'donut' : (config.type === 'comments' ? 'comments' : 'default');
+  const currentType = String(card.dataset?.cardType || '');
+  card.classList.toggle('ed-dashboard__card--donut', nextType === 'donut');
+  card.classList.toggle('ed-dashboard__card--comments', nextType === 'comments');
+  if (currentType !== nextType) {
+    card.replaceChildren();
   }
-  card.appendChild(title);
+  setDatasetValue(card, 'cardType', nextType);
 
-  if (config.type === 'donut') {
-    const chartWrapper = document.createElement('div');
-    chartWrapper.className = 'ed-dashboard__donut-chart';
-    const canvas = document.createElement('canvas');
-    canvas.id = 'edDispositionsChart';
-    canvas.setAttribute('role', 'img');
+  let title = card.querySelector('.ed-dashboard__card-title');
+  if (!title) {
+    title = document.createElement('p');
+    title.className = 'ed-dashboard__card-title';
+    card.prepend(title);
+  }
+  title.textContent = config.title;
+
+  if (nextType === 'donut') {
+    title.id = 'edDispositionsTitle';
+    let chartWrapper = card.querySelector('.ed-dashboard__donut-chart');
+    if (!chartWrapper) {
+      chartWrapper = document.createElement('div');
+      chartWrapper.className = 'ed-dashboard__donut-chart';
+      card.appendChild(chartWrapper);
+    }
+    let canvas = chartWrapper.querySelector('#edDispositionsChart');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'edDispositionsChart';
+      canvas.setAttribute('role', 'img');
+      chartWrapper.replaceChildren(canvas);
+    }
     canvas.setAttribute('aria-labelledby', 'edDispositionsTitle');
-    chartWrapper.appendChild(canvas);
-    card.appendChild(chartWrapper);
-    const message = document.createElement('p');
-    message.className = 'ed-dashboard__chart-message';
-    message.id = 'edDispositionsMessage';
-    message.setAttribute('role', 'status');
-    message.hidden = true;
-    card.appendChild(message);
+    let message = card.querySelector('#edDispositionsMessage');
+    if (!message) {
+      message = document.createElement('p');
+      message.className = 'ed-dashboard__chart-message';
+      message.id = 'edDispositionsMessage';
+      message.setAttribute('role', 'status');
+      message.hidden = true;
+      card.appendChild(message);
+    }
     return;
   }
 
-  if (config.type === 'comments') {
+  title.removeAttribute('id');
+
+  if (nextType === 'comments') {
     const rawComments = Array.isArray(summary?.[config.key]) ? summary[config.key] : [];
     const metaValue = config.metaKey ? summary?.[config.metaKey] : '';
+    const staleNodes = Array.from(card.children).filter((node) => node !== title);
+    staleNodes.forEach((node) => node.remove());
     renderEdCommentsCard(card, config, rawComments, metaValue);
     return;
   }
 
-  const value = document.createElement('p');
-  value.className = 'ed-dashboard__card-value';
+  const staleDonutNodes = card.querySelector('.ed-dashboard__donut-chart');
+  if (staleDonutNodes) {
+    staleDonutNodes.remove();
+  }
+  const staleMessage = card.querySelector('#edDispositionsMessage');
+  if (staleMessage) {
+    staleMessage.remove();
+  }
+
+  let value = card.querySelector('.ed-dashboard__card-value');
+  if (!value) {
+    value = document.createElement('p');
+    value.className = 'ed-dashboard__card-value';
+    card.appendChild(value);
+  }
   const { text, primaryRaw, secondaryRaw } = formatCardDisplayValue(config, summary, formatEdCardValue);
   value.textContent = text;
-  card.appendChild(value);
-  const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary);
-  visuals.forEach((node) => card.appendChild(node));
 
-  const meta = document.createElement('p');
-  meta.className = 'ed-dashboard__card-meta';
+  let visualsRoot = card.querySelector('.ed-dashboard__card-visuals');
+  if (!visualsRoot) {
+    visualsRoot = document.createElement('div');
+    visualsRoot.className = 'ed-dashboard__card-visuals';
+    card.appendChild(visualsRoot);
+  }
+  const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary);
+  visualsRoot.replaceChildren(...visuals);
+
+  let meta = card.querySelector('.ed-dashboard__card-meta');
+  if (!meta) {
+    meta = document.createElement('p');
+    meta.className = 'ed-dashboard__card-meta';
+    card.appendChild(meta);
+  }
   const metaRaw = config.metaKey ? summary?.[config.metaKey] : null;
   const metaText = typeof metaRaw === 'string' ? metaRaw.trim() : (metaRaw != null ? String(metaRaw).trim() : '');
   meta.textContent = metaText.length ? metaText : (config.description || '');
-  card.appendChild(meta);
 }
 
 function upsertSection(container, section, sectionIndex, groupedSections, sectionDefinitions, TEXT, createEdSectionIcon, summary, deps) {
@@ -119,50 +160,92 @@ function upsertSection(container, section, sectionIndex, groupedSections, sectio
     container.appendChild(sectionEl);
   }
   const shouldRenderHeader = Boolean(section.title || section.description || groupedSections.length > 1);
-  sectionEl.replaceChildren();
+  let header = sectionEl.querySelector('.ed-dashboard__section-header');
   let sectionLabelId = '';
   if (shouldRenderHeader) {
-    const header = document.createElement('header');
-    header.className = 'ed-dashboard__section-header';
-    const iconWrapper = document.createElement('span');
-    iconWrapper.className = 'ed-dashboard__section-icon';
-    iconWrapper.appendChild(createEdSectionIcon(section.icon || (section.key !== 'default' ? section.key : 'default')));
-    header.appendChild(iconWrapper);
-    const textWrapper = document.createElement('div');
-    textWrapper.className = 'ed-dashboard__section-header-text';
-    const titleEl = document.createElement('h3');
+    if (!header) {
+      header = document.createElement('header');
+      header.className = 'ed-dashboard__section-header';
+      sectionEl.prepend(header);
+    }
+    let iconWrapper = header.querySelector('.ed-dashboard__section-icon');
+    if (!iconWrapper) {
+      iconWrapper = document.createElement('span');
+      iconWrapper.className = 'ed-dashboard__section-icon';
+      header.prepend(iconWrapper);
+    }
+    iconWrapper.replaceChildren(createEdSectionIcon(section.icon || (section.key !== 'default' ? section.key : 'default')));
+    let textWrapper = header.querySelector('.ed-dashboard__section-header-text');
+    if (!textWrapper) {
+      textWrapper = document.createElement('div');
+      textWrapper.className = 'ed-dashboard__section-header-text';
+      header.appendChild(textWrapper);
+    }
+    let titleEl = textWrapper.querySelector('.ed-dashboard__section-title');
+    if (!titleEl) {
+      titleEl = document.createElement('h3');
+      titleEl.className = 'ed-dashboard__section-title';
+      textWrapper.prepend(titleEl);
+    }
     sectionLabelId = `edSectionTitle-${String(section.key || sectionIndex).replace(/[^a-z0-9_-]/gi, '') || sectionIndex}`;
-    titleEl.className = 'ed-dashboard__section-title';
     titleEl.id = sectionLabelId;
     titleEl.textContent = section.title || sectionDefinitions?.default?.title || TEXT.ed.title || 'RŠL SMPS skydelis';
-    textWrapper.appendChild(titleEl);
+    let descriptionEl = textWrapper.querySelector('.ed-dashboard__section-description');
     if (section.description || sectionDefinitions?.default?.description) {
-      const descriptionEl = document.createElement('p');
-      descriptionEl.className = 'ed-dashboard__section-description';
+      if (!descriptionEl) {
+        descriptionEl = document.createElement('p');
+        descriptionEl.className = 'ed-dashboard__section-description';
+        textWrapper.appendChild(descriptionEl);
+      }
       descriptionEl.textContent = section.description || sectionDefinitions?.default?.description || '';
-      textWrapper.appendChild(descriptionEl);
+    } else if (descriptionEl) {
+      descriptionEl.remove();
     }
-    header.appendChild(textWrapper);
-    sectionEl.appendChild(header);
     sectionEl.setAttribute('aria-labelledby', sectionLabelId);
   } else {
+    if (header) {
+      header.remove();
+    }
     sectionEl.removeAttribute('aria-labelledby');
   }
-  const cardsWrapper = document.createElement('div');
-  cardsWrapper.className = 'ed-dashboard__section-grid';
+  let cardsWrapper = sectionEl.querySelector('.ed-dashboard__section-grid');
+  if (!cardsWrapper) {
+    cardsWrapper = document.createElement('div');
+    cardsWrapper.className = 'ed-dashboard__section-grid';
+    sectionEl.appendChild(cardsWrapper);
+  }
   cardsWrapper.setAttribute('role', 'list');
   if (sectionLabelId) {
     cardsWrapper.setAttribute('aria-labelledby', sectionLabelId);
+  } else {
+    cardsWrapper.removeAttribute('aria-labelledby');
   }
+  const existingCards = new Map(
+    Array.from(cardsWrapper.querySelectorAll('.ed-dashboard__card[data-card-key]'))
+      .map((node) => [String(node.dataset.cardKey || ''), node]),
+  );
+  const nextCardKeys = new Set();
   (Array.isArray(section.cards) ? section.cards : []).forEach((config) => {
     if (!config || typeof config !== 'object') {
       return;
     }
-    const card = document.createElement('article');
+    const cardKey = String(config.key || config.type || '');
+    if (!cardKey) {
+      return;
+    }
+    nextCardKeys.add(cardKey);
+    let card = existingCards.get(cardKey);
+    if (!card) {
+      card = document.createElement('article');
+    }
     upsertCard(card, config, summary, deps);
     cardsWrapper.appendChild(card);
   });
-  sectionEl.appendChild(cardsWrapper);
+  existingCards.forEach((node, key) => {
+    if (!nextCardKeys.has(key)) {
+      node.remove();
+    }
+  });
 }
 
 export function createEdRenderer(env) {
@@ -215,11 +298,11 @@ export function createEdRenderer(env) {
       enrichSummaryWithOverviewFallback,
     });
     const { dataset, summary, dispositions, displayVariant, cardConfigs, dispositionsText } = model;
-    resetEdCommentRotation();
     const renderKey = buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant);
     const mustPatchCards = dashboardState.edCardsRenderKey !== renderKey;
 
     if (mustPatchCards) {
+      resetEdCommentRotation();
       const { sectionDefinitions, groupedSections } = buildEdSectionsModel({ TEXT, cardConfigs });
       const activeSectionKeys = new Set((Array.isArray(groupedSections) ? groupedSections : []).map((section, index) => section.key || `section-${index}`));
       Array.from(selectors.edCards.querySelectorAll('.ed-dashboard__section')).forEach((sectionEl) => {
@@ -247,9 +330,9 @@ export function createEdRenderer(env) {
       dashboardState.edCardsRenderKey = renderKey;
     }
 
-    selectors.edDispositionsTitle = document.getElementById('edDispositionsTitle');
-    selectors.edDispositionsChart = document.getElementById('edDispositionsChart');
-    selectors.edDispositionsMessage = document.getElementById('edDispositionsMessage');
+    selectors.edDispositionsTitle = selectors.edCards.querySelector('#edDispositionsTitle');
+    selectors.edDispositionsChart = selectors.edCards.querySelector('#edDispositionsChart');
+    selectors.edDispositionsMessage = selectors.edCards.querySelector('#edDispositionsMessage');
     if (selectors.edDispositionsTitle) {
       selectors.edDispositionsTitle.textContent = dispositionsText.title || '';
     }
