@@ -166,10 +166,6 @@ export async function renderFeedbackTrendChart(env, monthlyStats) {
     return;
   }
 
-  if (dashboardState.charts.feedbackTrend && typeof dashboardState.charts.feedbackTrend.destroy === 'function') {
-    dashboardState.charts.feedbackTrend.destroy();
-  }
-
   const palette = getThemePalette();
   const styleTarget = getThemeStyleTarget();
   Chart.defaults.color = palette.textColor;
@@ -339,7 +335,7 @@ export async function renderFeedbackTrendChart(env, monthlyStats) {
     order: 1,
   } : null;
 
-  dashboardState.charts.feedbackTrend = new Chart(ctx, {
+  const chartConfig = {
     type: 'line',
     data: {
       labels,
@@ -422,5 +418,22 @@ export async function renderFeedbackTrendChart(env, monthlyStats) {
         } : {}),
       },
     },
-  });
+  };
+
+  const existingChart = dashboardState.charts.feedbackTrend;
+  const canReuse = existingChart
+    && existingChart.canvas === canvas
+    && existingChart.config?.type === 'line';
+  if (canReuse) {
+    existingChart.data.labels = chartConfig.data.labels;
+    existingChart.data.datasets = chartConfig.data.datasets;
+    existingChart.options = chartConfig.options;
+    existingChart.config.plugins = chartConfig.plugins;
+    existingChart.update('none');
+    return;
+  }
+  if (existingChart && typeof existingChart.destroy === 'function') {
+    existingChart.destroy();
+  }
+  dashboardState.charts.feedbackTrend = new Chart(ctx, chartConfig);
 }

@@ -60,11 +60,10 @@ export function renderDailyChart(env, dailyStats, period, ChartLib, palette) {
   Chart.defaults.font.family = getComputedStyle(styleTarget).fontFamily;
   Chart.defaults.borderColor = themePalette.gridColor;
 
-  if (dashboardState.charts.daily) {
-    dashboardState.charts.daily.destroy();
-  }
-
   if (!scopedData.length) {
+    if (dashboardState.charts.daily && typeof dashboardState.charts.daily.destroy === 'function') {
+      dashboardState.charts.daily.destroy();
+    }
     dashboardState.charts.daily = null;
     return;
   }
@@ -105,7 +104,7 @@ export function renderDailyChart(env, dailyStats, period, ChartLib, palette) {
   const weekendColors = useWeekendColors
     ? weekendFlags.map((isWeekend) => (isWeekend ? themePalette.weekendAccent : themePalette.accent))
     : null;
-  dashboardState.charts.daily = new Chart(ctx, {
+  const chartConfig = {
     type: chartType,
     data: {
       labels,
@@ -250,5 +249,21 @@ export function renderDailyChart(env, dailyStats, period, ChartLib, palette) {
         },
       },
     },
-  });
+  };
+
+  const existingChart = dashboardState.charts.daily;
+  const canReuse = existingChart
+    && existingChart.canvas === canvas
+    && existingChart.config?.type === chartType;
+  if (canReuse) {
+    existingChart.data.labels = chartConfig.data.labels;
+    existingChart.data.datasets = chartConfig.data.datasets;
+    existingChart.options = chartConfig.options;
+    existingChart.update('none');
+    return;
+  }
+  if (existingChart && typeof existingChart.destroy === 'function') {
+    existingChart.destroy();
+  }
+  dashboardState.charts.daily = new Chart(ctx, chartConfig);
 }
