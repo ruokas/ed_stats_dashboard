@@ -1,3 +1,5 @@
-import { createFullPageRunner } from './full-page-composition.js';
+import { startFullPageApp } from '../../full-page-app.js?v=2026-02-08-fullpage-refresh-2';
 
-export const runRecentPage = createFullPageRunner('recent');
+export function runRecentPage(core) {
+  return startFullPageApp({ forcePageId: core?.pageId || 'recent', skipGlobalInit: true });
+}

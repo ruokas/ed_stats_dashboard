@@ -29,7 +29,6 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - `summaries`: `src/app/runtime/pages/summaries-page.js`
 - `feedback`: `src/app/runtime/pages/feedback-page.js`
 - `ed`: `src/app/runtime/pages/ed-page.js`
-- Bendras `charts/recent/feedback/ed` suderinamumo kompozicijos adapteris: `src/app/runtime/pages/full-page-composition.js`
 - Legacy monolitas perkeltas i `src/app/full-page-app.js`, o `src/app/runtime-full.js` paliktas kaip suderinamumo shim.
 - Legacy runner kelias pašalintas: nebenaudojami `runtime-legacy` ir `legacy-runner`.
 
