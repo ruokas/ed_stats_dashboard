@@ -103,14 +103,21 @@ export function createEdHandlers(context) {
     });
   }
 
-  function runEdWorkerJob(csvText, workerOptions = {}) {
+  function runEdWorkerJob(csvText, workerOptions = {}, signal = null) {
     if (typeof Worker !== 'function') {
       return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
+    }
+    if (signal?.aborted) {
+      return Promise.reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
     }
     const jobId = `ed-job-${Date.now()}-${edWorkerCounter += 1}`;
     const worker = new Worker(ED_WORKER_URL);
     return new Promise((resolve, reject) => {
+      let abortHandler = null;
       const cleanup = () => {
+        if (signal && abortHandler) {
+          signal.removeEventListener('abort', abortHandler);
+        }
         try {
           worker.terminate();
         } catch (error) {
@@ -133,6 +140,13 @@ export function createEdHandlers(context) {
         cleanup();
         reject(event?.error || new Error(event?.message || 'ED worker klaida.'));
       });
+      if (signal) {
+        abortHandler = () => {
+          cleanup();
+          reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
+        };
+        signal.addEventListener('abort', abortHandler, { once: true });
+      }
       try {
         worker.postMessage({ id: jobId, type: 'transformEdCsv', csvText, options: workerOptions });
       } catch (error) {
@@ -1066,6 +1080,7 @@ export function createEdHandlers(context) {
           }
           : null,
         onChunk: options?.onChunk,
+        signal,
       });
       if (download.status === 304 && cachedEntry?.payload) {
         const fromCache = {
@@ -1096,7 +1111,7 @@ export function createEdHandlers(context) {
       }
       let workerPayload = null;
       try {
-        workerPayload = await runEdWorkerJob(download.text, options?.workerOptions || {});
+        workerPayload = await runEdWorkerJob(download.text, options?.workerOptions || {}, signal);
       } catch (workerError) {
         const workerInfo = describeError(workerError, { code: 'ED_WORKER' });
         console.warn(workerInfo.log, workerError);
@@ -1111,6 +1126,9 @@ export function createEdHandlers(context) {
       writeCacheEntry(url, finalized, download);
       return finalized;
     } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw error;
+      }
       const errorInfo = describeError(error, { code: 'ED_FETCH' });
       return {
         ...empty,
@@ -1127,3 +1145,4 @@ export function createEdHandlers(context) {
     fetchEdData,
   };
 }
+    const signal = options?.signal || null;

@@ -108,9 +108,15 @@ export function createDataFlow({
   let visibilityHandlersBound = false;
   let deferredHydrationQueued = false;
   let lastIssuedLoadToken = 0;
+  let activeLoadAbortController = null;
+  let activeHydrationAbortController = null;
 
   function isLoadTokenCurrent(token) {
     return Number.isFinite(token) && token === lastIssuedLoadToken;
+  }
+
+  function isAbortError(error) {
+    return Boolean(error && typeof error === 'object' && error.name === 'AbortError');
   }
 
   function computeMainDataSignature(dataset, cachedDailyStats) {
@@ -211,6 +217,11 @@ export function createDataFlow({
     if (!supportsDeferredMainHydration || historicalHydrationInFlight || historicalHydrated) {
       return;
     }
+    if (activeHydrationAbortController && !activeHydrationAbortController.signal.aborted) {
+      activeHydrationAbortController.abort();
+    }
+    const hydrationController = new AbortController();
+    activeHydrationAbortController = hydrationController;
     historicalHydrationInFlight = true;
     try {
       const skipHistoricalForHydration = Boolean(isEdOnlyPage);
@@ -219,6 +230,7 @@ export function createDataFlow({
         onHistoricalChunk: historicalChunkReporter,
         onWorkerProgress: workerProgressReporter,
         skipHistorical: skipHistoricalForHydration,
+        signal: hydrationController.signal,
       });
       if (!dataset || dashboardState.loading || runNumber !== dashboardState.loadCounter) {
         return;
@@ -271,10 +283,16 @@ export function createDataFlow({
       writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
       historicalHydrated = true;
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       const errorInfo = describeError(error, { code: 'CHART_HISTORICAL_HYDRATE' });
       console.warn(errorInfo.log, error);
     } finally {
       historicalHydrationInFlight = false;
+      if (activeHydrationAbortController === hydrationController) {
+        activeHydrationAbortController = null;
+      }
     }
   }
 
@@ -310,6 +328,9 @@ export function createDataFlow({
   async function loadDashboard() {
     if (dashboardState.loading) {
       dashboardState.queuedReload = true;
+      if (activeLoadAbortController && !activeLoadAbortController.signal.aborted) {
+        activeLoadAbortController.abort();
+      }
       return;
     }
 
@@ -320,6 +341,14 @@ export function createDataFlow({
     const runNumber = dashboardState.loadCounter;
     const loadToken = (lastIssuedLoadToken += 1);
     dashboardState.activeLoadToken = loadToken;
+    if (activeHydrationAbortController && !activeHydrationAbortController.signal.aborted) {
+      activeHydrationAbortController.abort();
+    }
+    if (activeLoadAbortController && !activeLoadAbortController.signal.aborted) {
+      activeLoadAbortController.abort();
+    }
+    const loadAbortController = new AbortController();
+    activeLoadAbortController = loadAbortController;
     const loadHandle = clientConfig.profilingEnabled
       ? perfMonitor.start('dashboard-load', { seansas: runNumber })
       : null;
@@ -367,12 +396,16 @@ export function createDataFlow({
               onHistoricalChunk: historicalChunkReporter,
               onWorkerProgress: workerProgressReporter,
               skipHistorical: shouldSkipHistoricalOnMainFetch,
+              signal: loadAbortController.signal,
             })
           : Promise.resolve(null),
-        needsFeedbackData ? fetchFeedbackData() : Promise.resolve([]),
-        needsEdData ? fetchEdData({ onChunk: edChunkReporter }) : Promise.resolve(null),
+        needsFeedbackData ? fetchFeedbackData({ signal: loadAbortController.signal }) : Promise.resolve([]),
+        needsEdData ? fetchEdData({ onChunk: edChunkReporter, signal: loadAbortController.signal }) : Promise.resolve(null),
       ]);
       if (!isLoadTokenCurrent(loadToken)) {
+        return;
+      }
+      if (loadAbortController.signal.aborted) {
         return;
       }
 
@@ -608,6 +641,9 @@ export function createDataFlow({
         return;
       }
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       const errorInfo = describeError(error, { code: 'DATA_PROCESS', message: 'Nepavyko apdoroti duomenų' });
       console.error(errorInfo.log, error);
       dashboardState.usingFallback = false;
@@ -627,6 +663,9 @@ export function createDataFlow({
       }
     } finally {
       const isCurrentRun = isLoadTokenCurrent(loadToken);
+      if (activeLoadAbortController === loadAbortController) {
+        activeLoadAbortController = null;
+      }
       if (isCurrentRun) {
         dashboardState.loading = false;
         dashboardState.hasLoadedOnce = true;

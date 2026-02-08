@@ -144,14 +144,21 @@ export function createMainDataHandlers(context) {
     inMemoryDataCache.delete(key);
   }
 
-  function runWorkerJob(message, { onProgress } = {}) {
+  function runWorkerJob(message, { onProgress, signal } = {}) {
     if (typeof Worker !== 'function') {
       return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
+    }
+    if (signal?.aborted) {
+      return Promise.reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
     }
     const jobId = `data-job-${Date.now()}-${dataWorkerCounter += 1}`;
     const worker = new Worker(DATA_WORKER_URL);
     return new Promise((resolve, reject) => {
+      let abortHandler = null;
       const cleanup = () => {
+        if (signal && abortHandler) {
+          signal.removeEventListener('abort', abortHandler);
+        }
         try {
           worker.terminate();
         } catch (error) {
@@ -185,6 +192,13 @@ export function createMainDataHandlers(context) {
         cleanup();
         reject(event.error || new Error(event.message || 'Worker klaida.'));
       });
+      if (signal) {
+        abortHandler = () => {
+          cleanup();
+          reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
+        };
+        signal.addEventListener('abort', abortHandler, { once: true });
+      }
       try {
         worker.postMessage({
           id: jobId,
@@ -229,6 +243,7 @@ export function createMainDataHandlers(context) {
     const onWorkerProgress = typeof config?.onWorkerProgress === 'function'
       ? config.onWorkerProgress
       : null;
+    const signal = config?.signal || null;
     const workerProgressStep = onWorkerProgress
       ? (Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
         ? config.workerProgressStep
@@ -256,7 +271,7 @@ export function createMainDataHandlers(context) {
     const cacheEntry = readDataCache(trimmedUrl);
 
     try {
-      let download = await downloadCsv(trimmedUrl, { cacheInfo: cacheEntry, onChunk });
+      let download = await downloadCsv(trimmedUrl, { cacheInfo: cacheEntry, onChunk, signal });
       if (download.status === 304) {
         if (cacheEntry?.records && cacheEntry?.dailyStats) {
           assignDataset({
@@ -273,12 +288,13 @@ export function createMainDataHandlers(context) {
           return result;
         }
         clearDataCache(trimmedUrl);
-        download = await downloadCsv(trimmedUrl, { onChunk });
+        download = await downloadCsv(trimmedUrl, { onChunk, signal });
       }
 
       const dataset = await runDataWorker(download.text, workerOptions, {
         onProgress: onWorkerProgress,
         progressStep: workerProgressStep,
+        signal,
       });
       assignDataset({
         records: Array.isArray(dataset?.records) ? dataset.records : [],
@@ -301,6 +317,9 @@ export function createMainDataHandlers(context) {
       });
       return result;
     } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw error;
+      }
       const errorInfo = describeError(error, { code: 'DATA_FETCH' });
       console.error(errorInfo.log, error);
       result.lastErrorMessage = errorInfo.userMessage;
@@ -330,11 +349,13 @@ export function createMainDataHandlers(context) {
   async function fetchData(options = {}) {
     const skipHistorical = options?.skipHistorical === true;
     const csvSettings = settings?.csv || DEFAULT_SETTINGS.csv;
+    const signal = options?.signal || null;
     const mainConfig = {
       url: settings?.dataSource?.url || DEFAULT_SETTINGS.dataSource.url,
       missingMessage: 'Nenurodytas pagrindinis duomenų URL.',
       onChunk: typeof options?.onPrimaryChunk === 'function' ? options.onPrimaryChunk : null,
       onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+      signal,
     };
     const workerOptions = {
       csvSettings,
@@ -354,6 +375,7 @@ export function createMainDataHandlers(context) {
         missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
         onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
         onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+        signal,
       }
       : null;
     const historicalShouldAttempt = Boolean(normalizedHistoricalConfig)
