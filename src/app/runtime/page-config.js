@@ -8,12 +8,12 @@ export const PAGE_CONFIG = {
 };
 
 export const RUNTIME_MODULE_BY_PAGE = {
-  kpi: './runtime/pages/kpi-page.js',
-  charts: './runtime/pages/charts-page.js',
-  recent: './runtime/pages/recent-page.js',
-  summaries: './runtime/pages/summaries-page.js',
-  feedback: './runtime/pages/feedback-page.js',
-  ed: './runtime/pages/ed-page.js',
+  kpi: './runtime/pages/kpi-page.js?v=2026-02-08-runtime-refresh-1',
+  charts: './runtime/pages/charts-page.js?v=2026-02-08-runtime-refresh-2',
+  recent: './runtime/pages/recent-page.js?v=2026-02-08-runtime-refresh-1',
+  summaries: './runtime/pages/summaries-page.js?v=2026-02-08-runtime-refresh-1',
+  feedback: './runtime/pages/feedback-page.js?v=2026-02-08-runtime-refresh-1',
+  ed: './runtime/pages/ed-page.js?v=2026-02-08-runtime-refresh-1',
 };
 
 const CHART_PRELOAD_PAGES = new Set(['charts', 'ed']);

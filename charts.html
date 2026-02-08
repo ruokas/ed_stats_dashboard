@@ -573,8 +573,90 @@
         </figure>
       </div>
     </section>
+    <section class="section section--compact" aria-labelledby="chartsHospitalTableHeading" data-section="charts-hospital-table">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="chartsHospitalTableHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 5h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 19h16" />
+                </svg>
+              </span>
+              <span class="section-title__text">Stacionarizuoti pacientai pagal skyrių ir SPS trukmę</span>
+            </h2>
+            <p id="chartsHospitalTableSubtitle" class="section__subtitle">Pasiskirstymas pagal skyrių ir buvimo SPS intervalus</p>
+          </div>
+        </div>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#chartsHospitalTableRoot"
+            data-table-title="Stacionarizacijos pagal skyrių ir SPS trukmę"
+            aria-label="Parsisiųsti stacionarizacijų lentelę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#chartsHospitalTableRoot"
+            data-table-title="Stacionarizacijos pagal skyrių ir SPS trukmę"
+            aria-label="Parsisiųsti stacionarizacijų lentelę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
+        </div>
+      </div>
 
-    
+      <div class="charts-hospital-table-controls" role="group" aria-label="Stacionarizacijų lentelės filtrai">
+        <label class="charts-hospital-table-controls__field" for="chartsHospitalTableYear">
+          <span id="chartsHospitalTableYearLabel">Metai</span>
+          <select id="chartsHospitalTableYear" aria-label="Filtruoti stacionarizacijų lentelę pagal metus">
+            <option value="all">Visi metai</option>
+          </select>
+        </label>
+        <label class="charts-hospital-table-controls__field" for="chartsHospitalTableSearch">
+          <span id="chartsHospitalTableSearchLabel">Skyriaus paieška</span>
+          <input id="chartsHospitalTableSearch" type="search" placeholder="Įveskite skyriaus pavadinimą" aria-label="Ieškoti skyriaus stacionarizacijų lentelėje">
+        </label>
+      </div>
+
+      <p id="chartsHospitalTableHint" class="charts-hospital-table-hint">% skaičiuojami eilutėje, pagal skyrių.</p>
+
+      <div class="table-wrapper charts-hospital-table-wrapper" role="region" aria-live="polite" aria-labelledby="chartsHospitalTableHeading">
+        <table id="chartsHospitalTableRoot" aria-describedby="chartsHospitalTableSubtitle">
+          <caption id="chartsHospitalTableCaption" class="sr-only">Metinis stacionarizuotų pacientų pasiskirstymas pagal skyrių ir SPS buvimo trukmės intervalus.</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-charts-hospital-sort="name">Nukreiptas į padalinį</th>
+              <th scope="col" data-charts-hospital-sort="lt4">&lt;4</th>
+              <th scope="col" data-charts-hospital-sort="4to8">4-8</th>
+              <th scope="col" data-charts-hospital-sort="8to16">8-16</th>
+              <th scope="col" data-charts-hospital-sort="gt16">&gt;16</th>
+              <th scope="col" data-charts-hospital-sort="unclassified">Neklasifikuota</th>
+              <th scope="col" data-charts-hospital-sort="total">Bendroji suma</th>
+            </tr>
+          </thead>
+          <tbody id="chartsHospitalTableBody">
+            <tr>
+              <td colspan="7">Lentelė bus parodyta užkrovus failą.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <article id="chartsHospitalDeptTrendCard" class="charts-hospital-trend" aria-live="polite">
+        <div class="charts-hospital-trend__header">
+          <h3 id="chartsHospitalDeptTrendTitle">Skyriaus dinamika per metus</h3>
+          <p id="chartsHospitalDeptTrendSubtitle">Pasirinkite skyrių lentelėje, kad matytumėte jo SPS trukmės % dinamiką pagal metus.</p>
+        </div>
+        <p id="chartsHospitalDeptTrendEmpty" class="charts-hospital-trend__empty">Šiam skyriui nepakanka duomenų metinei dinamikai.</p>
+        <canvas id="chartsHospitalDeptTrendCanvas" height="240" aria-label="Skyriaus metinės dinamikos grafikas" hidden></canvas>
+      </article>
+    </section>
 </div>
 </main>
 
@@ -596,8 +678,9 @@
     </div>
   </footer>
 
-    <script type="module" src="main.js"></script>
+    <script type="module" src="main.js?v=2026-02-08-entry-refresh-1"></script>
 
 
 </body>
 </html>
+

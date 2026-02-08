@@ -1,5 +1,3 @@
-import { startFullPageApp } from '../../runtime-full.js';
+import { createFullPageRunner } from './full-page-composition.js';
 
-export function runEdPage(core) {
-  return startFullPageApp({ forcePageId: core?.pageId || 'ed', skipGlobalInit: true });
-}
+export const runEdPage = createFullPageRunner('ed');

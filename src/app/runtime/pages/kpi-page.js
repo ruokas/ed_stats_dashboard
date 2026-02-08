@@ -3,7 +3,7 @@ import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import { createSelectors } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
-import { createMainDataHandlers } from '../../../data/main-data.js';
+import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import { computeDailyStats } from '../../../data/stats.js';
 import { createKpiRenderer } from '../../../render/kpi.js';
 import { createKpiFlow } from '../kpi-flow.js';
@@ -42,6 +42,12 @@ import {
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
+  applyTheme,
+  getThemePalette,
+  getThemeStyleTarget,
+  initializeTheme,
+} from '../features/theme.js';
+import {
   createTextSignature,
   describeCacheMeta,
   describeError,
@@ -61,28 +67,6 @@ function updateClientConfig(patch = {}) {
   clientConfig = { ...clientConfig, ...patch };
   clientStore.save(clientConfig);
   return clientConfig;
-}
-
-function getThemeStyleTarget() {
-  return document.body || document.documentElement;
-}
-
-function getThemePalette() {
-  const styleTarget = getThemeStyleTarget();
-  const rootStyles = getComputedStyle(styleTarget);
-  return {
-    accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
-    accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
-    weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
-    weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
-    success: rootStyles.getPropertyValue('--color-success').trim() || '#16a34a',
-    danger: rootStyles.getPropertyValue('--color-danger').trim() || '#c34b55',
-    dangerSoft: rootStyles.getPropertyValue('--color-danger-soft').trim() || 'rgba(195, 75, 85, 0.28)',
-    textColor: rootStyles.getPropertyValue('--color-text').trim() || '#0f172a',
-    textMuted: rootStyles.getPropertyValue('--color-text-muted').trim() || '#475569',
-    gridColor: rootStyles.getPropertyValue('--chart-grid').trim() || 'rgba(15, 23, 42, 0.12)',
-    surface: rootStyles.getPropertyValue('--color-surface').trim() || '#f8fafc',
-  };
 }
 
 function dateKeyToUtc(dateKey) {
@@ -537,45 +521,6 @@ function setStatus(selectors, dashboardState, type, details = '') {
   statusEl.textContent = TEXT.status.success();
 }
 
-function updateThemeToggleState(selectors, theme) {
-  if (!selectors.themeToggleBtn) {
-    return;
-  }
-  const isDark = theme === 'dark';
-  selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
-  selectors.themeToggleBtn.setAttribute('data-theme', isDark ? 'dark' : 'light');
-}
-
-function applyTheme(dashboardState, selectors, theme, { persist = false } = {}) {
-  const normalized = theme === 'dark' ? 'dark' : 'light';
-  [document.documentElement, document.body].filter(Boolean).forEach((el) => {
-    el.setAttribute('data-theme', normalized);
-  });
-  dashboardState.theme = normalized;
-  updateThemeToggleState(selectors, normalized);
-  if (persist) {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, normalized);
-    } catch (error) {
-      console.warn('Nepavyko išsaugoti temos nustatymo:', error);
-    }
-  }
-}
-
-function initializeTheme(dashboardState, selectors) {
-  const htmlTheme = document.documentElement.getAttribute('data-theme');
-  const bodyTheme = document.body?.getAttribute('data-theme');
-  const attrTheme = htmlTheme || bodyTheme;
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const resolved = attrTheme === 'dark' || attrTheme === 'light'
-    ? attrTheme
-    : storedTheme === 'dark' || storedTheme === 'light'
-      ? storedTheme
-      : (prefersDark ? 'dark' : 'light');
-  applyTheme(dashboardState, selectors, resolved, { persist: false });
-}
-
 export async function runKpiPage(core) {
   const pageId = core?.pageId || 'kpi';
   const pageConfig = core?.pageConfig || { kpi: true };
@@ -738,10 +683,10 @@ export async function runKpiPage(core) {
     selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
   }
 
-  initializeTheme(dashboardState, selectors);
+  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
   const toggleTheme = () => {
     const nextTheme = dashboardState.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(dashboardState, selectors, nextTheme, { persist: true });
+    applyTheme(dashboardState, selectors, nextTheme, { persist: true, themeStorageKey: THEME_STORAGE_KEY });
     if (dashboardState.kpi?.lastShiftHourly) {
       renderLastShiftHourlyChartWithThemeBound(dashboardState.kpi.lastShiftHourly).catch((error) => {
         const info = describeError(error, { code: 'LAST_SHIFT_THEME', fallbackMessage: TEXT.status.error });

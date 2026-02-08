@@ -1,5 +1,3 @@
-import { startFullPageApp } from '../../runtime-full.js';
+import { createFullPageRunner } from './full-page-composition.js?v=2026-02-08-fullpage-refresh-1';
 
-export function runChartsPage(core) {
-  return startFullPageApp({ forcePageId: core?.pageId || 'charts', skipGlobalInit: true });
-}
+export const runChartsPage = createFullPageRunner('charts');

@@ -7,6 +7,7 @@ Use this checklist to keep behavior stable while refactoring.
 - Save a screenshot of: hero/header, KPI section, charts, ED panel, feedback section.
 - Note current config: copy `config.json` to `docs/config-baseline.json`.
 - Capture console output on a clean load (no filters).
+- Refactor guardrail: target new or updated runtime JS modules at ~400 lines (prefer under 500).
 
 ## Smoke test (after each refactor step)
 1. Open `index.html` from a local server (not file://).

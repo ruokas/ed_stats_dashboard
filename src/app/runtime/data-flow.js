@@ -22,6 +22,7 @@ export function createDataFlow({
   computeDailyStats,
   filterDailyStatsByWindow,
   populateChartYearOptions,
+  populateChartsHospitalTableYearOptions,
   populateHourlyCompareYearOptions,
   populateHeatmapYearOptions,
   syncHeatmapFilterControls,
@@ -33,6 +34,7 @@ export function createDataFlow({
   prepareChartDataForPeriod,
   applyKpiFiltersAndRender,
   renderCharts,
+  renderChartsHospitalTable,
   getHeatmapData,
   renderRecentTable,
   computeMonthlyStats,
@@ -89,10 +91,7 @@ export function createDataFlow({
     && !activeConfig.feedback
     && !activeConfig.ed,
   );
-  const canUseDailyStatsCache = Boolean(
-    canUseDailyStatsCacheOnly
-    || isChartsOnlyPage,
-  );
+  const canUseDailyStatsCache = Boolean(canUseDailyStatsCacheOnly);
   let historicalHydrationInFlight = false;
   let historicalHydrated = false;
   let visibilityHandlersBound = false;
@@ -184,7 +183,7 @@ export function createDataFlow({
     primaryChunkReporter,
     historicalChunkReporter,
   }) {
-    const supportsDeferredHistorical = isChartsOnlyPage || isKpiOnlyPage;
+    const supportsDeferredHistorical = isKpiOnlyPage;
     if (!supportsDeferredHistorical || historicalHydrationInFlight || historicalHydrated) {
       return;
     }
@@ -213,6 +212,7 @@ export function createDataFlow({
       dashboardState.dailyStats = dailyStats;
       dashboardState.primaryRecords = primaryRecords.slice();
       dashboardState.primaryDaily = primaryDaily.slice();
+      dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
       dashboardState.dataMeta = dataset.meta || null;
       if (activeConfig.charts) {
         dashboardState.chartData.baseDaily = dailyStats.slice();
@@ -220,6 +220,9 @@ export function createDataFlow({
         dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         syncChartFilterControls();
         populateChartYearOptions(dailyStats);
+        if (typeof populateChartsHospitalTableYearOptions === 'function') {
+          populateChartsHospitalTableYearOptions(combinedRecords);
+        }
         populateHourlyCompareYearOptions(dailyStats);
         if (typeof populateHeatmapYearOptions === 'function') {
           populateHeatmapYearOptions(dailyStats);
@@ -230,6 +233,9 @@ export function createDataFlow({
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
         await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
+        if (typeof renderChartsHospitalTable === 'function') {
+          renderChartsHospitalTable(combinedRecords);
+        }
       }
       if (activeConfig.kpi) {
         await applyKpiFiltersAndRender();
@@ -321,7 +327,7 @@ export function createDataFlow({
       const historicalChunkReporter = needsMainData ? createChunkReporter('Istorinis CSV') : null;
       const workerProgressReporter = shouldFetchMainData ? createChunkReporter('Apdorojama CSV') : null;
       const edChunkReporter = needsEdData ? createChunkReporter('ED CSV') : null;
-      const shouldDeferHistoricalOnThisLoad = Boolean(isChartsOnlyPage || isKpiOnlyPage);
+      const shouldDeferHistoricalOnThisLoad = Boolean(isKpiOnlyPage);
       const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
         shouldFetchMainData
           ? fetchData({
@@ -417,6 +423,7 @@ export function createDataFlow({
         dashboardState.dailyStats = dailyStats;
         dashboardState.primaryRecords = primaryRecords.slice();
         dashboardState.primaryDaily = primaryDaily.slice();
+        dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
         dashboardState.dataMeta = dataset.meta || null;
         if (!cachedDailyStats && !shouldDeferHistoricalOnThisLoad) {
           writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
@@ -424,6 +431,9 @@ export function createDataFlow({
 
         if (activeConfig.charts) {
           populateChartYearOptions(dailyStats);
+          if (typeof populateChartsHospitalTableYearOptions === 'function') {
+            populateChartsHospitalTableYearOptions(combinedRecords);
+          }
           populateHourlyCompareYearOptions(dailyStats);
           if (typeof populateHeatmapYearOptions === 'function') {
             populateHeatmapYearOptions(dailyStats);
@@ -455,6 +465,9 @@ export function createDataFlow({
           const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
           const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
           await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
+          if (typeof renderChartsHospitalTable === 'function') {
+            renderChartsHospitalTable(combinedRecords);
+          }
         }
 
         if (activeConfig.kpi) {
@@ -506,7 +519,7 @@ export function createDataFlow({
           historicalChunkReporter: null,
         });
       }
-      if (cachedDailyStats && (isChartsOnlyPage || isKpiOnlyPage)) {
+      if (cachedDailyStats && isKpiOnlyPage) {
         scheduleDeferredHydration({
           runNumber,
           settings,
@@ -523,7 +536,16 @@ export function createDataFlow({
       console.error(errorInfo.log, error);
       dashboardState.usingFallback = false;
       dashboardState.lastErrorMessage = errorInfo.userMessage;
+      dashboardState.chartsHospitalTableWorkerAgg = null;
       setStatus('error', errorInfo.userMessage);
+      if (activeConfig.charts) {
+        if (typeof populateChartsHospitalTableYearOptions === 'function') {
+          populateChartsHospitalTableYearOptions([]);
+        }
+        if (typeof renderChartsHospitalTable === 'function') {
+          renderChartsHospitalTable([]);
+        }
+      }
       if (needsEdData) {
         await renderEdDashboard(dashboardState.ed);
       }

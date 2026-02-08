@@ -43,7 +43,7 @@ export function createUIEvents(env) {
       runNonCritical(() => initChartCopyButtons(env));
       runNonCritical(() => initChartDownloadButtons(env));
     }
-    if (pageConfig.recent || pageConfig.monthly || pageConfig.yearly || pageConfig.feedback) {
+    if (pageConfig.charts || pageConfig.recent || pageConfig.monthly || pageConfig.yearly || pageConfig.feedback) {
       runNonCritical(() => initTableDownloadButtons(env));
     }
     if (pageConfig.tv) {

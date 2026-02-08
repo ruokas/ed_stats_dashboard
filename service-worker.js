@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'ed-static-v13';
+const STATIC_CACHE = 'ed-static-v19';
 const API_CACHE = 'ed-api-v1';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [
@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
   new URL('./src/main.js', self.location).pathname,
   new URL('./src/app/runtime.js', self.location).pathname,
   new URL('./src/app/runtime-full.js', self.location).pathname,
+  new URL('./src/app/full-page-app.js', self.location).pathname,
 ];
 
 self.addEventListener('install', (event) => {
@@ -124,7 +125,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (request.mode === 'navigate') {
-    event.respondWith(cacheFirst(request, { useOfflineFallback: true }));
+    event.respondWith(networkFirst(request, { useOfflineFallback: true }));
     return;
   }
 
