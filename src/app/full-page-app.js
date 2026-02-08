@@ -128,7 +128,16 @@ export function startFullPageApp(options = {}) {
 
       let settings = normalizeSettings({});
       let chartRenderers = null;
+      let kpiRenderer = null;
       let edRenderer = null;
+      let uiEvents = null;
+      const capabilityState = {
+        charts: false,
+        kpi: false,
+        ed: false,
+        feedback: false,
+        ui: false,
+      };
       const renderCharts = (dailyStats, funnelTotals, heatmapData) => chartRenderers
         .renderCharts(dailyStats, funnelTotals, heatmapData);
       const edRenderBridge = createEdRenderBridgeFeature({
@@ -5224,16 +5233,7 @@ export function startFullPageApp(options = {}) {
           setDatasetValue(button, 'active', String(isActive));
         });
       }
-      const funnelCanvasFeature = createFunnelCanvasFeature({
-        TEXT,
-        getThemeStyleTarget,
-        parseColorToRgb,
-        relativeLuminance,
-        rgbToRgba,
-        numberFormatter,
-        percentFormatter,
-      });
-      const { renderFunnelShape } = funnelCanvasFeature;
+      let renderFunnelShape = null;
 
         const { loadDashboard, scheduleInitialLoad } = createDataFlow({
           pageConfig,
@@ -5290,176 +5290,277 @@ export function startFullPageApp(options = {}) {
         },
       });
 
-      chartRenderers = createChartRenderers({
-        dashboardState,
-        selectors,
-        TEXT,
-        loadChartJs,
-        getThemePalette,
-        getThemeStyleTarget,
-        showChartSkeletons,
-        hideChartSkeletons,
-        clearChartError,
-        showChartError,
-        setChartCardMessage,
-        renderFunnelShape,
-        filterDailyStatsByYear,
-        computeFunnelStats,
-        isValidHeatmapData,
-        filterRecordsByYear,
-        filterRecordsByChartFilters,
-        filterRecordsByWindow,
-        computeArrivalHeatmap,
-        renderArrivalHeatmap,
-        getWeekdayIndexFromDateKey,
-        numberFormatter,
-        decimalFormatter,
-        oneDecimalFormatter,
-        percentFormatter,
-        monthOnlyFormatter,
-        monthDayFormatter,
-        shortDateFormatter,
-        dateKeyToDate,
-        isWeekendDateKey,
-        computeMonthlyStats,
-        formatMonthLabel,
-        formatDailyCaption,
-        syncChartPeriodButtons,
-        HEATMAP_METRIC_KEYS,
-        DEFAULT_HEATMAP_METRIC,
-        HEATMAP_HOURS,
-        HOURLY_STAY_BUCKET_ALL,
-        HOURLY_COMPARE_SERIES,
-        HOURLY_COMPARE_SERIES_ALL,
-        normalizeHourlyWeekday,
-        normalizeHourlyStayBucket,
-        normalizeHourlyMetric,
-        normalizeHourlyDepartment,
-        normalizeHourlyCompareYears,
-        updateHourlyCaption,
-        updateHourlyDepartmentOptions,
-        syncHourlyDepartmentVisibility,
-        getHourlyChartRecords,
-        computeHourlySeries,
-        applyHourlyYAxisAuto,
-        syncFeedbackTrendControls,
-        updateFeedbackTrendSubtitle,
-        getActiveFeedbackTrendWindow,
-        formatMonthLabelForAxis: null,
-      });
+      function waitForFirstPaintAndIdle() {
+        return new Promise((resolve) => {
+          window.requestAnimationFrame(() => {
+            runAfterDomAndIdle(resolve, { timeout: 1200 });
+          });
+        });
+      }
 
-      const kpiRenderer = createKpiRenderer({
-        selectors,
-        dashboardState,
-        TEXT,
-        escapeHtml,
-        formatKpiValue,
-        percentFormatter,
-        numberFormatter,
-        buildYearMonthMetrics,
-        buildLastShiftSummary,
-        hideKpiSkeleton,
-      });
+      function initializeChartsCapability() {
+        if (capabilityState.charts) {
+          return;
+        }
+        const funnelCanvasFeature = createFunnelCanvasFeature({
+          TEXT,
+          getThemeStyleTarget,
+          parseColorToRgb,
+          relativeLuminance,
+          rgbToRgba,
+          numberFormatter,
+          percentFormatter,
+        });
+        ({ renderFunnelShape } = funnelCanvasFeature);
 
-      edRenderer = createEdRenderer({
-        selectors,
-        dashboardState,
-        TEXT,
-        DEFAULT_KPI_WINDOW_DAYS,
-        settings,
-        buildYearMonthMetrics,
-        numberFormatter,
-        resetEdCommentRotation,
-        hideEdSkeleton,
-        normalizeEdSearchQuery,
-        matchesEdSearch,
-        createEmptyEdSummary,
-        summarizeEdRecords,
-        formatLocalDateKey,
-        formatMonthLabel,
-        buildFeedbackTrendInfo,
-        buildEdStatus,
-        renderEdDispositionsChart,
-        createEdSectionIcon,
-        renderEdCommentsCard,
-        formatEdCardValue,
-        buildEdCardVisuals,
-        enrichSummaryWithOverviewFallback,
-      });
+        chartRenderers = createChartRenderers({
+          dashboardState,
+          selectors,
+          TEXT,
+          loadChartJs,
+          getThemePalette,
+          getThemeStyleTarget,
+          showChartSkeletons,
+          hideChartSkeletons,
+          clearChartError,
+          showChartError,
+          setChartCardMessage,
+          renderFunnelShape,
+          filterDailyStatsByYear,
+          computeFunnelStats,
+          isValidHeatmapData,
+          filterRecordsByYear,
+          filterRecordsByChartFilters,
+          filterRecordsByWindow,
+          computeArrivalHeatmap,
+          renderArrivalHeatmap,
+          getWeekdayIndexFromDateKey,
+          numberFormatter,
+          decimalFormatter,
+          oneDecimalFormatter,
+          percentFormatter,
+          monthOnlyFormatter,
+          monthDayFormatter,
+          shortDateFormatter,
+          dateKeyToDate,
+          isWeekendDateKey,
+          computeMonthlyStats,
+          formatMonthLabel,
+          formatDailyCaption,
+          syncChartPeriodButtons,
+          HEATMAP_METRIC_KEYS,
+          DEFAULT_HEATMAP_METRIC,
+          HEATMAP_HOURS,
+          HOURLY_STAY_BUCKET_ALL,
+          HOURLY_COMPARE_SERIES,
+          HOURLY_COMPARE_SERIES_ALL,
+          normalizeHourlyWeekday,
+          normalizeHourlyStayBucket,
+          normalizeHourlyMetric,
+          normalizeHourlyDepartment,
+          normalizeHourlyCompareYears,
+          updateHourlyCaption,
+          updateHourlyDepartmentOptions,
+          syncHourlyDepartmentVisibility,
+          getHourlyChartRecords,
+          computeHourlySeries,
+          applyHourlyYAxisAuto,
+          syncFeedbackTrendControls,
+          updateFeedbackTrendSubtitle,
+          getActiveFeedbackTrendWindow,
+          formatMonthLabelForAxis: null,
+        });
+        capabilityState.charts = true;
+      }
 
-        const uiEvents = createUIEvents({
+      function initializeKpiCapability() {
+        if (capabilityState.kpi) {
+          return;
+        }
+        kpiRenderer = createKpiRenderer({
+          selectors,
+          dashboardState,
+          TEXT,
+          escapeHtml,
+          formatKpiValue,
+          percentFormatter,
+          numberFormatter,
+          buildYearMonthMetrics,
+          buildLastShiftSummary,
+          hideKpiSkeleton,
+        });
+        capabilityState.kpi = true;
+      }
+
+      function initializeEdCapability() {
+        if (capabilityState.ed) {
+          return;
+        }
+        initializeChartsCapability();
+        edRenderer = createEdRenderer({
+          selectors,
+          dashboardState,
+          TEXT,
+          DEFAULT_KPI_WINDOW_DAYS,
+          settings,
+          buildYearMonthMetrics,
+          numberFormatter,
+          resetEdCommentRotation,
+          hideEdSkeleton,
+          normalizeEdSearchQuery,
+          matchesEdSearch,
+          createEmptyEdSummary,
+          summarizeEdRecords,
+          formatLocalDateKey,
+          formatMonthLabel,
+          buildFeedbackTrendInfo,
+          buildEdStatus,
+          renderEdDispositionsChart,
+          createEdSectionIcon,
+          renderEdCommentsCard,
+          formatEdCardValue,
+          buildEdCardVisuals,
+          enrichSummaryWithOverviewFallback,
+        });
+        capabilityState.ed = true;
+      }
+
+      function initializeFeedbackCapability() {
+        if (capabilityState.feedback) {
+          return;
+        }
+        // Feedback trend rendering uses shared chart renderers.
+        initializeChartsCapability();
+        capabilityState.feedback = true;
+      }
+
+      function initializeUiCapability() {
+        if (capabilityState.ui) {
+          return;
+        }
+        uiEvents = createUIEvents({
           pageConfig,
           selectors,
           dashboardState,
-        refreshKpiWindowOptions,
-        syncKpiFilterControls,
-        handleKpiFilterInput,
-        handleKpiDateClear,
-        handleKpiDateInput,
-        handleKpiSegmentedClick,
-        handleLastShiftMetricClick,
-        syncLastShiftHourlyMetricButtons,
-        resetKpiFilters,
-        KPI_FILTER_TOGGLE_LABELS,
-        updateKpiSummary,
-        populateFeedbackFilterControls,
-        syncFeedbackFilterControls,
-        updateFeedbackFiltersSummary,
-        handleFeedbackFilterChange,
-        handleFeedbackFilterChipClick,
-        handleYearlyToggle,
-        setFeedbackTrendWindow,
-        storeCopyButtonBaseLabel,
-        handleChartCopyClick,
-        handleChartDownloadClick,
-        handleTableDownloadClick,
-        handleTabKeydown,
-        setActiveTab,
-        updateChartPeriod,
-        updateChartYear,
-        handleHeatmapMetricChange,
-        handleHeatmapFilterChange,
-        handleHourlyMetricClick,
-        handleHourlyDepartmentInput,
-        handleHourlyDepartmentBlur,
-        handleHourlyDepartmentKeydown,
-        handleHourlyDepartmentToggle,
-        handleHourlyFilterChange,
-        handleHourlyCompareToggle,
-        handleHourlyCompareYearsChange,
-        handleHourlyCompareSeriesClick,
-        handleHourlyResetFilters,
-        handleChartsHospitalTableYearChange,
-        handleChartsHospitalTableSearchInput,
-        handleChartsHospitalTableHeaderClick,
-        handleChartsHospitalTableRowClick,
-        handleChartFilterChange,
-        handleChartSegmentedClick,
-        toggleTheme,
-        setCompareMode,
-        clearCompareSelection,
-        updateCompareSummary,
-        handleCompareRowSelection,
-        debounce,
-        applyEdSearchFilter,
-        applyHourlyDepartmentSelection,
-        updateScrollTopButtonVisibility,
-        scheduleScrollTopUpdate,
-        sectionNavState,
-        sectionVisibility,
-        sectionNavCompactQuery,
-        setLayoutRefreshAllowed,
-        getLayoutResizeObserver,
-        setLayoutResizeObserver,
-        updateSectionNavCompactState,
-        handleNavKeydown,
-        scheduleLayoutRefresh,
-        syncSectionNavVisibility,
-        waitForFontsAndStyles,
-        updateLayoutMetrics,
-        refreshSectionObserver,
-        flushPendingLayoutRefresh,
-      });
+          refreshKpiWindowOptions,
+          syncKpiFilterControls,
+          handleKpiFilterInput,
+          handleKpiDateClear,
+          handleKpiDateInput,
+          handleKpiSegmentedClick,
+          handleLastShiftMetricClick,
+          syncLastShiftHourlyMetricButtons,
+          resetKpiFilters,
+          KPI_FILTER_TOGGLE_LABELS,
+          updateKpiSummary,
+          populateFeedbackFilterControls,
+          syncFeedbackFilterControls,
+          updateFeedbackFiltersSummary,
+          handleFeedbackFilterChange,
+          handleFeedbackFilterChipClick,
+          handleYearlyToggle,
+          setFeedbackTrendWindow,
+          storeCopyButtonBaseLabel,
+          handleChartCopyClick,
+          handleChartDownloadClick,
+          handleTableDownloadClick,
+          handleTabKeydown,
+          setActiveTab,
+          updateChartPeriod,
+          updateChartYear,
+          handleHeatmapMetricChange,
+          handleHeatmapFilterChange,
+          handleHourlyMetricClick,
+          handleHourlyDepartmentInput,
+          handleHourlyDepartmentBlur,
+          handleHourlyDepartmentKeydown,
+          handleHourlyDepartmentToggle,
+          handleHourlyFilterChange,
+          handleHourlyCompareToggle,
+          handleHourlyCompareYearsChange,
+          handleHourlyCompareSeriesClick,
+          handleHourlyResetFilters,
+          handleChartsHospitalTableYearChange,
+          handleChartsHospitalTableSearchInput,
+          handleChartsHospitalTableHeaderClick,
+          handleChartsHospitalTableRowClick,
+          handleChartFilterChange,
+          handleChartSegmentedClick,
+          toggleTheme,
+          setCompareMode,
+          clearCompareSelection,
+          updateCompareSummary,
+          handleCompareRowSelection,
+          debounce,
+          applyEdSearchFilter,
+          applyHourlyDepartmentSelection,
+          updateScrollTopButtonVisibility,
+          scheduleScrollTopUpdate,
+          sectionNavState,
+          sectionVisibility,
+          sectionNavCompactQuery,
+          setLayoutRefreshAllowed,
+          getLayoutResizeObserver,
+          setLayoutResizeObserver,
+          updateSectionNavCompactState,
+          handleNavKeydown,
+          scheduleLayoutRefresh,
+          syncSectionNavVisibility,
+          waitForFontsAndStyles,
+          updateLayoutMetrics,
+          refreshSectionObserver,
+          flushPendingLayoutRefresh,
+        });
+        capabilityState.ui = true;
+      }
+
+      function getRequiredCapabilitiesForPage() {
+        const required = [];
+        const needsCharts = pageConfig.kpi || pageConfig.charts || pageConfig.feedback || pageConfig.ed;
+        if (needsCharts) {
+          required.push('charts');
+        }
+        if (pageConfig.kpi) {
+          required.push('kpi');
+        }
+        if (pageConfig.feedback) {
+          required.push('feedback');
+        }
+        if (pageConfig.ed) {
+          required.push('ed');
+        }
+        required.push('ui');
+        return required;
+      }
+
+      function initializeCapability(name) {
+        if (name === 'charts') {
+          initializeChartsCapability();
+          return;
+        }
+        if (name === 'kpi') {
+          initializeKpiCapability();
+          return;
+        }
+        if (name === 'feedback') {
+          initializeFeedbackCapability();
+          return;
+        }
+        if (name === 'ed') {
+          initializeEdCapability();
+          return;
+        }
+        if (name === 'ui') {
+          initializeUiCapability();
+        }
+      }
+
+      async function ensureRuntimeCapabilities({ defer = false, required = [] } = {}) {
+        if (defer) {
+          await waitForFirstPaintAndIdle();
+        }
+        required.forEach((name) => initializeCapability(name));
+      }
 
         async function bootstrap() {
           settings = await loadSettingsFromConfig();
@@ -5474,6 +5575,9 @@ export function startFullPageApp(options = {}) {
           if (pageConfig.charts) {
             syncHeatmapFilterControls();
           }
+          const requiredCapabilities = getRequiredCapabilitiesForPage();
+          const deferCapabilities = pageConfig.charts || pageConfig.feedback || pageConfig.ed;
+          await ensureRuntimeCapabilities({ defer: deferCapabilities, required: requiredCapabilities });
           uiEvents.initUI();
           if (pageConfig.ed) {
             setActiveTab('ed', { focusPanel: false, restoreFocus: false });
