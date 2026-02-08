@@ -28,7 +28,20 @@ import { createCopyExportFeature } from './runtime/features/copy-export.js';
 import { createFeedbackPanelFeature } from './runtime/features/feedback-panel.js';
 import { createFeedbackRenderFeature } from './runtime/features/feedback-render.js';
 import { createEdPanelCoreFeature } from './runtime/features/ed-panel-core.js';
+import { createEdCommentsFeature } from './runtime/features/ed-comments.js';
+import { createEdCardsFeature } from './runtime/features/ed-cards.js';
+import { createEdRenderBridgeFeature } from './runtime/features/ed-render-bridge.js';
+import { createTextContentFeature } from './runtime/features/text-content.js';
 import { getThemePalette, getThemeStyleTarget } from './runtime/features/theme.js';
+import {
+  clampColorChannel,
+  parseColorToRgb,
+  relativeLuminance,
+  rgbToRgba,
+  ensureRgb,
+  mixRgbColors,
+  createSequentialPalette,
+} from './runtime/utils/color.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -113,8 +126,17 @@ export function startFullPageApp(options = {}) {
 
       let settings = normalizeSettings({});
       let chartRenderers = null;
+      let edRenderer = null;
       const renderCharts = (dailyStats, funnelTotals, heatmapData) => chartRenderers
         .renderCharts(dailyStats, funnelTotals, heatmapData);
+      const edRenderBridge = createEdRenderBridgeFeature({
+        getEdRenderer: () => edRenderer,
+        getChartRenderers: () => chartRenderers,
+      });
+      const {
+        renderEdDashboard,
+        renderEdDispositionsChart,
+      } = edRenderBridge;
 
       const getDefaultKpiFilters = () => createDefaultKpiFilters({ settings, DEFAULT_SETTINGS, DEFAULT_KPI_WINDOW_DAYS });
       const getDefaultChartFilters = () => createDefaultChartFilters();
@@ -1760,127 +1782,6 @@ export function startFullPageApp(options = {}) {
         }
       }
 
-      function resetEdCommentRotation() {
-        const rotation = dashboardState?.ed?.commentRotation;
-        if (rotation?.timerId) {
-          window.clearInterval(rotation.timerId);
-        }
-        if (dashboardState?.ed) {
-          dashboardState.ed.commentRotation = { timerId: null, index: 0, entries: [] };
-        }
-      }
-
-      function applyEdCommentAutoScroll(wrapper) {
-        if (!wrapper) {
-          return;
-        }
-        const scroller = wrapper.querySelector('.ed-dashboard__comment-scroller');
-        if (!scroller) {
-          return;
-        }
-
-        scroller.style.removeProperty('--scroll-distance');
-        scroller.style.removeProperty('--scroll-duration');
-        scroller.style.transform = 'translateY(0)';
-        wrapper.classList.remove('is-scrollable');
-
-        window.requestAnimationFrame(() => {
-          const containerHeight = wrapper.clientHeight;
-          const contentHeight = scroller.scrollHeight;
-          const overflow = contentHeight - containerHeight;
-          if (overflow > 4) {
-            const duration = Math.min(30000, Math.max(8000, overflow * 80));
-            scroller.style.setProperty('--scroll-distance', `${overflow}px`);
-            scroller.style.setProperty('--scroll-duration', `${duration}ms`);
-            wrapper.classList.add('is-scrollable');
-          }
-        });
-      }
-
-      function renderEdCommentsCard(cardElement, cardConfig, rawComments, fallbackMeta = '') {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'ed-dashboard__comment-wrapper';
-
-        const scroller = document.createElement('div');
-        scroller.className = 'ed-dashboard__comment-scroller';
-
-        const content = document.createElement('p');
-        content.className = 'ed-dashboard__comment';
-        content.setAttribute('aria-live', 'polite');
-
-        const meta = document.createElement('p');
-        meta.className = 'ed-dashboard__card-meta ed-dashboard__comment-meta';
-
-        scroller.append(content, meta);
-        wrapper.appendChild(scroller);
-        cardElement.appendChild(wrapper);
-
-        const rotation = dashboardState.ed.commentRotation || { timerId: null, index: 0, entries: [] };
-        if (rotation.timerId) {
-          window.clearInterval(rotation.timerId);
-        }
-
-        const comments = Array.isArray(rawComments)
-          ? rawComments.filter((item) => item && typeof item.text === 'string' && item.text.trim())
-          : [];
-        rotation.entries = comments.map((item) => ({
-          ...item,
-          text: item.text.trim(),
-        }));
-        rotation.index = 0;
-        rotation.timerId = null;
-        dashboardState.ed.commentRotation = rotation;
-
-        if (!rotation.entries.length) {
-          content.textContent = cardConfig.empty || TEXT.ed?.empty || '—';
-          meta.textContent = typeof fallbackMeta === 'string' && fallbackMeta.trim().length
-            ? fallbackMeta.trim()
-            : (cardConfig.description || '');
-          applyEdCommentAutoScroll(wrapper);
-          return;
-        }
-
-        const renderEntry = (entry) => {
-          content.textContent = entry?.text || (cardConfig.empty || TEXT.ed?.empty || '—');
-          const metaParts = [];
-          if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
-            metaParts.push(statusTimeFormatter.format(entry.receivedAt));
-          }
-          if (entry?.respondent) {
-            metaParts.push(entry.respondent);
-          }
-          if (entry?.location) {
-            metaParts.push(entry.location);
-          }
-          if (!metaParts.length) {
-            const metaText = typeof fallbackMeta === 'string' ? fallbackMeta.trim() : '';
-            if (metaText) {
-              metaParts.push(metaText);
-            }
-          }
-          if (!metaParts.length && cardConfig?.description) {
-            metaParts.push(cardConfig.description);
-          }
-          meta.textContent = metaParts.join(' • ');
-          applyEdCommentAutoScroll(wrapper);
-        };
-
-        const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 10000;
-
-        const advance = () => {
-          const entry = rotation.entries[rotation.index] || rotation.entries[0];
-          renderEntry(entry);
-          if (rotation.entries.length > 1) {
-            rotation.index = (rotation.index + 1) % rotation.entries.length;
-          }
-        };
-
-        advance();
-        if (rotation.entries.length > 1) {
-          rotation.timerId = window.setInterval(advance, rotateMs);
-        }
-      }
-
       function handleTabKeydown(event) {
         if (!selectors.tabButtons || !selectors.tabButtons.length) {
           return;
@@ -3440,6 +3341,29 @@ export function startFullPageApp(options = {}) {
       });
       dashboardState.activeTab = pageConfig.ed ? 'ed' : 'overview';
 
+      const edCommentsFeature = createEdCommentsFeature({
+        dashboardState,
+        TEXT,
+        statusTimeFormatter,
+      });
+      const {
+        resetEdCommentRotation,
+        renderEdCommentsCard,
+      } = edCommentsFeature;
+
+      const edCardsFeature = createEdCardsFeature({
+        ED_TOTAL_BEDS,
+        numberFormatter,
+        oneDecimalFormatter,
+        percentFormatter,
+        setDatasetValue,
+      });
+      const {
+        formatEdCardValue,
+        buildFeedbackTrendInfo,
+        buildEdCardVisuals,
+      } = edCardsFeature;
+
       const edPanelCoreFeature = createEdPanelCoreFeature({
         dashboardState,
         TEXT,
@@ -3504,6 +3428,34 @@ export function startFullPageApp(options = {}) {
         handleFeedbackFilterChipClick,
         updateFeedbackFilterOptions,
       } = feedbackPanelFeature;
+
+      const textContentFeature = createTextContentFeature({
+        selectors,
+        settings,
+        TEXT,
+        dashboardState,
+        setDatasetValue,
+        getDatasetValue,
+        formatDailyCaption,
+        updateChartsHospitalTableHeaderSortIndicators,
+        syncHourlyMetricButtons,
+        populateHourlyWeekdayOptions,
+        populateHourlyStayOptions,
+        syncHourlyDepartmentVisibility,
+        updateHourlyCaption,
+        populateHeatmapMetricOptions,
+        updateHeatmapCaption,
+        populateFeedbackFilterControls,
+        syncFeedbackFilterControls,
+        updateFeedbackFiltersSummary,
+        updateFeedbackTrendSubtitle,
+        syncFeedbackTrendControls,
+        hideStatusNote,
+        updateFullscreenControls,
+      });
+      const {
+        applyTextContent,
+      } = textContentFeature;
 
       const chartFlow = createChartFlow({
         selectors,
@@ -3611,321 +3563,6 @@ export function startFullPageApp(options = {}) {
         selectors.edNavButton.setAttribute('aria-label', activeLabel);
         selectors.edNavButton.title = activeLabel;
         setDatasetValue(selectors.edNavButton, 'fullscreenAvailable', isEdActive ? 'true' : 'false');
-      }
-
-      /**
-       * Pirminis tekstų suleidimas iš konfigūracijos (galima perrašyti iš kitų failų).
-       */
-        function applyTextContent() {
-          if (selectors.title) {
-            selectors.title.textContent = TEXT.title;
-          }
-          const setSectionTitle = (heading, text) => {
-            if (!heading) {
-              return;
-            }
-            const textNode = heading.querySelector('.section-title__text');
-            if (textNode) {
-              textNode.textContent = text;
-            } else {
-              heading.textContent = text;
-            }
-          };
-          if (selectors.tabOverview) {
-            selectors.tabOverview.textContent = settings.output.tabOverviewLabel || TEXT.tabs.overview;
-          }
-          if (selectors.edNavButton) {
-            const edNavLabel = settings.output.tabEdLabel || TEXT.tabs.ed;
-            const openLabel = typeof TEXT.edToggle?.open === 'function'
-              ? TEXT.edToggle.open(edNavLabel)
-              : `Atidaryti ${edNavLabel}`;
-          const closeLabel = typeof TEXT.edToggle?.close === 'function'
-            ? TEXT.edToggle.close(edNavLabel)
-            : `Uždaryti ${edNavLabel}`;
-          setDatasetValue(selectors.edNavButton, 'panelLabel', edNavLabel);
-          setDatasetValue(selectors.edNavButton, 'openLabel', openLabel);
-          setDatasetValue(selectors.edNavButton, 'closeLabel', closeLabel);
-          const isActive = dashboardState.activeTab === 'ed';
-          const currentLabel = isActive ? closeLabel : openLabel;
-          selectors.edNavButton.setAttribute('aria-label', currentLabel);
-          selectors.edNavButton.title = currentLabel;
-        }
-        if (selectors.closeEdPanelBtn) {
-          const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
-          const closeLabel = typeof TEXT.ed?.closeButton === 'function'
-            ? TEXT.ed.closeButton(overviewLabel)
-            : (TEXT.ed?.closeButton || 'Grįžti');
-          selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
-          selectors.closeEdPanelBtn.title = closeLabel;
-          const labelSpan = selectors.closeEdPanelBtn.querySelector('span');
-          if (labelSpan) {
-            labelSpan.textContent = closeLabel;
-          } else {
-            selectors.closeEdPanelBtn.textContent = closeLabel;
-          }
-        }
-        if (selectors.themeToggleBtn) {
-          selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
-          selectors.themeToggleBtn.title = `${TEXT.theme.toggle} (Ctrl+Shift+L)`;
-        }
-          updateFullscreenControls();
-          setSectionTitle(selectors.kpiHeading, TEXT.kpis.title);
-          if (selectors.kpiSubtitle) {
-            selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
-          }
-          setSectionTitle(selectors.chartHeading, TEXT.charts.title);
-          if (selectors.chartSubtitle) {
-            selectors.chartSubtitle.textContent = TEXT.charts.subtitle;
-          }
-          if (selectors.chartYearLabel) {
-            selectors.chartYearLabel.textContent = TEXT.charts.yearFilterLabel;
-          }
-        if (selectors.chartYearSelect) {
-          const firstOption = selectors.chartYearSelect.querySelector('option[value="all"]');
-          if (firstOption) {
-            firstOption.textContent = TEXT.charts.yearFilterAll;
-          }
-        }
-          if (selectors.dailyCaption) {
-            selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
-          }
-          const hospitalTableText = TEXT?.charts?.hospitalTable || {};
-          setSectionTitle(selectors.chartsHospitalTableHeading, hospitalTableText.title || 'Stacionarizuoti pacientai pagal skyrių ir SPS trukmę');
-          if (selectors.chartsHospitalTableSubtitle) {
-            selectors.chartsHospitalTableSubtitle.textContent = hospitalTableText.subtitle || '';
-          }
-          if (selectors.chartsHospitalTableCaption) {
-            selectors.chartsHospitalTableCaption.textContent = hospitalTableText.caption || '';
-          }
-          if (selectors.chartsHospitalTableHint) {
-            selectors.chartsHospitalTableHint.textContent = hospitalTableText.hint || '';
-          }
-          if (selectors.chartsHospitalDeptTrendTitle) {
-            selectors.chartsHospitalDeptTrendTitle.textContent = hospitalTableText.trendTitle || 'Skyriaus dinamika per metus';
-          }
-          if (selectors.chartsHospitalDeptTrendSubtitle) {
-            selectors.chartsHospitalDeptTrendSubtitle.textContent = hospitalTableText.trendSubtitle || '';
-          }
-          if (selectors.chartsHospitalDeptTrendEmpty) {
-            selectors.chartsHospitalDeptTrendEmpty.textContent = hospitalTableText.trendEmpty || 'Šiam skyriui nepakanka duomenų metinei dinamikai.';
-          }
-          if (selectors.chartsHospitalTableYearLabel) {
-            selectors.chartsHospitalTableYearLabel.textContent = hospitalTableText.yearFilterLabel || 'Metai';
-          }
-          if (selectors.chartsHospitalTableSearchLabel) {
-            selectors.chartsHospitalTableSearchLabel.textContent = hospitalTableText.searchLabel || 'Skyriaus paieška';
-          }
-          if (selectors.chartsHospitalTableSearch) {
-            const placeholder = hospitalTableText.searchPlaceholder || 'Įveskite skyriaus pavadinimą';
-            selectors.chartsHospitalTableSearch.placeholder = placeholder;
-            selectors.chartsHospitalTableSearch.setAttribute('aria-label', placeholder);
-            selectors.chartsHospitalTableSearch.title = placeholder;
-          }
-          if (selectors.chartsHospitalTableRoot && hospitalTableText.columns) {
-            const headers = selectors.chartsHospitalTableRoot.querySelectorAll('thead th');
-            const columns = hospitalTableText.columns;
-            const values = [
-              columns.department,
-              columns.lt4,
-              columns.from4to8,
-              columns.from8to16,
-              columns.gt16,
-              columns.unclassified,
-              columns.total,
-            ];
-            headers.forEach((header, index) => {
-              const label = values[index];
-              if (header && typeof label === 'string' && label.trim()) {
-                header.textContent = label;
-              }
-            });
-          }
-          updateChartsHospitalTableHeaderSortIndicators();
-          if (selectors.dailyCaptionContext) {
-            selectors.dailyCaptionContext.textContent = '';
-          }
-          if (selectors.dowCaption) {
-            selectors.dowCaption.textContent = TEXT.charts.dowCaption;
-          }
-          if (selectors.dowStayCaption) {
-            selectors.dowStayCaption.textContent = TEXT.charts.dowStayCaption;
-          }
-        if (selectors.hourlyWeekdayLabel) {
-          const hourlyLabelText = TEXT.charts?.hourlyWeekdayLabel || 'Savaitės diena';
-          selectors.hourlyWeekdayLabel.textContent = hourlyLabelText;
-          if (selectors.hourlyWeekdaySelect) {
-            selectors.hourlyWeekdaySelect.setAttribute('aria-label', hourlyLabelText);
-            selectors.hourlyWeekdaySelect.title = hourlyLabelText;
-          }
-        }
-        if (selectors.hourlyMetricLabel) {
-          syncHourlyMetricButtons();
-        }
-        if (selectors.hourlyDepartmentLabel) {
-          const departmentLabelText = TEXT.charts?.hourlyDepartmentLabel || 'Skyrius';
-          selectors.hourlyDepartmentLabel.textContent = departmentLabelText;
-          if (selectors.hourlyDepartmentInput) {
-            selectors.hourlyDepartmentInput.setAttribute('aria-label', departmentLabelText);
-            selectors.hourlyDepartmentInput.title = departmentLabelText;
-            selectors.hourlyDepartmentInput.placeholder = TEXT.charts?.hourlyDepartmentAll || 'Visi skyriai';
-          }
-        }
-        if (selectors.hourlyStayLabel) {
-          const stayLabelText = TEXT.charts?.hourlyStayLabel || 'Buvimo trukmė';
-          selectors.hourlyStayLabel.textContent = stayLabelText;
-          if (selectors.hourlyStaySelect) {
-            selectors.hourlyStaySelect.setAttribute('aria-label', stayLabelText);
-            selectors.hourlyStaySelect.title = stayLabelText;
-          }
-        }
-        populateHourlyWeekdayOptions();
-        populateHourlyStayOptions();
-        syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
-          updateHourlyCaption(
-            dashboardState.hourlyWeekday,
-            dashboardState.hourlyStayBucket,
-            dashboardState.hourlyMetric,
-            dashboardState.hourlyDepartment,
-          );
-          const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
-            ? TEXT.charts.funnelCaptionWithYear(null)
-            : TEXT.charts.funnelCaption;
-          if (selectors.funnelCaption) {
-            selectors.funnelCaption.textContent = funnelCaptionText;
-          }
-        if (selectors.heatmapMetricLabel) {
-          const heatmapLabelText = TEXT.charts?.heatmapMetricLabel || 'Rodiklis';
-          selectors.heatmapMetricLabel.textContent = heatmapLabelText;
-          if (selectors.heatmapMetricSelect) {
-            selectors.heatmapMetricSelect.setAttribute('aria-label', heatmapLabelText);
-            selectors.heatmapMetricSelect.title = `${heatmapLabelText} (Ctrl+Shift+H)`;
-          }
-        }
-        if (selectors.heatmapFilterArrival) {
-          selectors.heatmapFilterArrival.setAttribute('aria-label', 'Atvykimas');
-        }
-        if (selectors.heatmapFilterDisposition) {
-          selectors.heatmapFilterDisposition.setAttribute('aria-label', 'Sprendimas');
-        }
-        if (selectors.heatmapFilterCardType) {
-          selectors.heatmapFilterCardType.setAttribute('aria-label', 'Kortelė');
-        }
-        if (selectors.heatmapYearSelect) {
-          selectors.heatmapYearSelect.setAttribute('aria-label', 'Metai');
-        }
-          populateHeatmapMetricOptions();
-          updateHeatmapCaption(dashboardState.heatmapMetric);
-          setSectionTitle(selectors.recentHeading, TEXT.recent.title);
-          if (selectors.recentSubtitle) {
-            selectors.recentSubtitle.textContent = TEXT.recent.subtitle;
-          }
-          if (selectors.recentCaption) {
-            selectors.recentCaption.textContent = TEXT.recent.caption;
-          }
-          if (selectors.monthlyHeading) {
-            setSectionTitle(selectors.monthlyHeading, TEXT.monthly.title);
-          }
-          if (selectors.monthlySubtitle) {
-            selectors.monthlySubtitle.textContent = TEXT.monthly.subtitle;
-          }
-          if (selectors.monthlyCaption) {
-            selectors.monthlyCaption.textContent = TEXT.monthly.caption;
-          }
-          if (selectors.yearlyHeading) {
-            setSectionTitle(selectors.yearlyHeading, TEXT.yearly.title);
-          }
-          if (selectors.yearlySubtitle) {
-            selectors.yearlySubtitle.textContent = TEXT.yearly.subtitle;
-          }
-          if (selectors.yearlyCaption) {
-            selectors.yearlyCaption.textContent = TEXT.yearly.caption;
-          }
-          setSectionTitle(selectors.feedbackHeading, TEXT.feedback.title);
-          if (selectors.feedbackSubtitle) {
-            selectors.feedbackSubtitle.textContent = TEXT.feedback.subtitle;
-          }
-          if (selectors.feedbackDescription) {
-            selectors.feedbackDescription.textContent = TEXT.feedback.description;
-          }
-        const feedbackFiltersText = TEXT.feedback?.filters || {};
-        if (selectors.feedbackRespondentLabel) {
-          selectors.feedbackRespondentLabel.textContent = feedbackFiltersText.respondent?.label || 'Kas pildo anketą';
-        }
-        if (selectors.feedbackLocationLabel) {
-          selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Šaltinis';
-        }
-        populateFeedbackFilterControls();
-        syncFeedbackFilterControls();
-        updateFeedbackFiltersSummary();
-        if (selectors.feedbackTrendTitle) {
-          selectors.feedbackTrendTitle.textContent = TEXT.feedback.trend.title;
-        }
-        updateFeedbackTrendSubtitle();
-        if (selectors.feedbackTrendControlsLabel) {
-          selectors.feedbackTrendControlsLabel.textContent = TEXT.feedback.trend.controlsLabel;
-        }
-        if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
-          const periodConfig = Array.isArray(TEXT.feedback.trend.periods) ? TEXT.feedback.trend.periods : [];
-          selectors.feedbackTrendButtons.forEach((button) => {
-            const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
-            const config = periodConfig.find((item) => Number.parseInt(item?.months, 10) === months);
-            if (config?.label) {
-              button.textContent = config.label;
-            }
-            if (config?.hint) {
-              button.title = config.hint;
-            } else {
-              button.removeAttribute('title');
-            }
-          });
-        }
-        syncFeedbackTrendControls();
-        if (selectors.feedbackCaption) {
-          selectors.feedbackCaption.textContent = TEXT.feedback.table.caption;
-        }
-        if (selectors.feedbackColumnMonth) {
-          selectors.feedbackColumnMonth.textContent = TEXT.feedback.table.headers.month;
-        }
-        if (selectors.feedbackColumnResponses) {
-          selectors.feedbackColumnResponses.textContent = TEXT.feedback.table.headers.responses;
-        }
-        if (selectors.feedbackColumnOverall) {
-          selectors.feedbackColumnOverall.textContent = TEXT.feedback.table.headers.overall;
-        }
-        if (selectors.feedbackColumnDoctors) {
-          selectors.feedbackColumnDoctors.textContent = TEXT.feedback.table.headers.doctors;
-        }
-        if (selectors.feedbackColumnNurses) {
-          selectors.feedbackColumnNurses.textContent = TEXT.feedback.table.headers.nurses;
-        }
-        if (selectors.feedbackColumnAides) {
-          selectors.feedbackColumnAides.textContent = TEXT.feedback.table.headers.aides;
-        }
-        if (selectors.feedbackColumnWaiting) {
-          selectors.feedbackColumnWaiting.textContent = TEXT.feedback.table.headers.waiting;
-        }
-        if (selectors.feedbackColumnContact) {
-          selectors.feedbackColumnContact.textContent = TEXT.feedback.table.headers.contact;
-        }
-          if (selectors.edHeading) {
-            setSectionTitle(selectors.edHeading, settings.output.edTitle || TEXT.ed.title);
-          }
-        if (selectors.edStatus) {
-          selectors.edStatus.textContent = '';
-          setDatasetValue(selectors.edStatus, 'tone', 'info');
-        }
-        if (selectors.compareToggle) {
-          selectors.compareToggle.textContent = TEXT.compare.toggle;
-        }
-        if (selectors.scrollTopBtn) {
-          selectors.scrollTopBtn.textContent = TEXT.scrollTop;
-          selectors.scrollTopBtn.setAttribute('aria-label', TEXT.scrollTop);
-          selectors.scrollTopBtn.title = `${TEXT.scrollTop} (Home)`;
-        }
-        if (selectors.compareSummary) {
-          selectors.compareSummary.textContent = TEXT.compare.prompt;
-        }
-        hideStatusNote();
       }
 
       const statusDisplay = {
@@ -6307,473 +5944,6 @@ export function startFullPageApp(options = {}) {
         dashboardState.yearlyExpandedYears = Array.from(expandedSet);
       }
 
-      function formatEdCardValue(rawValue, format) {
-        switch (format) {
-          case 'text':
-            if (typeof rawValue === 'string') {
-              const trimmed = rawValue.trim();
-              return trimmed.length ? trimmed : null;
-            }
-            return null;
-          case 'hours':
-            if (!Number.isFinite(rawValue)) {
-              return null;
-            }
-            return oneDecimalFormatter.format(rawValue / 60);
-          case 'minutes':
-            if (!Number.isFinite(rawValue)) {
-              return null;
-            }
-            return numberFormatter.format(Math.round(rawValue));
-          case 'percent':
-            if (!Number.isFinite(rawValue)) {
-              return null;
-            }
-            return percentFormatter.format(rawValue);
-          case 'oneDecimal':
-            if (!Number.isFinite(rawValue)) {
-              return null;
-            }
-            return oneDecimalFormatter.format(rawValue);
-          case 'ratio':
-            if (!Number.isFinite(rawValue) || rawValue <= 0) {
-              return null;
-            }
-            return `1:${oneDecimalFormatter.format(rawValue)}`;
-          case 'multiplier':
-            if (!Number.isFinite(rawValue)) {
-              return null;
-            }
-            return `${oneDecimalFormatter.format(rawValue)}×`;
-          case 'beds':
-            if (!Number.isFinite(rawValue)) {
-              return null;
-            }
-            {
-              const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? ED_TOTAL_BEDS : 0;
-              const occupied = Math.max(0, Math.round(rawValue));
-              if (totalBeds > 0) {
-                const share = occupied / totalBeds;
-                const percentText = percentFormatter.format(share);
-                return `${numberFormatter.format(occupied)}/${numberFormatter.format(totalBeds)} (${percentText})`;
-              }
-              return numberFormatter.format(occupied);
-            }
-          default:
-            if (!Number.isFinite(rawValue)) {
-              return null;
-            }
-            return numberFormatter.format(rawValue);
-        }
-      }
-
-      function normalizePercentValue(rawValue) {
-        if (!Number.isFinite(rawValue)) {
-          return null;
-        }
-        if (rawValue < 0) {
-          return 0;
-        }
-        if (rawValue <= 1) {
-          return rawValue;
-        }
-        if (rawValue <= 100) {
-          return rawValue / 100;
-        }
-        return 1;
-      }
-
-      function getEdCardDeltaInfo(primaryRaw, secondaryRaw, format) {
-        if (!Number.isFinite(primaryRaw) || !Number.isFinite(secondaryRaw)) {
-          return null;
-        }
-        const diff = primaryRaw - secondaryRaw;
-        if (!Number.isFinite(diff)) {
-          return null;
-        }
-
-        let trend = 'neutral';
-        if (diff > 0) {
-          trend = 'up';
-        } else if (diff < 0) {
-          trend = 'down';
-        }
-
-        const reference = formatEdCardValue(secondaryRaw, format);
-        let valueText = '';
-        let ariaValue = '';
-
-        switch (format) {
-          case 'hours': {
-            const hours = Math.abs(diff) / 60;
-            const rounded = Math.round(hours * 10) / 10;
-            if (!rounded) {
-              trend = 'neutral';
-            }
-            valueText = `${oneDecimalFormatter.format(rounded)} val.`;
-            ariaValue = `${oneDecimalFormatter.format(rounded)} valandos`;
-            break;
-          }
-          case 'minutes': {
-            const minutes = Math.round(Math.abs(diff));
-            if (!minutes) {
-              trend = 'neutral';
-            }
-            valueText = `${numberFormatter.format(minutes)} min.`;
-            ariaValue = `${numberFormatter.format(minutes)} minutės`;
-            break;
-          }
-          case 'percent': {
-            const normalized = Math.abs(diff) <= 1 ? Math.abs(diff) * 100 : Math.abs(diff);
-            const rounded = Math.round(normalized * 10) / 10;
-            if (!rounded) {
-              trend = 'neutral';
-            }
-            valueText = `${oneDecimalFormatter.format(rounded)} p.p.`;
-            ariaValue = `${oneDecimalFormatter.format(rounded)} procentinio punkto`;
-            break;
-          }
-          case 'oneDecimal': {
-            const absolute = Math.abs(diff);
-            const rounded = Math.round(absolute * 10) / 10;
-            if (!rounded) {
-              trend = 'neutral';
-            }
-            valueText = oneDecimalFormatter.format(rounded);
-            ariaValue = `${oneDecimalFormatter.format(rounded)} vienetai`;
-            break;
-          }
-          case 'ratio':
-            return null;
-          default: {
-            const absolute = Math.abs(diff);
-            const rounded = Math.round(absolute);
-            if (!rounded) {
-              trend = 'neutral';
-            }
-            valueText = numberFormatter.format(rounded);
-            ariaValue = `${numberFormatter.format(rounded)} vienetai`;
-          }
-        }
-
-        if (trend === 'neutral') {
-          return {
-            trend: 'neutral',
-            arrow: '→',
-            text: 'Be pokyčio',
-            reference,
-            ariaLabel: reference
-              ? `Pokytis lyginant su ${reference}: be pokyčio`
-              : 'Pokytis: be pokyčio',
-          };
-        }
-
-        const arrow = trend === 'up' ? '↑' : '↓';
-        const sign = trend === 'up' ? '+' : '−';
-        return {
-          trend,
-          arrow,
-          text: `${sign}${valueText}`,
-          reference,
-          ariaLabel: reference
-            ? `Pokytis lyginant su ${reference}: ${sign}${ariaValue}`
-            : `Pokytis: ${sign}${ariaValue}`,
-        };
-      }
-
-      function buildFeedbackTrendInfo(currentValue, previousValue, { currentLabel = '', previousLabel = '' } = {}) {
-        if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) {
-          return null;
-        }
-
-        const diff = currentValue - previousValue;
-        const absDiff = Math.round(Math.abs(diff) * 10) / 10;
-
-        let trend = 'neutral';
-        if (diff > 0) {
-          trend = 'up';
-        } else if (diff < 0) {
-          trend = 'down';
-        }
-
-        if (!absDiff) {
-          trend = 'neutral';
-        }
-
-        const arrow = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
-        const sign = trend === 'down' ? '−' : '+';
-        const previous = oneDecimalFormatter.format(previousValue);
-        const current = oneDecimalFormatter.format(currentValue);
-        const referenceLabel = previousLabel || 'praėjusiu mėnesiu';
-        const changeSummary = trend === 'neutral'
-          ? 'Pokyčio nėra'
-          : `${sign}${oneDecimalFormatter.format(absDiff)}`;
-        const rangeText = previous && current ? `(${previous} → ${current})` : '';
-        const text = [changeSummary, rangeText].filter(Boolean).join(' ');
-        const ariaLabel = trend === 'neutral'
-          ? `Pokyčio nėra lyginant su ${referenceLabel}. Dabartinis: ${current}.`
-          : `Pokytis lyginant su ${referenceLabel}: ${sign}${oneDecimalFormatter.format(absDiff)} (nuo ${previous} iki ${current}).`;
-
-        return {
-          trend,
-          arrow,
-          text,
-          ariaLabel,
-          previousValue,
-          previousLabel,
-          currentValue,
-          currentLabel,
-        };
-      }
-
-      function buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary) {
-        const visuals = [];
-
-        if (config.format === 'percent' && Number.isFinite(primaryRaw)) {
-          const normalized = normalizePercentValue(primaryRaw);
-          if (normalized != null) {
-            const progress = document.createElement('div');
-            progress.className = 'ed-dashboard__card-progress';
-            progress.setAttribute('aria-hidden', 'true');
-            const fill = document.createElement('div');
-            fill.className = 'ed-dashboard__card-progress-fill';
-            fill.setAttribute('aria-hidden', 'true');
-            const width = `${Math.max(0, Math.min(100, normalized * 100))}%`;
-            fill.style.setProperty('--progress-width', width);
-            progress.appendChild(fill);
-
-            if (Number.isFinite(secondaryRaw)) {
-              const normalizedSecondary = normalizePercentValue(secondaryRaw);
-              if (normalizedSecondary != null) {
-                const marker = document.createElement('span');
-                marker.className = 'ed-dashboard__card-progress-marker';
-                marker.setAttribute('aria-hidden', 'true');
-                marker.style.left = `${Math.max(0, Math.min(100, normalizedSecondary * 100))}%`;
-                const secondaryText = formatEdCardValue(secondaryRaw, config.format);
-                if (secondaryText) {
-                  marker.title = `Lyginamasis rodiklis: ${secondaryText}`;
-                }
-                progress.appendChild(marker);
-              }
-            }
-
-            visuals.push(progress);
-          }
-        } else if (config.format === 'beds' && Number.isFinite(primaryRaw)) {
-          const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? Math.max(ED_TOTAL_BEDS, 0) : 0;
-          if (totalBeds > 0) {
-            const occupancyShare = Math.max(0, Math.min(1, primaryRaw / totalBeds));
-            const occupancyLevel = occupancyShare > 0.7
-              ? 'critical'
-              : occupancyShare > 0.5
-                ? 'elevated'
-                : 'normal';
-            const progress = document.createElement('div');
-            progress.className = 'ed-dashboard__card-progress';
-            progress.setAttribute('aria-hidden', 'true');
-            setDatasetValue(progress, 'occupancyLevel', occupancyLevel);
-            const fill = document.createElement('div');
-            fill.className = 'ed-dashboard__card-progress-fill';
-            fill.setAttribute('aria-hidden', 'true');
-            setDatasetValue(fill, 'occupancyLevel', occupancyLevel);
-            const width = `${Math.round(occupancyShare * 1000) / 10}%`;
-            fill.style.setProperty('--progress-width', width);
-            const occupancyText = percentFormatter.format(occupancyShare);
-            progress.title = `Užimtumas: ${numberFormatter.format(Math.round(primaryRaw))}/${numberFormatter.format(totalBeds)} (${occupancyText})`;
-            progress.appendChild(fill);
-            visuals.push(progress);
-          }
-        }
-
-        if (config.secondaryKey) {
-          const deltaInfo = getEdCardDeltaInfo(primaryRaw, secondaryRaw, config.format);
-            if (deltaInfo) {
-              const delta = document.createElement('p');
-              delta.className = 'ed-dashboard__card-delta';
-              setDatasetValue(delta, 'trend', deltaInfo.trend);
-            delta.setAttribute('aria-label', deltaInfo.ariaLabel);
-            const arrowSpan = document.createElement('span');
-            arrowSpan.className = 'ed-dashboard__card-delta-arrow';
-            arrowSpan.textContent = deltaInfo.arrow;
-            const textSpan = document.createElement('span');
-            textSpan.className = 'ed-dashboard__card-delta-text';
-            textSpan.textContent = deltaInfo.text;
-            delta.append(arrowSpan, textSpan);
-            if (deltaInfo.reference) {
-              const referenceSpan = document.createElement('span');
-              referenceSpan.className = 'ed-dashboard__card-delta-reference';
-              referenceSpan.textContent = `vs ${deltaInfo.reference}`;
-              delta.appendChild(referenceSpan);
-            }
-            visuals.push(delta);
-          }
-        } else if (config.trendKey && summary?.[config.trendKey]) {
-          const trendInfo = summary[config.trendKey];
-          const delta = document.createElement('p');
-          delta.className = 'ed-dashboard__card-delta';
-          setDatasetValue(delta, 'trend', trendInfo.trend || 'neutral');
-          if (trendInfo.ariaLabel) {
-            delta.setAttribute('aria-label', trendInfo.ariaLabel);
-          }
-
-          const arrowSpan = document.createElement('span');
-          arrowSpan.className = 'ed-dashboard__card-delta-arrow';
-          arrowSpan.textContent = trendInfo.arrow || '→';
-
-          const textSpan = document.createElement('span');
-          textSpan.className = 'ed-dashboard__card-delta-text';
-          textSpan.textContent = trendInfo.text || '';
-
-          delta.append(arrowSpan, textSpan);
-
-          if (trendInfo.previousLabel) {
-            const referenceSpan = document.createElement('span');
-            referenceSpan.className = 'ed-dashboard__card-delta-reference';
-            referenceSpan.textContent = `vs ${trendInfo.previousLabel}`;
-            delta.appendChild(referenceSpan);
-          }
-
-          visuals.push(delta);
-        }
-
-        return visuals;
-      }
-
-      async function renderEdDashboard(edData) {
-        return edRenderer.renderEdDashboard(edData);
-      }
-
-      async function renderEdDispositionsChart(dispositions, text, displayVariant) {
-        return chartRenderers.renderEdDispositionsChart(dispositions, text, displayVariant);
-      }
-
-
-
-
-      function clampColorChannel(value) {
-        return Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
-      }
-
-      function parseColorToRgb(color) {
-        if (typeof color !== 'string') {
-          return null;
-        }
-        const trimmed = color.trim();
-        if (!trimmed) {
-          return null;
-        }
-        if (trimmed.startsWith('#')) {
-          let hex = trimmed.slice(1);
-          if (hex.length === 3 || hex.length === 4) {
-            hex = hex
-              .split('')
-              .map((char) => char + char)
-              .join('');
-          }
-          if (hex.length === 6 || hex.length === 8) {
-            const r = parseInt(hex.slice(0, 2), 16);
-            const g = parseInt(hex.slice(2, 4), 16);
-            const b = parseInt(hex.slice(4, 6), 16);
-            if ([r, g, b].every((channel) => Number.isFinite(channel))) {
-              return { r, g, b };
-            }
-          }
-          return null;
-        }
-        const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
-        if (rgbMatch) {
-          const parts = rgbMatch[1]
-            .split(',')
-            .map((part) => Number.parseFloat(part.trim()))
-            .filter((value, index) => index < 3 && Number.isFinite(value));
-          if (parts.length === 3) {
-            const [r, g, b] = parts;
-            return { r: clampColorChannel(r), g: clampColorChannel(g), b: clampColorChannel(b) };
-          }
-        }
-        return null;
-      }
-
-      function relativeLuminance({ r, g, b }) {
-        const normalize = (channel) => {
-          const ratio = channel / 255;
-          if (ratio <= 0.03928) {
-            return ratio / 12.92;
-          }
-          return ((ratio + 0.055) / 1.055) ** 2.4;
-        };
-        const linearR = normalize(clampColorChannel(r));
-        const linearG = normalize(clampColorChannel(g));
-        const linearB = normalize(clampColorChannel(b));
-        return 0.2126 * linearR + 0.7152 * linearG + 0.0722 * linearB;
-      }
-
-      function rgbToRgba(rgb, alpha) {
-        const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1;
-        const formattedAlpha = safeAlpha === 1 ? '1' : Number(safeAlpha.toFixed(3)).toString();
-        return `rgba(${clampColorChannel(rgb.r)}, ${clampColorChannel(rgb.g)}, ${clampColorChannel(rgb.b)}, ${formattedAlpha})`;
-      }
-
-      function ensureRgb(color, fallback) {
-        const parsed = typeof color === 'string' ? parseColorToRgb(color) : null;
-        if (parsed) {
-          return parsed;
-        }
-        if (fallback && typeof fallback === 'object') {
-          const { r, g, b } = fallback;
-          if ([r, g, b].every((channel) => Number.isFinite(channel))) {
-            return {
-              r: clampColorChannel(r),
-              g: clampColorChannel(g),
-              b: clampColorChannel(b),
-            };
-          }
-        }
-        return { r: 37, g: 99, b: 235 };
-      }
-
-      function mixRgbColors(rgbA, rgbB, weight) {
-        const hasA = rgbA && [rgbA.r, rgbA.g, rgbA.b].every((channel) => Number.isFinite(channel));
-        const hasB = rgbB && [rgbB.r, rgbB.g, rgbB.b].every((channel) => Number.isFinite(channel));
-        if (!hasA && !hasB) {
-          return { r: 37, g: 99, b: 235 };
-        }
-        if (!hasA) {
-          return {
-            r: clampColorChannel(rgbB.r),
-            g: clampColorChannel(rgbB.g),
-            b: clampColorChannel(rgbB.b),
-          };
-        }
-        if (!hasB) {
-          return {
-            r: clampColorChannel(rgbA.r),
-            g: clampColorChannel(rgbA.g),
-            b: clampColorChannel(rgbA.b),
-          };
-        }
-        const ratio = Number.isFinite(weight) ? Math.max(0, Math.min(1, weight)) : 0;
-        const inverse = 1 - ratio;
-        return {
-          r: clampColorChannel(rgbA.r * inverse + rgbB.r * ratio),
-          g: clampColorChannel(rgbA.g * inverse + rgbB.g * ratio),
-          b: clampColorChannel(rgbA.b * inverse + rgbB.b * ratio),
-        };
-      }
-
-      function createSequentialPalette(baseRgb, softRgb, surfaceRgb, count, theme) {
-        const safeCount = Math.max(1, Math.floor(Number(count)) || 1);
-        const palette = [];
-        const softenTarget = mixRgbColors(softRgb, surfaceRgb, theme === 'dark' ? 0.18 : 0.32);
-        for (let index = 0; index < safeCount; index += 1) {
-          const progress = safeCount === 1 ? 0.5 : index / (safeCount - 1);
-          const softened = mixRgbColors(baseRgb, softRgb, 0.2 + progress * 0.18);
-          const tinted = mixRgbColors(softened, softenTarget, theme === 'dark' ? progress * 0.16 : progress * 0.28);
-          palette.push(tinted);
-        }
-        return palette;
-      }
-
       function buildFunnelTextPalette(baseColor) {
         const fallbackRgb = { r: 15, g: 23, b: 42 };
         const rgb = parseColorToRgb(baseColor) || fallbackRgb;
@@ -7148,7 +6318,7 @@ export function startFullPageApp(options = {}) {
         hideKpiSkeleton,
       });
 
-      const edRenderer = createEdRenderer({
+      edRenderer = createEdRenderer({
         selectors,
         dashboardState,
         TEXT,
