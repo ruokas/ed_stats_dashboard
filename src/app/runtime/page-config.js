@@ -1,3 +1,5 @@
+const RUNTIME_VERSION = '2026-02-08-runtime-refresh-3';
+
 export const PAGE_CONFIG = {
   kpi: { kpi: true },
   charts: { charts: true, heatmap: true, hourly: true },
@@ -8,12 +10,12 @@ export const PAGE_CONFIG = {
 };
 
 export const RUNTIME_MODULE_BY_PAGE = {
-  kpi: './runtime/pages/kpi-page.js',
-  charts: './runtime/pages/charts-page.js',
-  recent: './runtime/pages/recent-page.js',
-  summaries: './runtime/pages/summaries-page.js',
-  feedback: './runtime/pages/feedback-page.js',
-  ed: './runtime/pages/ed-page.js',
+  kpi: `./runtime/pages/kpi-page.js?v=${RUNTIME_VERSION}`,
+  charts: `./runtime/pages/charts-page.js?v=${RUNTIME_VERSION}`,
+  recent: `./runtime/pages/recent-page.js?v=${RUNTIME_VERSION}`,
+  summaries: `./runtime/pages/summaries-page.js?v=${RUNTIME_VERSION}`,
+  feedback: `./runtime/pages/feedback-page.js?v=${RUNTIME_VERSION}`,
+  ed: `./runtime/pages/ed-page.js?v=${RUNTIME_VERSION}`,
 };
 
 const CHART_PRELOAD_PAGES = new Set(['charts', 'ed']);

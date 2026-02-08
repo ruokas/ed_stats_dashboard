@@ -15,6 +15,16 @@ export function buildEdDashboardModel({
   buildFeedbackTrendInfo,
   enrichSummaryWithOverviewFallback,
 }) {
+  const toMonthKey = (value) => {
+    const date = value instanceof Date ? value : (value ? new Date(value) : null);
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  };
+
   const baseDataset = edData || {};
   const baseComments = Array.isArray(baseDataset?.summary?.feedbackComments)
     ? baseDataset.summary.feedbackComments
@@ -80,11 +90,11 @@ export function buildEdDashboardModel({
 
       summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
       summary.avgLosHospitalizedMinutes = yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
-      summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : null;
-      summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : null;
+      summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosYearMinutes;
+      summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : summary.avgLosMonthMinutes;
       summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
-      summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : null;
-      summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : null;
+      summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : summary.hospitalizedYearShare;
+      summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : summary.hospitalizedMonthShare;
     }
   }
   const overviewRecords = Array.isArray(dashboardState?.primaryRecords) && dashboardState.primaryRecords.length
@@ -114,6 +124,37 @@ export function buildEdDashboardModel({
       }
       return entry.month > latest.month ? entry : latest;
     }, null);
+  }
+  if (!feedbackMonth) {
+    const feedbackRecords = Array.isArray(dashboardState?.feedback?.records)
+      ? dashboardState.feedback.records
+      : [];
+    const buckets = new Map();
+    feedbackRecords.forEach((record) => {
+      const monthKey = toMonthKey(record?.receivedAt);
+      const overall = Number.isFinite(record?.overallRating) ? record.overallRating : null;
+      if (!monthKey || overall == null) {
+        return;
+      }
+      if (!buckets.has(monthKey)) {
+        buckets.set(monthKey, { month: monthKey, total: 0, responses: 0 });
+      }
+      const bucket = buckets.get(monthKey);
+      bucket.total += overall;
+      bucket.responses += 1;
+    });
+    if (buckets.size) {
+      const monthlyFromRecords = Array.from(buckets.values())
+        .map((entry) => ({
+          month: entry.month,
+          responses: entry.responses,
+          overallAverage: entry.responses > 0 ? entry.total / entry.responses : null,
+        }))
+        .sort((a, b) => (a.month > b.month ? 1 : -1));
+      feedbackMonth = monthlyFromRecords.find((entry) => entry.month === currentMonthKey)
+        || monthlyFromRecords[monthlyFromRecords.length - 1]
+        || null;
+    }
   }
   const feedbackAverage = Number.isFinite(feedbackMonth?.overallAverage)
     ? feedbackMonth.overallAverage
@@ -157,27 +198,38 @@ export function buildEdDashboardModel({
   if (feedbackResponses != null) {
     feedbackMetaParts.push(`Atsakymai: ${numberFormatter.format(feedbackResponses)}`);
   }
-  summary.feedbackCurrentMonthOverall = feedbackAverage;
-  summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
-  summary.feedbackCurrentMonthTrend = feedbackTrend;
+  if (feedbackAverage != null) {
+    summary.feedbackCurrentMonthOverall = feedbackAverage;
+  }
+  if (feedbackMetaParts.length) {
+    summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
+  }
+  if (feedbackTrend) {
+    summary.feedbackCurrentMonthTrend = feedbackTrend;
+  }
 
   const feedbackComments = Array.isArray(dashboardState?.feedback?.summary?.comments)
     ? dashboardState.feedback.summary.comments
-    : [];
+    : (Array.isArray(summary.feedbackComments) ? summary.feedbackComments : []);
   const now = new Date();
   const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - 30);
   const recentFeedbackComments = feedbackComments.filter((entry) => {
-    if (!(entry?.receivedAt instanceof Date) || Number.isNaN(entry.receivedAt.getTime())) {
+    const receivedAt = entry?.receivedAt instanceof Date
+      ? entry.receivedAt
+      : (entry?.receivedAt ? new Date(entry.receivedAt) : null);
+    if (!(receivedAt instanceof Date) || Number.isNaN(receivedAt.getTime())) {
       return false;
     }
-    return entry.receivedAt >= cutoff;
+    return receivedAt >= cutoff;
   });
-  summary.feedbackComments = recentFeedbackComments;
-  const commentsMeta = recentFeedbackComments.length
-    ? `Komentarai (30 d.): ${numberFormatter.format(recentFeedbackComments.length)}`
-    : '';
-  summary.feedbackCommentsMeta = commentsMeta;
+  if (recentFeedbackComments.length) {
+    summary.feedbackComments = recentFeedbackComments;
+    summary.feedbackCommentsMeta = `Komentarai (30 d.): ${numberFormatter.format(recentFeedbackComments.length)}`;
+  } else if (!Array.isArray(summary.feedbackComments) || !summary.feedbackComments.length) {
+    summary.feedbackComments = [];
+    summary.feedbackCommentsMeta = '';
+  }
 
   return {
     dataset,

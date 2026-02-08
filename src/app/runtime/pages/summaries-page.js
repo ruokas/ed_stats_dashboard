@@ -1,7 +1,7 @@
 import { createClientStore, PerfMonitor } from '../../../../app.js';
 import { createSelectors } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
-import { createMainDataHandlers } from '../../../data/main-data.js';
+import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import {
   computeAgeDiagnosisHeatmap,
   computeAgeDistribution,
@@ -43,6 +43,7 @@ import {
   createDefaultKpiFilters,
 } from '../state.js';
 import { loadSettingsFromConfig } from '../settings.js';
+import { applyTheme, initializeTheme } from '../features/theme.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -123,43 +124,6 @@ function applyChartThemeDefaults(chartLib) {
     ...(chartLib.defaults.plugins.legend.labels || {}),
     color: textColor,
   };
-}
-
-function updateThemeToggleState(selectors, theme) {
-  if (!selectors.themeToggleBtn) {
-    return;
-  }
-  const isDark = theme === 'dark';
-  selectors.themeToggleBtn.setAttribute('aria-pressed', String(isDark));
-  selectors.themeToggleBtn.setAttribute('data-theme', isDark ? 'dark' : 'light');
-}
-
-function applyTheme(dashboardState, selectors, theme, { persist = false } = {}) {
-  const normalized = theme === 'dark' ? 'dark' : 'light';
-  [document.documentElement, document.body].filter(Boolean).forEach((el) => el.setAttribute('data-theme', normalized));
-  dashboardState.theme = normalized;
-  updateThemeToggleState(selectors, normalized);
-  if (persist) {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, normalized);
-    } catch (error) {
-      console.warn('Nepavyko issaugoti temos nustatymo:', error);
-    }
-  }
-}
-
-function initializeTheme(dashboardState, selectors) {
-  const htmlTheme = document.documentElement.getAttribute('data-theme');
-  const bodyTheme = document.body?.getAttribute('data-theme');
-  const attrTheme = htmlTheme || bodyTheme;
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const resolved = attrTheme === 'dark' || attrTheme === 'light'
-    ? attrTheme
-    : storedTheme === 'dark' || storedTheme === 'light'
-      ? storedTheme
-      : (prefersDark ? 'dark' : 'light');
-  applyTheme(dashboardState, selectors, resolved, { persist: false });
 }
 
 function formatMonthLabel(monthKey) {
@@ -1888,10 +1852,13 @@ export async function runSummariesPage(core) {
   if (selectors.scrollTopBtn) {
     selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
   }
-  initializeTheme(dashboardState, selectors);
+  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
   let rerenderReports = () => {};
   const toggleTheme = () => {
-    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', { persist: true });
+    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', {
+      persist: true,
+      themeStorageKey: THEME_STORAGE_KEY,
+    });
     rerenderReports();
   };
   const layoutTools = createLayoutTools({ selectors });

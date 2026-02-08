@@ -130,7 +130,11 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
     .slice(1)
     .filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
   const totalRows = dataRows.length;
-  const records = dataRows.map((cols, index) => {
+  const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
+  const hospitalByDeptStayAgg = createHospitalizedDeptStayAgg();
+  const records = [];
+  for (let index = 0; index < dataRows.length; index += 1) {
+    const cols = dataRows[index];
     const record = mapRow(
       header,
       cols,
@@ -140,13 +144,14 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
       calculations,
       calculationDefaults,
     );
+    records.push(record);
+    accumulateHospitalizedDeptStayAgg(hospitalByDeptStayAgg, record, shiftStartHour);
     if (reportProgress && ((index + 1) % progressStep === 0 || index + 1 === totalRows)) {
       reportProgress(index + 1, totalRows);
     }
-    return record;
-  });
+  }
   const dailyStats = computeDailyStats(records, calculations, calculationDefaults);
-  return { records, dailyStats };
+  return { records, dailyStats, hospitalByDeptStayAgg };
 }
 
 function applyKpiFiltersInWorker(data = {}) {
@@ -1123,4 +1128,76 @@ function computeDailyStats(data, calculations, defaults) {
         ? item.hospitalizedTime / item.hospitalizedDurations
         : 0,
     }));
+}
+
+function createHospitalizedDeptStayAgg() {
+  return { byYear: Object.create(null) };
+}
+
+function ensureHospitalAggBucket(agg, year, department) {
+  if (!agg.byYear[year]) {
+    agg.byYear[year] = Object.create(null);
+  }
+  if (!agg.byYear[year][department]) {
+    agg.byYear[year][department] = {
+      count_lt4: 0,
+      count_4_8: 0,
+      count_8_16: 0,
+      count_gt16: 0,
+      count_unclassified: 0,
+      total: 0,
+    };
+  }
+  return agg.byYear[year][department];
+}
+
+function resolveHospitalStayBucket(durationHours) {
+  if (!Number.isFinite(durationHours) || durationHours < 0 || durationHours > 24) {
+    return 'unclassified';
+  }
+  if (durationHours < 4) {
+    return 'lt4';
+  }
+  if (durationHours < 8) {
+    return '4to8';
+  }
+  if (durationHours < 16) {
+    return '8to16';
+  }
+  return 'gt16';
+}
+
+function accumulateHospitalizedDeptStayAgg(agg, record, shiftStartHour) {
+  if (!agg || !record || record.hospitalized !== true) {
+    return;
+  }
+  const hasArrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
+  const hasDischarge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
+  const reference = hasArrival ? record.arrival : (hasDischarge ? record.discharge : null);
+  const dateKey = computeShiftDateKey(reference, shiftStartHour);
+  if (!dateKey) {
+    return;
+  }
+  const year = dateKey.slice(0, 4);
+  if (!/^\d{4}$/.test(year)) {
+    return;
+  }
+  const department = String(record.department || '').trim() || 'Nenurodyta';
+  const bucket = ensureHospitalAggBucket(agg, year, department);
+  const durationHours = hasArrival && hasDischarge
+    ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
+    : Number.NaN;
+  const stayBucket = resolveHospitalStayBucket(durationHours);
+  if (stayBucket === 'lt4') {
+    bucket.count_lt4 += 1;
+  } else if (stayBucket === '4to8') {
+    bucket.count_4_8 += 1;
+  } else if (stayBucket === '8to16') {
+    bucket.count_8_16 += 1;
+  } else if (stayBucket === 'gt16') {
+    bucket.count_gt16 += 1;
+  } else {
+    bucket.count_unclassified += 1;
+  }
+  bucket.total += 1;
 }

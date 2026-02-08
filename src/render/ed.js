@@ -1,5 +1,5 @@
 import { setDatasetValue } from '../utils/dom.js';
-import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js';
+import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js?v=2026-02-08-ed-cards-fallback-1';
 
 export function createEdRenderer(env) {
   const {
@@ -20,7 +20,6 @@ export function createEdRenderer(env) {
     formatMonthLabel,
     buildFeedbackTrendInfo,
     buildEdStatus,
-    updateEdTvPanel,
     renderEdDispositionsChart,
     createEdSectionIcon,
     renderEdCommentsCard,
@@ -264,7 +263,6 @@ export function createEdRenderer(env) {
         selectors.edStatus.textContent = pillText;
         setDatasetValue(selectors.edStatus, 'tone', tone);
       }
-      updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
     }
 
   return { renderEdDashboard };

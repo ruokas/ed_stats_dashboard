@@ -105,7 +105,6 @@ export function createDashboardState({
     },
     theme: 'light',
     fullscreen: false,
-    tvMode: false,
     activeTab: 'overview',
     compare: {
       active: false,
