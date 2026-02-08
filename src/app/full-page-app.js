@@ -18,7 +18,7 @@ import {
 } from '../data/stats.js';
 import { createChartRenderers } from '../charts/index.js';
 import { createKpiRenderer } from '../render/kpi.js';
-import { createEdRenderer } from '../render/ed.js?v=2026-02-08-ed-cards-fallback-1';
+import { createEdRenderer } from '../render/ed.js?v=2026-02-08-ed-cards-fallback-2';
 import { createUIEvents } from '../events/index.js';
 import { createLayoutTools } from './runtime/layout.js';
 import { createDataFlow } from './runtime/data-flow.js';
@@ -63,8 +63,6 @@ import {
   shortDateFormatter,
   monthDayFormatter,
   statusTimeFormatter,
-  tvTimeFormatter,
-  tvDateFormatter,
   weekdayLongFormatter,
   textCollator,
   dailyDateFormatter,
@@ -109,7 +107,7 @@ export function startFullPageApp(options = {}) {
         recent: { recent: true },
         summaries: { monthly: false, yearly: true },
         feedback: { feedback: true },
-        ed: { ed: true, tv: false },
+        ed: { ed: true },
       };
       const pageConfig = PAGE_CONFIG[pageId] || PAGE_CONFIG.kpi;
 
@@ -165,11 +163,6 @@ export function startFullPageApp(options = {}) {
         updateScrollTopButtonVisibility,
         scheduleScrollTopUpdate,
       } = layoutTools;
-
-      const tvState = { clockHandle: null };
-
-
-
 
       function normalizeHourlyWeekday(value) {
         if (value === HOURLY_WEEKDAY_ALL) {
@@ -1968,9 +1961,6 @@ export function startFullPageApp(options = {}) {
             selectors.sectionNav.setAttribute('aria-hidden', 'true');
           }
         }
-        if (normalized !== 'ed' && dashboardState.tvMode) {
-          setTvMode(false, { silent: true });
-        }
         if (selectors.edNavButton) {
           const edActive = normalized === 'ed';
           selectors.edNavButton.setAttribute('aria-pressed', edActive ? 'true' : 'false');
@@ -3621,114 +3611,6 @@ export function startFullPageApp(options = {}) {
         selectors.edNavButton.setAttribute('aria-label', activeLabel);
         selectors.edNavButton.title = activeLabel;
         setDatasetValue(selectors.edNavButton, 'fullscreenAvailable', isEdActive ? 'true' : 'false');
-        updateTvToggleControls();
-      }
-
-      function updateTvToggleControls() {
-        if (!selectors.edTvToggleBtn) {
-          return;
-        }
-        const toggleTexts = TEXT.edTv?.toggle || {};
-        const isActive = dashboardState.tvMode === true && dashboardState.activeTab === 'ed';
-        const label = isActive
-          ? (toggleTexts.exit || 'Išjungti ekraną')
-          : (toggleTexts.enter || 'Įjungti ekraną');
-        const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
-        if (labelTarget) {
-          labelTarget.textContent = label;
-        }
-        selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
-        selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
-        selectors.edTvToggleBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-      }
-
-      function updateEdTvClock() {
-        if (!selectors.edTvClockTime || !selectors.edTvClockDate) {
-          return;
-        }
-        const now = new Date();
-        selectors.edTvClockTime.textContent = tvTimeFormatter.format(now);
-        selectors.edTvClockDate.textContent = capitalizeSentence(tvDateFormatter.format(now));
-      }
-
-      function startTvClock() {
-        updateEdTvClock();
-        if (tvState.clockHandle != null) {
-          return;
-        }
-        tvState.clockHandle = window.setInterval(updateEdTvClock, 15000);
-      }
-
-      function stopTvClock() {
-        if (tvState.clockHandle != null) {
-          window.clearInterval(tvState.clockHandle);
-          tvState.clockHandle = null;
-        }
-      }
-
-      function setTvMode(active, options = {}) {
-        if (!selectors.edTvPanel) {
-          dashboardState.tvMode = false;
-          document.body.removeAttribute('data-tv-mode');
-          if (selectors.edStandardSection) {
-            selectors.edStandardSection.removeAttribute('hidden');
-            selectors.edStandardSection.removeAttribute('aria-hidden');
-          }
-          stopTvClock();
-          if (!options.silent) {
-            scheduleLayoutRefresh();
-          }
-          return;
-        }
-        const shouldEnable = Boolean(active);
-        const previous = dashboardState.tvMode === true;
-        if (shouldEnable === previous && !options.force) {
-          updateTvToggleControls();
-          return;
-        }
-        dashboardState.tvMode = shouldEnable;
-        if (shouldEnable) {
-          document.body.setAttribute('data-tv-mode', 'true');
-          if (selectors.edStandardSection) {
-            selectors.edStandardSection.setAttribute('hidden', 'hidden');
-            selectors.edStandardSection.setAttribute('aria-hidden', 'true');
-          }
-          if (selectors.edTvPanel) {
-            selectors.edTvPanel.removeAttribute('hidden');
-            selectors.edTvPanel.setAttribute('aria-hidden', 'false');
-          }
-          startTvClock();
-          setFullscreenMode(true);
-          const dataset = dashboardState.ed || {};
-          const summary = dataset.summary || createEmptyEdSummary(dataset.meta?.type);
-          const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
-          const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
-          const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
-            || Number.isFinite(summary?.occupiedBeds)
-            || Number.isFinite(summary?.nursePatientsPerStaff)
-            || Number.isFinite(summary?.doctorPatientsPerStaff);
-          const displayVariant = summaryMode === 'snapshot'
-            || (summaryMode === 'hybrid' && hasSnapshotMetrics)
-            ? 'snapshot'
-            : 'legacy';
-          const statusInfo = buildEdStatus(summary, dataset, displayVariant);
-          updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
-        } else {
-          document.body.removeAttribute('data-tv-mode');
-          if (selectors.edStandardSection) {
-            selectors.edStandardSection.removeAttribute('hidden');
-            selectors.edStandardSection.removeAttribute('aria-hidden');
-          }
-          if (selectors.edTvPanel) {
-            selectors.edTvPanel.setAttribute('hidden', 'hidden');
-            selectors.edTvPanel.setAttribute('aria-hidden', 'true');
-          }
-          stopTvClock();
-        }
-        updateTvToggleControls();
-        if (!options.silent) {
-          scheduleLayoutRefresh();
-        }
       }
 
       /**
@@ -3781,34 +3663,6 @@ export function startFullPageApp(options = {}) {
           } else {
             selectors.closeEdPanelBtn.textContent = closeLabel;
           }
-        }
-        if (selectors.edTvToggleBtn) {
-          if (!pageConfig.tv) {
-            selectors.edTvToggleBtn.setAttribute('hidden', 'hidden');
-            selectors.edTvToggleBtn.setAttribute('aria-hidden', 'true');
-          } else {
-            selectors.edTvToggleBtn.removeAttribute('hidden');
-            selectors.edTvToggleBtn.removeAttribute('aria-hidden');
-          }
-          const toggleTexts = TEXT.edTv?.toggle || {};
-          const isActive = dashboardState.tvMode === true;
-          const label = isActive
-            ? (toggleTexts.exit || 'Išjungti ekraną')
-            : (toggleTexts.enter || 'Įjungti ekraną');
-          const labelTarget = selectors.edTvToggleBtn.querySelector('[data-tv-toggle-label]');
-          if (labelTarget) {
-            labelTarget.textContent = label;
-          }
-          if (pageConfig.tv) {
-            selectors.edTvToggleBtn.setAttribute('aria-label', `${label} (Ctrl+Shift+T)`);
-            selectors.edTvToggleBtn.title = `${label} (Ctrl+Shift+T)`;
-          }
-        }
-        if (selectors.edTvTitle && TEXT.edTv?.title) {
-          selectors.edTvTitle.textContent = TEXT.edTv.title;
-        }
-        if (selectors.edTvSubtitle) {
-          selectors.edTvSubtitle.textContent = TEXT.edTv?.subtitle || selectors.edTvSubtitle.textContent || '';
         }
         if (selectors.themeToggleBtn) {
           selectors.themeToggleBtn.setAttribute('aria-label', TEXT.theme.toggle);
@@ -6785,363 +6639,6 @@ export function startFullPageApp(options = {}) {
         return visuals;
       }
 
-      function renderTvMetrics(listElement, metrics) {
-        if (!listElement) {
-          return;
-        }
-        listElement.replaceChildren();
-        const entries = Array.isArray(metrics)
-          ? metrics.map((item) => ({
-            label: typeof item?.label === 'string' ? item.label : '',
-            value: item?.value != null && item.value !== '' ? String(item.value) : '—',
-            meta: item?.meta,
-          }))
-          : [];
-        if (!entries.length) {
-          return;
-        }
-        entries.forEach((entry) => {
-          const item = document.createElement('li');
-          item.className = 'ed-tv__metric';
-          const labelEl = document.createElement('p');
-          labelEl.className = 'ed-tv__metric-label';
-          labelEl.textContent = entry.label;
-          const valueEl = document.createElement('p');
-          valueEl.className = 'ed-tv__metric-value';
-          valueEl.textContent = entry.value;
-          item.append(labelEl, valueEl);
-          const metaLines = Array.isArray(entry.meta)
-            ? entry.meta
-            : (entry.meta != null && entry.meta !== '' ? [entry.meta] : []);
-          const filteredMeta = metaLines
-            .map((line) => (line != null ? String(line) : ''))
-            .map((line) => line.trim())
-            .filter((line) => line.length);
-          if (filteredMeta.length) {
-            const metaEl = document.createElement('p');
-            metaEl.className = 'ed-tv__metric-meta';
-            metaEl.textContent = filteredMeta.join('\n');
-            item.appendChild(metaEl);
-          }
-          listElement.appendChild(item);
-        });
-      }
-
-      function updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo) {
-        if (!selectors.edTvPanel) {
-          return;
-        }
-        const tvTexts = TEXT.edTv || {};
-        if (selectors.edTvTitle && tvTexts.title) {
-          selectors.edTvTitle.textContent = tvTexts.title;
-        }
-        if (selectors.edTvSubtitle) {
-          selectors.edTvSubtitle.textContent = tvTexts.subtitle || '';
-        }
-        const toneValue = dataset?.error
-          ? 'error'
-          : (dataset?.usingFallback ? 'warning' : (statusInfo?.tone || 'info'));
-        setDatasetValue(selectors.edTvPanel, 'tone', toneValue);
-        if (selectors.edTvStatusText) {
-          selectors.edTvStatusText.textContent = statusInfo?.tone === 'error'
-            ? (statusInfo?.message || '')
-            : '';
-        }
-        if (selectors.edTvUpdated) {
-          selectors.edTvUpdated.textContent = '';
-        }
-        if (selectors.edTvNotice) {
-          let noticeText = '';
-          let noticeTone = '';
-          if (dataset?.error) {
-            noticeText = tvTexts.notices?.error || '';
-            noticeTone = 'error';
-          } else if (dataset?.usingFallback) {
-            noticeText = tvTexts.notices?.fallback || '';
-            noticeTone = 'warning';
-          } else if (!statusInfo?.hasEntries) {
-            noticeText = tvTexts.notices?.empty || '';
-            noticeTone = 'warning';
-          }
-          if (noticeText) {
-            selectors.edTvNotice.textContent = noticeText;
-            setDatasetValue(selectors.edTvNotice, 'tone', noticeTone || 'info');
-            selectors.edTvNotice.hidden = false;
-          } else {
-            selectors.edTvNotice.hidden = true;
-            selectors.edTvNotice.textContent = '';
-            selectors.edTvNotice.removeAttribute('data-tone');
-          }
-        }
-        const groupTexts = tvTexts.groups?.[displayVariant] || tvTexts.groups?.snapshot || {};
-        if (selectors.edTvPrimaryTitle && groupTexts.now) {
-          selectors.edTvPrimaryTitle.textContent = groupTexts.now;
-        }
-        if (selectors.edTvStaffTitle && groupTexts.staff) {
-          selectors.edTvStaffTitle.textContent = groupTexts.staff;
-        }
-        if (selectors.edTvFlowTitle && groupTexts.flow) {
-          selectors.edTvFlowTitle.textContent = groupTexts.flow;
-        }
-        if (selectors.edTvTriageTitle && groupTexts.triage) {
-          selectors.edTvTriageTitle.textContent = groupTexts.triage;
-        }
-
-        const metricTexts = tvTexts.metrics || {};
-        const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? ED_TOTAL_BEDS : null;
-        const currentPatients = Number.isFinite(summary.currentPatients) ? summary.currentPatients : null;
-        const occupiedBeds = Number.isFinite(summary.occupiedBeds) ? summary.occupiedBeds : null;
-        const freeBeds = totalBeds != null && occupiedBeds != null
-          ? Math.max(totalBeds - occupiedBeds, 0)
-          : null;
-        const occupancyShare = totalBeds && occupiedBeds != null ? occupiedBeds / totalBeds : null;
-
-        let primaryMetrics = [];
-        let staffMetrics = [];
-        let flowMetrics = [];
-
-        if (displayVariant === 'snapshot') {
-          const occupancyPercentText = occupancyShare != null ? percentFormatter.format(occupancyShare) : null;
-          const freeShare = totalBeds && freeBeds != null && totalBeds > 0 ? freeBeds / totalBeds : null;
-          const bedStatusLines = [];
-          if (occupiedBeds != null) {
-            const occupiedParts = [];
-            if (totalBeds != null) {
-              occupiedParts.push(`${numberFormatter.format(occupiedBeds)} / ${numberFormatter.format(totalBeds)} lov.`);
-            } else {
-              occupiedParts.push(`${numberFormatter.format(occupiedBeds)} lov.`);
-            }
-            if (occupancyShare != null) {
-              occupiedParts.push(`(${percentFormatter.format(occupancyShare)})`);
-            }
-            const occupiedLabel = metricTexts.bedOccupied || metricTexts.occupiedBeds || 'Užimta';
-            bedStatusLines.push(`${occupiedLabel}: ${occupiedParts.join(' ')}`.trim());
-          }
-          if (freeBeds != null) {
-            const freeParts = [`${numberFormatter.format(freeBeds)} lov.`];
-            if (freeShare != null) {
-              freeParts.push(`(${percentFormatter.format(freeShare)})`);
-            }
-            const freeLabel = metricTexts.bedFree || metricTexts.freeBeds || 'Laisvos';
-            bedStatusLines.push(`${freeLabel}: ${freeParts.join(' ')}`.trim());
-          }
-          const occupancyValue = occupancyPercentText
-            || (occupiedBeds != null && totalBeds != null
-              ? `${numberFormatter.format(occupiedBeds)} / ${numberFormatter.format(totalBeds)} lov.`
-              : (occupiedBeds != null ? `${numberFormatter.format(occupiedBeds)} lov.` : '—'));
-
-          primaryMetrics = [
-            {
-              label: metricTexts.currentPatients || 'Šiuo metu pacientų',
-              value: currentPatients != null ? numberFormatter.format(currentPatients) : '—',
-            },
-            {
-              label: metricTexts.bedStatus || metricTexts.occupancy || 'Lovų būklė',
-              value: occupancyValue,
-              meta: bedStatusLines,
-            },
-          ];
-
-          const nurseRatioValue = Number.isFinite(summary.nursePatientsPerStaff)
-            ? summary.nursePatientsPerStaff
-            : null;
-          const nurseRatioText = formatEdCardValue(nurseRatioValue, 'ratio');
-          const nurseStaff = currentPatients != null && nurseRatioValue && nurseRatioValue > 0
-            ? currentPatients / nurseRatioValue
-            : null;
-          const doctorRatioValue = Number.isFinite(summary.doctorPatientsPerStaff)
-            ? summary.doctorPatientsPerStaff
-            : null;
-          const doctorRatioText = formatEdCardValue(doctorRatioValue, 'ratio');
-          const doctorStaff = currentPatients != null && doctorRatioValue && doctorRatioValue > 0
-            ? currentPatients / doctorRatioValue
-            : null;
-
-          const staffValueParts = [];
-          const staffMetaLines = [];
-          if (nurseRatioText) {
-            const shortLabel = metricTexts.nurseRatioShort || 'Sl.';
-            staffValueParts.push(`${shortLabel} ${nurseRatioText}`);
-            const nurseMeta = [`${metricTexts.nurseRatio || 'Slaugytojai'}: ${nurseRatioText}`];
-            if (nurseStaff != null) {
-              nurseMeta.push(`(~${oneDecimalFormatter.format(nurseStaff)} slaugyt.)`);
-            }
-            staffMetaLines.push(nurseMeta.join(' '));
-          }
-          if (doctorRatioText) {
-            const shortLabel = metricTexts.doctorRatioShort || 'Gyd.';
-            staffValueParts.push(`${shortLabel} ${doctorRatioText}`);
-            const doctorMeta = [`${metricTexts.doctorRatio || 'Gydytojai'}: ${doctorRatioText}`];
-            if (doctorStaff != null) {
-              doctorMeta.push(`(~${oneDecimalFormatter.format(doctorStaff)} gyd.)`);
-            }
-            staffMetaLines.push(doctorMeta.join(' '));
-          }
-
-          const staffCardLabel = metricTexts.staffCombined || metricTexts.nurseRatio || 'Santykiai';
-          const staffCardValue = staffValueParts.length ? staffValueParts.join(' · ') : '—';
-          staffMetrics = [
-            {
-              label: staffCardLabel,
-              value: staffCardValue,
-              meta: staffMetaLines,
-            },
-          ];
-
-          const avgLos = formatEdCardValue(summary.avgLosMinutes, 'hours');
-          if (avgLos != null) {
-            flowMetrics.push({
-              label: metricTexts.avgLos || 'Vid. buvimas',
-              value: `${avgLos} val.`,
-            });
-          }
-          const doorMinutes = formatEdCardValue(summary.avgDoorToProviderMinutes, 'minutes');
-          if (doorMinutes != null) {
-            flowMetrics.push({
-              label: metricTexts.door || 'Durys → gyd.',
-              value: `${doorMinutes} min.`,
-            });
-          }
-          const decisionMinutes = formatEdCardValue(summary.avgDecisionToLeaveMinutes, 'minutes');
-          if (decisionMinutes != null) {
-            flowMetrics.push({
-              label: metricTexts.decision || 'Sprendimas → išvykimas',
-              value: `${decisionMinutes} min.`,
-            });
-          }
-          const hospShare = formatEdCardValue(summary.hospitalizedShare, 'percent');
-          if (hospShare != null) {
-            flowMetrics.push({
-              label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
-              value: hospShare,
-            });
-          }
-        } else {
-          const avgDaily = Number.isFinite(summary.avgDailyPatients)
-            ? oneDecimalFormatter.format(summary.avgDailyPatients)
-            : null;
-          const totalPatients = Number.isFinite(summary.totalPatients)
-            ? numberFormatter.format(summary.totalPatients)
-            : null;
-          const avgLos = formatEdCardValue(summary.avgLosMinutes, 'hours');
-          const hospShare = formatEdCardValue(summary.hospitalizedShare, 'percent');
-          primaryMetrics = [
-            {
-              label: metricTexts.avgDaily || 'Vid. pacientų/d.',
-              value: avgDaily ?? '—',
-              meta: totalPatients ? `${totalPatients} pac. analizuota` : '',
-            },
-            {
-              label: metricTexts.avgLos || 'Vid. buvimas',
-              value: avgLos != null ? `${avgLos} val.` : '—',
-            },
-            {
-              label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
-              value: hospShare ?? '—',
-            },
-          ];
-
-          const doorMinutes = formatEdCardValue(summary.avgDoorToProviderMinutes, 'minutes');
-          const decisionMinutes = formatEdCardValue(summary.avgDecisionToLeaveMinutes, 'minutes');
-          staffMetrics = [
-            {
-              label: metricTexts.door || 'Durys → gyd.',
-              value: doorMinutes != null ? `${doorMinutes} min.` : '—',
-            },
-            {
-              label: metricTexts.decision || 'Sprendimas → išvykimas',
-              value: decisionMinutes != null ? `${decisionMinutes} min.` : '—',
-            },
-          ];
-
-          const monthAvg = formatEdCardValue(summary.avgLosMonthMinutes, 'hours');
-          if (monthAvg != null) {
-            flowMetrics.push({
-              label: metricTexts.avgLos || 'Vid. buvimas',
-              value: `${monthAvg} val.`,
-              meta: '',
-            });
-          }
-          const monthShare = formatEdCardValue(summary.hospitalizedMonthShare, 'percent');
-          if (monthShare != null) {
-            flowMetrics.push({
-              label: metricTexts.hospitalizedShare || 'Hospitalizuojama dalis',
-              value: monthShare,
-              meta: '',
-            });
-          }
-        }
-
-        renderTvMetrics(selectors.edTvPrimaryMetrics, primaryMetrics);
-        renderTvMetrics(selectors.edTvStaffMetrics, staffMetrics);
-        renderTvMetrics(selectors.edTvFlowMetrics, flowMetrics);
-
-        if (selectors.edTvTriageList) {
-          selectors.edTvTriageList.replaceChildren();
-          const list = Array.isArray(dispositions) ? dispositions : [];
-          const total = list.reduce((acc, entry) => acc + (Number.isFinite(entry?.count) ? entry.count : 0), 0);
-          if (!list.length || total <= 0) {
-            const emptyItem = document.createElement('li');
-            emptyItem.className = 'ed-tv__triage-item';
-            const label = document.createElement('p');
-            label.className = 'ed-tv__triage-label';
-            label.textContent = tvTexts.triageEmpty || 'Pasiskirstymo duomenų nėra.';
-            emptyItem.appendChild(label);
-            selectors.edTvTriageList.appendChild(emptyItem);
-            if (selectors.edTvTriageMeta) {
-              selectors.edTvTriageMeta.textContent = '';
-            }
-          } else {
-            list.forEach((entry) => {
-              if (!entry) {
-                return;
-              }
-              const item = document.createElement('li');
-              item.className = 'ed-tv__triage-item';
-              if (entry.categoryKey) {
-                item.classList.add(`ed-tv__triage-item--c${entry.categoryKey}`);
-              } else {
-                item.classList.add('ed-tv__triage-item--other');
-              }
-              const label = document.createElement('p');
-              label.className = 'ed-tv__triage-label';
-              label.textContent = entry.label || '';
-              const meta = document.createElement('div');
-              meta.className = 'ed-tv__triage-meta';
-              const countSpan = document.createElement('span');
-              countSpan.textContent = Number.isFinite(entry.count)
-                ? numberFormatter.format(entry.count)
-                : '—';
-              const shareValue = Number.isFinite(entry.share)
-                ? entry.share
-                : (total > 0 && Number.isFinite(entry.count) ? entry.count / total : null);
-              const shareSpan = document.createElement('span');
-              shareSpan.textContent = shareValue != null ? percentFormatter.format(shareValue) : '—';
-              meta.append(countSpan, shareSpan);
-              const bar = document.createElement('div');
-              bar.className = 'ed-tv__triage-bar';
-              const fill = document.createElement('div');
-              fill.className = 'ed-tv__triage-bar-fill';
-              if (shareValue != null) {
-                const width = Math.max(0, Math.min(100, shareValue * 100));
-                fill.style.width = `${width}%`;
-              } else {
-                fill.style.width = '0%';
-              }
-              bar.appendChild(fill);
-              item.append(label, meta, bar);
-              selectors.edTvTriageList.appendChild(item);
-            });
-            if (selectors.edTvTriageMeta) {
-              const totalText = numberFormatter.format(total);
-              selectors.edTvTriageMeta.textContent = typeof tvTexts.triageTotal === 'function'
-                ? tvTexts.triageTotal(totalText)
-                : `Iš viso: ${totalText}`;
-            }
-          }
-        }
-      }
-
       async function renderEdDashboard(edData) {
         return edRenderer.renderEdDashboard(edData);
       }
@@ -7669,7 +7166,6 @@ export function startFullPageApp(options = {}) {
         formatMonthLabel,
         buildFeedbackTrendInfo,
         buildEdStatus,
-        updateEdTvPanel,
         renderEdDispositionsChart,
         createEdSectionIcon,
         renderEdCommentsCard,
@@ -7706,9 +7202,6 @@ export function startFullPageApp(options = {}) {
         handleTableDownloadClick,
         handleTabKeydown,
         setActiveTab,
-        updateTvToggleControls,
-        setTvMode,
-        stopTvClock,
         updateChartPeriod,
         updateChartYear,
         handleHeatmapMetricChange,

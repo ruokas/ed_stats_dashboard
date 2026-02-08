@@ -20,7 +20,6 @@ export function createEdRenderer(env) {
     formatMonthLabel,
     buildFeedbackTrendInfo,
     buildEdStatus,
-    updateEdTvPanel,
     renderEdDispositionsChart,
     createEdSectionIcon,
     renderEdCommentsCard,
@@ -264,7 +263,6 @@ export function createEdRenderer(env) {
         selectors.edStatus.textContent = pillText;
         setDatasetValue(selectors.edStatus, 'tone', tone);
       }
-      updateEdTvPanel(summary, dispositions, displayVariant, dataset, statusInfo);
     }
 
   return { renderEdDashboard };

@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="styles.css">
 
 </head>
-<body data-page="ed">
+<body data-page="ed" data-fullscreen="true">
 <header class="hero" role="banner">
     <div class="container hero__content">
       <div class="hero__identity">
@@ -136,7 +136,6 @@
               </div>
             </div>
             <div class="ed-dashboard__header-actions">
-              <button id="toggleTvBtn" type="button" class="btn btn-secondary btn-small">TV režimas</button>
               <a href="index.html" class="ed-panel-close-btn" aria-label="Grįžti į rodiklius" title="Grįžti į rodiklius">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m11 7-5 5 5 5" />
@@ -149,50 +148,6 @@
           <div id="edCards" class="ed-dashboard__cards" role="list"></div>
         </div>
       </section>
-      <div id="edTvPanel" class="ed-tv" hidden aria-hidden="true">
-        <div class="ed-tv__header">
-          <div class="ed-tv__branding">
-            <h2 id="edTvTitle">SMPS ekranas</h2>
-            <p id="edTvSubtitle"></p>
-          </div>
-          <div class="ed-tv__clock">
-            <span id="edTvClockTime" class="ed-tv__clock-time">--:--</span>
-            <span id="edTvClockDate" class="ed-tv__clock-date"></span>
-          </div>
-          <div class="ed-tv__meta">
-            <p id="edTvUpdated"></p>
-            <p id="edTvStatusText" class="ed-tv__status"></p>
-          </div>
-        </div>
-        <p id="edTvNotice" class="ed-tv__notice" hidden></p>
-        <div class="ed-tv__grid">
-          <section class="ed-tv__group">
-            <div class="ed-tv__group-header">
-              <h3 id="edTvPrimaryTitle" class="ed-tv__group-title"></h3>
-            </div>
-            <div id="edTvPrimaryMetrics" class="ed-tv__metrics"></div>
-          </section>
-          <section class="ed-tv__group">
-            <div class="ed-tv__group-header">
-              <h3 id="edTvStaffTitle" class="ed-tv__group-title"></h3>
-            </div>
-            <div id="edTvStaffMetrics" class="ed-tv__metrics"></div>
-          </section>
-          <section class="ed-tv__group">
-            <div class="ed-tv__group-header">
-              <h3 id="edTvFlowTitle" class="ed-tv__group-title"></h3>
-            </div>
-            <div id="edTvFlowMetrics" class="ed-tv__metrics"></div>
-          </section>
-          <section class="ed-tv__group ed-tv__group--wide">
-            <div class="ed-tv__group-header">
-              <h3 id="edTvTriageTitle" class="ed-tv__group-title"></h3>
-              <p id="edTvTriageMeta" class="ed-tv__group-meta"></p>
-            </div>
-            <ul id="edTvTriageList" class="ed-tv__triage-list"></ul>
-          </section>
-        </div>
-      </div>
 </div>
 </main>
 
