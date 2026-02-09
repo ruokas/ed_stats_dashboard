@@ -17,7 +17,15 @@
       rel="stylesheet">
   <link rel="stylesheet" href="theme-init.css">
   <script src="theme-init.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2026-02-08-charts-jump-sticky-9">
+  <style>
+    body[data-page="charts"] .charts-jump-nav {
+      position: -webkit-sticky !important;
+      position: sticky !important;
+      top: var(--charts-jump-sticky-top, 56px) !important;
+      z-index: 6 !important;
+    }
+  </style>
 
 </head>
 <body data-page="charts">
@@ -119,6 +127,12 @@
   </header>
 <main class="container" role="main">
 <div class="section-band section-band--trends">
+<nav class="charts-jump-nav" aria-label="Grafikų sekcijos">
+  <a class="charts-jump-nav__link" href="#chartHeading">Srautų apžvalga</a>
+  <a class="charts-jump-nav__link" href="#chartsHourlyHeading">Valandinis profilis</a>
+  <a class="charts-jump-nav__link" href="#chartsHeatmapHeading">Intensyvumo žemėlapis</a>
+  <a class="charts-jump-nav__link" href="#chartsHospitalTableHeading">Hospitalizacijų analizė</a>
+</nav>
 <section class="section" aria-labelledby="chartHeading" data-section="chart">
       <div class="section__header">
         <div class="section__heading">
@@ -204,7 +218,12 @@
           </form>
         </div>
       </div>
-      <div class="chart-grid">
+      <section class="charts-subsection" aria-labelledby="chartsOverviewHeading">
+        <header class="charts-subsection__header">
+          <h3 id="chartsOverviewHeading" class="charts-subsection__title">Srautų apžvalga</h3>
+          <p class="charts-subsection__subtitle">Pagrindinė dienos ir savaitės dinamikos apžvalga.</p>
+        </header>
+        <div class="chart-grid">
         <figure class="chart-card chart-card--tall">
           <div class="chart-card__skeleton" aria-hidden="true" hidden>
             <span class="skeleton skeleton--title"></span>
@@ -334,6 +353,14 @@
             <span id="dowStayChartContext" class="chart-caption__context"></span>
           </figcaption>
         </figure>
+        </div>
+      </section>
+      <section class="charts-subsection" aria-labelledby="chartsHourlyHeading">
+        <header class="charts-subsection__header">
+          <h3 id="chartsHourlyHeading" class="charts-subsection__title">Valandinis profilis</h3>
+          <p class="charts-subsection__subtitle">Detali valandinių srautų analizė su lokaliais filtrais.</p>
+        </header>
+        <div class="chart-grid">
         <figure class="chart-card chart-card--tall chart-card--full chart-card--hourly">
           <div class="chart-card__skeleton" aria-hidden="true" hidden>
             <span class="skeleton skeleton--title"></span>
@@ -454,6 +481,14 @@
           </div>
           <figcaption id="hourlyChartTitle">Vidutinis pacientų skaičius per valandą</figcaption>
         </figure>
+        </div>
+      </section>
+      <section class="charts-subsection" aria-labelledby="chartsHeatmapHeading">
+        <header class="charts-subsection__header">
+          <h3 id="chartsHeatmapHeading" class="charts-subsection__title">Intensyvumo žemėlapis</h3>
+          <p class="charts-subsection__subtitle">Atvykimų aktyvumas pagal savaitės dieną ir valandą.</p>
+        </header>
+        <div class="chart-grid">
         <figure class="chart-card chart-card--heatmap">
           <div class="chart-card__skeleton" aria-hidden="true" hidden>
             <span class="skeleton skeleton--title"></span>
@@ -531,47 +566,8 @@
           <div id="arrivalHeatmap" class="heatmap-scroll" role="group" aria-live="polite"></div>
           <figcaption id="arrivalHeatmapTitle">Pacientų atvykimų šilumos žemėlapis (savaitės dienos × valandos)</figcaption>
         </figure>
-        <figure class="chart-card chart-card--funnel">
-          <div class="chart-card__skeleton" aria-hidden="true" hidden>
-            <span class="skeleton skeleton--title"></span>
-            <span class="skeleton skeleton--chart-area"></span>
-            <span class="skeleton skeleton--caption"></span>
-          </div>
-          <div class="chart-card__toolbar chart-card__toolbar--actions">
-            <button
-              type="button"
-              class="chart-copy-btn"
-              data-chart-copy
-              data-chart-target="#funnelChart"
-              data-tooltip="Kopijuoti grafiką"
-              aria-label="Kopijuoti grafiką"
-              title="Kopijuoti grafiką"
-            >
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
-                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="chart-download-btn"
-              data-chart-download
-              data-chart-target="#funnelChart"
-              data-tooltip="Parsisiųsti PNG"
-              aria-label="Parsisiųsti grafiką PNG formatu"
-              title="Parsisiųsti PNG"
-            >
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3v12"></path>
-                <path d="M8 11l4 4 4-4"></path>
-                <path d="M4 21h16"></path>
-              </svg>
-            </button>
-          </div>
-          <canvas id="funnelChart" aria-labelledby="funnelChartTitle"></canvas>
-          <figcaption id="funnelChartTitle">Pacientų srautas pagal sprendimą (atvykę → sprendimas)</figcaption>
-        </figure>
-      </div>
+        </div>
+      </section>
     </section>
     <section class="section section--compact" aria-labelledby="chartsHospitalTableHeading" data-section="charts-hospital-table">
       <div class="section__header">
@@ -678,7 +674,7 @@
     </div>
   </footer>
 
-    <script type="module" src="main.js?v=2026-02-08-entry-refresh-1"></script>
+    <script type="module" src="main.js?v=2026-02-08-entry-refresh-9"></script>
 
 
 </body>

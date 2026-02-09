@@ -2271,12 +2271,23 @@ body[data-theme="dark"] select optgroup {
 
     #kpiHeading,
     #chartHeading,
+    #chartsOverviewHeading,
+    #chartsHourlyHeading,
+    #chartsHeatmapHeading,
     #chartsHospitalTableHeading,
     #recentHeading,
     #yearlyHeading,
     #summariesSegmentHeading,
     #feedbackHeading {
       scroll-margin-top: calc(var(--hero-height, 0px) + 16px);
+    }
+
+    body[data-page="charts"] #chartHeading,
+    body[data-page="charts"] #chartsOverviewHeading,
+    body[data-page="charts"] #chartsHourlyHeading,
+    body[data-page="charts"] #chartsHeatmapHeading,
+    body[data-page="charts"] #chartsHospitalTableHeading {
+      scroll-margin-top: calc(var(--hero-height, 0px) + var(--charts-jump-nav-height, 52px) + 20px);
     }
 
     .section__subtitle {
@@ -2290,6 +2301,103 @@ body[data-theme="dark"] select optgroup {
       font-size: 0.9rem;
       color: var(--color-text-muted);
       max-width: 720px;
+    }
+
+    .charts-jump-nav {
+      position: sticky;
+      top: var(--charts-jump-sticky-top, 56px);
+      z-index: 6;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin: 0 0 18px;
+      padding: 8px;
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      background: var(--color-surface);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .charts-jump-nav__link {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .charts-jump-nav__link:hover,
+    .charts-jump-nav__link:focus-visible {
+      color: var(--color-accent);
+      border-color: rgba(47, 91, 234, 0.34);
+      background: var(--color-input-bg);
+      outline: none;
+    }
+
+    .charts-jump-nav__link.is-active,
+    .charts-jump-nav__link[aria-current="true"] {
+      color: var(--color-accent);
+      border-color: rgba(47, 91, 234, 0.42);
+      background: var(--color-input-bg);
+      box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.18);
+    }
+
+    .charts-subsection {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      background: var(--color-surface);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    body[data-theme="dark"] .charts-jump-nav {
+      background: rgba(20, 25, 39, 0.92);
+      border-color: rgba(121, 147, 199, 0.3);
+    }
+
+    body[data-theme="dark"] .charts-subsection {
+      box-shadow: inset 0 0 0 1px rgba(109, 141, 255, 0.12);
+    }
+
+    .charts-subsection:first-of-type {
+      margin-top: 0;
+    }
+
+    .charts-subsection__header {
+      margin-bottom: 12px;
+    }
+
+    .charts-subsection__title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--color-text);
+    }
+
+    .charts-subsection__subtitle {
+      margin: 4px 0 0;
+      font-size: 0.86rem;
+      color: var(--color-text-muted);
+    }
+
+    .charts-subsection .chart-grid {
+      gap: 12px;
     }
 
     .feedback-controls {
@@ -5227,6 +5335,19 @@ body[data-theme="dark"] select optgroup {
     }
 
     @media (max-width: 768px) {
+      .charts-jump-nav {
+        margin: 8px 0 14px;
+        padding: 6px;
+      }
+
+      .charts-jump-nav__link {
+        min-height: 36px;
+      }
+
+      .charts-subsection {
+        padding: 12px;
+      }
+
       .kpi-header-actions {
         width: 100%;
         flex-direction: column;
@@ -6136,6 +6257,14 @@ body[data-theme="dark"] select optgroup {
 
       .charts-hospital-table-controls {
         grid-template-columns: minmax(0, 1fr);
+      }
+
+      .charts-jump-nav {
+        border-radius: 14px;
+      }
+
+      .charts-jump-nav__link {
+        min-height: 40px;
       }
 
       .summaries-reports-grid {

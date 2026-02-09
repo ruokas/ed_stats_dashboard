@@ -268,6 +268,7 @@ export function createSelectorsForPage(pageId) {
     const chartPeriodGroup = byId('chartPeriodGroup');
     const chartFiltersForm = byId('chartFiltersForm');
     const hourlyCompareSeriesGroup = byQueryIn(chartSection, '.hourly-compare-series');
+    const chartsJumpNav = byQueryIn(main, '.charts-jump-nav');
     const chartsHospitalTableRoot = byId('chartsHospitalTableRoot');
     return {
       hero: byQuery('header.hero'),
@@ -324,6 +325,8 @@ export function createSelectorsForPage(pageId) {
       chartFilterCardType: byId('chartCardType'),
       chartFilterCardTypeButtons: byQueryAllIn(chartFiltersForm, '[data-chart-card-type]'),
       chartFilterCompareGmp: byId('chartCompareGmp'),
+      chartsJumpNav,
+      chartsJumpLinks: byQueryAllIn(chartsJumpNav, '.charts-jump-nav__link'),
       chartsHospitalTableHeading: byId('chartsHospitalTableHeading'),
       chartsHospitalTableSubtitle: byId('chartsHospitalTableSubtitle'),
       chartsHospitalTableCaption: byId('chartsHospitalTableCaption'),
