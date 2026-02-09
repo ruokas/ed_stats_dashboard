@@ -997,6 +997,7 @@ export function createEdHandlers(context) {
   }
 
   async function fetchEdData(options = {}) {
+    const signal = options?.signal || null;
     const config = settings?.dataSource?.ed || DEFAULT_SETTINGS.dataSource.ed;
     const url = (config?.url ?? '').trim();
     const empty = {
@@ -1145,4 +1146,3 @@ export function createEdHandlers(context) {
     fetchEdData,
   };
 }
-    const signal = options?.signal || null;
