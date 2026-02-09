@@ -41,13 +41,6 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
   const departmentValue = normalizeHourlyDepartment(dashboardState.hourlyDepartment);
   updateHourlyCaption(weekdayValue, stayBucket, metricValue, departmentValue);
 
-  if (dashboardState.charts.hourly) {
-    if (dashboardState.charts.hourly._yAxisWheelHandler && canvas) {
-      canvas.removeEventListener('wheel', dashboardState.charts.hourly._yAxisWheelHandler);
-    }
-    dashboardState.charts.hourly.destroy();
-  }
-
   const compareEnabled = dashboardState.hourlyCompareEnabled === true;
   const compareYears = normalizeHourlyCompareYears(
     dashboardState.hourlyCompareYears?.[0],
@@ -183,6 +176,14 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
 
   if (!hasData) {
     setChartCardMessage(canvas, TEXT.charts?.empty);
+    if (dashboardState.charts.hourly) {
+      if (dashboardState.charts.hourly._yAxisWheelHandler && canvas) {
+        canvas.removeEventListener('wheel', dashboardState.charts.hourly._yAxisWheelHandler);
+      }
+      if (typeof dashboardState.charts.hourly.destroy === 'function') {
+        dashboardState.charts.hourly.destroy();
+      }
+    }
     dashboardState.charts.hourly = null;
     return;
   }
@@ -192,7 +193,7 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
   dashboardState.hourlyYAxisSuggestedMin = suggestedMin ?? null;
 
   const labels = HEATMAP_HOURS;
-  dashboardState.charts.hourly = new Chart(ctx, {
+  const chartConfig = {
     type: 'line',
     data: {
       labels,
@@ -271,7 +272,31 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
         },
       },
     },
-  });
+  };
+
+  const existingChart = dashboardState.charts.hourly;
+  const canReuse = existingChart
+    && existingChart.canvas === canvas
+    && existingChart.config?.type === 'line';
+  if (canReuse) {
+    existingChart.data.labels = chartConfig.data.labels;
+    existingChart.data.datasets = chartConfig.data.datasets;
+    existingChart.options = chartConfig.options;
+    if (typeof applyHourlyYAxisAuto === 'function') {
+      applyHourlyYAxisAuto(existingChart);
+    }
+    existingChart.update('none');
+    return;
+  }
+  if (existingChart) {
+    if (existingChart._yAxisWheelHandler && canvas) {
+      canvas.removeEventListener('wheel', existingChart._yAxisWheelHandler);
+    }
+    if (typeof existingChart.destroy === 'function') {
+      existingChart.destroy();
+    }
+  }
+  dashboardState.charts.hourly = new Chart(ctx, chartConfig);
 
   if (typeof applyHourlyYAxisAuto === 'function') {
     applyHourlyYAxisAuto(dashboardState.charts.hourly);
@@ -352,14 +377,13 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
   Chart.defaults.borderColor = palette.gridColor;
   dashboardState.chartLib = Chart;
 
-  if (dashboardState.charts.lastShiftHourly) {
-    dashboardState.charts.lastShiftHourly.destroy();
-  }
-
   if (!seriesInfo?.hasData) {
     setChartCardMessage(canvas, TEXT.charts?.empty);
     if (selectors.lastShiftHourlyContext) {
       selectors.lastShiftHourlyContext.textContent = '';
+    }
+    if (dashboardState.charts.lastShiftHourly && typeof dashboardState.charts.lastShiftHourly.destroy === 'function') {
+      dashboardState.charts.lastShiftHourly.destroy();
     }
     dashboardState.charts.lastShiftHourly = null;
     return;
@@ -586,7 +610,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
       },
     ];
 
-  const lastShiftChart = new Chart(ctx, {
+  const chartConfig = {
     type: 'line',
     data: {
       labels: rotateSeries(HEATMAP_HOURS),
@@ -651,9 +675,29 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
         },
       },
     },
-  });
+  };
 
-  dashboardState.charts.lastShiftHourly = lastShiftChart;
+  const existingLastShiftChart = dashboardState.charts.lastShiftHourly;
+  const canReuseLastShiftChart = existingLastShiftChart
+    && existingLastShiftChart.canvas === canvas
+    && existingLastShiftChart.config?.type === 'line';
+  const lastShiftChart = canReuseLastShiftChart
+    ? existingLastShiftChart
+    : new Chart(ctx, chartConfig);
+  if (canReuseLastShiftChart) {
+    existingLastShiftChart.data.labels = chartConfig.data.labels;
+    existingLastShiftChart.data.datasets = chartConfig.data.datasets;
+    existingLastShiftChart.options = chartConfig.options;
+    existingLastShiftChart.update('none');
+  } else {
+    if (existingLastShiftChart && typeof existingLastShiftChart.destroy === 'function') {
+      existingLastShiftChart.destroy();
+    }
+    dashboardState.charts.lastShiftHourly = lastShiftChart;
+  }
+  if (canReuseLastShiftChart) {
+    dashboardState.charts.lastShiftHourly = existingLastShiftChart;
+  }
 
   if (selectors.lastShiftHourlyLegend) {
     datasets.forEach((dataset, index) => {

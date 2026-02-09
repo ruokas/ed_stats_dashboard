@@ -233,7 +233,7 @@ export function createFeedbackHandlers(context) {
       .filter(Boolean);
   };
 
-  const fetchFeedbackData = async () => {
+  const fetchFeedbackData = async (options = {}) => {
     const config = settings?.dataSource?.feedback || DEFAULT_SETTINGS.dataSource.feedback;
     const url = (config?.url ?? '').trim();
 
@@ -244,12 +244,15 @@ export function createFeedbackHandlers(context) {
     }
 
     try {
-      const download = await downloadCsv(url);
+      const download = await downloadCsv(url, { signal: options?.signal });
       const dataset = transformFeedbackCsv(download.text);
       dashboardState.feedback.usingFallback = false;
       dashboardState.feedback.lastErrorMessage = '';
       return dataset;
     } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw error;
+      }
       const errorInfo = describeError(error, { code: 'FEEDBACK_FETCH' });
       console.error(errorInfo.log, error);
       dashboardState.feedback.lastErrorMessage = errorInfo.userMessage;

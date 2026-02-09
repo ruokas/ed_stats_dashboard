@@ -106,18 +106,18 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
 
   const dowCanvas = document.getElementById('dowChart');
   if (dowCanvas && dowCanvas.getContext) {
-    if (dashboardState.charts.dow) {
-      dashboardState.charts.dow.destroy();
-    }
     const hasDowData = dowTotals.some((total) => total > 0);
     if (!hasDowData) {
       setChartCardMessage(dowCanvas, TEXT.charts?.empty);
+      if (dashboardState.charts.dow && typeof dashboardState.charts.dow.destroy === 'function') {
+        dashboardState.charts.dow.destroy();
+      }
       dashboardState.charts.dow = null;
     } else {
       setChartCardMessage(dowCanvas, null);
       const dowCtx = dowCanvas.getContext('2d');
       if (dowCtx) {
-        dashboardState.charts.dow = new Chart(dowCtx, {
+        const chartConfig = {
           type: 'line',
           data: {
             labels: dowLabels,
@@ -201,27 +201,42 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
               },
             },
           },
-        });
+        };
+        const existingChart = dashboardState.charts.dow;
+        const canReuse = existingChart
+          && existingChart.canvas === dowCanvas
+          && existingChart.config?.type === 'line';
+        if (canReuse) {
+          existingChart.data.labels = chartConfig.data.labels;
+          existingChart.data.datasets = chartConfig.data.datasets;
+          existingChart.options = chartConfig.options;
+          existingChart.update('none');
+        } else {
+          if (existingChart && typeof existingChart.destroy === 'function') {
+            existingChart.destroy();
+          }
+          dashboardState.charts.dow = new Chart(dowCtx, chartConfig);
+        }
       }
     }
   }
 
   const dowStayCanvas = document.getElementById('dowStayChart');
   if (dowStayCanvas && dowStayCanvas.getContext) {
-    if (dashboardState.charts.dowStay) {
-      dashboardState.charts.dowStay.destroy();
-    }
     const hasStayData = compareGmp
       ? dowStayEmsCounts.some((count) => count > 0) || dowStaySelfCounts.some((count) => count > 0)
       : dowStayCounts.some((count) => count > 0);
     if (!hasStayData) {
       setChartCardMessage(dowStayCanvas, TEXT.charts?.empty);
+      if (dashboardState.charts.dowStay && typeof dashboardState.charts.dowStay.destroy === 'function') {
+        dashboardState.charts.dowStay.destroy();
+      }
       dashboardState.charts.dowStay = null;
     } else {
       setChartCardMessage(dowStayCanvas, null);
       const stayCtx = dowStayCanvas.getContext('2d');
       if (stayCtx) {
-        dashboardState.charts.dowStay = new Chart(stayCtx, {
+        const chartConfig = {
           type: 'line',
           data: {
             labels: dowLabels,
@@ -308,7 +323,22 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
               },
             },
           },
-        });
+        };
+        const existingChart = dashboardState.charts.dowStay;
+        const canReuse = existingChart
+          && existingChart.canvas === dowStayCanvas
+          && existingChart.config?.type === 'line';
+        if (canReuse) {
+          existingChart.data.labels = chartConfig.data.labels;
+          existingChart.data.datasets = chartConfig.data.datasets;
+          existingChart.options = chartConfig.options;
+          existingChart.update('none');
+        } else {
+          if (existingChart && typeof existingChart.destroy === 'function') {
+            existingChart.destroy();
+          }
+          dashboardState.charts.dowStay = new Chart(stayCtx, chartConfig);
+        }
       }
     }
   }

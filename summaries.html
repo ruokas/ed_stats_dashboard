@@ -211,6 +211,176 @@
         </table>
       </div>
     </section>
+    <section class="section section--compact" aria-labelledby="summariesReportsHeading" data-section="summaries-reports">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="summariesReportsHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 18h16" />
+                  <path d="M5 13h3" />
+                  <path d="M10 9h3" />
+                  <path d="M15 6h4" />
+                </svg>
+              </span>
+              <span class="section-title__text">Papildomų duomenų ataskaitos</span>
+            </h2>
+            <p id="summariesReportsSubtitle" class="section__subtitle"></p>
+          </div>
+        </div>
+      </div>
+      <div class="summaries-reports-controls" role="group" aria-label="Papildomų ataskaitų filtrai">
+        <label class="summaries-reports-controls__field" for="summariesReportsYear">
+          <span>Metai</span>
+          <select id="summariesReportsYear"></select>
+        </label>
+        <label class="summaries-reports-controls__field" for="summariesReportsTopN">
+          <span>TOP N</span>
+          <select id="summariesReportsTopN">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="20">20</option>
+          </select>
+        </label>
+        <label class="summaries-reports-controls__field" for="summariesReportsMinGroupSize">
+          <span>Min. grupės imtis</span>
+          <input id="summariesReportsMinGroupSize" type="number" min="1" max="999" step="1" value="10">
+        </label>
+      </div>
+      <p id="summariesReportsCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
+      <div class="summaries-reports-grid">
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Diagnozių pasiskirstymas pagal dažnį</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="diagnosis">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="diagnosis">PNG</button>
+            </div>
+          </div>
+          <canvas id="diagnosisChart" height="220"></canvas>
+          <p id="diagnosisInfo" class="report-card__hint"></p>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Amžiaus ir diagnozių grupių ryšys</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="ageDiagnosisHeatmap">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="ageDiagnosisHeatmap">PNG</button>
+            </div>
+          </div>
+          <canvas id="ageDiagnosisHeatmapChart" height="260"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Pasišalinę pacientai (Z76.9)</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="z769Trend">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="z769Trend">PNG</button>
+            </div>
+          </div>
+          <canvas id="z769TrendChart" height="220"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Pacientai su siuntimu</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralTrend">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralTrend">PNG</button>
+            </div>
+          </div>
+          <canvas id="referralTrendChart" height="220"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Siuntimas × baigtis pagal metus</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralDispositionYearly">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralDispositionYearly">PNG</button>
+            </div>
+          </div>
+          <canvas id="referralDispositionYearlyChart" height="220"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Siuntimų % pagal mėnesį</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralMonthlyHeatmap">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralMonthlyHeatmap">PNG</button>
+            </div>
+          </div>
+          <canvas id="referralMonthlyHeatmapChart" height="260"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC</h3>
+            <div class="report-card__actions">
+              <label for="referralHospitalizedByPspcSort" class="report-card__inline-filter">
+                <span>Rikiuoti</span>
+                <select id="referralHospitalizedByPspcSort">
+                  <option value="desc">Nuo didžiausių %</option>
+                  <option value="asc">Nuo mažiausių %</option>
+                </select>
+              </label>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralHospitalizedByPspc">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralHospitalizedByPspc">PNG</button>
+            </div>
+          </div>
+          <canvas id="referralHospitalizedByPspcChart" height="220"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>PSPC: siuntimų ir hospitalizacijų ryšys</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="pspcCorrelation">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="pspcCorrelation">PNG</button>
+            </div>
+          </div>
+          <canvas id="pspcCorrelationChart" height="220"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Pacientų pasiskirstymas pagal amžių</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="ageDistribution">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="ageDistribution">PNG</button>
+            </div>
+          </div>
+          <canvas id="ageDistributionChart" height="220"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Pacientų kiekiai pagal PSPC įstaigas</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="pspcDistribution">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="pspcDistribution">PNG</button>
+            </div>
+          </div>
+          <canvas id="pspcDistributionChart" height="220"></canvas>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card__head">
+            <h3>Pacientų pasiskirstymas pagal lytį</h3>
+            <div class="report-card__actions">
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="sexDistribution">CSV</button>
+              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="sexDistribution">PNG</button>
+            </div>
+          </div>
+          <canvas id="sexDistributionChart" height="220"></canvas>
+        </article>
+      </div>
+    </section>
 </div>
 </main>
 
@@ -232,8 +402,9 @@
     </div>
   </footer>
 
-    <script type="module" src="main.js"></script>
+    <script type="module" src="main.js?v=2026-02-08-entry-refresh-1"></script>
 
 
 </body>
 </html>
+

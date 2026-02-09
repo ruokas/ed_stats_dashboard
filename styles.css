@@ -51,6 +51,22 @@ body[data-theme="light"] {
   --hero-chip-active-bg: rgba(47, 91, 234, 0.18);
   --hero-chip-color: #21304d;
   --hero-chip-active-color: #12387f;
+  --report-diagnosis: #0284c7;
+  --report-age: #16a34a;
+  --report-referral: #ef4444;
+  --report-disposition-hosp-with-referral: #ef4444;
+  --report-disposition-discharged-with-referral: rgba(239, 68, 68, 0.28);
+  --report-disposition-hosp-without-referral: #2563eb;
+  --report-disposition-discharged-without-referral: rgba(37, 99, 235, 0.24);
+  --report-referral-pspc: #2563eb;
+  --report-pspc: #f59e0b;
+  --report-sex-1: #8b5cf6;
+  --report-sex-2: #06b6d4;
+  --report-sex-3: #f59e0b;
+  --report-sex-4: #10b981;
+  --report-heatmap: #16a34a;
+  --report-correlation-fill: rgba(37, 99, 235, 0.38);
+  --report-correlation-stroke: rgba(37, 99, 235, 0.9);
   --hero-height: 0px;
   --section-nav-height: 0px;
   font-family: "Sora", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -107,6 +123,22 @@ body[data-theme="dark"] {
   --hero-chip-active-bg: rgba(109, 141, 255, 0.34);
   --hero-chip-color: rgba(232, 236, 246, 0.92);
   --hero-chip-active-color: #f4f8ff;
+  --report-diagnosis: #38bdf8;
+  --report-age: #4ade80;
+  --report-referral: #f87171;
+  --report-disposition-hosp-with-referral: #f87171;
+  --report-disposition-discharged-with-referral: rgba(248, 113, 113, 0.3);
+  --report-disposition-hosp-without-referral: #60a5fa;
+  --report-disposition-discharged-without-referral: rgba(96, 165, 250, 0.3);
+  --report-referral-pspc: #60a5fa;
+  --report-pspc: #fbbf24;
+  --report-sex-1: #a78bfa;
+  --report-sex-2: #22d3ee;
+  --report-sex-3: #fbbf24;
+  --report-sex-4: #34d399;
+  --report-heatmap: #4ade80;
+  --report-correlation-fill: rgba(96, 165, 250, 0.38);
+  --report-correlation-stroke: rgba(147, 197, 253, 0.94);
 }
 
 * {
@@ -2239,10 +2271,23 @@ body[data-theme="dark"] select optgroup {
 
     #kpiHeading,
     #chartHeading,
+    #chartsOverviewHeading,
+    #chartsHourlyHeading,
+    #chartsHeatmapHeading,
+    #chartsHospitalTableHeading,
     #recentHeading,
     #yearlyHeading,
+    #summariesSegmentHeading,
     #feedbackHeading {
       scroll-margin-top: calc(var(--hero-height, 0px) + 16px);
+    }
+
+    body[data-page="charts"] #chartHeading,
+    body[data-page="charts"] #chartsOverviewHeading,
+    body[data-page="charts"] #chartsHourlyHeading,
+    body[data-page="charts"] #chartsHeatmapHeading,
+    body[data-page="charts"] #chartsHospitalTableHeading {
+      scroll-margin-top: calc(var(--hero-height, 0px) + var(--charts-jump-nav-height, 52px) + 20px);
     }
 
     .section__subtitle {
@@ -2258,11 +2303,418 @@ body[data-theme="dark"] select optgroup {
       max-width: 720px;
     }
 
+    .charts-jump-nav {
+      position: sticky;
+      top: var(--charts-jump-sticky-top, 56px);
+      z-index: 6;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin: 0 0 18px;
+      padding: 8px;
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      background: var(--color-surface);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .charts-jump-nav__link {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .charts-jump-nav__link:hover,
+    .charts-jump-nav__link:focus-visible {
+      color: var(--color-accent);
+      border-color: rgba(47, 91, 234, 0.34);
+      background: var(--color-input-bg);
+      outline: none;
+    }
+
+    .charts-jump-nav__link.is-active,
+    .charts-jump-nav__link[aria-current="true"] {
+      color: var(--color-accent);
+      border-color: rgba(47, 91, 234, 0.42);
+      background: var(--color-input-bg);
+      box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.18);
+    }
+
+    .charts-subsection {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      background: var(--color-surface);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    body[data-theme="dark"] .charts-jump-nav {
+      background: rgba(20, 25, 39, 0.92);
+      border-color: rgba(121, 147, 199, 0.3);
+    }
+
+    body[data-theme="dark"] .charts-subsection {
+      box-shadow: inset 0 0 0 1px rgba(109, 141, 255, 0.12);
+    }
+
+    .charts-subsection:first-of-type {
+      margin-top: 0;
+    }
+
+    .charts-subsection__header {
+      margin-bottom: 12px;
+    }
+
+    .charts-subsection__title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--color-text);
+    }
+
+    .charts-subsection__subtitle {
+      margin: 4px 0 0;
+      font-size: 0.86rem;
+      color: var(--color-text-muted);
+    }
+
+    .charts-subsection .chart-grid {
+      gap: 12px;
+    }
+
     .feedback-controls {
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin: 16px 0 24px;
+    }
+
+    .summaries-segment-controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 8px 0 14px;
+    }
+
+    .summaries-segment-controls__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    .summaries-segment-controls__field select,
+    .summaries-segment-controls__field input {
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      min-height: 40px;
+    }
+
+    .summaries-insights {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px dashed var(--color-border);
+      border-radius: 10px;
+      background: var(--color-surface-alt);
+      color: var(--color-text-muted);
+      display: grid;
+      gap: 6px;
+      font-size: 0.92rem;
+    }
+
+    .summaries-insights p {
+      margin: 0;
+    }
+
+    .summaries-segment-status {
+      margin: 0 0 10px;
+      color: var(--color-text-muted);
+      font-size: 0.88rem;
+    }
+
+    .summaries-reports-controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 8px 0 14px;
+    }
+
+    .summaries-reports-controls__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    .summaries-reports-controls__field select,
+    .summaries-reports-controls__field input {
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      min-height: 40px;
+    }
+
+    .summaries-reports-coverage {
+      margin: 0 0 12px;
+      color: var(--color-text-muted);
+      font-size: 0.88rem;
+    }
+
+    .charts-hospital-table-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 8px 0 10px;
+    }
+
+    .charts-hospital-table-controls__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    .charts-hospital-table-controls__field select,
+    .charts-hospital-table-controls__field input {
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      min-height: 40px;
+    }
+
+    .charts-hospital-table-hint {
+      margin: 0 0 12px;
+      color: var(--color-text-muted);
+      font-size: 0.88rem;
+    }
+
+    .charts-hospital-table-wrapper {
+      max-height: min(72vh, 640px);
+    }
+
+    .charts-hospital-table-wrapper th:first-child,
+    .charts-hospital-table-wrapper td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: var(--color-surface);
+    }
+
+    .charts-hospital-table-wrapper th:first-child {
+      z-index: 4;
+      background: var(--color-surface-alt);
+    }
+
+    .charts-hospital-table-wrapper th[data-charts-hospital-sort] {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .charts-hospital-table-wrapper th[data-charts-hospital-sort].is-sort-active {
+      color: var(--color-text);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-thickness: 2px;
+    }
+
+    .charts-hospital-table-wrapper td:first-child {
+      font-weight: 600;
+      min-width: 220px;
+      box-shadow: 8px 0 16px -14px rgba(15, 23, 42, 0.45);
+    }
+
+    .charts-hospital-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: flex-start;
+      justify-content: center;
+      min-width: 94px;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-variant-numeric: tabular-nums;
+      background: color-mix(in srgb, var(--color-accent-soft) var(--cell-intensity, 0%), transparent);
+    }
+
+    .charts-hospital-cell__count {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .charts-hospital-cell__pct {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .charts-hospital-cell--unclassified {
+      background: color-mix(in srgb, var(--color-warning, #d97706) var(--cell-intensity, 0%), transparent);
+    }
+
+    .charts-hospital-total {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-text);
+      white-space: nowrap;
+    }
+
+    .charts-hospital-table-wrapper tbody tr {
+      cursor: pointer;
+    }
+
+    .charts-hospital-table-wrapper tbody tr.is-department-active td {
+      background: color-mix(in srgb, var(--color-accent-soft) 42%, transparent);
+    }
+
+    .charts-hospital-trend {
+      margin-top: 14px;
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      background: var(--color-surface-alt);
+      padding: 12px;
+    }
+
+    .charts-hospital-trend__header h3 {
+      margin: 0;
+      font-size: 0.98rem;
+      color: var(--color-text);
+    }
+
+    .charts-hospital-trend__header p {
+      margin: 4px 0 0;
+      font-size: 0.86rem;
+      color: var(--color-text-muted);
+    }
+
+    .charts-hospital-trend__empty {
+      margin: 10px 0 0;
+      font-size: 0.88rem;
+      color: var(--color-text-muted);
+    }
+
+    .charts-hospital-trend canvas {
+      width: 100% !important;
+      height: 260px !important;
+      min-height: 260px;
+      max-height: 260px;
+      display: block;
+    }
+
+    .summaries-reports-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .report-card {
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--color-surface-alt);
+      display: grid;
+      align-content: start;
+      gap: 10px;
+    }
+
+    .report-card__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .report-card__head h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--color-text);
+    }
+
+    .report-card__actions {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .report-card__actions .btn {
+      min-width: 44px;
+      min-height: 32px;
+      padding: 6px 10px;
+    }
+
+    .report-card__inline-filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    .report-card__inline-filter span {
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .report-card__inline-filter select {
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+
+    .report-card__hint {
+      margin: 0;
+      font-size: 0.84rem;
+      color: var(--color-text-muted);
+      line-height: 1.45;
+    }
+
+    .report-card canvas {
+      width: 100% !important;
+      height: 240px !important;
+      min-height: 240px;
+      max-height: 240px;
+      display: block;
+    }
+
+    .table-wrapper--report {
+      max-height: 180px;
+      overflow: auto;
     }
 
     .feedback-filters__summary {
@@ -4883,6 +5335,19 @@ body[data-theme="dark"] select optgroup {
     }
 
     @media (max-width: 768px) {
+      .charts-jump-nav {
+        margin: 8px 0 14px;
+        padding: 6px;
+      }
+
+      .charts-jump-nav__link {
+        min-height: 36px;
+      }
+
+      .charts-subsection {
+        padding: 12px;
+      }
+
       .kpi-header-actions {
         width: 100%;
         flex-direction: column;
@@ -5780,6 +6245,46 @@ body[data-theme="dark"] select optgroup {
       .feedback-controls {
         margin: 12px 0 16px;
         gap: 10px;
+      }
+
+      .summaries-segment-controls {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .summaries-reports-controls {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .charts-hospital-table-controls {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .charts-jump-nav {
+        border-radius: 14px;
+      }
+
+      .charts-jump-nav__link {
+        min-height: 40px;
+      }
+
+      .summaries-reports-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .report-card__head h3 {
+        width: 100%;
+      }
+
+      .report-card__actions {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+
+      .report-card canvas {
+        height: 210px !important;
+        min-height: 210px;
+        max-height: 210px;
       }
 
       .feedback-filters {

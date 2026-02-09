@@ -1,6 +1,17 @@
 import { parseCsv } from './csv.js';
 import { parseDate } from './date.js';
 import { numberFormatter, oneDecimalFormatter, percentFormatter } from '../utils/format.js';
+import {
+  computePercentile,
+  formatHourLabel,
+  formatPercentPointDelta,
+  normalizeDispositionValue,
+  normalizeRatioValue,
+  parseDurationMinutes,
+  parseNumericCell,
+  pickTopHours,
+  toDateKeyFromDate,
+} from './ed-utils.js';
 
 export function createEdHandlers(context) {
   const {
@@ -11,93 +22,140 @@ export function createEdHandlers(context) {
     describeError,
     resolveColumnIndex,
   } = context;
+  const ED_WORKER_URL = new URL('data-worker.js?v=2026-02-08-ed-worker-2', window.location.href).toString();
+  const edDataCache = new Map();
+  const edSignatureCache = new Map();
+  let edWorkerCounter = 0;
 
-  function parseDurationMinutes(value) {
-    if (value == null) {
+  function getCacheEntry(url) {
+    if (!url || !edDataCache.has(url)) {
       return null;
     }
-    const text = String(value).trim();
-    if (!text) {
+    const cached = edDataCache.get(url);
+    if (!cached || typeof cached !== 'object') {
       return null;
     }
-    const normalized = text.replace(',', '.').replace(/\s+/g, '');
-    if (/^\d{1,2}:\d{2}$/.test(normalized)) {
-      const [hours, minutes] = normalized.split(':').map((part) => Number.parseInt(part, 10));
-      if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
-        return hours * 60 + minutes;
+    return {
+      etag: cached.etag || '',
+      lastModified: cached.lastModified || '',
+      signature: cached.signature || '',
+      payload: cached.payload && typeof cached.payload === 'object'
+        ? {
+          records: Array.isArray(cached.payload.records) ? cached.payload.records : [],
+          summary: cached.payload.summary || createEmptyEdSummary(),
+          dispositions: Array.isArray(cached.payload.dispositions) ? cached.payload.dispositions : [],
+          daily: Array.isArray(cached.payload.daily) ? cached.payload.daily : [],
+          meta: cached.payload.meta && typeof cached.payload.meta === 'object' ? cached.payload.meta : { type: 'legacy' },
+        }
+        : null,
+    };
+  }
+
+  function writeCacheEntry(url, payload, downloadMeta = {}) {
+    if (!url || !payload || typeof payload !== 'object') {
+      return;
+    }
+    edDataCache.set(url, {
+      etag: downloadMeta.etag || '',
+      lastModified: downloadMeta.lastModified || '',
+      signature: downloadMeta.signature || '',
+      payload: {
+        records: Array.isArray(payload.records) ? payload.records : [],
+        summary: payload.summary || createEmptyEdSummary(),
+        dispositions: Array.isArray(payload.dispositions) ? payload.dispositions : [],
+        daily: Array.isArray(payload.daily) ? payload.daily : [],
+        meta: payload.meta && typeof payload.meta === 'object' ? payload.meta : { type: 'legacy' },
+      },
+    });
+  }
+
+  function readSignatureCache(signature) {
+    const key = String(signature || '').trim();
+    if (!key || !edSignatureCache.has(key)) {
+      return null;
+    }
+    const cached = edSignatureCache.get(key);
+    if (!cached || typeof cached !== 'object') {
+      return null;
+    }
+    return {
+      records: Array.isArray(cached.records) ? cached.records : [],
+      summary: cached.summary || createEmptyEdSummary(),
+      dispositions: Array.isArray(cached.dispositions) ? cached.dispositions : [],
+      daily: Array.isArray(cached.daily) ? cached.daily : [],
+      meta: cached.meta && typeof cached.meta === 'object' ? cached.meta : { type: 'legacy', signature: key },
+    };
+  }
+
+  function writeSignatureCache(signature, payload) {
+    const key = String(signature || '').trim();
+    if (!key || !payload || typeof payload !== 'object') {
+      return;
+    }
+    edSignatureCache.set(key, {
+      records: Array.isArray(payload.records) ? payload.records : [],
+      summary: payload.summary || createEmptyEdSummary(),
+      dispositions: Array.isArray(payload.dispositions) ? payload.dispositions : [],
+      daily: Array.isArray(payload.daily) ? payload.daily : [],
+      meta: payload.meta && typeof payload.meta === 'object'
+        ? payload.meta
+        : { type: 'legacy', signature: key },
+    });
+  }
+
+  function runEdWorkerJob(csvText, workerOptions = {}, signal = null) {
+    if (typeof Worker !== 'function') {
+      return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
+    }
+    if (signal?.aborted) {
+      return Promise.reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
+    }
+    const jobId = `ed-job-${Date.now()}-${edWorkerCounter += 1}`;
+    const worker = new Worker(ED_WORKER_URL);
+    return new Promise((resolve, reject) => {
+      let abortHandler = null;
+      const cleanup = () => {
+        if (signal && abortHandler) {
+          signal.removeEventListener('abort', abortHandler);
+        }
+        try {
+          worker.terminate();
+        } catch (error) {
+          console.warn('Nepavyko uždaryti ED workerio:', error);
+        }
+      };
+      worker.addEventListener('message', (event) => {
+        const data = event.data || {};
+        if (data.id !== jobId) {
+          return;
+        }
+        cleanup();
+        if (data.status === 'error') {
+          reject(new Error(data?.error?.message || 'ED worker klaida.'));
+          return;
+        }
+        resolve(data.payload || null);
+      });
+      worker.addEventListener('error', (event) => {
+        cleanup();
+        reject(event?.error || new Error(event?.message || 'ED worker klaida.'));
+      });
+      if (signal) {
+        abortHandler = () => {
+          cleanup();
+          reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
+        };
+        signal.addEventListener('abort', abortHandler, { once: true });
       }
-    }
-    const numeric = Number.parseFloat(normalized);
-    return Number.isFinite(numeric) ? numeric : null;
-  }
-
-  function parseNumericCell(value) {
-    if (value == null) {
-      return null;
-    }
-    const raw = String(value).trim();
-    if (!raw) {
-      return null;
-    }
-    const normalized = raw.replace(/\s+/g, '').replace(',', '.');
-    const numeric = Number.parseFloat(normalized);
-    return Number.isFinite(numeric) ? numeric : null;
-  }
-
-  function normalizeRatioValue(value) {
-    if (value == null) {
-      return { ratio: null, text: '' };
-    }
-    const text = String(value).trim();
-    if (!text) {
-      return { ratio: null, text: '' };
-    }
-    const normalized = text.replace(',', '.').replace(/\s+/g, '');
-    if (normalized.includes(':')) {
-      const [left, right] = normalized.split(':');
-      const numerator = Number.parseFloat(left);
-      const denominator = Number.parseFloat(right);
-      if (Number.isFinite(numerator) && Number.isFinite(denominator) && denominator > 0) {
-        return { ratio: numerator / denominator, text };
+      try {
+        worker.postMessage({ id: jobId, type: 'transformEdCsv', csvText, options: workerOptions });
+      } catch (error) {
+        cleanup();
+        reject(error);
       }
-    }
-    const numeric = Number.parseFloat(normalized);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      return { ratio: numeric, text };
-    }
-    return { ratio: null, text };
+    });
   }
 
-  function normalizeDispositionValue(value) {
-    const raw = typeof value === 'string' ? value.trim() : '';
-    if (!raw) {
-      return { label: 'Nežinoma', category: 'unknown' };
-    }
-    const lower = raw.toLowerCase();
-    if (/(hospital|stacion|admit|ward|perkel|stacionar|stac\.|priimtuvas)/i.test(lower)) {
-      return { label: raw, category: 'hospitalized' };
-    }
-    if (/(discharg|nam|ambulator|released|outpatient|home|išle)/i.test(lower)) {
-      return { label: raw, category: 'discharged' };
-    }
-    if (/(transfer|perkeltas|perkelta|pervež|perkėlimo)/i.test(lower)) {
-      return { label: raw, category: 'transfer' };
-    }
-    if (/(left|atsisak|neatvyko|nedalyv|amoa|dnw|did not wait|lwbs|lwt|pabėg|walked)/i.test(lower)) {
-      return { label: raw, category: 'left' };
-    }
-    return { label: raw, category: 'other' };
-  }
-
-  function toDateKeyFromDate(date) {
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-      return '';
-    }
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
 
   function createEmptyEdSummary(mode = 'legacy') {
     return {
@@ -147,6 +205,21 @@ export function createEdHandlers(context) {
       feedbackComments: [],
       feedbackCommentsMeta: '',
     };
+  }
+
+  function hasEdSummaryShape(summary) {
+    if (!summary || typeof summary !== 'object') {
+      return false;
+    }
+    const requiredKeys = [
+      'avgDailyPatients',
+      'avgLosMinutes',
+      'avgLosMonthMinutes',
+      'avgLabMonthMinutes',
+      'hospitalizedMonthShare',
+      'generatedAt',
+    ];
+    return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(summary, key));
   }
 
   function transformEdCsv(text) {
@@ -348,67 +421,6 @@ export function createEdHandlers(context) {
     return { records, meta: { type: datasetType } };
   }
 
-  function formatHourLabel(hour) {
-    if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
-      return '';
-    }
-    return `${String(hour).padStart(2, '0')}:00`;
-  }
-
-  function pickTopHours(hourCounts, limit = 3) {
-    if (!Array.isArray(hourCounts) || !hourCounts.length) {
-      return [];
-    }
-    return hourCounts
-      .map((count, hour) => ({ hour, count }))
-      .filter((entry) => Number.isFinite(entry.count) && entry.count > 0)
-      .sort((a, b) => {
-        if (b.count !== a.count) {
-          return b.count - a.count;
-        }
-        return a.hour - b.hour;
-      })
-      .slice(0, Math.max(0, limit));
-  }
-
-  function computePercentile(sortedValues, percentile) {
-    if (!Array.isArray(sortedValues) || !sortedValues.length) {
-      return null;
-    }
-    const clamped = Math.min(Math.max(percentile, 0), 1);
-    if (sortedValues.length === 1) {
-      return sortedValues[0];
-    }
-    const index = (sortedValues.length - 1) * clamped;
-    const lower = Math.floor(index);
-    const upper = Math.ceil(index);
-    const weight = index - lower;
-    if (upper >= sortedValues.length) {
-      return sortedValues[sortedValues.length - 1];
-    }
-    if (lower === upper) {
-      return sortedValues[lower];
-    }
-    const lowerValue = sortedValues[lower];
-    const upperValue = sortedValues[upper];
-    if (!Number.isFinite(lowerValue) || !Number.isFinite(upperValue)) {
-      return null;
-    }
-    return lowerValue + (upperValue - lowerValue) * weight;
-  }
-
-  function formatPercentPointDelta(delta) {
-    if (!Number.isFinite(delta)) {
-      return '';
-    }
-    const magnitude = Math.abs(delta) * 100;
-    const rounded = Math.round(magnitude * 10) / 10;
-    if (!rounded) {
-      return '±0 p.p.';
-    }
-    const sign = delta > 0 ? '+' : '−';
-    return `${sign}${oneDecimalFormatter.format(rounded)} p.p.`;
-  }
 
   function summarizeLegacyRecords(records) {
     const summary = createEmptyEdSummary('legacy');
@@ -778,8 +790,8 @@ export function createEdHandlers(context) {
     summary.fastLaneDelta = fastDelta;
     summary.slowLaneDelta = slowDelta;
     if (fastDelta != null || slowDelta != null) {
-      const deltaFastText = formatPercentPointDelta(fastDelta);
-      const deltaSlowText = formatPercentPointDelta(slowDelta);
+      const deltaFastText = formatPercentPointDelta(fastDelta, oneDecimalFormatter);
+      const deltaSlowText = formatPercentPointDelta(slowDelta, oneDecimalFormatter);
       const deltaParts = [];
       if (deltaFastText) {
         deltaParts.push(`Greitieji ${deltaFastText}`);
@@ -985,6 +997,7 @@ export function createEdHandlers(context) {
   }
 
   async function fetchEdData(options = {}) {
+    const signal = options?.signal || null;
     const config = settings?.dataSource?.ed || DEFAULT_SETTINGS.dataSource.ed;
     const url = (config?.url ?? '').trim();
     const empty = {
@@ -1000,21 +1013,48 @@ export function createEdHandlers(context) {
     };
 
     const finalize = (result, options = {}) => {
+      const signature = String(options.signature || '').trim();
       const payload = Array.isArray(result)
         ? { records: result, meta: {} }
         : (result && typeof result === 'object'
           ? {
             records: Array.isArray(result.records) ? result.records : [],
             meta: result.meta && typeof result.meta === 'object' ? result.meta : {},
+            summary: result.summary && typeof result.summary === 'object' ? result.summary : null,
+            dispositions: Array.isArray(result.dispositions) ? result.dispositions : null,
+            daily: Array.isArray(result.daily) ? result.daily : null,
           }
-          : { records: [], meta: {} });
-      const aggregates = summarizeEdRecords(payload.records, payload.meta);
+          : { records: [], meta: {}, summary: null, dispositions: null, daily: null });
+      const hasWorkerAggregates = payload.summary && payload.dispositions && payload.daily;
+      let aggregates = hasWorkerAggregates
+        ? {
+          summary: payload.summary,
+          dispositions: payload.dispositions,
+          daily: payload.daily,
+          meta: payload.meta,
+        }
+        : summarizeEdRecords(payload.records, payload.meta);
+      // Worker aggregate shape can lag behind UI card requirements; keep worker fast-path
+      // but rebuild locally when required summary keys are missing.
+      if (hasWorkerAggregates && !hasEdSummaryShape(aggregates.summary)) {
+        const rebuilt = summarizeEdRecords(payload.records, payload.meta);
+        aggregates = {
+          summary: rebuilt.summary,
+          dispositions: Array.isArray(payload.dispositions) && payload.dispositions.length
+            ? payload.dispositions
+            : rebuilt.dispositions,
+          daily: Array.isArray(payload.daily) && payload.daily.length
+            ? payload.daily
+            : rebuilt.daily,
+          meta: { ...(rebuilt.meta || {}), ...(payload.meta || {}) },
+        };
+      }
       return {
         records: payload.records,
         summary: aggregates.summary,
         dispositions: aggregates.dispositions,
         daily: aggregates.daily,
-        meta: { ...payload.meta, ...(aggregates.meta || {}) },
+        meta: { ...payload.meta, ...(aggregates.meta || {}), signature: signature || payload?.meta?.signature || '' },
         usingFallback: Boolean(options.usingFallback),
         lastErrorMessage: options.lastErrorMessage || '',
         error: options.error || null,
@@ -1031,10 +1071,65 @@ export function createEdHandlers(context) {
     }
 
     try {
-      const download = await downloadCsv(url, { onChunk: options?.onChunk });
-      const result = transformEdCsv(download.text);
-      return finalize(result);
+      const cachedEntry = getCacheEntry(url);
+      const download = await downloadCsv(url, {
+        cacheInfo: cachedEntry
+          ? {
+            etag: cachedEntry.etag,
+            lastModified: cachedEntry.lastModified,
+            signature: cachedEntry.signature,
+          }
+          : null,
+        onChunk: options?.onChunk,
+        signal,
+      });
+      if (download.status === 304 && cachedEntry?.payload) {
+        const fromCache = {
+          ...cachedEntry.payload,
+          usingFallback: false,
+          lastErrorMessage: '',
+          error: null,
+          updatedAt: new Date(),
+        };
+        if (fromCache?.meta?.signature) {
+          writeSignatureCache(fromCache.meta.signature, fromCache);
+        }
+        return fromCache;
+      }
+      const downloadSignature = String(download.signature || download.etag || download.lastModified || '').trim();
+      const signatureCached = readSignatureCache(downloadSignature);
+      if (signatureCached) {
+        const fromSignatureCache = {
+          ...signatureCached,
+          meta: { ...(signatureCached.meta || {}), signature: downloadSignature || signatureCached?.meta?.signature || '' },
+          usingFallback: false,
+          lastErrorMessage: '',
+          error: null,
+          updatedAt: new Date(),
+        };
+        writeCacheEntry(url, fromSignatureCache, download);
+        return fromSignatureCache;
+      }
+      let workerPayload = null;
+      try {
+        workerPayload = await runEdWorkerJob(download.text, options?.workerOptions || {}, signal);
+      } catch (workerError) {
+        const workerInfo = describeError(workerError, { code: 'ED_WORKER' });
+        console.warn(workerInfo.log, workerError);
+      }
+      const result = workerPayload && typeof workerPayload === 'object'
+        ? workerPayload
+        : transformEdCsv(download.text);
+      const finalized = finalize(result, { signature: downloadSignature });
+      if (finalized?.meta?.signature) {
+        writeSignatureCache(finalized.meta.signature, finalized);
+      }
+      writeCacheEntry(url, finalized, download);
+      return finalized;
     } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw error;
+      }
       const errorInfo = describeError(error, { code: 'ED_FETCH' });
       return {
         ...empty,

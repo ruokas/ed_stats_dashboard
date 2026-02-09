@@ -70,6 +70,21 @@ export function createSelectors() {
     chartFilterCardType: document.getElementById('chartCardType'),
     chartFilterCardTypeButtons: Array.from(document.querySelectorAll('[data-chart-card-type]')),
     chartFilterCompareGmp: document.getElementById('chartCompareGmp'),
+    chartsHospitalTableHeading: document.getElementById('chartsHospitalTableHeading'),
+    chartsHospitalTableSubtitle: document.getElementById('chartsHospitalTableSubtitle'),
+    chartsHospitalTableCaption: document.getElementById('chartsHospitalTableCaption'),
+    chartsHospitalTableYearLabel: document.getElementById('chartsHospitalTableYearLabel'),
+    chartsHospitalTableYear: document.getElementById('chartsHospitalTableYear'),
+    chartsHospitalTableSearchLabel: document.getElementById('chartsHospitalTableSearchLabel'),
+    chartsHospitalTableSearch: document.getElementById('chartsHospitalTableSearch'),
+    chartsHospitalTableHint: document.getElementById('chartsHospitalTableHint'),
+    chartsHospitalTableBody: document.getElementById('chartsHospitalTableBody'),
+    chartsHospitalTableRoot: document.getElementById('chartsHospitalTableRoot'),
+    chartsHospitalDeptTrendCard: document.getElementById('chartsHospitalDeptTrendCard'),
+    chartsHospitalDeptTrendTitle: document.getElementById('chartsHospitalDeptTrendTitle'),
+    chartsHospitalDeptTrendSubtitle: document.getElementById('chartsHospitalDeptTrendSubtitle'),
+    chartsHospitalDeptTrendCanvas: document.getElementById('chartsHospitalDeptTrendCanvas'),
+    chartsHospitalDeptTrendEmpty: document.getElementById('chartsHospitalDeptTrendEmpty'),
     chartCards: Array.from(document.querySelectorAll('.chart-grid .chart-card')),
     chartCopyButtons: Array.from(document.querySelectorAll('[data-chart-copy]')),
     chartDownloadButtons: Array.from(document.querySelectorAll('[data-chart-download]')),
@@ -86,6 +101,26 @@ export function createSelectors() {
     yearlySubtitle: document.getElementById('yearlySubtitle'),
     yearlyCaption: document.getElementById('yearlyCaption'),
     yearlyTable: document.getElementById('yearlyTable'),
+    summariesReportsHeading: document.getElementById('summariesReportsHeading'),
+    summariesReportsSubtitle: document.getElementById('summariesReportsSubtitle'),
+    summariesReportsYear: document.getElementById('summariesReportsYear'),
+    summariesReportsTopN: document.getElementById('summariesReportsTopN'),
+    summariesReportsMinGroupSize: document.getElementById('summariesReportsMinGroupSize'),
+    referralHospitalizedByPspcSort: document.getElementById('referralHospitalizedByPspcSort'),
+    summariesReportsCoverage: document.getElementById('summariesReportsCoverage'),
+    diagnosisChart: document.getElementById('diagnosisChart'),
+    ageDiagnosisHeatmapChart: document.getElementById('ageDiagnosisHeatmapChart'),
+    diagnosisInfo: document.getElementById('diagnosisInfo'),
+    z769TrendChart: document.getElementById('z769TrendChart'),
+    referralTrendChart: document.getElementById('referralTrendChart'),
+    referralDispositionYearlyChart: document.getElementById('referralDispositionYearlyChart'),
+    referralMonthlyHeatmapChart: document.getElementById('referralMonthlyHeatmapChart'),
+    referralHospitalizedByPspcChart: document.getElementById('referralHospitalizedByPspcChart'),
+    pspcCorrelationChart: document.getElementById('pspcCorrelationChart'),
+    ageDistributionChart: document.getElementById('ageDistributionChart'),
+    pspcDistributionChart: document.getElementById('pspcDistributionChart'),
+    sexDistributionChart: document.getElementById('sexDistributionChart'),
+    reportExportButtons: Array.from(document.querySelectorAll('[data-report-export]')),
     feedbackHeading: document.getElementById('feedbackHeading'),
     feedbackSubtitle: document.getElementById('feedbackSubtitle'),
     feedbackDescription: document.getElementById('feedbackDescription'),
@@ -126,28 +161,11 @@ export function createSelectors() {
     edDispositionsChart: document.getElementById('edDispositionsChart'),
     edDispositionsMessage: document.getElementById('edDispositionsMessage'),
     edStandardSection: document.getElementById('edStandardSection'),
-    edTvToggleBtn: document.getElementById('toggleTvBtn'),
-    edTvPanel: document.getElementById('edTvPanel'),
-    edTvTitle: document.getElementById('edTvTitle'),
-    edTvSubtitle: document.getElementById('edTvSubtitle'),
-    edTvClockTime: document.getElementById('edTvClockTime'),
-    edTvClockDate: document.getElementById('edTvClockDate'),
-    edTvUpdated: document.getElementById('edTvUpdated'),
-    edTvStatusText: document.getElementById('edTvStatusText'),
-    edTvNotice: document.getElementById('edTvNotice'),
-    edTvPrimaryTitle: document.getElementById('edTvPrimaryTitle'),
-    edTvStaffTitle: document.getElementById('edTvStaffTitle'),
-    edTvFlowTitle: document.getElementById('edTvFlowTitle'),
-    edTvPrimaryMetrics: document.getElementById('edTvPrimaryMetrics'),
-    edTvStaffMetrics: document.getElementById('edTvStaffMetrics'),
-    edTvFlowMetrics: document.getElementById('edTvFlowMetrics'),
-    edTvTriageTitle: document.getElementById('edTvTriageTitle'),
-    edTvTriageMeta: document.getElementById('edTvTriageMeta'),
-    edTvTriageList: document.getElementById('edTvTriageList'),
     themeToggleBtn: document.getElementById('themeToggleBtn'),
     recentSection: document.querySelector('[data-section="recent"]'),
     monthlySection: document.querySelector('[data-section="monthly"]'),
     yearlySection: document.querySelector('[data-section="yearly"]'),
+    summariesReportsSection: document.querySelector('[data-section="summaries-reports"]'),
     feedbackSection: document.querySelector('[data-section="feedback"]'),
     kpiControls: document.querySelector('.kpi-controls'),
     kpiFiltersForm: document.getElementById('kpiFiltersForm'),
@@ -168,5 +186,316 @@ export function createSelectors() {
     sectionNav: document.querySelector('.section-nav'),
     sectionNavLinks: Array.from(document.querySelectorAll('.section-nav__link')),
     scrollTopBtn: document.getElementById('scrollTopBtn'),
+  };
+}
+
+function byId(id) {
+  return document.getElementById(id);
+}
+
+function byQuery(selector) {
+  return document.querySelector(selector);
+}
+
+function byQueryAll(selector) {
+  return Array.from(document.querySelectorAll(selector));
+}
+
+function byQueryIn(root, selector) {
+  if (!root || !selector) {
+    return null;
+  }
+  return root.querySelector(selector);
+}
+
+function byQueryAllIn(root, selector) {
+  if (!root || !selector) {
+    return [];
+  }
+  return Array.from(root.querySelectorAll(selector));
+}
+
+export function createSelectorsForPage(pageId) {
+  const normalizedPage = typeof pageId === 'string' ? pageId.trim().toLowerCase() : '';
+
+  if (normalizedPage === 'kpi') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    const kpiSection = byQuery('[data-section="kpi"]');
+    const kpiFiltersForm = byId('kpiFiltersForm');
+    const kpiHourlyControls = byQueryIn(kpiSection, '.kpi-hourly-controls');
+    return {
+      hero: byQuery('header.hero'),
+      title: byId('pageTitle'),
+      status: byId('status'),
+      footerSource: byId('footerSource'),
+      themeToggleBtn: byId('themeToggleBtn'),
+      scrollTopBtn: byId('scrollTopBtn'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+      kpiHeading: byId('kpiHeading'),
+      kpiSubtitle: byId('kpiSubtitle'),
+      kpiDatePrev: byId('kpiDatePrev'),
+      kpiDateInput: byId('kpiDateInput'),
+      kpiDateNext: byId('kpiDateNext'),
+      kpiDateClear: byId('kpiDateClear'),
+      kpiSummary: byId('kpiSummary'),
+      kpiGrid: byId('kpiGrid'),
+      kpiControls: byQueryIn(kpiSection, '.kpi-controls'),
+      kpiFiltersForm,
+      kpiWindow: byId('kpiWindow'),
+      kpiShift: byId('kpiShift'),
+      kpiArrival: byId('kpiArrival'),
+      kpiArrivalButtons: byQueryAllIn(kpiFiltersForm, '[data-kpi-arrival]'),
+      kpiDisposition: byId('kpiDisposition'),
+      kpiCardType: byId('kpiCardType'),
+      kpiCardTypeButtons: byQueryAllIn(kpiFiltersForm, '[data-kpi-card-type]'),
+      kpiFiltersReset: byId('kpiFiltersReset'),
+      kpiFiltersToggle: byId('kpiFiltersToggle'),
+      kpiActiveInfo: byId('kpiActiveFilters'),
+      lastShiftHourlyChart: byId('lastShiftHourlyChart'),
+      lastShiftHourlyContext: byId('lastShiftHourlyContext'),
+      lastShiftHourlyLegend: byId('lastShiftHourlyLegend'),
+      lastShiftHourlyMetricButtons: byQueryAllIn(kpiHourlyControls, '[data-last-shift-metric]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
+    };
+  }
+
+  if (normalizedPage === 'charts') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    const chartSection = byQuery('[data-section="chart"]');
+    const chartPeriodGroup = byId('chartPeriodGroup');
+    const chartFiltersForm = byId('chartFiltersForm');
+    const hourlyCompareSeriesGroup = byQueryIn(chartSection, '.hourly-compare-series');
+    const chartsJumpNav = byQueryIn(main, '.charts-jump-nav');
+    const chartsHospitalTableRoot = byId('chartsHospitalTableRoot');
+    return {
+      hero: byQuery('header.hero'),
+      title: byId('pageTitle'),
+      status: byId('status'),
+      footerSource: byId('footerSource'),
+      themeToggleBtn: byId('themeToggleBtn'),
+      scrollTopBtn: byId('scrollTopBtn'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+      chartHeading: byId('chartHeading'),
+      chartSubtitle: byId('chartSubtitle'),
+      dailyCaption: byId('dailyChartLabel'),
+      dailyCaptionContext: byId('dailyChartContext'),
+      dowCaption: byId('dowChartTitle'),
+      dowStayCaption: byId('dowStayChartTitle'),
+      dowCaptionContext: byId('dowChartContext'),
+      dowStayCaptionContext: byId('dowStayChartContext'),
+      hourlyCaption: byId('hourlyChartTitle'),
+      hourlyMetricLabel: byId('hourlyMetricLabel'),
+      hourlyMetricButtons: byQueryAllIn(chartSection, '[data-hourly-metric]'),
+      hourlyDepartmentLabel: byId('hourlyDepartmentLabel'),
+      hourlyDepartmentInput: byId('hourlyDepartment'),
+      hourlyDepartmentSuggestions: byId('hourlyDepartmentSuggestions'),
+      hourlyDepartmentToggle: byId('hourlyDepartmentToggle'),
+      hourlyCompareToggle: byId('hourlyCompareToggle'),
+      hourlyCompareYearA: byId('hourlyCompareYearA'),
+      hourlyCompareYearB: byId('hourlyCompareYearB'),
+      hourlyCompareSeriesGroup,
+      hourlyCompareSeriesButtons: byQueryAllIn(hourlyCompareSeriesGroup, '[data-hourly-compare-series]'),
+      hourlyWeekdayLabel: byId('hourlyWeekdayLabel'),
+      hourlyWeekdaySelect: byId('hourlyWeekday'),
+      hourlyStayLabel: byId('hourlyStayLabel'),
+      hourlyStaySelect: byId('hourlyStayBucket'),
+      hourlyResetFilters: byId('hourlyResetFilters'),
+      funnelCaption: byId('funnelChartTitle'),
+      heatmapCaption: byId('arrivalHeatmapTitle'),
+      heatmapContainer: byId('arrivalHeatmap'),
+      heatmapMetricSelect: byId('heatmapMetric'),
+      heatmapMetricLabel: byId('heatmapMetricLabel'),
+      heatmapFilterArrival: byId('heatmapArrival'),
+      heatmapFilterDisposition: byId('heatmapDisposition'),
+      heatmapFilterCardType: byId('heatmapCardType'),
+      heatmapYearSelect: byId('heatmapYear'),
+      chartYearLabel: byId('chartYearLabel'),
+      chartYearSelect: byId('chartYear'),
+      chartPeriodButtons: byQueryAllIn(chartPeriodGroup, '[data-chart-period]'),
+      chartFiltersSummary: byId('chartFiltersSummary'),
+      chartFiltersForm,
+      chartFilterArrival: byId('chartArrival'),
+      chartFilterArrivalButtons: byQueryAllIn(chartFiltersForm, '[data-chart-arrival]'),
+      chartFilterDisposition: byId('chartDisposition'),
+      chartFilterDispositionButtons: byQueryAllIn(chartFiltersForm, '[data-chart-disposition]'),
+      chartFilterCardType: byId('chartCardType'),
+      chartFilterCardTypeButtons: byQueryAllIn(chartFiltersForm, '[data-chart-card-type]'),
+      chartFilterCompareGmp: byId('chartCompareGmp'),
+      chartsJumpNav,
+      chartsJumpLinks: byQueryAllIn(chartsJumpNav, '.charts-jump-nav__link'),
+      chartsHospitalTableHeading: byId('chartsHospitalTableHeading'),
+      chartsHospitalTableSubtitle: byId('chartsHospitalTableSubtitle'),
+      chartsHospitalTableCaption: byId('chartsHospitalTableCaption'),
+      chartsHospitalTableYearLabel: byId('chartsHospitalTableYearLabel'),
+      chartsHospitalTableYear: byId('chartsHospitalTableYear'),
+      chartsHospitalTableSearchLabel: byId('chartsHospitalTableSearchLabel'),
+      chartsHospitalTableSearch: byId('chartsHospitalTableSearch'),
+      chartsHospitalTableHint: byId('chartsHospitalTableHint'),
+      chartsHospitalTableRoot,
+      chartsHospitalTableHeaders: byQueryAllIn(chartsHospitalTableRoot, 'thead th'),
+      chartsHospitalSortableHeaders: byQueryAllIn(chartsHospitalTableRoot, 'thead th[data-charts-hospital-sort]'),
+      chartsHospitalTableBody: byId('chartsHospitalTableBody'),
+      chartsHospitalDeptTrendCard: byId('chartsHospitalDeptTrendCard'),
+      chartsHospitalDeptTrendTitle: byId('chartsHospitalDeptTrendTitle'),
+      chartsHospitalDeptTrendSubtitle: byId('chartsHospitalDeptTrendSubtitle'),
+      chartsHospitalDeptTrendCanvas: byId('chartsHospitalDeptTrendCanvas'),
+      chartsHospitalDeptTrendEmpty: byId('chartsHospitalDeptTrendEmpty'),
+      chartCards: byQueryAllIn(main, '.chart-grid .chart-card'),
+      chartCopyButtons: byQueryAllIn(main, '[data-chart-copy]'),
+      chartDownloadButtons: byQueryAllIn(main, '[data-chart-download]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
+    };
+  }
+
+  if (normalizedPage === 'summaries') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    return {
+      hero: byQuery('header.hero'),
+      title: byId('pageTitle'),
+      status: byId('status'),
+      footerSource: byId('footerSource'),
+      themeToggleBtn: byId('themeToggleBtn'),
+      scrollTopBtn: byId('scrollTopBtn'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+      yearlyTable: byId('yearlyTable'),
+      summariesReportsHeading: byId('summariesReportsHeading'),
+      summariesReportsSubtitle: byId('summariesReportsSubtitle'),
+      summariesReportsYear: byId('summariesReportsYear'),
+      summariesReportsTopN: byId('summariesReportsTopN'),
+      summariesReportsMinGroupSize: byId('summariesReportsMinGroupSize'),
+      referralHospitalizedByPspcSort: byId('referralHospitalizedByPspcSort'),
+      summariesReportsCoverage: byId('summariesReportsCoverage'),
+      diagnosisChart: byId('diagnosisChart'),
+      ageDiagnosisHeatmapChart: byId('ageDiagnosisHeatmapChart'),
+      diagnosisInfo: byId('diagnosisInfo'),
+      z769TrendChart: byId('z769TrendChart'),
+      referralTrendChart: byId('referralTrendChart'),
+      referralDispositionYearlyChart: byId('referralDispositionYearlyChart'),
+      referralMonthlyHeatmapChart: byId('referralMonthlyHeatmapChart'),
+      referralHospitalizedByPspcChart: byId('referralHospitalizedByPspcChart'),
+      pspcCorrelationChart: byId('pspcCorrelationChart'),
+      ageDistributionChart: byId('ageDistributionChart'),
+      pspcDistributionChart: byId('pspcDistributionChart'),
+      sexDistributionChart: byId('sexDistributionChart'),
+      reportExportButtons: byQueryAllIn(main, '[data-report-export]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
+      monthlyHeading: byId('monthlyHeading'),
+      monthlySubtitle: byId('monthlySubtitle'),
+      monthlyCaption: byId('monthlyCaption'),
+      monthlyTable: byId('monthlyTable'),
+      yearlyHeading: byId('yearlyHeading'),
+      yearlySubtitle: byId('yearlySubtitle'),
+      yearlyCaption: byId('yearlyCaption'),
+    };
+  }
+
+  if (normalizedPage === 'recent') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    return {
+      hero: byQuery('header.hero'),
+      title: byId('pageTitle'),
+      status: byId('status'),
+      footerSource: byId('footerSource'),
+      themeToggleBtn: byId('themeToggleBtn'),
+      scrollTopBtn: byId('scrollTopBtn'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
+      recentHeading: byId('recentHeading'),
+      recentSubtitle: byId('recentSubtitle'),
+      recentCaption: byId('recentCaption'),
+      recentTable: byId('recentTable'),
+      compareToggle: byId('compareToggle'),
+      compareCard: byId('compareCard'),
+      compareSummary: byId('compareSummary'),
+      compareClear: byId('compareClear'),
+      monthlyTable: null,
+      yearlyTable: null,
+    };
+  }
+
+  if (normalizedPage === 'feedback') {
+    const main = byQuery('main.container');
+    const sectionNav = byQuery('.section-nav');
+    const feedbackFilters = byId('feedbackFilters');
+    const feedbackTrendControls = byId('feedbackTrendControls');
+    return {
+      hero: byQuery('header.hero'),
+      title: byId('pageTitle'),
+      status: byId('status'),
+      footerSource: byId('footerSource'),
+      themeToggleBtn: byId('themeToggleBtn'),
+      scrollTopBtn: byId('scrollTopBtn'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+      feedbackHeading: byId('feedbackHeading'),
+      feedbackSubtitle: byId('feedbackSubtitle'),
+      feedbackDescription: byId('feedbackDescription'),
+      feedbackFiltersSummary: byId('feedbackFiltersSummary'),
+      feedbackRespondentFilter: byId('feedbackRespondentFilter'),
+      feedbackRespondentLabel: byId('feedbackRespondentLabel'),
+      feedbackRespondentChips: byId('feedbackRespondentChips'),
+      feedbackLocationFilter: byId('feedbackLocationFilter'),
+      feedbackLocationLabel: byId('feedbackLocationLabel'),
+      feedbackLocationChips: byId('feedbackLocationChips'),
+      feedbackFilterButtons: byQueryAllIn(feedbackFilters, '[data-feedback-filter]'),
+      feedbackCaption: byId('feedbackCaption'),
+      feedbackCards: byId('feedbackCards'),
+      feedbackTrendTitle: byId('feedbackTrendTitle'),
+      feedbackTrendSubtitle: byId('feedbackTrendSubtitle'),
+      feedbackTrendControls,
+      feedbackTrendControlsLabel: byId('feedbackTrendControlsLabel'),
+      feedbackTrendButtons: byQueryAllIn(feedbackTrendControls, '[data-trend-months]'),
+      feedbackTrendSummary: byId('feedbackTrendSummary'),
+      feedbackTrendSkeleton: byId('feedbackTrendSkeleton'),
+      feedbackTrendMessage: byId('feedbackTrendMessage'),
+      feedbackTrendChart: byId('feedbackTrendChart'),
+      feedbackTableWrapper: byQuery('.table-wrapper--feedback'),
+      feedbackTable: byId('feedbackTable'),
+      chartCopyButtons: byQueryAllIn(main, '[data-chart-copy]'),
+      chartDownloadButtons: byQueryAllIn(main, '[data-chart-download]'),
+      tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
+    };
+  }
+
+  if (normalizedPage === 'ed') {
+    const sectionNav = byQuery('.section-nav');
+    return {
+      hero: byQuery('header.hero'),
+      title: byId('pageTitle'),
+      status: byId('status'),
+      footerSource: byId('footerSource'),
+      themeToggleBtn: byId('themeToggleBtn'),
+      scrollTopBtn: byId('scrollTopBtn'),
+      sectionNav,
+      sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+      edHeading: byId('edHeading'),
+      edStatus: byId('edStatus'),
+      edSearchInput: byId('edSearchInput'),
+      edCards: byId('edCards'),
+      edDispositionsTitle: byId('edDispositionsTitle'),
+      edDispositionsChart: byId('edDispositionsChart'),
+      edDispositionsMessage: byId('edDispositionsMessage'),
+      edStandardSection: byId('edStandardSection'),
+      footer: byQuery('footer'),
+    };
+  }
+
+  return {
+    hero: byQuery('header.hero'),
+    title: byId('pageTitle'),
+    status: byId('status'),
+    footerSource: byId('footerSource'),
+    themeToggleBtn: byId('themeToggleBtn'),
+    scrollTopBtn: byId('scrollTopBtn'),
+    sectionNav: byQuery('.section-nav'),
+    sectionNavLinks: byQueryAll('.section-nav__link'),
   };
 }

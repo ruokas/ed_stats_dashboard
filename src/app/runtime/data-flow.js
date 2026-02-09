@@ -22,6 +22,7 @@ export function createDataFlow({
   computeDailyStats,
   filterDailyStatsByWindow,
   populateChartYearOptions,
+  populateChartsHospitalTableYearOptions,
   populateHourlyCompareYearOptions,
   populateHeatmapYearOptions,
   syncHeatmapFilterControls,
@@ -33,6 +34,7 @@ export function createDataFlow({
   prepareChartDataForPeriod,
   applyKpiFiltersAndRender,
   renderCharts,
+  renderChartsHospitalTable,
   getHeatmapData,
   renderRecentTable,
   computeMonthlyStats,
@@ -89,14 +91,42 @@ export function createDataFlow({
     && !activeConfig.feedback
     && !activeConfig.ed,
   );
-  const canUseDailyStatsCache = Boolean(
-    canUseDailyStatsCacheOnly
-    || isChartsOnlyPage,
+  const isEdOnlyPage = Boolean(
+    activeConfig.ed
+    && !activeConfig.kpi
+    && !activeConfig.charts
+    && !activeConfig.recent
+    && !activeConfig.monthly
+    && !activeConfig.yearly
+    && !activeConfig.feedback,
   );
+  const supportsDeferredMainHydration = Boolean(isKpiOnlyPage || isEdOnlyPage);
+  const disableHistoricalForPage = Boolean(isEdOnlyPage);
+  const canUseDailyStatsCache = Boolean(canUseDailyStatsCacheOnly);
   let historicalHydrationInFlight = false;
   let historicalHydrated = false;
   let visibilityHandlersBound = false;
   let deferredHydrationQueued = false;
+  let lastIssuedLoadToken = 0;
+  let activeLoadAbortController = null;
+  let activeHydrationAbortController = null;
+
+  function isLoadTokenCurrent(token) {
+    return Number.isFinite(token) && token === lastIssuedLoadToken;
+  }
+
+  function isAbortError(error) {
+    return Boolean(error && typeof error === 'object' && error.name === 'AbortError');
+  }
+
+  function computeMainDataSignature(dataset, cachedDailyStats) {
+    if (cachedDailyStats) {
+      return `session:${Array.isArray(cachedDailyStats) ? cachedDailyStats.length : 0}`;
+    }
+    const primarySignature = dataset?.meta?.primary?.signature || dataset?.meta?.primary?.etag || dataset?.meta?.primary?.lastModified || '';
+    const historicalSignature = dataset?.meta?.historical?.signature || dataset?.meta?.historical?.etag || dataset?.meta?.historical?.lastModified || '';
+    return `${primarySignature}|${historicalSignature}`;
+  }
 
   function readDailyStatsFromSessionCache() {
     if (!canUseDailyStatsCache) {
@@ -184,17 +214,23 @@ export function createDataFlow({
     primaryChunkReporter,
     historicalChunkReporter,
   }) {
-    const supportsDeferredHistorical = isChartsOnlyPage || isKpiOnlyPage;
-    if (!supportsDeferredHistorical || historicalHydrationInFlight || historicalHydrated) {
+    if (!supportsDeferredMainHydration || historicalHydrationInFlight || historicalHydrated) {
       return;
     }
+    if (activeHydrationAbortController && !activeHydrationAbortController.signal.aborted) {
+      activeHydrationAbortController.abort();
+    }
+    const hydrationController = new AbortController();
+    activeHydrationAbortController = hydrationController;
     historicalHydrationInFlight = true;
     try {
+      const skipHistoricalForHydration = Boolean(isEdOnlyPage);
       const dataset = await fetchData({
         onPrimaryChunk: primaryChunkReporter,
         onHistoricalChunk: historicalChunkReporter,
         onWorkerProgress: workerProgressReporter,
-        skipHistorical: false,
+        skipHistorical: skipHistoricalForHydration,
+        signal: hydrationController.signal,
       });
       if (!dataset || dashboardState.loading || runNumber !== dashboardState.loadCounter) {
         return;
@@ -213,6 +249,7 @@ export function createDataFlow({
       dashboardState.dailyStats = dailyStats;
       dashboardState.primaryRecords = primaryRecords.slice();
       dashboardState.primaryDaily = primaryDaily.slice();
+      dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
       dashboardState.dataMeta = dataset.meta || null;
       if (activeConfig.charts) {
         dashboardState.chartData.baseDaily = dailyStats.slice();
@@ -220,6 +257,9 @@ export function createDataFlow({
         dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
         syncChartFilterControls();
         populateChartYearOptions(dailyStats);
+        if (typeof populateChartsHospitalTableYearOptions === 'function') {
+          populateChartsHospitalTableYearOptions(combinedRecords);
+        }
         populateHourlyCompareYearOptions(dailyStats);
         if (typeof populateHeatmapYearOptions === 'function') {
           populateHeatmapYearOptions(dailyStats);
@@ -230,17 +270,29 @@ export function createDataFlow({
         const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
         const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
         await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
+        if (typeof renderChartsHospitalTable === 'function') {
+          renderChartsHospitalTable(combinedRecords);
+        }
       }
       if (activeConfig.kpi) {
         await applyKpiFiltersAndRender();
       }
+      if (activeConfig.ed && dashboardState.ed) {
+        await renderEdDashboard(dashboardState.ed);
+      }
       writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
       historicalHydrated = true;
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       const errorInfo = describeError(error, { code: 'CHART_HISTORICAL_HYDRATE' });
       console.warn(errorInfo.log, error);
     } finally {
       historicalHydrationInFlight = false;
+      if (activeHydrationAbortController === hydrationController) {
+        activeHydrationAbortController = null;
+      }
     }
   }
 
@@ -276,6 +328,9 @@ export function createDataFlow({
   async function loadDashboard() {
     if (dashboardState.loading) {
       dashboardState.queuedReload = true;
+      if (activeLoadAbortController && !activeLoadAbortController.signal.aborted) {
+        activeLoadAbortController.abort();
+      }
       return;
     }
 
@@ -284,6 +339,16 @@ export function createDataFlow({
 
     dashboardState.loadCounter += 1;
     const runNumber = dashboardState.loadCounter;
+    const loadToken = (lastIssuedLoadToken += 1);
+    dashboardState.activeLoadToken = loadToken;
+    if (activeHydrationAbortController && !activeHydrationAbortController.signal.aborted) {
+      activeHydrationAbortController.abort();
+    }
+    if (activeLoadAbortController && !activeLoadAbortController.signal.aborted) {
+      activeLoadAbortController.abort();
+    }
+    const loadAbortController = new AbortController();
+    activeLoadAbortController = loadAbortController;
     const loadHandle = clientConfig.profilingEnabled
       ? perfMonitor.start('dashboard-load', { seansas: runNumber })
       : null;
@@ -316,24 +381,33 @@ export function createDataFlow({
         setDatasetValue(selectors.edStatus, 'tone', 'info');
       }
       const cachedDailyStats = readDailyStatsFromSessionCache();
-      const shouldFetchMainData = Boolean(needsMainData && !cachedDailyStats);
+      const shouldDeferAllMainDataOnThisLoad = Boolean(isEdOnlyPage && !historicalHydrated);
+      const shouldFetchMainData = Boolean(needsMainData && !cachedDailyStats && !shouldDeferAllMainDataOnThisLoad);
       const primaryChunkReporter = shouldFetchMainData ? createChunkReporter('Pagrindinis CSV') : null;
       const historicalChunkReporter = needsMainData ? createChunkReporter('Istorinis CSV') : null;
       const workerProgressReporter = shouldFetchMainData ? createChunkReporter('Apdorojama CSV') : null;
       const edChunkReporter = needsEdData ? createChunkReporter('ED CSV') : null;
-      const shouldDeferHistoricalOnThisLoad = Boolean(isChartsOnlyPage || isKpiOnlyPage);
+      const shouldDeferHistoricalOnThisLoad = Boolean(isKpiOnlyPage);
+      const shouldSkipHistoricalOnMainFetch = Boolean(shouldDeferHistoricalOnThisLoad || disableHistoricalForPage);
       const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
         shouldFetchMainData
           ? fetchData({
               onPrimaryChunk: primaryChunkReporter,
               onHistoricalChunk: historicalChunkReporter,
               onWorkerProgress: workerProgressReporter,
-              skipHistorical: shouldDeferHistoricalOnThisLoad,
+              skipHistorical: shouldSkipHistoricalOnMainFetch,
+              signal: loadAbortController.signal,
             })
           : Promise.resolve(null),
-        needsFeedbackData ? fetchFeedbackData() : Promise.resolve([]),
-        needsEdData ? fetchEdData({ onChunk: edChunkReporter }) : Promise.resolve(null),
+        needsFeedbackData ? fetchFeedbackData({ signal: loadAbortController.signal }) : Promise.resolve([]),
+        needsEdData ? fetchEdData({ onChunk: edChunkReporter, signal: loadAbortController.signal }) : Promise.resolve(null),
       ]);
+      if (!isLoadTokenCurrent(loadToken)) {
+        return;
+      }
+      if (loadAbortController.signal.aborted) {
+        return;
+      }
 
       if (clientConfig.profilingEnabled && fetchHandle) {
         const primaryCache = cachedDailyStats
@@ -381,12 +455,32 @@ export function createDataFlow({
           };
         }
       }
-      if (needsMainData && !cachedDailyStats && dataResult.status !== 'fulfilled') {
+      if (shouldFetchMainData && dataResult.status !== 'fulfilled') {
         throw dataResult.reason;
       }
 
-      const dataset = needsMainData && !cachedDailyStats ? (dataResult.value || {}) : {};
+      const hasMainDataPayload = Boolean(
+        cachedDailyStats
+        || (shouldFetchMainData && dataResult.status === 'fulfilled'),
+      );
+      const dataset = hasMainDataPayload && !cachedDailyStats ? (dataResult.value || {}) : {};
       const feedbackRecords = needsFeedbackData && feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
+      const currentMainSignature = (needsMainData && hasMainDataPayload)
+        ? computeMainDataSignature(dataset, cachedDailyStats)
+        : '';
+      const currentEdSignature = needsEdData ? (dashboardState.ed?.meta?.signature || '') : '';
+      const skipMainRender = Boolean(
+        shouldAutoRefresh
+        && dashboardState.hasLoadedOnce
+        && currentMainSignature
+        && dashboardState.lastMainDataSignature === currentMainSignature,
+      );
+      const skipEdRender = Boolean(
+        shouldAutoRefresh
+        && dashboardState.hasLoadedOnce
+        && currentEdSignature
+        && dashboardState.lastEdDataSignature === currentEdSignature,
+      );
       if (needsFeedbackData && feedbackResult.status === 'rejected') {
         const errorInfo = describeError(feedbackResult.reason, { code: 'FEEDBACK_DATA', message: TEXT.status.error });
         console.error(errorInfo.log, feedbackResult.reason);
@@ -397,7 +491,7 @@ export function createDataFlow({
       }
 
       let dailyStats = [];
-      if (needsMainData) {
+      if (needsMainData && hasMainDataPayload) {
         const combinedRecords = cachedDailyStats ? [] : (Array.isArray(dataset.records) ? dataset.records : []);
         const primaryRecords = cachedDailyStats
           ? []
@@ -417,13 +511,17 @@ export function createDataFlow({
         dashboardState.dailyStats = dailyStats;
         dashboardState.primaryRecords = primaryRecords.slice();
         dashboardState.primaryDaily = primaryDaily.slice();
+        dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
         dashboardState.dataMeta = dataset.meta || null;
         if (!cachedDailyStats && !shouldDeferHistoricalOnThisLoad) {
           writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
         }
 
-        if (activeConfig.charts) {
+        if (activeConfig.charts && !skipMainRender) {
           populateChartYearOptions(dailyStats);
+          if (typeof populateChartsHospitalTableYearOptions === 'function') {
+            populateChartsHospitalTableYearOptions(combinedRecords);
+          }
           populateHourlyCompareYearOptions(dailyStats);
           if (typeof populateHeatmapYearOptions === 'function') {
             populateHeatmapYearOptions(dailyStats);
@@ -455,17 +553,26 @@ export function createDataFlow({
           const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
           const heatmapData = typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
           await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
+          if (typeof renderChartsHospitalTable === 'function') {
+            renderChartsHospitalTable(combinedRecords);
+          }
+        }
+        if (!isLoadTokenCurrent(loadToken)) {
+          return;
         }
 
-        if (activeConfig.kpi) {
+        if (activeConfig.kpi && !skipMainRender) {
           await applyKpiFiltersAndRender();
         }
+        if (!isLoadTokenCurrent(loadToken)) {
+          return;
+        }
 
-        if (activeConfig.recent) {
+        if (activeConfig.recent && !skipMainRender) {
           renderRecentTable(recentDailyStats);
         }
 
-        if (activeConfig.monthly || activeConfig.yearly) {
+        if ((activeConfig.monthly || activeConfig.yearly) && !skipMainRender) {
           // Naudojame jau paruoštus pilnus dailyStats iš workerio,
           // kad išvengtume perteklinio perskaičiavimo kiekvieno atnaujinimo metu.
           const summaryDailyStats = Array.isArray(dailyStats) && dailyStats.length
@@ -495,9 +602,15 @@ export function createDataFlow({
         applyFeedbackFiltersAndRender();
         applyFeedbackStatusNote();
       }
+      if (!isLoadTokenCurrent(loadToken)) {
+        return;
+      }
 
       setStatus('success');
-      if (shouldFetchMainData && shouldDeferHistoricalOnThisLoad) {
+      if (
+        (shouldFetchMainData && shouldDeferHistoricalOnThisLoad)
+        || shouldDeferAllMainDataOnThisLoad
+      ) {
         scheduleDeferredHydration({
           runNumber,
           settings,
@@ -506,7 +619,7 @@ export function createDataFlow({
           historicalChunkReporter: null,
         });
       }
-      if (cachedDailyStats && (isChartsOnlyPage || isKpiOnlyPage)) {
+      if (cachedDailyStats && supportsDeferredMainHydration) {
         scheduleDeferredHydration({
           runNumber,
           settings,
@@ -515,23 +628,50 @@ export function createDataFlow({
           historicalChunkReporter: null,
         });
       }
-      if (needsEdData) {
+      if (needsEdData && !skipEdRender) {
         await renderEdDashboard(dashboardState.ed);
       }
+      if (currentMainSignature) {
+        dashboardState.lastMainDataSignature = currentMainSignature;
+      }
+      if (currentEdSignature) {
+        dashboardState.lastEdDataSignature = currentEdSignature;
+      }
+      if (!isLoadTokenCurrent(loadToken)) {
+        return;
+      }
     } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       const errorInfo = describeError(error, { code: 'DATA_PROCESS', message: 'Nepavyko apdoroti duomenų' });
       console.error(errorInfo.log, error);
       dashboardState.usingFallback = false;
       dashboardState.lastErrorMessage = errorInfo.userMessage;
+      dashboardState.chartsHospitalTableWorkerAgg = null;
       setStatus('error', errorInfo.userMessage);
+      if (activeConfig.charts) {
+        if (typeof populateChartsHospitalTableYearOptions === 'function') {
+          populateChartsHospitalTableYearOptions([]);
+        }
+        if (typeof renderChartsHospitalTable === 'function') {
+          renderChartsHospitalTable([]);
+        }
+      }
       if (needsEdData) {
         await renderEdDashboard(dashboardState.ed);
       }
     } finally {
-      dashboardState.loading = false;
-      dashboardState.hasLoadedOnce = true;
-      restartAutoRefreshTimer();
-      if (dashboardState.queuedReload) {
+      const isCurrentRun = isLoadTokenCurrent(loadToken);
+      if (activeLoadAbortController === loadAbortController) {
+        activeLoadAbortController = null;
+      }
+      if (isCurrentRun) {
+        dashboardState.loading = false;
+        dashboardState.hasLoadedOnce = true;
+        restartAutoRefreshTimer();
+      }
+      if (isCurrentRun && dashboardState.queuedReload) {
         dashboardState.queuedReload = false;
         window.setTimeout(() => {
           loadDashboard();

@@ -1,5 +1,5 @@
-import { startFullPageApp } from '../../runtime-full.js';
+import { runChartsRuntime } from '../runtimes/charts-runtime.js';
 
 export function runChartsPage(core) {
-  return startFullPageApp({ forcePageId: core?.pageId || 'charts', skipGlobalInit: true });
+  return runChartsRuntime(core);
 }

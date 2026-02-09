@@ -6,7 +6,6 @@ import { initGlobalShortcuts } from './global.js';
 import { initKpiFilters } from './kpi.js';
 import { initScrollTopButton } from './scroll.js';
 import { initSectionNavigation } from './section-nav.js';
-import { initTvMode } from './tv.js';
 import { initThemeToggle } from './theme.js';
 import { initYearlyExpand } from './yearly.js';
 import { runAfterDomAndIdle } from '../utils/dom.js';
@@ -43,11 +42,8 @@ export function createUIEvents(env) {
       runNonCritical(() => initChartCopyButtons(env));
       runNonCritical(() => initChartDownloadButtons(env));
     }
-    if (pageConfig.recent || pageConfig.monthly || pageConfig.yearly || pageConfig.feedback) {
+    if (pageConfig.charts || pageConfig.recent || pageConfig.monthly || pageConfig.yearly || pageConfig.feedback) {
       runNonCritical(() => initTableDownloadButtons(env));
-    }
-    if (pageConfig.tv) {
-      initTvMode(env);
     }
     if (pageConfig.charts) {
       // Chart controls are interaction-only; defer to reduce startup main-thread contention.

@@ -56,6 +56,10 @@ export function initChartControls(env) {
     handleChartFilterChange,
     handleChartSegmentedClick,
     applyHourlyDepartmentSelection,
+    handleChartsHospitalTableYearChange,
+    handleChartsHospitalTableSearchInput,
+    handleChartsHospitalTableHeaderClick,
+    handleChartsHospitalTableRowClick,
   } = env;
 
   if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
@@ -76,6 +80,22 @@ export function initChartControls(env) {
         updateChartYear(value);
       }
     });
+  }
+
+  if (selectors.chartsHospitalTableYear) {
+    selectors.chartsHospitalTableYear.addEventListener('change', handleChartsHospitalTableYearChange);
+  }
+
+  if (selectors.chartsHospitalTableSearch) {
+    selectors.chartsHospitalTableSearch.addEventListener('input', handleChartsHospitalTableSearchInput);
+  }
+
+  if (selectors.chartsHospitalTableRoot) {
+    selectors.chartsHospitalTableRoot.addEventListener('click', handleChartsHospitalTableHeaderClick);
+  }
+
+  if (selectors.chartsHospitalTableBody) {
+    selectors.chartsHospitalTableBody.addEventListener('click', handleChartsHospitalTableRowClick);
   }
 
   if (selectors.heatmapMetricSelect) {

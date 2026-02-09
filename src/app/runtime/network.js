@@ -91,7 +91,10 @@ export function createTextSignature(text) {
   return `${length}:${head}`;
 }
 
-export async function downloadCsv(url, { cacheInfo = null, onChunk } = {}) {
+export async function downloadCsv(url, { cacheInfo = null, onChunk, signal } = {}) {
+  if (signal?.aborted) {
+    throw new DOMException('Užklausa nutraukta.', 'AbortError');
+  }
   const headers = {};
   if (cacheInfo?.etag) {
     headers['If-None-Match'] = cacheInfo.etag;
@@ -99,7 +102,7 @@ export async function downloadCsv(url, { cacheInfo = null, onChunk } = {}) {
   if (cacheInfo?.lastModified) {
     headers['If-Modified-Since'] = cacheInfo.lastModified;
   }
-  const response = await fetch(url, { cache: 'no-store', headers });
+  const response = await fetch(url, { cache: 'no-store', headers, signal });
   const statusText = response.statusText || '';
   const cacheStatusHeader = response.headers.get('x-cache-status') || '';
   if (response.status === 304) {
@@ -131,6 +134,14 @@ export async function downloadCsv(url, { cacheInfo = null, onChunk } = {}) {
     const decoder = new TextDecoder();
     let receivedBytes = 0;
     while (true) {
+      if (signal?.aborted) {
+        try {
+          await reader.cancel();
+        } catch (error) {
+          // ignore cancellation errors
+        }
+        throw new DOMException('Užklausa nutraukta.', 'AbortError');
+      }
       const { done, value } = await reader.read();
       if (done) {
         break;

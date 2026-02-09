@@ -1,5 +1,5 @@
-import { startFullPageApp } from '../../runtime-full.js';
+import { runEdRuntime } from '../runtimes/ed-runtime.js';
 
 export function runEdPage(core) {
-  return startFullPageApp({ forcePageId: core?.pageId || 'ed', skipGlobalInit: true });
+  return runEdRuntime(core);
 }

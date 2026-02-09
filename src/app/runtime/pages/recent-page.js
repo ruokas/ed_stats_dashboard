@@ -1,5 +1,5 @@
-import { startFullPageApp } from '../../runtime-full.js';
+import { runRecentRuntime } from '../runtimes/recent-runtime.js';
 
 export function runRecentPage(core) {
-  return startFullPageApp({ forcePageId: core?.pageId || 'recent', skipGlobalInit: true });
+  return runRecentRuntime(core);
 }
