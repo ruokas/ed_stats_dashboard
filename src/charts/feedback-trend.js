@@ -382,10 +382,17 @@ export async function renderFeedbackTrendChart(env, monthlyStats, feedbackRecord
         : { borderDash: [8, 4], opacity: 0.58 })
       : { borderDash: [], opacity: 0.82 };
 
+    const lineStyleLabel = isCompare && item.metricAxis !== 'responses'
+      ? (item.groupKey === groups[0]?.key ? 'pilna' : 'punktyrinė')
+      : '';
+    const datasetLabel = isCompare
+      ? `${item.metricLabel} (${item.groupLabel})${lineStyleLabel ? ` • ${lineStyleLabel} linija` : ''}`
+      : item.metricLabel;
+
     if (item.metricAxis === 'responses') {
       const alpha = isCompare ? (item.groupKey === groups[0]?.key ? 0.36 : 0.2) : 0.3;
       return {
-        label: isCompare ? `${item.metricLabel} (${item.groupLabel})` : item.metricLabel,
+        label: datasetLabel,
         type: 'bar',
         data: item.values,
         yAxisID: responseAxisId,
@@ -399,7 +406,7 @@ export async function renderFeedbackTrendChart(env, monthlyStats, feedbackRecord
     }
 
     return {
-      label: isCompare ? `${item.metricLabel} (${item.groupLabel})` : item.metricLabel,
+      label: datasetLabel,
       type: 'line',
       data: item.values,
       borderColor: baseColor,
@@ -568,6 +575,27 @@ export async function renderFeedbackTrendChart(env, monthlyStats, feedbackRecord
           labels: {
             color: palette.textColor,
             usePointStyle: true,
+            pointStyleWidth: 34,
+            generateLabels(chart) {
+              const defaults = Chart.defaults.plugins?.legend?.labels;
+              const base = typeof defaults?.generateLabels === 'function'
+                ? defaults.generateLabels(chart)
+                : [];
+              return base.map((item) => {
+                const dataset = chart.data?.datasets?.[item.datasetIndex];
+                if (!dataset || dataset.type === 'bar') {
+                  return item;
+                }
+                return {
+                  ...item,
+                  pointStyle: 'line',
+                  fillStyle: 'rgba(0,0,0,0)',
+                  strokeStyle: dataset.borderColor || item.strokeStyle,
+                  lineWidth: Number.isFinite(dataset.borderWidth) ? dataset.borderWidth : 3,
+                  lineDash: Array.isArray(dataset.borderDash) ? dataset.borderDash : [],
+                };
+              });
+            },
           },
         },
         tooltip: {
