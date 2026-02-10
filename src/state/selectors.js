@@ -142,6 +142,8 @@ export function createSelectors() {
     feedbackTrendMetrics: document.getElementById('feedbackTrendMetrics'),
     feedbackTrendMetricsLabel: document.getElementById('feedbackTrendMetricsLabel'),
     feedbackTrendMetricButtons: Array.from(document.querySelectorAll('[data-trend-metric]')),
+    feedbackTrendCompareSelect: document.getElementById('feedbackTrendCompareSelect'),
+    feedbackTrendCompareLabel: document.getElementById('feedbackTrendCompareLabel'),
     feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
     feedbackTrendSkeleton: document.getElementById('feedbackTrendSkeleton'),
     feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
@@ -430,6 +432,7 @@ export function createSelectorsForPage(pageId) {
     const feedbackFilters = byId('feedbackFilters');
     const feedbackTrendControls = byId('feedbackTrendControls');
     const feedbackTrendMetrics = byId('feedbackTrendMetrics');
+    const feedbackTrendCompareSelect = byId('feedbackTrendCompareSelect');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -460,6 +463,8 @@ export function createSelectorsForPage(pageId) {
       feedbackTrendMetrics,
       feedbackTrendMetricsLabel: byId('feedbackTrendMetricsLabel'),
       feedbackTrendMetricButtons: byQueryAllIn(feedbackTrendMetrics, '[data-trend-metric]'),
+      feedbackTrendCompareSelect,
+      feedbackTrendCompareLabel: byId('feedbackTrendCompareLabel'),
       feedbackTrendSummary: byId('feedbackTrendSummary'),
       feedbackTrendSkeleton: byId('feedbackTrendSkeleton'),
       feedbackTrendMessage: byId('feedbackTrendMessage'),

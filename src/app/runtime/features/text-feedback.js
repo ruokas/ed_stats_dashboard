@@ -71,6 +71,34 @@ export function applyFeedbackText({
       }
     });
   }
+  if (selectors.feedbackTrendCompareLabel) {
+    selectors.feedbackTrendCompareLabel.textContent = TEXT.feedback.trend.compareControlsLabel || 'Palyginti pagal';
+  }
+  if (selectors.feedbackTrendCompareSelect) {
+    const compareModes = Array.isArray(TEXT.feedback?.trend?.compareModes) ? TEXT.feedback.trend.compareModes : [];
+    if (compareModes.length) {
+      selectors.feedbackTrendCompareSelect.replaceChildren();
+      compareModes.forEach((mode) => {
+        if (!mode || typeof mode !== 'object' || !mode.key) {
+          return;
+        }
+        const option = document.createElement('option');
+        option.value = String(mode.key);
+        option.textContent = mode.label || String(mode.key);
+        selectors.feedbackTrendCompareSelect.appendChild(option);
+      });
+      const activeValue = selectors.feedbackTrendCompareSelect.dataset.value;
+      if (activeValue && selectors.feedbackTrendCompareSelect.querySelector(`option[value="${activeValue}"]`)) {
+        selectors.feedbackTrendCompareSelect.value = activeValue;
+      }
+    }
+    const hint = TEXT.feedback.trend.compareHint;
+    if (hint) {
+      selectors.feedbackTrendCompareSelect.title = hint;
+    } else {
+      selectors.feedbackTrendCompareSelect.removeAttribute('title');
+    }
+  }
   syncFeedbackTrendControls();
 
   if (selectors.feedbackCaption) {

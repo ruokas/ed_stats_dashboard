@@ -568,26 +568,43 @@ export const TEXT = {
     empty: 'Kol kas nėra apibendrintų atsiliepimų.',
     trend: {
       title: 'Bendro vertinimo dinamika',
-      subtitle: (months, metricCount) => {
+      subtitle: (months, metricCount, compareLabel = '') => {
         const metricSuffix = Number.isFinite(metricCount) && metricCount > 0
           ? ` • ${Math.max(1, Math.round(metricCount))} rodikliai`
           : '';
+        const compareSuffix = compareLabel ? ` • ${compareLabel}` : '';
         if (!Number.isFinite(months) || months <= 0) {
-          return `Visų prieinamų mėnesių dinamika${metricSuffix}`;
+          return `Visų prieinamų mėnesių dinamika${metricSuffix}${compareSuffix}`;
         }
         const normalized = Math.max(1, Math.round(months));
         if (normalized === 1) {
-          return `Paskutinio mėnesio dinamika${metricSuffix}`;
+          return `Paskutinio mėnesio dinamika${metricSuffix}${compareSuffix}`;
         }
-        return `Paskutinių ${normalized} mėnesių dinamika${metricSuffix}`;
+        return `Paskutinių ${normalized} mėnesių dinamika${metricSuffix}${compareSuffix}`;
       },
       controlsLabel: 'Laikotarpis',
       metricControlsLabel: 'Rodikliai',
+      compareControlsLabel: 'Palyginti pagal',
       periods: [
         { months: 3, label: '3 mėn.' },
         { months: 6, label: '6 mėn.' },
         { months: 12, label: '12 mėn.' },
       ],
+      compareModes: [
+        { key: 'none', label: 'Nelyginti' },
+        { key: 'respondent', label: 'Pacientas vs artimasis' },
+        { key: 'location', label: 'Ambulatorija vs salė' },
+      ],
+      compareGroups: {
+        respondent: {
+          left: { key: 'patient', label: 'Pacientas' },
+          right: { key: 'relative', label: 'Paciento artimasis' },
+        },
+        location: {
+          left: { key: 'ambulatory', label: 'Ambulatorija' },
+          right: { key: 'hall', label: 'Salė' },
+        },
+      },
       metrics: [
         { key: 'overallAverage', label: 'Bendra patirtis', axis: 'rating', enabledByDefault: true },
         { key: 'doctorsAverage', label: 'Gydytojų darbas', axis: 'rating' },
@@ -615,6 +632,9 @@ export const TEXT = {
           return '';
         }
         const parts = [];
+        if (info.compareModeLabel) {
+          parts.push(info.compareModeLabel);
+        }
         if (info.average?.formatted) {
           parts.push(`Vidurkis ${info.average.formatted}`);
         }

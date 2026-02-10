@@ -249,6 +249,14 @@
                 <button type="button" class="feedback-trend-card__button" data-trend-metric="responses" aria-pressed="false">Atsakymų skaičius</button>
               </div>
             </div>
+            <div class="feedback-trend-card__filter-field feedback-trend-card__filter-field--compare">
+              <span id="feedbackTrendCompareLabel" class="feedback-trend-card__controls-label">Palyginti pagal</span>
+              <select id="feedbackTrendCompareSelect" class="feedback-trend-card__select" aria-labelledby="feedbackTrendCompareLabel">
+                <option value="none">Nelyginti</option>
+                <option value="respondent">Pacientas vs artimasis</option>
+                <option value="location">Ambulatorija vs salė</option>
+              </select>
+            </div>
           </div>
         </div>
         <p id="feedbackTrendSummary" class="feedback-trend-summary" hidden></p>
