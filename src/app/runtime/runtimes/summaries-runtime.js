@@ -1338,10 +1338,6 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
   canvas.style.setProperty('height', `${height}px`, 'important');
   canvas.style.setProperty('min-height', `${height}px`, 'important');
   canvas.style.setProperty('max-height', `${height}px`, 'important');
-  const truncateLabel = (value, max = 32) => {
-    const text = String(value || '');
-    return text.length > max ? `${text.slice(0, max - 1)}…` : text;
-  };
   const valueLabelPlugin = {
     id: `${slot}-count-labels`,
     afterDatasetsDraw(chart) {
@@ -1412,7 +1408,8 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
         },
         y: {
           ticks: {
-            callback: (_value, index) => truncateLabel(rows[index]?.label, 32),
+            autoSkip: false,
+            callback: (_value, index) => String(rows[index]?.label || ''),
           },
         },
       },
