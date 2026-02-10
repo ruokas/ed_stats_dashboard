@@ -280,6 +280,8 @@ export async function runFeedbackRuntime(core) {
         syncFeedbackTrendControls: () => feedbackRenderFeature.syncFeedbackTrendControls(),
         updateFeedbackTrendSubtitle: () => feedbackRenderFeature.updateFeedbackTrendSubtitle(),
         getActiveFeedbackTrendWindow: () => feedbackRenderFeature.getActiveFeedbackTrendWindow(),
+        getActiveFeedbackTrendMetrics: () => feedbackRenderFeature.getActiveFeedbackTrendMetrics(),
+        getFeedbackTrendMetricConfig: () => feedbackRenderFeature.getFeedbackTrendMetricConfig(),
         formatMonthLabel,
         numberFormatter,
         oneDecimalFormatter,
@@ -335,6 +337,7 @@ export async function runFeedbackRuntime(core) {
   initFeedbackTrendControls({
     selectors,
     setFeedbackTrendWindow: feedbackRenderFeature.setFeedbackTrendWindow,
+    setFeedbackTrendMetric: feedbackRenderFeature.setFeedbackTrendMetric,
   });
   initFeedbackTableScrollAffordance({ selectors });
   initChartCopyButtons({

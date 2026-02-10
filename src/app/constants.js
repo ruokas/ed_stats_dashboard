@@ -568,22 +568,35 @@ export const TEXT = {
     empty: 'Kol kas nėra apibendrintų atsiliepimų.',
     trend: {
       title: 'Bendro vertinimo dinamika',
-      subtitle: (months) => {
+      subtitle: (months, metricCount) => {
+        const metricSuffix = Number.isFinite(metricCount) && metricCount > 0
+          ? ` • ${Math.max(1, Math.round(metricCount))} rodikliai`
+          : '';
         if (!Number.isFinite(months) || months <= 0) {
-          return 'Visų prieinamų mėnesių dinamika';
+          return `Visų prieinamų mėnesių dinamika${metricSuffix}`;
         }
         const normalized = Math.max(1, Math.round(months));
         if (normalized === 1) {
-          return 'Paskutinio mėnesio dinamika';
+          return `Paskutinio mėnesio dinamika${metricSuffix}`;
         }
-        return `Paskutinių ${normalized} mėnesių dinamika`;
+        return `Paskutinių ${normalized} mėnesių dinamika${metricSuffix}`;
       },
       controlsLabel: 'Laikotarpis',
+      metricControlsLabel: 'Rodikliai',
       periods: [
         { months: 3, label: '3 mėn.' },
         { months: 6, label: '6 mėn.' },
         { months: 12, label: '12 mėn.' },
       ],
+      metrics: [
+        { key: 'overallAverage', label: 'Bendra patirtis', axis: 'rating', enabledByDefault: true },
+        { key: 'doctorsAverage', label: 'Gydytojų darbas', axis: 'rating' },
+        { key: 'nursesAverage', label: 'Slaugytojų darbas', axis: 'rating' },
+        { key: 'aidesAverage', label: 'Padėjėjų darbas', axis: 'rating' },
+        { key: 'waitingAverage', label: 'Laukimo vertinimas', axis: 'rating' },
+        { key: 'responses', label: 'Atsakymų skaičius', axis: 'responses' },
+      ],
+      noMetricSelected: 'Pasirinkite bent vieną rodiklį trendo atvaizdavimui.',
       empty: 'Trendo grafikas bus parodytas, kai atsiras bent vienas mėnuo su bendru įvertinimu.',
       unavailable: 'Nepavyko atvaizduoti trendo grafiko. Patikrinkite ryšį ir bandykite dar kartą.',
       aria: (label, from, to) => {

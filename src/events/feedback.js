@@ -29,7 +29,7 @@ export function initFeedbackFilters(env) {
 }
 
 export function initFeedbackTrendControls(env) {
-  const { selectors, setFeedbackTrendWindow } = env;
+  const { selectors, setFeedbackTrendWindow, setFeedbackTrendMetric } = env;
 
   const controls = selectors.feedbackTrendControls;
   if (!controls) {
@@ -51,6 +51,26 @@ export function initFeedbackTrendControls(env) {
       return;
     }
     setFeedbackTrendWindow(null);
+  });
+
+  const metricControls = selectors.feedbackTrendMetrics;
+  if (!metricControls || typeof setFeedbackTrendMetric !== 'function') {
+    return;
+  }
+  metricControls.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+    const button = target.closest('button[data-trend-metric]');
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    const metricKey = getDatasetValue(button, 'trendMetric', '');
+    if (!metricKey) {
+      return;
+    }
+    setFeedbackTrendMetric(metricKey);
   });
 }
 

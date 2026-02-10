@@ -53,6 +53,24 @@ export function applyFeedbackText({
       }
     });
   }
+  if (selectors.feedbackTrendMetricsLabel) {
+    selectors.feedbackTrendMetricsLabel.textContent = TEXT.feedback.trend.metricControlsLabel || 'Rodikliai';
+  }
+  if (selectors.feedbackTrendMetricButtons && selectors.feedbackTrendMetricButtons.length) {
+    const metricsConfig = Array.isArray(TEXT.feedback?.trend?.metrics) ? TEXT.feedback.trend.metrics : [];
+    selectors.feedbackTrendMetricButtons.forEach((button) => {
+      const metricKey = getDatasetValue(button, 'trendMetric', '');
+      const config = metricsConfig.find((item) => String(item?.key || '') === metricKey);
+      if (config?.label) {
+        button.textContent = config.label;
+      }
+      if (config?.hint) {
+        button.title = config.hint;
+      } else {
+        button.removeAttribute('title');
+      }
+    });
+  }
   syncFeedbackTrendControls();
 
   if (selectors.feedbackCaption) {

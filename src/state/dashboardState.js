@@ -126,6 +126,7 @@ export function createDashboardState({
       usingFallback: false,
       lastErrorMessage: '',
       trendWindow: 6,
+      trendMetrics: ['overallAverage'],
       records: [],
       filteredRecords: [],
       filters: defaultFeedbackFilters(),
