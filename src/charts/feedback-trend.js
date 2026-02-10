@@ -421,17 +421,6 @@ export async function renderFeedbackTrendChart(env, monthlyStats) {
   };
 
   const existingChart = dashboardState.charts.feedbackTrend;
-  const canReuse = existingChart
-    && existingChart.canvas === canvas
-    && existingChart.config?.type === 'line';
-  if (canReuse) {
-    existingChart.data.labels = chartConfig.data.labels;
-    existingChart.data.datasets = chartConfig.data.datasets;
-    existingChart.options = chartConfig.options;
-    existingChart.config.plugins = chartConfig.plugins;
-    existingChart.update('none');
-    return;
-  }
   if (existingChart && typeof existingChart.destroy === 'function') {
     existingChart.destroy();
   }

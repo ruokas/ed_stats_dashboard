@@ -31,18 +31,26 @@ export function initFeedbackFilters(env) {
 export function initFeedbackTrendControls(env) {
   const { selectors, setFeedbackTrendWindow } = env;
 
-  if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
+  const controls = selectors.feedbackTrendControls;
+  if (!controls) {
     return;
   }
-  selectors.feedbackTrendButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
-      if (Number.isFinite(months) && months > 0) {
-        setFeedbackTrendWindow(months);
-      } else {
-        setFeedbackTrendWindow(null);
-      }
-    });
+
+  controls.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+    const button = target.closest('button[data-trend-months]');
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
+    if (Number.isFinite(months) && months > 0) {
+      setFeedbackTrendWindow(months);
+      return;
+    }
+    setFeedbackTrendWindow(null);
   });
 }
 
