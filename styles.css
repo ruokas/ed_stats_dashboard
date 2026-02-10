@@ -1010,7 +1010,7 @@ body[data-theme="dark"] select optgroup {
     .ed-dashboard__card--comments {
       gap: 12px;
       min-height: 256px;
-      max-height: 520px;
+      max-height: 420px;
       overflow: hidden;
       background-clip: padding-box;
     }

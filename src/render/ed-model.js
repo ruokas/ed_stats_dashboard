@@ -60,10 +60,22 @@ export function buildEdDashboardModel({
     || Number.isFinite(summary?.occupiedBeds)
     || Number.isFinite(summary?.nursePatientsPerStaff)
     || Number.isFinite(summary?.doctorPatientsPerStaff);
-  const displayVariant = summaryMode === 'snapshot'
+  const computedDisplayVariant = summaryMode === 'snapshot'
     || (summaryMode === 'hybrid' && hasSnapshotMetrics)
     ? 'snapshot'
     : 'legacy';
+  const hasRecords = Array.isArray(dataset?.records) && dataset.records.length > 0;
+  const hasLegacyTotals = Number.isFinite(summary?.totalPatients) && summary.totalPatients > 0;
+  const hasRenderableEdData = hasRecords || hasLegacyTotals || hasSnapshotMetrics;
+  let displayVariant = computedDisplayVariant;
+  if (hasRenderableEdData) {
+    dashboardState.edLastDisplayVariant = computedDisplayVariant;
+  } else {
+    const persistedVariant = dashboardState?.edLastDisplayVariant;
+    displayVariant = persistedVariant === 'legacy' || persistedVariant === 'snapshot'
+      ? persistedVariant
+      : 'snapshot';
+  }
 
   const overviewDailyStats = Array.isArray(dashboardState?.kpi?.daily) && dashboardState.kpi.daily.length
     ? dashboardState.kpi.daily
