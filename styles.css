@@ -2646,6 +2646,10 @@ body[data-theme="dark"] select optgroup {
       gap: 10px;
     }
 
+    .report-card--full-width {
+      grid-column: 1 / -1;
+    }
+
     .report-card__head {
       display: flex;
       justify-content: space-between;

@@ -37,6 +37,8 @@ export function createDashboardState({
     summariesReportsTopN: 15,
     summariesReportsMinGroupSize: 10,
     summariesReferralPspcSort: 'desc',
+    summariesReferralPspcMode: 'cross',
+    summariesReferralPspcTrendPspc: '__top3__',
     summariesReportsCoverage: { total: 0, extended: 0, percent: 0 },
     summariesHistoricalRecordsCache: {
       recordsRef: null,

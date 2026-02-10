@@ -15,7 +15,6 @@ import {
   computeReferralHospitalizedShareByPspc,
   computeReferralDispositionYearlyTrend,
   computeReferralYearlyTrend,
-  computeSexDistribution,
   computeYearlyStats,
   scopeExtendedHistoricalRecords,
 } from '../../../data/stats.js?v=2026-02-07-monthly-heatmap-1';
@@ -426,10 +425,14 @@ function getReportsComputation(dashboardState, settings, historicalRecords, scop
     referralDispositionYearly: computeReferralDispositionYearlyTrend(historicalRecords, baseOptions),
     referralMonthlyHeatmap: computeReferralMonthlyHeatmap(historicalRecords, baseOptions),
     referralHospitalizedByPspc: computeReferralHospitalizedShareByPspc(historicalRecords, baseOptions),
+    referralHospitalizedByPspcYearly: computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
+      minGroupSize: dashboardState.summariesReportsMinGroupSize,
+      yearOptions: scopeMeta.yearOptions,
+      shiftStartHour: scopeMeta.shiftStartHour,
+    }),
     pspcCorrelation: computePspcReferralHospitalizationCorrelation(historicalRecords, baseOptions),
     ageDistribution: computeAgeDistribution(historicalRecords, baseOptions),
     pspcDistribution: computePspcDistribution(historicalRecords, baseOptions),
-    sexDistribution: computeSexDistribution(historicalRecords, baseOptions),
   };
   dashboardState.summariesReportsComputationCache = {
     recordsRef: historicalRecords,
@@ -437,6 +440,100 @@ function getReportsComputation(dashboardState, settings, historicalRecords, scop
     value,
   };
   return value;
+}
+
+function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
+  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  const minGroupSizeRaw = Number.parseInt(String(options?.minGroupSize ?? 10), 10);
+  const minGroupSize = Number.isFinite(minGroupSizeRaw) && minGroupSizeRaw > 0 ? minGroupSizeRaw : 10;
+  const shiftStartHourRaw = Number(options?.shiftStartHour);
+  const shiftStartHour = Number.isFinite(shiftStartHourRaw) ? shiftStartHourRaw : 7;
+  const getShiftAdjustedYear = (record) => {
+    const arrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+    const discharge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
+    const reference = arrival || discharge;
+    if (reference) {
+      const anchor = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+      if (reference.getHours() < shiftStartHour) {
+        anchor.setDate(anchor.getDate() - 1);
+      }
+      return String(anchor.getFullYear());
+    }
+    const fallback = Number.parseInt(String(record?.year ?? ''), 10);
+    if (Number.isFinite(fallback)) {
+      return String(fallback);
+    }
+    return '';
+  };
+  const yearSet = new Set();
+  const byPspc = new Map();
+
+  list.forEach((record) => {
+    const year = getShiftAdjustedYear(record);
+    if (!/^\d{4}$/.test(year)) {
+      return;
+    }
+    yearSet.add(year);
+    const referralValue = String(record?.referral || '').trim().toLowerCase();
+    if (referralValue !== 'su siuntimu') {
+      return;
+    }
+    const pspc = String(record?.pspc || '').trim() || 'Nenurodyta';
+    if (!byPspc.has(pspc)) {
+      byPspc.set(pspc, {
+        label: pspc,
+        totalReferred: 0,
+        totalHospitalized: 0,
+        byYear: new Map(),
+      });
+    }
+    const bucket = byPspc.get(pspc);
+    bucket.totalReferred += 1;
+    if (record?.hospitalized === true) {
+      bucket.totalHospitalized += 1;
+    }
+    if (!bucket.byYear.has(year)) {
+      bucket.byYear.set(year, { referredTotal: 0, hospitalizedCount: 0 });
+    }
+    const yearBucket = bucket.byYear.get(year);
+    yearBucket.referredTotal += 1;
+    if (record?.hospitalized === true) {
+      yearBucket.hospitalizedCount += 1;
+    }
+  });
+
+  const years = Array.from(yearSet)
+    .filter((year) => /^\d{4}$/.test(year))
+    .sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10));
+
+  const rows = Array.from(byPspc.values())
+    .filter((row) => row.label !== 'Nenurodyta')
+    .filter((row) => row.totalReferred >= minGroupSize)
+    .map((row) => ({
+      label: row.label,
+      totalReferred: row.totalReferred,
+      totalHospitalized: row.totalHospitalized,
+      share: row.totalReferred > 0 ? row.totalHospitalized / row.totalReferred : 0,
+      yearly: years.map((year) => {
+        const yearBucket = row.byYear.get(year) || { referredTotal: 0, hospitalizedCount: 0 };
+        const referredTotal = Number(yearBucket.referredTotal || 0);
+        const hospitalizedCount = Number(yearBucket.hospitalizedCount || 0);
+        return {
+          year,
+          referredTotal,
+          hospitalizedCount,
+          share: referredTotal > 0 ? hospitalizedCount / referredTotal : null,
+        };
+      }),
+    }))
+    .sort((a, b) => {
+      if (b.totalReferred !== a.totalReferred) {
+        return b.totalReferred - a.totalReferred;
+      }
+      return String(a.label).localeCompare(String(b.label), 'lt');
+    });
+
+  return { years, rows };
 }
 
 function getScopedReportsMeta(dashboardState, settings, historicalRecords, yearFilter) {
@@ -460,7 +557,7 @@ function getScopedReportsMeta(dashboardState, settings, historicalRecords, yearF
   return scoped;
 }
 
-function syncReportsControls(selectors, dashboardState, yearOptions) {
+function syncReportsControls(selectors, dashboardState, yearOptions, pspcTrendOptions) {
   if (selectors.summariesReportsYear) {
     const select = selectors.summariesReportsYear;
     const allOption = document.createElement('option');
@@ -484,6 +581,49 @@ function syncReportsControls(selectors, dashboardState, yearOptions) {
   }
   if (selectors.referralHospitalizedByPspcSort) {
     selectors.referralHospitalizedByPspcSort.value = dashboardState.summariesReferralPspcSort === 'asc' ? 'asc' : 'desc';
+  }
+  if (selectors.referralHospitalizedByPspcMode) {
+    const mode = String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase();
+    selectors.referralHospitalizedByPspcMode.value = mode === 'trend' ? 'trend' : 'cross';
+  }
+  if (selectors.referralHospitalizedByPspcTrendPspc && Array.isArray(pspcTrendOptions)) {
+    const select = selectors.referralHospitalizedByPspcTrendPspc;
+    const previous = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
+    select.replaceChildren();
+    const topOption = document.createElement('option');
+    topOption.value = '__top3__';
+    topOption.textContent = 'TOP 3 PSPC';
+    select.appendChild(topOption);
+    (Array.isArray(pspcTrendOptions) ? pspcTrendOptions : []).forEach((label) => {
+      if (!label) {
+        return;
+      }
+      const option = document.createElement('option');
+      option.value = label;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+    const hasPrevious = Array.from(select.options).some((option) => option.value === previous);
+    const nextValue = hasPrevious ? previous : '__top3__';
+    select.value = nextValue;
+    dashboardState.summariesReferralPspcTrendPspc = nextValue;
+  }
+  const isTrend = String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase() === 'trend';
+  if (selectors.referralHospitalizedByPspcSort) {
+    selectors.referralHospitalizedByPspcSort.disabled = isTrend;
+    const sortField = selectors.referralHospitalizedByPspcSort.closest('.report-card__inline-filter');
+    if (sortField) {
+      sortField.hidden = isTrend;
+      sortField.setAttribute('aria-hidden', String(isTrend));
+    }
+  }
+  if (selectors.referralHospitalizedByPspcTrendPspc) {
+    selectors.referralHospitalizedByPspcTrendPspc.disabled = !isTrend;
+    const trendField = selectors.referralHospitalizedByPspcTrendPspc.closest('.report-card__inline-filter');
+    if (trendField) {
+      trendField.hidden = !isTrend;
+      trendField.setAttribute('aria-hidden', String(!isTrend));
+    }
   }
 }
 
@@ -1417,6 +1557,122 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
   }, { forceRecreate: true });
 }
 
+function renderReferralHospitalizedByPspcTrendChart(slot, dashboardState, chartLib, canvas, trendData, color) {
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    return;
+  }
+  const years = Array.isArray(trendData?.years) ? trendData.years : [];
+  const series = Array.isArray(trendData?.series) ? trendData.series : [];
+  canvas.style.setProperty('height', '320px', 'important');
+  canvas.style.setProperty('min-height', '320px', 'important');
+  canvas.style.setProperty('max-height', '320px', 'important');
+
+  const fallbackColors = [
+    color,
+    '#0284c7',
+    '#16a34a',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+  ];
+  const datasets = series.map((item, index) => {
+    const baseColor = fallbackColors[index % fallbackColors.length];
+    return {
+      label: item.label,
+      data: item.points.map((point) => (Number.isFinite(point?.share) ? point.share * 100 : null)),
+      borderColor: baseColor,
+      backgroundColor: baseColor,
+      tension: 0.28,
+      spanGaps: false,
+      fill: false,
+      borderWidth: 2.2,
+      pointRadius: 3.5,
+      pointHoverRadius: 5.5,
+      pointBackgroundColor: baseColor,
+      pointBorderColor: baseColor,
+      pointBorderWidth: 1,
+      __points: item.points,
+    };
+  });
+
+  const allValues = datasets
+    .flatMap((dataset) => (Array.isArray(dataset.data) ? dataset.data : []))
+    .filter((value) => Number.isFinite(value));
+  const dynamicYAxis = (() => {
+    if (!allValues.length) {
+      return { min: 0, max: 100 };
+    }
+    const rawMin = Math.min(...allValues);
+    const rawMax = Math.max(...allValues);
+    const range = Math.max(0.5, rawMax - rawMin);
+    const pad = Math.max(0.8, range * 0.18);
+    const min = Math.max(0, rawMin - pad);
+    const max = Math.min(100, rawMax + pad);
+    if (max - min < 2) {
+      const middle = (max + min) / 2;
+      return {
+        min: Math.max(0, middle - 1),
+        max: Math.min(100, middle + 1),
+      };
+    }
+    return { min, max };
+  })();
+
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
+    type: 'line',
+    data: {
+      labels: years,
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = Number(context.parsed?.y ?? 0);
+              const dataset = context.dataset || {};
+              const points = Array.isArray(dataset.__points) ? dataset.__points : [];
+              const point = points[context.dataIndex] || {};
+              const referred = Number(point.referredTotal || 0);
+              const hospitalized = Number(point.hospitalizedCount || 0);
+              return `${dataset.label}: ${oneDecimalFormatter.format(value)}% (n=${numberFormatter.format(referred)}, hosp=${numberFormatter.format(hospitalized)})`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxRotation: 0,
+            autoSkip: false,
+          },
+        },
+        y: {
+          min: dynamicYAxis.min,
+          max: dynamicYAxis.max,
+          ticks: {
+            callback: (value) => `${Number(value).toFixed(0)}%`,
+          },
+          title: {
+            display: true,
+            text: 'Hospitalizacijų dalis (%)',
+          },
+        },
+      },
+    },
+  }, { forceRecreate: true });
+}
+
 function renderPspcCorrelationChart(slot, dashboardState, chartLib, canvas, rows) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
@@ -1535,10 +1791,10 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const referralDispositionYearly = reports.referralDispositionYearly;
   const referralMonthlyHeatmap = reports.referralMonthlyHeatmap;
   const referralHospitalizedByPspc = reports.referralHospitalizedByPspc;
+  const referralHospitalizedByPspcYearly = reports.referralHospitalizedByPspcYearly;
   const pspcCorrelation = reports.pspcCorrelation;
   const ageDistribution = reports.ageDistribution;
   const pspcDistribution = reports.pspcDistribution;
-  const sexDistribution = reports.sexDistribution;
   const chartLib = dashboardState.chartLib || await loadChartJs();
   if (chartLib && !dashboardState.chartLib) {
     dashboardState.chartLib = chartLib;
@@ -1573,6 +1829,11 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     ...row,
     percent: row.share * 100,
   }));
+  const referralHospitalizedPspcYearlyRows = Array.isArray(referralHospitalizedByPspcYearly?.rows)
+    ? referralHospitalizedByPspcYearly.rows
+    : [];
+  const referralHospitalizedPspcTrendOptions = referralHospitalizedPspcYearlyRows.map((row) => row.label);
+  syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions, referralHospitalizedPspcTrendOptions);
   const pspcCorrelationRows = pspcCorrelation.rows.map((row) => ({
     ...row,
     referralPercent: row.referralShare * 100,
@@ -1582,12 +1843,6 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     ...row,
     percent: toPercent(row.count, pspcDistribution.total),
   })).filter((row) => String(row?.label || '') !== 'Kita / maža imtis');
-  const sexPercentRows = sexDistribution.rows
-    .filter((row) => String(row?.label || '') !== 'Kita/Nenurodyta')
-    .map((row) => ({
-      ...row,
-      percent: toPercent(row.count, sexDistribution.total),
-    }));
   const colors = {
     diagnosis: getCssVar('--report-diagnosis', '#0284c7'),
     referral: getCssVar('--report-referral', '#ef4444'),
@@ -1600,12 +1855,6 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     age: getCssVar('--report-age', '#16a34a'),
     referralPspc: getCssVar('--report-referral-pspc', '#2563eb'),
     pspc: getCssVar('--report-pspc', '#f59e0b'),
-    sex: [
-      getCssVar('--report-sex-1', '#8b5cf6'),
-      getCssVar('--report-sex-2', '#06b6d4'),
-      getCssVar('--report-sex-3', '#f59e0b'),
-      getCssVar('--report-sex-4', '#10b981'),
-    ],
   };
   const treemapRendered = await renderDiagnosisTreemap(dashboardState, chartLib, selectors.diagnosisChart, diagnosisPercentRows);
   if (!treemapRendered) {
@@ -1638,11 +1887,46 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     selectors.referralMonthlyHeatmapChart,
     referralMonthlyHeatmap,
   );
-  renderReferralHospitalizedByPspcChart('referralHospitalizedByPspc', dashboardState, chartLib, selectors.referralHospitalizedByPspcChart, referralHospitalizedPspcPercentRows, colors.referralPspc);
+  const referralHospitalizedPspcMode = String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase() === 'trend'
+    ? 'trend'
+    : 'cross';
+  if (referralHospitalizedPspcMode === 'trend') {
+    const selectedPspc = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
+    const trendYears = Array.isArray(referralHospitalizedByPspcYearly?.years) ? referralHospitalizedByPspcYearly.years : [];
+    let selectedRows = [];
+    if (selectedPspc === '__top3__') {
+      selectedRows = referralHospitalizedPspcYearlyRows.slice(0, 3);
+    } else {
+      selectedRows = referralHospitalizedPspcYearlyRows.filter((row) => row.label === selectedPspc);
+    }
+    if (!selectedRows.length) {
+      selectedRows = referralHospitalizedPspcYearlyRows.slice(0, 3);
+    }
+    const trendSeries = selectedRows.map((row) => ({
+      label: row.label,
+      points: Array.isArray(row.yearly) ? row.yearly : [],
+    }));
+    renderReferralHospitalizedByPspcTrendChart(
+      'referralHospitalizedByPspc',
+      dashboardState,
+      chartLib,
+      selectors.referralHospitalizedByPspcChart,
+      { years: trendYears, series: trendSeries },
+      colors.referralPspc,
+    );
+  } else {
+    renderReferralHospitalizedByPspcChart(
+      'referralHospitalizedByPspc',
+      dashboardState,
+      chartLib,
+      selectors.referralHospitalizedByPspcChart,
+      referralHospitalizedPspcPercentRows,
+      colors.referralPspc,
+    );
+  }
   renderPspcCorrelationChart('pspcCorrelation', dashboardState, chartLib, selectors.pspcCorrelationChart, pspcCorrelationRows);
   renderBarChart('ageDistribution', dashboardState, chartLib, selectors.ageDistributionChart, agePercentRows, colors.age, { dynamicYAxis: true });
   renderBarChart('pspcDistribution', dashboardState, chartLib, selectors.pspcDistributionChart, pspcPercentRows, colors.pspc, { dynamicYAxis: true });
-  renderPieChart('sexDistribution', dashboardState, chartLib, selectors.sexDistributionChart, sexPercentRows, colors.sex);
   exportState.diagnosis = {
     title: TEXT.summariesReports?.cards?.diagnosis || 'Diagnozės',
     headers: ['Diagnozė', 'Procentas (%)'],
@@ -1714,17 +1998,39 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     ]),
     target: selectors.referralMonthlyHeatmapChart,
   };
-  exportState.referralHospitalizedByPspc = {
-    title: TEXT.summariesReports?.cards?.referralHospitalizedByPspc || 'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC',
-    headers: ['PSPC', 'Hospitalizuota iš su siuntimu (%)', 'Hospitalizuota (sk.)', 'Pacientai su siuntimu (sk.)'],
-    rows: referralHospitalizedPspcPercentRows.map((row) => [
-      row.label,
-      oneDecimalFormatter.format(row.percent),
-      numberFormatter.format(row.hospitalizedCount),
-      numberFormatter.format(row.referredTotal),
-    ]),
-    target: selectors.referralHospitalizedByPspcChart,
-  };
+  if (referralHospitalizedPspcMode === 'trend') {
+    const selectedPspc = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
+    let selectedRows = selectedPspc === '__top3__'
+      ? referralHospitalizedPspcYearlyRows.slice(0, 3)
+      : referralHospitalizedPspcYearlyRows.filter((row) => row.label === selectedPspc);
+    if (!selectedRows.length) {
+      selectedRows = referralHospitalizedPspcYearlyRows.slice(0, 3);
+    }
+    exportState.referralHospitalizedByPspc = {
+      title: `${TEXT.summariesReports?.cards?.referralHospitalizedByPspc || 'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC'} (metinė dinamika)`,
+      headers: ['PSPC', 'Metai', 'Hospitalizuota iš su siuntimu (%)', 'Hospitalizuota (sk.)', 'Pacientai su siuntimu (sk.)'],
+      rows: selectedRows.flatMap((row) => (Array.isArray(row.yearly) ? row.yearly : []).map((point) => [
+        row.label,
+        point.year,
+        Number.isFinite(point.share) ? oneDecimalFormatter.format(point.share * 100) : '',
+        numberFormatter.format(point.hospitalizedCount || 0),
+        numberFormatter.format(point.referredTotal || 0),
+      ])),
+      target: selectors.referralHospitalizedByPspcChart,
+    };
+  } else {
+    exportState.referralHospitalizedByPspc = {
+      title: TEXT.summariesReports?.cards?.referralHospitalizedByPspc || 'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC',
+      headers: ['PSPC', 'Hospitalizuota iš su siuntimu (%)', 'Hospitalizuota (sk.)', 'Pacientai su siuntimu (sk.)'],
+      rows: referralHospitalizedPspcPercentRows.map((row) => [
+        row.label,
+        oneDecimalFormatter.format(row.percent),
+        numberFormatter.format(row.hospitalizedCount),
+        numberFormatter.format(row.referredTotal),
+      ]),
+      target: selectors.referralHospitalizedByPspcChart,
+    };
+  }
   exportState.pspcCorrelation = {
     title: TEXT.summariesReports?.cards?.pspcCorrelation || 'PSPC: siuntimų ir hospitalizacijų ryšys',
     headers: ['PSPC', 'Siuntimų dalis (%)', 'Hospitalizacijų dalis (%)', 'Pacientai (sk.)', 'Su siuntimu (sk.)', 'Hospitalizuoti (sk.)'],
@@ -1749,12 +2055,6 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     headers: ['PSPC', 'Procentas (%)'],
     rows: pspcPercentRows.map((row) => [row.label, oneDecimalFormatter.format(row.percent)]),
     target: selectors.pspcDistributionChart,
-  };
-  exportState.sexDistribution = {
-    title: TEXT.summariesReports?.cards?.sexDistribution || 'Lytis',
-    headers: ['Lytis', 'Procentas (%)'],
-    rows: sexPercentRows.map((row) => [row.label, oneDecimalFormatter.format(row.percent)]),
-    target: selectors.sexDistributionChart,
   };
 }
 
@@ -1873,6 +2173,20 @@ export async function runSummariesRuntime(core) {
     selectors.referralHospitalizedByPspcSort.addEventListener('change', (event) => {
       const value = String(event.target.value || 'desc').toLowerCase();
       dashboardState.summariesReferralPspcSort = value === 'asc' ? 'asc' : 'desc';
+      rerenderReports();
+    });
+  }
+  if (selectors.referralHospitalizedByPspcMode) {
+    selectors.referralHospitalizedByPspcMode.addEventListener('change', (event) => {
+      const value = String(event.target.value || 'cross').toLowerCase();
+      dashboardState.summariesReferralPspcMode = value === 'trend' ? 'trend' : 'cross';
+      rerenderReports();
+    });
+  }
+  if (selectors.referralHospitalizedByPspcTrendPspc) {
+    selectors.referralHospitalizedByPspcTrendPspc.addEventListener('change', (event) => {
+      const value = String(event.target.value || '__top3__');
+      dashboardState.summariesReferralPspcTrendPspc = value || '__top3__';
       rerenderReports();
     });
   }

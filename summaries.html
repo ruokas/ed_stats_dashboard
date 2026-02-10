@@ -318,10 +318,23 @@
           <canvas id="referralMonthlyHeatmapChart" height="260"></canvas>
         </article>
 
-        <article class="report-card">
+        <article class="report-card report-card--full-width">
           <div class="report-card__head">
             <h3>Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC</h3>
             <div class="report-card__actions">
+              <label for="referralHospitalizedByPspcMode" class="report-card__inline-filter">
+                <span>Rodinys</span>
+                <select id="referralHospitalizedByPspcMode">
+                  <option value="cross">Skerspjūvis</option>
+                  <option value="trend">Metinė dinamika</option>
+                </select>
+              </label>
+              <label for="referralHospitalizedByPspcTrendPspc" class="report-card__inline-filter">
+                <span>PSPC</span>
+                <select id="referralHospitalizedByPspcTrendPspc">
+                  <option value="__top3__">TOP 3 PSPC</option>
+                </select>
+              </label>
               <label for="referralHospitalizedByPspcSort" class="report-card__inline-filter">
                 <span>Rikiuoti</span>
                 <select id="referralHospitalizedByPspcSort">
@@ -369,16 +382,6 @@
           <canvas id="pspcDistributionChart" height="220"></canvas>
         </article>
 
-        <article class="report-card">
-          <div class="report-card__head">
-            <h3>Pacientų pasiskirstymas pagal lytį</h3>
-            <div class="report-card__actions">
-              <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="sexDistribution">CSV</button>
-              <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="sexDistribution">PNG</button>
-            </div>
-          </div>
-          <canvas id="sexDistributionChart" height="220"></canvas>
-        </article>
       </div>
     </section>
 </div>
