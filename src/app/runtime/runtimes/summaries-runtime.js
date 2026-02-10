@@ -11,7 +11,6 @@ import {
   computePspcDistribution,
   computePspcReferralHospitalizationCorrelation,
   computeReferralMonthlyHeatmap,
-  computeReferralHospitalizedShareByPspc,
   computeReferralDispositionYearlyTrend,
   computeReferralYearlyTrend,
   computeYearlyStats,
@@ -381,7 +380,7 @@ function buildReportsComputationKey(dashboardState, settings, scopeMeta) {
   return [
     String(dashboardState.summariesReportsYear ?? 'all'),
     Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
-    Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 10), 10) || 10,
+    Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10) || 100,
     String(dashboardState.summariesReferralPspcSort || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc',
     Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
     Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
@@ -423,7 +422,6 @@ function getReportsComputation(dashboardState, settings, historicalRecords, scop
     referralTrend: computeReferralYearlyTrend(historicalRecords, baseOptions),
     referralDispositionYearly: computeReferralDispositionYearlyTrend(historicalRecords, baseOptions),
     referralMonthlyHeatmap: computeReferralMonthlyHeatmap(historicalRecords, baseOptions),
-    referralHospitalizedByPspc: computeReferralHospitalizedShareByPspc(historicalRecords, baseOptions),
     referralHospitalizedByPspcYearly: computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
       minGroupSize: dashboardState.summariesReportsMinGroupSize,
       yearOptions: scopeMeta.yearOptions,
@@ -440,10 +438,59 @@ function getReportsComputation(dashboardState, settings, historicalRecords, scop
   return value;
 }
 
+function normalizeLithuanianText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function classifyPspcAreaType(label) {
+  const normalized = normalizeLithuanianText(label);
+  if (!normalized || normalized === 'nenurodyta') {
+    return 'unknown';
+  }
+  if (/\brajono\b/.test(normalized) || /\braj\.\b/.test(normalized) || /\braj\b/.test(normalized)) {
+    return 'district';
+  }
+  if (/\bmiesto\b/.test(normalized) || /\bm\.\b/.test(normalized)) {
+    return 'city';
+  }
+  const majorCityFragments = [
+    'vilniaus',
+    'kauno',
+    'klaipedos',
+    'siauliu',
+    'panevezio',
+    'alytaus',
+    'marijampoles',
+  ];
+  if (majorCityFragments.some((fragment) => normalized.includes(fragment))) {
+    return 'city';
+  }
+  return 'unknown';
+}
+
+function sortPspcRows(rows, direction = 'desc') {
+  const sortDirection = String(direction || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';
+  return [...(Array.isArray(rows) ? rows : [])].sort((a, b) => {
+    const aShare = Number(a?.share || 0);
+    const bShare = Number(b?.share || 0);
+    if (aShare !== bShare) {
+      return sortDirection === 'asc' ? aShare - bShare : bShare - aShare;
+    }
+    const aTotal = Number(a?.referredTotal || 0);
+    const bTotal = Number(b?.referredTotal || 0);
+    if (aTotal !== bTotal) {
+      return sortDirection === 'asc' ? aTotal - bTotal : bTotal - aTotal;
+    }
+    return String(a?.label || '').localeCompare(String(b?.label || ''), 'lt');
+  });
+}
+
 function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
   const list = Array.isArray(records) ? records.filter(Boolean) : [];
-  const minGroupSizeRaw = Number.parseInt(String(options?.minGroupSize ?? 10), 10);
-  const minGroupSize = Number.isFinite(minGroupSizeRaw) && minGroupSizeRaw > 0 ? minGroupSizeRaw : 10;
   const shiftStartHourRaw = Number(options?.shiftStartHour);
   const shiftStartHour = Number.isFinite(shiftStartHourRaw) ? shiftStartHourRaw : 7;
   const getShiftAdjustedYear = (record) => {
@@ -480,6 +527,7 @@ function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
     if (!byPspc.has(pspc)) {
       byPspc.set(pspc, {
         label: pspc,
+        pspcType: classifyPspcAreaType(pspc),
         totalReferred: 0,
         totalHospitalized: 0,
         byYear: new Map(),
@@ -506,9 +554,9 @@ function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
 
   const rows = Array.from(byPspc.values())
     .filter((row) => row.label !== 'Nenurodyta')
-    .filter((row) => row.totalReferred >= minGroupSize)
     .map((row) => ({
       label: row.label,
+      pspcType: row.pspcType,
       totalReferred: row.totalReferred,
       totalHospitalized: row.totalHospitalized,
       share: row.totalReferred > 0 ? row.totalHospitalized / row.totalReferred : 0,
@@ -532,6 +580,42 @@ function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
     });
 
   return { years, rows };
+}
+
+function computeReferralHospitalizedShareByPspcDetailed(records) {
+  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  const byPspc = new Map();
+  list.forEach((record) => {
+    const referralValue = String(record?.referral || '').trim().toLowerCase();
+    if (referralValue !== 'su siuntimu') {
+      return;
+    }
+    const pspc = String(record?.pspc || '').trim() || 'Nenurodyta';
+    if (!byPspc.has(pspc)) {
+      byPspc.set(pspc, {
+        label: pspc,
+        pspcType: classifyPspcAreaType(pspc),
+        referredTotal: 0,
+        hospitalizedCount: 0,
+      });
+    }
+    const bucket = byPspc.get(pspc);
+    bucket.referredTotal += 1;
+    if (record?.hospitalized === true) {
+      bucket.hospitalizedCount += 1;
+    }
+  });
+  const rows = Array.from(byPspc.values())
+    .filter((row) => row.label !== 'Nenurodyta')
+    .map((row) => ({
+      ...row,
+      share: row.referredTotal > 0 ? row.hospitalizedCount / row.referredTotal : 0,
+      percent: row.referredTotal > 0 ? (row.hospitalizedCount / row.referredTotal) * 100 : 0,
+    }));
+  return {
+    rows,
+    totalReferred: rows.reduce((sum, row) => sum + Number(row.referredTotal || 0), 0),
+  };
 }
 
 function getScopedReportsMeta(dashboardState, settings, historicalRecords, yearFilter) {
@@ -575,7 +659,7 @@ function syncReportsControls(selectors, dashboardState, yearOptions, pspcTrendOp
     selectors.summariesReportsTopN.value = String(dashboardState.summariesReportsTopN || 15);
   }
   if (selectors.summariesReportsMinGroupSize) {
-    selectors.summariesReportsMinGroupSize.value = String(dashboardState.summariesReportsMinGroupSize || 10);
+    selectors.summariesReportsMinGroupSize.value = String(dashboardState.summariesReportsMinGroupSize || 100);
   }
   if (selectors.referralHospitalizedByPspcSort) {
     selectors.referralHospitalizedByPspcSort.value = dashboardState.summariesReferralPspcSort === 'asc' ? 'asc' : 'desc';
@@ -1130,7 +1214,7 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
     destroyReportChartSlot(dashboardState, slot);
     return false;
   }
-  const height = Math.max(280, Math.min(760, 120 + ageBands.length * 40));
+  const height = Math.max(340, Math.min(820, 140 + ageBands.length * 44));
   canvas.style.setProperty('height', `${height}px`, 'important');
   canvas.style.setProperty('min-height', `${height}px`, 'important');
   canvas.style.setProperty('max-height', `${height}px`, 'important');
@@ -1495,7 +1579,7 @@ async function renderReferralMonthlyHeatmapChart(slot, dashboardState, chartLib,
     destroyReportChartSlot(dashboardState, slot);
     return false;
   }
-  const height = Math.max(260, Math.min(820, 120 + years.length * 36));
+  const height = Math.max(320, Math.min(860, 140 + years.length * 40));
   canvas.style.setProperty('height', `${height}px`, 'important');
   canvas.style.setProperty('min-height', `${height}px`, 'important');
   canvas.style.setProperty('max-height', `${height}px`, 'important');
@@ -1606,7 +1690,7 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  const height = Math.max(260, Math.min(760, 90 + rows.length * 28));
+  const height = Math.max(320, Math.min(820, 110 + rows.length * 30));
   canvas.style.setProperty('height', `${height}px`, 'important');
   canvas.style.setProperty('min-height', `${height}px`, 'important');
   canvas.style.setProperty('max-height', `${height}px`, 'important');
@@ -1695,9 +1779,9 @@ function renderReferralHospitalizedByPspcTrendChart(slot, dashboardState, chartL
   }
   const years = Array.isArray(trendData?.years) ? trendData.years : [];
   const series = Array.isArray(trendData?.series) ? trendData.series : [];
-  canvas.style.setProperty('height', '320px', 'important');
-  canvas.style.setProperty('min-height', '320px', 'important');
-  canvas.style.setProperty('max-height', '320px', 'important');
+  canvas.style.setProperty('height', '380px', 'important');
+  canvas.style.setProperty('min-height', '380px', 'important');
+  canvas.style.setProperty('max-height', '380px', 'important');
 
   const fallbackColors = [
     color,
@@ -1922,7 +2006,6 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const referralTrend = reports.referralTrend;
   const referralDispositionYearly = reports.referralDispositionYearly;
   const referralMonthlyHeatmap = reports.referralMonthlyHeatmap;
-  const referralHospitalizedByPspc = reports.referralHospitalizedByPspc;
   const referralHospitalizedByPspcYearly = reports.referralHospitalizedByPspcYearly;
   const pspcCorrelation = reports.pspcCorrelation;
   const pspcDistribution = reports.pspcDistribution;
@@ -1953,14 +2036,18 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const ageDistributionBySex = computeAgeDistributionBySex(scopeMeta.records);
   const ageDistributionRows = ageDistributionBySex.rows
     .filter((row) => String(row?.label || '') !== 'Nenurodyta');
-  const referralHospitalizedPspcPercentRows = referralHospitalizedByPspc.rows.map((row) => ({
-    ...row,
-    percent: row.share * 100,
-  }));
+  const minGroupSizeRaw = Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10);
+  const minGroupSize = Number.isFinite(minGroupSizeRaw) && minGroupSizeRaw > 0 ? minGroupSizeRaw : 100;
+  const topNRaw = Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10);
+  const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 15;
+  const pspcCrossDetailed = computeReferralHospitalizedShareByPspcDetailed(scopeMeta.records);
+  const referralHospitalizedPspcAllRows = pspcCrossDetailed.rows;
   const referralHospitalizedPspcYearlyRows = Array.isArray(referralHospitalizedByPspcYearly?.rows)
     ? referralHospitalizedByPspcYearly.rows
     : [];
-  const referralHospitalizedPspcTrendOptions = referralHospitalizedPspcYearlyRows.map((row) => row.label);
+  const referralHospitalizedPspcTrendCandidates = referralHospitalizedPspcYearlyRows
+    .filter((row) => Number(row?.totalReferred || 0) >= minGroupSize);
+  const referralHospitalizedPspcTrendOptions = referralHospitalizedPspcTrendCandidates.map((row) => row.label);
   syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions, referralHospitalizedPspcTrendOptions);
   const pspcCorrelationRows = pspcCorrelation.rows.map((row) => ({
     ...row,
@@ -2018,17 +2105,22 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const referralHospitalizedPspcMode = String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase() === 'trend'
     ? 'trend'
     : 'cross';
+  const referralHospitalizedPspcSortDirection = String(dashboardState.summariesReferralPspcSort || 'desc');
+  const referralHospitalizedPspcFilteredRows = referralHospitalizedPspcAllRows
+    .filter((row) => Number(row?.referredTotal || 0) >= minGroupSize);
+  const referralHospitalizedPspcPercentRows = sortPspcRows(referralHospitalizedPspcFilteredRows, referralHospitalizedPspcSortDirection)
+    .slice(0, topN);
   if (referralHospitalizedPspcMode === 'trend') {
     const selectedPspc = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
     const trendYears = Array.isArray(referralHospitalizedByPspcYearly?.years) ? referralHospitalizedByPspcYearly.years : [];
     let selectedRows = [];
     if (selectedPspc === '__top3__') {
-      selectedRows = referralHospitalizedPspcYearlyRows.slice(0, 3);
+      selectedRows = referralHospitalizedPspcTrendCandidates.slice(0, 3);
     } else {
-      selectedRows = referralHospitalizedPspcYearlyRows.filter((row) => row.label === selectedPspc);
+      selectedRows = referralHospitalizedPspcTrendCandidates.filter((row) => row.label === selectedPspc);
     }
     if (!selectedRows.length) {
-      selectedRows = referralHospitalizedPspcYearlyRows.slice(0, 3);
+      selectedRows = referralHospitalizedPspcTrendCandidates.slice(0, 3);
     }
     const trendSeries = selectedRows.map((row) => ({
       label: row.label,
@@ -2143,10 +2235,10 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   if (referralHospitalizedPspcMode === 'trend') {
     const selectedPspc = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
     let selectedRows = selectedPspc === '__top3__'
-      ? referralHospitalizedPspcYearlyRows.slice(0, 3)
-      : referralHospitalizedPspcYearlyRows.filter((row) => row.label === selectedPspc);
+      ? referralHospitalizedPspcTrendCandidates.slice(0, 3)
+      : referralHospitalizedPspcTrendCandidates.filter((row) => row.label === selectedPspc);
     if (!selectedRows.length) {
-      selectedRows = referralHospitalizedPspcYearlyRows.slice(0, 3);
+      selectedRows = referralHospitalizedPspcTrendCandidates.slice(0, 3);
     }
     exportState.referralHospitalizedByPspc = {
       title: `${TEXT.summariesReports?.cards?.referralHospitalizedByPspc || 'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC'} (metinė dinamika)`,
@@ -2314,7 +2406,7 @@ export async function runSummariesRuntime(core) {
   if (selectors.summariesReportsMinGroupSize) {
     selectors.summariesReportsMinGroupSize.addEventListener('change', (event) => {
       const value = Number.parseInt(String(event.target.value || '10'), 10);
-      dashboardState.summariesReportsMinGroupSize = Number.isFinite(value) && value > 0 ? value : 10;
+      dashboardState.summariesReportsMinGroupSize = Number.isFinite(value) && value > 0 ? value : 100;
       rerenderReports();
     });
   }
