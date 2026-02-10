@@ -1145,8 +1145,8 @@ async function renderDiagnosisTreemap(dashboardState, chartLib, canvas, rows) {
         key: 'percent',
         groups: ['code'],
         spacing: 2,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.92)',
+        borderWidth: 0,
+        borderColor: 'rgba(255, 255, 255, 0)',
         backgroundColor: (context) => {
           const value = Number(context.raw?._data?.percent ?? 0);
           const alpha = Math.max(0.48, Math.min(0.92, value / 16));
@@ -1264,8 +1264,8 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
             }
             return `rgba(22, 163, 74, ${alpha})`;
           },
-          borderColor: 'rgba(255, 255, 255, 0.88)',
-          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0)',
+          borderWidth: 0,
         }],
       },
       options: {
@@ -1341,8 +1341,8 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
           }
           return `rgba(22, 163, 74, ${alpha})`;
         }),
-        borderColor: 'rgba(15, 23, 42, 0.2)',
-        borderWidth: 1,
+        borderColor: 'rgba(15, 23, 42, 0)',
+        borderWidth: 0,
       }],
     },
     options: {
