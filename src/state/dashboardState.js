@@ -35,7 +35,7 @@ export function createDashboardState({
     yearlyExpandedYears: [],
     summariesReportsYear: 'all',
     summariesReportsTopN: 15,
-    summariesReportsMinGroupSize: 10,
+    summariesReportsMinGroupSize: 100,
     summariesReferralPspcSort: 'desc',
     summariesReferralPspcMode: 'cross',
     summariesReferralPspcTrendPspc: '__top3__',
