@@ -112,6 +112,129 @@ export function buildEdDashboardModel({
   const feedbackMonthly = Array.isArray(dashboardState?.feedback?.monthly)
     ? dashboardState.feedback.monthly
     : [];
+  const feedbackRecords = Array.isArray(dashboardState?.feedback?.records)
+    ? dashboardState.feedback.records
+    : [];
+  const feedbackRotatingConfig = cardConfigs.find((card) => card?.type === 'feedback-rotating-metric');
+  const feedbackMetricConfig = Array.isArray(feedbackRotatingConfig?.metrics) && feedbackRotatingConfig.metrics.length
+    ? feedbackRotatingConfig.metrics
+    : [
+      { key: 'overallAverage', label: 'Bendra patirtis', countKey: 'overallCount' },
+      { key: 'doctorsAverage', label: 'Gydytojų darbas', countKey: 'doctorsCount' },
+      { key: 'nursesAverage', label: 'Slaugytojų darbas', countKey: 'nursesCount' },
+      { key: 'aidesAverage', label: 'Padėjėjų darbas', countKey: 'aidesResponses' },
+      { key: 'waitingAverage', label: 'Laukimo vertinimas', countKey: 'waitingCount' },
+    ];
+  const isValidRating = (value) => Number.isFinite(value) && value >= 1 && value <= 5;
+  const normalizeText = (value) => (typeof value === 'string'
+    ? value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+    : '');
+  const classifyLocation = (raw) => {
+    const value = normalizeText(raw);
+    if (!value) return null;
+    if (value.includes('ambulator')) return 'left';
+    if (value.includes('sale') || value.includes('sal') || value.includes('zale')) return 'right';
+    return null;
+  };
+  const compareGroups = TEXT?.feedback?.trend?.compareGroups?.location || {};
+  const locationLabels = {
+    left: String(compareGroups?.left?.label || 'Ambulatorija'),
+    right: String(compareGroups?.right?.label || 'Salė'),
+  };
+  const getMetricValueFromRecord = (record, metricKey) => {
+    if (!record || typeof record !== 'object') {
+      return null;
+    }
+    if (metricKey === 'overallAverage') {
+      return isValidRating(record.overallRating) ? Number(record.overallRating) : null;
+    }
+    if (metricKey === 'doctorsAverage') {
+      return isValidRating(record.doctorsRating) ? Number(record.doctorsRating) : null;
+    }
+    if (metricKey === 'nursesAverage') {
+      return isValidRating(record.nursesRating) ? Number(record.nursesRating) : null;
+    }
+    if (metricKey === 'aidesAverage') {
+      return record.aidesContact === true && isValidRating(record.aidesRating) ? Number(record.aidesRating) : null;
+    }
+    if (metricKey === 'waitingAverage') {
+      return isValidRating(record.waitingRating) ? Number(record.waitingRating) : null;
+    }
+    return null;
+  };
+  const locationMetricBuckets = new Map();
+  feedbackRecords.forEach((record) => {
+    const monthKey = toMonthKey(record?.receivedAt);
+    const side = classifyLocation(record?.location);
+    if (!monthKey || !side) {
+      return;
+    }
+    feedbackMetricConfig.forEach((metric) => {
+      const metricKey = String(metric?.key || '');
+      if (!metricKey) {
+        return;
+      }
+      const value = getMetricValueFromRecord(record, metricKey);
+      if (!Number.isFinite(value)) {
+        return;
+      }
+      const key = `${monthKey}|||${metricKey}|||${side}`;
+      if (!locationMetricBuckets.has(key)) {
+        locationMetricBuckets.set(key, { sum: 0, count: 0 });
+      }
+      const bucket = locationMetricBuckets.get(key);
+      bucket.sum += Number(value);
+      bucket.count += 1;
+    });
+  });
+  const getLocationMetricStats = (monthKey, metricKey, side) => {
+    const key = `${monthKey}|||${metricKey}|||${side}`;
+    const bucket = locationMetricBuckets.get(key);
+    const count = Number.isFinite(bucket?.count) ? bucket.count : 0;
+    const sum = Number.isFinite(bucket?.sum) ? bucket.sum : 0;
+    return {
+      count,
+      average: count > 0 ? sum / count : null,
+    };
+  };
+  const buildFeedbackCountsForMonth = (monthKey) => {
+    const counts = {
+      overallCount: 0,
+      doctorsCount: 0,
+      nursesCount: 0,
+      aidesResponses: 0,
+      waitingCount: 0,
+    };
+    if (!monthKey) {
+      return counts;
+    }
+    feedbackRecords.forEach((record) => {
+      const recordMonth = toMonthKey(record?.receivedAt);
+      if (recordMonth !== monthKey) {
+        return;
+      }
+      if (isValidRating(record?.overallRating)) {
+        counts.overallCount += 1;
+      }
+      if (isValidRating(record?.doctorsRating)) {
+        counts.doctorsCount += 1;
+      }
+      if (isValidRating(record?.nursesRating)) {
+        counts.nursesCount += 1;
+      }
+      if (record?.aidesContact === true && isValidRating(record?.aidesRating)) {
+        counts.aidesResponses += 1;
+      }
+      if (isValidRating(record?.waitingRating)) {
+        counts.waitingCount += 1;
+      }
+    });
+    return counts;
+  };
   const currentMonthKey = (formatLocalDateKey(new Date()) || '').slice(0, 7);
   let feedbackMonth = feedbackMonthly.find((entry) => entry?.month === currentMonthKey) || null;
   if (!feedbackMonth && feedbackMonthly.length) {
@@ -126,9 +249,6 @@ export function buildEdDashboardModel({
     }, null);
   }
   if (!feedbackMonth) {
-    const feedbackRecords = Array.isArray(dashboardState?.feedback?.records)
-      ? dashboardState.feedback.records
-      : [];
     const buckets = new Map();
     feedbackRecords.forEach((record) => {
       const monthKey = toMonthKey(record?.receivedAt);
@@ -156,56 +276,147 @@ export function buildEdDashboardModel({
         || null;
     }
   }
-  const feedbackAverage = Number.isFinite(feedbackMonth?.overallAverage)
-    ? feedbackMonth.overallAverage
-    : null;
-  const feedbackResponses = Number.isFinite(feedbackMonth?.responses)
-    ? Math.max(0, Math.round(feedbackMonth.responses))
-    : null;
+  const feedbackMonthKey = feedbackMonth?.month ? String(feedbackMonth.month) : '';
+  const feedbackMonthCounts = buildFeedbackCountsForMonth(feedbackMonthKey);
   const feedbackMonthLabel = feedbackMonth?.month
     ? (formatMonthLabel(feedbackMonth.month) || feedbackMonth.month)
     : '';
+  const monthKeysFromRecords = Array.from(new Set(feedbackRecords.map((record) => toMonthKey(record?.receivedAt)).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
+  const feedbackMonthRecordIndex = feedbackMonthKey
+    ? monthKeysFromRecords.findIndex((month) => month === feedbackMonthKey)
+    : -1;
   const feedbackIndex = feedbackMonth?.month
     ? feedbackMonthly.findIndex((entry) => entry?.month === feedbackMonth.month)
     : -1;
-  let previousFeedbackMonth = null;
-  if (feedbackIndex > 0) {
-    for (let i = feedbackIndex - 1; i >= 0; i -= 1) {
-      const candidate = feedbackMonthly[i];
-      if (candidate?.month && Number.isFinite(candidate.overallAverage)) {
-        previousFeedbackMonth = candidate;
-        break;
+  const feedbackMetricCatalog = feedbackMetricConfig.map((metric) => {
+    const value = Number.isFinite(feedbackMonth?.[metric.key]) ? Number(feedbackMonth[metric.key]) : null;
+    const countValue = Number.isFinite(feedbackMonthCounts?.[metric.countKey])
+      ? Number(feedbackMonthCounts[metric.countKey])
+      : null;
+    let previousMonth = null;
+    if (feedbackIndex > 0) {
+      for (let i = feedbackIndex - 1; i >= 0; i -= 1) {
+        const candidate = feedbackMonthly[i];
+        if (candidate?.month && Number.isFinite(candidate?.[metric.key])) {
+          previousMonth = candidate;
+          break;
+        }
       }
     }
-  }
-  const previousMonthLabel = previousFeedbackMonth?.month
-    ? (formatMonthLabel(previousFeedbackMonth.month) || previousFeedbackMonth.month)
-    : '';
-  const feedbackTrend = previousFeedbackMonth && Number.isFinite(feedbackAverage)
-    ? buildFeedbackTrendInfo(
-      feedbackAverage,
-      previousFeedbackMonth.overallAverage,
-      {
+    const previousMonthLabel = previousMonth?.month
+      ? (formatMonthLabel(previousMonth.month) || previousMonth.month)
+      : '';
+    const trend = previousMonth && Number.isFinite(value)
+      ? buildFeedbackTrendInfo(value, Number(previousMonth[metric.key]), {
         currentLabel: feedbackMonthLabel,
         previousLabel: previousMonthLabel,
+      })
+      : null;
+    const currentLeft = getLocationMetricStats(feedbackMonthKey, metric.key, 'left');
+    const currentRight = getLocationMetricStats(feedbackMonthKey, metric.key, 'right');
+    const findPreviousLocationValue = (side) => {
+      if (feedbackMonthRecordIndex <= 0) {
+        return null;
+      }
+      for (let i = feedbackMonthRecordIndex - 1; i >= 0; i -= 1) {
+        const monthKey = monthKeysFromRecords[i];
+        const previousStats = getLocationMetricStats(monthKey, metric.key, side);
+        if (Number.isFinite(previousStats.average)) {
+          return {
+            month: monthKey,
+            label: formatMonthLabel(monthKey) || monthKey,
+            average: Number(previousStats.average),
+          };
+        }
+      }
+      return null;
+    };
+    const previousLeft = findPreviousLocationValue('left');
+    const previousRight = findPreviousLocationValue('right');
+    const leftTrend = previousLeft && Number.isFinite(currentLeft.average)
+      ? buildFeedbackTrendInfo(Number(currentLeft.average), Number(previousLeft.average), {
+        currentLabel: feedbackMonthLabel,
+        previousLabel: previousLeft.label,
+      })
+      : null;
+    const rightTrend = previousRight && Number.isFinite(currentRight.average)
+      ? buildFeedbackTrendInfo(Number(currentRight.average), Number(previousRight.average), {
+        currentLabel: feedbackMonthLabel,
+        previousLabel: previousRight.label,
+      })
+      : null;
+    const metaParts = [];
+    if (feedbackMonthLabel) {
+      metaParts.push(feedbackMonthLabel);
+    }
+    if (countValue != null && feedbackMonthKey) {
+      metaParts.push(`Atsakymai: ${numberFormatter.format(Math.max(0, Math.round(countValue)))}`);
+    }
+    return {
+      key: metric.key,
+      label: metric.label,
+      countKey: metric.countKey,
+      value,
+      count: countValue,
+      meta: metaParts.join(' • '),
+      trend,
+      byLocation: {
+        left: {
+          key: 'left',
+          label: locationLabels.left,
+          value: Number.isFinite(currentLeft.average) ? Number(currentLeft.average) : null,
+          count: Number.isFinite(currentLeft.count) ? currentLeft.count : 0,
+          trend: leftTrend,
+        },
+        right: {
+          key: 'right',
+          label: locationLabels.right,
+          value: Number.isFinite(currentRight.average) ? Number(currentRight.average) : null,
+          count: Number.isFinite(currentRight.count) ? currentRight.count : 0,
+          trend: rightTrend,
+        },
       },
-    )
-    : null;
-  const feedbackMetaParts = [];
-  if (feedbackMonthLabel) {
-    feedbackMetaParts.push(feedbackMonthLabel);
+      month: feedbackMonthKey,
+    };
+  });
+  summary.feedbackCurrentMonthMetricCatalog = feedbackMetricCatalog;
+  const carousel = dashboardState.feedbackMetricCarousel && typeof dashboardState.feedbackMetricCarousel === 'object'
+    ? dashboardState.feedbackMetricCarousel
+    : { index: 0 };
+  const normalizedIndex = feedbackMetricCatalog.length
+    ? ((Number.parseInt(String(carousel.index ?? 0), 10) % feedbackMetricCatalog.length) + feedbackMetricCatalog.length) % feedbackMetricCatalog.length
+    : 0;
+  carousel.index = normalizedIndex;
+  if (dashboardState.feedbackMetricCarousel && typeof dashboardState.feedbackMetricCarousel === 'object') {
+    dashboardState.feedbackMetricCarousel.index = normalizedIndex;
   }
-  if (feedbackResponses != null) {
-    feedbackMetaParts.push(`Atsakymai: ${numberFormatter.format(feedbackResponses)}`);
+  const activeMetric = feedbackMetricCatalog[normalizedIndex] || null;
+  summary.feedbackCurrentMonthMetricKey = activeMetric?.key || '';
+  summary.feedbackCurrentMonthMetricTitle = activeMetric?.label || (feedbackRotatingConfig?.title || 'Atsiliepimų rodiklis');
+  summary.feedbackCurrentMonthMetricValue = Number.isFinite(activeMetric?.value) ? activeMetric.value : null;
+  summary.feedbackCurrentMonthMetricMeta = activeMetric?.meta || '';
+  summary.feedbackCurrentMonthMetricTrend = activeMetric?.trend || null;
+  summary.feedbackCurrentMonthMetricByLocation = activeMetric?.byLocation || {
+    left: { key: 'left', label: locationLabels.left, value: null, count: 0, trend: null },
+    right: { key: 'right', label: locationLabels.right, value: null, count: 0, trend: null },
+  };
+
+  const overallMetric = feedbackMetricCatalog.find((metric) => metric.key === 'overallAverage') || null;
+  if (Number.isFinite(overallMetric?.value)) {
+    summary.feedbackCurrentMonthOverall = overallMetric.value;
+  } else {
+    summary.feedbackCurrentMonthOverall = null;
   }
-  if (feedbackAverage != null) {
-    summary.feedbackCurrentMonthOverall = feedbackAverage;
+  if (overallMetric?.meta) {
+    summary.feedbackCurrentMonthMeta = overallMetric.meta;
+  } else {
+    summary.feedbackCurrentMonthMeta = '';
   }
-  if (feedbackMetaParts.length) {
-    summary.feedbackCurrentMonthMeta = feedbackMetaParts.join(' • ');
-  }
-  if (feedbackTrend) {
-    summary.feedbackCurrentMonthTrend = feedbackTrend;
+  if (overallMetric?.trend) {
+    summary.feedbackCurrentMonthTrend = overallMetric.trend;
+  } else {
+    summary.feedbackCurrentMonthTrend = null;
   }
 
   const feedbackComments = Array.isArray(dashboardState?.feedback?.summary?.comments)

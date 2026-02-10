@@ -147,6 +147,12 @@ export function createDashboardState({
       updatedAt: null,
       commentRotation: { timerId: null, index: 0, entries: [] },
     },
+    feedbackMetricCarousel: {
+      index: 0,
+      intervalMs: 8000,
+      timerId: null,
+      metricCatalog: [],
+    },
     edSearchQuery: '',
   };
 }

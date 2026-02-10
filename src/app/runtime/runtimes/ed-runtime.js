@@ -475,6 +475,70 @@ export async function runEdRuntime(core) {
   let renderEdDashboardRef = () => Promise.resolve();
   let edSkeletonShownAt = 0;
   let edSkeletonHideTimerId = null;
+  const getFeedbackRotationIntervalMs = () => {
+    const cardsRoot = TEXT?.ed?.cards;
+    const catalogs = [];
+    if (Array.isArray(cardsRoot)) {
+      catalogs.push(cardsRoot);
+    } else if (cardsRoot && typeof cardsRoot === 'object') {
+      if (Array.isArray(cardsRoot.snapshot)) {
+        catalogs.push(cardsRoot.snapshot);
+      }
+      if (Array.isArray(cardsRoot.legacy)) {
+        catalogs.push(cardsRoot.legacy);
+      }
+    }
+    const rotatingCard = catalogs.flat().find((card) => card?.type === 'feedback-rotating-metric');
+    const configured = Number(rotatingCard?.rotationMs);
+    return Number.isFinite(configured) && configured >= 2000 ? configured : 8000;
+  };
+  const clearFeedbackMetricCarouselTimer = () => {
+    const timerId = dashboardState?.feedbackMetricCarousel?.timerId;
+    if (timerId) {
+      window.clearInterval(timerId);
+    }
+    if (dashboardState?.feedbackMetricCarousel) {
+      dashboardState.feedbackMetricCarousel.timerId = null;
+    }
+  };
+  const ensureFeedbackMetricCarouselTimer = () => {
+    const carousel = dashboardState?.feedbackMetricCarousel;
+    const catalog = Array.isArray(carousel?.metricCatalog)
+      ? carousel.metricCatalog
+      : (Array.isArray(dashboardState?.ed?.summary?.feedbackCurrentMonthMetricCatalog)
+        ? dashboardState.ed.summary.feedbackCurrentMonthMetricCatalog
+        : []);
+    if (!carousel || catalog.length <= 1) {
+      clearFeedbackMetricCarouselTimer();
+      if (carousel) {
+        carousel.index = 0;
+      }
+      return;
+    }
+    const normalizedIndex = ((Number.parseInt(String(carousel.index ?? 0), 10) % catalog.length) + catalog.length) % catalog.length;
+    carousel.index = normalizedIndex;
+    const intervalMs = Number.isFinite(Number(carousel.intervalMs)) && Number(carousel.intervalMs) >= 2000
+      ? Number(carousel.intervalMs)
+      : getFeedbackRotationIntervalMs();
+    carousel.intervalMs = intervalMs;
+    clearFeedbackMetricCarouselTimer();
+    carousel.timerId = window.setInterval(async () => {
+      const activeCatalog = Array.isArray(carousel?.metricCatalog)
+        ? carousel.metricCatalog
+        : (Array.isArray(dashboardState?.ed?.summary?.feedbackCurrentMonthMetricCatalog)
+          ? dashboardState.ed.summary.feedbackCurrentMonthMetricCatalog
+          : []);
+      if (activeCatalog.length <= 1) {
+        clearFeedbackMetricCarouselTimer();
+        return;
+      }
+      const currentIndex = Number.parseInt(String(carousel.index ?? 0), 10);
+      const safeIndex = Number.isFinite(currentIndex) ? currentIndex : 0;
+      carousel.index = (safeIndex + 1) % activeCatalog.length;
+      await renderEdDashboardRef(dashboardState.ed);
+    }, intervalMs);
+  };
+  window.addEventListener('beforeunload', clearFeedbackMetricCarouselTimer, { once: true });
   const edPanelCoreFeature = createEdPanelCoreFeature({
     dashboardState,
     TEXT,
@@ -540,47 +604,19 @@ export async function runEdRuntime(core) {
     return sections;
   }
 
-  function createEdSkeletonCard(cardConfig) {
+  function createEdSkeletonCard() {
     const card = document.createElement('article');
     card.className = 'ed-dashboard__card ed-dashboard__card--skeleton';
-    const type = cardConfig?.type === 'donut'
-      ? 'donut'
-      : (cardConfig?.type === 'comments' ? 'comments' : 'default');
-    card.classList.add(`ed-dashboard__card--skeleton-${type}`);
 
     const title = document.createElement('div');
     title.className = 'skeleton skeleton--title';
-    card.appendChild(title);
-
-    if (type === 'donut') {
-      const donut = document.createElement('div');
-      donut.className = 'skeleton skeleton--donut';
-      const detail = document.createElement('div');
-      detail.className = 'skeleton skeleton--detail';
-      card.append(donut, detail);
-      return card;
-    }
-
-    if (type === 'comments') {
-      const line1 = document.createElement('div');
-      line1.className = 'skeleton skeleton--detail';
-      const line2 = document.createElement('div');
-      line2.className = 'skeleton skeleton--detail';
-      const line3 = document.createElement('div');
-      line3.className = 'skeleton skeleton--detail';
-      const meta = document.createElement('div');
-      meta.className = 'skeleton skeleton--detail';
-      card.append(line1, line2, line3, meta);
-      return card;
-    }
-
     const value = document.createElement('div');
     value.className = 'skeleton skeleton--value';
-    const progress = document.createElement('div');
-    progress.className = 'skeleton skeleton--detail';
-    const detail = document.createElement('div');
-    detail.className = 'skeleton skeleton--detail';
-    card.append(value, progress, detail);
+    const detailPrimary = document.createElement('div');
+    detailPrimary.className = 'skeleton skeleton--detail';
+    const detailSecondary = document.createElement('div');
+    detailSecondary.className = 'skeleton skeleton--detail';
+    card.append(title, value, detailPrimary, detailSecondary);
     return card;
   }
 
@@ -608,8 +644,8 @@ export async function runEdRuntime(core) {
     const grid = document.createElement('div');
     grid.className = 'ed-dashboard__section-grid';
     const cards = Array.isArray(section?.cards) ? section.cards : [];
-    cards.forEach((cardConfig) => {
-      grid.appendChild(createEdSkeletonCard(cardConfig));
+    cards.forEach(() => {
+      grid.appendChild(createEdSkeletonCard());
     });
     sectionEl.append(header, grid);
     return sectionEl;
@@ -634,8 +670,21 @@ export async function runEdRuntime(core) {
       container.replaceChildren();
       return;
     }
+    const flatCards = sections.flatMap((section) => (Array.isArray(section?.cards) ? section.cards : []));
+    const limitedCards = flatCards.slice(0, 3);
+    if (!limitedCards.length) {
+      container.replaceChildren();
+      return;
+    }
+    const baseSection = sections[0] || {};
+    const compactSection = {
+      key: baseSection.key || 'default',
+      title: baseSection.title || '',
+      description: baseSection.description || '',
+      cards: limitedCards,
+    };
     const fragment = document.createDocumentFragment();
-    sections.forEach((section) => fragment.appendChild(createEdSkeletonSection(section)));
+    fragment.appendChild(createEdSkeletonSection(compactSection));
     container.replaceChildren(fragment);
   }
 
@@ -710,7 +759,10 @@ export async function runEdRuntime(core) {
     buildEdCardVisuals: edCardsFeature.buildEdCardVisuals,
     enrichSummaryWithOverviewFallback,
   });
-  renderEdDashboardRef = (data) => edRenderer.renderEdDashboard(data);
+  renderEdDashboardRef = async (data) => {
+    await edRenderer.renderEdDashboard(data);
+    ensureFeedbackMetricCarouselTimer();
+  };
 
   if (selectors.edSearchInput) {
     selectors.edSearchInput.addEventListener('input', (event) => {
@@ -778,7 +830,7 @@ export async function runEdRuntime(core) {
         setStatus(selectors, 'warning', TEXT.feedback.status.fallback(reason));
       }
     },
-    renderEdDashboard: (edData) => edRenderer.renderEdDashboard(edData),
+    renderEdDashboard: (edData) => renderEdDashboardRef(edData),
     numberFormatter,
     getSettings: () => settings,
     getClientConfig: () => clientConfig,
