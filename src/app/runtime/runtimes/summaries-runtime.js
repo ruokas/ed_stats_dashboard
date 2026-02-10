@@ -4,7 +4,6 @@ import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import {
   computeAgeDiagnosisHeatmap,
-  computeAgeDistribution,
   computeDailyStats,
   computeDiagnosisFrequency,
   computeDiagnosisCodeYearlyShare,
@@ -431,7 +430,6 @@ function getReportsComputation(dashboardState, settings, historicalRecords, scop
       shiftStartHour: scopeMeta.shiftStartHour,
     }),
     pspcCorrelation: computePspcReferralHospitalizationCorrelation(historicalRecords, baseOptions),
-    ageDistribution: computeAgeDistribution(historicalRecords, baseOptions),
     pspcDistribution: computePspcDistribution(historicalRecords, baseOptions),
   };
   dashboardState.summariesReportsComputationCache = {
@@ -867,6 +865,140 @@ function renderBarChart(slot, dashboardState, chartLib, canvas, rows, color, opt
           max: dynamicYAxis
             ? (dynamicMax > dynamicMin ? dynamicMax : Math.min(100, dynamicMin + 1))
             : 100,
+          ticks: {
+            callback: (value) => `${Number(value).toFixed(0)}%`,
+          },
+        },
+      },
+    },
+  });
+}
+
+function normalizeSexLabel(rawValue) {
+  const value = String(rawValue || '').trim().toLowerCase();
+  if (value === 'vyras' || value === 'male') {
+    return 'Vyras';
+  }
+  if (value === 'moteris' || value === 'female') {
+    return 'Moteris';
+  }
+  return 'Kita/Nenurodyta';
+}
+
+function computeAgeDistributionBySex(records) {
+  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  const ageOrder = ['0-17', '18-34', '35-49', '50-64', '65-79', '80+', 'Nenurodyta'];
+  const sexOrder = ['Vyras', 'Moteris', 'Kita/Nenurodyta'];
+  const buckets = new Map(ageOrder.map((label) => [label, {
+    label,
+    total: 0,
+    bySex: {
+      Vyras: 0,
+      Moteris: 0,
+      'Kita/Nenurodyta': 0,
+    },
+  }]));
+
+  list.forEach((record) => {
+    const ageRaw = String(record?.ageBand || '').trim();
+    const age = ageOrder.includes(ageRaw) ? ageRaw : 'Nenurodyta';
+    const sex = normalizeSexLabel(record?.sex);
+    const bucket = buckets.get(age);
+    if (!bucket) {
+      return;
+    }
+    bucket.total += 1;
+    bucket.bySex[sex] = Number(bucket.bySex?.[sex] || 0) + 1;
+  });
+
+  const rows = ageOrder
+    .map((label) => buckets.get(label))
+    .filter((row) => Number(row?.total || 0) > 0)
+    .map((row) => ({
+      label: row.label,
+      total: row.total,
+      bySex: {
+        Vyras: Number(row.bySex?.Vyras || 0),
+        Moteris: Number(row.bySex?.Moteris || 0),
+        'Kita/Nenurodyta': Number(row.bySex?.['Kita/Nenurodyta'] || 0),
+      },
+    }));
+
+  return {
+    total: list.length,
+    sexOrder,
+    rows,
+  };
+}
+
+function renderAgeDistributionStackedBySex(slot, dashboardState, chartLib, canvas, distribution, palette = {}) {
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    return;
+  }
+  const rows = Array.isArray(distribution?.rows) ? distribution.rows : [];
+  const total = Number(distribution?.total || 0);
+  const sexOrder = Array.isArray(distribution?.sexOrder) && distribution.sexOrder.length
+    ? distribution.sexOrder
+    : ['Vyras', 'Moteris', 'Kita/Nenurodyta'];
+  const colorMap = {
+    Vyras: palette.Vyras || '#2563eb',
+    Moteris: palette.Moteris || '#ef4444',
+    'Kita/Nenurodyta': palette['Kita/Nenurodyta'] || '#94a3b8',
+  };
+  const datasets = sexOrder.map((sex) => ({
+    label: sex,
+    data: rows.map((row) => toPercent(Number(row?.bySex?.[sex] || 0), total)),
+    backgroundColor: colorMap[sex] || '#94a3b8',
+    borderWidth: 0,
+  }));
+  const totals = rows.map((row) => toPercent(Number(row?.total || 0), total));
+  const maxTotal = totals.length ? Math.max(...totals) : 0;
+  const yMax = Math.min(100, Math.max(2, maxTotal + Math.max(0.5, maxTotal * 0.2)));
+
+  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
+    type: 'bar',
+    data: {
+      labels: rows.map((row) => row.label),
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            filter: (legendItem) => String(legendItem?.text || '') !== 'Kita/Nenurodyta',
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const sex = String(context.dataset?.label || '');
+              const value = Number(context.parsed?.y ?? 0);
+              const row = rows[Number(context.dataIndex || 0)] || null;
+              const count = Number(row?.bySex?.[sex] || 0);
+              return `${sex}: ${oneDecimalFormatter.format(value)}% (n=${numberFormatter.format(count)})`;
+            },
+            footer: (items) => {
+              const index = Number(items?.[0]?.dataIndex ?? -1);
+              const row = index >= 0 ? rows[index] : null;
+              const totalCount = Number(row?.total || 0);
+              const totalPercent = toPercent(totalCount, total);
+              return `Grupė: ${oneDecimalFormatter.format(totalPercent)}% (n=${numberFormatter.format(totalCount)})`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          max: yMax,
           ticks: {
             callback: (value) => `${Number(value).toFixed(0)}%`,
           },
@@ -1793,7 +1925,6 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const referralHospitalizedByPspc = reports.referralHospitalizedByPspc;
   const referralHospitalizedByPspcYearly = reports.referralHospitalizedByPspcYearly;
   const pspcCorrelation = reports.pspcCorrelation;
-  const ageDistribution = reports.ageDistribution;
   const pspcDistribution = reports.pspcDistribution;
   const chartLib = dashboardState.chartLib || await loadChartJs();
   if (chartLib && !dashboardState.chartLib) {
@@ -1819,12 +1950,9 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
       ? `${baseNote} TOP kodai: ${topCodes}.`.trim()
       : baseNote;
   }
-  const agePercentRows = ageDistribution.rows
-    .filter((row) => String(row?.label || '') !== 'Nenurodyta')
-    .map((row) => ({
-      ...row,
-      percent: toPercent(row.count, ageDistribution.total),
-    }));
+  const ageDistributionBySex = computeAgeDistributionBySex(scopeMeta.records);
+  const ageDistributionRows = ageDistributionBySex.rows
+    .filter((row) => String(row?.label || '') !== 'Nenurodyta');
   const referralHospitalizedPspcPercentRows = referralHospitalizedByPspc.rows.map((row) => ({
     ...row,
     percent: row.share * 100,
@@ -1925,7 +2053,21 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     );
   }
   renderPspcCorrelationChart('pspcCorrelation', dashboardState, chartLib, selectors.pspcCorrelationChart, pspcCorrelationRows);
-  renderBarChart('ageDistribution', dashboardState, chartLib, selectors.ageDistributionChart, agePercentRows, colors.age, { dynamicYAxis: true });
+  renderAgeDistributionStackedBySex(
+    'ageDistribution',
+    dashboardState,
+    chartLib,
+    selectors.ageDistributionChart,
+    {
+      ...ageDistributionBySex,
+      rows: ageDistributionRows,
+    },
+    {
+      Vyras: '#2563eb',
+      Moteris: '#ef4444',
+      'Kita/Nenurodyta': '#94a3b8',
+    },
+  );
   renderBarChart('pspcDistribution', dashboardState, chartLib, selectors.pspcDistributionChart, pspcPercentRows, colors.pspc, { dynamicYAxis: true });
   exportState.diagnosis = {
     title: TEXT.summariesReports?.cards?.diagnosis || 'Diagnozės',
@@ -2046,8 +2188,15 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   };
   exportState.ageDistribution = {
     title: TEXT.summariesReports?.cards?.ageDistribution || 'Amžius',
-    headers: ['Amžiaus grupė', 'Procentas (%)'],
-    rows: agePercentRows.map((row) => [row.label, oneDecimalFormatter.format(row.percent)]),
+    headers: ['Amžiaus grupė', 'Iš viso (%)', 'Vyras (%)', 'Moteris (%)', 'Kita/Nenurodyta (%)', 'Iš viso (n)'],
+    rows: ageDistributionRows.map((row) => [
+      row.label,
+      oneDecimalFormatter.format(toPercent(row.total, ageDistributionBySex.total)),
+      oneDecimalFormatter.format(toPercent(row.bySex?.Vyras || 0, ageDistributionBySex.total)),
+      oneDecimalFormatter.format(toPercent(row.bySex?.Moteris || 0, ageDistributionBySex.total)),
+      oneDecimalFormatter.format(toPercent(row.bySex?.['Kita/Nenurodyta'] || 0, ageDistributionBySex.total)),
+      numberFormatter.format(row.total),
+    ]),
     target: selectors.ageDistributionChart,
   };
   exportState.pspcDistribution = {
