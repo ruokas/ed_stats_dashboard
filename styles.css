@@ -1053,6 +1053,44 @@ body[data-theme="dark"] select optgroup {
       background-clip: padding-box;
     }
 
+    .ed-dashboard__card--feedback-rotating {
+      min-height: 256px;
+    }
+
+    .ed-dashboard__card--feedback-rotating .ed-dashboard__card-title {
+      min-height: 2.6em;
+    }
+
+    .ed-dashboard__card--feedback-rotating .ed-dashboard__card-value {
+      min-height: 1.25em;
+    }
+
+    .ed-dashboard__card--feedback-rotating .ed-dashboard__card-meta {
+      min-height: 1.6em;
+    }
+
+    .ed-dashboard__feedback-indicators {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 6px;
+    }
+
+    .ed-dashboard__feedback-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--color-text) 28%, transparent);
+      opacity: 0.65;
+      transition: transform 160ms ease, opacity 160ms ease, background-color 160ms ease;
+    }
+
+    .ed-dashboard__feedback-indicator.is-active {
+      background: var(--color-accent);
+      opacity: 1;
+      transform: scale(1.18);
+    }
+
     .ed-dashboard__comment-wrapper {
       position: relative;
       display: flex;

@@ -1,5 +1,5 @@
 import { setDatasetValue } from '../utils/dom.js';
-import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js?v=2026-02-08-ed-cards-fallback-1';
+import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js?v=2026-02-10-feedback-rotating-card-1';
 
 function formatCardDisplayValue(config, summary, formatEdCardValue) {
   const primaryRaw = summary?.[config.key];
@@ -44,7 +44,13 @@ function buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant) 
     count: Number.isFinite(item?.count) ? item.count : 0,
     key: item?.categoryKey || item?.category || '',
   }));
-  return JSON.stringify({ displayVariant, cardSnapshot, dispositionsSnapshot });
+  return JSON.stringify({
+    displayVariant,
+    activeFeedbackMetricKey: summary?.feedbackCurrentMonthMetricKey ?? '',
+    activeFeedbackMetricTitle: summary?.feedbackCurrentMonthMetricTitle ?? '',
+    cardSnapshot,
+    dispositionsSnapshot,
+  });
 }
 
 function upsertCard(card, config, summary, {
@@ -55,10 +61,15 @@ function upsertCard(card, config, summary, {
   card.className = 'ed-dashboard__card';
   card.setAttribute('role', 'listitem');
   setDatasetValue(card, 'cardKey', config.key || config.type || 'unknown');
-  const nextType = config.type === 'donut' ? 'donut' : (config.type === 'comments' ? 'comments' : 'default');
+  const nextType = config.type === 'donut'
+    ? 'donut'
+    : (config.type === 'comments'
+      ? 'comments'
+      : (config.type === 'feedback-rotating-metric' ? 'feedback-rotating-metric' : 'default'));
   const currentType = String(card.dataset?.cardType || '');
   card.classList.toggle('ed-dashboard__card--donut', nextType === 'donut');
   card.classList.toggle('ed-dashboard__card--comments', nextType === 'comments');
+  card.classList.toggle('ed-dashboard__card--feedback-rotating', nextType === 'feedback-rotating-metric');
   if (currentType !== nextType) {
     card.replaceChildren();
   }
@@ -70,7 +81,11 @@ function upsertCard(card, config, summary, {
     title.className = 'ed-dashboard__card-title';
     card.prepend(title);
   }
-  title.textContent = config.title;
+  if (nextType === 'feedback-rotating-metric') {
+    title.textContent = String(summary?.feedbackCurrentMonthMetricTitle || config.title || '').trim() || config.title;
+  } else {
+    title.textContent = config.title;
+  }
 
   if (nextType === 'donut') {
     title.id = 'edDispositionsTitle';
@@ -108,6 +123,66 @@ function upsertCard(card, config, summary, {
     const staleNodes = Array.from(card.children).filter((node) => node !== title);
     staleNodes.forEach((node) => node.remove());
     renderEdCommentsCard(card, config, rawComments, metaValue);
+    return;
+  }
+
+  if (nextType === 'feedback-rotating-metric') {
+    const staleDonutNodes = card.querySelector('.ed-dashboard__donut-chart');
+    if (staleDonutNodes) {
+      staleDonutNodes.remove();
+    }
+    const staleMessage = card.querySelector('#edDispositionsMessage');
+    if (staleMessage) {
+      staleMessage.remove();
+    }
+    let value = card.querySelector('.ed-dashboard__card-value');
+    if (!value) {
+      value = document.createElement('p');
+      value.className = 'ed-dashboard__card-value';
+      card.appendChild(value);
+    }
+    const { text, primaryRaw, secondaryRaw } = formatCardDisplayValue(config, summary, formatEdCardValue);
+    value.textContent = text;
+
+    let visualsRoot = card.querySelector('.ed-dashboard__card-visuals');
+    if (!visualsRoot) {
+      visualsRoot = document.createElement('div');
+      visualsRoot.className = 'ed-dashboard__card-visuals';
+      card.appendChild(visualsRoot);
+    }
+    const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary);
+    visualsRoot.replaceChildren(...visuals);
+
+    let meta = card.querySelector('.ed-dashboard__card-meta');
+    if (!meta) {
+      meta = document.createElement('p');
+      meta.className = 'ed-dashboard__card-meta';
+      card.appendChild(meta);
+    }
+    const metaRaw = config.metaKey ? summary?.[config.metaKey] : null;
+    const metaText = typeof metaRaw === 'string' ? metaRaw.trim() : (metaRaw != null ? String(metaRaw).trim() : '');
+    meta.textContent = metaText.length ? metaText : (config.description || '');
+
+    let indicators = card.querySelector('.ed-dashboard__feedback-indicators');
+    if (!indicators) {
+      indicators = document.createElement('div');
+      indicators.className = 'ed-dashboard__feedback-indicators';
+      indicators.setAttribute('aria-hidden', 'true');
+      card.appendChild(indicators);
+    }
+    const catalog = Array.isArray(summary?.feedbackCurrentMonthMetricCatalog)
+      ? summary.feedbackCurrentMonthMetricCatalog
+      : [];
+    const activeKey = String(summary?.feedbackCurrentMonthMetricKey || '');
+    indicators.replaceChildren(...catalog.map((metric) => {
+      const dot = document.createElement('span');
+      dot.className = 'ed-dashboard__feedback-indicator';
+      const isActive = String(metric?.key || '') === activeKey;
+      if (isActive) {
+        dot.classList.add('is-active');
+      }
+      return dot;
+    }));
     return;
   }
 
@@ -298,6 +373,11 @@ export function createEdRenderer(env) {
       enrichSummaryWithOverviewFallback,
     });
     const { dataset, summary, dispositions, displayVariant, cardConfigs, dispositionsText } = model;
+    if (dashboardState?.feedbackMetricCarousel && typeof dashboardState.feedbackMetricCarousel === 'object') {
+      dashboardState.feedbackMetricCarousel.metricCatalog = Array.isArray(summary?.feedbackCurrentMonthMetricCatalog)
+        ? summary.feedbackCurrentMonthMetricCatalog
+        : [];
+    }
     const renderKey = buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant);
     const mustPatchCards = dashboardState.edCardsRenderKey !== renderKey;
 
