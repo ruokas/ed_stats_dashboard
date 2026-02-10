@@ -154,5 +154,6 @@ export function createDashboardState({
       metricCatalog: [],
     },
     edSearchQuery: '',
+    edLastDisplayVariant: 'snapshot',
   };
 }

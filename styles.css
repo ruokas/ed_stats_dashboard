@@ -69,6 +69,8 @@ body[data-theme="light"] {
   --report-correlation-stroke: rgba(37, 99, 235, 0.9);
   --hero-height: 0px;
   --section-nav-height: 0px;
+  --summaries-jump-sticky-top: 56px;
+  --summaries-jump-nav-height: 52px;
   font-family: "Sora", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -1008,7 +1010,7 @@ body[data-theme="dark"] select optgroup {
     .ed-dashboard__card--comments {
       gap: 12px;
       min-height: 256px;
-      max-height: 520px;
+      max-height: 420px;
       overflow: hidden;
       background-clip: padding-box;
     }
@@ -2354,6 +2356,9 @@ body[data-theme="dark"] select optgroup {
     #recentHeading,
     #yearlyHeading,
     #summariesSegmentHeading,
+    #summariesGroupClinicalHeading,
+    #summariesGroupReferralHeading,
+    #summariesGroupPspcHeading,
     #feedbackHeading {
       scroll-margin-top: calc(var(--hero-height, 0px) + 16px);
     }
@@ -2364,6 +2369,13 @@ body[data-theme="dark"] select optgroup {
     body[data-page="charts"] #chartsHeatmapHeading,
     body[data-page="charts"] #chartsHospitalTableHeading {
       scroll-margin-top: calc(var(--hero-height, 0px) + var(--charts-jump-nav-height, 52px) + 20px);
+    }
+
+    body[data-page="summaries"] #yearlyHeading,
+    body[data-page="summaries"] #summariesGroupClinicalHeading,
+    body[data-page="summaries"] #summariesGroupReferralHeading,
+    body[data-page="summaries"] #summariesGroupPspcHeading {
+      scroll-margin-top: calc(var(--hero-height, 0px) + var(--summaries-jump-nav-height, 52px) + 20px);
     }
 
     .section__subtitle {
@@ -2432,6 +2444,59 @@ body[data-theme="dark"] select optgroup {
       box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.18);
     }
 
+    .summaries-jump-nav {
+      position: sticky;
+      top: var(--summaries-jump-sticky-top, 56px);
+      z-index: 6;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding: 8px;
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      background: var(--color-surface);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .summaries-jump-nav__link {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .summaries-jump-nav__link:hover,
+    .summaries-jump-nav__link:focus-visible {
+      color: var(--color-accent);
+      border-color: rgba(47, 91, 234, 0.34);
+      background: var(--color-input-bg);
+      outline: none;
+    }
+
+    .summaries-jump-nav__link.is-active,
+    .summaries-jump-nav__link[aria-current="true"] {
+      color: var(--color-accent);
+      border-color: rgba(47, 91, 234, 0.42);
+      background: var(--color-input-bg);
+      box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.18);
+    }
+
     .charts-subsection {
       margin-top: 20px;
       padding: 16px;
@@ -2442,6 +2507,11 @@ body[data-theme="dark"] select optgroup {
     }
 
     body[data-theme="dark"] .charts-jump-nav {
+      background: rgba(20, 25, 39, 0.92);
+      border-color: rgba(121, 147, 199, 0.3);
+    }
+
+    body[data-theme="dark"] .summaries-jump-nav {
       background: rgba(20, 25, 39, 0.92);
       border-color: rgba(121, 147, 199, 0.3);
     }
@@ -2712,6 +2782,36 @@ body[data-theme="dark"] select optgroup {
       gap: 14px;
     }
 
+    .summaries-report-groups {
+      display: grid;
+      gap: 18px;
+    }
+
+    .summaries-report-group {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      background: var(--color-surface);
+    }
+
+    .summaries-report-group__heading h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--color-text);
+    }
+
+    .summaries-report-group__heading p {
+      margin: 4px 0 0;
+      font-size: 0.86rem;
+      color: var(--color-text-muted);
+    }
+
+    .summaries-report-group__grid {
+      width: 100%;
+    }
+
     .report-card {
       border: 1px solid var(--color-border);
       border-radius: 12px;
@@ -2734,7 +2834,8 @@ body[data-theme="dark"] select optgroup {
       flex-wrap: wrap;
     }
 
-    .report-card__head h3 {
+    .report-card__head h3,
+    .report-card__head h4 {
       margin: 0;
       font-size: 0.95rem;
       color: var(--color-text);
@@ -5496,7 +5597,16 @@ body[data-theme="dark"] select optgroup {
         padding: 6px;
       }
 
+      .summaries-jump-nav {
+        margin: 8px 0 12px;
+        padding: 6px;
+      }
+
       .charts-jump-nav__link {
+        min-height: 36px;
+      }
+
+      .summaries-jump-nav__link {
         min-height: 36px;
       }
 
@@ -6411,6 +6521,10 @@ body[data-theme="dark"] select optgroup {
         grid-template-columns: minmax(0, 1fr);
       }
 
+      .summaries-report-group {
+        padding: 10px;
+      }
+
       .charts-hospital-table-controls {
         grid-template-columns: minmax(0, 1fr);
       }
@@ -6427,7 +6541,8 @@ body[data-theme="dark"] select optgroup {
         grid-template-columns: minmax(0, 1fr);
       }
 
-      .report-card__head h3 {
+      .report-card__head h3,
+      .report-card__head h4 {
         width: 100%;
       }
 

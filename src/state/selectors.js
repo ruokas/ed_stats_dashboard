@@ -108,6 +108,8 @@ export function createSelectors() {
     summariesReportsMinGroupSize: document.getElementById('summariesReportsMinGroupSize'),
     referralHospitalizedByPspcSort: document.getElementById('referralHospitalizedByPspcSort'),
     summariesReportsCoverage: document.getElementById('summariesReportsCoverage'),
+    summariesJumpNav: document.querySelector('.summaries-jump-nav'),
+    summariesJumpLinks: Array.from(document.querySelectorAll('.summaries-jump-nav__link')),
     diagnosisChart: document.getElementById('diagnosisChart'),
     ageDiagnosisHeatmapChart: document.getElementById('ageDiagnosisHeatmapChart'),
     diagnosisInfo: document.getElementById('diagnosisInfo'),
@@ -358,6 +360,7 @@ export function createSelectorsForPage(pageId) {
   if (normalizedPage === 'summaries') {
     const main = byQuery('main.container');
     const sectionNav = byQuery('.section-nav');
+    const summariesJumpNav = byQueryIn(main, '.summaries-jump-nav');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -377,6 +380,8 @@ export function createSelectorsForPage(pageId) {
       referralHospitalizedByPspcTrendPspc: byId('referralHospitalizedByPspcTrendPspc'),
       referralHospitalizedByPspcSort: byId('referralHospitalizedByPspcSort'),
       summariesReportsCoverage: byId('summariesReportsCoverage'),
+      summariesJumpNav,
+      summariesJumpLinks: byQueryAllIn(summariesJumpNav, '.summaries-jump-nav__link'),
       diagnosisChart: byId('diagnosisChart'),
       ageDiagnosisHeatmapChart: byId('ageDiagnosisHeatmapChart'),
       diagnosisInfo: byId('diagnosisInfo'),

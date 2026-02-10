@@ -153,6 +153,13 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `600 12px ${computedStyles.fontFamily}`;
+      const shadowColor = theme === 'dark'
+        ? 'rgba(15, 23, 42, 0.72)'
+        : 'rgba(15, 23, 42, 0.58)';
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 1;
       meta.data.forEach((element, index) => {
         const value = Number.isFinite(dataset.data?.[index]) ? dataset.data[index] : 0;
         if (!value) {
