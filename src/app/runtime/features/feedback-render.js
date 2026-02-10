@@ -253,7 +253,10 @@ export function createFeedbackRenderFeature(deps) {
     if (!renderers || typeof renderers.renderFeedbackTrendChart !== 'function') {
       return Promise.resolve();
     }
-    return renderers.renderFeedbackTrendChart(monthlyStats);
+    const records = Array.isArray(dashboardState.feedback?.filteredRecords)
+      ? dashboardState.feedback.filteredRecords
+      : [];
+    return renderers.renderFeedbackTrendChart(monthlyStats, records);
   }
 
   function renderFeedbackSection(feedbackStats) {
@@ -281,34 +284,178 @@ export function createFeedbackRenderFeature(deps) {
     return null;
   }
 
+  function getFeedbackTrendMetricConfig() {
+    const configured = Array.isArray(TEXT.feedback?.trend?.metrics)
+      ? TEXT.feedback.trend.metrics
+      : [];
+    const fallback = [
+      { key: 'overallAverage', label: 'Bendra patirtis', axis: 'rating', enabledByDefault: true },
+      { key: 'doctorsAverage', label: 'Gydytojų darbas', axis: 'rating' },
+      { key: 'nursesAverage', label: 'Slaugytojų darbas', axis: 'rating' },
+      { key: 'aidesAverage', label: 'Padėjėjų darbas', axis: 'rating' },
+      { key: 'waitingAverage', label: 'Laukimo vertinimas', axis: 'rating' },
+      { key: 'responses', label: 'Atsakymų skaičius', axis: 'responses' },
+    ];
+    const source = configured.length ? configured : fallback;
+    const unique = [];
+    const seen = new Set();
+    source.forEach((item) => {
+      const key = typeof item?.key === 'string' ? item.key.trim() : '';
+      if (!key || seen.has(key)) {
+        return;
+      }
+      seen.add(key);
+      unique.push({
+        key,
+        label: typeof item?.label === 'string' && item.label.trim()
+          ? item.label.trim()
+          : key,
+        axis: item?.axis === 'responses' ? 'responses' : 'rating',
+        enabledByDefault: Boolean(item?.enabledByDefault),
+      });
+    });
+    return unique;
+  }
+
+  function getActiveFeedbackTrendMetrics() {
+    const config = getFeedbackTrendMetricConfig();
+    const allowed = new Set(config.map((item) => item.key));
+    const selectedRaw = Array.isArray(dashboardState.feedback?.trendMetrics)
+      ? dashboardState.feedback.trendMetrics
+      : [];
+    const selected = [];
+    selectedRaw.forEach((item) => {
+      const key = typeof item === 'string' ? item.trim() : '';
+      if (!key || !allowed.has(key) || selected.includes(key)) {
+        return;
+      }
+      selected.push(key);
+    });
+    if (selected.length) {
+      return selected;
+    }
+    const defaults = config.filter((item) => item.enabledByDefault).map((item) => item.key);
+    if (defaults.length) {
+      return defaults;
+    }
+    return config[0]?.key ? [config[0].key] : ['overallAverage'];
+  }
+
+  function getFeedbackTrendCompareModes() {
+    const configured = Array.isArray(TEXT.feedback?.trend?.compareModes)
+      ? TEXT.feedback.trend.compareModes
+      : [];
+    const fallback = [
+      { key: 'none', label: 'Nelyginti' },
+      { key: 'respondent', label: 'Pacientas vs artimasis' },
+      { key: 'location', label: 'Ambulatorija vs salė' },
+    ];
+    const source = configured.length ? configured : fallback;
+    const normalized = [];
+    const seen = new Set();
+    source.forEach((item) => {
+      const key = typeof item?.key === 'string' ? item.key.trim() : '';
+      if (!key || seen.has(key)) {
+        return;
+      }
+      seen.add(key);
+      normalized.push({
+        key,
+        label: typeof item?.label === 'string' && item.label.trim() ? item.label.trim() : key,
+      });
+    });
+    return normalized;
+  }
+
+  function getActiveFeedbackTrendCompareMode() {
+    const modes = getFeedbackTrendCompareModes();
+    const allowed = new Set(modes.map((item) => item.key));
+    const raw = typeof dashboardState.feedback?.trendCompareMode === 'string'
+      ? dashboardState.feedback.trendCompareMode.trim()
+      : '';
+    if (raw && allowed.has(raw)) {
+      return raw;
+    }
+    return 'none';
+  }
+
+  function getFeedbackTrendCompareConfig() {
+    const compareGroups = TEXT.feedback?.trend?.compareGroups || {};
+    const respondent = compareGroups.respondent || {};
+    const location = compareGroups.location || {};
+    return {
+      respondent: {
+        left: {
+          key: respondent.left?.key || 'patient',
+          label: respondent.left?.label || 'Pacientas',
+        },
+        right: {
+          key: respondent.right?.key || 'relative',
+          label: respondent.right?.label || 'Paciento artimasis',
+        },
+      },
+      location: {
+        left: {
+          key: location.left?.key || 'ambulatory',
+          label: location.left?.label || 'Ambulatorija',
+        },
+        right: {
+          key: location.right?.key || 'hall',
+          label: location.right?.label || 'Salė',
+        },
+      },
+    };
+  }
+
   function updateFeedbackTrendSubtitle() {
     if (!selectors.feedbackTrendSubtitle) {
       return;
     }
     const builder = TEXT.feedback?.trend?.subtitle;
     const activeWindow = getActiveFeedbackTrendWindow();
+    const activeMetrics = getActiveFeedbackTrendMetrics();
+    const metricCount = activeMetrics.length;
+    const activeCompareMode = getActiveFeedbackTrendCompareMode();
+    const compareLabel = getFeedbackTrendCompareModes().find((item) => item.key === activeCompareMode)?.label || '';
+    const compareSuffix = activeCompareMode === 'none' ? '' : compareLabel;
     if (typeof builder === 'function') {
-      selectors.feedbackTrendSubtitle.textContent = builder(activeWindow);
+      selectors.feedbackTrendSubtitle.textContent = builder(activeWindow, metricCount, compareSuffix);
     } else if (typeof builder === 'string') {
       selectors.feedbackTrendSubtitle.textContent = builder;
     } else if (Number.isFinite(activeWindow) && activeWindow > 0) {
-      selectors.feedbackTrendSubtitle.textContent = `Paskutinių ${activeWindow} mėnesių dinamika`;
+      selectors.feedbackTrendSubtitle.textContent = `Paskutinių ${activeWindow} mėnesių dinamika • ${metricCount} rodikliai${compareSuffix ? ` • ${compareSuffix}` : ''}`;
     } else {
-      selectors.feedbackTrendSubtitle.textContent = 'Visų prieinamų mėnesių dinamika';
+      selectors.feedbackTrendSubtitle.textContent = `Visų prieinamų mėnesių dinamika • ${metricCount} rodikliai${compareSuffix ? ` • ${compareSuffix}` : ''}`;
     }
   }
 
   function syncFeedbackTrendControls() {
-    if (!selectors.feedbackTrendButtons || !selectors.feedbackTrendButtons.length) {
-      return;
-    }
     const activeWindow = getActiveFeedbackTrendWindow();
-    selectors.feedbackTrendButtons.forEach((button) => {
-      const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
-      const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
-      button.setAttribute('aria-pressed', String(Boolean(isActive)));
-      setDatasetValue(button, 'active', String(Boolean(isActive)));
-    });
+    if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
+      selectors.feedbackTrendButtons.forEach((button) => {
+        const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
+        const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
+        button.setAttribute('aria-pressed', String(Boolean(isActive)));
+        setDatasetValue(button, 'active', String(Boolean(isActive)));
+      });
+    }
+    const activeMetrics = getActiveFeedbackTrendMetrics();
+    if (selectors.feedbackTrendMetricButtons && selectors.feedbackTrendMetricButtons.length) {
+      selectors.feedbackTrendMetricButtons.forEach((button) => {
+        const key = getDatasetValue(button, 'trendMetric', '');
+        const isActive = activeMetrics.includes(key);
+        button.setAttribute('aria-pressed', String(Boolean(isActive)));
+        setDatasetValue(button, 'active', String(Boolean(isActive)));
+      });
+    }
+    const activeCompareMode = getActiveFeedbackTrendCompareMode();
+    if (selectors.feedbackTrendCompareSelect) {
+      const select = selectors.feedbackTrendCompareSelect;
+      if (select.querySelector(`option[value="${activeCompareMode}"]`)) {
+        select.value = activeCompareMode;
+      }
+      setDatasetValue(select, 'value', activeCompareMode);
+    }
   }
 
   function setFeedbackTrendWindow(months) {
@@ -330,12 +477,90 @@ export function createFeedbackRenderFeature(deps) {
     });
   }
 
+  function setFeedbackTrendMetrics(metrics) {
+    const allowed = new Set(getFeedbackTrendMetricConfig().map((item) => item.key));
+    const normalized = [];
+    (Array.isArray(metrics) ? metrics : []).forEach((item) => {
+      const key = typeof item === 'string' ? item.trim() : '';
+      if (!key || !allowed.has(key) || normalized.includes(key)) {
+        return;
+      }
+      normalized.push(key);
+    });
+    const nextMetrics = normalized.length ? normalized : getActiveFeedbackTrendMetrics();
+    const currentMetrics = getActiveFeedbackTrendMetrics();
+    if (nextMetrics.length === currentMetrics.length
+      && nextMetrics.every((item, index) => item === currentMetrics[index])) {
+      return;
+    }
+    dashboardState.feedback.trendMetrics = nextMetrics.slice();
+    syncFeedbackTrendControls();
+    updateFeedbackTrendSubtitle();
+    const monthly = Array.isArray(dashboardState.feedback.monthly)
+      ? dashboardState.feedback.monthly
+      : [];
+    renderFeedbackTrendChart(monthly).catch((error) => {
+      const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_METRICS', message: 'Nepavyko atnaujinti atsiliepimų trendo rodiklių' });
+      console.error(errorInfo.log, error);
+    });
+  }
+
+  function setFeedbackTrendMetric(metricKey, shouldEnable = null) {
+    const key = typeof metricKey === 'string' ? metricKey.trim() : '';
+    if (!key) {
+      return;
+    }
+    const current = getActiveFeedbackTrendMetrics();
+    const isActive = current.includes(key);
+    const enable = shouldEnable == null ? !isActive : Boolean(shouldEnable);
+    if (enable) {
+      if (isActive) {
+        return;
+      }
+      setFeedbackTrendMetrics(current.concat(key));
+      return;
+    }
+    if (!isActive) {
+      return;
+    }
+    if (current.length <= 1) {
+      return;
+    }
+    setFeedbackTrendMetrics(current.filter((item) => item !== key));
+  }
+
+  function setFeedbackTrendCompareMode(mode) {
+    const normalized = typeof mode === 'string' ? mode.trim() : '';
+    const allowed = new Set(getFeedbackTrendCompareModes().map((item) => item.key));
+    const nextMode = allowed.has(normalized) ? normalized : 'none';
+    if (dashboardState.feedback.trendCompareMode === nextMode) {
+      return;
+    }
+    dashboardState.feedback.trendCompareMode = nextMode;
+    syncFeedbackTrendControls();
+    updateFeedbackTrendSubtitle();
+    const monthly = Array.isArray(dashboardState.feedback.monthly)
+      ? dashboardState.feedback.monthly
+      : [];
+    renderFeedbackTrendChart(monthly).catch((error) => {
+      const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_COMPARE', message: 'Nepavyko atnaujinti atsiliepimų trendo palyginimo' });
+      console.error(errorInfo.log, error);
+    });
+  }
+
   return {
     renderFeedbackTrendChart,
     renderFeedbackSection,
     getActiveFeedbackTrendWindow,
+    getActiveFeedbackTrendMetrics,
+    getActiveFeedbackTrendCompareMode,
+    getFeedbackTrendMetricConfig,
+    getFeedbackTrendCompareConfig,
     updateFeedbackTrendSubtitle,
     syncFeedbackTrendControls,
     setFeedbackTrendWindow,
+    setFeedbackTrendMetrics,
+    setFeedbackTrendMetric,
+    setFeedbackTrendCompareMode,
   };
 }

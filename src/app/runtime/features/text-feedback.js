@@ -53,6 +53,52 @@ export function applyFeedbackText({
       }
     });
   }
+  if (selectors.feedbackTrendMetricsLabel) {
+    selectors.feedbackTrendMetricsLabel.textContent = TEXT.feedback.trend.metricControlsLabel || 'Rodikliai';
+  }
+  if (selectors.feedbackTrendMetricButtons && selectors.feedbackTrendMetricButtons.length) {
+    const metricsConfig = Array.isArray(TEXT.feedback?.trend?.metrics) ? TEXT.feedback.trend.metrics : [];
+    selectors.feedbackTrendMetricButtons.forEach((button) => {
+      const metricKey = getDatasetValue(button, 'trendMetric', '');
+      const config = metricsConfig.find((item) => String(item?.key || '') === metricKey);
+      if (config?.label) {
+        button.textContent = config.label;
+      }
+      if (config?.hint) {
+        button.title = config.hint;
+      } else {
+        button.removeAttribute('title');
+      }
+    });
+  }
+  if (selectors.feedbackTrendCompareLabel) {
+    selectors.feedbackTrendCompareLabel.textContent = TEXT.feedback.trend.compareControlsLabel || 'Palyginti pagal';
+  }
+  if (selectors.feedbackTrendCompareSelect) {
+    const compareModes = Array.isArray(TEXT.feedback?.trend?.compareModes) ? TEXT.feedback.trend.compareModes : [];
+    if (compareModes.length) {
+      selectors.feedbackTrendCompareSelect.replaceChildren();
+      compareModes.forEach((mode) => {
+        if (!mode || typeof mode !== 'object' || !mode.key) {
+          return;
+        }
+        const option = document.createElement('option');
+        option.value = String(mode.key);
+        option.textContent = mode.label || String(mode.key);
+        selectors.feedbackTrendCompareSelect.appendChild(option);
+      });
+      const activeValue = selectors.feedbackTrendCompareSelect.dataset.value;
+      if (activeValue && selectors.feedbackTrendCompareSelect.querySelector(`option[value="${activeValue}"]`)) {
+        selectors.feedbackTrendCompareSelect.value = activeValue;
+      }
+    }
+    const hint = TEXT.feedback.trend.compareHint;
+    if (hint) {
+      selectors.feedbackTrendCompareSelect.title = hint;
+    } else {
+      selectors.feedbackTrendCompareSelect.removeAttribute('title');
+    }
+  }
   syncFeedbackTrendControls();
 
   if (selectors.feedbackCaption) {

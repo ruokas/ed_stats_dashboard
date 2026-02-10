@@ -269,7 +269,7 @@ export async function runFeedbackRuntime(core) {
 
   let feedbackRenderFeature = null;
   const chartRenderers = {
-    renderFeedbackTrendChart(monthlyStats) {
+    renderFeedbackTrendChart(monthlyStats, records) {
       return renderFeedbackTrendChartModule({
         dashboardState,
         selectors,
@@ -280,10 +280,14 @@ export async function runFeedbackRuntime(core) {
         syncFeedbackTrendControls: () => feedbackRenderFeature.syncFeedbackTrendControls(),
         updateFeedbackTrendSubtitle: () => feedbackRenderFeature.updateFeedbackTrendSubtitle(),
         getActiveFeedbackTrendWindow: () => feedbackRenderFeature.getActiveFeedbackTrendWindow(),
+        getActiveFeedbackTrendMetrics: () => feedbackRenderFeature.getActiveFeedbackTrendMetrics(),
+        getActiveFeedbackTrendCompareMode: () => feedbackRenderFeature.getActiveFeedbackTrendCompareMode(),
+        getFeedbackTrendMetricConfig: () => feedbackRenderFeature.getFeedbackTrendMetricConfig(),
+        getFeedbackTrendCompareConfig: () => feedbackRenderFeature.getFeedbackTrendCompareConfig(),
         formatMonthLabel,
         numberFormatter,
         oneDecimalFormatter,
-      }, monthlyStats);
+      }, monthlyStats, records);
     },
   };
 
@@ -335,6 +339,8 @@ export async function runFeedbackRuntime(core) {
   initFeedbackTrendControls({
     selectors,
     setFeedbackTrendWindow: feedbackRenderFeature.setFeedbackTrendWindow,
+    setFeedbackTrendMetric: feedbackRenderFeature.setFeedbackTrendMetric,
+    setFeedbackTrendCompareMode: feedbackRenderFeature.setFeedbackTrendCompareMode,
   });
   initFeedbackTableScrollAffordance({ selectors });
   initChartCopyButtons({

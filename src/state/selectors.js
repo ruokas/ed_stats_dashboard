@@ -139,6 +139,11 @@ export function createSelectors() {
     feedbackTrendControls: document.getElementById('feedbackTrendControls'),
     feedbackTrendControlsLabel: document.getElementById('feedbackTrendControlsLabel'),
     feedbackTrendButtons: Array.from(document.querySelectorAll('[data-trend-months]')),
+    feedbackTrendMetrics: document.getElementById('feedbackTrendMetrics'),
+    feedbackTrendMetricsLabel: document.getElementById('feedbackTrendMetricsLabel'),
+    feedbackTrendMetricButtons: Array.from(document.querySelectorAll('[data-trend-metric]')),
+    feedbackTrendCompareSelect: document.getElementById('feedbackTrendCompareSelect'),
+    feedbackTrendCompareLabel: document.getElementById('feedbackTrendCompareLabel'),
     feedbackTrendSummary: document.getElementById('feedbackTrendSummary'),
     feedbackTrendSkeleton: document.getElementById('feedbackTrendSkeleton'),
     feedbackTrendMessage: document.getElementById('feedbackTrendMessage'),
@@ -426,6 +431,8 @@ export function createSelectorsForPage(pageId) {
     const sectionNav = byQuery('.section-nav');
     const feedbackFilters = byId('feedbackFilters');
     const feedbackTrendControls = byId('feedbackTrendControls');
+    const feedbackTrendMetrics = byId('feedbackTrendMetrics');
+    const feedbackTrendCompareSelect = byId('feedbackTrendCompareSelect');
     return {
       hero: byQuery('header.hero'),
       title: byId('pageTitle'),
@@ -453,6 +460,11 @@ export function createSelectorsForPage(pageId) {
       feedbackTrendControls,
       feedbackTrendControlsLabel: byId('feedbackTrendControlsLabel'),
       feedbackTrendButtons: byQueryAllIn(feedbackTrendControls, '[data-trend-months]'),
+      feedbackTrendMetrics,
+      feedbackTrendMetricsLabel: byId('feedbackTrendMetricsLabel'),
+      feedbackTrendMetricButtons: byQueryAllIn(feedbackTrendMetrics, '[data-trend-metric]'),
+      feedbackTrendCompareSelect,
+      feedbackTrendCompareLabel: byId('feedbackTrendCompareLabel'),
       feedbackTrendSummary: byId('feedbackTrendSummary'),
       feedbackTrendSkeleton: byId('feedbackTrendSkeleton'),
       feedbackTrendMessage: byId('feedbackTrendMessage'),
