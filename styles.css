@@ -889,60 +889,20 @@ body[data-theme="dark"] select optgroup {
       opacity: 0.9;
     }
 
-    .ed-dashboard__card--skeleton-default .skeleton--detail:nth-of-type(2) {
+    .ed-dashboard__card--skeleton .skeleton--title {
+      max-width: 72%;
+    }
+
+    .ed-dashboard__card--skeleton .skeleton--value {
+      max-width: 56%;
+    }
+
+    .ed-dashboard__card--skeleton .skeleton--detail:nth-of-type(3) {
       max-width: 82%;
     }
 
-    .ed-dashboard__card--skeleton-default .skeleton--detail:nth-of-type(3) {
+    .ed-dashboard__card--skeleton .skeleton--detail:nth-of-type(4) {
       max-width: 70%;
-    }
-
-    .ed-dashboard__card--skeleton-donut {
-      align-items: center;
-      justify-content: flex-start;
-      text-align: center;
-      gap: 14px;
-    }
-
-    .ed-dashboard__card--skeleton-donut .skeleton--title {
-      max-width: 76%;
-    }
-
-    .skeleton--donut {
-      width: clamp(150px, 16vw, 210px);
-      aspect-ratio: 1 / 1;
-      border-radius: 50%;
-      margin: 2px auto;
-    }
-
-    .ed-dashboard__card--skeleton-donut .skeleton--detail {
-      max-width: 64%;
-    }
-
-    .ed-dashboard__card--skeleton-comments {
-      min-height: 300px;
-      justify-content: flex-start;
-    }
-
-    .ed-dashboard__card--skeleton-comments .skeleton--title {
-      max-width: 55%;
-    }
-
-    .ed-dashboard__card--skeleton-comments .skeleton--detail:nth-of-type(2) {
-      max-width: 96%;
-    }
-
-    .ed-dashboard__card--skeleton-comments .skeleton--detail:nth-of-type(3) {
-      max-width: 92%;
-    }
-
-    .ed-dashboard__card--skeleton-comments .skeleton--detail:nth-of-type(4) {
-      max-width: 88%;
-    }
-
-    .ed-dashboard__card--skeleton-comments .skeleton--detail:nth-of-type(5) {
-      max-width: 62%;
-      margin-top: auto;
     }
 
     body[data-theme="dark"] .ed-dashboard__card--skeleton {
@@ -1048,7 +1008,7 @@ body[data-theme="dark"] select optgroup {
     .ed-dashboard__card--comments {
       gap: 12px;
       min-height: 256px;
-      max-height: 595px;
+      max-height: 520px;
       overflow: hidden;
       background-clip: padding-box;
     }
@@ -1067,6 +1027,55 @@ body[data-theme="dark"] select optgroup {
 
     .ed-dashboard__card--feedback-rotating .ed-dashboard__card-meta {
       min-height: 1.6em;
+    }
+
+    .ed-dashboard__feedback-location-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 2px;
+    }
+
+    .ed-dashboard__feedback-location-metric {
+      border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+      border-radius: 12px;
+      padding: 8px 10px;
+      background: color-mix(in srgb, var(--color-bg) 74%, var(--color-accent-soft) 26%);
+      min-height: 108px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 2px;
+    }
+
+    .ed-dashboard__feedback-location-label {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+
+    .ed-dashboard__feedback-location-value {
+      margin: 0;
+      font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+      line-height: 1.05;
+      font-weight: 800;
+      color: var(--color-text);
+    }
+
+    .ed-dashboard__feedback-location-meta {
+      margin: 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .ed-dashboard__feedback-location-metric .ed-dashboard__card-delta {
+      margin-top: 2px;
+      font-size: 0.75rem;
     }
 
     .ed-dashboard__feedback-indicators {
@@ -1136,6 +1145,35 @@ body[data-theme="dark"] select optgroup {
       font-size: clamp(0.95rem, 1.4vw, 1.05rem);
       color: var(--color-text);
       opacity: 0.82;
+    }
+
+    .ed-dashboard__comment-rotation {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    .ed-dashboard__comment-rotation-dots {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: 6px;
+    }
+
+    .ed-dashboard__comment-rotation-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--color-text) 20%, transparent);
+      opacity: 0.8;
+      transition: transform 160ms ease, opacity 160ms ease, background-color 160ms ease;
+    }
+
+    .ed-dashboard__comment-rotation-dot.is-active {
+      background: var(--color-accent);
+      opacity: 1;
+      transform: scale(1.22);
     }
 
     .ed-dashboard__card-progress {

@@ -58,7 +58,17 @@ export function createEdCommentsFeature(deps) {
 
     scroller.append(content, meta);
     wrapper.appendChild(scroller);
+
+    const rotationIndicator = document.createElement('div');
+    rotationIndicator.className = 'ed-dashboard__comment-rotation';
+    rotationIndicator.setAttribute('aria-hidden', 'true');
+
+    const dots = document.createElement('span');
+    dots.className = 'ed-dashboard__comment-rotation-dots';
+    rotationIndicator.append(dots);
+
     cardElement.appendChild(wrapper);
+    cardElement.appendChild(rotationIndicator);
 
     const rotation = dashboardState.ed.commentRotation || { timerId: null, index: 0, entries: [] };
     if (rotation.timerId) {
@@ -81,9 +91,12 @@ export function createEdCommentsFeature(deps) {
       meta.textContent = typeof fallbackMeta === 'string' && fallbackMeta.trim().length
         ? fallbackMeta.trim()
         : (cardConfig.description || '');
+      rotationIndicator.hidden = true;
       applyEdCommentAutoScroll(wrapper);
       return;
     }
+
+    rotationIndicator.hidden = false;
 
     const renderEntry = (entry) => {
       content.textContent = entry?.text || (cardConfig.empty || TEXT.ed?.empty || '—');
@@ -110,11 +123,31 @@ export function createEdCommentsFeature(deps) {
       applyEdCommentAutoScroll(wrapper);
     };
 
+    const renderRotationIndicator = (entryIndex) => {
+      const total = rotation.entries.length;
+      if (total <= 1) {
+        rotationIndicator.hidden = true;
+        return;
+      }
+      rotationIndicator.hidden = false;
+      dots.textContent = '';
+      for (let i = 0; i < total; i += 1) {
+        const dot = document.createElement('span');
+        dot.className = 'ed-dashboard__comment-rotation-dot';
+        if (i === entryIndex) {
+          dot.classList.add('is-active');
+        }
+        dots.appendChild(dot);
+      }
+    };
+
     const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 10000;
 
     const advance = () => {
-      const entry = rotation.entries[rotation.index] || rotation.entries[0];
+      const entryIndex = rotation.index;
+      const entry = rotation.entries[entryIndex] || rotation.entries[0];
       renderEntry(entry);
+      renderRotationIndicator(entryIndex);
       if (rotation.entries.length > 1) {
         rotation.index = (rotation.index + 1) % rotation.entries.length;
       }

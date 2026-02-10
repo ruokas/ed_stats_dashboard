@@ -126,6 +126,81 @@ export function buildEdDashboardModel({
       { key: 'waitingAverage', label: 'Laukimo vertinimas', countKey: 'waitingCount' },
     ];
   const isValidRating = (value) => Number.isFinite(value) && value >= 1 && value <= 5;
+  const normalizeText = (value) => (typeof value === 'string'
+    ? value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+    : '');
+  const classifyLocation = (raw) => {
+    const value = normalizeText(raw);
+    if (!value) return null;
+    if (value.includes('ambulator')) return 'left';
+    if (value.includes('sale') || value.includes('sal') || value.includes('zale')) return 'right';
+    return null;
+  };
+  const compareGroups = TEXT?.feedback?.trend?.compareGroups?.location || {};
+  const locationLabels = {
+    left: String(compareGroups?.left?.label || 'Ambulatorija'),
+    right: String(compareGroups?.right?.label || 'Salė'),
+  };
+  const getMetricValueFromRecord = (record, metricKey) => {
+    if (!record || typeof record !== 'object') {
+      return null;
+    }
+    if (metricKey === 'overallAverage') {
+      return isValidRating(record.overallRating) ? Number(record.overallRating) : null;
+    }
+    if (metricKey === 'doctorsAverage') {
+      return isValidRating(record.doctorsRating) ? Number(record.doctorsRating) : null;
+    }
+    if (metricKey === 'nursesAverage') {
+      return isValidRating(record.nursesRating) ? Number(record.nursesRating) : null;
+    }
+    if (metricKey === 'aidesAverage') {
+      return record.aidesContact === true && isValidRating(record.aidesRating) ? Number(record.aidesRating) : null;
+    }
+    if (metricKey === 'waitingAverage') {
+      return isValidRating(record.waitingRating) ? Number(record.waitingRating) : null;
+    }
+    return null;
+  };
+  const locationMetricBuckets = new Map();
+  feedbackRecords.forEach((record) => {
+    const monthKey = toMonthKey(record?.receivedAt);
+    const side = classifyLocation(record?.location);
+    if (!monthKey || !side) {
+      return;
+    }
+    feedbackMetricConfig.forEach((metric) => {
+      const metricKey = String(metric?.key || '');
+      if (!metricKey) {
+        return;
+      }
+      const value = getMetricValueFromRecord(record, metricKey);
+      if (!Number.isFinite(value)) {
+        return;
+      }
+      const key = `${monthKey}|||${metricKey}|||${side}`;
+      if (!locationMetricBuckets.has(key)) {
+        locationMetricBuckets.set(key, { sum: 0, count: 0 });
+      }
+      const bucket = locationMetricBuckets.get(key);
+      bucket.sum += Number(value);
+      bucket.count += 1;
+    });
+  });
+  const getLocationMetricStats = (monthKey, metricKey, side) => {
+    const key = `${monthKey}|||${metricKey}|||${side}`;
+    const bucket = locationMetricBuckets.get(key);
+    const count = Number.isFinite(bucket?.count) ? bucket.count : 0;
+    const sum = Number.isFinite(bucket?.sum) ? bucket.sum : 0;
+    return {
+      count,
+      average: count > 0 ? sum / count : null,
+    };
+  };
   const buildFeedbackCountsForMonth = (monthKey) => {
     const counts = {
       overallCount: 0,
@@ -206,6 +281,11 @@ export function buildEdDashboardModel({
   const feedbackMonthLabel = feedbackMonth?.month
     ? (formatMonthLabel(feedbackMonth.month) || feedbackMonth.month)
     : '';
+  const monthKeysFromRecords = Array.from(new Set(feedbackRecords.map((record) => toMonthKey(record?.receivedAt)).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
+  const feedbackMonthRecordIndex = feedbackMonthKey
+    ? monthKeysFromRecords.findIndex((month) => month === feedbackMonthKey)
+    : -1;
   const feedbackIndex = feedbackMonth?.month
     ? feedbackMonthly.findIndex((entry) => entry?.month === feedbackMonth.month)
     : -1;
@@ -233,6 +313,39 @@ export function buildEdDashboardModel({
         previousLabel: previousMonthLabel,
       })
       : null;
+    const currentLeft = getLocationMetricStats(feedbackMonthKey, metric.key, 'left');
+    const currentRight = getLocationMetricStats(feedbackMonthKey, metric.key, 'right');
+    const findPreviousLocationValue = (side) => {
+      if (feedbackMonthRecordIndex <= 0) {
+        return null;
+      }
+      for (let i = feedbackMonthRecordIndex - 1; i >= 0; i -= 1) {
+        const monthKey = monthKeysFromRecords[i];
+        const previousStats = getLocationMetricStats(monthKey, metric.key, side);
+        if (Number.isFinite(previousStats.average)) {
+          return {
+            month: monthKey,
+            label: formatMonthLabel(monthKey) || monthKey,
+            average: Number(previousStats.average),
+          };
+        }
+      }
+      return null;
+    };
+    const previousLeft = findPreviousLocationValue('left');
+    const previousRight = findPreviousLocationValue('right');
+    const leftTrend = previousLeft && Number.isFinite(currentLeft.average)
+      ? buildFeedbackTrendInfo(Number(currentLeft.average), Number(previousLeft.average), {
+        currentLabel: feedbackMonthLabel,
+        previousLabel: previousLeft.label,
+      })
+      : null;
+    const rightTrend = previousRight && Number.isFinite(currentRight.average)
+      ? buildFeedbackTrendInfo(Number(currentRight.average), Number(previousRight.average), {
+        currentLabel: feedbackMonthLabel,
+        previousLabel: previousRight.label,
+      })
+      : null;
     const metaParts = [];
     if (feedbackMonthLabel) {
       metaParts.push(feedbackMonthLabel);
@@ -248,6 +361,22 @@ export function buildEdDashboardModel({
       count: countValue,
       meta: metaParts.join(' • '),
       trend,
+      byLocation: {
+        left: {
+          key: 'left',
+          label: locationLabels.left,
+          value: Number.isFinite(currentLeft.average) ? Number(currentLeft.average) : null,
+          count: Number.isFinite(currentLeft.count) ? currentLeft.count : 0,
+          trend: leftTrend,
+        },
+        right: {
+          key: 'right',
+          label: locationLabels.right,
+          value: Number.isFinite(currentRight.average) ? Number(currentRight.average) : null,
+          count: Number.isFinite(currentRight.count) ? currentRight.count : 0,
+          trend: rightTrend,
+        },
+      },
       month: feedbackMonthKey,
     };
   });
@@ -268,6 +397,10 @@ export function buildEdDashboardModel({
   summary.feedbackCurrentMonthMetricValue = Number.isFinite(activeMetric?.value) ? activeMetric.value : null;
   summary.feedbackCurrentMonthMetricMeta = activeMetric?.meta || '';
   summary.feedbackCurrentMonthMetricTrend = activeMetric?.trend || null;
+  summary.feedbackCurrentMonthMetricByLocation = activeMetric?.byLocation || {
+    left: { key: 'left', label: locationLabels.left, value: null, count: 0, trend: null },
+    right: { key: 'right', label: locationLabels.right, value: null, count: 0, trend: null },
+  };
 
   const overallMetric = feedbackMetricCatalog.find((metric) => metric.key === 'overallAverage') || null;
   if (Number.isFinite(overallMetric?.value)) {

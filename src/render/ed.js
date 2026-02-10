@@ -1,5 +1,5 @@
 import { setDatasetValue } from '../utils/dom.js';
-import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js?v=2026-02-10-feedback-rotating-card-1';
+import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js?v=2026-02-10-feedback-location-split-1';
 
 function formatCardDisplayValue(config, summary, formatEdCardValue) {
   const primaryRaw = summary?.[config.key];
@@ -48,6 +48,8 @@ function buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant) 
     displayVariant,
     activeFeedbackMetricKey: summary?.feedbackCurrentMonthMetricKey ?? '',
     activeFeedbackMetricTitle: summary?.feedbackCurrentMonthMetricTitle ?? '',
+    activeFeedbackLocationLeft: summary?.feedbackCurrentMonthMetricByLocation?.left?.value ?? null,
+    activeFeedbackLocationRight: summary?.feedbackCurrentMonthMetricByLocation?.right?.value ?? null,
     cardSnapshot,
     dispositionsSnapshot,
   });
@@ -120,9 +122,27 @@ function upsertCard(card, config, summary, {
   if (nextType === 'comments') {
     const rawComments = Array.isArray(summary?.[config.key]) ? summary[config.key] : [];
     const metaValue = config.metaKey ? summary?.[config.metaKey] : '';
+    const commentsRenderKey = JSON.stringify({
+      comments: rawComments.map((item) => ({
+        text: String(item?.text || '').trim(),
+        respondent: String(item?.respondent || '').trim(),
+        location: String(item?.location || '').trim(),
+        receivedAt: item?.receivedAt instanceof Date && !Number.isNaN(item.receivedAt.getTime())
+          ? item.receivedAt.toISOString()
+          : String(item?.receivedAt || ''),
+      })),
+      meta: typeof metaValue === 'string' ? metaValue.trim() : String(metaValue ?? ''),
+      rotateMs: Number(config?.rotateMs) || 0,
+      title: String(config?.title || ''),
+    });
+    const previousCommentsRenderKey = String(card.dataset?.commentsRenderKey || '');
+    if (previousCommentsRenderKey === commentsRenderKey) {
+      return;
+    }
     const staleNodes = Array.from(card.children).filter((node) => node !== title);
     staleNodes.forEach((node) => node.remove());
     renderEdCommentsCard(card, config, rawComments, metaValue);
+    setDatasetValue(card, 'commentsRenderKey', commentsRenderKey);
     return;
   }
 
@@ -141,8 +161,9 @@ function upsertCard(card, config, summary, {
       value.className = 'ed-dashboard__card-value';
       card.appendChild(value);
     }
-    const { text, primaryRaw, secondaryRaw } = formatCardDisplayValue(config, summary, formatEdCardValue);
-    value.textContent = text;
+    value.textContent = '';
+    value.hidden = true;
+    value.setAttribute('aria-hidden', 'true');
 
     let visualsRoot = card.querySelector('.ed-dashboard__card-visuals');
     if (!visualsRoot) {
@@ -150,8 +171,50 @@ function upsertCard(card, config, summary, {
       visualsRoot.className = 'ed-dashboard__card-visuals';
       card.appendChild(visualsRoot);
     }
-    const visuals = buildEdCardVisuals(config, primaryRaw, secondaryRaw, summary);
-    visualsRoot.replaceChildren(...visuals);
+    const byLocation = summary?.feedbackCurrentMonthMetricByLocation || {};
+    const left = byLocation.left || {};
+    const right = byLocation.right || {};
+    const buildLocationMetricNode = (entry) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ed-dashboard__feedback-location-metric';
+      const label = document.createElement('p');
+      label.className = 'ed-dashboard__feedback-location-label';
+      label.textContent = String(entry?.label || '');
+      const metricValue = document.createElement('p');
+      metricValue.className = 'ed-dashboard__feedback-location-value';
+      const formatted = formatEdCardValue(entry?.value, config.format);
+      metricValue.textContent = formatted != null ? formatted : (config.empty || '—');
+      const meta = document.createElement('p');
+      meta.className = 'ed-dashboard__feedback-location-meta';
+      const count = Number.isFinite(entry?.count) ? Math.max(0, Math.round(entry.count)) : null;
+      meta.textContent = Number.isFinite(count) ? `n=${count}` : '';
+      wrapper.append(label, metricValue, meta);
+      if (entry?.trend) {
+        const trendInfo = entry.trend;
+        const trend = document.createElement('p');
+        trend.className = 'ed-dashboard__card-delta';
+        setDatasetValue(trend, 'trend', trendInfo.trend || 'neutral');
+        if (trendInfo.ariaLabel) {
+          trend.setAttribute('aria-label', trendInfo.ariaLabel);
+        }
+        const arrow = document.createElement('span');
+        arrow.className = 'ed-dashboard__card-delta-arrow';
+        arrow.textContent = trendInfo.arrow || '→';
+        const text = document.createElement('span');
+        text.className = 'ed-dashboard__card-delta-text';
+        text.textContent = trendInfo.text || '';
+        trend.append(arrow, text);
+        wrapper.appendChild(trend);
+      }
+      return wrapper;
+    };
+    const locationGrid = document.createElement('div');
+    locationGrid.className = 'ed-dashboard__feedback-location-grid';
+    locationGrid.append(
+      buildLocationMetricNode(left),
+      buildLocationMetricNode(right),
+    );
+    visualsRoot.replaceChildren(locationGrid);
 
     let meta = card.querySelector('.ed-dashboard__card-meta');
     if (!meta) {
@@ -381,8 +444,12 @@ export function createEdRenderer(env) {
     const renderKey = buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant);
     const mustPatchCards = dashboardState.edCardsRenderKey !== renderKey;
 
-    if (mustPatchCards) {
-      resetEdCommentRotation();
+  if (mustPatchCards) {
+      const commentsCurrentlyRendered = Boolean(selectors.edCards.querySelector('.ed-dashboard__card[data-card-key="feedbackComments"]'));
+      const commentsWillBeRendered = cardConfigs.some((config) => String(config?.key || '') === 'feedbackComments');
+      if (commentsCurrentlyRendered && !commentsWillBeRendered) {
+        resetEdCommentRotation();
+      }
       const { sectionDefinitions, groupedSections } = buildEdSectionsModel({ TEXT, cardConfigs });
       const activeSectionKeys = new Set((Array.isArray(groupedSections) ? groupedSections : []).map((section, index) => section.key || `section-${index}`));
       Array.from(selectors.edCards.querySelectorAll('.ed-dashboard__section')).forEach((sectionEl) => {
