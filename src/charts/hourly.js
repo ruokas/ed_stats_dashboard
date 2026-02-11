@@ -688,7 +688,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     existingLastShiftChart.data.labels = chartConfig.data.labels;
     existingLastShiftChart.data.datasets = chartConfig.data.datasets;
     existingLastShiftChart.options = chartConfig.options;
-    existingLastShiftChart.update('none');
+    existingLastShiftChart.update();
   } else {
     if (existingLastShiftChart && typeof existingLastShiftChart.destroy === 'function') {
       existingLastShiftChart.destroy();
