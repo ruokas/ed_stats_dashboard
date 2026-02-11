@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app.js",
+    "theme-init.js",
+    "service-worker.js",
+    "data-worker.js",
+    "scripts/perf-harness.mjs",
+    "src/main.js",
+    "src/app/runtime.js",
+    "src/app/runtime-full.js",
+    "src/app/full-page-app.js",
+    "src/events/tv.js",
+    "src/app/runtime/pages/*.js",
+    "src/app/runtime/runtimes/*.js",
+    "src/app/runtime/runtimes/summaries/*.js"
+  ],
+  "project": ["src/**/*.js", "tests/**/*.js", "*.js", "scripts/**/*.mjs"],
+  "ignore": ["coverage/**", "docs/**", ".husky/**"]
+}

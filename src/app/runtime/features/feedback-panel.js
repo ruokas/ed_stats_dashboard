@@ -84,14 +84,15 @@ export function createFeedbackPanelFeature(deps) {
       pushValue(locationMap, entry?.location);
     });
 
-    const toOptions = (map) => Array.from(map.values())
-      .filter((item) => Number.isFinite(item.count) && item.count > 0 && typeof item.value === 'string')
-      .map((item) => ({
-        value: item.value,
-        label: item.label,
-        count: item.count,
-      }))
-      .sort((a, b) => textCollator.compare(a.label, b.label));
+    const toOptions = (map) =>
+      Array.from(map.values())
+        .filter((item) => Number.isFinite(item.count) && item.count > 0 && typeof item.value === 'string')
+        .map((item) => ({
+          value: item.value,
+          label: item.label,
+          count: item.count,
+        }))
+        .sort((a, b) => textCollator.compare(a.label, b.label));
 
     return {
       respondent: toOptions(respondentMap),
@@ -116,9 +117,10 @@ export function createFeedbackPanelFeature(deps) {
       return;
     }
     const filtersText = TEXT.feedback?.filters || {};
-    const allLabel = type === 'respondent'
-      ? (filtersText.respondent?.all || 'Visi dalyviai')
-      : (filtersText.location?.all || 'Visos vietos');
+    const allLabel =
+      type === 'respondent'
+        ? filtersText.respondent?.all || 'Visi dalyviai'
+        : filtersText.location?.all || 'Visos vietos';
     const items = [{ value: FEEDBACK_FILTER_ALL, label: allLabel }];
     (Array.isArray(config) ? config : []).forEach((option) => {
       if (!option || typeof option.value !== 'string') {
@@ -130,9 +132,10 @@ export function createFeedbackPanelFeature(deps) {
       });
     });
     const currentFilters = dashboardState.feedback.filters || getDefaultFeedbackFilters();
-    const activeValue = type === 'respondent'
-      ? (currentFilters.respondent || FEEDBACK_FILTER_ALL)
-      : (currentFilters.location || FEEDBACK_FILTER_ALL);
+    const activeValue =
+      type === 'respondent'
+        ? currentFilters.respondent || FEEDBACK_FILTER_ALL
+        : currentFilters.location || FEEDBACK_FILTER_ALL;
     const buttons = items.map((item) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -224,9 +227,10 @@ export function createFeedbackPanelFeature(deps) {
         if (type !== 'respondent' && type !== 'location') {
           return;
         }
-        const activeValue = type === 'respondent'
-          ? (filters.respondent || FEEDBACK_FILTER_ALL)
-          : (filters.location || FEEDBACK_FILTER_ALL);
+        const activeValue =
+          type === 'respondent'
+            ? filters.respondent || FEEDBACK_FILTER_ALL
+            : filters.location || FEEDBACK_FILTER_ALL;
         button.setAttribute('aria-pressed', value === activeValue ? 'true' : 'false');
       });
     }
@@ -273,12 +277,19 @@ export function createFeedbackPanelFeature(deps) {
       parts.push(locationLabel);
     }
     const baseText = parts.length
-      ? (filtersText.summaryLabel ? `${filtersText.summaryLabel} ${parts.join(' • ')}` : parts.join(' • '))
+      ? filtersText.summaryLabel
+        ? `${filtersText.summaryLabel} ${parts.join(' • ')}`
+        : parts.join(' • ')
       : filtersText.summaryDefault || '';
     const totalResponses = Number.isFinite(summary?.totalResponses) ? summary.totalResponses : null;
     const countLabel = filtersText.countLabel || TEXT.feedback?.table?.headers?.responses || 'Atsakymai';
-    const countText = Number.isFinite(totalResponses) ? `${countLabel}: ${numberFormatter.format(totalResponses)}` : '';
-    const finalText = baseText && countText ? `${baseText} • ${countText}` : (baseText || countText || filtersText.summaryDefault || '');
+    const countText = Number.isFinite(totalResponses)
+      ? `${countLabel}: ${numberFormatter.format(totalResponses)}`
+      : '';
+    const finalText =
+      baseText && countText
+        ? `${baseText} • ${countText}`
+        : baseText || countText || filtersText.summaryDefault || '';
     summaryElement.textContent = finalText;
     const isDefault = filters.respondent === FEEDBACK_FILTER_ALL && filters.location === FEEDBACK_FILTER_ALL;
     setDatasetValue(summaryElement, 'default', isDefault ? 'true' : 'false');

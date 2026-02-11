@@ -90,8 +90,14 @@ export function createFunnelCanvasFeature(deps) {
     const topPoints = xPositions.map((x, index) => ({ x, y: centerY - thicknesses[index] / 2 }));
     const bottomPoints = xPositions.map((x, index) => ({ x, y: centerY + thicknesses[index] / 2 })).reverse();
 
-    const accentGradientColor = typeof accentColor === 'string' && accentColor.trim() ? accentColor : '#8b5cf6';
-    const gradient = ctx.createLinearGradient(paddingX, topPoints[0]?.y ?? centerY, width - paddingX, bottomPoints[0]?.y ?? centerY);
+    const accentGradientColor =
+      typeof accentColor === 'string' && accentColor.trim() ? accentColor : '#8b5cf6';
+    const gradient = ctx.createLinearGradient(
+      paddingX,
+      topPoints[0]?.y ?? centerY,
+      width - paddingX,
+      bottomPoints[0]?.y ?? centerY
+    );
     gradient.addColorStop(0, '#ffb56b');
     gradient.addColorStop(0.45, '#ff6f91');
     gradient.addColorStop(0.78, '#f472b6');
@@ -128,8 +134,12 @@ export function createFunnelCanvasFeature(deps) {
     ctx.strokeStyle = textPalette.outline;
     ctx.stroke();
 
-    const funnelTop = topPoints.length ? Math.min(...topPoints.map((point) => point.y)) : paddingTop + labelAreaHeight;
-    const funnelBottom = bottomPoints.length ? Math.max(...bottomPoints.map((point) => point.y)) : centerY + maxThickness / 2;
+    const funnelTop = topPoints.length
+      ? Math.min(...topPoints.map((point) => point.y))
+      : paddingTop + labelAreaHeight;
+    const funnelBottom = bottomPoints.length
+      ? Math.max(...bottomPoints.map((point) => point.y))
+      : centerY + maxThickness / 2;
 
     const valueFontSize = Math.max(22, Math.min(34, width * 0.05));
     const labelFontSize = Math.max(12, Math.min(16, valueFontSize * 0.45));
@@ -185,13 +195,14 @@ export function createFunnelCanvasFeature(deps) {
       return;
     }
 
-    const stepsConfig = Array.isArray(TEXT.charts.funnelSteps) && TEXT.charts.funnelSteps.length
-      ? TEXT.charts.funnelSteps
-      : [
-          { key: 'arrived', label: 'Atvykę' },
-          { key: 'discharged', label: 'Išleisti' },
-          { key: 'hospitalized', label: 'Hospitalizuoti' },
-        ];
+    const stepsConfig =
+      Array.isArray(TEXT.charts.funnelSteps) && TEXT.charts.funnelSteps.length
+        ? TEXT.charts.funnelSteps
+        : [
+            { key: 'arrived', label: 'Atvykę' },
+            { key: 'discharged', label: 'Išleisti' },
+            { key: 'hospitalized', label: 'Hospitalizuoti' },
+          ];
 
     const steps = stepsConfig.map((step) => ({
       label: step.label,
@@ -203,7 +214,11 @@ export function createFunnelCanvasFeature(deps) {
     if (!canvas.__funnelObserver && typeof ResizeObserver === 'function') {
       const observer = new ResizeObserver(() => {
         if (canvas.__funnelState) {
-          const { steps: currentSteps, accentColor: currentAccent, textColor: currentText } = canvas.__funnelState;
+          const {
+            steps: currentSteps,
+            accentColor: currentAccent,
+            textColor: currentText,
+          } = canvas.__funnelState;
           drawFunnelShape(canvas, currentSteps, currentAccent, currentText);
         }
       });

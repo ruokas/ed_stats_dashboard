@@ -1,6 +1,6 @@
+import { oneDecimalFormatter, percentFormatter } from '../utils/format.js';
 import { parseCsv } from './csv.js';
 import { parseDate } from './date.js';
-import { numberFormatter, oneDecimalFormatter, percentFormatter } from '../utils/format.js';
 import {
   computePercentile,
   formatHourLabel,
@@ -14,14 +14,7 @@ import {
 } from './ed-utils.js';
 
 export function createEdHandlers(context) {
-  const {
-    settings,
-    DEFAULT_SETTINGS,
-    TEXT,
-    downloadCsv,
-    describeError,
-    resolveColumnIndex,
-  } = context;
+  const { settings, DEFAULT_SETTINGS, TEXT, downloadCsv, describeError, resolveColumnIndex } = context;
   const ED_WORKER_URL = new URL('data-worker.js?v=2026-02-08-ed-worker-2', window.location.href).toString();
   const edDataCache = new Map();
   const edSignatureCache = new Map();
@@ -39,15 +32,19 @@ export function createEdHandlers(context) {
       etag: cached.etag || '',
       lastModified: cached.lastModified || '',
       signature: cached.signature || '',
-      payload: cached.payload && typeof cached.payload === 'object'
-        ? {
-          records: Array.isArray(cached.payload.records) ? cached.payload.records : [],
-          summary: cached.payload.summary || createEmptyEdSummary(),
-          dispositions: Array.isArray(cached.payload.dispositions) ? cached.payload.dispositions : [],
-          daily: Array.isArray(cached.payload.daily) ? cached.payload.daily : [],
-          meta: cached.payload.meta && typeof cached.payload.meta === 'object' ? cached.payload.meta : { type: 'legacy' },
-        }
-        : null,
+      payload:
+        cached.payload && typeof cached.payload === 'object'
+          ? {
+              records: Array.isArray(cached.payload.records) ? cached.payload.records : [],
+              summary: cached.payload.summary || createEmptyEdSummary(),
+              dispositions: Array.isArray(cached.payload.dispositions) ? cached.payload.dispositions : [],
+              daily: Array.isArray(cached.payload.daily) ? cached.payload.daily : [],
+              meta:
+                cached.payload.meta && typeof cached.payload.meta === 'object'
+                  ? cached.payload.meta
+                  : { type: 'legacy' },
+            }
+          : null,
     };
   }
 
@@ -97,9 +94,8 @@ export function createEdHandlers(context) {
       summary: payload.summary || createEmptyEdSummary(),
       dispositions: Array.isArray(payload.dispositions) ? payload.dispositions : [],
       daily: Array.isArray(payload.daily) ? payload.daily : [],
-      meta: payload.meta && typeof payload.meta === 'object'
-        ? payload.meta
-        : { type: 'legacy', signature: key },
+      meta:
+        payload.meta && typeof payload.meta === 'object' ? payload.meta : { type: 'legacy', signature: key },
     });
   }
 
@@ -110,7 +106,8 @@ export function createEdHandlers(context) {
     if (signal?.aborted) {
       return Promise.reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
     }
-    const jobId = `ed-job-${Date.now()}-${edWorkerCounter += 1}`;
+    edWorkerCounter += 1;
+    const jobId = `ed-job-${Date.now()}-${edWorkerCounter}`;
     const worker = new Worker(ED_WORKER_URL);
     return new Promise((resolve, reject) => {
       let abortHandler = null;
@@ -155,7 +152,6 @@ export function createEdHandlers(context) {
       }
     });
   }
-
 
   function createEmptyEdSummary(mode = 'legacy') {
     return {
@@ -219,7 +215,7 @@ export function createEdHandlers(context) {
       'hospitalizedMonthShare',
       'generatedAt',
     ];
-    return requiredKeys.every((key) => Object.prototype.hasOwnProperty.call(summary, key));
+    return requiredKeys.every((key) => Object.hasOwn(summary, key));
   }
 
   function transformEdCsv(text) {
@@ -239,11 +235,31 @@ export function createEdHandlers(context) {
     const legacyCandidates = {
       date: ['date', 'data', 'service date', 'diena', 'atvykimo data'],
       arrival: ['arrival', 'arrival time', 'atvykimo laikas', 'atvykimo data', 'registered'],
-      departure: ['departure', 'departure time', 'discharge', 'išrašymo data', 'išvykimo laikas', 'completion'],
+      departure: [
+        'departure',
+        'departure time',
+        'discharge',
+        'išrašymo data',
+        'išvykimo laikas',
+        'completion',
+      ],
       disposition: ['disposition', 'outcome', 'sprendimas', 'status', 'būsena', 'dispo'],
       los: ['length of stay (min)', 'los (min)', 'stay (min)', 'trukmė (min)', 'los minutes', 'los_min'],
-      door: ['door to provider (min)', 'door to doctor (min)', 'door to doc (min)', 'door to physician (min)', 'laukimo laikas (min)', 'durys iki gydytojo (min)'],
-      decision: ['decision to depart (min)', 'boarding (min)', 'decision to leave (min)', 'disposition to depart (min)', 'sprendimo laukimas (min)'],
+      door: [
+        'door to provider (min)',
+        'door to doctor (min)',
+        'door to doc (min)',
+        'door to physician (min)',
+        'laukimo laikas (min)',
+        'durys iki gydytojo (min)',
+      ],
+      decision: [
+        'decision to depart (min)',
+        'boarding (min)',
+        'decision to leave (min)',
+        'disposition to depart (min)',
+        'sprendimo laukimas (min)',
+      ],
       lab: [
         'avg lab turnaround (min)',
         'lab turnaround (min)',
@@ -269,8 +285,18 @@ export function createEdHandlers(context) {
       timestamp: ['timestamp', 'datetime', 'laikas', 'įrašyta', 'atnaujinta', 'data', 'created', 'updated'],
       currentPatients: ['šiuo metu pacientų', 'current patients', 'patients now', 'patients in ed'],
       occupiedBeds: ['užimta lovų', 'occupied beds', 'beds occupied'],
-      nurseRatio: ['slaugytojų - pacientų santykis', 'nurse - patient ratio', 'nurse to patient ratio', 'nurse ratio'],
-      doctorRatio: ['gydytojų - pacientų santykis', 'doctor - patient ratio', 'doctor to patient ratio', 'physician ratio'],
+      nurseRatio: [
+        'slaugytojų - pacientų santykis',
+        'nurse - patient ratio',
+        'nurse to patient ratio',
+        'nurse ratio',
+      ],
+      doctorRatio: [
+        'gydytojų - pacientų santykis',
+        'doctor - patient ratio',
+        'doctor to patient ratio',
+        'physician ratio',
+      ],
       lab: [
         'lab',
         'avg lab turnaround (min)',
@@ -297,17 +323,18 @@ export function createEdHandlers(context) {
       category4: resolveColumnIndex(headerNormalized, snapshotCandidates.category4),
       category5: resolveColumnIndex(headerNormalized, snapshotCandidates.category5),
     };
-    const hasSnapshot = snapshotIndices.currentPatients >= 0
-      || snapshotIndices.occupiedBeds >= 0
-      || snapshotIndices.nurseRatio >= 0
-      || snapshotIndices.doctorRatio >= 0
-      || snapshotIndices.category1 >= 0
-      || snapshotIndices.category2 >= 0
-      || snapshotIndices.category3 >= 0
-      || snapshotIndices.category4 >= 0
-      || snapshotIndices.category5 >= 0;
+    const hasSnapshot =
+      snapshotIndices.currentPatients >= 0 ||
+      snapshotIndices.occupiedBeds >= 0 ||
+      snapshotIndices.nurseRatio >= 0 ||
+      snapshotIndices.doctorRatio >= 0 ||
+      snapshotIndices.category1 >= 0 ||
+      snapshotIndices.category2 >= 0 ||
+      snapshotIndices.category3 >= 0 ||
+      snapshotIndices.category4 >= 0 ||
+      snapshotIndices.category5 >= 0;
     const hasLegacy = Object.values(legacyIndices).some((index) => index >= 0);
-    const datasetType = hasSnapshot && hasLegacy ? 'hybrid' : (hasSnapshot ? 'snapshot' : 'legacy');
+    const datasetType = hasSnapshot && hasLegacy ? 'hybrid' : hasSnapshot ? 'snapshot' : 'legacy';
 
     const records = [];
     let syntheticCounter = 0;
@@ -330,11 +357,15 @@ export function createEdHandlers(context) {
       const departureDate = departureValue ? parseDate(departureValue) : null;
       let recordDate = dateValue ? parseDate(dateValue) : null;
       if (!(recordDate instanceof Date) || Number.isNaN(recordDate.getTime())) {
-        recordDate = arrivalDate || departureDate || (timestamp instanceof Date && !Number.isNaN(timestamp.getTime()) ? timestamp : null);
+        recordDate =
+          arrivalDate ||
+          departureDate ||
+          (timestamp instanceof Date && !Number.isNaN(timestamp.getTime()) ? timestamp : null);
       }
-      let dateKey = recordDate instanceof Date && !Number.isNaN(recordDate.getTime())
-        ? toDateKeyFromDate(recordDate)
-        : '';
+      let dateKey =
+        recordDate instanceof Date && !Number.isNaN(recordDate.getTime())
+          ? toDateKeyFromDate(recordDate)
+          : '';
 
       const dispositionValue = legacyIndices.disposition >= 0 ? normalizedRow[legacyIndices.disposition] : '';
       let losMinutes = legacyIndices.los >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.los]) : null;
@@ -344,26 +375,32 @@ export function createEdHandlers(context) {
           losMinutes = diffMinutes;
         }
       }
-      const doorMinutes = legacyIndices.door >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.door]) : null;
-      const decisionMinutes = legacyIndices.decision >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.decision]) : null;
-      const labMinutes = legacyIndices.lab >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.lab]) : null;
+      const doorMinutes =
+        legacyIndices.door >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.door]) : null;
+      const decisionMinutes =
+        legacyIndices.decision >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.decision]) : null;
+      const labMinutes =
+        legacyIndices.lab >= 0 ? parseDurationMinutes(normalizedRow[legacyIndices.lab]) : null;
       const dispositionInfo = normalizeDispositionValue(dispositionValue);
 
-      const currentPatients = snapshotIndices.currentPatients >= 0
-        ? parseNumericCell(normalizedRow[snapshotIndices.currentPatients])
-        : null;
-      const occupiedBeds = snapshotIndices.occupiedBeds >= 0
-        ? parseNumericCell(normalizedRow[snapshotIndices.occupiedBeds])
-        : null;
-      const nurseRatioInfo = snapshotIndices.nurseRatio >= 0
-        ? normalizeRatioValue(normalizedRow[snapshotIndices.nurseRatio])
-        : { ratio: null, text: '' };
-      const doctorRatioInfo = snapshotIndices.doctorRatio >= 0
-        ? normalizeRatioValue(normalizedRow[snapshotIndices.doctorRatio])
-        : { ratio: null, text: '' };
-      const snapshotLabMinutes = snapshotIndices.lab >= 0
-        ? parseNumericCell(normalizedRow[snapshotIndices.lab])
-        : null;
+      const currentPatients =
+        snapshotIndices.currentPatients >= 0
+          ? parseNumericCell(normalizedRow[snapshotIndices.currentPatients])
+          : null;
+      const occupiedBeds =
+        snapshotIndices.occupiedBeds >= 0
+          ? parseNumericCell(normalizedRow[snapshotIndices.occupiedBeds])
+          : null;
+      const nurseRatioInfo =
+        snapshotIndices.nurseRatio >= 0
+          ? normalizeRatioValue(normalizedRow[snapshotIndices.nurseRatio])
+          : { ratio: null, text: '' };
+      const doctorRatioInfo =
+        snapshotIndices.doctorRatio >= 0
+          ? normalizeRatioValue(normalizedRow[snapshotIndices.doctorRatio])
+          : { ratio: null, text: '' };
+      const snapshotLabMinutes =
+        snapshotIndices.lab >= 0 ? parseNumericCell(normalizedRow[snapshotIndices.lab]) : null;
       const categories = {};
       let hasCategoryData = false;
       ['1', '2', '3', '4', '5'].forEach((key) => {
@@ -377,11 +414,12 @@ export function createEdHandlers(context) {
           categories[key] = null;
         }
       });
-      const hasSnapshotData = Number.isFinite(currentPatients)
-        || Number.isFinite(occupiedBeds)
-        || Number.isFinite(nurseRatioInfo.ratio)
-        || Number.isFinite(doctorRatioInfo.ratio)
-        || hasCategoryData;
+      const hasSnapshotData =
+        Number.isFinite(currentPatients) ||
+        Number.isFinite(occupiedBeds) ||
+        Number.isFinite(nurseRatioInfo.ratio) ||
+        Number.isFinite(doctorRatioInfo.ratio) ||
+        hasCategoryData;
 
       if (!hasSnapshotData && datasetType === 'snapshot') {
         continue;
@@ -403,24 +441,31 @@ export function createEdHandlers(context) {
         dispositionCategory: dispositionInfo.category,
         losMinutes: Number.isFinite(losMinutes) && losMinutes >= 0 ? losMinutes : null,
         doorToProviderMinutes: Number.isFinite(doorMinutes) && doorMinutes >= 0 ? doorMinutes : null,
-        decisionToLeaveMinutes: Number.isFinite(decisionMinutes) && decisionMinutes >= 0 ? decisionMinutes : null,
+        decisionToLeaveMinutes:
+          Number.isFinite(decisionMinutes) && decisionMinutes >= 0 ? decisionMinutes : null,
         labMinutes: Number.isFinite(labMinutes) && labMinutes >= 0 ? labMinutes : null,
-        snapshotLabMinutes: Number.isFinite(snapshotLabMinutes) && snapshotLabMinutes >= 0 ? snapshotLabMinutes : null,
+        snapshotLabMinutes:
+          Number.isFinite(snapshotLabMinutes) && snapshotLabMinutes >= 0 ? snapshotLabMinutes : null,
         currentPatients: Number.isFinite(currentPatients) && currentPatients >= 0 ? currentPatients : null,
         occupiedBeds: Number.isFinite(occupiedBeds) && occupiedBeds >= 0 ? occupiedBeds : null,
-        nurseRatio: Number.isFinite(nurseRatioInfo.ratio) && nurseRatioInfo.ratio > 0 ? nurseRatioInfo.ratio : null,
+        nurseRatio:
+          Number.isFinite(nurseRatioInfo.ratio) && nurseRatioInfo.ratio > 0 ? nurseRatioInfo.ratio : null,
         nurseRatioText: nurseRatioInfo.text,
-        doctorRatio: Number.isFinite(doctorRatioInfo.ratio) && doctorRatioInfo.ratio > 0 ? doctorRatioInfo.ratio : null,
+        doctorRatio:
+          Number.isFinite(doctorRatioInfo.ratio) && doctorRatioInfo.ratio > 0 ? doctorRatioInfo.ratio : null,
         doctorRatioText: doctorRatioInfo.text,
         categories,
-        arrivalHour: arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
-        departureHour: departureDate instanceof Date && !Number.isNaN(departureDate.getTime()) ? departureDate.getHours() : null,
+        arrivalHour:
+          arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
+        departureHour:
+          departureDate instanceof Date && !Number.isNaN(departureDate.getTime())
+            ? departureDate.getHours()
+            : null,
       });
     }
 
     return { records, meta: { type: datasetType } };
   }
-
 
   function summarizeLegacyRecords(records) {
     const summary = createEmptyEdSummary('legacy');
@@ -437,7 +482,10 @@ export function createEdHandlers(context) {
     let fastCount = 0;
     let slowCount = 0;
     const validRecords = Array.isArray(records)
-      ? records.filter((record) => record && typeof record.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.dateKey))
+      ? records.filter(
+          (record) =>
+            record && typeof record.dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(record.dateKey)
+        )
       : [];
     if (!validRecords.length) {
       return { summary, dispositions: [], daily: [] };
@@ -474,13 +522,14 @@ export function createEdHandlers(context) {
       if (Number.isInteger(departureHour) && departureHour >= 0 && departureHour <= 23) {
         dischargeHourCounts[departureHour] += 1;
       }
-      const key = disposition && disposition.trim().length ? disposition : 'Nežinoma';
+      const key = disposition?.trim().length ? disposition : 'Nežinoma';
       if (!dispositions.has(key)) {
         dispositions.set(key, { label: key, count: 0, category: dispositionCategory || 'other' });
       }
       const dispositionEntry = dispositions.get(key);
       dispositionEntry.count += 1;
-      const categoryKey = dispositionCategory && categoryTotals[dispositionCategory] != null ? dispositionCategory : 'other';
+      const categoryKey =
+        dispositionCategory && categoryTotals[dispositionCategory] != null ? dispositionCategory : 'other';
       categoryTotals[categoryKey] += 1;
 
       const bucket = dailyBuckets.get(dateKey) || {
@@ -537,9 +586,8 @@ export function createEdHandlers(context) {
       }
       dailyBuckets.set(dateKey, bucket);
 
-      const monthKey = typeof dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)
-        ? dateKey.slice(0, 7)
-        : '';
+      const monthKey =
+        typeof dateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateKey) ? dateKey.slice(0, 7) : '';
       if (monthKey) {
         const monthBucket = monthBuckets.get(monthKey) || {
           count: 0,
@@ -615,15 +663,12 @@ export function createEdHandlers(context) {
       const latestMonthKey = sortedMonthKeys[sortedMonthKeys.length - 1];
       const currentMonth = monthBuckets.get(latestMonthKey);
       if (currentMonth) {
-        summary.avgLosMonthMinutes = currentMonth.losCount > 0
-          ? currentMonth.losSum / currentMonth.losCount
-          : null;
-        summary.hospitalizedMonthShare = currentMonth.count > 0
-          ? currentMonth.hospitalized / currentMonth.count
-          : null;
-        summary.avgLabMonthMinutes = currentMonth.labCount > 0
-          ? currentMonth.labSum / currentMonth.labCount
-          : null;
+        summary.avgLosMonthMinutes =
+          currentMonth.losCount > 0 ? currentMonth.losSum / currentMonth.losCount : null;
+        summary.hospitalizedMonthShare =
+          currentMonth.count > 0 ? currentMonth.hospitalized / currentMonth.count : null;
+        summary.avgLabMonthMinutes =
+          currentMonth.labCount > 0 ? currentMonth.labSum / currentMonth.labCount : null;
         summary.currentMonthKey = latestMonthKey;
         const monthDayInfo = monthlyDayTotals.get(latestMonthKey);
         if (monthDayInfo && monthDayInfo.dayCount > 0) {
@@ -653,18 +698,16 @@ export function createEdHandlers(context) {
               yearTotals.labCount += bucket.labCount;
             }
           });
-          summary.avgLosYearMinutes = yearTotals.losCount > 0
-            ? yearTotals.losSum / yearTotals.losCount
-            : null;
-          summary.hospitalizedYearShare = yearTotals.count > 0
-            ? yearTotals.hospitalized / yearTotals.count
-            : null;
+          summary.avgLosYearMinutes =
+            yearTotals.losCount > 0 ? yearTotals.losSum / yearTotals.losCount : null;
+          summary.hospitalizedYearShare =
+            yearTotals.count > 0 ? yearTotals.hospitalized / yearTotals.count : null;
           if (yearTotals.hospitalizedLosCount > 0) {
-            summary.avgLosHospitalizedMinutes = yearTotals.hospitalizedLosSum / yearTotals.hospitalizedLosCount;
+            summary.avgLosHospitalizedMinutes =
+              yearTotals.hospitalizedLosSum / yearTotals.hospitalizedLosCount;
           }
-          summary.avgLabYearMinutes = yearTotals.labCount > 0
-            ? yearTotals.labSum / yearTotals.labCount
-            : null;
+          summary.avgLabYearMinutes =
+            yearTotals.labCount > 0 ? yearTotals.labSum / yearTotals.labCount : null;
         }
       }
     }
@@ -673,14 +716,22 @@ export function createEdHandlers(context) {
     const topDepartureHours = pickTopHours(dischargeHourCounts, 3);
     if (topArrivalHours.length || topDepartureHours.length) {
       const arrivalText = topArrivalHours.length
-        ? topArrivalHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+        ? topArrivalHours
+            .map((item) => formatHourLabel(item.hour))
+            .filter(Boolean)
+            .join(', ')
         : '—';
       const departureText = topDepartureHours.length
-        ? topDepartureHours.map((item) => formatHourLabel(item.hour)).filter(Boolean).join(', ')
+        ? topDepartureHours
+            .map((item) => formatHourLabel(item.hour))
+            .filter(Boolean)
+            .join(', ')
         : '—';
       summary.peakWindowText = `Atvykimai: ${arrivalText} / Išvykimai: ${departureText}`;
       if (topArrivalHours.length && topDepartureHours.length) {
-        const mismatch = topArrivalHours.filter((item) => !topDepartureHours.some((candidate) => candidate.hour === item.hour));
+        const mismatch = topArrivalHours.filter(
+          (item) => !topDepartureHours.some((candidate) => candidate.hour === item.hour)
+        );
         if (mismatch.length) {
           const labels = mismatch.map((item) => formatHourLabel(item.hour)).filter(Boolean);
           summary.peakWindowRiskNote = labels.length
@@ -758,22 +809,42 @@ export function createEdHandlers(context) {
         fastShare: bucket.losCount > 0 ? bucket.fastCount / bucket.losCount : null,
         slowShare: bucket.losCount > 0 ? bucket.slowCount / bucket.losCount : null,
       }))
-      .sort((a, b) => (a.dateKey === b.dateKey ? 0 : (a.dateKey > b.dateKey ? -1 : 1)));
+      .sort((a, b) => (a.dateKey === b.dateKey ? 0 : a.dateKey > b.dateKey ? -1 : 1));
 
     const dailyAsc = [...daily].sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
     const trendWindowSize = Math.min(30, dailyAsc.length);
     const recentWindow = trendWindowSize > 0 ? dailyAsc.slice(-trendWindowSize) : [];
-    const previousWindow = trendWindowSize > 0 ? dailyAsc.slice(Math.max(0, dailyAsc.length - trendWindowSize * 2), dailyAsc.length - trendWindowSize) : [];
-    const reduceWindow = (list) => list.reduce((acc, item) => {
-      acc.fast += Number.isFinite(item.fastCount) ? item.fastCount : 0;
-      acc.slow += Number.isFinite(item.slowCount) ? item.slowCount : 0;
-      acc.totalLos += Number.isFinite(item.losCount) ? item.losCount : 0;
-      return acc;
-    }, { fast: 0, slow: 0, totalLos: 0 });
+    const previousWindow =
+      trendWindowSize > 0
+        ? dailyAsc.slice(
+            Math.max(0, dailyAsc.length - trendWindowSize * 2),
+            dailyAsc.length - trendWindowSize
+          )
+        : [];
+    const reduceWindow = (list) =>
+      list.reduce(
+        (acc, item) => {
+          acc.fast += Number.isFinite(item.fastCount) ? item.fastCount : 0;
+          acc.slow += Number.isFinite(item.slowCount) ? item.slowCount : 0;
+          acc.totalLos += Number.isFinite(item.losCount) ? item.losCount : 0;
+          return acc;
+        },
+        { fast: 0, slow: 0, totalLos: 0 }
+      );
     const recentAgg = reduceWindow(recentWindow);
     const previousAgg = reduceWindow(previousWindow);
-    const recentFastShare = recentAgg.totalLos > 0 ? recentAgg.fast / recentAgg.totalLos : (losValidCount > 0 ? fastCount / losValidCount : null);
-    const recentSlowShare = recentAgg.totalLos > 0 ? recentAgg.slow / recentAgg.totalLos : (losValidCount > 0 ? slowCount / losValidCount : null);
+    const recentFastShare =
+      recentAgg.totalLos > 0
+        ? recentAgg.fast / recentAgg.totalLos
+        : losValidCount > 0
+          ? fastCount / losValidCount
+          : null;
+    const recentSlowShare =
+      recentAgg.totalLos > 0
+        ? recentAgg.slow / recentAgg.totalLos
+        : losValidCount > 0
+          ? slowCount / losValidCount
+          : null;
     summary.fastLaneShare = Number.isFinite(recentFastShare) ? recentFastShare : null;
     summary.slowLaneShare = Number.isFinite(recentSlowShare) ? recentSlowShare : null;
     if (summary.fastLaneShare != null && summary.slowLaneShare != null) {
@@ -882,7 +953,8 @@ export function createEdHandlers(context) {
         summary.occupiedBeds = latestBucket.occupied / latestBucket.count;
         summary.nursePatientsPerStaff = latestBucket.nurseRatio / latestBucket.count;
         summary.doctorPatientsPerStaff = latestBucket.doctorRatio / latestBucket.count;
-        summary.avgLabMonthMinutes = latestBucket.labCount > 0 ? latestBucket.labSum / latestBucket.labCount : null;
+        summary.avgLabMonthMinutes =
+          latestBucket.labCount > 0 ? latestBucket.labSum / latestBucket.labCount : null;
         summary.latestSnapshotLabel = latestBucket.dateKey || '';
       }
     }
@@ -910,21 +982,24 @@ export function createEdHandlers(context) {
       .map((record, index) => ({ record, index }))
       .filter((item) => {
         const r = item.record;
-        const hasValue = Number.isFinite(r.currentPatients)
-          || Number.isFinite(r.occupiedBeds)
-          || Number.isFinite(r.nurseRatio)
-          || Number.isFinite(r.doctorRatio)
-          || (r.categories && Object.values(r.categories).some((value) => Number.isFinite(value)));
+        const hasValue =
+          Number.isFinite(r.currentPatients) ||
+          Number.isFinite(r.occupiedBeds) ||
+          Number.isFinite(r.nurseRatio) ||
+          Number.isFinite(r.doctorRatio) ||
+          (r.categories && Object.values(r.categories).some((value) => Number.isFinite(value)));
         return hasValue;
       });
     if (wrapped.length) {
       const sortedByTime = [...wrapped].sort((a, b) => {
-        const timeA = a.record.timestamp instanceof Date && !Number.isNaN(a.record.timestamp.getTime())
-          ? a.record.timestamp.getTime()
-          : Number.NEGATIVE_INFINITY;
-        const timeB = b.record.timestamp instanceof Date && !Number.isNaN(b.record.timestamp.getTime())
-          ? b.record.timestamp.getTime()
-          : Number.NEGATIVE_INFINITY;
+        const timeA =
+          a.record.timestamp instanceof Date && !Number.isNaN(a.record.timestamp.getTime())
+            ? a.record.timestamp.getTime()
+            : Number.NEGATIVE_INFINITY;
+        const timeB =
+          b.record.timestamp instanceof Date && !Number.isNaN(b.record.timestamp.getTime())
+            ? b.record.timestamp.getTime()
+            : Number.NEGATIVE_INFINITY;
         if (timeA !== timeB) {
           return timeB - timeA;
         }
@@ -956,7 +1031,7 @@ export function createEdHandlers(context) {
 
   function summarizeEdRecords(records, meta = {}) {
     const mode = typeof meta?.type === 'string' ? meta.type : 'legacy';
-    const summary = createEmptyEdSummary(mode);
+    const _summary = createEmptyEdSummary(mode);
     let legacy = { summary: createEmptyEdSummary('legacy'), dispositions: [], daily: [] };
     let snapshot = { summary: createEmptyEdSummary('snapshot'), dispositions: [], daily: [] };
     const hasLegacy = mode === 'legacy' || mode === 'hybrid';
@@ -969,16 +1044,27 @@ export function createEdHandlers(context) {
     }
 
     if (mode === 'snapshot') {
-      return { summary: snapshot.summary, dispositions: snapshot.dispositions, daily: snapshot.daily, meta: { type: 'snapshot' } };
+      return {
+        summary: snapshot.summary,
+        dispositions: snapshot.dispositions,
+        daily: snapshot.daily,
+        meta: { type: 'snapshot' },
+      };
     }
     if (mode === 'legacy') {
-      return { summary: legacy.summary, dispositions: legacy.dispositions, daily: legacy.daily, meta: { type: 'legacy' } };
+      return {
+        summary: legacy.summary,
+        dispositions: legacy.dispositions,
+        daily: legacy.daily,
+        meta: { type: 'legacy' },
+      };
     }
 
-    const hasSnapshotMetrics = Number.isFinite(snapshot.summary?.currentPatients)
-      || Number.isFinite(snapshot.summary?.occupiedBeds)
-      || Number.isFinite(snapshot.summary?.nursePatientsPerStaff)
-      || Number.isFinite(snapshot.summary?.doctorPatientsPerStaff);
+    const hasSnapshotMetrics =
+      Number.isFinite(snapshot.summary?.currentPatients) ||
+      Number.isFinite(snapshot.summary?.occupiedBeds) ||
+      Number.isFinite(snapshot.summary?.nursePatientsPerStaff) ||
+      Number.isFinite(snapshot.summary?.doctorPatientsPerStaff);
     if (hasSnapshotMetrics) {
       return {
         summary: { ...legacy.summary, ...snapshot.summary, mode: 'hybrid' },
@@ -1016,23 +1102,23 @@ export function createEdHandlers(context) {
       const signature = String(options.signature || '').trim();
       const payload = Array.isArray(result)
         ? { records: result, meta: {} }
-        : (result && typeof result === 'object'
+        : result && typeof result === 'object'
           ? {
-            records: Array.isArray(result.records) ? result.records : [],
-            meta: result.meta && typeof result.meta === 'object' ? result.meta : {},
-            summary: result.summary && typeof result.summary === 'object' ? result.summary : null,
-            dispositions: Array.isArray(result.dispositions) ? result.dispositions : null,
-            daily: Array.isArray(result.daily) ? result.daily : null,
-          }
-          : { records: [], meta: {}, summary: null, dispositions: null, daily: null });
+              records: Array.isArray(result.records) ? result.records : [],
+              meta: result.meta && typeof result.meta === 'object' ? result.meta : {},
+              summary: result.summary && typeof result.summary === 'object' ? result.summary : null,
+              dispositions: Array.isArray(result.dispositions) ? result.dispositions : null,
+              daily: Array.isArray(result.daily) ? result.daily : null,
+            }
+          : { records: [], meta: {}, summary: null, dispositions: null, daily: null };
       const hasWorkerAggregates = payload.summary && payload.dispositions && payload.daily;
       let aggregates = hasWorkerAggregates
         ? {
-          summary: payload.summary,
-          dispositions: payload.dispositions,
-          daily: payload.daily,
-          meta: payload.meta,
-        }
+            summary: payload.summary,
+            dispositions: payload.dispositions,
+            daily: payload.daily,
+            meta: payload.meta,
+          }
         : summarizeEdRecords(payload.records, payload.meta);
       // Worker aggregate shape can lag behind UI card requirements; keep worker fast-path
       // but rebuild locally when required summary keys are missing.
@@ -1040,12 +1126,11 @@ export function createEdHandlers(context) {
         const rebuilt = summarizeEdRecords(payload.records, payload.meta);
         aggregates = {
           summary: rebuilt.summary,
-          dispositions: Array.isArray(payload.dispositions) && payload.dispositions.length
-            ? payload.dispositions
-            : rebuilt.dispositions,
-          daily: Array.isArray(payload.daily) && payload.daily.length
-            ? payload.daily
-            : rebuilt.daily,
+          dispositions:
+            Array.isArray(payload.dispositions) && payload.dispositions.length
+              ? payload.dispositions
+              : rebuilt.dispositions,
+          daily: Array.isArray(payload.daily) && payload.daily.length ? payload.daily : rebuilt.daily,
           meta: { ...(rebuilt.meta || {}), ...(payload.meta || {}) },
         };
       }
@@ -1054,7 +1139,11 @@ export function createEdHandlers(context) {
         summary: aggregates.summary,
         dispositions: aggregates.dispositions,
         daily: aggregates.daily,
-        meta: { ...payload.meta, ...(aggregates.meta || {}), signature: signature || payload?.meta?.signature || '' },
+        meta: {
+          ...payload.meta,
+          ...(aggregates.meta || {}),
+          signature: signature || payload?.meta?.signature || '',
+        },
         usingFallback: Boolean(options.usingFallback),
         lastErrorMessage: options.lastErrorMessage || '',
         error: options.error || null,
@@ -1075,10 +1164,10 @@ export function createEdHandlers(context) {
       const download = await downloadCsv(url, {
         cacheInfo: cachedEntry
           ? {
-            etag: cachedEntry.etag,
-            lastModified: cachedEntry.lastModified,
-            signature: cachedEntry.signature,
-          }
+              etag: cachedEntry.etag,
+              lastModified: cachedEntry.lastModified,
+              signature: cachedEntry.signature,
+            }
           : null,
         onChunk: options?.onChunk,
         signal,
@@ -1096,12 +1185,17 @@ export function createEdHandlers(context) {
         }
         return fromCache;
       }
-      const downloadSignature = String(download.signature || download.etag || download.lastModified || '').trim();
+      const downloadSignature = String(
+        download.signature || download.etag || download.lastModified || ''
+      ).trim();
       const signatureCached = readSignatureCache(downloadSignature);
       if (signatureCached) {
         const fromSignatureCache = {
           ...signatureCached,
-          meta: { ...(signatureCached.meta || {}), signature: downloadSignature || signatureCached?.meta?.signature || '' },
+          meta: {
+            ...(signatureCached.meta || {}),
+            signature: downloadSignature || signatureCached?.meta?.signature || '',
+          },
           usingFallback: false,
           lastErrorMessage: '',
           error: null,
@@ -1117,9 +1211,8 @@ export function createEdHandlers(context) {
         const workerInfo = describeError(workerError, { code: 'ED_WORKER' });
         console.warn(workerInfo.log, workerError);
       }
-      const result = workerPayload && typeof workerPayload === 'object'
-        ? workerPayload
-        : transformEdCsv(download.text);
+      const result =
+        workerPayload && typeof workerPayload === 'object' ? workerPayload : transformEdCsv(download.text);
       const finalized = finalize(result, { signature: downloadSignature });
       if (finalized?.meta?.signature) {
         writeSignatureCache(finalized.meta.signature, finalized);

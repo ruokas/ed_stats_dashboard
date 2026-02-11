@@ -29,12 +29,7 @@ export function initFeedbackFilters(env) {
 }
 
 export function initFeedbackTrendControls(env) {
-  const {
-    selectors,
-    setFeedbackTrendWindow,
-    setFeedbackTrendMetric,
-    setFeedbackTrendCompareMode,
-  } = env;
+  const { selectors, setFeedbackTrendWindow, setFeedbackTrendMetric, setFeedbackTrendCompareMode } = env;
 
   const controls = selectors.feedbackTrendControls;
   if (!controls) {

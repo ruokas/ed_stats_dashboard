@@ -1,6 +1,6 @@
 import { initializeLazyLoading, initializeServiceWorker, preloadChartJs } from './bootstrap.js';
 import { createPageBootstrapContext } from './runtime/core-context.js';
-import { resolvePageId, RUNTIME_MODULE_BY_PAGE, shouldPreloadChartJs } from './runtime/page-config.js';
+import { RUNTIME_MODULE_BY_PAGE, resolvePageId, shouldPreloadChartJs } from './runtime/page-config.js';
 
 function getRunnerExportName(pageId) {
   switch (pageId) {
@@ -14,7 +14,6 @@ function getRunnerExportName(pageId) {
       return 'runFeedbackPage';
     case 'ed':
       return 'runEdPage';
-    case 'kpi':
     default:
       return 'runKpiPage';
   }
@@ -28,7 +27,7 @@ function isProfilingEnabled() {
     }
     const parsed = JSON.parse(raw);
     return parsed?.profilingEnabled === true;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -81,7 +80,8 @@ export async function startApp() {
     measure('app:router-import', 'app-start-entered', 'app-runtime-module-imported');
     measure('app:page-runner', 'app-runtime-module-imported', 'app-page-runner-complete');
     measure('app:startup-total', 'app-start-entered', 'app-first-meaningful-render');
-    const rows = performance.getEntriesByType('measure')
+    const rows = performance
+      .getEntriesByType('measure')
       .filter((entry) => entry.name.startsWith('app:'))
       .map((entry) => ({ metric: entry.name, ms: Number(entry.duration.toFixed(2)) }));
     if (rows.length) {

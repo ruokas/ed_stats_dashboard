@@ -32,7 +32,10 @@ export function applyChartsText({
   }
 
   const hospitalTableText = TEXT?.charts?.hospitalTable || {};
-  setSectionTitle(selectors.chartsHospitalTableHeading, hospitalTableText.title || 'Stacionarizuoti pacientai pagal skyrių ir SPS trukmę');
+  setSectionTitle(
+    selectors.chartsHospitalTableHeading,
+    hospitalTableText.title || 'Stacionarizuoti pacientai pagal skyrių ir SPS trukmę'
+  );
   if (selectors.chartsHospitalTableSubtitle) {
     selectors.chartsHospitalTableSubtitle.textContent = hospitalTableText.subtitle || '';
   }
@@ -43,19 +46,22 @@ export function applyChartsText({
     selectors.chartsHospitalTableHint.textContent = hospitalTableText.hint || '';
   }
   if (selectors.chartsHospitalDeptTrendTitle) {
-    selectors.chartsHospitalDeptTrendTitle.textContent = hospitalTableText.trendTitle || 'Skyriaus dinamika per metus';
+    selectors.chartsHospitalDeptTrendTitle.textContent =
+      hospitalTableText.trendTitle || 'Skyriaus dinamika per metus';
   }
   if (selectors.chartsHospitalDeptTrendSubtitle) {
     selectors.chartsHospitalDeptTrendSubtitle.textContent = hospitalTableText.trendSubtitle || '';
   }
   if (selectors.chartsHospitalDeptTrendEmpty) {
-    selectors.chartsHospitalDeptTrendEmpty.textContent = hospitalTableText.trendEmpty || 'Šiam skyriui nepakanka duomenų metinei dinamikai.';
+    selectors.chartsHospitalDeptTrendEmpty.textContent =
+      hospitalTableText.trendEmpty || 'Šiam skyriui nepakanka duomenų metinei dinamikai.';
   }
   if (selectors.chartsHospitalTableYearLabel) {
     selectors.chartsHospitalTableYearLabel.textContent = hospitalTableText.yearFilterLabel || 'Metai';
   }
   if (selectors.chartsHospitalTableSearchLabel) {
-    selectors.chartsHospitalTableSearchLabel.textContent = hospitalTableText.searchLabel || 'Skyriaus paieška';
+    selectors.chartsHospitalTableSearchLabel.textContent =
+      hospitalTableText.searchLabel || 'Skyriaus paieška';
   }
   if (selectors.chartsHospitalTableSearch) {
     const placeholder = hospitalTableText.searchPlaceholder || 'Įveskite skyriaus pavadinimą';
@@ -132,12 +138,13 @@ export function applyChartsText({
     dashboardState.hourlyWeekday,
     dashboardState.hourlyStayBucket,
     dashboardState.hourlyMetric,
-    dashboardState.hourlyDepartment,
+    dashboardState.hourlyDepartment
   );
 
-  const funnelCaptionText = typeof TEXT.charts.funnelCaptionWithYear === 'function'
-    ? TEXT.charts.funnelCaptionWithYear(null)
-    : TEXT.charts.funnelCaption;
+  const funnelCaptionText =
+    typeof TEXT.charts.funnelCaptionWithYear === 'function'
+      ? TEXT.charts.funnelCaptionWithYear(null)
+      : TEXT.charts.funnelCaption;
   if (selectors.funnelCaption) {
     selectors.funnelCaption.textContent = funnelCaptionText;
   }

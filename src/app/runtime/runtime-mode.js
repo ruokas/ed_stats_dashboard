@@ -6,7 +6,7 @@ export function resolveRuntimeMode(pageId) {
     try {
       const mode = new URLSearchParams(window.location.search).get('runtimeMode');
       return typeof mode === 'string' ? mode.trim().toLowerCase() : '';
-    } catch (error) {
+    } catch (_error) {
       return '';
     }
   })();
@@ -22,7 +22,7 @@ export function resolveRuntimeMode(pageId) {
     try {
       const mode = window.localStorage.getItem(RUNTIME_MODE_STORAGE_KEY);
       return typeof mode === 'string' ? mode.trim().toLowerCase() : '';
-    } catch (error) {
+    } catch (_error) {
       return '';
     }
   })();
@@ -30,7 +30,14 @@ export function resolveRuntimeMode(pageId) {
     return fromStorage;
   }
   // Keep legacy default for pages that are still being migrated.
-  if (normalizedPage === 'kpi' || normalizedPage === 'charts' || normalizedPage === 'summaries' || normalizedPage === 'recent' || normalizedPage === 'feedback' || normalizedPage === 'ed') {
+  if (
+    normalizedPage === 'kpi' ||
+    normalizedPage === 'charts' ||
+    normalizedPage === 'summaries' ||
+    normalizedPage === 'recent' ||
+    normalizedPage === 'feedback' ||
+    normalizedPage === 'ed'
+  ) {
     return 'modular';
   }
   return 'legacy';

@@ -1,13 +1,12 @@
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
-import { createFeedbackHandlers } from '../../../data/feedback.js';
-import { createDataFlow } from '../data-flow.js';
-import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
-import { createFeedbackRenderFeature } from '../features/feedback-render.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { initFeedbackFilters, initFeedbackTableScrollAffordance, initFeedbackTrendControls } from '../../../events/feedback.js';
 import { renderFeedbackTrendChart as renderFeedbackTrendChartModule } from '../../../charts/feedback-trend.js';
+import { createFeedbackHandlers } from '../../../data/feedback.js';
+import {
+  initFeedbackFilters,
+  initFeedbackTableScrollAffordance,
+  initFeedbackTrendControls,
+} from '../../../events/feedback.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import {
@@ -20,8 +19,6 @@ import {
   statusTimeFormatter,
   textCollator,
 } from '../../../utils/format.js';
-import { describeCacheMeta, describeError, downloadCsv } from '../network.js';
-import { FEEDBACK_FILTER_ALL, FEEDBACK_FILTER_MISSING, createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters } from '../state.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -34,12 +31,25 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
-import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { resolveRuntimeMode } from '../runtime-mode.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
-import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
+import { createDataFlow } from '../data-flow.js';
 import { setupCopyExportControls } from '../export-controls.js';
+import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
+import { createFeedbackRenderFeature } from '../features/feedback-render.js';
+import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
 import { runLegacyFallback } from '../legacy-fallback.js';
+import { describeCacheMeta, describeError, downloadCsv } from '../network.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
+import { resolveRuntimeMode } from '../runtime-mode.js';
+import { loadSettingsFromConfig } from '../settings.js';
+import {
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+  FEEDBACK_FILTER_ALL,
+  FEEDBACK_FILTER_MISSING,
+} from '../state.js';
+import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -106,7 +116,7 @@ function renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, raw
   }
 
   const renderEntry = (entry) => {
-    content.textContent = entry?.text || (cardConfig.empty || TEXT.feedback?.empty || '—');
+    content.textContent = entry?.text || cardConfig.empty || TEXT.feedback?.empty || '—';
     const metaParts = [];
     if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
       metaParts.push(statusTimeFormatter.format(entry.receivedAt));
@@ -123,7 +133,9 @@ function renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, raw
     meta.textContent = metaParts.join(' • ');
   };
 
-  const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 10000;
+  const rotateMs = Number.isFinite(Number(cardConfig.rotateMs))
+    ? Math.max(3000, Number(cardConfig.rotateMs))
+    : 10000;
   const advance = () => {
     const entry = rotation.entries[rotation.index] || rotation.entries[0];
     renderEntry(entry);
@@ -196,24 +208,28 @@ export async function runFeedbackRuntime(core) {
   let feedbackRenderFeature = null;
   const chartRenderers = {
     renderFeedbackTrendChart(monthlyStats, records) {
-      return renderFeedbackTrendChartModule({
-        dashboardState,
-        selectors,
-        TEXT,
-        loadChartJs,
-        getThemePalette,
-        getThemeStyleTarget,
-        syncFeedbackTrendControls: () => feedbackRenderFeature.syncFeedbackTrendControls(),
-        updateFeedbackTrendSubtitle: () => feedbackRenderFeature.updateFeedbackTrendSubtitle(),
-        getActiveFeedbackTrendWindow: () => feedbackRenderFeature.getActiveFeedbackTrendWindow(),
-        getActiveFeedbackTrendMetrics: () => feedbackRenderFeature.getActiveFeedbackTrendMetrics(),
-        getActiveFeedbackTrendCompareMode: () => feedbackRenderFeature.getActiveFeedbackTrendCompareMode(),
-        getFeedbackTrendMetricConfig: () => feedbackRenderFeature.getFeedbackTrendMetricConfig(),
-        getFeedbackTrendCompareConfig: () => feedbackRenderFeature.getFeedbackTrendCompareConfig(),
-        formatMonthLabel,
-        numberFormatter,
-        oneDecimalFormatter,
-      }, monthlyStats, records);
+      return renderFeedbackTrendChartModule(
+        {
+          dashboardState,
+          selectors,
+          TEXT,
+          loadChartJs,
+          getThemePalette,
+          getThemeStyleTarget,
+          syncFeedbackTrendControls: () => feedbackRenderFeature.syncFeedbackTrendControls(),
+          updateFeedbackTrendSubtitle: () => feedbackRenderFeature.updateFeedbackTrendSubtitle(),
+          getActiveFeedbackTrendWindow: () => feedbackRenderFeature.getActiveFeedbackTrendWindow(),
+          getActiveFeedbackTrendMetrics: () => feedbackRenderFeature.getActiveFeedbackTrendMetrics(),
+          getActiveFeedbackTrendCompareMode: () => feedbackRenderFeature.getActiveFeedbackTrendCompareMode(),
+          getFeedbackTrendMetricConfig: () => feedbackRenderFeature.getFeedbackTrendMetricConfig(),
+          getFeedbackTrendCompareConfig: () => feedbackRenderFeature.getFeedbackTrendCompareConfig(),
+          formatMonthLabel,
+          numberFormatter,
+          oneDecimalFormatter,
+        },
+        monthlyStats,
+        records
+      );
     },
   };
 
@@ -230,9 +246,8 @@ export async function runFeedbackRuntime(core) {
     describeError,
     getChartRenderers: () => chartRenderers,
     resetFeedbackCommentRotation: () => resetFeedbackCommentRotation(dashboardState),
-    renderFeedbackCommentsCard: (cardElement, cardConfig, rawComments) => (
-      renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, rawComments)
-    ),
+    renderFeedbackCommentsCard: (cardElement, cardConfig, rawComments) =>
+      renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, rawComments),
   });
 
   const feedbackPanelFeature = createFeedbackPanelFeature({
@@ -334,7 +349,9 @@ export async function runFeedbackRuntime(core) {
     getSettings: () => settings,
     getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
 
   dataFlow.scheduleInitialLoad();

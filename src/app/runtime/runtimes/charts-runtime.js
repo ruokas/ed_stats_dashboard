@@ -1,14 +1,14 @@
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
+import { createChartRenderers } from '../../../charts/index.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import {
   computeDailyStats,
   computeHospitalizedByDepartmentAndSpsStay,
   computeHospitalizedDepartmentYearlyStayTrend,
 } from '../../../data/stats.js';
-import { createChartRenderers } from '../../../charts/index.js';
-import { loadChartJs } from '../../../utils/chart-loader.js';
 import { initChartControls } from '../../../events/charts.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
+import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import {
   decimalFormatter,
@@ -20,38 +20,6 @@ import {
   shortDateFormatter,
   textCollator,
 } from '../../../utils/format.js';
-import { createDataFlow } from '../data-flow.js';
-import { createChartFlow } from '../chart-flow.js';
-import {
-  populateChartYearOptions,
-  syncChartPeriodButtons,
-  syncChartYearControl,
-  dateKeyToDate,
-  getWeekdayIndexFromDateKey,
-  isWeekendDateKey,
-  filterDailyStatsByYear,
-  filterRecordsByWindow,
-  filterRecordsByYear,
-  filterDailyStatsByWindow,
-  buildDailyWindowKeys,
-  fillDailyStatsWindow,
-  getAvailableYearsFromDaily,
-} from '../chart-primitives.js';
-import { createHourlyControlsFeature } from '../features/hourly-controls.js';
-import { createFunnelCanvasFeature } from '../features/funnel-canvas.js';
-import { applyChartsText } from '../features/text-charts.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import { sanitizeChartFilters } from '../filters.js';
-import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters, KPI_FILTER_LABELS } from '../state.js';
-import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { describeCacheMeta, describeError, downloadCsv, createTextSignature, formatUrlForDiagnostics } from '../network.js';
-import { parseColorToRgb, relativeLuminance, rgbToRgba } from '../utils/color.js';
-import { resolveRuntimeMode } from '../runtime-mode.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
-import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { setupCopyExportControls } from '../export-controls.js';
-import { createStatusSetter } from '../utils/common.js';
-import { runLegacyFallback } from '../legacy-fallback.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -61,13 +29,64 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { createChartFlow } from '../chart-flow.js';
+import {
+  buildDailyWindowKeys,
+  dateKeyToDate,
+  fillDailyStatsWindow,
+  filterDailyStatsByWindow,
+  filterDailyStatsByYear,
+  filterRecordsByWindow,
+  filterRecordsByYear,
+  getAvailableYearsFromDaily,
+  getWeekdayIndexFromDateKey,
+  isWeekendDateKey,
+  populateChartYearOptions,
+  syncChartPeriodButtons,
+  syncChartYearControl,
+} from '../chart-primitives.js';
+import { createDataFlow } from '../data-flow.js';
+import { setupCopyExportControls } from '../export-controls.js';
+import { createFunnelCanvasFeature } from '../features/funnel-canvas.js';
+import { createHourlyControlsFeature } from '../features/hourly-controls.js';
+import { applyChartsText } from '../features/text-charts.js';
+import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
+import { sanitizeChartFilters } from '../filters.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
+import {
+  createTextSignature,
+  describeCacheMeta,
+  describeError,
+  downloadCsv,
+  formatUrlForDiagnostics,
+} from '../network.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
+import { resolveRuntimeMode } from '../runtime-mode.js';
+import { loadSettingsFromConfig } from '../settings.js';
+import {
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+  KPI_FILTER_LABELS,
+} from '../state.js';
+import { parseColorToRgb, relativeLuminance, rgbToRgba } from '../utils/color.js';
+import { createStatusSetter } from '../utils/common.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
 const setStatus = createStatusSetter(TEXT.status);
 
 const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
-const HEATMAP_WEEKDAY_FULL = ['Pirmadienis', 'Antradienis', 'Treciadienis', 'Ketvirtadienis', 'Penktadienis', 'Sestadienis', 'Sekmadienis'];
+const HEATMAP_WEEKDAY_FULL = [
+  'Pirmadienis',
+  'Antradienis',
+  'Treciadienis',
+  'Ketvirtadienis',
+  'Penktadienis',
+  'Sestadienis',
+  'Sekmadienis',
+];
 const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Trec', 'Ketv', 'Penkt', 'Sest', 'Sekm'];
 const HEATMAP_METRIC_KEYS = ['arrivals', 'discharges', 'hospitalized', 'avgDuration'];
 const DEFAULT_HEATMAP_METRIC = 'arrivals';
@@ -77,11 +96,20 @@ const HOURLY_METRIC_ARRIVALS = 'arrivals';
 const HOURLY_METRIC_DISCHARGES = 'discharges';
 const HOURLY_METRIC_BALANCE = 'balance';
 const HOURLY_METRIC_HOSPITALIZED = 'hospitalized';
-const HOURLY_METRICS = [HOURLY_METRIC_ARRIVALS, HOURLY_METRIC_DISCHARGES, HOURLY_METRIC_BALANCE, HOURLY_METRIC_HOSPITALIZED];
+const HOURLY_METRICS = [
+  HOURLY_METRIC_ARRIVALS,
+  HOURLY_METRIC_DISCHARGES,
+  HOURLY_METRIC_BALANCE,
+  HOURLY_METRIC_HOSPITALIZED,
+];
 const HOURLY_COMPARE_SERIES_ALL = 'all';
 const HOURLY_COMPARE_SERIES_EMS = 'ems';
 const HOURLY_COMPARE_SERIES_SELF = 'self';
-const HOURLY_COMPARE_SERIES = [HOURLY_COMPARE_SERIES_ALL, HOURLY_COMPARE_SERIES_EMS, HOURLY_COMPARE_SERIES_SELF];
+const HOURLY_COMPARE_SERIES = [
+  HOURLY_COMPARE_SERIES_ALL,
+  HOURLY_COMPARE_SERIES_EMS,
+  HOURLY_COMPARE_SERIES_SELF,
+];
 const HOURLY_STAY_BUCKETS = [
   { key: 'lt4', min: 0, max: 4 },
   { key: '4to8', min: 4, max: 8 },
@@ -101,59 +129,84 @@ function matchesSharedPatientFilters(record, filters = {}) {
 }
 
 function filterRecordsByChartFilters(records, filters) {
-  const normalized = sanitizeChartFilters(filters, { getDefaultChartFilters: createDefaultChartFilters, KPI_FILTER_LABELS });
-  return (Array.isArray(records) ? records : []).filter((record) => matchesSharedPatientFilters(record, normalized));
+  const normalized = sanitizeChartFilters(filters, {
+    getDefaultChartFilters: createDefaultChartFilters,
+    KPI_FILTER_LABELS,
+  });
+  return (Array.isArray(records) ? records : []).filter((record) =>
+    matchesSharedPatientFilters(record, normalized)
+  );
 }
 
 function sanitizeHeatmapFilters(filters) {
   const defaults = { arrival: 'all', disposition: 'all', cardType: 'all' };
   const normalized = { ...defaults, ...(filters || {}) };
   if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) normalized.arrival = defaults.arrival;
-  if (!(normalized.disposition in KPI_FILTER_LABELS.disposition)) normalized.disposition = defaults.disposition;
+  if (!(normalized.disposition in KPI_FILTER_LABELS.disposition))
+    normalized.disposition = defaults.disposition;
   if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) normalized.cardType = defaults.cardType;
   return normalized;
 }
 
 function filterRecordsByHeatmapFilters(records, filters) {
   const normalized = sanitizeHeatmapFilters(filters);
-  return (Array.isArray(records) ? records : []).filter((record) => matchesSharedPatientFilters(record, normalized));
+  return (Array.isArray(records) ? records : []).filter((record) =>
+    matchesSharedPatientFilters(record, normalized)
+  );
 }
 
 function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
-  const entries = (Array.isArray(dailyStats) && dailyStats.length) ? dailyStats : (Array.isArray(fallbackDailyStats) ? fallbackDailyStats : []);
-  return entries.reduce((acc, entry) => ({
-    arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
-    hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
-    discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
-    year: Number.isFinite(targetYear) ? targetYear : null,
-  }), { arrived: 0, hospitalized: 0, discharged: 0, year: Number.isFinite(targetYear) ? targetYear : null });
+  const entries =
+    Array.isArray(dailyStats) && dailyStats.length
+      ? dailyStats
+      : Array.isArray(fallbackDailyStats)
+        ? fallbackDailyStats
+        : [];
+  return entries.reduce(
+    (acc, entry) => ({
+      arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
+      hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
+      discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
+      year: Number.isFinite(targetYear) ? targetYear : null,
+    }),
+    { arrived: 0, hospitalized: 0, discharged: 0, year: Number.isFinite(targetYear) ? targetYear : null }
+  );
 }
 
 function computeArrivalHeatmap(records) {
-  const aggregates = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({
-    arrivals: 0,
-    discharges: 0,
-    hospitalized: 0,
-    durationSum: 0,
-    durationCount: 0,
-  })));
+  const aggregates = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => ({
+      arrivals: 0,
+      discharges: 0,
+      hospitalized: 0,
+      durationSum: 0,
+      durationCount: 0,
+    }))
+  );
   const weekdayDays = {
     arrivals: Array.from({ length: 7 }, () => new Set()),
     discharges: Array.from({ length: 7 }, () => new Set()),
     hospitalized: Array.from({ length: 7 }, () => new Set()),
     avgDuration: Array.from({ length: 7 }, () => new Set()),
   };
-  const formatLocalDateKey = (date) => (
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  );
+  const formatLocalDateKey = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
   (Array.isArray(records) ? records : []).forEach((entry) => {
-    const arrival = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
-    const discharge = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
-    const arrivalHasTime = entry?.arrivalHasTime === true
-      || (entry?.arrivalHasTime == null && arrival && (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
-    const dischargeHasTime = entry?.dischargeHasTime === true
-      || (entry?.dischargeHasTime == null && discharge && (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
+    const arrival =
+      entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
+    const discharge =
+      entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
+    const arrivalHasTime =
+      entry?.arrivalHasTime === true ||
+      (entry?.arrivalHasTime == null &&
+        arrival &&
+        (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+    const dischargeHasTime =
+      entry?.dischargeHasTime === true ||
+      (entry?.dischargeHasTime == null &&
+        discharge &&
+        (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
 
     if (arrival && arrivalHasTime) {
       const dayIndex = (arrival.getDay() + 6) % 7;
@@ -363,11 +416,13 @@ function initChartsJumpNavigation(selectors) {
 
   const getStickyOffset = () => {
     const jumpNavHeight = nav instanceof HTMLElement ? nav.getBoundingClientRect().height : 0;
-    const jumpNavTop = nav instanceof HTMLElement
-      ? Number.parseFloat(getComputedStyle(nav).top) || 0
-      : 0;
+    const jumpNavTop = nav instanceof HTMLElement ? Number.parseFloat(getComputedStyle(nav).top) || 0 : 0;
     const safeGap = 10;
-    const total = Math.ceil((Number.isFinite(jumpNavTop) ? jumpNavTop : 0) + (Number.isFinite(jumpNavHeight) ? jumpNavHeight : 0) + safeGap);
+    const total = Math.ceil(
+      (Number.isFinite(jumpNavTop) ? jumpNavTop : 0) +
+        (Number.isFinite(jumpNavHeight) ? jumpNavHeight : 0) +
+        safeGap
+    );
     return total > 0 ? total : 160;
   };
 
@@ -401,7 +456,7 @@ function initChartsJumpNavigation(selectors) {
   };
 
   const hashMatchedLink = findLinkByHash(window.location.hash);
-  applyActiveLink((hashMatchedLink && hashMatchedLink.link) || items[0].link);
+  applyActiveLink(hashMatchedLink?.link || items[0].link);
   if (hashMatchedLink?.target) {
     window.setTimeout(() => {
       scrollToSectionStart(hashMatchedLink.target, { smooth: false, updateHash: false });
@@ -429,7 +484,9 @@ function initChartsJumpNavigation(selectors) {
     return;
   }
 
-  const visibility = new Map(items.map(({ target }) => [target, { ratio: 0, top: Number.POSITIVE_INFINITY }]));
+  const visibility = new Map(
+    items.map(({ target }) => [target, { ratio: 0, top: Number.POSITIVE_INFINITY }])
+  );
   const updateActiveFromVisibility = () => {
     let bestItem = null;
     let bestRatio = -1;
@@ -466,10 +523,12 @@ function initChartsJumpNavigation(selectors) {
       root: null,
       rootMargin: '-24% 0px -54% 0px',
       threshold: [0, 0.12, 0.3, 0.55, 0.8],
-    },
+    }
   );
 
-  items.forEach(({ target }) => observer.observe(target));
+  items.forEach(({ target }) => {
+    observer.observe(target);
+  });
 }
 
 function initChartsJumpStickyOffset(selectors) {
@@ -481,7 +540,8 @@ function initChartsJumpStickyOffset(selectors) {
   const applyOffset = () => {
     const hero = selectors?.hero;
     const measuredHeroHeight = hero instanceof HTMLElement ? hero.getBoundingClientRect().height : 0;
-    const cssHeroHeight = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hero-height')) || 0;
+    const cssHeroHeight =
+      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hero-height')) || 0;
     const heroHeight = measuredHeroHeight > 0 ? measuredHeroHeight : cssHeroHeight;
     const offset = Math.max(56, Math.ceil(heroHeight) + 2);
     jumpNav.style.setProperty('--charts-jump-sticky-top', `${offset}px`);
@@ -594,7 +654,9 @@ export async function runChartsRuntime(core) {
       return true;
     }
     const matrix = Array.isArray(metric.matrix) ? metric.matrix : [];
-    return matrix.some((row) => Array.isArray(row) && row.some((value) => Number.isFinite(value) && value > 0));
+    return matrix.some(
+      (row) => Array.isArray(row) && row.some((value) => Number.isFinite(value) && value > 0)
+    );
   };
 
   const normalizeHeatmapMetricKey = (metricKey, metrics = {}) => {
@@ -647,9 +709,10 @@ export async function runChartsRuntime(core) {
       return;
     }
     const label = getHeatmapMetricLabel(metricKey);
-    selectors.heatmapCaption.textContent = typeof TEXT.charts?.heatmapCaption === 'function'
-      ? TEXT.charts.heatmapCaption(label)
-      : (TEXT.charts?.heatmapCaption || '');
+    selectors.heatmapCaption.textContent =
+      typeof TEXT.charts?.heatmapCaption === 'function'
+        ? TEXT.charts.heatmapCaption(label)
+        : TEXT.charts?.heatmapCaption || '';
   };
 
   const populateHeatmapMetricOptions = () => {
@@ -701,14 +764,18 @@ export async function runChartsRuntime(core) {
       option.textContent = String(year);
       selectors.heatmapYearSelect.appendChild(option);
     });
-    selectors.heatmapYearSelect.value = Number.isFinite(dashboardState.heatmapYear) ? String(dashboardState.heatmapYear) : 'all';
+    selectors.heatmapYearSelect.value = Number.isFinite(dashboardState.heatmapYear)
+      ? String(dashboardState.heatmapYear)
+      : 'all';
   };
 
   const computeHeatmapDataForFilters = () => {
     const baseRecords = (dashboardState.chartData.baseRecords || []).length
       ? dashboardState.chartData.baseRecords
       : dashboardState.rawRecords;
-    const selectedYear = Number.isFinite(dashboardState.heatmapYear) ? Number(dashboardState.heatmapYear) : null;
+    const selectedYear = Number.isFinite(dashboardState.heatmapYear)
+      ? Number(dashboardState.heatmapYear)
+      : null;
     const yearScoped = filterRecordsByYear(baseRecords, selectedYear);
     const filtered = filterRecordsByHeatmapFilters(yearScoped, dashboardState.heatmapFilters);
     const data = computeArrivalHeatmap(filtered);
@@ -722,7 +789,7 @@ export async function runChartsRuntime(core) {
       selectors.heatmapContainer,
       computeHeatmapDataForFilters(),
       palette.accent,
-      dashboardState.heatmapMetric,
+      dashboardState.heatmapMetric
     );
   };
 
@@ -756,13 +823,20 @@ export async function runChartsRuntime(core) {
   const normalizeChartsHospitalTableSort = (value) => {
     const normalized = String(value || '').trim();
     const allowed = [
-      'total_desc', 'total_asc',
-      'name_asc', 'name_desc',
-      'lt4_desc', 'lt4_asc',
-      '4to8_desc', '4to8_asc',
-      '8to16_desc', '8to16_asc',
-      'gt16_desc', 'gt16_asc',
-      'unclassified_desc', 'unclassified_asc',
+      'total_desc',
+      'total_asc',
+      'name_asc',
+      'name_desc',
+      'lt4_desc',
+      'lt4_asc',
+      '4to8_desc',
+      '4to8_asc',
+      '8to16_desc',
+      '8to16_asc',
+      'gt16_desc',
+      'gt16_asc',
+      'unclassified_desc',
+      'unclassified_asc',
     ];
     return allowed.includes(normalized) ? normalized : 'total_desc';
   };
@@ -790,8 +864,13 @@ export async function runChartsRuntime(core) {
       }
       const isActive = key === current.key;
       header.classList.toggle('is-sort-active', isActive);
-      header.setAttribute('aria-sort', isActive ? (current.dir === 'asc' ? 'ascending' : 'descending') : 'none');
-      const baseLabel = String(header.textContent || '').replace(/\s*[↑↓]$/, '').trim();
+      header.setAttribute(
+        'aria-sort',
+        isActive ? (current.dir === 'asc' ? 'ascending' : 'descending') : 'none'
+      );
+      const baseLabel = String(header.textContent || '')
+        .replace(/\s*[↑↓]$/, '')
+        .trim();
       header.textContent = isActive ? `${baseLabel} ${current.dir === 'asc' ? '↑' : '↓'}` : baseLabel;
     });
   };
@@ -834,9 +913,8 @@ export async function runChartsRuntime(core) {
       .filter((value) => Number.isFinite(value))
       .sort((a, b) => b - a);
     const selectedYear = yearFilter == null ? 'all' : String(yearFilter);
-    const yearsToUse = selectedYear === 'all'
-      ? yearKeys
-      : (yearKeys.includes(selectedYear) ? [selectedYear] : []);
+    const yearsToUse =
+      selectedYear === 'all' ? yearKeys : yearKeys.includes(selectedYear) ? [selectedYear] : [];
     const buckets = new Map();
     yearsToUse.forEach((yearKey) => {
       const yearData = byYear[yearKey] && typeof byYear[yearKey] === 'object' ? byYear[yearKey] : {};
@@ -873,22 +951,25 @@ export async function runChartsRuntime(core) {
         pct_gt16: row.total > 0 ? (row.count_gt16 / row.total) * 100 : 0,
         pct_unclassified: row.total > 0 ? (row.count_unclassified / row.total) * 100 : 0,
       }));
-    const totals = rows.reduce((acc, row) => {
-      acc.count_lt4 += row.count_lt4;
-      acc.count_4_8 += row.count_4_8;
-      acc.count_8_16 += row.count_8_16;
-      acc.count_gt16 += row.count_gt16;
-      acc.count_unclassified += row.count_unclassified;
-      acc.total += row.total;
-      return acc;
-    }, {
-      count_lt4: 0,
-      count_4_8: 0,
-      count_8_16: 0,
-      count_gt16: 0,
-      count_unclassified: 0,
-      total: 0,
-    });
+    const totals = rows.reduce(
+      (acc, row) => {
+        acc.count_lt4 += row.count_lt4;
+        acc.count_4_8 += row.count_4_8;
+        acc.count_8_16 += row.count_8_16;
+        acc.count_gt16 += row.count_gt16;
+        acc.count_unclassified += row.count_unclassified;
+        acc.total += row.total;
+        return acc;
+      },
+      {
+        count_lt4: 0,
+        count_4_8: 0,
+        count_8_16: 0,
+        count_gt16: 0,
+        count_unclassified: 0,
+        total: 0,
+      }
+    );
     return {
       rows,
       totals,
@@ -947,14 +1028,13 @@ export async function runChartsRuntime(core) {
       .sort((a, b) => a.year - b.year);
   };
 
-  const buildChartsHospitalStats = (records, yearFilter) => (
-    getChartsHospitalStatsFromWorkerAgg(yearFilter)
-    || computeHospitalizedByDepartmentAndSpsStay(records, {
+  const buildChartsHospitalStats = (records, yearFilter) =>
+    getChartsHospitalStatsFromWorkerAgg(yearFilter) ||
+    computeHospitalizedByDepartmentAndSpsStay(records, {
       yearFilter: yearFilter == null ? 'all' : String(yearFilter),
       calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
       defaultSettings: DEFAULT_SETTINGS,
-    })
-  );
+    });
 
   const destroyChartsHospitalDeptTrendChart = () => {
     const existing = dashboardState.chartsHospitalDeptTrendChart;
@@ -975,8 +1055,9 @@ export async function runChartsRuntime(core) {
       selectors.chartsHospitalDeptTrendCanvas.hidden = true;
       selectors.chartsHospitalDeptTrendEmpty.hidden = false;
       if (selectors.chartsHospitalDeptTrendSubtitle) {
-        selectors.chartsHospitalDeptTrendSubtitle.textContent = TEXT?.charts?.hospitalTable?.trendSubtitle
-          || 'Pasirinkite skyriu lenteleje, kad matytumete jo SPS trukmes % dinamika pagal metus.';
+        selectors.chartsHospitalDeptTrendSubtitle.textContent =
+          TEXT?.charts?.hospitalTable?.trendSubtitle ||
+          'Pasirinkite skyriu lenteleje, kad matytumete jo SPS trukmes % dinamika pagal metus.';
       }
       return;
     }
@@ -986,7 +1067,7 @@ export async function runChartsRuntime(core) {
       defaultSettings: DEFAULT_SETTINGS,
     });
     const workerRows = getDepartmentTrendRowsFromWorkerAgg(department);
-    const rows = workerRows.length ? workerRows : (Array.isArray(trend?.rows) ? trend.rows : []);
+    const rows = workerRows.length ? workerRows : Array.isArray(trend?.rows) ? trend.rows : [];
     if (rows.length < 2) {
       destroyChartsHospitalDeptTrendChart();
       selectors.chartsHospitalDeptTrendCanvas.hidden = true;
@@ -1007,7 +1088,10 @@ export async function runChartsRuntime(core) {
       return;
     }
     const trendKey = `${department}|${rows.map((row) => `${row.year}:${row.total}:${row.count_lt4}:${row.count_4_8}:${row.count_8_16}:${row.count_gt16}:${row.count_unclassified}`).join(';')}`;
-    if (dashboardState.chartsHospitalDeptTrendChart && dashboardState.chartsHospitalDeptTrendKey === trendKey) {
+    if (
+      dashboardState.chartsHospitalDeptTrendChart &&
+      dashboardState.chartsHospitalDeptTrendKey === trendKey
+    ) {
       selectors.chartsHospitalDeptTrendCanvas.hidden = false;
       selectors.chartsHospitalDeptTrendEmpty.hidden = true;
       return;
@@ -1032,7 +1116,8 @@ export async function runChartsRuntime(core) {
         pct_gt16: Number(row?.pct_gt16 || 0),
         pct_unclassified: Number(row?.pct_unclassified || 0),
       };
-      const sum = values.pct_lt4 + values.pct_4_8 + values.pct_8_16 + values.pct_gt16 + values.pct_unclassified;
+      const sum =
+        values.pct_lt4 + values.pct_4_8 + values.pct_8_16 + values.pct_gt16 + values.pct_unclassified;
       if (!(sum > 0)) {
         return { ...row, ...values };
       }
@@ -1115,10 +1200,10 @@ export async function runChartsRuntime(core) {
     const existing = dashboardState.chartsHospitalDeptTrendChart;
     const existingType = String(existing?.config?.type || existing?.constructor?.id || '');
     if (
-      existing
-      && typeof existing.update === 'function'
-      && existing.canvas === selectors.chartsHospitalDeptTrendCanvas
-      && existingType === String(config.type)
+      existing &&
+      typeof existing.update === 'function' &&
+      existing.canvas === selectors.chartsHospitalDeptTrendCanvas &&
+      existingType === String(config.type)
     ) {
       existing.data = config.data;
       existing.options = config.options;
@@ -1162,13 +1247,20 @@ export async function runChartsRuntime(core) {
     if (!selectors.chartsHospitalTableBody) {
       return;
     }
-    const yearFilter = dashboardState.chartsHospitalTableYear == null ? 'all' : dashboardState.chartsHospitalTableYear;
-    const searchQuery = String(dashboardState.chartsHospitalTableSearch || '').trim().toLocaleLowerCase('lt');
+    const yearFilter =
+      dashboardState.chartsHospitalTableYear == null ? 'all' : dashboardState.chartsHospitalTableYear;
+    const searchQuery = String(dashboardState.chartsHospitalTableSearch || '')
+      .trim()
+      .toLocaleLowerCase('lt');
     const stats = buildChartsHospitalStats(records, yearFilter);
     const tableText = TEXT?.charts?.hospitalTable || {};
-    const filteredRows = (Array.isArray(stats?.rows) ? stats.rows : []).filter((row) => (
-      !searchQuery || String(row?.department || '').toLocaleLowerCase('lt').includes(searchQuery)
-    ));
+    const filteredRows = (Array.isArray(stats?.rows) ? stats.rows : []).filter(
+      (row) =>
+        !searchQuery ||
+        String(row?.department || '')
+          .toLocaleLowerCase('lt')
+          .includes(searchQuery)
+    );
     const rows = sortChartsHospitalRows(filteredRows, dashboardState.chartsHospitalTableSort);
 
     selectors.chartsHospitalTableBody.replaceChildren();
@@ -1187,7 +1279,10 @@ export async function runChartsRuntime(core) {
     rows.forEach((entry) => {
       const row = document.createElement('tr');
       setDatasetValue(row, 'department', String(entry.department || ''));
-      if (String(dashboardState.chartsHospitalTableDepartment || '').trim() === String(entry.department || '').trim()) {
+      if (
+        String(dashboardState.chartsHospitalTableDepartment || '').trim() ===
+        String(entry.department || '').trim()
+      ) {
         row.classList.add('is-department-active');
       }
       row.innerHTML = `
@@ -1244,7 +1339,8 @@ export async function runChartsRuntime(core) {
       return;
     }
     const current = getChartsHospitalSortParts(dashboardState.chartsHospitalTableSort);
-    const nextDir = current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : (key === 'name' ? 'asc' : 'desc');
+    const nextDir =
+      current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : key === 'name' ? 'asc' : 'desc';
     dashboardState.chartsHospitalTableSort = normalizeChartsHospitalTableSort(`${key}_${nextDir}`);
     renderChartsHospitalTable(dashboardState.rawRecords);
   };
@@ -1289,9 +1385,8 @@ export async function runChartsRuntime(core) {
     const endDate = new Date(Math.max(...dates.map((date) => date.getTime())));
     const startLabel = shortDateFormatter.format(startDate);
     const endLabel = shortDateFormatter.format(endDate);
-    selectors.dailyCaptionContext.textContent = startLabel === endLabel
-      ? startLabel
-      : `${startLabel} – ${endLabel}`;
+    selectors.dailyCaptionContext.textContent =
+      startLabel === endLabel ? startLabel : `${startLabel} – ${endLabel}`;
   };
 
   const chartFlow = createChartFlow({
@@ -1304,7 +1399,8 @@ export async function runChartsRuntime(core) {
     sanitizeChartFilters,
     getDatasetValue,
     setDatasetValue,
-    toSentenceCase: (value) => (typeof value === 'string' ? value.charAt(0).toUpperCase() + value.slice(1) : ''),
+    toSentenceCase: (value) =>
+      typeof value === 'string' ? value.charAt(0).toUpperCase() + value.slice(1) : '',
     showChartError: (message) => showChartError(selectors, message),
     describeError,
     computeDailyStats,
@@ -1340,7 +1436,8 @@ export async function runChartsRuntime(core) {
     filterRecordsByWindow,
     getAvailableYearsFromDaily,
     textCollator,
-    formatLocalDateKey: (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+    formatLocalDateKey: (date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
     describeError,
     showChartError: (message) => showChartError(selectors, message),
     getChartRenderers: () => chartRenderers,
@@ -1369,7 +1466,11 @@ export async function runChartsRuntime(core) {
     percentFormatter,
   });
 
-  const isValidHeatmapData = (heatmapData) => Boolean(heatmapData?.metrics && HEATMAP_METRIC_KEYS.some((key) => Array.isArray(heatmapData.metrics[key]?.matrix)));
+  const isValidHeatmapData = (heatmapData) =>
+    Boolean(
+      heatmapData?.metrics &&
+        HEATMAP_METRIC_KEYS.some((key) => Array.isArray(heatmapData.metrics[key]?.matrix))
+    );
   const renderArrivalHeatmap = (container, heatmapData, accentColor, metricKey) => {
     if (!container) return;
     container.replaceChildren();
@@ -1383,7 +1484,7 @@ export async function runChartsRuntime(core) {
     }
     updateHeatmapCaption(selectedMetric);
     const metric = metrics[selectedMetric] || {};
-    const matrix = Array.isArray(metric.matrix) ? metric.matrix : [];
+    const _matrix = Array.isArray(metric.matrix) ? metric.matrix : [];
     const countsMatrix = Array.isArray(metric.counts) ? metric.counts : [];
     const hasData = hasHeatmapMetricData(metric);
     const captionText = selectors.heatmapCaption?.textContent || '';
@@ -1432,13 +1533,16 @@ export async function runChartsRuntime(core) {
         const span = document.createElement('span');
         span.className = 'heatmap-cell';
         const intensity = metric.max > 0 ? numericValue / metric.max : 0;
-        const color = intensity > 0 ? computeHeatmapColor(accentColor, intensity) : 'var(--color-surface-alt)';
+        const color =
+          intensity > 0 ? computeHeatmapColor(accentColor, intensity) : 'var(--color-surface-alt)';
         span.style.backgroundColor = color;
-        span.style.color = intensity > 0.55 ? '#fff' : intensity > 0 ? 'var(--color-text)' : 'var(--color-text-muted)';
+        span.style.color =
+          intensity > 0.55 ? '#fff' : intensity > 0 ? 'var(--color-text)' : 'var(--color-text-muted)';
         const durationSamples = Array.isArray(countsMatrix?.[dayIdx]) ? countsMatrix[dayIdx][hourIdx] : 0;
-        const hasCellData = selectedMetric === 'avgDuration'
-          ? Number.isFinite(durationSamples) && durationSamples > 0
-          : numericValue > 0;
+        const hasCellData =
+          selectedMetric === 'avgDuration'
+            ? Number.isFinite(durationSamples) && durationSamples > 0
+            : numericValue > 0;
         const formattedValue = formatHeatmapMetricValue(numericValue);
         span.textContent = hasCellData ? formattedValue : '';
         span.tabIndex = hasCellData ? 0 : -1;
@@ -1590,7 +1694,14 @@ export async function runChartsRuntime(core) {
     describeError,
     computeDailyStats,
     filterDailyStatsByWindow,
-    populateChartYearOptions: (dailyStats) => populateChartYearOptions({ dailyStats, selectors, dashboardState, TEXT, syncChartYearControl: () => syncChartYearControl({ selectors, dashboardState }) }),
+    populateChartYearOptions: (dailyStats) =>
+      populateChartYearOptions({
+        dailyStats,
+        selectors,
+        dashboardState,
+        TEXT,
+        syncChartYearControl: () => syncChartYearControl({ selectors, dashboardState }),
+      }),
     populateChartsHospitalTableYearOptions,
     populateHourlyCompareYearOptions: hourlyControlsFeature.populateHourlyCompareYearOptions,
     populateHeatmapYearOptions,
@@ -1618,7 +1729,9 @@ export async function runChartsRuntime(core) {
     getSettings: () => settings,
     getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
 
   dataFlow.scheduleInitialLoad();

@@ -8,7 +8,13 @@ function parseHexToRgb(value) {
     return null;
   }
   const hex = text.slice(1);
-  const fullHex = hex.length === 3 ? hex.split('').map((char) => `${char}${char}`).join('') : hex;
+  const fullHex =
+    hex.length === 3
+      ? hex
+          .split('')
+          .map((char) => `${char}${char}`)
+          .join('')
+      : hex;
   if (fullHex.length !== 6) {
     return null;
   }
@@ -64,7 +70,8 @@ export function getThemePalette() {
     accent: rootStyles.getPropertyValue('--color-accent').trim() || '#2563eb',
     accentSoft: rootStyles.getPropertyValue('--color-accent-soft').trim() || 'rgba(37, 99, 235, 0.18)',
     weekendAccent: rootStyles.getPropertyValue('--color-weekend').trim() || '#f97316',
-    weekendAccentSoft: rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
+    weekendAccentSoft:
+      rootStyles.getPropertyValue('--color-weekend-soft').trim() || 'rgba(249, 115, 22, 0.2)',
     success: rootStyles.getPropertyValue('--color-success').trim() || '#16a34a',
     danger,
     dangerSoft: rootStyles.getPropertyValue('--color-danger-soft').trim() || rgbToRgba(dangerRgb, 0.28),
@@ -108,11 +115,14 @@ export function initializeTheme(dashboardState, selectors, { themeStorageKey } =
   const bodyTheme = document.body?.getAttribute('data-theme');
   const attrTheme = htmlTheme || bodyTheme;
   const storedTheme = themeStorageKey ? localStorage.getItem(themeStorageKey) : null;
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const resolved = attrTheme === 'dark' || attrTheme === 'light'
-    ? attrTheme
-    : storedTheme === 'dark' || storedTheme === 'light'
-      ? storedTheme
-      : (prefersDark ? 'dark' : 'light');
+  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  const resolved =
+    attrTheme === 'dark' || attrTheme === 'light'
+      ? attrTheme
+      : storedTheme === 'dark' || storedTheme === 'light'
+        ? storedTheme
+        : prefersDark
+          ? 'dark'
+          : 'light';
   applyTheme(dashboardState, selectors, resolved, { persist: false, themeStorageKey });
 }

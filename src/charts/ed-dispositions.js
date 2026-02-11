@@ -1,12 +1,6 @@
-export async function renderEdDispositionsChart(env, dispositions, text, displayVariant) {
-  const {
-    dashboardState,
-    selectors,
-    loadChartJs,
-    getThemePalette,
-    getThemeStyleTarget,
-    percentFormatter,
-  } = env;
+export async function renderEdDispositionsChart(env, dispositions, text, _displayVariant) {
+  const { dashboardState, selectors, loadChartJs, getThemePalette, getThemeStyleTarget, percentFormatter } =
+    env;
 
   const canvas = selectors.edDispositionsChart;
   const messageEl = selectors.edDispositionsMessage || null;
@@ -26,12 +20,12 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
 
   const validEntries = Array.isArray(dispositions)
     ? dispositions
-      .filter((entry) => Number.isFinite(entry?.count) && entry.count >= 0)
-      .map((entry, index) => ({
-        ...entry,
-        categoryKey: entry?.categoryKey != null ? String(entry.categoryKey) : null,
-        label: entry?.label || `Kategorija ${entry?.categoryKey ?? index + 1}`,
-      }))
+        .filter((entry) => Number.isFinite(entry?.count) && entry.count >= 0)
+        .map((entry, index) => ({
+          ...entry,
+          categoryKey: entry?.categoryKey != null ? String(entry.categoryKey) : null,
+          label: entry?.label || `Kategorija ${entry?.categoryKey ?? index + 1}`,
+        }))
     : [];
 
   if (!validEntries.length) {
@@ -71,11 +65,11 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
   const theme = styleTarget?.dataset?.theme || 'light';
 
   const CATEGORY_COLORS = {
-    '1': '#2563eb',
-    '2': '#ef4444',
-    '3': '#f59e0b',
-    '4': '#10b981',
-    '5': '#6366f1',
+    1: '#2563eb',
+    2: '#ef4444',
+    3: '#f59e0b',
+    4: '#10b981',
+    5: '#6366f1',
   };
 
   const colors = validEntries.map((entry, index) => {
@@ -91,14 +85,15 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
   }));
 
   const legendBuilder = text?.legendBuilder;
-  const legendFormatter = typeof legendBuilder === 'function'
-    ? legendBuilder
-    : (item) => {
-        if (Number.isFinite(item.share)) {
-          return `${item.label} (${percentFormatter.format(item.share)})`;
-        }
-        return item.label;
-      };
+  const legendFormatter =
+    typeof legendBuilder === 'function'
+      ? legendBuilder
+      : (item) => {
+          if (Number.isFinite(item.share)) {
+            return `${item.label} (${percentFormatter.format(item.share)})`;
+          }
+          return item.label;
+        };
 
   Chart.defaults.color = palette.textColor;
   Chart.defaults.font.family = computedStyles.fontFamily;
@@ -153,9 +148,7 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `600 12px ${computedStyles.fontFamily}`;
-      const shadowColor = theme === 'dark'
-        ? 'rgba(15, 23, 42, 0.72)'
-        : 'rgba(15, 23, 42, 0.58)';
+      const shadowColor = theme === 'dark' ? 'rgba(15, 23, 42, 0.72)' : 'rgba(15, 23, 42, 0.58)';
       ctx.shadowColor = shadowColor;
       ctx.shadowBlur = 8;
       ctx.shadowOffsetX = 0;
@@ -190,14 +183,16 @@ export async function renderEdDispositionsChart(env, dispositions, text, display
   const activeChart = dashboardState.charts.edDispositions;
   const targetData = {
     labels: legendLabels.map((item) => legendFormatter(item)),
-    datasets: [{
-      label: datasetLabel,
-      data: validEntries.map((entry) => entry.count),
-      backgroundColor: colors,
-      borderColor: theme === 'dark' ? palette.surface : '#ffffff',
-      borderWidth: 2,
-      hoverOffset: 12,
-    }],
+    datasets: [
+      {
+        label: datasetLabel,
+        data: validEntries.map((entry) => entry.count),
+        backgroundColor: colors,
+        borderColor: theme === 'dark' ? palette.surface : '#ffffff',
+        borderWidth: 2,
+        hoverOffset: 12,
+      },
+    ],
   };
   if (activeChart && typeof activeChart.update === 'function') {
     activeChart.data.labels = targetData.labels;

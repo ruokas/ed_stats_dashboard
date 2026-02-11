@@ -65,7 +65,8 @@ export function registerServiceWorker(scriptUrl = '/service-worker.js') {
   const resolvedUrl = scriptUrl.startsWith('http')
     ? scriptUrl
     : new URL(scriptUrl, window.location.href).href;
-  return navigator.serviceWorker.register(resolvedUrl)
+  return navigator.serviceWorker
+    .register(resolvedUrl)
     .then((registration) => {
       console.info('Service worker užregistruotas.', registration.scope);
       return registration;

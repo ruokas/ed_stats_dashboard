@@ -86,12 +86,10 @@ export function createKpiFlow(env) {
     if (!record) {
       return '';
     }
-    const arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-      ? record.arrival
-      : null;
-    const discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-      ? record.discharge
-      : null;
+    const arrival =
+      record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+    const discharge =
+      record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
     const reference = arrival || discharge;
     return reference ? computeShiftDateKeyForArrival(reference, shiftStartHour) : '';
   }
@@ -197,9 +195,7 @@ export function createKpiFlow(env) {
     }
     const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
     const startUtc = endUtc - (days - 1) * 86400000;
-    return decorated
-      .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-      .map((item) => item.entry);
+    return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
   }
 
   function updateKpiSubtitle() {
@@ -229,9 +225,7 @@ export function createKpiFlow(env) {
       : false;
     const hasData = totalRecords > 0 || hasAggregatedData;
     const summaryParts = [];
-    const isWindowDefault = Number.isFinite(windowDays)
-      ? windowDays === defaultFilters.window
-      : false;
+    const isWindowDefault = Number.isFinite(windowDays) ? windowDays === defaultFilters.window : false;
     const isShiftDefault = filters.shift === defaultFilters.shift;
     const isArrivalDefault = filters.arrival === defaultFilters.arrival;
     const isDispositionDefault = filters.disposition === defaultFilters.disposition;
@@ -274,15 +268,15 @@ export function createKpiFlow(env) {
     const configuredWindowRaw = Number.isFinite(Number(settings?.calculations?.windowDays))
       ? Number(settings.calculations.windowDays)
       : DEFAULT_SETTINGS.calculations.windowDays;
-    const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
-      ? configuredWindowRaw
-      : DEFAULT_KPI_WINDOW_DAYS;
+    const configuredWindow =
+      Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
+        ? configuredWindowRaw
+        : DEFAULT_KPI_WINDOW_DAYS;
     const currentWindowRaw = Number.isFinite(Number(dashboardState.kpi?.filters?.window))
       ? Number(dashboardState.kpi.filters.window)
       : configuredWindow;
-    const currentWindow = Number.isFinite(currentWindowRaw) && currentWindowRaw > 0
-      ? currentWindowRaw
-      : configuredWindow;
+    const currentWindow =
+      Number.isFinite(currentWindowRaw) && currentWindowRaw > 0 ? currentWindowRaw : configuredWindow;
     const uniqueValues = [...new Set([...KPI_WINDOW_OPTION_BASE, configuredWindow, currentWindow])]
       .filter((value) => Number.isFinite(value) && value >= 0)
       .sort((a, b) => {
@@ -374,15 +368,13 @@ export function createKpiFlow(env) {
 
   function applyKpiFiltersLocally(filters) {
     const normalizedFilters = sanitizeKpiFilters(filters, { getDefaultKpiFilters, KPI_FILTER_LABELS });
-    const settings = getSettings();
+    const _settings = getSettings();
     const windowDays = Number.isFinite(normalizedFilters.window)
       ? normalizedFilters.window
       : DEFAULT_SETTINGS.calculations.windowDays;
-    const hasPrimaryRecords = Array.isArray(dashboardState.primaryRecords)
-      && dashboardState.primaryRecords.length > 0;
-    const primaryDailyStats = Array.isArray(dashboardState.primaryDaily)
-      ? dashboardState.primaryDaily
-      : [];
+    const hasPrimaryRecords =
+      Array.isArray(dashboardState.primaryRecords) && dashboardState.primaryRecords.length > 0;
+    const primaryDailyStats = Array.isArray(dashboardState.primaryDaily) ? dashboardState.primaryDaily : [];
     let filteredRecords = [];
     let filteredDailyStats = [];
 
@@ -448,21 +440,35 @@ export function createKpiFlow(env) {
     (Array.isArray(records) ? records : []).forEach((record) => {
       const arrival = record?.arrival;
       const discharge = record?.discharge;
-      const arrivalHasTime = record?.arrivalHasTime === true
-        || (record?.arrivalHasTime == null && arrival instanceof Date && (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
-      const dischargeHasTime = record?.dischargeHasTime === true
-        || (record?.dischargeHasTime == null && discharge instanceof Date && (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
+      const arrivalHasTime =
+        record?.arrivalHasTime === true ||
+        (record?.arrivalHasTime == null &&
+          arrival instanceof Date &&
+          (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+      const dischargeHasTime =
+        record?.dischargeHasTime === true ||
+        (record?.dischargeHasTime == null &&
+          discharge instanceof Date &&
+          (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
       let reference = null;
       if (metric === 'arrivals') {
-        reference = arrivalHasTime && arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
+        reference =
+          arrivalHasTime && arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
       } else if (metric === 'discharges') {
-        reference = dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
+        reference =
+          dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime())
+            ? discharge
+            : null;
       } else if (metric === 'hospitalized') {
         if (record?.hospitalized) {
-          reference = dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime()) ? discharge : null;
+          reference =
+            dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime())
+              ? discharge
+              : null;
         }
       } else if (metric === 'balance' || metric === 'census') {
-        reference = arrivalHasTime && arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
+        reference =
+          arrivalHasTime && arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
       }
       if (!reference) {
         return;
@@ -488,8 +494,11 @@ export function createKpiFlow(env) {
     if (metric === 'balance' || metric === 'census') {
       (Array.isArray(records) ? records : []).forEach((record) => {
         const discharge = record?.discharge;
-        const dischargeHasTime = record?.dischargeHasTime === true
-          || (record?.dischargeHasTime == null && discharge instanceof Date && (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
+        const dischargeHasTime =
+          record?.dischargeHasTime === true ||
+          (record?.dischargeHasTime == null &&
+            discharge instanceof Date &&
+            (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
         if (!dischargeHasTime || !(discharge instanceof Date) || Number.isNaN(discharge.getTime())) {
           return;
         }
@@ -506,7 +515,10 @@ export function createKpiFlow(env) {
       if (metric === 'balance') {
         series.net = series.total.map((value, index) => value - (series.outflow[index] || 0));
       } else {
-        const orderedHours = Array.from({ length: 24 }, (_, offset) => ((shiftStartHour + offset) % 24 + 24) % 24);
+        const orderedHours = Array.from(
+          { length: 24 },
+          (_, offset) => (((shiftStartHour + offset) % 24) + 24) % 24
+        );
         let running = 0;
         orderedHours.forEach((hour) => {
           running = Math.max(0, running + (series.total[hour] || 0) - (series.outflow[hour] || 0));
@@ -522,11 +534,12 @@ export function createKpiFlow(env) {
       metric,
       metricLabel: getLastShiftMetricLabel(metric),
       series,
-      hasData: metric === 'balance'
-        ? (series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0))
-        : metric === 'census'
-          ? (series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0))
-        : hasData,
+      hasData:
+        metric === 'balance'
+          ? series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0)
+          : metric === 'census'
+            ? series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0)
+            : hasData,
     };
   }
 
@@ -535,7 +548,10 @@ export function createKpiFlow(env) {
     const seriesInfo = buildLastShiftHourlySeries(records, dailyStats, metricKey);
     dashboardState.kpi.lastShiftHourly = seriesInfo;
     renderLastShiftHourlyChartWithTheme(seriesInfo).catch((error) => {
-      const errorInfo = describeError(error, { code: 'LAST_SHIFT_HOURLY', message: 'Nepavyko atnaujinti paskutinės pamainos grafiko' });
+      const errorInfo = describeError(error, {
+        code: 'LAST_SHIFT_HOURLY',
+        message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
+      });
       console.error(errorInfo.log, error);
       if (setChartCardMessage) {
         setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
@@ -544,7 +560,10 @@ export function createKpiFlow(env) {
   }
 
   async function applyKpiFiltersAndRender() {
-    const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters, { getDefaultKpiFilters, KPI_FILTER_LABELS });
+    const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters, {
+      getDefaultKpiFilters,
+      KPI_FILTER_LABELS,
+    });
     dashboardState.kpi.filters = { ...normalizedFilters };
     const defaultFilters = getDefaultKpiFilters();
     const windowDays = normalizedFilters.window;
@@ -592,7 +611,10 @@ export function createKpiFlow(env) {
       });
       updateKpiSubtitle();
     } catch (error) {
-      const errorInfo = describeError(error, { code: 'KPI_WORKER', message: 'Nepavyko pritaikyti KPI filtrų worker\'yje' });
+      const errorInfo = describeError(error, {
+        code: 'KPI_WORKER',
+        message: "Nepavyko pritaikyti KPI filtrų worker'yje",
+      });
       console.error(errorInfo.log, error);
       if (jobToken !== kpiWorkerJobToken) {
         return;
@@ -732,7 +754,11 @@ export function createKpiFlow(env) {
       const settings = getSettings();
       const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
       const dateFilteredRecords = filterKpiRecordsByDate(baseRecords, selectedDate, shiftStartHour);
-      const dateFilteredDailyStats = computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS);
+      const dateFilteredDailyStats = computeDailyStats(
+        dateFilteredRecords,
+        settings?.calculations,
+        DEFAULT_SETTINGS
+      );
       renderLastShiftHourlyChart(dateFilteredRecords, dateFilteredDailyStats);
       return;
     }

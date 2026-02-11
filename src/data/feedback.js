@@ -4,14 +4,21 @@ import { parseDate } from './date.js';
 const FEEDBACK_HEADER_CANDIDATES = {
   date: 'timestamp,gauta,data,received,created,submitted,laikas,pildymo data,pildymo laikas,pildymo data ir laikas,užpildymo data,užpildymo laikas,forma pateikta,data pateikta,atsakymo data,atsakymo laikas,įrašo data,įrašo laikas',
   respondent: 'kas pildo formą?,kas pildo formą,kas pildo forma,respondentas,role,dalyvis,tipas',
-  location: 'kur pildėte anketą?,kur pildėte anketą,kur pildėte anketa,kur pildėte forma,kur pildėte formą?,kur pildoma anketa,pildymo vieta,pildymo vieta?,apklausos vieta,location,kur pildoma forma,šaltinis,saltinis',
-  overall: 'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
-  doctors: 'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
-  nurses: 'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
-  aidesContact: 'ar bendravote su slaugytojų padėjėjais?,ar bendravote su slaugytojų padėjėjais,ar bendravote su slaugytoju padejejais,ar bendravote su padėjėjais,contact with aides',
-  aides: 'kaip vertinate slaugytojų padėjėjų darbą,*padėjėjų darb*,slaugytoju padejeju darba,padėjėjų vertinimas,aide rating',
+  location:
+    'kur pildėte anketą?,kur pildėte anketą,kur pildėte anketa,kur pildėte forma,kur pildėte formą?,kur pildoma anketa,pildymo vieta,pildymo vieta?,apklausos vieta,location,kur pildoma forma,šaltinis,saltinis',
+  overall:
+    'kaip vertinate savo bendrą patirtį mūsų skyriuje?,*bendr* patirt*,overall,general experience,experience rating',
+  doctors:
+    'kaip vertinate gydytojų darbą,*gydytojų darb*,gydytoju darba,gydytojų vertinimas,physician,doctor rating',
+  nurses:
+    'kaip vertinate slaugytojų darbą ?,kaip vertinate slaugytojų darbą,*slaugytojų darb*,slaugytoju darba,slaugytojų vertinimas,nurse rating',
+  aidesContact:
+    'ar bendravote su slaugytojų padėjėjais?,ar bendravote su slaugytojų padėjėjais,ar bendravote su slaugytoju padejejais,ar bendravote su padėjėjais,contact with aides',
+  aides:
+    'kaip vertinate slaugytojų padėjėjų darbą,*padėjėjų darb*,slaugytoju padejeju darba,padėjėjų vertinimas,aide rating',
   waiting: 'kaip vertinate laukimo laiką skyriuje?,*laukimo laik*,wait time,laukimo vertinimas',
-  comments: 'turite pasiūlymų ar pastabų, kaip galėtume tobulėti?,pasiūlymai,pastabos,komentarai,atsiliepimų komentarai',
+  comments:
+    'turite pasiūlymų ar pastabų, kaip galėtume tobulėti?,pasiūlymai,pastabos,komentarai,atsiliepimų komentarai',
 };
 
 const FEEDBACK_CONTACT_YES = 'taip,yes,yeah,1,true';
@@ -72,7 +79,9 @@ export function createFeedbackHandlers(context) {
       if (!normalizedCandidate) {
         continue;
       }
-      const match = headerNormalized.find((column) => matchesWildcard(column.normalized, normalizedCandidate));
+      const match = headerNormalized.find((column) =>
+        matchesWildcard(column.normalized, normalizedCandidate)
+      );
       if (match) {
         return match.index;
       }
@@ -163,52 +172,43 @@ export function createFeedbackHandlers(context) {
       comments: resolveFeedbackColumn(headerNormalized, FEEDBACK_HEADER_CANDIDATES.comments),
     };
 
-    const yesCandidates = parseCandidateList(FEEDBACK_CONTACT_YES, FEEDBACK_CONTACT_YES)
-      .map((token) => token.toLowerCase());
-    const noCandidates = parseCandidateList(FEEDBACK_CONTACT_NO, FEEDBACK_CONTACT_NO)
-      .map((token) => token.toLowerCase());
+    const yesCandidates = parseCandidateList(FEEDBACK_CONTACT_YES, FEEDBACK_CONTACT_YES).map((token) =>
+      token.toLowerCase()
+    );
+    const noCandidates = parseCandidateList(FEEDBACK_CONTACT_NO, FEEDBACK_CONTACT_NO).map((token) =>
+      token.toLowerCase()
+    );
 
-    const rowsWithoutHeader = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
+    const rowsWithoutHeader = rows
+      .slice(1)
+      .filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
     return rowsWithoutHeader
       .map((columns) => {
         const rawDate = indices.date >= 0 ? columns[indices.date] : '';
         const parsedDate = parseDate(rawDate);
-        const dateValue = parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
+        const dateValue =
+          parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
 
-        const respondent = indices.respondent >= 0
-          ? String(columns[indices.respondent] ?? '').trim()
-          : '';
+        const respondent = indices.respondent >= 0 ? String(columns[indices.respondent] ?? '').trim() : '';
 
-        const location = indices.location >= 0
-          ? String(columns[indices.location] ?? '').trim()
-          : '';
+        const location = indices.location >= 0 ? String(columns[indices.location] ?? '').trim() : '';
 
-        const overallRating = indices.overall >= 0
-          ? parseFeedbackRatingCell(columns[indices.overall])
-          : null;
-        const doctorsRating = indices.doctors >= 0
-          ? parseFeedbackRatingCell(columns[indices.doctors])
-          : null;
-        const nursesRating = indices.nurses >= 0
-          ? parseFeedbackRatingCell(columns[indices.nurses])
-          : null;
-        const aidesContact = indices.aidesContact >= 0
-          ? parseFeedbackContactValue(columns[indices.aidesContact], yesCandidates, noCandidates)
-          : null;
-        const aidesRating = indices.aides >= 0
-          ? parseFeedbackRatingCell(columns[indices.aides])
-          : null;
-        const waitingRating = indices.waiting >= 0
-          ? parseFeedbackRatingCell(columns[indices.waiting])
-          : null;
+        const overallRating = indices.overall >= 0 ? parseFeedbackRatingCell(columns[indices.overall]) : null;
+        const doctorsRating = indices.doctors >= 0 ? parseFeedbackRatingCell(columns[indices.doctors]) : null;
+        const nursesRating = indices.nurses >= 0 ? parseFeedbackRatingCell(columns[indices.nurses]) : null;
+        const aidesContact =
+          indices.aidesContact >= 0
+            ? parseFeedbackContactValue(columns[indices.aidesContact], yesCandidates, noCandidates)
+            : null;
+        const aidesRating = indices.aides >= 0 ? parseFeedbackRatingCell(columns[indices.aides]) : null;
+        const waitingRating = indices.waiting >= 0 ? parseFeedbackRatingCell(columns[indices.waiting]) : null;
 
-        const commentRaw = indices.comments >= 0
-          ? String(columns[indices.comments] ?? '').trim()
-          : '';
+        const commentRaw = indices.comments >= 0 ? String(columns[indices.comments] ?? '').trim() : '';
         const hasComment = commentRaw.length > 0;
 
-        const hasRating = [overallRating, doctorsRating, nursesRating, aidesRating, waitingRating]
-          .some((value) => Number.isFinite(value));
+        const hasRating = [overallRating, doctorsRating, nursesRating, aidesRating, waitingRating].some(
+          (value) => Number.isFinite(value)
+        );
         const hasContact = aidesContact === true || aidesContact === false;
         const hasRespondent = respondent.length > 0;
         const hasLocation = location.length > 0;

@@ -20,7 +20,8 @@ export function applyFeedbackText({
 
   const feedbackFiltersText = TEXT.feedback?.filters || {};
   if (selectors.feedbackRespondentLabel) {
-    selectors.feedbackRespondentLabel.textContent = feedbackFiltersText.respondent?.label || 'Kas pildo anketą';
+    selectors.feedbackRespondentLabel.textContent =
+      feedbackFiltersText.respondent?.label || 'Kas pildo anketą';
   }
   if (selectors.feedbackLocationLabel) {
     selectors.feedbackLocationLabel.textContent = feedbackFiltersText.location?.label || 'Šaltinis';
@@ -38,7 +39,7 @@ export function applyFeedbackText({
   if (selectors.feedbackTrendControlsLabel) {
     selectors.feedbackTrendControlsLabel.textContent = TEXT.feedback.trend.controlsLabel;
   }
-  if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
+  if (selectors.feedbackTrendButtons?.length) {
     const periodConfig = Array.isArray(TEXT.feedback.trend.periods) ? TEXT.feedback.trend.periods : [];
     selectors.feedbackTrendButtons.forEach((button) => {
       const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
@@ -56,7 +57,7 @@ export function applyFeedbackText({
   if (selectors.feedbackTrendMetricsLabel) {
     selectors.feedbackTrendMetricsLabel.textContent = TEXT.feedback.trend.metricControlsLabel || 'Rodikliai';
   }
-  if (selectors.feedbackTrendMetricButtons && selectors.feedbackTrendMetricButtons.length) {
+  if (selectors.feedbackTrendMetricButtons?.length) {
     const metricsConfig = Array.isArray(TEXT.feedback?.trend?.metrics) ? TEXT.feedback.trend.metrics : [];
     selectors.feedbackTrendMetricButtons.forEach((button) => {
       const metricKey = getDatasetValue(button, 'trendMetric', '');
@@ -72,10 +73,13 @@ export function applyFeedbackText({
     });
   }
   if (selectors.feedbackTrendCompareLabel) {
-    selectors.feedbackTrendCompareLabel.textContent = TEXT.feedback.trend.compareControlsLabel || 'Palyginti pagal';
+    selectors.feedbackTrendCompareLabel.textContent =
+      TEXT.feedback.trend.compareControlsLabel || 'Palyginti pagal';
   }
   if (selectors.feedbackTrendCompareSelect) {
-    const compareModes = Array.isArray(TEXT.feedback?.trend?.compareModes) ? TEXT.feedback.trend.compareModes : [];
+    const compareModes = Array.isArray(TEXT.feedback?.trend?.compareModes)
+      ? TEXT.feedback.trend.compareModes
+      : [];
     if (compareModes.length) {
       selectors.feedbackTrendCompareSelect.replaceChildren();
       compareModes.forEach((mode) => {
@@ -88,7 +92,10 @@ export function applyFeedbackText({
         selectors.feedbackTrendCompareSelect.appendChild(option);
       });
       const activeValue = selectors.feedbackTrendCompareSelect.dataset.value;
-      if (activeValue && selectors.feedbackTrendCompareSelect.querySelector(`option[value="${activeValue}"]`)) {
+      if (
+        activeValue &&
+        selectors.feedbackTrendCompareSelect.querySelector(`option[value="${activeValue}"]`)
+      ) {
         selectors.feedbackTrendCompareSelect.value = activeValue;
       }
     }

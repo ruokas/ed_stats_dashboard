@@ -11,9 +11,8 @@ self.addEventListener('message', (event) => {
     let payload;
     if (type === 'transformCsv') {
       const { csvText, options, progressStep } = event.data;
-      const reportProgress = Number.isInteger(progressStep) && progressStep > 0
-        ? createProgressReporter(id, progressStep)
-        : null;
+      const reportProgress =
+        Number.isInteger(progressStep) && progressStep > 0 ? createProgressReporter(id, progressStep) : null;
       payload = transformCsvWithStats(csvText, options, { reportProgress, progressStep });
     } else if (type === 'transformEdCsv') {
       const { csvText, options } = event.data;
@@ -52,7 +51,7 @@ function createProgressReporter(id, step = 500) {
       return;
     }
     const now = Date.now();
-    if (current < total && now - lastSent < 100 && (current % normalizedStep !== 0)) {
+    if (current < total && now - lastSent < 100 && current % normalizedStep !== 0) {
       return;
     }
     lastSent = now;
@@ -69,18 +68,13 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   if (!text) {
     throw new Error('CSV turinys tuščias.');
   }
-  const {
-    csvSettings = {},
-    csvDefaults = {},
-    calculations = {},
-    calculationDefaults = {},
-  } = options;
-  const progressStep = Number.isInteger(progressOptions.progressStep) && progressOptions.progressStep > 0
-    ? progressOptions.progressStep
-    : 500;
-  const reportProgress = typeof progressOptions.reportProgress === 'function'
-    ? progressOptions.reportProgress
-    : null;
+  const { csvSettings = {}, csvDefaults = {}, calculations = {}, calculationDefaults = {} } = options;
+  const progressStep =
+    Number.isInteger(progressOptions.progressStep) && progressOptions.progressStep > 0
+      ? progressOptions.progressStep
+      : 500;
+  const reportProgress =
+    typeof progressOptions.reportProgress === 'function' ? progressOptions.reportProgress : null;
   const { rows, delimiter } = parseCsv(text);
   if (!rows.length) {
     throw new Error('CSV failas tuščias.');
@@ -120,7 +114,14 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
       if (key === 'cardNumber') {
         return false;
       }
-      if (key === 'age' || key === 'sex' || key === 'address' || key === 'pspc' || key === 'diagnosis' || key === 'referral') {
+      if (
+        key === 'age' ||
+        key === 'sex' ||
+        key === 'address' ||
+        key === 'pspc' ||
+        key === 'diagnosis' ||
+        key === 'referral'
+      ) {
         return false;
       }
       return true;
@@ -129,9 +130,7 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   if (missing.length) {
     throw new Error(`CSV faile nerasti stulpeliai: ${missing.join(', ')}`);
   }
-  const dataRows = rows
-    .slice(1)
-    .filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
+  const dataRows = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
   const totalRows = dataRows.length;
   const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
   const hospitalByDeptStayAgg = createHospitalizedDeptStayAgg();
@@ -145,7 +144,7 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
       columnIndices,
       csvRuntime,
       calculations,
-      calculationDefaults,
+      calculationDefaults
     );
     records.push(record);
     accumulateHospitalizedDeptStayAgg(hospitalByDeptStayAgg, record, shiftStartHour);
@@ -160,12 +159,11 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
 function applyKpiFiltersInWorker(data = {}) {
   const defaultFilters = normalizeKpiFilters(data.defaultFilters);
   const requestedFilters = normalizeKpiFilters(data.filters, defaultFilters);
-  const windowFromPayload = Number.isFinite(Number(data.windowDays)) && Number(data.windowDays) >= 0
-    ? Number(data.windowDays)
-    : Number.NaN;
-  const windowDays = Number.isFinite(windowFromPayload)
-    ? windowFromPayload
-    : requestedFilters.window;
+  const windowFromPayload =
+    Number.isFinite(Number(data.windowDays)) && Number(data.windowDays) >= 0
+      ? Number(data.windowDays)
+      : Number.NaN;
+  const windowDays = Number.isFinite(windowFromPayload) ? windowFromPayload : requestedFilters.window;
   const records = Array.isArray(data.records) ? data.records : [];
   const dailyStats = Array.isArray(data.dailyStats) ? data.dailyStats : [];
   const calculations = data.calculations || {};
@@ -217,8 +215,21 @@ function transformEdCsvWithSummary(text, options = {}) {
     departure: ['departure', 'departure time', 'discharge', 'išrašymo data', 'išvykimo laikas', 'completion'],
     disposition: ['disposition', 'outcome', 'sprendimas', 'status', 'būsena', 'dispo'],
     los: ['length of stay (min)', 'los (min)', 'stay (min)', 'trukmė (min)', 'los minutes', 'los_min'],
-    door: ['door to provider (min)', 'door to doctor (min)', 'door to doc (min)', 'door to physician (min)', 'laukimo laikas (min)', 'durys iki gydytojo (min)'],
-    decision: ['decision to depart (min)', 'boarding (min)', 'decision to leave (min)', 'disposition to depart (min)', 'sprendimo laukimas (min)'],
+    door: [
+      'door to provider (min)',
+      'door to doctor (min)',
+      'door to doc (min)',
+      'door to physician (min)',
+      'laukimo laikas (min)',
+      'durys iki gydytojo (min)',
+    ],
+    decision: [
+      'decision to depart (min)',
+      'boarding (min)',
+      'decision to leave (min)',
+      'disposition to depart (min)',
+      'sprendimo laukimas (min)',
+    ],
     lab: [
       'avg lab turnaround (min)',
       'lab turnaround (min)',
@@ -234,9 +245,25 @@ function transformEdCsvWithSummary(text, options = {}) {
     timestamp: ['timestamp', 'datetime', 'laikas', 'įrašyta', 'atnaujinta', 'data', 'created', 'updated'],
     currentPatients: ['šiuo metu pacientų', 'current patients', 'patients now', 'patients in ed'],
     occupiedBeds: ['užimta lovų', 'occupied beds', 'beds occupied'],
-    nurseRatio: ['slaugytojų - pacientų santykis', 'nurse - patient ratio', 'nurse to patient ratio', 'nurse ratio'],
-    doctorRatio: ['gydytojų - pacientų santykis', 'doctor - patient ratio', 'doctor to patient ratio', 'physician ratio'],
-    lab: ['lab', 'avg lab turnaround (min)', 'lab turnaround (min)', 'vid. lab. tyrimų laikas (min)', 'vid. lab. tyrimų laikas'],
+    nurseRatio: [
+      'slaugytojų - pacientų santykis',
+      'nurse - patient ratio',
+      'nurse to patient ratio',
+      'nurse ratio',
+    ],
+    doctorRatio: [
+      'gydytojų - pacientų santykis',
+      'doctor - patient ratio',
+      'doctor to patient ratio',
+      'physician ratio',
+    ],
+    lab: [
+      'lab',
+      'avg lab turnaround (min)',
+      'lab turnaround (min)',
+      'vid. lab. tyrimų laikas (min)',
+      'vid. lab. tyrimų laikas',
+    ],
     category1: ['1 kategorijos pacientų', 'category 1 patients', 'patients category 1', 'c1'],
     category2: ['2 kategorijos pacientų', 'category 2 patients', 'patients category 2', 'c2'],
     category3: ['3 kategorijos pacientų', 'category 3 patients', 'patients category 3', 'c3'],
@@ -268,7 +295,7 @@ function transformEdCsvWithSummary(text, options = {}) {
   };
   const hasSnapshot = Object.values(snapshotIndices).some((index) => index >= 0);
   const hasLegacy = Object.values(legacyIndices).some((index) => index >= 0);
-  const datasetType = hasSnapshot && hasLegacy ? 'hybrid' : (hasSnapshot ? 'snapshot' : 'legacy');
+  const datasetType = hasSnapshot && hasLegacy ? 'hybrid' : hasSnapshot ? 'snapshot' : 'legacy';
 
   const records = [];
   for (let i = 1; i < rows.length; i += 1) {
@@ -284,10 +311,13 @@ function transformEdCsvWithSummary(text, options = {}) {
     const dateValue = legacyIndices.date >= 0 ? normalizedRow[legacyIndices.date] : '';
     const arrivalDate = arrivalValue ? parseDate(arrivalValue) : null;
     const departureDate = departureValue ? parseDate(departureValue) : null;
-    const recordDate = dateValue ? parseDate(dateValue) : (arrivalDate || departureDate || timestamp);
+    const recordDate = dateValue ? parseDate(dateValue) : arrivalDate || departureDate || timestamp;
     const dateKey = recordDate ? toDateKeyFromDate(recordDate) : '';
-    const dispositionInfo = normalizeEdDisposition(legacyIndices.disposition >= 0 ? normalizedRow[legacyIndices.disposition] : '');
-    let losMinutes = legacyIndices.los >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.los]) : null;
+    const dispositionInfo = normalizeEdDisposition(
+      legacyIndices.disposition >= 0 ? normalizedRow[legacyIndices.disposition] : ''
+    );
+    let losMinutes =
+      legacyIndices.los >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.los]) : null;
     if (!Number.isFinite(losMinutes) && arrivalDate instanceof Date && departureDate instanceof Date) {
       const diffMinutes = (departureDate.getTime() - arrivalDate.getTime()) / 60000;
       losMinutes = Number.isFinite(diffMinutes) && diffMinutes >= 0 ? diffMinutes : null;
@@ -299,31 +329,74 @@ function transformEdCsvWithSummary(text, options = {}) {
       disposition: dispositionInfo.label,
       dispositionCategory: dispositionInfo.category,
       losMinutes: Number.isFinite(losMinutes) && losMinutes >= 0 ? losMinutes : null,
-      doorToProviderMinutes: legacyIndices.door >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.door]) : null,
-      decisionToLeaveMinutes: legacyIndices.decision >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.decision]) : null,
-      labMinutes: legacyIndices.lab >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.lab]) : null,
-      snapshotLabMinutes: snapshotIndices.lab >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.lab]) : null,
-      currentPatients: snapshotIndices.currentPatients >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.currentPatients]) : null,
-      occupiedBeds: snapshotIndices.occupiedBeds >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.occupiedBeds]) : null,
-      nurseRatio: snapshotIndices.nurseRatio >= 0 ? parseRatioWorker(normalizedRow[snapshotIndices.nurseRatio]).ratio : null,
-      nurseRatioText: snapshotIndices.nurseRatio >= 0 ? parseRatioWorker(normalizedRow[snapshotIndices.nurseRatio]).text : '',
-      doctorRatio: snapshotIndices.doctorRatio >= 0 ? parseRatioWorker(normalizedRow[snapshotIndices.doctorRatio]).ratio : null,
-      doctorRatioText: snapshotIndices.doctorRatio >= 0 ? parseRatioWorker(normalizedRow[snapshotIndices.doctorRatio]).text : '',
+      doorToProviderMinutes:
+        legacyIndices.door >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.door]) : null,
+      decisionToLeaveMinutes:
+        legacyIndices.decision >= 0
+          ? parseDurationMinutesWorker(normalizedRow[legacyIndices.decision])
+          : null,
+      labMinutes:
+        legacyIndices.lab >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.lab]) : null,
+      snapshotLabMinutes:
+        snapshotIndices.lab >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.lab]) : null,
+      currentPatients:
+        snapshotIndices.currentPatients >= 0
+          ? parseNumericCellWorker(normalizedRow[snapshotIndices.currentPatients])
+          : null,
+      occupiedBeds:
+        snapshotIndices.occupiedBeds >= 0
+          ? parseNumericCellWorker(normalizedRow[snapshotIndices.occupiedBeds])
+          : null,
+      nurseRatio:
+        snapshotIndices.nurseRatio >= 0
+          ? parseRatioWorker(normalizedRow[snapshotIndices.nurseRatio]).ratio
+          : null,
+      nurseRatioText:
+        snapshotIndices.nurseRatio >= 0
+          ? parseRatioWorker(normalizedRow[snapshotIndices.nurseRatio]).text
+          : '',
+      doctorRatio:
+        snapshotIndices.doctorRatio >= 0
+          ? parseRatioWorker(normalizedRow[snapshotIndices.doctorRatio]).ratio
+          : null,
+      doctorRatioText:
+        snapshotIndices.doctorRatio >= 0
+          ? parseRatioWorker(normalizedRow[snapshotIndices.doctorRatio]).text
+          : '',
       categories: {
-        1: snapshotIndices.category1 >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.category1]) : null,
-        2: snapshotIndices.category2 >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.category2]) : null,
-        3: snapshotIndices.category3 >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.category3]) : null,
-        4: snapshotIndices.category4 >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.category4]) : null,
-        5: snapshotIndices.category5 >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.category5]) : null,
+        1:
+          snapshotIndices.category1 >= 0
+            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category1])
+            : null,
+        2:
+          snapshotIndices.category2 >= 0
+            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category2])
+            : null,
+        3:
+          snapshotIndices.category3 >= 0
+            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category3])
+            : null,
+        4:
+          snapshotIndices.category4 >= 0
+            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category4])
+            : null,
+        5:
+          snapshotIndices.category5 >= 0
+            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category5])
+            : null,
       },
-      arrivalHour: arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
-      departureHour: departureDate instanceof Date && !Number.isNaN(departureDate.getTime()) ? departureDate.getHours() : null,
+      arrivalHour:
+        arrivalDate instanceof Date && !Number.isNaN(arrivalDate.getTime()) ? arrivalDate.getHours() : null,
+      departureHour:
+        departureDate instanceof Date && !Number.isNaN(departureDate.getTime())
+          ? departureDate.getHours()
+          : null,
     };
     if (
-      datasetType !== 'snapshot'
-      || Number.isFinite(record.currentPatients)
-      || Number.isFinite(record.occupiedBeds)
-      || Number.isFinite(record.snapshotLabMinutes)
+      datasetType !== 'snapshot' ||
+      Number.isFinite(record.currentPatients) ||
+      Number.isFinite(record.occupiedBeds) ||
+      Number.isFinite(record.snapshotLabMinutes)
     ) {
       records.push(record);
     }
@@ -345,10 +418,11 @@ function summarizeEdRecordsWorker(records, mode = 'legacy') {
   if (mode === 'hybrid') {
     const legacy = summarizeLegacyWorker(records);
     const snapshot = summarizeSnapshotWorker(records);
-    const hasSnapshotMetrics = Number.isFinite(snapshot.summary.currentPatients)
-      || Number.isFinite(snapshot.summary.occupiedBeds)
-      || Number.isFinite(snapshot.summary.nursePatientsPerStaff)
-      || Number.isFinite(snapshot.summary.doctorPatientsPerStaff);
+    const hasSnapshotMetrics =
+      Number.isFinite(snapshot.summary.currentPatients) ||
+      Number.isFinite(snapshot.summary.occupiedBeds) ||
+      Number.isFinite(snapshot.summary.nursePatientsPerStaff) ||
+      Number.isFinite(snapshot.summary.doctorPatientsPerStaff);
     if (hasSnapshotMetrics) {
       return {
         type: 'hybrid',
@@ -357,7 +431,12 @@ function summarizeEdRecordsWorker(records, mode = 'legacy') {
         daily: snapshot.daily.length ? snapshot.daily : legacy.daily,
       };
     }
-    return { type: 'legacy', summary: legacy.summary, dispositions: legacy.dispositions, daily: legacy.daily };
+    return {
+      type: 'legacy',
+      summary: legacy.summary,
+      dispositions: legacy.dispositions,
+      daily: legacy.daily,
+    };
   }
   return summarizeLegacyWorker(records);
 }
@@ -402,22 +481,33 @@ function summarizeLegacyWorker(records) {
     }
     dailyMap.set(record.dateKey, existing);
     const label = record.disposition || 'Nežinoma';
-    const dispo = dispositionMap.get(label) || { label, count: 0, category: record.dispositionCategory || 'other' };
+    const dispo = dispositionMap.get(label) || {
+      label,
+      count: 0,
+      category: record.dispositionCategory || 'other',
+    };
     dispo.count += 1;
     dispositionMap.set(label, dispo);
   });
-  const daily = Array.from(dailyMap.values()).sort((a, b) => (a.dateKey > b.dateKey ? -1 : 1)).map((entry) => ({
-    dateKey: entry.dateKey,
-    patients: entry.patients,
-    avgLosMinutes: entry.losCount > 0 ? entry.losSum / entry.losCount : null,
-    avgLabMinutes: entry.labCount > 0 ? entry.labSum / entry.labCount : null,
-  }));
-  const latestMonthKey = Array.from(monthMap.keys()).sort((a, b) => a.localeCompare(b)).pop() || '';
+  const daily = Array.from(dailyMap.values())
+    .sort((a, b) => (a.dateKey > b.dateKey ? -1 : 1))
+    .map((entry) => ({
+      dateKey: entry.dateKey,
+      patients: entry.patients,
+      avgLosMinutes: entry.losCount > 0 ? entry.losSum / entry.losCount : null,
+      avgLabMinutes: entry.labCount > 0 ? entry.labSum / entry.labCount : null,
+    }));
+  const latestMonthKey =
+    Array.from(monthMap.keys())
+      .sort((a, b) => a.localeCompare(b))
+      .pop() || '';
   const latestMonth = latestMonthKey ? monthMap.get(latestMonthKey) : null;
-  const dispositions = Array.from(dispositionMap.values()).sort((a, b) => b.count - a.count).map((entry) => ({
-    ...entry,
-    share: totalPatients > 0 ? entry.count / totalPatients : null,
-  }));
+  const dispositions = Array.from(dispositionMap.values())
+    .sort((a, b) => b.count - a.count)
+    .map((entry) => ({
+      ...entry,
+      share: totalPatients > 0 ? entry.count / totalPatients : null,
+    }));
   return {
     type: 'legacy',
     summary: {
@@ -426,7 +516,8 @@ function summarizeLegacyWorker(records) {
       uniqueDates: dailyMap.size,
       avgDailyPatients: dailyMap.size > 0 ? totalPatients / dailyMap.size : null,
       avgLabMinutes: labCount > 0 ? labSum / labCount : null,
-      avgLabMonthMinutes: latestMonth && latestMonth.labCount > 0 ? latestMonth.labSum / latestMonth.labCount : null,
+      avgLabMonthMinutes:
+        latestMonth && latestMonth.labCount > 0 ? latestMonth.labSum / latestMonth.labCount : null,
       generatedAt: new Date(),
     },
     dispositions,
@@ -435,9 +526,16 @@ function summarizeLegacyWorker(records) {
 }
 
 function summarizeSnapshotWorker(records) {
-  const valid = Array.isArray(records) ? records.filter((item) => item && typeof item.dateKey === 'string') : [];
+  const valid = Array.isArray(records)
+    ? records.filter((item) => item && typeof item.dateKey === 'string')
+    : [];
   if (!valid.length) {
-    return { type: 'snapshot', summary: { mode: 'snapshot', entryCount: 0, generatedAt: new Date() }, dispositions: [], daily: [] };
+    return {
+      type: 'snapshot',
+      summary: { mode: 'snapshot', entryCount: 0, generatedAt: new Date() },
+      dispositions: [],
+      daily: [],
+    };
   }
   const sorted = valid.slice().sort((a, b) => (a.dateKey > b.dateKey ? 1 : -1));
   const latest = sorted[sorted.length - 1];
@@ -482,7 +580,8 @@ function summarizeSnapshotWorker(records) {
       occupiedBeds: Number.isFinite(latest?.occupiedBeds) ? latest.occupiedBeds : null,
       nursePatientsPerStaff: Number.isFinite(latest?.nurseRatio) ? latest.nurseRatio : null,
       doctorPatientsPerStaff: Number.isFinite(latest?.doctorRatio) ? latest.doctorRatio : null,
-      avgLabMonthMinutes: latestBucket && latestBucket.labCount > 0 ? latestBucket.labSum / latestBucket.labCount : null,
+      avgLabMonthMinutes:
+        latestBucket && latestBucket.labCount > 0 ? latestBucket.labSum / latestBucket.labCount : null,
       latestSnapshotLabel: latest?.dateKey || '',
       latestSnapshotAt: latest?.timestamp || null,
       generatedAt: new Date(),
@@ -506,7 +605,7 @@ function parseDurationMinutesWorker(value) {
   if (/^\d{1,2}:\d{2}$/.test(normalized)) {
     const [hours, minutes] = normalized.split(':').map((part) => Number.parseInt(part, 10));
     if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
-      return (hours * 60) + minutes;
+      return hours * 60 + minutes;
     }
   }
   const valueFloat = Number.parseFloat(normalized);
@@ -596,9 +695,8 @@ function detectDelimiter(text) {
 }
 
 function normalizeKpiFilters(raw, fallback = {}) {
-  const defaultWindow = Number.isFinite(Number(fallback.window)) && Number(fallback.window) >= 0
-    ? Number(fallback.window)
-    : 0;
+  const defaultWindow =
+    Number.isFinite(Number(fallback.window)) && Number(fallback.window) >= 0 ? Number(fallback.window) : 0;
   const defaults = {
     window: defaultWindow,
     shift: KPI_SHIFT_VALUES.includes(fallback.shift) ? fallback.shift : 'all',
@@ -606,9 +704,8 @@ function normalizeKpiFilters(raw, fallback = {}) {
     disposition: KPI_DISPOSITION_VALUES.includes(fallback.disposition) ? fallback.disposition : 'all',
     cardType: KPI_CARD_TYPE_VALUES.includes(fallback.cardType) ? fallback.cardType : 'all',
   };
-  const normalizedWindow = Number.isFinite(Number(raw?.window)) && Number(raw.window) >= 0
-    ? Number(raw.window)
-    : defaults.window;
+  const normalizedWindow =
+    Number.isFinite(Number(raw?.window)) && Number(raw.window) >= 0 ? Number(raw.window) : defaults.window;
   return {
     window: normalizedWindow,
     shift: KPI_SHIFT_VALUES.includes(raw?.shift) ? raw.shift : defaults.shift,
@@ -674,7 +771,7 @@ function filterRecordsByWindow(records, days, calculations = {}, calculationDefa
     .map((entry) => {
       const hasArrival = entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime());
       const hasDischarge = entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime());
-      const reference = hasArrival ? entry.arrival : (hasDischarge ? entry.discharge : null);
+      const reference = hasArrival ? entry.arrival : hasDischarge ? entry.discharge : null;
       if (!reference) {
         return null;
       }
@@ -694,9 +791,7 @@ function filterRecordsByWindow(records, days, calculations = {}, calculationDefa
   }
   const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated
-    .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-    .map((item) => item.entry);
+  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
 }
 
 function dateKeyToUtc(dateKey) {
@@ -815,9 +910,7 @@ function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
   };
   const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
   const cardNumberHasValue = csvSettings.number && csvSettings.number.trim().length > 0;
-  const departmentHeaders = departmentHasValue
-    ? toHeaderCandidates(csvSettings.department, '')
-    : [];
+  const departmentHeaders = departmentHasValue ? toHeaderCandidates(csvSettings.department, '') : [];
   const cardNumberHeaders = cardNumberHasValue
     ? toHeaderCandidates(csvSettings.number, '')
     : toHeaderCandidates('', fallback.number);
@@ -844,8 +937,10 @@ function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
       discharge: csvSettings.discharge || fallback.discharge || hardDefaults.discharge,
       dayNight: csvSettings.dayNight || fallback.dayNight || hardDefaults.dayNight,
       gmp: csvSettings.gmp || fallback.gmp || hardDefaults.gmp,
-      department: departmentHasValue ? csvSettings.department : (fallback.department || hardDefaults.department),
-      cardNumber: cardNumberHasValue ? csvSettings.number : (fallback.number || hardDefaults.number),
+      department: departmentHasValue
+        ? csvSettings.department
+        : fallback.department || hardDefaults.department,
+      cardNumber: cardNumberHasValue ? csvSettings.number : fallback.number || hardDefaults.number,
       age: csvSettings.age || fallback.age || hardDefaults.age,
       sex: csvSettings.sex || fallback.sex || hardDefaults.sex,
       address: csvSettings.address || fallback.address || hardDefaults.address,
@@ -884,7 +979,9 @@ function resolveColumnIndex(headerNormalized, candidates) {
   }
   for (const candidate of candidates) {
     const foldedCandidate = normalizeHeaderToken(candidate);
-    const match = normalizedHeader.find((column) => column.foldedOriginal === foldedCandidate || column.foldedNormalized === foldedCandidate);
+    const match = normalizedHeader.find(
+      (column) => column.foldedOriginal === foldedCandidate || column.foldedNormalized === foldedCandidate
+    );
     if (match) {
       return match.index;
     }
@@ -898,7 +995,10 @@ function resolveColumnIndex(headerNormalized, candidates) {
   }
   for (const candidate of candidates) {
     const foldedCandidate = normalizeHeaderToken(candidate);
-    const match = normalizedHeader.find((column) => column.foldedOriginal.includes(foldedCandidate) || column.foldedNormalized.includes(foldedCandidate));
+    const match = normalizedHeader.find(
+      (column) =>
+        column.foldedOriginal.includes(foldedCandidate) || column.foldedNormalized.includes(foldedCandidate)
+    );
     if (match) {
       return match.index;
     }
@@ -943,9 +1043,12 @@ function parseBoolean(value, trueValues, fallbackTrueValues) {
   if (!normalized) {
     return false;
   }
-  const candidates = Array.isArray(trueValues) && trueValues.length
-    ? trueValues
-    : Array.isArray(fallbackTrueValues) ? fallbackTrueValues : [];
+  const candidates =
+    Array.isArray(trueValues) && trueValues.length
+      ? trueValues
+      : Array.isArray(fallbackTrueValues)
+        ? fallbackTrueValues
+        : [];
   return candidates.some((candidate) => matchesWildcard(normalized, candidate));
 }
 
@@ -1041,7 +1144,10 @@ function normalizeCityName(value) {
   if (!raw) {
     return '';
   }
-  const parts = raw.split(/[,;]+/).map((part) => normalizeSimpleText(part)).filter(Boolean);
+  const parts = raw
+    .split(/[,;]+/)
+    .map((part) => normalizeSimpleText(part))
+    .filter(Boolean);
   const candidates = parts.length ? parts : [raw];
   const stopWords = ['g.', 'gatve', 'gatvė', 'pr.', 'prospektas', 'al.', 'aleja', 'raj.', 'rajonas'];
   let chosen = candidates[candidates.length - 1];
@@ -1192,10 +1298,7 @@ function detectCardTypeFromNumber(value) {
 
   // Tikslinės sekos leidžia identifikuoti kortelės tipą net jei raidžių seka
   // turi tarpus, papildomus simbolius ar priedus prieš/po tipo žymos.
-  const sequences = new Set([
-    letterSequence,
-    ...upper.split(/[^A-Z]+/).filter((token) => token.length > 0),
-  ]);
+  const sequences = new Set([letterSequence, ...upper.split(/[^A-Z]+/).filter((token) => token.length > 0)]);
 
   for (const token of sequences) {
     if (!token) {
@@ -1222,9 +1325,7 @@ function isNightByArrival(arrivalDate, calculations, defaults) {
   const fallbackStart = Number.isFinite(Number(defaults?.nightStartHour))
     ? Number(defaults.nightStartHour)
     : 22;
-  const fallbackEnd = Number.isFinite(Number(defaults?.nightEndHour))
-    ? Number(defaults.nightEndHour)
-    : 7;
+  const fallbackEnd = Number.isFinite(Number(defaults?.nightEndHour)) ? Number(defaults.nightEndHour) : 7;
   const startRaw = Number.isFinite(Number(calculations?.nightStartHour))
     ? Number(calculations.nightStartHour)
     : fallbackStart;
@@ -1284,7 +1385,9 @@ function parseDate(value) {
   if (!Number.isNaN(parsed?.getTime?.())) {
     return parsed;
   }
-  const slashIso = normalized.match(/^(\d{4})[\/](\d{1,2})[\/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  const slashIso = normalized.match(
+    /^(\d{4})[/](\d{1,2})[/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+  );
   if (slashIso) {
     const [, year, month, day, hour = '0', minute = '0', second = '0'] = slashIso;
     parsed = new Date(
@@ -1293,11 +1396,13 @@ function parseDate(value) {
       Number(day),
       Number(hour),
       Number(minute),
-      Number(second),
+      Number(second)
     );
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
-  const euMatch = normalized.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  const euMatch = normalized.match(
+    /^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+  );
   if (euMatch) {
     const [, day, month, year, hour = '0', minute = '0', second = '0'] = euMatch;
     parsed = new Date(
@@ -1306,7 +1411,7 @@ function parseDate(value) {
       Number(day),
       Number(hour),
       Number(minute),
-      Number(second),
+      Number(second)
     );
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
@@ -1361,19 +1466,20 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   const dayNightRaw = normalized[indices.dayNight] ?? '';
   const gmpRaw = normalized[indices.gmp] ?? '';
   const departmentRaw = normalized[indices.department] ?? '';
-  const cardNumberRaw = indices.cardNumber >= 0 ? normalized[indices.cardNumber] ?? '' : '';
-  const ageRaw = indices.age >= 0 ? normalized[indices.age] ?? '' : '';
-  const sexRaw = indices.sex >= 0 ? normalized[indices.sex] ?? '' : '';
-  const addressRaw = indices.address >= 0 ? normalized[indices.address] ?? '' : '';
-  const pspcRaw = indices.pspc >= 0 ? normalized[indices.pspc] ?? '' : '';
-  const diagnosisRaw = indices.diagnosis >= 0 ? normalized[indices.diagnosis] ?? '' : '';
-  const referralRaw = indices.referral >= 0 ? normalized[indices.referral] ?? '' : '';
-  const hasExtendedColumns = indices.age >= 0
-    || indices.sex >= 0
-    || indices.address >= 0
-    || indices.pspc >= 0
-    || indices.diagnosis >= 0
-    || indices.referral >= 0;
+  const cardNumberRaw = indices.cardNumber >= 0 ? (normalized[indices.cardNumber] ?? '') : '';
+  const ageRaw = indices.age >= 0 ? (normalized[indices.age] ?? '') : '';
+  const sexRaw = indices.sex >= 0 ? (normalized[indices.sex] ?? '') : '';
+  const addressRaw = indices.address >= 0 ? (normalized[indices.address] ?? '') : '';
+  const pspcRaw = indices.pspc >= 0 ? (normalized[indices.pspc] ?? '') : '';
+  const diagnosisRaw = indices.diagnosis >= 0 ? (normalized[indices.diagnosis] ?? '') : '';
+  const referralRaw = indices.referral >= 0 ? (normalized[indices.referral] ?? '') : '';
+  const hasExtendedColumns =
+    indices.age >= 0 ||
+    indices.sex >= 0 ||
+    indices.address >= 0 ||
+    indices.pspc >= 0 ||
+    indices.diagnosis >= 0 ||
+    indices.referral >= 0;
   entry.arrival = parseDate(arrivalRaw);
   entry.discharge = parseDate(dischargeRaw);
   entry.arrivalHasTime = detectHasTime(arrivalRaw);
@@ -1444,7 +1550,11 @@ function computeShiftDateKey(referenceDate, shiftStartHour) {
   const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
   const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
   const arrivalMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
-  const shiftAnchor = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const shiftAnchor = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate()
+  );
   if (arrivalMinutes < startMinutes) {
     shiftAnchor.setDate(shiftAnchor.getDate() - 1);
   }
@@ -1457,7 +1567,7 @@ function computeDailyStats(data, calculations, defaults) {
   data.forEach((record) => {
     const hasArrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
     const hasDischarge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
-    const reference = hasArrival ? record.arrival : (hasDischarge ? record.discharge : null);
+    const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
     const dateKey = computeShiftDateKey(reference, shiftStartHour);
     if (!dateKey) {
       return;
@@ -1551,7 +1661,7 @@ function accumulateHospitalizedDeptStayAgg(agg, record, shiftStartHour) {
   }
   const hasArrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
   const hasDischarge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
-  const reference = hasArrival ? record.arrival : (hasDischarge ? record.discharge : null);
+  const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
   const dateKey = computeShiftDateKey(reference, shiftStartHour);
   if (!dateKey) {
     return;
@@ -1562,9 +1672,10 @@ function accumulateHospitalizedDeptStayAgg(agg, record, shiftStartHour) {
   }
   const department = String(record.department || '').trim() || 'Nenurodyta';
   const bucket = ensureHospitalAggBucket(agg, year, department);
-  const durationHours = hasArrival && hasDischarge
-    ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
-    : Number.NaN;
+  const durationHours =
+    hasArrival && hasDischarge
+      ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
+      : Number.NaN;
   const stayBucket = resolveHospitalStayBucket(durationHours);
   if (stayBucket === 'lt4') {
     bucket.count_lt4 += 1;

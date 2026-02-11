@@ -1,16 +1,10 @@
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import { computeDailyStats } from '../../../data/stats.js';
-import { createDataFlow } from '../data-flow.js';
-import { dateKeyToDate, dateKeyToUtc, filterDailyStatsByWindow } from '../chart-primitives.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import { applyTheme, initializeTheme } from '../features/theme.js';
-import { initCompareControls } from '../../../events/compare.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
-import { storeCopyButtonBaseLabel, setCopyButtonFeedback } from '../clipboard.js';
+import { initCompareControls } from '../../../events/compare.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
-import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters } from '../state.js';
 import {
   dailyDateFormatter,
   decimalFormatter,
@@ -18,7 +12,6 @@ import {
   oneDecimalFormatter,
   percentFormatter,
 } from '../../../utils/format.js';
-import { createTextSignature, describeCacheMeta, describeError, downloadCsv, formatUrlForDiagnostics } from '../network.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -28,12 +21,29 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { dateKeyToDate, filterDailyStatsByWindow } from '../chart-primitives.js';
+import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
+import { createDataFlow } from '../data-flow.js';
+import { applyTheme, initializeTheme } from '../features/theme.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
+import {
+  createTextSignature,
+  describeCacheMeta,
+  describeError,
+  downloadCsv,
+  formatUrlForDiagnostics,
+} from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
+import { resolveRuntimeMode } from '../runtime-mode.js';
+import { loadSettingsFromConfig } from '../settings.js';
+import {
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+} from '../state.js';
 import { createTableDownloadHandler } from '../table-export.js';
 import { createStatusSetter } from '../utils/common.js';
-import { runLegacyFallback } from '../legacy-fallback.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -205,17 +215,20 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
 
   const sorted = [...recentDailyStats].sort((a, b) => (a.date > b.date ? -1 : 1));
   const daysCount = sorted.length;
-  const totals = sorted.reduce((acc, entry) => {
-    const total = Number.isFinite(entry?.count) ? entry.count : 0;
-    acc.total += total;
-    acc.night += Number.isFinite(entry?.night) ? entry.night : 0;
-    acc.ems += Number.isFinite(entry?.ems) ? entry.ems : 0;
-    acc.hospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
-    acc.discharged += Number.isFinite(entry?.discharged) ? entry.discharged : 0;
-    acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
-    acc.durations += Number.isFinite(entry?.durations) ? entry.durations : 0;
-    return acc;
-  }, { total: 0, night: 0, ems: 0, hospitalized: 0, discharged: 0, totalTime: 0, durations: 0 });
+  const totals = sorted.reduce(
+    (acc, entry) => {
+      const total = Number.isFinite(entry?.count) ? entry.count : 0;
+      acc.total += total;
+      acc.night += Number.isFinite(entry?.night) ? entry.night : 0;
+      acc.ems += Number.isFinite(entry?.ems) ? entry.ems : 0;
+      acc.hospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+      acc.discharged += Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+      acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
+      acc.durations += Number.isFinite(entry?.durations) ? entry.durations : 0;
+      return acc;
+    },
+    { total: 0, night: 0, ems: 0, hospitalized: 0, discharged: 0, totalTime: 0, durations: 0 }
+  );
 
   const summaryRow = document.createElement('tr');
   summaryRow.classList.add('table-row--summary');
@@ -305,7 +318,8 @@ export async function runRecentRuntime(core) {
     DEFAULT_SETTINGS,
     dashboardState,
     downloadCsv,
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     createTextSignature,
     formatUrlForDiagnostics,
   });
@@ -348,7 +362,8 @@ export async function runRecentRuntime(core) {
     perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     computeDailyStats,
     filterDailyStatsByWindow,
     populateChartYearOptions: () => {},
@@ -377,7 +392,9 @@ export async function runRecentRuntime(core) {
     getSettings: () => settings,
     getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
   compareFeature.setCompareMode(false);
   dataFlow.scheduleInitialLoad();

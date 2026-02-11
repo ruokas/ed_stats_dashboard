@@ -29,7 +29,10 @@ export function createChartFlow({
   getSettings,
 }) {
   function syncChartSegmentedButtons(compareActive = false) {
-    const filters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
+    const filters = sanitizeChartFilters(dashboardState.chartFilters, {
+      getDefaultChartFilters,
+      KPI_FILTER_LABELS,
+    });
     if (Array.isArray(selectors.chartFilterArrivalButtons) && selectors.chartFilterArrivalButtons.length) {
       selectors.chartFilterArrivalButtons.forEach((button) => {
         const value = getDatasetValue(button, 'chartArrival');
@@ -47,7 +50,10 @@ export function createChartFlow({
         }
       });
     }
-    if (Array.isArray(selectors.chartFilterDispositionButtons) && selectors.chartFilterDispositionButtons.length) {
+    if (
+      Array.isArray(selectors.chartFilterDispositionButtons) &&
+      selectors.chartFilterDispositionButtons.length
+    ) {
       selectors.chartFilterDispositionButtons.forEach((button) => {
         const value = getDatasetValue(button, 'chartDisposition');
         if (!value) {
@@ -68,7 +74,10 @@ export function createChartFlow({
   }
 
   function syncChartFilterControls() {
-    const filters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
+    const filters = sanitizeChartFilters(dashboardState.chartFilters, {
+      getDefaultChartFilters,
+      KPI_FILTER_LABELS,
+    });
     dashboardState.chartFilters = { ...filters };
     const compareActive = Boolean(filters.compareGmp);
     if (selectors.chartFilterArrival) {
@@ -96,7 +105,10 @@ export function createChartFlow({
     if (!selectors.chartFiltersSummary) {
       return;
     }
-    const filters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
+    const filters = sanitizeChartFilters(dashboardState.chartFilters, {
+      getDefaultChartFilters,
+      KPI_FILTER_LABELS,
+    });
     const defaults = getDefaultChartFilters();
     const summaryParts = [];
     if (filters.compareGmp) {
@@ -130,11 +142,15 @@ export function createChartFlow({
   }
 
   function applyChartFilters() {
-    const sanitized = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
+    const sanitized = sanitizeChartFilters(dashboardState.chartFilters, {
+      getDefaultChartFilters,
+      KPI_FILTER_LABELS,
+    });
     dashboardState.chartFilters = { ...sanitized };
     syncChartFilterControls();
-    const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
-      || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+    const hasBaseData =
+      (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length) ||
+      (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
     if (!hasBaseData) {
       updateChartFiltersSummary({ records: [], daily: [] });
       if (selectors.dailyCaptionContext) {
@@ -143,12 +159,14 @@ export function createChartFlow({
       return Promise.resolve();
     }
     const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
-    return renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
-      .catch((error) => {
-        const errorInfo = describeError(error, { code: 'CHART_FILTERS', message: 'Nepavyko pritaikyti grafiko filtrų' });
-        console.error(errorInfo.log, error);
-        showChartError(TEXT.charts?.errorLoading);
+    return renderCharts(scoped.daily, scoped.funnel, scoped.heatmap).catch((error) => {
+      const errorInfo = describeError(error, {
+        code: 'CHART_FILTERS',
+        message: 'Nepavyko pritaikyti grafiko filtrų',
       });
+      console.error(errorInfo.log, error);
+      showChartError(TEXT.charts?.errorLoading);
+    });
   }
 
   function updateChartPeriod(period) {
@@ -163,8 +181,9 @@ export function createChartFlow({
     if (selectors.dailyCaption) {
       selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
     }
-    const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
-      || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+    const hasBaseData =
+      (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length) ||
+      (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
     if (!hasBaseData) {
       updateDailyPeriodSummary([]);
       if (selectors.dailyCaptionContext) {
@@ -174,12 +193,14 @@ export function createChartFlow({
       return;
     }
     const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
-    renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
-      .catch((error) => {
-        const errorInfo = describeError(error, { code: 'CHART_PERIOD', message: 'Nepavyko atnaujinti grafiko laikotarpio' });
-        console.error(errorInfo.log, error);
-        showChartError(TEXT.charts?.errorLoading);
+    renderCharts(scoped.daily, scoped.funnel, scoped.heatmap).catch((error) => {
+      const errorInfo = describeError(error, {
+        code: 'CHART_PERIOD',
+        message: 'Nepavyko atnaujinti grafiko laikotarpio',
       });
+      console.error(errorInfo.log, error);
+      showChartError(TEXT.charts?.errorLoading);
+    });
   }
 
   function updateChartYear(year) {
@@ -194,8 +215,9 @@ export function createChartFlow({
     if (selectors.dailyCaption) {
       selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
     }
-    const hasBaseData = (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length)
-      || (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
+    const hasBaseData =
+      (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length) ||
+      (Array.isArray(dashboardState.dailyStats) && dashboardState.dailyStats.length);
     if (!hasBaseData) {
       updateDailyPeriodSummary([]);
       if (selectors.dailyCaptionContext) {
@@ -205,28 +227,33 @@ export function createChartFlow({
       return;
     }
     const scoped = prepareChartDataForPeriod(dashboardState.chartPeriod);
-    renderCharts(scoped.daily, scoped.funnel, scoped.heatmap)
-      .catch((error) => {
-        const errorInfo = describeError(error, { code: 'CHART_YEAR', message: 'Nepavyko atnaujinti grafiko metų filtro' });
-        console.error(errorInfo.log, error);
-        showChartError(TEXT.charts?.errorLoading);
+    renderCharts(scoped.daily, scoped.funnel, scoped.heatmap).catch((error) => {
+      const errorInfo = describeError(error, {
+        code: 'CHART_YEAR',
+        message: 'Nepavyko atnaujinti grafiko metų filtro',
       });
+      console.error(errorInfo.log, error);
+      showChartError(TEXT.charts?.errorLoading);
+    });
   }
 
   function prepareChartDataForPeriod(period) {
-    const normalized = Number.isFinite(Number(period))
-      ? Math.max(0, Number(period))
-      : 30;
+    const normalized = Number.isFinite(Number(period)) ? Math.max(0, Number(period)) : 30;
     const settings = getSettings();
-    const baseDaily = Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
-      ? dashboardState.chartData.baseDaily
-      : dashboardState.dailyStats;
-    const baseRecords = Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
-      ? dashboardState.chartData.baseRecords
-      : dashboardState.rawRecords;
+    const baseDaily =
+      Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
+        ? dashboardState.chartData.baseDaily
+        : dashboardState.dailyStats;
+    const baseRecords =
+      Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+        ? dashboardState.chartData.baseRecords
+        : dashboardState.rawRecords;
     const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
     const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-    const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters, { getDefaultChartFilters, KPI_FILTER_LABELS });
+    const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters, {
+      getDefaultChartFilters,
+      KPI_FILTER_LABELS,
+    });
     dashboardState.chartFilters = { ...sanitizedFilters };
     const effectiveFilters = sanitizedFilters.compareGmp
       ? { ...sanitizedFilters, arrival: 'all' }

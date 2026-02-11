@@ -46,17 +46,20 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
     }
   });
   if (compareGmp) {
-    const stayRecordsSource = Array.isArray(dashboardState.chartData.filteredWindowRecords)
-      && dashboardState.chartData.filteredWindowRecords.length
-      ? dashboardState.chartData.filteredWindowRecords
-      : (Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : []);
+    const stayRecordsSource =
+      Array.isArray(dashboardState.chartData.filteredWindowRecords) &&
+      dashboardState.chartData.filteredWindowRecords.length
+        ? dashboardState.chartData.filteredWindowRecords
+        : Array.isArray(dashboardState.rawRecords)
+          ? dashboardState.rawRecords
+          : [];
     stayRecordsSource.forEach((record) => {
-      const arrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-        ? record.arrival
-        : null;
-      const discharge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-        ? record.discharge
-        : null;
+      const arrival =
+        record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+      const discharge =
+        record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+          ? record.discharge
+          : null;
       if (!arrival || !discharge) {
         return;
       }
@@ -78,22 +81,28 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
     });
   }
   const dowAverages = dowCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-  const dowEmsAverages = dowEmsCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-  const dowSelfAverages = dowSelfCounts.map((value, index) => (dowTotals[index] ? value / dowTotals[index] : 0));
-  const dowStayAverages = dowStayTotals.map((value, index) => (dowStayCounts[index] ? value / dowStayCounts[index] : 0));
-  const dowStayEmsAverages = dowStayEmsTotals.map((value, index) => (
+  const dowEmsAverages = dowEmsCounts.map((value, index) =>
+    dowTotals[index] ? value / dowTotals[index] : 0
+  );
+  const dowSelfAverages = dowSelfCounts.map((value, index) =>
+    dowTotals[index] ? value / dowTotals[index] : 0
+  );
+  const dowStayAverages = dowStayTotals.map((value, index) =>
+    dowStayCounts[index] ? value / dowStayCounts[index] : 0
+  );
+  const dowStayEmsAverages = dowStayEmsTotals.map((value, index) =>
     dowStayEmsCounts[index] ? value / dowStayEmsCounts[index] : 0
-  ));
-  const dowStaySelfAverages = dowStaySelfTotals.map((value, index) => (
+  );
+  const dowStaySelfAverages = dowStaySelfTotals.map((value, index) =>
     dowStaySelfCounts[index] ? value / dowStaySelfCounts[index] : 0
-  ));
+  );
   const dowPointColors = dowLabels.map((_, index) => (index >= 5 ? palette.weekendAccent : palette.accent));
   const dowPointRadii = dowLabels.map((_, index) => (index >= 5 ? 6 : 4));
   const dowHoverRadii = dowLabels.map((_, index) => (index >= 5 ? 8 : 6));
   const totalDays = dowTotals.reduce((sum, value) => sum + value, 0);
   const totalStaySamples = compareGmp
-    ? dowStayEmsCounts.reduce((sum, value) => sum + value, 0)
-      + dowStaySelfCounts.reduce((sum, value) => sum + value, 0)
+    ? dowStayEmsCounts.reduce((sum, value) => sum + value, 0) +
+      dowStaySelfCounts.reduce((sum, value) => sum + value, 0)
     : dowStayCounts.reduce((sum, value) => sum + value, 0);
   if (selectors.dowCaptionContext) {
     selectors.dowCaptionContext.textContent = totalDays ? `n=${numberFormatter.format(totalDays)} d.` : '';
@@ -105,7 +114,7 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
   }
 
   const dowCanvas = document.getElementById('dowChart');
-  if (dowCanvas && dowCanvas.getContext) {
+  if (dowCanvas?.getContext) {
     const hasDowData = dowTotals.some((total) => total > 0);
     if (!hasDowData) {
       setChartCardMessage(dowCanvas, TEXT.charts?.empty);
@@ -121,41 +130,43 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
           type: 'line',
           data: {
             labels: dowLabels,
-            datasets: compareGmp ? [
-              {
-                label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
-                data: dowEmsAverages,
-                borderColor: palette.danger,
-                backgroundColor: palette.danger,
-                tension: 0.35,
-                fill: false,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-              },
-              {
-                label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-                data: dowSelfAverages,
-                borderColor: palette.success,
-                backgroundColor: palette.success,
-                tension: 0.35,
-                fill: false,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-              },
-            ] : [
-              {
-                label: TEXT.charts?.dowLabel || 'Vid. pacientų sk.',
-                data: dowAverages,
-                borderColor: palette.accent,
-                backgroundColor: palette.accent,
-                tension: 0.35,
-                fill: false,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-                pointBackgroundColor: dowPointColors,
-                pointBorderColor: dowPointColors,
-              },
-            ],
+            datasets: compareGmp
+              ? [
+                  {
+                    label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
+                    data: dowEmsAverages,
+                    borderColor: palette.danger,
+                    backgroundColor: palette.danger,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: dowPointRadii,
+                    pointHoverRadius: dowHoverRadii,
+                  },
+                  {
+                    label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+                    data: dowSelfAverages,
+                    borderColor: palette.success,
+                    backgroundColor: palette.success,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: dowPointRadii,
+                    pointHoverRadius: dowHoverRadii,
+                  },
+                ]
+              : [
+                  {
+                    label: TEXT.charts?.dowLabel || 'Vid. pacientų sk.',
+                    data: dowAverages,
+                    borderColor: palette.accent,
+                    backgroundColor: palette.accent,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: dowPointRadii,
+                    pointHoverRadius: dowHoverRadii,
+                    pointBackgroundColor: dowPointColors,
+                    pointBorderColor: dowPointColors,
+                  },
+                ],
           },
           options: {
             responsive: true,
@@ -203,9 +214,8 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
           },
         };
         const existingChart = dashboardState.charts.dow;
-        const canReuse = existingChart
-          && existingChart.canvas === dowCanvas
-          && existingChart.config?.type === 'line';
+        const canReuse =
+          existingChart && existingChart.canvas === dowCanvas && existingChart.config?.type === 'line';
         if (canReuse) {
           existingChart.data.labels = chartConfig.data.labels;
           existingChart.data.datasets = chartConfig.data.datasets;
@@ -222,7 +232,7 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
   }
 
   const dowStayCanvas = document.getElementById('dowStayChart');
-  if (dowStayCanvas && dowStayCanvas.getContext) {
+  if (dowStayCanvas?.getContext) {
     const hasStayData = compareGmp
       ? dowStayEmsCounts.some((count) => count > 0) || dowStaySelfCounts.some((count) => count > 0)
       : dowStayCounts.some((count) => count > 0);
@@ -240,44 +250,46 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
           type: 'line',
           data: {
             labels: dowLabels,
-            datasets: compareGmp ? [
-              {
-                label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
-                data: dowStayEmsAverages,
-                borderColor: palette.danger,
-                backgroundColor: palette.danger,
-                tension: 0.35,
-                fill: false,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-              },
-              {
-                label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
-                data: dowStaySelfAverages,
-                borderColor: palette.success,
-                backgroundColor: palette.success,
-                tension: 0.35,
-                fill: false,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-              },
-            ] : [
-              {
-                label: TEXT.charts?.dowStayLabel || 'Vid. trukmė (val.)',
-                data: dowStayAverages,
-                borderColor: palette.accent,
-                backgroundColor: palette.accent,
-                tension: 0.35,
-                fill: false,
-                pointRadius: dowPointRadii,
-                pointHoverRadius: dowHoverRadii,
-                pointBackgroundColor: dowPointColors,
-                pointBorderColor: dowPointColors,
-                segment: {
-                  borderColor: (ctx) => (ctx.p1DataIndex >= 5 ? palette.weekendAccent : palette.accent),
-                },
-              },
-            ],
+            datasets: compareGmp
+              ? [
+                  {
+                    label: TEXT.charts?.hourlyDatasetEmsLabel || 'Tik GMP',
+                    data: dowStayEmsAverages,
+                    borderColor: palette.danger,
+                    backgroundColor: palette.danger,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: dowPointRadii,
+                    pointHoverRadius: dowHoverRadii,
+                  },
+                  {
+                    label: TEXT.charts?.hourlyDatasetSelfLabel || 'Be GMP',
+                    data: dowStaySelfAverages,
+                    borderColor: palette.success,
+                    backgroundColor: palette.success,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: dowPointRadii,
+                    pointHoverRadius: dowHoverRadii,
+                  },
+                ]
+              : [
+                  {
+                    label: TEXT.charts?.dowStayLabel || 'Vid. trukmė (val.)',
+                    data: dowStayAverages,
+                    borderColor: palette.accent,
+                    backgroundColor: palette.accent,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: dowPointRadii,
+                    pointHoverRadius: dowHoverRadii,
+                    pointBackgroundColor: dowPointColors,
+                    pointBorderColor: dowPointColors,
+                    segment: {
+                      borderColor: (ctx) => (ctx.p1DataIndex >= 5 ? palette.weekendAccent : palette.accent),
+                    },
+                  },
+                ],
           },
           options: {
             responsive: true,
@@ -325,9 +337,8 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
           },
         };
         const existingChart = dashboardState.charts.dowStay;
-        const canReuse = existingChart
-          && existingChart.canvas === dowStayCanvas
-          && existingChart.config?.type === 'line';
+        const canReuse =
+          existingChart && existingChart.canvas === dowStayCanvas && existingChart.config?.type === 'line';
         if (canReuse) {
           existingChart.data.labels = chartConfig.data.labels;
           existingChart.data.datasets = chartConfig.data.datasets;

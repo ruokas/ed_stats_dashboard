@@ -74,7 +74,7 @@ export function initSummariesJumpNavigation(selectors) {
   };
 
   const hashMatchedLink = findLinkByHash(window.location.hash);
-  applyActiveLink((hashMatchedLink?.link) || items[0].link);
+  applyActiveLink(hashMatchedLink?.link || items[0].link);
   if (hashMatchedLink?.target) {
     window.setTimeout(() => {
       scrollToSectionStart(hashMatchedLink.target, { smooth: false, updateHash: false });

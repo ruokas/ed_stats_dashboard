@@ -11,9 +11,11 @@ const edSectionIconDefinitions = {
     svg.appendChild(createSvgElement('path', { d: 'M12 8v4.8l3 2.2' }));
   },
   feedback(svg) {
-    svg.appendChild(createSvgElement('path', {
-      d: 'M6 6.5h10a3 3 0 0 1 3 3v4.5a3 3 0 0 1-3 3H10l-3 2.5v-2.5H6a3 3 0 0 1-3-3V9.5a3 3 0 0 1 3-3z',
-    }));
+    svg.appendChild(
+      createSvgElement('path', {
+        d: 'M6 6.5h10a3 3 0 0 1 3 3v4.5a3 3 0 0 1-3 3H10l-3 2.5v-2.5H6a3 3 0 0 1-3-3V9.5a3 3 0 0 1 3-3z',
+      })
+    );
     svg.appendChild(createSvgElement('path', { d: 'M8.5 12h7' }));
   },
   insights(svg) {
@@ -40,17 +42,10 @@ function createSvgElement(type, attributes = {}) {
 }
 
 export function createEdPanelCoreFeature(deps) {
-  const {
-    dashboardState,
-    TEXT,
-    statusTimeFormatter,
-    renderEdDashboard,
-  } = deps;
+  const { dashboardState, TEXT, statusTimeFormatter, renderEdDashboard } = deps;
 
   function normalizeStatusTimestamp(candidate, fallback) {
-    const fallbackDate = fallback instanceof Date && !Number.isNaN(fallback.getTime())
-      ? fallback
-      : null;
+    const fallbackDate = fallback instanceof Date && !Number.isNaN(fallback.getTime()) ? fallback : null;
     if (!(candidate instanceof Date) || Number.isNaN(candidate.getTime())) {
       return fallbackDate;
     }
@@ -65,17 +60,20 @@ export function createEdPanelCoreFeature(deps) {
   }
 
   function buildEdStatus(summary, dataset, displayVariant) {
-    const updatedAt = dataset?.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime())
-      ? dataset.updatedAt
-      : null;
-    const snapshotDateRaw = summary?.latestSnapshotAt instanceof Date && !Number.isNaN(summary.latestSnapshotAt.getTime())
-      ? summary.latestSnapshotAt
-      : null;
+    const updatedAt =
+      dataset?.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime())
+        ? dataset.updatedAt
+        : null;
+    const snapshotDateRaw =
+      summary?.latestSnapshotAt instanceof Date && !Number.isNaN(summary.latestSnapshotAt.getTime())
+        ? summary.latestSnapshotAt
+        : null;
     const statusDate = normalizeStatusTimestamp(snapshotDateRaw, updatedAt) || updatedAt || null;
     const timestampText = statusDate ? statusTimeFormatter.format(statusDate) : null;
-    const hasEntries = displayVariant === 'snapshot'
-      ? Number.isFinite(summary?.entryCount) && summary.entryCount > 0
-      : Number.isFinite(summary?.totalPatients) && summary.totalPatients > 0;
+    const hasEntries =
+      displayVariant === 'snapshot'
+        ? Number.isFinite(summary?.entryCount) && summary.entryCount > 0
+        : Number.isFinite(summary?.totalPatients) && summary.totalPatients > 0;
     let tone = 'info';
     let message = '';
     if (dataset?.error) {
@@ -110,9 +108,7 @@ export function createEdPanelCoreFeature(deps) {
     svg.setAttribute('role', 'img');
     svg.setAttribute('aria-hidden', 'true');
     svg.setAttribute('focusable', 'false');
-    const iconName = iconKey && edSectionIconDefinitions[iconKey]
-      ? iconKey
-      : 'default';
+    const iconName = iconKey && edSectionIconDefinitions[iconKey] ? iconKey : 'default';
     edSectionIconDefinitions[iconName](svg);
     return svg;
   }

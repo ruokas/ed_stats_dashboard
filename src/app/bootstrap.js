@@ -1,6 +1,6 @@
-import { loadChartJs } from '../utils/chart-loader.js';
-import { runAfterDomAndIdle, enableLazyLoading } from '../utils/dom.js';
 import { registerServiceWorker } from '../../app.js';
+import { loadChartJs } from '../utils/chart-loader.js';
+import { enableLazyLoading, runAfterDomAndIdle } from '../utils/dom.js';
 
 const SW_INIT_SESSION_KEY = 'edDashboard:sw-init:v2';
 
@@ -8,7 +8,7 @@ export function initializeServiceWorker({ updateClientConfig }) {
   const initDone = (() => {
     try {
       return window.sessionStorage.getItem(SW_INIT_SESSION_KEY) === 'true';
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   })();
@@ -24,7 +24,7 @@ export function initializeServiceWorker({ updateClientConfig }) {
       }
       try {
         window.sessionStorage.setItem(SW_INIT_SESSION_KEY, 'true');
-      } catch (error) {
+      } catch (_error) {
         // Ignore storage write issues.
       }
     });

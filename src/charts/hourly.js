@@ -1,7 +1,6 @@
 export function renderHourlyChart(env, records, ChartLib, palette) {
   const {
     dashboardState,
-    selectors,
     TEXT,
     getThemePalette,
     setChartCardMessage,
@@ -44,12 +43,12 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
   const compareEnabled = dashboardState.hourlyCompareEnabled === true;
   const compareYears = normalizeHourlyCompareYears(
     dashboardState.hourlyCompareYears?.[0],
-    dashboardState.hourlyCompareYears?.[1],
+    dashboardState.hourlyCompareYears?.[1]
   );
-  const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-    && dashboardState.chartData.baseRecords.length
-    ? dashboardState.chartData.baseRecords
-    : dashboardState.rawRecords;
+  const baseRecords =
+    Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+      ? dashboardState.chartData.baseRecords
+      : dashboardState.rawRecords;
   const optionRecords = compareEnabled
     ? getHourlyChartRecords(baseRecords, null, dashboardState.chartFilters || {}, dashboardState.chartPeriod)
     : records;
@@ -63,8 +62,8 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
   updateHourlyCaption(weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
 
   let datasets = [];
-  let suggestedMax = undefined;
-  let suggestedMin = undefined;
+  let suggestedMax;
+  let suggestedMin;
   let hasData = false;
   const isBalanceMetric = metricValue === 'balance';
 
@@ -75,13 +74,18 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
       ? dashboardState.hourlyCompareSeries
       : HOURLY_COMPARE_SERIES_ALL;
     datasets = compareYears.map((year, index) => {
-      const yearRecords = getHourlyChartRecords(baseRecords, year, dashboardState.chartFilters || {}, dashboardState.chartPeriod);
+      const yearRecords = getHourlyChartRecords(
+        baseRecords,
+        year,
+        dashboardState.chartFilters || {},
+        dashboardState.chartPeriod
+      );
       const yearResult = computeHourlySeries(
         yearRecords,
         weekdayValue,
         stayBucket,
         metricValue,
-        dashboardState.hourlyDepartment,
+        dashboardState.hourlyDepartment
       );
       if (yearResult?.hasData) {
         hasData = true;
@@ -113,14 +117,18 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
       suggestedMax = maxValue > 0 ? Math.ceil(maxValue * 1.1 * 10) / 10 : undefined;
     }
   } else {
-    const result = computeHourlySeries(records, weekdayValue, stayBucket, metricValue, dashboardState.hourlyDepartment);
+    const result = computeHourlySeries(
+      records,
+      weekdayValue,
+      stayBucket,
+      metricValue,
+      dashboardState.hourlyDepartment
+    );
     if (result?.hasData) {
       hasData = true;
     }
     const baseSeries = computeHourlySeries(records, weekdayValue, HOURLY_STAY_BUCKET_ALL, metricValue, 'all');
-    const baseMax = baseSeries?.averages?.all
-      ? Math.max(0, ...baseSeries.averages.all)
-      : 0;
+    const baseMax = baseSeries?.averages?.all ? Math.max(0, ...baseSeries.averages.all) : 0;
     if (isBalanceMetric) {
       const absMax = baseSeries?.averages?.all
         ? Math.max(...baseSeries.averages.all.map((value) => Math.abs(value)))
@@ -129,9 +137,7 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
       suggestedMax = rounded;
       suggestedMin = rounded != null ? -rounded : undefined;
     } else {
-      suggestedMax = baseMax > 0
-        ? Math.ceil(baseMax * 1.1 * 10) / 10
-        : undefined;
+      suggestedMax = baseMax > 0 ? Math.ceil(baseMax * 1.1 * 10) / 10 : undefined;
     }
 
     datasets = [
@@ -218,7 +224,7 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
             padding: 18,
           },
           padding: 10,
-          onClick(event, legendItem, legend) {
+          onClick(_event, legendItem, legend) {
             const chart = legend.chart;
             const index = legendItem.datasetIndex;
             const meta = chart.getDatasetMeta(index);
@@ -275,9 +281,7 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
   };
 
   const existingChart = dashboardState.charts.hourly;
-  const canReuse = existingChart
-    && existingChart.canvas === canvas
-    && existingChart.config?.type === 'line';
+  const canReuse = existingChart && existingChart.canvas === canvas && existingChart.config?.type === 'line';
   if (canReuse) {
     existingChart.data.labels = chartConfig.data.labels;
     existingChart.data.datasets = chartConfig.data.datasets;
@@ -304,13 +308,8 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
 }
 
 export async function renderHourlyChartWithTheme(env, records) {
-  const {
-    dashboardState,
-    loadChartJs,
-    getThemePalette,
-    getThemeStyleTarget,
-  } = env;
-  const Chart = dashboardState.chartLib ?? await loadChartJs();
+  const { dashboardState, loadChartJs, getThemePalette, getThemeStyleTarget } = env;
+  const Chart = dashboardState.chartLib ?? (await loadChartJs());
   if (!Chart) {
     console.error('Chart.js biblioteka nepasiekiama.');
     return;
@@ -362,7 +361,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     }
   }
 
-  const Chart = dashboardState.chartLib ?? await loadChartJs();
+  const Chart = dashboardState.chartLib ?? (await loadChartJs());
   if (!Chart) {
     throw new Error('Chart.js biblioteka nepasiekiama');
   }
@@ -382,7 +381,10 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     if (selectors.lastShiftHourlyContext) {
       selectors.lastShiftHourlyContext.textContent = '';
     }
-    if (dashboardState.charts.lastShiftHourly && typeof dashboardState.charts.lastShiftHourly.destroy === 'function') {
+    if (
+      dashboardState.charts.lastShiftHourly &&
+      typeof dashboardState.charts.lastShiftHourly.destroy === 'function'
+    ) {
       dashboardState.charts.lastShiftHourly.destroy();
     }
     dashboardState.charts.lastShiftHourly = null;
@@ -459,55 +461,6 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
 
   const datasets = isBalance
     ? [
-      {
-        label: 'Atvykimai',
-        data: rotatedSeries.total || [],
-        borderColor: palette.textColor,
-        backgroundColor: palette.textColor,
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.total ? 5 : 2;
-        },
-        pointHoverRadius: 4,
-        pointBackgroundColor: palette.textColor,
-        pointBorderColor: palette.textColor,
-      },
-      {
-        label: 'Išvykimai',
-        data: rotatedOutflow,
-        borderColor: '#f97316',
-        backgroundColor: '#f97316',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.outflow ? 5 : 2;
-        },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#f97316',
-        pointBorderColor: '#f97316',
-      },
-      {
-        label: 'Neto srautas',
-        data: rotatedNet,
-        borderColor: '#22c55e',
-        backgroundColor: '#22c55e',
-        fill: {
-          target: 'origin',
-          above: 'rgba(34, 197, 94, 0.18)',
-          below: 'rgba(239, 68, 68, 0.18)',
-        },
-        tension: 0.35,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.net ? 5 : 2;
-        },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#22c55e',
-        pointBorderColor: '#22c55e',
-      },
-    ]
-    : isCensus
-      ? [
         {
           label: 'Atvykimai',
           data: rotatedSeries.total || [],
@@ -524,7 +477,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
         },
         {
           label: 'Išvykimai',
-          data: rotatedOutflow || [],
+          data: rotatedOutflow,
           borderColor: '#f97316',
           backgroundColor: '#f97316',
           tension: 0.35,
@@ -537,78 +490,127 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
           pointBorderColor: '#f97316',
         },
         {
-          label: 'Pacientų kiekis skyriuje',
-          data: rotatedCensus || [],
-          borderColor: palette.accent,
-          backgroundColor: palette.accentSoft,
+          label: 'Neto srautas',
+          data: rotatedNet,
+          borderColor: '#22c55e',
+          backgroundColor: '#22c55e',
+          fill: {
+            target: 'origin',
+            above: 'rgba(34, 197, 94, 0.18)',
+            below: 'rgba(239, 68, 68, 0.18)',
+          },
           tension: 0.35,
-          fill: true,
           pointRadius(context) {
-            return context.dataIndex === peakIndices.census ? 5 : 2;
+            return context.dataIndex === peakIndices.net ? 5 : 2;
           },
           pointHoverRadius: 4,
-          pointBackgroundColor: palette.accent,
-          pointBorderColor: palette.accent,
+          pointBackgroundColor: '#22c55e',
+          pointBorderColor: '#22c55e',
         },
       ]
-    : [
-      {
-        label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-        data: rotatedSeries.total || [],
-        borderColor: palette.textColor,
-        backgroundColor: palette.textColor,
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.total ? 5 : 2;
-        },
-        pointHoverRadius: 4,
-        pointBackgroundColor: palette.textColor,
-        pointBorderColor: palette.textColor,
-      },
-      {
-        label: 'T',
-        data: rotatedSeries.t || [],
-        borderColor: '#f2c94c',
-        backgroundColor: '#f2c94c',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.t ? 5 : 2;
-        },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#f2c94c',
-        pointBorderColor: '#f2c94c',
-      },
-      {
-        label: 'TR',
-        data: rotatedSeries.tr || [],
-        borderColor: '#27ae60',
-        backgroundColor: '#27ae60',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.tr ? 5 : 2;
-        },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#27ae60',
-        pointBorderColor: '#27ae60',
-      },
-      {
-        label: 'CH',
-        data: rotatedSeries.ch || [],
-        borderColor: '#2f80ed',
-        backgroundColor: '#2f80ed',
-        tension: 0.35,
-        fill: false,
-        pointRadius(context) {
-          return context.dataIndex === peakIndices.ch ? 5 : 2;
-        },
-        pointHoverRadius: 4,
-        pointBackgroundColor: '#2f80ed',
-        pointBorderColor: '#2f80ed',
-      },
-    ];
+    : isCensus
+      ? [
+          {
+            label: 'Atvykimai',
+            data: rotatedSeries.total || [],
+            borderColor: palette.textColor,
+            backgroundColor: palette.textColor,
+            tension: 0.35,
+            fill: false,
+            pointRadius(context) {
+              return context.dataIndex === peakIndices.total ? 5 : 2;
+            },
+            pointHoverRadius: 4,
+            pointBackgroundColor: palette.textColor,
+            pointBorderColor: palette.textColor,
+          },
+          {
+            label: 'Išvykimai',
+            data: rotatedOutflow || [],
+            borderColor: '#f97316',
+            backgroundColor: '#f97316',
+            tension: 0.35,
+            fill: false,
+            pointRadius(context) {
+              return context.dataIndex === peakIndices.outflow ? 5 : 2;
+            },
+            pointHoverRadius: 4,
+            pointBackgroundColor: '#f97316',
+            pointBorderColor: '#f97316',
+          },
+          {
+            label: 'Pacientų kiekis skyriuje',
+            data: rotatedCensus || [],
+            borderColor: palette.accent,
+            backgroundColor: palette.accentSoft,
+            tension: 0.35,
+            fill: true,
+            pointRadius(context) {
+              return context.dataIndex === peakIndices.census ? 5 : 2;
+            },
+            pointHoverRadius: 4,
+            pointBackgroundColor: palette.accent,
+            pointBorderColor: palette.accent,
+          },
+        ]
+      : [
+          {
+            label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+            data: rotatedSeries.total || [],
+            borderColor: palette.textColor,
+            backgroundColor: palette.textColor,
+            tension: 0.35,
+            fill: false,
+            pointRadius(context) {
+              return context.dataIndex === peakIndices.total ? 5 : 2;
+            },
+            pointHoverRadius: 4,
+            pointBackgroundColor: palette.textColor,
+            pointBorderColor: palette.textColor,
+          },
+          {
+            label: 'T',
+            data: rotatedSeries.t || [],
+            borderColor: '#f2c94c',
+            backgroundColor: '#f2c94c',
+            tension: 0.35,
+            fill: false,
+            pointRadius(context) {
+              return context.dataIndex === peakIndices.t ? 5 : 2;
+            },
+            pointHoverRadius: 4,
+            pointBackgroundColor: '#f2c94c',
+            pointBorderColor: '#f2c94c',
+          },
+          {
+            label: 'TR',
+            data: rotatedSeries.tr || [],
+            borderColor: '#27ae60',
+            backgroundColor: '#27ae60',
+            tension: 0.35,
+            fill: false,
+            pointRadius(context) {
+              return context.dataIndex === peakIndices.tr ? 5 : 2;
+            },
+            pointHoverRadius: 4,
+            pointBackgroundColor: '#27ae60',
+            pointBorderColor: '#27ae60',
+          },
+          {
+            label: 'CH',
+            data: rotatedSeries.ch || [],
+            borderColor: '#2f80ed',
+            backgroundColor: '#2f80ed',
+            tension: 0.35,
+            fill: false,
+            pointRadius(context) {
+              return context.dataIndex === peakIndices.ch ? 5 : 2;
+            },
+            pointHoverRadius: 4,
+            pointBackgroundColor: '#2f80ed',
+            pointBorderColor: '#2f80ed',
+          },
+        ];
 
   const chartConfig = {
     type: 'line',
@@ -678,12 +680,11 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
   };
 
   const existingLastShiftChart = dashboardState.charts.lastShiftHourly;
-  const canReuseLastShiftChart = existingLastShiftChart
-    && existingLastShiftChart.canvas === canvas
-    && existingLastShiftChart.config?.type === 'line';
-  const lastShiftChart = canReuseLastShiftChart
-    ? existingLastShiftChart
-    : new Chart(ctx, chartConfig);
+  const canReuseLastShiftChart =
+    existingLastShiftChart &&
+    existingLastShiftChart.canvas === canvas &&
+    existingLastShiftChart.config?.type === 'line';
+  const lastShiftChart = canReuseLastShiftChart ? existingLastShiftChart : new Chart(ctx, chartConfig);
   if (canReuseLastShiftChart) {
     existingLastShiftChart.data.labels = chartConfig.data.labels;
     existingLastShiftChart.data.datasets = chartConfig.data.datasets;

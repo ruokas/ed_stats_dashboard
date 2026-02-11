@@ -47,7 +47,9 @@ const summary = [];
 for (const [key, runs] of grouped.entries()) {
   const [page, cacheMode] = key.split('::');
   const startup = runs.map((run) => toNumber(run?.metrics?.['app:startup-total'])).filter(Number.isFinite);
-  const routerImport = runs.map((run) => toNumber(run?.metrics?.['app:router-import'])).filter(Number.isFinite);
+  const routerImport = runs
+    .map((run) => toNumber(run?.metrics?.['app:router-import']))
+    .filter(Number.isFinite);
   const pageRunner = runs.map((run) => toNumber(run?.metrics?.['app:page-runner'])).filter(Number.isFinite);
   summary.push({
     page,

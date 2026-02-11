@@ -1,8 +1,5 @@
 export function createEdRenderBridgeFeature(deps) {
-  const {
-    getEdRenderer,
-    getChartRenderers,
-  } = deps;
+  const { getEdRenderer, getChartRenderers } = deps;
 
   async function renderEdDashboard(edData) {
     const renderer = getEdRenderer();

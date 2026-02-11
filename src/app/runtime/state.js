@@ -36,9 +36,8 @@ export function createDefaultKpiFilters({ settings, DEFAULT_SETTINGS, DEFAULT_KP
   const configuredWindow = Number.isFinite(Number(settings?.calculations?.windowDays))
     ? Number(settings.calculations.windowDays)
     : DEFAULT_SETTINGS.calculations.windowDays;
-  const defaultWindow = Number.isFinite(configuredWindow) && configuredWindow > 0
-    ? configuredWindow
-    : DEFAULT_KPI_WINDOW_DAYS;
+  const defaultWindow =
+    Number.isFinite(configuredWindow) && configuredWindow > 0 ? configuredWindow : DEFAULT_KPI_WINDOW_DAYS;
   return {
     window: defaultWindow,
     shift: 'all',

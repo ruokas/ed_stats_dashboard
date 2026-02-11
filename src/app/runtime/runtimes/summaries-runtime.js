@@ -1,59 +1,22 @@
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import {
-  computeAgeDiagnosisHeatmap,
   computeDailyStats,
-  computeDiagnosisFrequency,
-  computeDiagnosisCodeYearlyShare,
   computeMonthlyStats,
-  computePspcDistribution,
-  computePspcReferralHospitalizationCorrelation,
-  computeReferralMonthlyHeatmap,
-  computeReferralDispositionYearlyTrend,
-  computeReferralYearlyTrend,
   computeYearlyStats,
-  scopeExtendedHistoricalRecords,
 } from '../../../data/stats.js?v=2026-02-07-monthly-heatmap-1';
+import { initTableDownloadButtons } from '../../../events/charts.js';
+import { initYearlyExpand } from '../../../events/yearly.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
+import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import {
+  capitalizeSentence,
+  monthFormatter,
   numberFormatter,
   oneDecimalFormatter,
   percentFormatter,
-  monthFormatter,
-  capitalizeSentence,
 } from '../../../utils/format.js';
-import { initYearlyExpand } from '../../../events/yearly.js';
-import { initTableDownloadButtons } from '../../../events/charts.js';
-import { loadChartJs } from '../../../utils/chart-loader.js';
-import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
-import { createDataFlow } from '../data-flow.js';
-import {
-  createDefaultChartFilters,
-  createDefaultFeedbackFilters,
-  createDefaultKpiFilters,
-} from '../state.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import { applyTheme, initializeTheme } from '../features/theme.js';
-import {
-  applyChartThemeDefaults,
-  formatExportFilename,
-  getCssVar,
-  mixRgb,
-  parseHexColor,
-} from '../features/summaries-runtime-helpers.js';
-import {
-  initSummariesJumpNavigation,
-  initSummariesJumpStickyOffset,
-} from '../features/summaries-jump-navigation.js';
-import { handleYearlyToggle, renderYearlyTable } from '../features/summaries-yearly-table.js';
-import {
-  createTextSignature,
-  describeCacheMeta,
-  describeError,
-  downloadCsv,
-  formatUrlForDiagnostics,
-} from '../network.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -63,14 +26,47 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
+import { createDataFlow } from '../data-flow.js';
+import {
+  initSummariesJumpNavigation,
+  initSummariesJumpStickyOffset,
+} from '../features/summaries-jump-navigation.js';
+import {
+  applyChartThemeDefaults,
+  formatExportFilename,
+  getCssVar,
+  mixRgb,
+  parseHexColor,
+} from '../features/summaries-runtime-helpers.js';
+import { handleYearlyToggle, renderYearlyTable } from '../features/summaries-yearly-table.js';
+import { applyTheme, initializeTheme } from '../features/theme.js';
+import {
+  createTextSignature,
+  describeCacheMeta,
+  describeError,
+  downloadCsv,
+  formatUrlForDiagnostics,
+} from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
+import { loadSettingsFromConfig } from '../settings.js';
 import {
-  createTableDownloadHandler,
-  escapeCsvCell,
-  triggerDownloadFromBlob,
-} from '../table-export.js';
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+} from '../state.js';
+import { createTableDownloadHandler, escapeCsvCell, triggerDownloadFromBlob } from '../table-export.js';
 import { createStatusSetter } from '../utils/common.js';
+import {
+  computeReferralHospitalizedShareByPspcDetailed,
+  extractHistoricalRecords,
+  getReportsComputation,
+  getScopedReportsMeta,
+  sortPspcRows,
+} from './summaries/report-computation.js';
+import { syncReportsControls } from './summaries/report-controls.js';
+import { createReportExportClickHandler } from './summaries/report-export.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -84,354 +80,6 @@ const handleTableDownloadClick = createTableDownloadHandler({
   defaultTitle: 'Lentelė',
   formatFilename: formatExportFilename,
 });
-
-function extractHistoricalRecords(dashboardState) {
-  const allRecords = Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : [];
-  const cache = dashboardState.summariesHistoricalRecordsCache || {};
-  if (cache.recordsRef === allRecords && Array.isArray(cache.records)) {
-    return cache.records;
-  }
-  const byTag = allRecords.filter((record) => record?.sourceId === 'historical');
-  const records = byTag.length ? byTag : allRecords.filter((record) => record?.hasExtendedHistoricalFields === true);
-  dashboardState.summariesHistoricalRecordsCache = {
-    recordsRef: allRecords,
-    records,
-  };
-  return records;
-}
-
-function buildReportsComputationKey(dashboardState, settings, scopeMeta) {
-  return [
-    String(dashboardState.summariesReportsYear ?? 'all'),
-    Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
-    Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10) || 100,
-    String(dashboardState.summariesReferralPspcSort || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc',
-    Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
-    Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
-  ].join('|');
-}
-
-function getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta) {
-  const key = buildReportsComputationKey(dashboardState, settings, scopeMeta);
-  const cache = dashboardState.summariesReportsComputationCache || {};
-  if (cache.recordsRef === historicalRecords && cache.key === key && cache.value) {
-    return cache.value;
-  }
-  const scopedMeta = {
-    scoped: scopeMeta.records,
-    yearOptions: scopeMeta.yearOptions,
-    yearFilter: scopeMeta.yearFilter,
-    shiftStartHour: scopeMeta.shiftStartHour,
-    coverage: scopeMeta.coverage,
-  };
-  const baseOptions = {
-    yearFilter: dashboardState.summariesReportsYear,
-    topN: dashboardState.summariesReportsTopN,
-    minGroupSize: dashboardState.summariesReportsMinGroupSize,
-    sortDirection: dashboardState.summariesReferralPspcSort,
-    calculations: settings?.calculations,
-    defaultSettings: DEFAULT_SETTINGS,
-    scopedMeta,
-  };
-  const value = {
-    diagnosis: computeDiagnosisFrequency(historicalRecords, {
-      ...baseOptions,
-      excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
-    }),
-    ageDiagnosisHeatmap: computeAgeDiagnosisHeatmap(historicalRecords, {
-      ...baseOptions,
-      excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
-    }),
-    z769Trend: computeDiagnosisCodeYearlyShare(historicalRecords, 'Z76.9', baseOptions),
-    referralTrend: computeReferralYearlyTrend(historicalRecords, baseOptions),
-    referralDispositionYearly: computeReferralDispositionYearlyTrend(historicalRecords, baseOptions),
-    referralMonthlyHeatmap: computeReferralMonthlyHeatmap(historicalRecords, baseOptions),
-    referralHospitalizedByPspcYearly: computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
-      minGroupSize: dashboardState.summariesReportsMinGroupSize,
-      yearOptions: scopeMeta.yearOptions,
-      shiftStartHour: scopeMeta.shiftStartHour,
-    }),
-    pspcCorrelation: computePspcReferralHospitalizationCorrelation(historicalRecords, baseOptions),
-    pspcDistribution: computePspcDistribution(historicalRecords, baseOptions),
-  };
-  dashboardState.summariesReportsComputationCache = {
-    recordsRef: historicalRecords,
-    key,
-    value,
-  };
-  return value;
-}
-
-function normalizeLithuanianText(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-}
-
-function classifyPspcAreaType(label) {
-  const normalized = normalizeLithuanianText(label);
-  if (!normalized || normalized === 'nenurodyta') {
-    return 'unknown';
-  }
-  if (/\brajono\b/.test(normalized) || /\braj\.\b/.test(normalized) || /\braj\b/.test(normalized)) {
-    return 'district';
-  }
-  if (/\bmiesto\b/.test(normalized) || /\bm\.\b/.test(normalized)) {
-    return 'city';
-  }
-  const majorCityFragments = [
-    'vilniaus',
-    'kauno',
-    'klaipedos',
-    'siauliu',
-    'panevezio',
-    'alytaus',
-    'marijampoles',
-  ];
-  if (majorCityFragments.some((fragment) => normalized.includes(fragment))) {
-    return 'city';
-  }
-  return 'unknown';
-}
-
-function sortPspcRows(rows, direction = 'desc') {
-  const sortDirection = String(direction || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';
-  return [...(Array.isArray(rows) ? rows : [])].sort((a, b) => {
-    const aShare = Number(a?.share || 0);
-    const bShare = Number(b?.share || 0);
-    if (aShare !== bShare) {
-      return sortDirection === 'asc' ? aShare - bShare : bShare - aShare;
-    }
-    const aTotal = Number(a?.referredTotal || 0);
-    const bTotal = Number(b?.referredTotal || 0);
-    if (aTotal !== bTotal) {
-      return sortDirection === 'asc' ? aTotal - bTotal : bTotal - aTotal;
-    }
-    return String(a?.label || '').localeCompare(String(b?.label || ''), 'lt');
-  });
-}
-
-function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
-  const list = Array.isArray(records) ? records.filter(Boolean) : [];
-  const shiftStartHourRaw = Number(options?.shiftStartHour);
-  const shiftStartHour = Number.isFinite(shiftStartHourRaw) ? shiftStartHourRaw : 7;
-  const getShiftAdjustedYear = (record) => {
-    const arrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
-    const discharge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
-    const reference = arrival || discharge;
-    if (reference) {
-      const anchor = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
-      if (reference.getHours() < shiftStartHour) {
-        anchor.setDate(anchor.getDate() - 1);
-      }
-      return String(anchor.getFullYear());
-    }
-    const fallback = Number.parseInt(String(record?.year ?? ''), 10);
-    if (Number.isFinite(fallback)) {
-      return String(fallback);
-    }
-    return '';
-  };
-  const yearSet = new Set();
-  const byPspc = new Map();
-
-  list.forEach((record) => {
-    const year = getShiftAdjustedYear(record);
-    if (!/^\d{4}$/.test(year)) {
-      return;
-    }
-    yearSet.add(year);
-    const referralValue = String(record?.referral || '').trim().toLowerCase();
-    if (referralValue !== 'su siuntimu') {
-      return;
-    }
-    const pspc = String(record?.pspc || '').trim() || 'Nenurodyta';
-    if (!byPspc.has(pspc)) {
-      byPspc.set(pspc, {
-        label: pspc,
-        pspcType: classifyPspcAreaType(pspc),
-        totalReferred: 0,
-        totalHospitalized: 0,
-        byYear: new Map(),
-      });
-    }
-    const bucket = byPspc.get(pspc);
-    bucket.totalReferred += 1;
-    if (record?.hospitalized === true) {
-      bucket.totalHospitalized += 1;
-    }
-    if (!bucket.byYear.has(year)) {
-      bucket.byYear.set(year, { referredTotal: 0, hospitalizedCount: 0 });
-    }
-    const yearBucket = bucket.byYear.get(year);
-    yearBucket.referredTotal += 1;
-    if (record?.hospitalized === true) {
-      yearBucket.hospitalizedCount += 1;
-    }
-  });
-
-  const years = Array.from(yearSet)
-    .filter((year) => /^\d{4}$/.test(year))
-    .sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10));
-
-  const rows = Array.from(byPspc.values())
-    .filter((row) => row.label !== 'Nenurodyta')
-    .map((row) => ({
-      label: row.label,
-      pspcType: row.pspcType,
-      totalReferred: row.totalReferred,
-      totalHospitalized: row.totalHospitalized,
-      share: row.totalReferred > 0 ? row.totalHospitalized / row.totalReferred : 0,
-      yearly: years.map((year) => {
-        const yearBucket = row.byYear.get(year) || { referredTotal: 0, hospitalizedCount: 0 };
-        const referredTotal = Number(yearBucket.referredTotal || 0);
-        const hospitalizedCount = Number(yearBucket.hospitalizedCount || 0);
-        return {
-          year,
-          referredTotal,
-          hospitalizedCount,
-          share: referredTotal > 0 ? hospitalizedCount / referredTotal : null,
-        };
-      }),
-    }))
-    .sort((a, b) => {
-      if (b.totalReferred !== a.totalReferred) {
-        return b.totalReferred - a.totalReferred;
-      }
-      return String(a.label).localeCompare(String(b.label), 'lt');
-    });
-
-  return { years, rows };
-}
-
-function computeReferralHospitalizedShareByPspcDetailed(records) {
-  const list = Array.isArray(records) ? records.filter(Boolean) : [];
-  const byPspc = new Map();
-  list.forEach((record) => {
-    const referralValue = String(record?.referral || '').trim().toLowerCase();
-    if (referralValue !== 'su siuntimu') {
-      return;
-    }
-    const pspc = String(record?.pspc || '').trim() || 'Nenurodyta';
-    if (!byPspc.has(pspc)) {
-      byPspc.set(pspc, {
-        label: pspc,
-        pspcType: classifyPspcAreaType(pspc),
-        referredTotal: 0,
-        hospitalizedCount: 0,
-      });
-    }
-    const bucket = byPspc.get(pspc);
-    bucket.referredTotal += 1;
-    if (record?.hospitalized === true) {
-      bucket.hospitalizedCount += 1;
-    }
-  });
-  const rows = Array.from(byPspc.values())
-    .filter((row) => row.label !== 'Nenurodyta')
-    .map((row) => ({
-      ...row,
-      share: row.referredTotal > 0 ? row.hospitalizedCount / row.referredTotal : 0,
-      percent: row.referredTotal > 0 ? (row.hospitalizedCount / row.referredTotal) * 100 : 0,
-    }));
-  return {
-    rows,
-    totalReferred: rows.reduce((sum, row) => sum + Number(row.referredTotal || 0), 0),
-  };
-}
-
-function getScopedReportsMeta(dashboardState, settings, historicalRecords, yearFilter) {
-  const cache = dashboardState.summariesReportsScopeCache || {};
-  const normalizedYearFilter = yearFilter == null ? 'all' : String(yearFilter);
-  if (cache.recordsRef !== historicalRecords || !(cache.byYear instanceof Map)) {
-    dashboardState.summariesReportsScopeCache = {
-      recordsRef: historicalRecords,
-      byYear: new Map(),
-    };
-  }
-  const activeCache = dashboardState.summariesReportsScopeCache.byYear;
-  if (activeCache.has(normalizedYearFilter)) {
-    return activeCache.get(normalizedYearFilter);
-  }
-  const scoped = scopeExtendedHistoricalRecords(historicalRecords, yearFilter, {
-    calculations: settings?.calculations,
-    defaultSettings: DEFAULT_SETTINGS,
-  });
-  activeCache.set(normalizedYearFilter, scoped);
-  return scoped;
-}
-
-function syncReportsControls(selectors, dashboardState, yearOptions, pspcTrendOptions) {
-  if (selectors.summariesReportsYear) {
-    const select = selectors.summariesReportsYear;
-    const allOption = document.createElement('option');
-    allOption.value = 'all';
-    allOption.textContent = TEXT.summariesReports?.filters?.allYears || 'Visi metai';
-    allOption.selected = String(dashboardState.summariesReportsYear) === 'all';
-    select.replaceChildren(allOption);
-    (Array.isArray(yearOptions) ? yearOptions : []).forEach((year) => {
-      const option = document.createElement('option');
-      option.value = year;
-      option.textContent = year;
-      option.selected = String(dashboardState.summariesReportsYear) === String(year);
-      select.appendChild(option);
-    });
-  }
-  if (selectors.summariesReportsTopN) {
-    selectors.summariesReportsTopN.value = String(dashboardState.summariesReportsTopN || 15);
-  }
-  if (selectors.summariesReportsMinGroupSize) {
-    selectors.summariesReportsMinGroupSize.value = String(dashboardState.summariesReportsMinGroupSize || 100);
-  }
-  if (selectors.referralHospitalizedByPspcSort) {
-    selectors.referralHospitalizedByPspcSort.value = dashboardState.summariesReferralPspcSort === 'asc' ? 'asc' : 'desc';
-  }
-  if (selectors.referralHospitalizedByPspcMode) {
-    const mode = String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase();
-    selectors.referralHospitalizedByPspcMode.value = mode === 'trend' ? 'trend' : 'cross';
-  }
-  if (selectors.referralHospitalizedByPspcTrendPspc && Array.isArray(pspcTrendOptions)) {
-    const select = selectors.referralHospitalizedByPspcTrendPspc;
-    const previous = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
-    select.replaceChildren();
-    const topOption = document.createElement('option');
-    topOption.value = '__top3__';
-    topOption.textContent = 'TOP 3 PSPC';
-    select.appendChild(topOption);
-    (Array.isArray(pspcTrendOptions) ? pspcTrendOptions : []).forEach((label) => {
-      if (!label) {
-        return;
-      }
-      const option = document.createElement('option');
-      option.value = label;
-      option.textContent = label;
-      select.appendChild(option);
-    });
-    const hasPrevious = Array.from(select.options).some((option) => option.value === previous);
-    const nextValue = hasPrevious ? previous : '__top3__';
-    select.value = nextValue;
-    dashboardState.summariesReferralPspcTrendPspc = nextValue;
-  }
-  const isTrend = String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase() === 'trend';
-  if (selectors.referralHospitalizedByPspcSort) {
-    selectors.referralHospitalizedByPspcSort.disabled = isTrend;
-    const sortField = selectors.referralHospitalizedByPspcSort.closest('.report-card__inline-filter');
-    if (sortField) {
-      sortField.hidden = isTrend;
-      sortField.setAttribute('aria-hidden', String(isTrend));
-    }
-  }
-  if (selectors.referralHospitalizedByPspcTrendPspc) {
-    selectors.referralHospitalizedByPspcTrendPspc.disabled = !isTrend;
-    const trendField = selectors.referralHospitalizedByPspcTrendPspc.closest('.report-card__inline-filter');
-    if (trendField) {
-      trendField.hidden = !isTrend;
-      trendField.setAttribute('aria-hidden', String(!isTrend));
-    }
-  }
-}
 
 function destroyReportCharts(dashboardState) {
   const charts = dashboardState.summariesReportCharts || {};
@@ -464,13 +112,12 @@ function updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, confi
   const existing = dashboardState?.summariesReportCharts?.[slot];
   const incomingType = String(config?.type || '');
   const existingType = String(existing?.config?.type || existing?.constructor?.id || '');
-  const canUpdate = (
-    !forceRecreate
-    && existing
-    && typeof existing.update === 'function'
-    && existing.canvas === canvas
-    && existingType === incomingType
-  );
+  const canUpdate =
+    !forceRecreate &&
+    existing &&
+    typeof existing.update === 'function' &&
+    existing.canvas === canvas &&
+    existingType === incomingType;
   if (canUpdate) {
     existing.data = config?.data || { labels: [], datasets: [] };
     existing.options = config?.options || {};
@@ -499,15 +146,13 @@ function ensureCoverage(selectors, dashboardState, coverage) {
       return;
     }
     selectors.summariesReportsCoverage.textContent = TEXT.summariesReports?.coverage
-      ? TEXT.summariesReports.coverage(numberFormatter.format(extended), numberFormatter.format(total), percentFormatter.format(percent))
+      ? TEXT.summariesReports.coverage(
+          numberFormatter.format(extended),
+          numberFormatter.format(total),
+          percentFormatter.format(percent)
+        )
       : `Analizėje naudojami papildomi įrašai: ${extended}/${total}.`;
   }
-}
-
-function createRowsCsv(headers, rows) {
-  const lines = [headers.map((cell) => escapeCsvCell(cell)).join(',')];
-  (rows || []).forEach((row) => lines.push(row.map((cell) => escapeCsvCell(cell)).join(',')));
-  return lines.join('\n');
 }
 
 function toPercent(value, total) {
@@ -531,7 +176,7 @@ function hasTreemapController(chartLib) {
   }
   try {
     return Boolean(chartLib.registry.getController('treemap'));
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -542,7 +187,7 @@ function hasMatrixController(chartLib) {
   }
   try {
     return Boolean(chartLib.registry.getController('matrix'));
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -556,7 +201,8 @@ async function ensureTreemapPlugin(chartLib) {
   }
   if (!treemapPluginPromise) {
     treemapPluginPromise = new Promise((resolve) => {
-      const scriptSrc = 'https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.1.0/dist/chartjs-chart-treemap.min.js';
+      const scriptSrc =
+        'https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.1.0/dist/chartjs-chart-treemap.min.js';
       const existingScript = document.querySelector(`script[src="${scriptSrc}"]`);
       if (existingScript) {
         existingScript.addEventListener('load', () => resolve(true), { once: true });
@@ -598,7 +244,8 @@ async function ensureMatrixPlugin(chartLib) {
   }
   if (!matrixPluginPromise) {
     matrixPluginPromise = new Promise((resolve) => {
-      const scriptSrc = 'https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js';
+      const scriptSrc =
+        'https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js';
       const existingScript = document.querySelector(`script[src="${scriptSrc}"]`);
       if (existingScript) {
         existingScript.addEventListener('load', () => resolve(true), { once: true });
@@ -660,7 +307,11 @@ function renderBarChart(slot, dashboardState, chartLib, canvas, rows, color, opt
               const value = Number(context.parsed?.y ?? context.parsed ?? 0);
               const index = Number(context.dataIndex ?? -1);
               const row = index >= 0 ? rows[index] : null;
-              const count = Number.isFinite(row?.count) ? row.count : (Number.isFinite(row?.total) ? row.total : null);
+              const count = Number.isFinite(row?.count)
+                ? row.count
+                : Number.isFinite(row?.total)
+                  ? row.total
+                  : null;
               return formatPercentTooltip(value, count);
             },
           },
@@ -670,9 +321,7 @@ function renderBarChart(slot, dashboardState, chartLib, canvas, rows, color, opt
         y: {
           beginAtZero: !dynamicYAxis,
           min: dynamicYAxis ? dynamicMin : 0,
-          max: dynamicYAxis
-            ? (dynamicMax > dynamicMin ? dynamicMax : Math.min(100, dynamicMin + 1))
-            : 100,
+          max: dynamicYAxis ? (dynamicMax > dynamicMin ? dynamicMax : Math.min(100, dynamicMin + 1)) : 100,
           ticks: {
             callback: (value) => `${Number(value).toFixed(0)}%`,
           },
@@ -683,7 +332,9 @@ function renderBarChart(slot, dashboardState, chartLib, canvas, rows, color, opt
 }
 
 function normalizeSexLabel(rawValue) {
-  const value = String(rawValue || '').trim().toLowerCase();
+  const value = String(rawValue || '')
+    .trim()
+    .toLowerCase();
   if (value === 'vyras' || value === 'male') {
     return 'Vyras';
   }
@@ -697,15 +348,20 @@ function computeAgeDistributionBySex(records) {
   const list = Array.isArray(records) ? records.filter(Boolean) : [];
   const ageOrder = ['0-17', '18-34', '35-49', '50-64', '65-79', '80+', 'Nenurodyta'];
   const sexOrder = ['Vyras', 'Moteris', 'Kita/Nenurodyta'];
-  const buckets = new Map(ageOrder.map((label) => [label, {
-    label,
-    total: 0,
-    bySex: {
-      Vyras: 0,
-      Moteris: 0,
-      'Kita/Nenurodyta': 0,
-    },
-  }]));
+  const buckets = new Map(
+    ageOrder.map((label) => [
+      label,
+      {
+        label,
+        total: 0,
+        bySex: {
+          Vyras: 0,
+          Moteris: 0,
+          'Kita/Nenurodyta': 0,
+        },
+      },
+    ])
+  );
 
   list.forEach((record) => {
     const ageRaw = String(record?.ageBand || '').trim();
@@ -739,15 +395,23 @@ function computeAgeDistributionBySex(records) {
   };
 }
 
-function renderAgeDistributionStackedBySex(slot, dashboardState, chartLib, canvas, distribution, palette = {}) {
+function renderAgeDistributionStackedBySex(
+  slot,
+  dashboardState,
+  chartLib,
+  canvas,
+  distribution,
+  palette = {}
+) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
   const rows = Array.isArray(distribution?.rows) ? distribution.rows : [];
   const total = Number(distribution?.total || 0);
-  const sexOrder = Array.isArray(distribution?.sexOrder) && distribution.sexOrder.length
-    ? distribution.sexOrder
-    : ['Vyras', 'Moteris', 'Kita/Nenurodyta'];
+  const sexOrder =
+    Array.isArray(distribution?.sexOrder) && distribution.sexOrder.length
+      ? distribution.sexOrder
+      : ['Vyras', 'Moteris', 'Kita/Nenurodyta'];
   const colorMap = {
     Vyras: palette.Vyras || '#2563eb',
     Moteris: palette.Moteris || '#ef4444',
@@ -816,7 +480,7 @@ function renderAgeDistributionStackedBySex(slot, dashboardState, chartLib, canva
   });
 }
 
-function renderPieChart(slot, dashboardState, chartLib, canvas, rows, palette) {
+function _renderPieChart(slot, dashboardState, chartLib, canvas, rows, palette) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
@@ -824,11 +488,13 @@ function renderPieChart(slot, dashboardState, chartLib, canvas, rows, palette) {
     type: 'pie',
     data: {
       labels: rows.map((row) => row.label),
-      datasets: [{
-        data: rows.map((row) => row.percent),
-        backgroundColor: rows.map((_, index) => palette[index % palette.length]),
-        borderWidth: 0,
-      }],
+      datasets: [
+        {
+          data: rows.map((row) => row.percent),
+          backgroundColor: rows.map((_, index) => palette[index % palette.length]),
+          borderWidth: 0,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -842,7 +508,11 @@ function renderPieChart(slot, dashboardState, chartLib, canvas, rows, palette) {
               const value = Number(context.parsed ?? 0);
               const index = Number(context.dataIndex ?? -1);
               const row = index >= 0 ? rows[index] : null;
-              const count = Number.isFinite(row?.count) ? row.count : (Number.isFinite(row?.total) ? row.total : null);
+              const count = Number.isFinite(row?.count)
+                ? row.count
+                : Number.isFinite(row?.total)
+                  ? row.total
+                  : null;
               return `${label} | ${formatPercentTooltip(value, count)}`;
             },
           },
@@ -861,69 +531,84 @@ async function renderDiagnosisTreemap(dashboardState, chartLib, canvas, rows) {
     return false;
   }
   const tree = rows.map((row) => ({ code: row.label, percent: row.percent, count: row.count }));
-  updateOrCreateReportChart('diagnosisFrequency', dashboardState, chartLib, canvas, {
-    type: 'treemap',
-    data: {
-      datasets: [{
-        tree,
-        key: 'percent',
-        groups: ['code'],
-        spacing: 2,
-        borderWidth: 0,
-        borderColor: 'rgba(255, 255, 255, 0)',
-        backgroundColor: (context) => {
-          const value = Number(context.raw?._data?.percent ?? 0);
-          const alpha = Math.max(0.48, Math.min(0.92, value / 16));
-            const base = getCssVar('--report-diagnosis', '#0284c7');
-            if (base.startsWith('#')) {
-              const hex = base.replace('#', '');
-              const fullHex = hex.length === 3 ? hex.split('').map((char) => `${char}${char}`).join('') : hex;
-              const r = Number.parseInt(fullHex.slice(0, 2), 16);
-              const g = Number.parseInt(fullHex.slice(2, 4), 16);
-              const b = Number.parseInt(fullHex.slice(4, 6), 16);
-              if ([r, g, b].every((v) => Number.isFinite(v))) {
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-              }
-            }
-            return `rgba(2, 132, 199, ${alpha})`;
-          },
-        labels: {
-          display: true,
-          align: 'center',
-          color: '#ffffff',
-          font: (context) => {
-            const value = Number(context.raw?._data?.percent ?? 0);
-            return { size: value >= 5 ? 13 : 11, weight: '700' };
-          },
-          formatter: (context) => {
-            const code = String(context.raw?.g || context.raw?._data?.code || '');
-            const value = Number(context.raw?._data?.percent ?? 0);
-            if (value < 1.2) {
-              return '';
-            }
-            return `${code}\n${oneDecimalFormatter.format(value)}%`;
-          },
-        },
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: (items) => String(items?.[0]?.raw?.g || ''),
-            label: (context) => {
+  updateOrCreateReportChart(
+    'diagnosisFrequency',
+    dashboardState,
+    chartLib,
+    canvas,
+    {
+      type: 'treemap',
+      data: {
+        datasets: [
+          {
+            tree,
+            key: 'percent',
+            groups: ['code'],
+            spacing: 2,
+            borderWidth: 0,
+            borderColor: 'rgba(255, 255, 255, 0)',
+            backgroundColor: (context) => {
               const value = Number(context.raw?._data?.percent ?? 0);
-              const count = Number(context.raw?._data?.count ?? Number.NaN);
-              return formatPercentTooltip(value, Number.isFinite(count) ? count : null);
+              const alpha = Math.max(0.48, Math.min(0.92, value / 16));
+              const base = getCssVar('--report-diagnosis', '#0284c7');
+              if (base.startsWith('#')) {
+                const hex = base.replace('#', '');
+                const fullHex =
+                  hex.length === 3
+                    ? hex
+                        .split('')
+                        .map((char) => `${char}${char}`)
+                        .join('')
+                    : hex;
+                const r = Number.parseInt(fullHex.slice(0, 2), 16);
+                const g = Number.parseInt(fullHex.slice(2, 4), 16);
+                const b = Number.parseInt(fullHex.slice(4, 6), 16);
+                if ([r, g, b].every((v) => Number.isFinite(v))) {
+                  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+              }
+              return `rgba(2, 132, 199, ${alpha})`;
+            },
+            labels: {
+              display: true,
+              align: 'center',
+              color: '#ffffff',
+              font: (context) => {
+                const value = Number(context.raw?._data?.percent ?? 0);
+                return { size: value >= 5 ? 13 : 11, weight: '700' };
+              },
+              formatter: (context) => {
+                const code = String(context.raw?.g || context.raw?._data?.code || '');
+                const value = Number(context.raw?._data?.percent ?? 0);
+                if (value < 1.2) {
+                  return '';
+                }
+                return `${code}\n${oneDecimalFormatter.format(value)}%`;
+              },
+            },
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => String(items?.[0]?.raw?.g || ''),
+              label: (context) => {
+                const value = Number(context.raw?._data?.percent ?? 0);
+                const count = Number(context.raw?._data?.count ?? Number.NaN);
+                return formatPercentTooltip(value, Number.isFinite(count) ? count : null);
+              },
             },
           },
         },
       },
     },
-  }, { forceRecreate: true });
+    { forceRecreate: true }
+  );
   return true;
 }
 
@@ -948,49 +633,57 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
     updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
       type: 'matrix',
       data: {
-        datasets: [{
-          label: TEXT.summariesReports?.cards?.ageDiagnosisHeatmap || 'Amžiaus ir diagnozių grupių ryšys',
-          data: rows.map((row) => ({
-            x: row.diagnosisGroup,
-            y: row.ageBand,
-            v: row.percent,
-            count: row.count,
-            ageTotal: row.ageTotal,
-          })),
-          width: ({ chart }) => {
-            const area = chart?.chartArea;
-            if (!area || !diagnosisGroups.length) {
-              return 18;
-            }
-            return Math.max(12, (area.width / diagnosisGroups.length) - 3);
-          },
-          height: ({ chart }) => {
-            const area = chart?.chartArea;
-            if (!area || !ageBands.length) {
-              return 18;
-            }
-            return Math.max(16, (area.height / ageBands.length) - 4);
-          },
-          backgroundColor: (context) => {
-            const value = Number(context.raw?.v || 0);
-            const ratio = maxPercent > 0 ? value / maxPercent : 0;
-            const alpha = Math.max(0.12, Math.min(0.92, ratio));
-            const base = getCssVar('--report-heatmap', '#16a34a');
-            if (base.startsWith('#')) {
-              const hex = base.replace('#', '');
-              const fullHex = hex.length === 3 ? hex.split('').map((char) => `${char}${char}`).join('') : hex;
-              const r = Number.parseInt(fullHex.slice(0, 2), 16);
-              const g = Number.parseInt(fullHex.slice(2, 4), 16);
-              const b = Number.parseInt(fullHex.slice(4, 6), 16);
-              if ([r, g, b].every((v) => Number.isFinite(v))) {
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        datasets: [
+          {
+            label: TEXT.summariesReports?.cards?.ageDiagnosisHeatmap || 'Amžiaus ir diagnozių grupių ryšys',
+            data: rows.map((row) => ({
+              x: row.diagnosisGroup,
+              y: row.ageBand,
+              v: row.percent,
+              count: row.count,
+              ageTotal: row.ageTotal,
+            })),
+            width: ({ chart }) => {
+              const area = chart?.chartArea;
+              if (!area || !diagnosisGroups.length) {
+                return 18;
               }
-            }
-            return `rgba(22, 163, 74, ${alpha})`;
+              return Math.max(12, area.width / diagnosisGroups.length - 3);
+            },
+            height: ({ chart }) => {
+              const area = chart?.chartArea;
+              if (!area || !ageBands.length) {
+                return 18;
+              }
+              return Math.max(16, area.height / ageBands.length - 4);
+            },
+            backgroundColor: (context) => {
+              const value = Number(context.raw?.v || 0);
+              const ratio = maxPercent > 0 ? value / maxPercent : 0;
+              const alpha = Math.max(0.12, Math.min(0.92, ratio));
+              const base = getCssVar('--report-heatmap', '#16a34a');
+              if (base.startsWith('#')) {
+                const hex = base.replace('#', '');
+                const fullHex =
+                  hex.length === 3
+                    ? hex
+                        .split('')
+                        .map((char) => `${char}${char}`)
+                        .join('')
+                    : hex;
+                const r = Number.parseInt(fullHex.slice(0, 2), 16);
+                const g = Number.parseInt(fullHex.slice(2, 4), 16);
+                const b = Number.parseInt(fullHex.slice(4, 6), 16);
+                if ([r, g, b].every((v) => Number.isFinite(v))) {
+                  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+              }
+              return `rgba(22, 163, 74, ${alpha})`;
+            },
+            borderColor: 'rgba(255, 255, 255, 0)',
+            borderWidth: 0,
           },
-          borderColor: 'rgba(255, 255, 255, 0)',
-          borderWidth: 0,
-        }],
+        ],
       },
       options: {
         responsive: true,
@@ -1046,28 +739,36 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
   updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bubble',
     data: {
-      datasets: [{
-        label: 'Heatmap fallback',
-        data: fallbackData,
-        backgroundColor: fallbackData.map((point) => {
-          const ratio = maxPercent > 0 ? point.v / maxPercent : 0;
-          const alpha = Math.max(0.18, Math.min(0.88, ratio));
-          const base = getCssVar('--report-heatmap', '#16a34a');
-          if (base.startsWith('#')) {
-            const hex = base.replace('#', '');
-            const fullHex = hex.length === 3 ? hex.split('').map((char) => `${char}${char}`).join('') : hex;
-            const r = Number.parseInt(fullHex.slice(0, 2), 16);
-            const g = Number.parseInt(fullHex.slice(2, 4), 16);
-            const b = Number.parseInt(fullHex.slice(4, 6), 16);
-            if ([r, g, b].every((v) => Number.isFinite(v))) {
-              return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      datasets: [
+        {
+          label: 'Heatmap fallback',
+          data: fallbackData,
+          backgroundColor: fallbackData.map((point) => {
+            const ratio = maxPercent > 0 ? point.v / maxPercent : 0;
+            const alpha = Math.max(0.18, Math.min(0.88, ratio));
+            const base = getCssVar('--report-heatmap', '#16a34a');
+            if (base.startsWith('#')) {
+              const hex = base.replace('#', '');
+              const fullHex =
+                hex.length === 3
+                  ? hex
+                      .split('')
+                      .map((char) => `${char}${char}`)
+                      .join('')
+                  : hex;
+              const r = Number.parseInt(fullHex.slice(0, 2), 16);
+              const g = Number.parseInt(fullHex.slice(2, 4), 16);
+              const b = Number.parseInt(fullHex.slice(4, 6), 16);
+              if ([r, g, b].every((v) => Number.isFinite(v))) {
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+              }
             }
-          }
-          return `rgba(22, 163, 74, ${alpha})`;
-        }),
-        borderColor: 'rgba(15, 23, 42, 0)',
-        borderWidth: 0,
-      }],
+            return `rgba(22, 163, 74, ${alpha})`;
+          }),
+          borderColor: 'rgba(15, 23, 42, 0)',
+          borderWidth: 0,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -1099,7 +800,7 @@ async function renderAgeDiagnosisHeatmapChart(slot, dashboardState, chartLib, ca
   return true;
 }
 
-function renderStackedTrend(slot, dashboardState, chartLib, canvas, trend) {
+function _renderStackedTrend(slot, dashboardState, chartLib, canvas, trend) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
@@ -1163,16 +864,18 @@ function renderPercentLineTrend(slot, dashboardState, chartLib, canvas, rows, la
     type: 'line',
     data: {
       labels: rows.map((row) => String(row.year)),
-      datasets: [{
-        label,
-        data: rows.map((row) => row.percent),
-        borderColor: color,
-        backgroundColor: color,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        tension: 0.25,
-        fill: false,
-      }],
+      datasets: [
+        {
+          label,
+          data: rows.map((row) => row.percent),
+          borderColor: color,
+          backgroundColor: color,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          tension: 0.25,
+          fill: false,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -1216,11 +919,12 @@ function renderReferralDispositionYearlyChart(slot, dashboardState, chartLib, ca
     if (referral === 'be siuntimo' && disposition === 'hospitalizuoti') return 'Be siuntimo: hospitalizuoti';
     return 'Be siuntimo: išleisti';
   };
-  const buildSeries = (referral, disposition) => rows.map((row) => {
-    const groupTotal = Number(row?.totals?.[referral] || 0);
-    const count = Number(row?.values?.[referral]?.[disposition] || 0);
-    return groupTotal > 0 ? (count / groupTotal) * 100 : 0;
-  });
+  const buildSeries = (referral, disposition) =>
+    rows.map((row) => {
+      const groupTotal = Number(row?.totals?.[referral] || 0);
+      const count = Number(row?.values?.[referral]?.[disposition] || 0);
+      return groupTotal > 0 ? (count / groupTotal) * 100 : 0;
+    });
   updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bar',
     data: {
@@ -1328,39 +1032,41 @@ async function renderReferralMonthlyHeatmapChart(slot, dashboardState, chartLib,
   updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'matrix',
     data: {
-      datasets: [{
-        label: TEXT.summariesReports?.cards?.referralMonthlyHeatmap || 'Siuntimų % pagal mėnesį',
-        data: rows.map((row) => ({
-          x: row.month,
-          y: row.year,
-          v: row.share * 100,
-          total: row.total,
-          referred: row.referred,
-        })),
-        width: ({ chart }) => {
-          const area = chart?.chartArea;
-          if (!area || !months.length) {
-            return 18;
-          }
-          return Math.max(14, (area.width / months.length) - 3);
+      datasets: [
+        {
+          label: TEXT.summariesReports?.cards?.referralMonthlyHeatmap || 'Siuntimų % pagal mėnesį',
+          data: rows.map((row) => ({
+            x: row.month,
+            y: row.year,
+            v: row.share * 100,
+            total: row.total,
+            referred: row.referred,
+          })),
+          width: ({ chart }) => {
+            const area = chart?.chartArea;
+            if (!area || !months.length) {
+              return 18;
+            }
+            return Math.max(14, area.width / months.length - 3);
+          },
+          height: ({ chart }) => {
+            const area = chart?.chartArea;
+            if (!area || !years.length) {
+              return 18;
+            }
+            return Math.max(16, area.height / years.length - 3);
+          },
+          backgroundColor: (context) => {
+            const value = Number(context.raw?.v || 0);
+            const normalized = Math.max(0, Math.min(1, (value - minPercent) / percentRange));
+            const boosted = normalized ** 0.72;
+            const color = mixRgb(lightColor, baseColor, boosted);
+            return `rgb(${color.r}, ${color.g}, ${color.b})`;
+          },
+          borderColor: 'rgba(255, 255, 255, 0.86)',
+          borderWidth: 1,
         },
-        height: ({ chart }) => {
-          const area = chart?.chartArea;
-          if (!area || !years.length) {
-            return 18;
-          }
-          return Math.max(16, (area.height / years.length) - 3);
-        },
-        backgroundColor: (context) => {
-          const value = Number(context.raw?.v || 0);
-          const normalized = Math.max(0, Math.min(1, (value - minPercent) / percentRange));
-          const boosted = Math.pow(normalized, 0.72);
-          const color = mixRgb(lightColor, baseColor, boosted);
-          return `rgb(${color.r}, ${color.g}, ${color.b})`;
-        },
-        borderColor: 'rgba(255, 255, 255, 0.86)',
-        borderWidth: 1,
-      }],
+      ],
     },
     options: {
       responsive: true,
@@ -1371,7 +1077,7 @@ async function renderReferralMonthlyHeatmapChart(slot, dashboardState, chartLib,
           labels: months,
           offset: true,
           ticks: {
-            callback: (value, index) => monthLabel(months[index]),
+            callback: (_value, index) => monthLabel(months[index]),
             maxRotation: 50,
             minRotation: 35,
           },
@@ -1444,60 +1150,74 @@ function renderReferralHospitalizedByPspcChart(slot, dashboardState, chartLib, c
       c.restore();
     },
   };
-  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
-    type: 'bar',
-    data: {
-      labels: rows.map((row) => row.label),
-      datasets: [{ data: rows.map((row) => row.percent), backgroundColor: color, borderRadius: 6 }],
-    },
-    plugins: [valueLabelPlugin],
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: {
-        padding: {
-          right: 72,
-        },
+  updateOrCreateReportChart(
+    slot,
+    dashboardState,
+    chartLib,
+    canvas,
+    {
+      type: 'bar',
+      data: {
+        labels: rows.map((row) => row.label),
+        datasets: [{ data: rows.map((row) => row.percent), backgroundColor: color, borderRadius: 6 }],
       },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: (items) => {
-              const index = Number(items?.[0]?.dataIndex ?? -1);
-              return index >= 0 && rows[index] ? rows[index].label : '';
+      plugins: [valueLabelPlugin],
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            right: 72,
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => {
+                const index = Number(items?.[0]?.dataIndex ?? -1);
+                return index >= 0 && rows[index] ? rows[index].label : '';
+              },
+              label: (context) => {
+                const index = Number(context.dataIndex ?? -1);
+                const row = index >= 0 ? rows[index] : null;
+                const percent = Number(context.parsed?.x ?? context.parsed ?? 0);
+                const total = Number.isFinite(row?.referredTotal) ? row.referredTotal : 0;
+                return formatPercentTooltip(percent, total);
+              },
             },
-            label: (context) => {
-              const index = Number(context.dataIndex ?? -1);
-              const row = index >= 0 ? rows[index] : null;
-              const percent = Number(context.parsed?.x ?? context.parsed ?? 0);
-              const total = Number.isFinite(row?.referredTotal) ? row.referredTotal : 0;
-              return formatPercentTooltip(percent, total);
+          },
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              callback: (value) => `${Number(value).toFixed(0)}%`,
+            },
+          },
+          y: {
+            ticks: {
+              autoSkip: false,
+              callback: (_value, index) => String(rows[index]?.label || ''),
             },
           },
         },
       },
-      scales: {
-        x: {
-          beginAtZero: true,
-          max: 100,
-          ticks: {
-            callback: (value) => `${Number(value).toFixed(0)}%`,
-          },
-        },
-        y: {
-          ticks: {
-            autoSkip: false,
-            callback: (_value, index) => String(rows[index]?.label || ''),
-          },
-        },
-      },
     },
-  }, { forceRecreate: true });
+    { forceRecreate: true }
+  );
 }
 
-function renderReferralHospitalizedByPspcTrendChart(slot, dashboardState, chartLib, canvas, trendData, color) {
+function renderReferralHospitalizedByPspcTrendChart(
+  slot,
+  dashboardState,
+  chartLib,
+  canvas,
+  trendData,
+  color
+) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
@@ -1507,14 +1227,7 @@ function renderReferralHospitalizedByPspcTrendChart(slot, dashboardState, chartL
   canvas.style.setProperty('min-height', '380px', 'important');
   canvas.style.setProperty('max-height', '380px', 'important');
 
-  const fallbackColors = [
-    color,
-    '#0284c7',
-    '#16a34a',
-    '#f59e0b',
-    '#ef4444',
-    '#8b5cf6',
-  ];
+  const fallbackColors = [color, '#0284c7', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6'];
   const datasets = series.map((item, index) => {
     const baseColor = fallbackColors[index % fallbackColors.length];
     return {
@@ -1558,72 +1271,85 @@ function renderReferralHospitalizedByPspcTrendChart(slot, dashboardState, chartL
     return { min, max };
   })();
 
-  updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
-    type: 'line',
-    data: {
-      labels: years,
-      datasets,
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: 'index',
-        intersect: false,
+  updateOrCreateReportChart(
+    slot,
+    dashboardState,
+    chartLib,
+    canvas,
+    {
+      type: 'line',
+      data: {
+        labels: years,
+        datasets,
       },
-      plugins: {
-        legend: {
-          display: true,
-          position: 'bottom',
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
         },
-        tooltip: {
-          callbacks: {
-            label: (context) => {
-              const value = Number(context.parsed?.y ?? 0);
-              const dataset = context.dataset || {};
-              const points = Array.isArray(dataset.__points) ? dataset.__points : [];
-              const point = points[context.dataIndex] || {};
-              const referred = Number(point.referredTotal || 0);
-              const hospitalized = Number(point.hospitalizedCount || 0);
-              return `${dataset.label}: ${oneDecimalFormatter.format(value)}% (n=${numberFormatter.format(referred)}, hosp=${numberFormatter.format(hospitalized)})`;
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const value = Number(context.parsed?.y ?? 0);
+                const dataset = context.dataset || {};
+                const points = Array.isArray(dataset.__points) ? dataset.__points : [];
+                const point = points[context.dataIndex] || {};
+                const referred = Number(point.referredTotal || 0);
+                const hospitalized = Number(point.hospitalizedCount || 0);
+                return `${dataset.label}: ${oneDecimalFormatter.format(value)}% (n=${numberFormatter.format(referred)}, hosp=${numberFormatter.format(hospitalized)})`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              maxRotation: 0,
+              autoSkip: false,
+            },
+          },
+          y: {
+            min: dynamicYAxis.min,
+            max: dynamicYAxis.max,
+            ticks: {
+              callback: (value) => `${Number(value).toFixed(0)}%`,
+            },
+            title: {
+              display: true,
+              text: 'Hospitalizacijų dalis (%)',
             },
           },
         },
       },
-      scales: {
-        x: {
-          ticks: {
-            maxRotation: 0,
-            autoSkip: false,
-          },
-        },
-        y: {
-          min: dynamicYAxis.min,
-          max: dynamicYAxis.max,
-          ticks: {
-            callback: (value) => `${Number(value).toFixed(0)}%`,
-          },
-          title: {
-            display: true,
-            text: 'Hospitalizacijų dalis (%)',
-          },
-        },
-      },
     },
-  }, { forceRecreate: true });
+    { forceRecreate: true }
+  );
 }
 
 function renderPspcCorrelationChart(slot, dashboardState, chartLib, canvas, rows) {
   if (!(canvas instanceof HTMLCanvasElement)) {
     return;
   }
-  const valuesX = rows.map((row) => Number(row.referralPercent || 0)).filter((value) => Number.isFinite(value));
-  const valuesY = rows.map((row) => Number(row.hospitalizedPercent || 0)).filter((value) => Number.isFinite(value));
+  const valuesX = rows
+    .map((row) => Number(row.referralPercent || 0))
+    .filter((value) => Number.isFinite(value));
+  const valuesY = rows
+    .map((row) => Number(row.hospitalizedPercent || 0))
+    .filter((value) => Number.isFinite(value));
   const minX = valuesX.length ? Math.max(0, Math.min(...valuesX) - 2) : 0;
   const maxX = valuesX.length ? Math.min(100, Math.max(...valuesX) + 2) : 100;
   const minY = valuesY.length ? Math.max(0, Math.min(...valuesY) - 2) : 0;
   const maxY = valuesY.length ? Math.min(100, Math.max(...valuesY) + 2) : 100;
-  const totals = rows.map((row) => Number(row.total || 0)).filter((value) => Number.isFinite(value) && value > 0);
+  const totals = rows
+    .map((row) => Number(row.total || 0))
+    .filter((value) => Number.isFinite(value) && value > 0);
   const minTotal = totals.length ? Math.min(...totals) : 1;
   const maxTotal = totals.length ? Math.max(...totals) : 1;
   const radiusForTotal = (total) => {
@@ -1631,28 +1357,30 @@ function renderPspcCorrelationChart(slot, dashboardState, chartLib, canvas, rows
       return 8;
     }
     const normalized = (total - minTotal) / (maxTotal - minTotal);
-    return 6 + (normalized * 16);
+    return 6 + normalized * 16;
   };
   const fillColor = getCssVar('--report-correlation-fill', 'rgba(37, 99, 235, 0.38)');
   const strokeColor = getCssVar('--report-correlation-stroke', 'rgba(37, 99, 235, 0.9)');
   updateOrCreateReportChart(slot, dashboardState, chartLib, canvas, {
     type: 'bubble',
     data: {
-      datasets: [{
-        label: 'PSPC',
-        data: rows.map((row) => ({
-          x: row.referralPercent,
-          y: row.hospitalizedPercent,
-          r: radiusForTotal(row.total),
-          label: row.label,
-          total: row.total,
-          referred: row.referred,
-          hospitalized: row.hospitalized,
-        })),
-        backgroundColor: fillColor,
-        borderColor: strokeColor,
-        borderWidth: 1.5,
-      }],
+      datasets: [
+        {
+          label: 'PSPC',
+          data: rows.map((row) => ({
+            x: row.referralPercent,
+            y: row.hospitalizedPercent,
+            r: radiusForTotal(row.total),
+            label: row.label,
+            total: row.total,
+            referred: row.referred,
+            hospitalized: row.hospitalized,
+          })),
+          backgroundColor: fillColor,
+          borderColor: strokeColor,
+          borderWidth: 1.5,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -1712,7 +1440,7 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     dashboardState,
     settings,
     historicalRecords,
-    dashboardState.summariesReportsYear,
+    dashboardState.summariesReportsYear
   );
   ensureCoverage(selectors, dashboardState, scopeMeta.coverage);
   syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions);
@@ -1733,7 +1461,7 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const referralHospitalizedByPspcYearly = reports.referralHospitalizedByPspcYearly;
   const pspcCorrelation = reports.pspcCorrelation;
   const pspcDistribution = reports.pspcDistribution;
-  const chartLib = dashboardState.chartLib || await loadChartJs();
+  const chartLib = dashboardState.chartLib || (await loadChartJs());
   if (chartLib && !dashboardState.chartLib) {
     dashboardState.chartLib = chartLib;
   }
@@ -1744,22 +1472,21 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const diagnosisPercentRows = diagnosis.rows
     .filter((row) => String(row?.label || '') !== 'Kita / maža imtis')
     .map((row) => ({
-    ...row,
-    percent: toPercent(row.count, diagnosis.totalPatients),
-  }));
+      ...row,
+      percent: toPercent(row.count, diagnosis.totalPatients),
+    }));
   if (selectors.diagnosisInfo) {
     const topCodes = diagnosisPercentRows
       .slice(0, 6)
       .map((row) => `${row.label} (${oneDecimalFormatter.format(row.percent)}%)`)
       .join(', ');
     const baseNote = TEXT.summariesReports?.diagnosisNote || '';
-    selectors.diagnosisInfo.textContent = topCodes
-      ? `${baseNote} TOP kodai: ${topCodes}.`.trim()
-      : baseNote;
+    selectors.diagnosisInfo.textContent = topCodes ? `${baseNote} TOP kodai: ${topCodes}.`.trim() : baseNote;
   }
   const ageDistributionBySex = computeAgeDistributionBySex(scopeMeta.records);
-  const ageDistributionRows = ageDistributionBySex.rows
-    .filter((row) => String(row?.label || '') !== 'Nenurodyta');
+  const ageDistributionRows = ageDistributionBySex.rows.filter(
+    (row) => String(row?.label || '') !== 'Nenurodyta'
+  );
   const minGroupSizeRaw = Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10);
   const minGroupSize = Number.isFinite(minGroupSizeRaw) && minGroupSizeRaw > 0 ? minGroupSizeRaw : 100;
   const topNRaw = Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10);
@@ -1769,74 +1496,122 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const referralHospitalizedPspcYearlyRows = Array.isArray(referralHospitalizedByPspcYearly?.rows)
     ? referralHospitalizedByPspcYearly.rows
     : [];
-  const referralHospitalizedPspcTrendCandidates = referralHospitalizedPspcYearlyRows
-    .filter((row) => Number(row?.totalReferred || 0) >= minGroupSize);
-  const referralHospitalizedPspcTrendOptions = referralHospitalizedPspcTrendCandidates.map((row) => row.label);
+  const referralHospitalizedPspcTrendCandidates = referralHospitalizedPspcYearlyRows.filter(
+    (row) => Number(row?.totalReferred || 0) >= minGroupSize
+  );
+  const referralHospitalizedPspcTrendOptions = referralHospitalizedPspcTrendCandidates.map(
+    (row) => row.label
+  );
   syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions, referralHospitalizedPspcTrendOptions);
   const pspcCorrelationRows = pspcCorrelation.rows.map((row) => ({
     ...row,
     referralPercent: row.referralShare * 100,
     hospitalizedPercent: row.hospitalizedShare * 100,
   }));
-  const pspcPercentRows = pspcDistribution.rows.map((row) => ({
-    ...row,
-    percent: toPercent(row.count, pspcDistribution.total),
-  })).filter((row) => String(row?.label || '') !== 'Kita / maža imtis');
+  const pspcPercentRows = pspcDistribution.rows
+    .map((row) => ({
+      ...row,
+      percent: toPercent(row.count, pspcDistribution.total),
+    }))
+    .filter((row) => String(row?.label || '') !== 'Kita / maža imtis');
   const colors = {
     diagnosis: getCssVar('--report-diagnosis', '#0284c7'),
     referral: getCssVar('--report-referral', '#ef4444'),
     referralDisposition: {
       hospWithReferral: getCssVar('--report-disposition-hosp-with-referral', '#ef4444'),
-      dischargedWithReferral: getCssVar('--report-disposition-discharged-with-referral', 'rgba(239, 68, 68, 0.28)'),
+      dischargedWithReferral: getCssVar(
+        '--report-disposition-discharged-with-referral',
+        'rgba(239, 68, 68, 0.28)'
+      ),
       hospWithoutReferral: getCssVar('--report-disposition-hosp-without-referral', '#2563eb'),
-      dischargedWithoutReferral: getCssVar('--report-disposition-discharged-without-referral', 'rgba(37, 99, 235, 0.24)'),
+      dischargedWithoutReferral: getCssVar(
+        '--report-disposition-discharged-without-referral',
+        'rgba(37, 99, 235, 0.24)'
+      ),
     },
     age: getCssVar('--report-age', '#16a34a'),
     referralPspc: getCssVar('--report-referral-pspc', '#2563eb'),
     pspc: getCssVar('--report-pspc', '#f59e0b'),
   };
-  const treemapRendered = await renderDiagnosisTreemap(dashboardState, chartLib, selectors.diagnosisChart, diagnosisPercentRows);
+  const treemapRendered = await renderDiagnosisTreemap(
+    dashboardState,
+    chartLib,
+    selectors.diagnosisChart,
+    diagnosisPercentRows
+  );
   if (!treemapRendered) {
-    renderBarChart('diagnosisFrequency', dashboardState, chartLib, selectors.diagnosisChart, diagnosisPercentRows, colors.diagnosis);
+    renderBarChart(
+      'diagnosisFrequency',
+      dashboardState,
+      chartLib,
+      selectors.diagnosisChart,
+      diagnosisPercentRows,
+      colors.diagnosis
+    );
   }
-  await renderAgeDiagnosisHeatmapChart('ageDiagnosisHeatmap', dashboardState, chartLib, selectors.ageDiagnosisHeatmapChart, ageDiagnosisHeatmap);
+  await renderAgeDiagnosisHeatmapChart(
+    'ageDiagnosisHeatmap',
+    dashboardState,
+    chartLib,
+    selectors.ageDiagnosisHeatmapChart,
+    ageDiagnosisHeatmap
+  );
   const z769Rows = z769Trend.rows.map((row) => ({
     ...row,
     percent: row.share * 100,
   }));
-  renderPercentLineTrend('z769Trend', dashboardState, chartLib, selectors.z769TrendChart, z769Rows, 'Z76.9 dalis');
+  renderPercentLineTrend(
+    'z769Trend',
+    dashboardState,
+    chartLib,
+    selectors.z769TrendChart,
+    z769Rows,
+    'Z76.9 dalis'
+  );
   const referralPercentRows = referralTrend.rows.map((row) => ({
     year: row.year,
     total: row.total,
     percent: toPercent(row.values['su siuntimu'] || 0, row.total || 0),
   }));
-  renderPercentLineTrend('referralTrend', dashboardState, chartLib, selectors.referralTrendChart, referralPercentRows, 'Pacientai su siuntimu', colors.referral);
+  renderPercentLineTrend(
+    'referralTrend',
+    dashboardState,
+    chartLib,
+    selectors.referralTrendChart,
+    referralPercentRows,
+    'Pacientai su siuntimu',
+    colors.referral
+  );
   renderReferralDispositionYearlyChart(
     'referralDispositionYearly',
     dashboardState,
     chartLib,
     selectors.referralDispositionYearlyChart,
     referralDispositionYearly,
-    colors.referralDisposition,
+    colors.referralDisposition
   );
   await renderReferralMonthlyHeatmapChart(
     'referralMonthlyHeatmap',
     dashboardState,
     chartLib,
     selectors.referralMonthlyHeatmapChart,
-    referralMonthlyHeatmap,
+    referralMonthlyHeatmap
   );
-  const referralHospitalizedPspcMode = String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase() === 'trend'
-    ? 'trend'
-    : 'cross';
+  const referralHospitalizedPspcMode =
+    String(dashboardState.summariesReferralPspcMode || 'cross').toLowerCase() === 'trend' ? 'trend' : 'cross';
   const referralHospitalizedPspcSortDirection = String(dashboardState.summariesReferralPspcSort || 'desc');
-  const referralHospitalizedPspcFilteredRows = referralHospitalizedPspcAllRows
-    .filter((row) => Number(row?.referredTotal || 0) >= minGroupSize);
-  const referralHospitalizedPspcPercentRows = sortPspcRows(referralHospitalizedPspcFilteredRows, referralHospitalizedPspcSortDirection)
-    .slice(0, topN);
+  const referralHospitalizedPspcFilteredRows = referralHospitalizedPspcAllRows.filter(
+    (row) => Number(row?.referredTotal || 0) >= minGroupSize
+  );
+  const referralHospitalizedPspcPercentRows = sortPspcRows(
+    referralHospitalizedPspcFilteredRows,
+    referralHospitalizedPspcSortDirection
+  ).slice(0, topN);
   if (referralHospitalizedPspcMode === 'trend') {
     const selectedPspc = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
-    const trendYears = Array.isArray(referralHospitalizedByPspcYearly?.years) ? referralHospitalizedByPspcYearly.years : [];
+    const trendYears = Array.isArray(referralHospitalizedByPspcYearly?.years)
+      ? referralHospitalizedByPspcYearly.years
+      : [];
     let selectedRows = [];
     if (selectedPspc === '__top3__') {
       selectedRows = referralHospitalizedPspcTrendCandidates.slice(0, 3);
@@ -1856,7 +1631,7 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
       chartLib,
       selectors.referralHospitalizedByPspcChart,
       { years: trendYears, series: trendSeries },
-      colors.referralPspc,
+      colors.referralPspc
     );
   } else {
     renderReferralHospitalizedByPspcChart(
@@ -1865,10 +1640,16 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
       chartLib,
       selectors.referralHospitalizedByPspcChart,
       referralHospitalizedPspcPercentRows,
-      colors.referralPspc,
+      colors.referralPspc
     );
   }
-  renderPspcCorrelationChart('pspcCorrelation', dashboardState, chartLib, selectors.pspcCorrelationChart, pspcCorrelationRows);
+  renderPspcCorrelationChart(
+    'pspcCorrelation',
+    dashboardState,
+    chartLib,
+    selectors.pspcCorrelationChart,
+    pspcCorrelationRows
+  );
   renderAgeDistributionStackedBySex(
     'ageDistribution',
     dashboardState,
@@ -1882,9 +1663,17 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
       Vyras: '#2563eb',
       Moteris: '#ef4444',
       'Kita/Nenurodyta': '#94a3b8',
-    },
+    }
   );
-  renderBarChart('pspcDistribution', dashboardState, chartLib, selectors.pspcDistributionChart, pspcPercentRows, colors.pspc, { dynamicYAxis: true });
+  renderBarChart(
+    'pspcDistribution',
+    dashboardState,
+    chartLib,
+    selectors.pspcDistributionChart,
+    pspcPercentRows,
+    colors.pspc,
+    { dynamicYAxis: true }
+  );
   exportState.diagnosis = {
     title: TEXT.summariesReports?.cards?.diagnosis || 'Diagnozės',
     headers: ['Diagnozė', 'Procentas (%)'],
@@ -1893,7 +1682,13 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   };
   exportState.ageDiagnosisHeatmap = {
     title: TEXT.summariesReports?.cards?.ageDiagnosisHeatmap || 'Amžiaus ir diagnozių grupių ryšys',
-    headers: ['Amžiaus grupė', 'Diagnozių grupė', 'Dalis amžiaus grupėje (%)', 'Atvejų sk.', 'Amžiaus grupės pacientų sk.'],
+    headers: [
+      'Amžiaus grupė',
+      'Diagnozių grupė',
+      'Dalis amžiaus grupėje (%)',
+      'Atvejų sk.',
+      'Amžiaus grupės pacientų sk.',
+    ],
     rows: ageDiagnosisHeatmap.rows.map((row) => [
       row.ageBand,
       row.diagnosisGroup,
@@ -1958,28 +1753,44 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   };
   if (referralHospitalizedPspcMode === 'trend') {
     const selectedPspc = String(dashboardState.summariesReferralPspcTrendPspc || '__top3__');
-    let selectedRows = selectedPspc === '__top3__'
-      ? referralHospitalizedPspcTrendCandidates.slice(0, 3)
-      : referralHospitalizedPspcTrendCandidates.filter((row) => row.label === selectedPspc);
+    let selectedRows =
+      selectedPspc === '__top3__'
+        ? referralHospitalizedPspcTrendCandidates.slice(0, 3)
+        : referralHospitalizedPspcTrendCandidates.filter((row) => row.label === selectedPspc);
     if (!selectedRows.length) {
       selectedRows = referralHospitalizedPspcTrendCandidates.slice(0, 3);
     }
     exportState.referralHospitalizedByPspc = {
       title: `${TEXT.summariesReports?.cards?.referralHospitalizedByPspc || 'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC'} (metinė dinamika)`,
-      headers: ['PSPC', 'Metai', 'Hospitalizuota iš su siuntimu (%)', 'Hospitalizuota (sk.)', 'Pacientai su siuntimu (sk.)'],
-      rows: selectedRows.flatMap((row) => (Array.isArray(row.yearly) ? row.yearly : []).map((point) => [
-        row.label,
-        point.year,
-        Number.isFinite(point.share) ? oneDecimalFormatter.format(point.share * 100) : '',
-        numberFormatter.format(point.hospitalizedCount || 0),
-        numberFormatter.format(point.referredTotal || 0),
-      ])),
+      headers: [
+        'PSPC',
+        'Metai',
+        'Hospitalizuota iš su siuntimu (%)',
+        'Hospitalizuota (sk.)',
+        'Pacientai su siuntimu (sk.)',
+      ],
+      rows: selectedRows.flatMap((row) =>
+        (Array.isArray(row.yearly) ? row.yearly : []).map((point) => [
+          row.label,
+          point.year,
+          Number.isFinite(point.share) ? oneDecimalFormatter.format(point.share * 100) : '',
+          numberFormatter.format(point.hospitalizedCount || 0),
+          numberFormatter.format(point.referredTotal || 0),
+        ])
+      ),
       target: selectors.referralHospitalizedByPspcChart,
     };
   } else {
     exportState.referralHospitalizedByPspc = {
-      title: TEXT.summariesReports?.cards?.referralHospitalizedByPspc || 'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC',
-      headers: ['PSPC', 'Hospitalizuota iš su siuntimu (%)', 'Hospitalizuota (sk.)', 'Pacientai su siuntimu (sk.)'],
+      title:
+        TEXT.summariesReports?.cards?.referralHospitalizedByPspc ||
+        'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC',
+      headers: [
+        'PSPC',
+        'Hospitalizuota iš su siuntimu (%)',
+        'Hospitalizuota (sk.)',
+        'Pacientai su siuntimu (sk.)',
+      ],
       rows: referralHospitalizedPspcPercentRows.map((row) => [
         row.label,
         oneDecimalFormatter.format(row.percent),
@@ -1991,7 +1802,14 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   }
   exportState.pspcCorrelation = {
     title: TEXT.summariesReports?.cards?.pspcCorrelation || 'PSPC: siuntimų ir hospitalizacijų ryšys',
-    headers: ['PSPC', 'Siuntimų dalis (%)', 'Hospitalizacijų dalis (%)', 'Pacientai (sk.)', 'Su siuntimu (sk.)', 'Hospitalizuoti (sk.)'],
+    headers: [
+      'PSPC',
+      'Siuntimų dalis (%)',
+      'Hospitalizacijų dalis (%)',
+      'Pacientai (sk.)',
+      'Su siuntimu (sk.)',
+      'Hospitalizuoti (sk.)',
+    ],
     rows: pspcCorrelationRows.map((row) => [
       row.label,
       oneDecimalFormatter.format(row.referralPercent),
@@ -2004,7 +1822,14 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   };
   exportState.ageDistribution = {
     title: TEXT.summariesReports?.cards?.ageDistribution || 'Amžius',
-    headers: ['Amžiaus grupė', 'Iš viso (%)', 'Vyras (%)', 'Moteris (%)', 'Kita/Nenurodyta (%)', 'Iš viso (n)'],
+    headers: [
+      'Amžiaus grupė',
+      'Iš viso (%)',
+      'Vyras (%)',
+      'Moteris (%)',
+      'Kita/Nenurodyta (%)',
+      'Iš viso (n)',
+    ],
     rows: ageDistributionRows.map((row) => [
       row.label,
       oneDecimalFormatter.format(toPercent(row.total, ageDistributionBySex.total)),
@@ -2023,37 +1848,6 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   };
 }
 
-async function handleReportExportClick(event, exportState) {
-  const button = event.currentTarget;
-  if (!(button instanceof HTMLElement)) {
-    return;
-  }
-  const key = getDatasetValue(button, 'reportKey', '');
-  const format = getDatasetValue(button, 'reportExport', 'csv');
-  const model = exportState[key];
-  if (!model) {
-    setCopyButtonFeedback(button, 'Nėra duomenų eksportui', 'error');
-    return;
-  }
-  if (format === 'csv') {
-    const csv = createRowsCsv(model.headers || [], model.rows || []);
-    const ok = triggerDownloadFromBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), formatExportFilename(model.title, 'csv'));
-    setCopyButtonFeedback(button, ok ? 'Ataskaita parsisiųsta' : 'Klaida parsisiunčiant', ok ? 'success' : 'error');
-    return;
-  }
-  if (model.target instanceof HTMLCanvasElement) {
-    const link = document.createElement('a');
-    link.href = model.target.toDataURL('image/png');
-    link.download = formatExportFilename(model.title, 'png');
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setCopyButtonFeedback(button, 'Ataskaita parsisiųsta', 'success');
-    return;
-  }
-}
-
 export async function runSummariesRuntime(core) {
   const pageConfig = core?.pageConfig || { yearly: true };
   const selectors = createSelectorsForPage(core?.pageId || 'summaries');
@@ -2068,18 +1862,28 @@ export async function runSummariesRuntime(core) {
     hourlyCompareSeriesAll: 'all',
   });
   const exportState = {};
+  const handleReportExportClick = createReportExportClickHandler({
+    exportState,
+    getDatasetValue,
+    setCopyButtonFeedback,
+    formatExportFilename,
+    escapeCsvCell,
+    triggerDownloadFromBlob,
+  });
   const { fetchData } = createMainDataHandlers({
     settings,
     DEFAULT_SETTINGS,
     dashboardState,
     downloadCsv,
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     createTextSignature,
     formatUrlForDiagnostics,
   });
   applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
   if (selectors.summariesReportsSubtitle) {
-    selectors.summariesReportsSubtitle.textContent = TEXT.summariesReports?.subtitle || selectors.summariesReportsSubtitle.textContent;
+    selectors.summariesReportsSubtitle.textContent =
+      TEXT.summariesReports?.subtitle || selectors.summariesReportsSubtitle.textContent;
   }
   let rerenderReports = () => {};
   setupSharedPageUi({
@@ -2094,11 +1898,14 @@ export async function runSummariesRuntime(core) {
       initSummariesJumpNavigation(selectors);
     },
   });
-  initYearlyExpand({ selectors, handleYearlyToggle: (event) => handleYearlyToggle(selectors, dashboardState, event) });
+  initYearlyExpand({
+    selectors,
+    handleYearlyToggle: (event) => handleYearlyToggle(selectors, dashboardState, event),
+  });
   initTableDownloadButtons({ selectors, storeCopyButtonBaseLabel, handleTableDownloadClick });
   if (Array.isArray(selectors.reportExportButtons)) {
     selectors.reportExportButtons.forEach((button) => {
-      button.addEventListener('click', (event) => handleReportExportClick(event, exportState));
+      button.addEventListener('click', handleReportExportClick);
     });
   }
   rerenderReports = () => renderReports(selectors, dashboardState, settings, exportState);
@@ -2164,7 +1971,8 @@ export async function runSummariesRuntime(core) {
     perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     computeDailyStats,
     filterDailyStatsByWindow: (daily) => (Array.isArray(daily) ? daily : []),
     populateChartYearOptions: () => {},
@@ -2196,7 +2004,9 @@ export async function runSummariesRuntime(core) {
     getSettings: () => settings,
     getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
   rerenderReports();
   dataFlow.scheduleInitialLoad();

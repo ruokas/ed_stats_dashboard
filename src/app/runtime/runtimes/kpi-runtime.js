@@ -1,32 +1,21 @@
-import { loadChartJs } from '../../../utils/chart-loader.js';
-import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
+import { renderLastShiftHourlyChartWithTheme } from '../../../charts/hourly.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import { computeDailyStats } from '../../../data/stats.js';
-import { createKpiRenderer } from '../../../render/kpi.js';
-import { createKpiFlow } from '../kpi-flow.js';
-import { createDataFlow } from '../data-flow.js';
-import { dateKeyToDate, dateKeyToUtc, filterDailyStatsByWindow } from '../chart-primitives.js';
-import { sanitizeKpiFilters } from '../filters.js';
-import {
-  KPI_FILTER_LABELS,
-  KPI_WINDOW_OPTION_BASE,
-  createDefaultChartFilters,
-  createDefaultFeedbackFilters,
-  createDefaultKpiFilters,
-} from '../state.js';
 import { initKpiFilters } from '../../../events/kpi.js';
+import { createKpiRenderer } from '../../../render/kpi.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
+import { loadChartJs } from '../../../utils/chart-loader.js';
+import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import {
-  decimalFormatter,
   dailyDateFormatter,
+  decimalFormatter,
   numberFormatter,
   oneDecimalFormatter,
   percentFormatter,
   shortDateFormatter,
   weekdayLongFormatter,
 } from '../../../utils/format.js';
-import { renderLastShiftHourlyChartWithTheme } from '../../../charts/hourly.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -36,13 +25,11 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import {
-  applyTheme,
-  getThemePalette,
-  getThemeStyleTarget,
-  initializeTheme,
-} from '../features/theme.js';
+import { dateKeyToDate, dateKeyToUtc, filterDailyStatsByWindow } from '../chart-primitives.js';
+import { createDataFlow } from '../data-flow.js';
+import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
+import { sanitizeKpiFilters } from '../filters.js';
+import { createKpiFlow } from '../kpi-flow.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -52,6 +39,14 @@ import {
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
+import { loadSettingsFromConfig } from '../settings.js';
+import {
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+  KPI_FILTER_LABELS,
+  KPI_WINDOW_OPTION_BASE,
+} from '../state.js';
 import { createStatusSetter } from '../utils/common.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
@@ -123,7 +118,9 @@ function derivePeriodMetrics(summary) {
   const totalDischarged = Number.isFinite(summary?.totalDischarged) ? summary.totalDischarged : 0;
   const totalTime = Number.isFinite(summary?.totalTime) ? summary.totalTime : 0;
   const durationCount = Number.isFinite(summary?.durationCount) ? summary.durationCount : 0;
-  const totalHospitalizedTime = Number.isFinite(summary?.totalHospitalizedTime) ? summary.totalHospitalizedTime : 0;
+  const totalHospitalizedTime = Number.isFinite(summary?.totalHospitalizedTime)
+    ? summary.totalHospitalizedTime
+    : 0;
   const hospitalizedDurationCount = Number.isFinite(summary?.hospitalizedDurationCount)
     ? summary.hospitalizedDurationCount
     : 0;
@@ -136,44 +133,49 @@ function derivePeriodMetrics(summary) {
     dischargedShare: totalCount > 0 ? totalDischarged / totalCount : null,
     hospitalizedShare: totalCount > 0 ? totalHospitalized / totalCount : null,
     avgTime: durationCount > 0 ? totalTime / durationCount : null,
-    avgHospitalizedTime: hospitalizedDurationCount > 0
-      ? totalHospitalizedTime / hospitalizedDurationCount
-      : null,
+    avgHospitalizedTime:
+      hospitalizedDurationCount > 0 ? totalHospitalizedTime / hospitalizedDurationCount : null,
   };
 }
 
 function aggregatePeriodSummary(entries) {
   const list = Array.isArray(entries) ? entries : [];
-  return list.reduce((acc, entry) => {
-    acc.days += 1;
-    acc.totalCount += Number.isFinite(entry?.count) ? entry.count : 0;
-    acc.totalNight += Number.isFinite(entry?.night) ? entry.night : 0;
-    acc.totalHospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
-    acc.totalDischarged += Number.isFinite(entry?.discharged) ? entry.discharged : 0;
-    acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
-    acc.durationCount += Number.isFinite(entry?.durations) ? entry.durations : 0;
-    acc.totalHospitalizedTime += Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
-    acc.hospitalizedDurationCount += Number.isFinite(entry?.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
-    return acc;
-  }, {
-    days: 0,
-    totalCount: 0,
-    totalNight: 0,
-    totalHospitalized: 0,
-    totalDischarged: 0,
-    totalTime: 0,
-    durationCount: 0,
-    totalHospitalizedTime: 0,
-    hospitalizedDurationCount: 0,
-  });
+  return list.reduce(
+    (acc, entry) => {
+      acc.days += 1;
+      acc.totalCount += Number.isFinite(entry?.count) ? entry.count : 0;
+      acc.totalNight += Number.isFinite(entry?.night) ? entry.night : 0;
+      acc.totalHospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+      acc.totalDischarged += Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+      acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
+      acc.durationCount += Number.isFinite(entry?.durations) ? entry.durations : 0;
+      acc.totalHospitalizedTime += Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
+      acc.hospitalizedDurationCount += Number.isFinite(entry?.hospitalizedDurations)
+        ? entry.hospitalizedDurations
+        : 0;
+      return acc;
+    },
+    {
+      days: 0,
+      totalCount: 0,
+      totalNight: 0,
+      totalHospitalized: 0,
+      totalDischarged: 0,
+      totalTime: 0,
+      durationCount: 0,
+      totalHospitalizedTime: 0,
+      hospitalizedDurationCount: 0,
+    }
+  );
 }
 
 function describePeriodLabel({ windowDays, startDateKey, endDateKey }) {
   let baseLabel = '';
   if (Number.isFinite(windowDays) && windowDays > 0) {
-    baseLabel = windowDays === 365
-      ? `Paskutinės ${numberFormatter.format(windowDays)} d.`
-      : `Paskutinės ${numberFormatter.format(windowDays)} d.`;
+    baseLabel =
+      windowDays === 365
+        ? `Paskutinės ${numberFormatter.format(windowDays)} d.`
+        : `Paskutinės ${numberFormatter.format(windowDays)} d.`;
   } else {
     baseLabel = TEXT.kpis.windowAllLabel;
   }
@@ -212,9 +214,12 @@ function buildYearMonthMetrics(dailyStats, windowDays) {
   const yearSummary = derivePeriodMetrics(aggregatePeriodSummary(periodEntries));
   const monthSummary = derivePeriodMetrics(aggregatePeriodSummary(monthEntries));
   const monthNumeric = Number.parseInt(monthStr, 10);
-  const monthLabel = Number.isFinite(monthNumeric) && Number.isFinite(year)
-    ? new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' }).format(new Date(year, Math.max(0, monthNumeric - 1), 1))
-    : '';
+  const monthLabel =
+    Number.isFinite(monthNumeric) && Number.isFinite(year)
+      ? new Intl.DateTimeFormat('lt-LT', { month: 'long', year: 'numeric' }).format(
+          new Date(year, Math.max(0, monthNumeric - 1), 1)
+        )
+      : '';
   const periodLabels = describePeriodLabel({
     windowDays,
     startDateKey: earliest?.date,
@@ -230,7 +235,9 @@ function buildYearMonthMetrics(dailyStats, windowDays) {
 }
 
 function buildLastShiftSummaryBase(dailyStats) {
-  const entries = Array.isArray(dailyStats) ? dailyStats.filter((entry) => entry && typeof entry.date === 'string') : [];
+  const entries = Array.isArray(dailyStats)
+    ? dailyStats.filter((entry) => entry && typeof entry.date === 'string')
+    : [];
   if (!entries.length) {
     return null;
   }
@@ -254,23 +261,28 @@ function buildLastShiftSummaryBase(dailyStats) {
   const lastDate = last.date;
   const weekdayIndex = lastDate.getDay();
   const weekdayLabel = toSentenceCase(weekdayLongFormatter.format(lastDate));
-  const sameWeekdayEntries = decorated.filter((item) => item.date.getDay() === weekdayIndex).map((item) => item.entry);
+  const sameWeekdayEntries = decorated
+    .filter((item) => item.date.getDay() === weekdayIndex)
+    .map((item) => item.entry);
 
   const averageFor = (key, predicate) => {
     if (!sameWeekdayEntries.length) {
       return null;
     }
-    const totals = sameWeekdayEntries.reduce((acc, item) => {
-      if (typeof predicate === 'function' && !predicate(item)) {
+    const totals = sameWeekdayEntries.reduce(
+      (acc, item) => {
+        if (typeof predicate === 'function' && !predicate(item)) {
+          return acc;
+        }
+        const value = Number.isFinite(item?.[key]) ? item[key] : null;
+        if (Number.isFinite(value)) {
+          acc.sum += value;
+          acc.count += 1;
+        }
         return acc;
-      }
-      const value = Number.isFinite(item?.[key]) ? item[key] : null;
-      if (Number.isFinite(value)) {
-        acc.sum += value;
-        acc.count += 1;
-      }
-      return acc;
-    }, { sum: 0, count: 0 });
+      },
+      { sum: 0, count: 0 }
+    );
     if (!totals.count) {
       return null;
     }
@@ -343,17 +355,20 @@ function buildLastShiftSummary(dailyStats, referenceDailyStats = null) {
     return baseSummary;
   }
   const averageFor = (key, predicate) => {
-    const totals = referenceEntries.reduce((acc, item) => {
-      if (typeof predicate === 'function' && !predicate(item)) {
+    const totals = referenceEntries.reduce(
+      (acc, item) => {
+        if (typeof predicate === 'function' && !predicate(item)) {
+          return acc;
+        }
+        const value = Number.isFinite(item?.[key]) ? item[key] : null;
+        if (Number.isFinite(value)) {
+          acc.sum += value;
+          acc.count += 1;
+        }
         return acc;
-      }
-      const value = Number.isFinite(item?.[key]) ? item[key] : null;
-      if (Number.isFinite(value)) {
-        acc.sum += value;
-        acc.count += 1;
-      }
-      return acc;
-    }, { sum: 0, count: 0 });
+      },
+      { sum: 0, count: 0 }
+    );
     if (!totals.count) {
       return null;
     }
@@ -366,7 +381,10 @@ function buildLastShiftSummary(dailyStats, referenceDailyStats = null) {
     return value / total;
   };
   const totalAverage = averageFor('count');
-  const avgTimeAverage = averageFor('avgTime', (entry) => Number.isFinite(entry?.durations) && entry.durations > 0);
+  const avgTimeAverage = averageFor(
+    'avgTime',
+    (entry) => Number.isFinite(entry?.durations) && entry.durations > 0
+  );
   const nightAverage = averageFor('night');
   const hospitalizedAverage = averageFor('hospitalized');
   const dischargedAverage = averageFor('discharged');
@@ -456,7 +474,8 @@ export async function runKpiRuntime(core) {
   const pageConfig = core?.pageConfig || { kpi: true };
   const selectors = createSelectorsForPage(pageId);
   const settings = await loadSettingsFromConfig(DEFAULT_SETTINGS);
-  const getDefaultKpiFilters = () => createDefaultKpiFilters({ settings, DEFAULT_SETTINGS, DEFAULT_KPI_WINDOW_DAYS });
+  const getDefaultKpiFilters = () =>
+    createDefaultKpiFilters({ settings, DEFAULT_SETTINGS, DEFAULT_KPI_WINDOW_DAYS });
   const getDefaultChartFilters = () => createDefaultChartFilters();
   const getDefaultFeedbackFilters = () => createDefaultFeedbackFilters();
   const getDefaultHeatmapFilters = () => ({ arrival: 'all', disposition: 'all', cardType: 'all' });
@@ -475,7 +494,8 @@ export async function runKpiRuntime(core) {
     DEFAULT_SETTINGS,
     dashboardState,
     downloadCsv,
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     createTextSignature,
     formatUrlForDiagnostics,
   });
@@ -492,18 +512,22 @@ export async function runKpiRuntime(core) {
     hideKpiSkeleton: () => hideKpiSkeleton(selectors),
   });
 
-  const renderLastShiftHourlyChartWithThemeBound = (seriesInfo) => renderLastShiftHourlyChartWithTheme({
-    dashboardState,
-    selectors,
-    loadChartJs,
-    getThemePalette,
-    getThemeStyleTarget,
-    setChartCardMessage,
-    TEXT,
-    HEATMAP_HOURS: Array.from({ length: 24 }, (_, index) => `${String(index).padStart(2, '0')}:00`),
-    decimalFormatter,
-    numberFormatter,
-  }, seriesInfo);
+  const renderLastShiftHourlyChartWithThemeBound = (seriesInfo) =>
+    renderLastShiftHourlyChartWithTheme(
+      {
+        dashboardState,
+        selectors,
+        loadChartJs,
+        getThemePalette,
+        getThemeStyleTarget,
+        setChartCardMessage,
+        TEXT,
+        HEATMAP_HOURS: Array.from({ length: 24 }, (_, index) => `${String(index).padStart(2, '0')}:00`),
+        decimalFormatter,
+        numberFormatter,
+      },
+      seriesInfo
+    );
 
   const kpiFlow = createKpiFlow({
     selectors,
@@ -531,7 +555,8 @@ export async function runKpiRuntime(core) {
     computeDailyStats,
     filterDailyStatsByWindow,
     matchesSharedPatientFilters,
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     showKpiSkeleton: () => showKpiSkeleton(selectors),
     renderKpis: (dailyStats, referenceDailyStats) => kpiRenderer.renderKpis(dailyStats, referenceDailyStats),
     renderLastShiftHourlyChartWithTheme: renderLastShiftHourlyChartWithThemeBound,
@@ -562,7 +587,8 @@ export async function runKpiRuntime(core) {
     perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     computeDailyStats,
     filterDailyStatsByWindow,
     populateChartYearOptions: () => {},
@@ -591,7 +617,9 @@ export async function runKpiRuntime(core) {
     getSettings: () => settings,
     getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
 
   applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });

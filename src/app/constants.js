@@ -1,4 +1,5 @@
-export const DEFAULT_ED_SOURCE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv';
+export const DEFAULT_ED_SOURCE_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTx5aS_sRmpVE78hB57h6J2C2r3OQAKm4T2qoC4JBfY7hFm97prfSajgtQHzitrcqzQx5GZefyEY2vR/pub?gid=715561082&single=true&output=csv';
 export const ED_TOTAL_BEDS = 29;
 export const FEEDBACK_RATING_MIN = 1;
 export const FEEDBACK_RATING_MAX = 5;
@@ -17,7 +18,8 @@ export const TEXT = {
     toggle: 'Perjungti šviesią/tamsią temą',
     light: 'Šviesi tema',
     dark: 'Tamsi tema',
-    contrastWarning: 'Dėmesio: pasirinkta tema gali turėti nepakankamą KPI kortelių kontrastą. Apsvarstykite kitą temą.',
+    contrastWarning:
+      'Dėmesio: pasirinkta tema gali turėti nepakankamą KPI kortelių kontrastą. Apsvarstykite kitą temą.',
   },
   scrollTop: 'Grįžti į pradžią',
   tabs: {
@@ -35,7 +37,8 @@ export const TEXT = {
     fallbackSuccess: () => 'Rodomi talpyklos duomenys',
     fallbackNote: (reason) => `Nepavyko pasiekti nuotolinio šaltinio: ${reason}.`,
     errorDetails: (details) => `Nepavyko įkelti duomenų${details ? ` (${details})` : ''}.`,
-    errorAdvice: 'Patikrinkite, ar „Google Sheet“ paskelbta pasirinkus „File → Share → Publish to web → CSV“.',
+    errorAdvice:
+      'Patikrinkite, ar „Google Sheet“ paskelbta pasirinkus „File → Share → Publish to web → CSV“.',
   },
   footer: (timestamp) => `Atnaujinta ${timestamp}`,
   footerFallback: (timestamp) => `Rodomi talpyklos duomenys (atnaujinta ${timestamp})`,
@@ -111,7 +114,7 @@ export const TEXT = {
           type: 'donut',
           section: 'flow',
         },
-        { 
+        {
           key: 'avgLosMinutes',
           title: 'Vid. buvimo trukmė',
           description: 'Vidutinė buvimo trukmė skyriuje.',
@@ -127,7 +130,7 @@ export const TEXT = {
           format: 'minutes',
           section: 'efficiency',
         },
-        { 
+        {
           key: 'avgLosMonthMinutes',
           title: 'Vid. laikas skyriuje (šis mėn.)',
           description: 'Šio mėnesio vidutinė buvimo trukmė (val.).',
@@ -135,7 +138,7 @@ export const TEXT = {
           format: 'hours',
           section: 'efficiency',
         },
-        { 
+        {
           key: 'avgLabMonthMinutes',
           title: 'Vid. lab. tyrimų laikas',
           description: 'Šio mėnesio laboratorinių tyrimų trukmė (min.).',
@@ -228,37 +231,37 @@ export const TEXT = {
           format: 'minutes',
           section: 'efficiency',
         },
-      {
-        key: 'feedbackCurrentMonthMetricValue',
-        title: 'Bendras vertinimas šį mėn.',
-        description: 'Vidutinis įvertinimas (1–5) pagal šio mėnesio atsiliepimus.',
-        empty: 'Nėra vertinimų.',
-        format: 'oneDecimal',
-        type: 'feedback-rotating-metric',
-        rotationMs: 8000,
-        metrics: [
-          { key: 'overallAverage', label: 'Bendra patirtis', countKey: 'overallCount' },
-          { key: 'doctorsAverage', label: 'Gydytojų darbas', countKey: 'doctorsCount' },
-          { key: 'nursesAverage', label: 'Slaugytojų darbas', countKey: 'nursesCount' },
-          { key: 'aidesAverage', label: 'Padėjėjų darbas', countKey: 'aidesResponses' },
-          { key: 'waitingAverage', label: 'Laukimo vertinimas', countKey: 'waitingCount' },
-        ],
-        metaKey: 'feedbackCurrentMonthMetricMeta',
-        trendKey: 'feedbackCurrentMonthMetricTrend',
-        section: 'staffing',
-      },
-      {
-        key: 'feedbackComments',
-        title: 'Pacientų komentarai',
-        description: 'Naujausi atsiliepimai (rodymai rotuojasi kas kelias sekundes).',
-        empty: 'Kol kas nėra komentarų.',
-        type: 'comments',
-        rotateMs: 20000,
-        metaKey: 'feedbackCommentsMeta',
-        section: 'staffing',
-      },
-    ],
-  },
+        {
+          key: 'feedbackCurrentMonthMetricValue',
+          title: 'Bendras vertinimas šį mėn.',
+          description: 'Vidutinis įvertinimas (1–5) pagal šio mėnesio atsiliepimus.',
+          empty: 'Nėra vertinimų.',
+          format: 'oneDecimal',
+          type: 'feedback-rotating-metric',
+          rotationMs: 8000,
+          metrics: [
+            { key: 'overallAverage', label: 'Bendra patirtis', countKey: 'overallCount' },
+            { key: 'doctorsAverage', label: 'Gydytojų darbas', countKey: 'doctorsCount' },
+            { key: 'nursesAverage', label: 'Slaugytojų darbas', countKey: 'nursesCount' },
+            { key: 'aidesAverage', label: 'Padėjėjų darbas', countKey: 'aidesResponses' },
+            { key: 'waitingAverage', label: 'Laukimo vertinimas', countKey: 'waitingCount' },
+          ],
+          metaKey: 'feedbackCurrentMonthMetricMeta',
+          trendKey: 'feedbackCurrentMonthMetricTrend',
+          section: 'staffing',
+        },
+        {
+          key: 'feedbackComments',
+          title: 'Pacientų komentarai',
+          description: 'Naujausi atsiliepimai (rodymai rotuojasi kas kelias sekundes).',
+          empty: 'Kol kas nėra komentarų.',
+          type: 'comments',
+          rotateMs: 20000,
+          metaKey: 'feedbackCommentsMeta',
+          section: 'staffing',
+        },
+      ],
+    },
     dispositions: {
       legacy: {
         title: 'Pacientų išvykimo sprendimai',
@@ -337,9 +340,26 @@ export const TEXT = {
       primaryNoData: '—',
       cards: [
         { metricKey: 'patientsPerDay', label: 'Pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
-        { metricKey: 'nightPerDay', label: 'Naktiniai pacientai / d.', format: 'oneDecimal', unitLabel: 'pac./d.' },
-        { metricKey: 'dischargedPerDay', label: 'Išleisti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'dischargedShare' },
-        { metricKey: 'hospitalizedPerDay', label: 'Hospitalizuoti / d.', format: 'oneDecimal', unitLabel: 'pac./d.', shareKey: 'hospitalizedShare' },
+        {
+          metricKey: 'nightPerDay',
+          label: 'Naktiniai pacientai / d.',
+          format: 'oneDecimal',
+          unitLabel: 'pac./d.',
+        },
+        {
+          metricKey: 'dischargedPerDay',
+          label: 'Išleisti / d.',
+          format: 'oneDecimal',
+          unitLabel: 'pac./d.',
+          shareKey: 'dischargedShare',
+        },
+        {
+          metricKey: 'hospitalizedPerDay',
+          label: 'Hospitalizuoti / d.',
+          format: 'oneDecimal',
+          unitLabel: 'pac./d.',
+          shareKey: 'hospitalizedShare',
+        },
       ],
     },
     detailLabels: {
@@ -353,9 +373,7 @@ export const TEXT = {
       if (!reference) {
         return '';
       }
-      const normalized = reference
-        .replace(/^Metinis vidurkis/i, 'vid.')
-        .replace(/^Vidurkis/i, 'vid.');
+      const normalized = reference.replace(/^Metinis vidurkis/i, 'vid.').replace(/^Vidurkis/i, 'vid.');
       return `vs ${normalized}`;
     },
     mainValueLabel: '',
@@ -371,9 +389,10 @@ export const TEXT = {
     compareGmpLabel: 'Palyginti GMP',
     compareGmpHint: 'GMP / be GMP',
     compareGmpSummary: 'GMP vs be GMP',
-  hourlyCaption: (weekdayLabel) => (weekdayLabel
-    ? `Vidutinis pacientų skaičius per valandą (${weekdayLabel}).`
-    : 'Vidutinis pacientų skaičius per valandą.'),
+    hourlyCaption: (weekdayLabel) =>
+      weekdayLabel
+        ? `Vidutinis pacientų skaičius per valandą (${weekdayLabel}).`
+        : 'Vidutinis pacientų skaičius per valandą.',
     hourlyDatasetTotalLabel: 'Iš viso',
     hourlyDatasetEmsLabel: 'Tik GMP',
     hourlyDatasetSelfLabel: 'Be GMP',
@@ -397,15 +416,17 @@ export const TEXT = {
       gt16: '>16 val.',
     },
     funnelCaption: 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
-    funnelCaptionWithYear: (year) => (year
-      ? `Pacientų srautas pagal sprendimą – ${year} m. (atvykę → sprendimas).`
-      : 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).'),
+    funnelCaptionWithYear: (year) =>
+      year
+        ? `Pacientų srautas pagal sprendimą – ${year} m. (atvykę → sprendimas).`
+        : 'Pacientų srautas pagal sprendimą (atvykę → sprendimas).',
     yearFilterLabel: 'Metai',
     yearFilterAll: 'Visi metai',
     hospitalTable: {
       title: 'Stacionarizuoti pacientai pagal skyrių ir SPS trukmę',
       subtitle: 'Pasiskirstymas pagal skyrių ir buvimo SPS intervalus',
-      caption: 'Metinis stacionarizuotų pacientų pasiskirstymas pagal skyrių ir SPS buvimo trukmės intervalus.',
+      caption:
+        'Metinis stacionarizuotų pacientų pasiskirstymas pagal skyrių ir SPS buvimo trukmės intervalus.',
       hint: '% skaičiuojami eilutėje, pagal skyrių.',
       yearFilterLabel: 'Metai',
       yearFilterAll: 'Visi metai',
@@ -450,9 +471,10 @@ export const TEXT = {
       { key: 'hospitalized', label: 'Hospitalizuoti' },
     ],
     funnelEmpty: 'Piltuvėlio sugeneruoti nepavyko – šiuo metu nėra atvykimų duomenų.',
-    heatmapCaption: (metricLabel) => (metricLabel
-      ? `Pasirinkto rodiklio („${metricLabel}“) reikšmės pagal savaitės dieną ir valandą.`
-      : 'Rodikliai pagal savaitės dieną ir valandą.'),
+    heatmapCaption: (metricLabel) =>
+      metricLabel
+        ? `Pasirinkto rodiklio („${metricLabel}“) reikšmės pagal savaitės dieną ir valandą.`
+        : 'Rodikliai pagal savaitės dieną ir valandą.',
     heatmapEmpty: 'Šiame laikotarpyje nėra duomenų pasirinktai kombinacijai.',
     heatmapLegend: 'Tamsesnė spalva reiškia didesnę pasirinktą reikšmę.',
     heatmapMetricLabel: 'Rodiklis',
@@ -534,7 +556,8 @@ export const TEXT = {
     subtitle: 'Kalendoriniai metai (paskutiniai 5 metai).',
     caption: 'Metinių pacientų suvestinė: sumos ir vidurkiai.',
     empty: 'Metinių duomenų lentelė bus parodyta užkrovus failą.',
-    noCompleteYears: 'Šiuo metu nėra pilnų kalendorinių metų rodymui. Kai tik bus sukaupti visi mėnesiai, naujausi metai atsiras automatiškai.',
+    noCompleteYears:
+      'Šiuo metu nėra pilnų kalendorinių metų rodymui. Kai tik bus sukaupti visi mėnesiai, naujausi metai atsiras automatiškai.',
     comparisonUnavailable: 'Laukiama pilnų metų duomenų palyginimui.',
   },
   summariesReports: {
@@ -546,7 +569,8 @@ export const TEXT = {
       topN: 'TOP N',
       minGroupSize: 'Min. grupės imtis',
     },
-    coverage: (extended, total, percent) => `Analizėje naudojami tik historical CSV įrašai su papildomais laukais: ${extended} iš ${total} (${percent}).`,
+    coverage: (extended, total, percent) =>
+      `Analizėje naudojami tik historical CSV įrašai su papildomais laukais: ${extended} iš ${total} (${percent}).`,
     empty: 'Papildomiems pjūviams šiuo metu duomenų nepakanka.',
     mapEmpty: 'Miestų su koordinatėmis nerasta.',
     unassignedCities: 'Nepriskirti miestai',
@@ -578,9 +602,10 @@ export const TEXT = {
     trend: {
       title: 'Bendro vertinimo dinamika',
       subtitle: (months, metricCount, compareLabel = '') => {
-        const metricSuffix = Number.isFinite(metricCount) && metricCount > 0
-          ? ` • ${Math.max(1, Math.round(metricCount))} rodikliai`
-          : '';
+        const metricSuffix =
+          Number.isFinite(metricCount) && metricCount > 0
+            ? ` • ${Math.max(1, Math.round(metricCount))} rodikliai`
+            : '';
         const compareSuffix = compareLabel ? ` • ${compareLabel}` : '';
         if (!Number.isFinite(months) || months <= 0) {
           return `Visų prieinamų mėnesių dinamika${metricSuffix}${compareSuffix}`;
@@ -657,7 +682,9 @@ export const TEXT = {
           if (info.responses.minFormatted === info.responses.maxFormatted) {
             parts.push(`${info.responses.label || 'Atsakymai/mėn.'}: ${info.responses.minFormatted}`);
           } else {
-            parts.push(`${info.responses.label || 'Atsakymai/mėn.'}: ${info.responses.minFormatted}–${info.responses.maxFormatted}`);
+            parts.push(
+              `${info.responses.label || 'Atsakymai/mėn.'}: ${info.responses.minFormatted}–${info.responses.maxFormatted}`
+            );
           }
         }
         return parts.join(' • ');
@@ -764,4 +791,3 @@ export const TEXT = {
     },
   },
 };
-
