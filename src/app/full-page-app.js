@@ -1,3 +1,4 @@
+// Legacy-only module: keep changes bugfix-focused while runtime pages migrate to modular runners.
 import { createClientStore, PerfMonitor } from '../../app.js';
 import { createChartRenderers } from '../charts/index.js';
 import { createEdHandlers } from '../data/ed.js';

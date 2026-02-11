@@ -8,7 +8,7 @@ import {
   computeReferralMonthlyHeatmap,
   computeReferralYearlyTrend,
   scopeExtendedHistoricalRecords,
-} from '../../../../data/stats.js?v=2026-02-07-monthly-heatmap-1';
+} from '../../../../data/stats.js';
 import { DEFAULT_SETTINGS } from '../../../default-settings.js';
 
 export function extractHistoricalRecords(dashboardState) {

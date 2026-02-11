@@ -327,7 +327,7 @@ export function computeSegmentedSummaryStats(records, options = {}) {
     });
   }
 
-  rows = rows.map(({ daySet, ...row }) => row);
+  const rowsWithoutDaySet = rows.map(({ daySet, ...row }) => row);
 
   const yearOptions = Array.from(yearSet)
     .filter((year) => /^\d{4}$/.test(year))
@@ -342,7 +342,7 @@ export function computeSegmentedSummaryStats(records, options = {}) {
     minGroupSize,
     totalCount,
     overallAvgStayHours,
-    rows,
+    rows: rowsWithoutDaySet,
     yearOptions,
     insights,
   };
@@ -614,7 +614,7 @@ export function collapseSmallGroups(rows, minGroupSize = 10, otherLabel = 'Kita 
   if (!mergedCount) {
     return regular;
   }
-  return regular.concat({ label: otherLabel, count: mergedCount, share: null, collapsed: true });
+  return regular.concat({ label: otherLabel, count: mergedCount, share: null });
 }
 
 function toSortedRows(map, total, topN) {
@@ -641,7 +641,6 @@ function toSortedRows(map, total, topN) {
       label: 'Kita / maža imtis',
       count: otherCount,
       share: total > 0 ? otherCount / total : 0,
-      collapsed: true,
     });
   }
   return head;

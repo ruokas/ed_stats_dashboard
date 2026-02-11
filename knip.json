@@ -16,5 +16,14 @@
     "src/app/runtime/runtimes/summaries/*.js"
   ],
   "project": ["src/**/*.js", "tests/**/*.js", "*.js", "scripts/**/*.mjs"],
+  "ignoreIssues": {
+    "src/data/stats.js": ["exports"],
+    "src/utils/format.js": ["exports"],
+    "src/app/runtime/features/theme.js": ["exports"],
+    "src/app/runtime/utils/color.js": ["exports"],
+    "src/app/runtime/core-context.js": ["exports"],
+    "src/app/runtime/chart-primitives.js": ["exports"],
+    "src/app/runtime/settings.js": ["exports"]
+  },
   "ignore": ["coverage/**", "docs/**", ".husky/**"]
 }

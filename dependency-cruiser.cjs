@@ -11,12 +11,23 @@ module.exports = {
     },
     {
       name: 'no-runtime-to-data-reverse-import',
-      severity: 'warn',
+      severity: 'error',
       from: {
         path: '^src/data',
       },
       to: {
         path: '^src/app/runtime',
+      },
+    },
+    {
+      name: 'no-runtime-to-legacy-full-page-app',
+      severity: 'error',
+      from: {
+        path: '^src/app/runtime',
+        pathNot: '^src/app/runtime/legacy-fallback\\.js$|^src/app/runtime-full\\.js$',
+      },
+      to: {
+        path: '^src/app/full-page-app\\.js$',
       },
     },
   ],
