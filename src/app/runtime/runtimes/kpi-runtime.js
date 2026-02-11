@@ -51,9 +51,11 @@ import {
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
+import { createStatusSetter } from '../utils/common.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
+const baseSetStatus = createStatusSetter(TEXT.status);
 
 function dateKeyToUtc(dateKey) {
   if (typeof dateKey !== 'string') {
@@ -481,30 +483,11 @@ function setChartCardMessage(element, message) {
 }
 
 function setStatus(selectors, dashboardState, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
+  if (type !== 'loading' && type !== 'error' && dashboardState.usingFallback) {
+    baseSetStatus(selectors, 'warning', TEXT.status.fallbackSuccess());
     return;
   }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  if (dashboardState.usingFallback) {
-    statusEl.classList.add('status--warning');
-    statusEl.textContent = TEXT.status.fallbackSuccess();
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
+  baseSetStatus(selectors, type, details);
 }
 
 export async function runKpiRuntime(core) {

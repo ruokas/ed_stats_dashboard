@@ -59,11 +59,13 @@ import {
   escapeCsvCell,
   triggerDownloadFromBlob,
 } from '../table-export.js';
+import { createStatusSetter } from '../utils/common.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
 let treemapPluginPromise = null;
 let matrixPluginPromise = null;
+const setStatus = createStatusSetter(TEXT.status, { showSuccessState: false });
 
 function getCssVar(name, fallback) {
   try {
@@ -150,25 +152,6 @@ function formatExportFilename(title, ext) {
   const date = new Date();
   const stamp = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   return `${normalized || 'ataskaita'}-${stamp}.${String(ext || 'csv').replace(/^\./, '')}`;
-}
-
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
-    return;
-  }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-  }
 }
 
 function isCompleteYearEntry(entry) {

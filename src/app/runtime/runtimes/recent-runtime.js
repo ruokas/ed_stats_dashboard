@@ -31,9 +31,11 @@ import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { createTableDownloadHandler } from '../table-export.js';
+import { createStatusSetter } from '../utils/common.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
+const setStatus = createStatusSetter(TEXT.status);
 
 function dateKeyToUtc(dateKey) {
   if (typeof dateKey !== 'string') {
@@ -68,28 +70,6 @@ function filterDailyStatsByWindow(dailyStats, days) {
   const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
   return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
-}
-
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
-    return;
-  }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
 }
 
 function formatValueWithShare(value, total) {

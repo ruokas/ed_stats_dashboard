@@ -16,7 +16,14 @@ export function matchesWildcard(normalized, candidate) {
   return regex.test(normalized);
 }
 
-export function createStatusSetter(statusText = {}) {
+function resolveStatusMessage(value, ...args) {
+  if (typeof value === 'function') {
+    return value(...args);
+  }
+  return value || '';
+}
+
+export function createStatusSetter(statusText = {}, { showSuccessState = true } = {}) {
   return function setStatus(selectors, type, details = '') {
     const statusEl = selectors.status;
     if (!statusEl) {
@@ -26,25 +33,30 @@ export function createStatusSetter(statusText = {}) {
     statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
     if (type === 'loading') {
       statusEl.classList.add('status--loading');
-      if (statusText.loading) {
-        statusEl.setAttribute('aria-label', statusText.loading);
+      const loadingText = resolveStatusMessage(statusText.loading);
+      if (loadingText) {
+        statusEl.setAttribute('aria-label', loadingText);
       }
       return;
     }
     statusEl.removeAttribute('aria-label');
     if (type === 'error') {
       statusEl.classList.add('status--error');
-      statusEl.textContent = details && typeof statusText.errorDetails === 'function'
-        ? statusText.errorDetails(details)
-        : (statusText.error || details || '');
+      statusEl.textContent =
+        details && typeof statusText.errorDetails === 'function'
+          ? statusText.errorDetails(details)
+          : resolveStatusMessage(statusText.error) || details || '';
       return;
     }
     if (type === 'warning') {
       statusEl.classList.add('status--warning');
-      statusEl.textContent = details || statusText.success || '';
+      statusEl.textContent = details || resolveStatusMessage(statusText.success);
+      return;
+    }
+    if (!showSuccessState) {
       return;
     }
     statusEl.classList.add('status--success');
-    statusEl.textContent = statusText.success || '';
+    statusEl.textContent = resolveStatusMessage(statusText.success);
   };
 }

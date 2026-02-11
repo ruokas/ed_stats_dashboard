@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createStatusSetter, matchesWildcard, parseCandidateList } from '../../src/app/runtime/utils/common.js';
+import {
+  createStatusSetter,
+  matchesWildcard,
+  parseCandidateList,
+} from '../../src/app/runtime/utils/common.js';
 
 describe('parseCandidateList', () => {
   it('splits candidates by supported separators and trims values', () => {
@@ -37,5 +41,24 @@ describe('createStatusSetter', () => {
     setStatus(selectors, 'success');
     expect(selectors.status.classList.contains('status--success')).toBe(true);
     expect(selectors.status.textContent).toBe('Gerai');
+  });
+
+  it('supports function-based status messages and optional success suppression', () => {
+    document.body.innerHTML = '<div id="status"></div>';
+    const selectors = { status: document.getElementById('status') };
+    const setStatus = createStatusSetter(
+      {
+        loading: () => 'Kraunama',
+        error: () => 'Klaida',
+        success: () => '',
+      },
+      { showSuccessState: false }
+    );
+
+    setStatus(selectors, 'loading');
+    expect(selectors.status.getAttribute('aria-label')).toBe('Kraunama');
+
+    setStatus(selectors, 'success');
+    expect(selectors.status.classList.contains('status--success')).toBe(false);
   });
 });

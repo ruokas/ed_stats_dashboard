@@ -50,6 +50,7 @@ import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { setupCopyExportControls } from '../export-controls.js';
+import { createStatusSetter } from '../utils/common.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -62,6 +63,7 @@ import { DEFAULT_SETTINGS } from '../../default-settings.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
+const setStatus = createStatusSetter(TEXT.status);
 
 const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
 const HEATMAP_WEEKDAY_FULL = ['Pirmadienis', 'Antradienis', 'Treciadienis', 'Ketvirtadienis', 'Penktadienis', 'Sestadienis', 'Sekmadienis'];
@@ -235,26 +237,6 @@ function computeArrivalHeatmap(records) {
   });
 
   return { metrics };
-}
-
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) return;
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
 }
 
 function clearChartError(selectors) {
