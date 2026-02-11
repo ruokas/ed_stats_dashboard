@@ -7,6 +7,7 @@ import { computeDailyStats } from '../../../data/stats.js';
 import { createKpiRenderer } from '../../../render/kpi.js';
 import { createKpiFlow } from '../kpi-flow.js';
 import { createDataFlow } from '../data-flow.js';
+import { dateKeyToDate, dateKeyToUtc, filterDailyStatsByWindow } from '../chart-primitives.js';
 import { sanitizeKpiFilters } from '../filters.js';
 import {
   KPI_FILTER_LABELS,
@@ -56,46 +57,6 @@ import { createStatusSetter } from '../utils/common.js';
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
 const baseSetStatus = createStatusSetter(TEXT.status);
-
-function dateKeyToUtc(dateKey) {
-  if (typeof dateKey !== 'string') {
-    return Number.NaN;
-  }
-  const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
-  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
-    return Number.NaN;
-  }
-  const [year, month, day] = parts;
-  return Date.UTC(year, month - 1, day);
-}
-
-function dateKeyToDate(dateKey) {
-  const utc = dateKeyToUtc(dateKey);
-  if (!Number.isFinite(utc)) {
-    return null;
-  }
-  return new Date(utc);
-}
-
-function filterDailyStatsByWindow(dailyStats, days) {
-  if (!Array.isArray(dailyStats)) {
-    return [];
-  }
-  if (!Number.isFinite(days) || days <= 0) {
-    return [...dailyStats];
-  }
-  const decorated = dailyStats
-    .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
-    .filter((item) => Number.isFinite(item.utc));
-  if (!decorated.length) {
-    return [];
-  }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-  const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated
-    .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-    .map((item) => item.entry);
-}
 
 function toSentenceCase(label) {
   if (typeof label !== 'string' || !label.length) {

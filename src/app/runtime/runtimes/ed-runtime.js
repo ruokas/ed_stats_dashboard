@@ -6,6 +6,7 @@ import { createEdHandlers } from '../../../data/ed.js';
 import { computeDailyStats } from '../../../data/stats.js';
 import { computeFeedbackStats } from '../features/feedback-stats.js';
 import { createDataFlow } from '../data-flow.js';
+import { dateKeyToDate, dateKeyToUtc, filterDailyStatsByWindow } from '../chart-primitives.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
 import { createEdPanelCoreFeature } from '../features/ed-panel-core.js';
@@ -119,38 +120,6 @@ function formatLocalDateKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-function dateKeyToUtc(dateKey) {
-  if (typeof dateKey !== 'string') {
-    return Number.NaN;
-  }
-  const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
-  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
-    return Number.NaN;
-  }
-  return Date.UTC(parts[0], parts[1] - 1, parts[2]);
-}
-
-function filterDailyStatsByWindow(dailyStats, days) {
-  if (!Array.isArray(dailyStats)) {
-    return [];
-  }
-  if (!Number.isFinite(days) || days <= 0) {
-    return [...dailyStats];
-  }
-  const decorated = dailyStats.map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) })).filter((item) => Number.isFinite(item.utc));
-  if (!decorated.length) {
-    return [];
-  }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-  const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
-}
-
-function dateKeyToDate(dateKey) {
-  const utc = dateKeyToUtc(dateKey);
-  return Number.isFinite(utc) ? new Date(utc) : null;
 }
 
 function buildYearMonthMetrics(dailyStats, windowDays) {
