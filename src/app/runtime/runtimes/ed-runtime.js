@@ -1,4 +1,3 @@
-import { createClientStore, PerfMonitor } from '../../../../app.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
@@ -45,26 +44,13 @@ import {
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
 import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters } from '../state.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
+import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
 
-const clientStore = createClientStore(CLIENT_CONFIG_KEY);
-const perfMonitor = new PerfMonitor();
-let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
 const MIN_ED_SKELETON_VISIBLE_MS = 450;
-
-function parseCandidateList(value, fallback = '') {
-  const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
-  return base.replace(/\r\n/g, '\n').split(/[\n,|;]+/).map((part) => part.trim()).filter(Boolean);
-}
-
-function matchesWildcard(normalized, candidate) {
-  if (!normalized || !candidate) {
-    return false;
-  }
-  const escaped = candidate.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-  const regex = new RegExp(`^${escaped}$`);
-  return regex.test(normalized);
-}
+const setStatus = createStatusSetter(TEXT.status);
 
 function normalizeHeaderToken(value) {
   return String(value ?? '')
@@ -341,33 +327,6 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
   }
 
   return summary;
-}
-
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
-    return;
-  }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  if (type === 'warning') {
-    statusEl.classList.add('status--warning');
-    statusEl.textContent = details || TEXT.status.success();
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
 }
 
 export async function runEdRuntime(core) {
@@ -787,7 +746,7 @@ export async function runEdRuntime(core) {
     fetchData,
     fetchFeedbackData,
     fetchEdData,
-    perfMonitor,
+    perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary,
     describeError,
@@ -833,7 +792,7 @@ export async function runEdRuntime(core) {
     renderEdDashboard: (edData) => renderEdDashboardRef(edData),
     numberFormatter,
     getSettings: () => settings,
-    getClientConfig: () => clientConfig,
+    getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
     setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
   });

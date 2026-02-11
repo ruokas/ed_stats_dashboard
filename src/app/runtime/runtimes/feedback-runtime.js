@@ -1,4 +1,3 @@
-import { createClientStore, PerfMonitor } from '../../../../app.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createFeedbackHandlers } from '../../../data/feedback.js';
@@ -43,29 +42,12 @@ import {
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
+import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
 
-const clientStore = createClientStore(CLIENT_CONFIG_KEY);
-const perfMonitor = new PerfMonitor();
-let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
-
-function parseCandidateList(value, fallback = '') {
-  const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
-  return base
-    .replace(/\r\n/g, '\n')
-    .split(/[\n,|;]+/)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-}
-
-function matchesWildcard(normalized, candidate) {
-  if (!normalized || !candidate) {
-    return false;
-  }
-  const escaped = candidate.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-  const regex = new RegExp(`^${escaped}$`);
-  return regex.test(normalized);
-}
+const setStatus = createStatusSetter(TEXT.status);
 
 function formatLocalDateKey(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -88,33 +70,6 @@ function formatMonthLabel(monthKey) {
     return monthKey;
   }
   return capitalizeSentence(monthFormatter.format(new Date(year, month - 1, 1)));
-}
-
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
-    return;
-  }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  if (type === 'warning') {
-    statusEl.classList.add('status--warning');
-    statusEl.textContent = details || TEXT.status.success();
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
 }
 
 function resetFeedbackCommentRotation(dashboardState) {
@@ -390,7 +345,7 @@ export async function runFeedbackRuntime(core) {
     fetchData: async () => ({}),
     fetchFeedbackData,
     fetchEdData: async () => null,
-    perfMonitor,
+    perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
     describeError,
@@ -422,7 +377,7 @@ export async function runFeedbackRuntime(core) {
     renderEdDashboard: async () => {},
     numberFormatter,
     getSettings: () => settings,
-    getClientConfig: () => clientConfig,
+    getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
     setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
   });

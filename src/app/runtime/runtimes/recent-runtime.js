@@ -1,4 +1,3 @@
-import { createClientStore, PerfMonitor } from '../../../../app.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
@@ -33,10 +32,9 @@ import {
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
 
-const clientStore = createClientStore(CLIENT_CONFIG_KEY);
-const perfMonitor = new PerfMonitor();
-let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
 
 function dateKeyToUtc(dateKey) {
@@ -469,7 +467,7 @@ export async function runRecentRuntime(core) {
     fetchData,
     fetchFeedbackData: async () => [],
     fetchEdData: async () => null,
-    perfMonitor,
+    perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
     describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
@@ -499,7 +497,7 @@ export async function runRecentRuntime(core) {
     renderEdDashboard: async () => {},
     numberFormatter,
     getSettings: () => settings,
-    getClientConfig: () => clientConfig,
+    getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
     setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
   });

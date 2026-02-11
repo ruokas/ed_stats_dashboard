@@ -1,4 +1,3 @@
-import { createClientStore, PerfMonitor } from '../../../../app.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
@@ -54,20 +53,10 @@ import {
   downloadCsv,
   formatUrlForDiagnostics,
 } from '../network.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
 
-const clientStore = createClientStore(CLIENT_CONFIG_KEY);
-const perfMonitor = new PerfMonitor();
-let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
-
-function updateClientConfig(patch = {}) {
-  if (!patch || typeof patch !== 'object') {
-    return clientConfig;
-  }
-  clientConfig = { ...clientConfig, ...patch };
-  clientStore.save(clientConfig);
-  return clientConfig;
-}
 
 function dateKeyToUtc(dateKey) {
   if (typeof dateKey !== 'string') {
@@ -629,7 +618,7 @@ export async function runKpiRuntime(core) {
     fetchData,
     fetchFeedbackData: async () => [],
     fetchEdData: async () => null,
-    perfMonitor,
+    perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
     describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
@@ -659,7 +648,7 @@ export async function runKpiRuntime(core) {
     renderEdDashboard: async () => {},
     numberFormatter,
     getSettings: () => settings,
-    getClientConfig: () => clientConfig,
+    getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
     setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
   });
@@ -712,6 +701,6 @@ export async function runKpiRuntime(core) {
     ...kpiFlow,
   });
 
-  updateClientConfig({ pageId });
+  runtimeClient.updateClientConfig({ pageId });
   dataFlow.scheduleInitialLoad();
 }
