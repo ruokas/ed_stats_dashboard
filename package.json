@@ -1,0 +1,32 @@
+{
+  "name": "ed_stats_dashboard",
+  "version": "1.0.0",
+  "description": "Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus, paskutinės savaitės kasdienę ir savaitinę suvestines.",
+  "main": "main.js",
+  "scripts": {
+    "lint": "biome check biome.json vitest.config.js tests package.json .github/workflows/code-quality.yml --files-ignore-unknown=true",
+    "lint:fix": "biome check biome.json vitest.config.js tests package.json .github/workflows/code-quality.yml --write --files-ignore-unknown=true",
+    "format": "biome format biome.json vitest.config.js tests package.json .github/workflows/code-quality.yml --write --files-ignore-unknown=true",
+    "lint:all": "biome check . --files-ignore-unknown=true",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ruokas/ed_stats_dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ruokas/ed_stats_dashboard/issues"
+  },
+  "homepage": "https://github.com/ruokas/ed_stats_dashboard#readme",
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.14",
+    "jsdom": "^28.0.0",
+    "vitest": "^4.0.18"
+  }
+}

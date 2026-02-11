@@ -37,6 +37,17 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 2. Atidarykite `index.html` pasirinktoje naršyklėje (Chrome, Edge, Firefox).
 3. Greiti pakeitimai atliekami `config.json` faile: atnaujinkite CSV nuorodas ir skaičiavimo parametrus pagal poreikį.
 
+## Kodo kokybė ir testai
+Nuo `code-quality` šakos projektas turi bazinę kokybės infrastruktūrą:
+- `npm run lint` – paleidžia bazinę `Biome` patikrą (infrastruktūrai ir testams).
+- `npm run lint:fix` – automatiškai sutvarko dalį `Biome` pažeidimų.
+- `npm run format` – performatuoja palaikomus failus.
+- `npm run lint:all` – pilna `Biome` patikra visam projektui (naudinga prieš didesnį valymą).
+- `npm run test` – paleidžia `Vitest` testus (`jsdom` aplinkoje).
+- `npm run check` – paleidžia lint + testus vienu veiksmu.
+
+CI darbo eiga (`.github/workflows/code-quality.yml`) vykdo `npm run check` kiekviename `pull_request` ir `push` į `main`/`code-quality`.
+
 ## Konfigūracija
 Skydelis įkelia `config.json` per `fetch`, todėl rekomenduojama jį atverti per lokalų serverį (ne `file://`).
 - Laikinai kitą konfigūraciją galima įkrauti per `?config=kelias/iki/config.json`.
