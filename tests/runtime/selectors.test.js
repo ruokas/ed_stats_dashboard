@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSelectorsForPage } from '../../src/state/selectors.js';
+import { createSelectors, createSelectorsForPage } from '../../src/state/selectors.js';
 
 describe('createSelectorsForPage', () => {
   it('normalizes page id and uses charts selector factory', () => {
@@ -73,5 +73,36 @@ describe('createSelectorsForPage', () => {
     expect(selectors.recentTable).not.toBeNull();
     expect(selectors.monthlyTable).toBeNull();
     expect(selectors.yearlyTable).toBeNull();
+  });
+});
+
+describe('createSelectors', () => {
+  it('returns full selector map with expected shared keys', () => {
+    document.body.innerHTML = `
+      <header class="hero"></header>
+      <h1 id="pageTitle"></h1>
+      <div id="status"></div>
+      <div id="footerSource"></div>
+      <button id="themeToggleBtn"></button>
+      <button id="scrollTopBtn"></button>
+      <nav class="section-nav">
+        <a class="section-nav__link"></a>
+        <a class="section-nav__link"></a>
+      </nav>
+      <div id="tabSwitcher"></div>
+      <button data-tab-target="overview"></button>
+      <section data-tab-panel="overview"></section>
+      <button data-chart-copy="daily"></button>
+      <button data-table-download="recent"></button>
+    `;
+
+    const selectors = createSelectors();
+
+    expect(selectors.hero).not.toBeNull();
+    expect(selectors.tabButtons).toHaveLength(1);
+    expect(selectors.tabPanels).toHaveLength(1);
+    expect(selectors.sectionNavLinks).toHaveLength(2);
+    expect(selectors.chartCopyButtons).toHaveLength(1);
+    expect(selectors.tableDownloadButtons).toHaveLength(1);
   });
 });
