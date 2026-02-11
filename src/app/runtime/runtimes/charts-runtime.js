@@ -8,7 +8,7 @@ import {
 } from '../../../data/stats.js';
 import { createChartRenderers } from '../../../charts/index.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
-import { initChartControls, initChartCopyButtons, initChartDownloadButtons, initTableDownloadButtons } from '../../../events/charts.js';
+import { initChartControls } from '../../../events/charts.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import {
   decimalFormatter,
@@ -39,18 +39,17 @@ import {
 } from '../chart-primitives.js';
 import { createHourlyControlsFeature } from '../features/hourly-controls.js';
 import { createFunnelCanvasFeature } from '../features/funnel-canvas.js';
-import { createCopyExportFeature } from '../features/copy-export.js';
 import { applyChartsText } from '../features/text-charts.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import { sanitizeChartFilters } from '../filters.js';
 import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters, KPI_FILTER_LABELS } from '../state.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
 import { describeCacheMeta, describeError, downloadCsv, createTextSignature, formatUrlForDiagnostics } from '../network.js';
-import { setCopyButtonFeedback, storeCopyButtonBaseLabel, writeBlobToClipboard, writeTextToClipboard } from '../clipboard.js';
 import { parseColorToRgb, relativeLuminance, rgbToRgba } from '../utils/color.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
+import { setupCopyExportControls } from '../export-controls.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -567,17 +566,12 @@ export async function runChartsRuntime(core) {
     },
   });
 
-  const copyExportFeature = createCopyExportFeature({
+  setupCopyExportControls({
+    selectors,
     getDatasetValue,
     setDatasetValue,
-    setCopyButtonFeedback,
-    writeBlobToClipboard,
-    writeTextToClipboard,
     describeError,
   });
-  initChartCopyButtons({ selectors, storeCopyButtonBaseLabel, handleChartCopyClick: copyExportFeature.handleChartCopyClick });
-  initChartDownloadButtons({ selectors, storeCopyButtonBaseLabel, handleChartDownloadClick: copyExportFeature.handleChartDownloadClick });
-  initTableDownloadButtons({ selectors, storeCopyButtonBaseLabel, handleTableDownloadClick: copyExportFeature.handleTableDownloadClick });
 
   const formatDailyCaption = (period) => {
     const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientu srautai';

@@ -4,15 +4,12 @@ import { createFeedbackHandlers } from '../../../data/feedback.js';
 import { createDataFlow } from '../data-flow.js';
 import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
 import { createFeedbackRenderFeature } from '../features/feedback-render.js';
-import { createCopyExportFeature } from '../features/copy-export.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { initChartCopyButtons, initChartDownloadButtons, initTableDownloadButtons } from '../../../events/charts.js';
 import { initFeedbackFilters, initFeedbackTableScrollAffordance, initFeedbackTrendControls } from '../../../events/feedback.js';
 import { renderFeedbackTrendChart as renderFeedbackTrendChartModule } from '../../../charts/feedback-trend.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
-import { setCopyButtonFeedback, storeCopyButtonBaseLabel, writeBlobToClipboard, writeTextToClipboard } from '../clipboard.js';
 import {
   capitalizeSentence,
   decimalFormatter,
@@ -41,6 +38,7 @@ import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
+import { setupCopyExportControls } from '../export-controls.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -188,12 +186,10 @@ export async function runFeedbackRuntime(core) {
     },
   });
 
-  const copyExportFeature = createCopyExportFeature({
+  setupCopyExportControls({
+    selectors,
     getDatasetValue,
     setDatasetValue,
-    setCopyButtonFeedback,
-    writeBlobToClipboard,
-    writeTextToClipboard,
     describeError,
   });
 
@@ -273,22 +269,6 @@ export async function runFeedbackRuntime(core) {
     setFeedbackTrendCompareMode: feedbackRenderFeature.setFeedbackTrendCompareMode,
   });
   initFeedbackTableScrollAffordance({ selectors });
-  initChartCopyButtons({
-    selectors,
-    storeCopyButtonBaseLabel,
-    handleChartCopyClick: copyExportFeature.handleChartCopyClick,
-  });
-  initChartDownloadButtons({
-    selectors,
-    storeCopyButtonBaseLabel,
-    handleChartDownloadClick: copyExportFeature.handleChartDownloadClick,
-  });
-  initTableDownloadButtons({
-    selectors,
-    storeCopyButtonBaseLabel,
-    handleTableDownloadClick: copyExportFeature.handleTableDownloadClick,
-  });
-
   const applyFeedbackStatusNote = () => {
     if (dashboardState.usingFallback) {
       return;
