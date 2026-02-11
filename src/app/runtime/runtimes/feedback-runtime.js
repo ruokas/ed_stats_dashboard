@@ -39,6 +39,7 @@ import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
 import { setupCopyExportControls } from '../export-controls.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -139,8 +140,7 @@ function renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, raw
 export async function runFeedbackRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'feedback');
   if (mode === 'legacy') {
-    const { startFullPageApp } = await import('../../full-page-app.js?v=2026-02-08-fullpage-refresh-2');
-    return startFullPageApp({ forcePageId: core?.pageId || 'feedback', skipGlobalInit: true });
+    return runLegacyFallback(core, 'feedback');
   }
 
   const pageConfig = core?.pageConfig || { feedback: true };

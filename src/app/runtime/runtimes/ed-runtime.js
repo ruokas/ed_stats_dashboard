@@ -44,6 +44,7 @@ import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultK
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -298,8 +299,7 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
 export async function runEdRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'ed');
   if (mode === 'legacy') {
-    const { startFullPageApp } = await import('../../full-page-app.js?v=2026-02-08-fullpage-refresh-2');
-    return startFullPageApp({ forcePageId: core?.pageId || 'ed', skipGlobalInit: true });
+    return runLegacyFallback(core, 'ed');
   }
 
   const pageConfig = core?.pageConfig || { ed: true };

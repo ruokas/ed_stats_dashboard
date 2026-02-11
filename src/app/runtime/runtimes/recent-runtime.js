@@ -33,6 +33,7 @@ import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { createTableDownloadHandler } from '../table-export.js';
 import { createStatusSetter } from '../utils/common.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -282,8 +283,7 @@ const handleTableDownloadClick = createTableDownloadHandler({
 export async function runRecentRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'recent');
   if (mode === 'legacy') {
-    const { startFullPageApp } = await import('../../full-page-app.js?v=2026-02-08-fullpage-refresh-2');
-    return startFullPageApp({ forcePageId: core?.pageId || 'recent', skipGlobalInit: true });
+    return runLegacyFallback(core, 'recent');
   }
 
   const pageConfig = core?.pageConfig || { recent: true };

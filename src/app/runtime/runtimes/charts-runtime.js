@@ -51,6 +51,7 @@ import { createRuntimeClientContext } from '../runtime-client.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { setupCopyExportControls } from '../export-controls.js';
 import { createStatusSetter } from '../utils/common.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -508,8 +509,7 @@ function initChartsJumpStickyOffset(selectors) {
 export async function runChartsRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'charts');
   if (mode === 'legacy') {
-    const { startFullPageApp } = await import('../../full-page-app.js?v=2026-02-08-fullpage-refresh-2');
-    return startFullPageApp({ forcePageId: core?.pageId || 'charts', skipGlobalInit: true });
+    return runLegacyFallback(core, 'charts');
   }
 
   const pageConfig = core?.pageConfig || { charts: true, heatmap: true, hourly: true };
