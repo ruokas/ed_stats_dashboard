@@ -24,14 +24,10 @@ import {
   monthFormatter,
   capitalizeSentence,
 } from '../../../utils/format.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
-import { initThemeToggle } from '../../../events/theme.js';
 import { initYearlyExpand } from '../../../events/yearly.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
 import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
-import { createLayoutTools } from '../layout.js';
 import { createDataFlow } from '../data-flow.js';
 import {
   createDefaultChartFilters,
@@ -56,6 +52,7 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
@@ -2529,36 +2526,23 @@ export async function runSummariesRuntime(core) {
     createTextSignature,
     formatUrlForDiagnostics,
   });
-  if (selectors.title) {
-    selectors.title.textContent = settings?.output?.title || TEXT.title;
-  }
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
   if (selectors.summariesReportsSubtitle) {
     selectors.summariesReportsSubtitle.textContent = TEXT.summariesReports?.subtitle || selectors.summariesReportsSubtitle.textContent;
   }
-  if (selectors.footerSource) {
-    selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  }
-  if (settings?.output?.pageTitle) {
-    document.title = settings.output.pageTitle;
-  }
-  if (selectors.scrollTopBtn) {
-    selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-  }
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
   let rerenderReports = () => {};
-  const toggleTheme = () => {
-    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', {
-      persist: true,
-      themeStorageKey: THEME_STORAGE_KEY,
-    });
-    rerenderReports();
-  };
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({ selectors, ...layoutTools });
-  initSummariesJumpStickyOffset(selectors);
-  initSummariesJumpNavigation(selectors);
-  initScrollTopButton({ selectors, updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility, scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate });
-  initThemeToggle({ selectors, toggleTheme });
+  setupSharedPageUi({
+    selectors,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
+    onThemeChange: () => rerenderReports(),
+    afterSectionNavigation: () => {
+      initSummariesJumpStickyOffset(selectors);
+      initSummariesJumpNavigation(selectors);
+    },
+  });
   initYearlyExpand({ selectors, handleYearlyToggle: (event) => handleYearlyToggle(selectors, dashboardState, event) });
   initTableDownloadButtons({ selectors, storeCopyButtonBaseLabel, handleTableDownloadClick });
   if (Array.isArray(selectors.reportExportButtons)) {

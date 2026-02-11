@@ -2,15 +2,11 @@ import { createSelectorsForPage } from '../../../state/selectors.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createFeedbackHandlers } from '../../../data/feedback.js';
 import { createDataFlow } from '../data-flow.js';
-import { createLayoutTools } from '../layout.js';
 import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
 import { createFeedbackRenderFeature } from '../features/feedback-render.js';
 import { createCopyExportFeature } from '../features/copy-export.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
-import { initThemeToggle } from '../../../events/theme.js';
 import { initChartCopyButtons, initChartDownloadButtons, initTableDownloadButtons } from '../../../events/charts.js';
 import { initFeedbackFilters, initFeedbackTableScrollAffordance, initFeedbackTrendControls } from '../../../events/feedback.js';
 import { renderFeedbackTrendChart as renderFeedbackTrendChartModule } from '../../../charts/feedback-trend.js';
@@ -41,6 +37,7 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
@@ -175,43 +172,21 @@ export async function runFeedbackRuntime(core) {
     FEEDBACK_LEGACY_MAX,
   });
 
-  if (selectors.title) {
-    selectors.title.textContent = settings?.output?.title || TEXT.title;
-  }
-  if (selectors.footerSource) {
-    selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  }
-  if (settings?.output?.pageTitle) {
-    document.title = settings.output.pageTitle;
-  }
-  if (selectors.scrollTopBtn) {
-    selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-  }
-
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
-  const toggleTheme = () => {
-    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', {
-      persist: true,
-      themeStorageKey: THEME_STORAGE_KEY,
-    });
-    const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
-    feedbackRenderFeature.renderFeedbackTrendChart(monthly).catch((error) => {
-      const info = describeError(error, { code: 'FEEDBACK_TREND_THEME' });
-      console.error(info.log, error);
-    });
-  };
-
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
+  setupSharedPageUi({
     selectors,
-    ...layoutTools,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
+    onThemeChange: () => {
+      const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
+      feedbackRenderFeature.renderFeedbackTrendChart(monthly).catch((error) => {
+        const info = describeError(error, { code: 'FEEDBACK_TREND_THEME' });
+        console.error(info.log, error);
+      });
+    },
   });
-  initScrollTopButton({
-    selectors,
-    updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility,
-    scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate,
-  });
-  initThemeToggle({ selectors, toggleTheme });
 
   const copyExportFeature = createCopyExportFeature({
     getDatasetValue,

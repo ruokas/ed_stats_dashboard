@@ -3,12 +3,8 @@ import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import { computeDailyStats } from '../../../data/stats.js';
 import { createDataFlow } from '../data-flow.js';
-import { createLayoutTools } from '../layout.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import { applyTheme, initializeTheme } from '../features/theme.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
-import { initThemeToggle } from '../../../events/theme.js';
 import { initCompareControls } from '../../../events/compare.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
 import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
@@ -31,6 +27,7 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 
@@ -411,35 +408,14 @@ export async function runRecentRuntime(core) {
     formatUrlForDiagnostics,
   });
 
-  if (selectors.title) {
-    selectors.title.textContent = settings?.output?.title || TEXT.title;
-  }
-  if (selectors.footerSource) {
-    selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  }
-  if (settings?.output?.pageTitle) {
-    document.title = settings.output.pageTitle;
-  }
-  if (selectors.scrollTopBtn) {
-    selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-  }
-
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
-  const toggleTheme = () => {
-    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', {
-      persist: true,
-      themeStorageKey: THEME_STORAGE_KEY,
-    });
-  };
-
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({ selectors, ...layoutTools });
-  initScrollTopButton({
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
+  setupSharedPageUi({
     selectors,
-    updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility,
-    scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
   });
-  initThemeToggle({ selectors, toggleTheme });
   initCompareControls({
     selectors,
     dashboardState,

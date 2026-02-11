@@ -8,9 +8,6 @@ import {
 } from '../../../data/stats.js';
 import { createChartRenderers } from '../../../charts/index.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
-import { initThemeToggle } from '../../../events/theme.js';
 import { initChartControls, initChartCopyButtons, initChartDownloadButtons, initTableDownloadButtons } from '../../../events/charts.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import {
@@ -25,7 +22,6 @@ import {
 } from '../../../utils/format.js';
 import { createDataFlow } from '../data-flow.js';
 import { createChartFlow } from '../chart-flow.js';
-import { createLayoutTools } from '../layout.js';
 import {
   populateChartYearOptions,
   syncChartPeriodButtons,
@@ -54,6 +50,7 @@ import { setCopyButtonFeedback, storeCopyButtonBaseLabel, writeBlobToClipboard, 
 import { parseColorToRgb, relativeLuminance, rgbToRgba } from '../utils/color.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -557,20 +554,18 @@ export async function runChartsRuntime(core) {
     formatUrlForDiagnostics,
   });
 
-  if (selectors.title) selectors.title.textContent = settings?.output?.title || TEXT.title;
-  if (selectors.footerSource) selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  if (settings?.output?.pageTitle) document.title = settings.output.pageTitle;
-  if (selectors.scrollTopBtn) selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
-  const toggleTheme = () => applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', { persist: true, themeStorageKey: THEME_STORAGE_KEY });
-
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({ selectors, ...layoutTools });
-  initChartsJumpStickyOffset(selectors);
-  initChartsJumpNavigation(selectors);
-  initScrollTopButton({ selectors, updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility, scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate });
-  initThemeToggle({ selectors, toggleTheme });
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
+  setupSharedPageUi({
+    selectors,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
+    afterSectionNavigation: () => {
+      initChartsJumpStickyOffset(selectors);
+      initChartsJumpNavigation(selectors);
+    },
+  });
 
   const copyExportFeature = createCopyExportFeature({
     getDatasetValue,

@@ -7,7 +7,6 @@ import { computeDailyStats } from '../../../data/stats.js';
 import { createKpiRenderer } from '../../../render/kpi.js';
 import { createKpiFlow } from '../kpi-flow.js';
 import { createDataFlow } from '../data-flow.js';
-import { createLayoutTools } from '../layout.js';
 import { sanitizeKpiFilters } from '../filters.js';
 import {
   KPI_FILTER_LABELS,
@@ -16,10 +15,7 @@ import {
   createDefaultFeedbackFilters,
   createDefaultKpiFilters,
 } from '../state.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
 import { initKpiFilters } from '../../../events/kpi.js';
-import { initThemeToggle } from '../../../events/theme.js';
 import {
   decimalFormatter,
   dailyDateFormatter,
@@ -53,6 +49,7 @@ import {
   downloadCsv,
   formatUrlForDiagnostics,
 } from '../network.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
@@ -653,48 +650,28 @@ export async function runKpiRuntime(core) {
     setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
   });
 
-  if (selectors.title) {
-    selectors.title.textContent = settings?.output?.title || TEXT.title;
-  }
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
   if (selectors.kpiHeading) {
     selectors.kpiHeading.textContent = settings?.output?.kpiTitle || TEXT.kpis.title;
   }
   if (selectors.kpiSubtitle) {
     selectors.kpiSubtitle.textContent = settings?.output?.kpiSubtitle || TEXT.kpis.subtitle;
   }
-  if (selectors.footerSource) {
-    selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  }
-  if (settings?.output?.pageTitle) {
-    document.title = settings.output.pageTitle;
-  }
-  if (selectors.scrollTopBtn) {
-    selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-  }
-
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
-  const toggleTheme = () => {
-    const nextTheme = dashboardState.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(dashboardState, selectors, nextTheme, { persist: true, themeStorageKey: THEME_STORAGE_KEY });
-    if (dashboardState.kpi?.lastShiftHourly) {
-      renderLastShiftHourlyChartWithThemeBound(dashboardState.kpi.lastShiftHourly).catch((error) => {
-        const info = describeError(error, { code: 'LAST_SHIFT_THEME', fallbackMessage: TEXT.status.error });
-        console.error(info.log, error);
-      });
-    }
-  };
-
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({
+  setupSharedPageUi({
     selectors,
-    ...layoutTools,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
+    onThemeChange: () => {
+      if (dashboardState.kpi?.lastShiftHourly) {
+        renderLastShiftHourlyChartWithThemeBound(dashboardState.kpi.lastShiftHourly).catch((error) => {
+          const info = describeError(error, { code: 'LAST_SHIFT_THEME', fallbackMessage: TEXT.status.error });
+          console.error(info.log, error);
+        });
+      }
+    },
   });
-  initScrollTopButton({
-    selectors,
-    updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility,
-    scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate,
-  });
-  initThemeToggle({ selectors, toggleTheme });
   initKpiFilters({
     selectors,
     dashboardState,
