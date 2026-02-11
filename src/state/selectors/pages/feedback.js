@@ -1,4 +1,4 @@
-import { byId, byQuery, byQueryAllIn } from '../helpers.js';
+import { byId, byQuery, byQueryAllIn, createPageShellSelectors } from '../helpers.js';
 
 export function createFeedbackPageSelectors() {
   const main = byQuery('main.container');
@@ -9,14 +9,7 @@ export function createFeedbackPageSelectors() {
   const feedbackTrendCompareSelect = byId('feedbackTrendCompareSelect');
 
   return {
-    hero: byQuery('header.hero'),
-    title: byId('pageTitle'),
-    status: byId('status'),
-    footerSource: byId('footerSource'),
-    themeToggleBtn: byId('themeToggleBtn'),
-    scrollTopBtn: byId('scrollTopBtn'),
-    sectionNav,
-    sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+    ...createPageShellSelectors({ sectionNav }),
     feedbackHeading: byId('feedbackHeading'),
     feedbackSubtitle: byId('feedbackSubtitle'),
     feedbackDescription: byId('feedbackDescription'),

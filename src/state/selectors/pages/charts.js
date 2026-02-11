@@ -1,4 +1,4 @@
-import { byId, byQuery, byQueryAllIn, byQueryIn } from '../helpers.js';
+import { byId, byQuery, byQueryAllIn, byQueryIn, createPageShellSelectors } from '../helpers.js';
 
 export function createChartsPageSelectors() {
   const main = byQuery('main.container');
@@ -11,14 +11,7 @@ export function createChartsPageSelectors() {
   const chartsHospitalTableRoot = byId('chartsHospitalTableRoot');
 
   return {
-    hero: byQuery('header.hero'),
-    title: byId('pageTitle'),
-    status: byId('status'),
-    footerSource: byId('footerSource'),
-    themeToggleBtn: byId('themeToggleBtn'),
-    scrollTopBtn: byId('scrollTopBtn'),
-    sectionNav,
-    sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+    ...createPageShellSelectors({ sectionNav }),
     chartHeading: byId('chartHeading'),
     chartSubtitle: byId('chartSubtitle'),
     dailyCaption: byId('dailyChartLabel'),

@@ -1,4 +1,4 @@
-import { byId, byQuery, byQueryAllIn, byQueryIn } from '../helpers.js';
+import { byId, byQuery, byQueryAllIn, byQueryIn, createPageShellSelectors } from '../helpers.js';
 
 export function createSummariesPageSelectors() {
   const main = byQuery('main.container');
@@ -6,14 +6,7 @@ export function createSummariesPageSelectors() {
   const summariesJumpNav = byQueryIn(main, '.summaries-jump-nav');
 
   return {
-    hero: byQuery('header.hero'),
-    title: byId('pageTitle'),
-    status: byId('status'),
-    footerSource: byId('footerSource'),
-    themeToggleBtn: byId('themeToggleBtn'),
-    scrollTopBtn: byId('scrollTopBtn'),
-    sectionNav,
-    sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+    ...createPageShellSelectors({ sectionNav }),
     yearlyTable: byId('yearlyTable'),
     summariesReportsHeading: byId('summariesReportsHeading'),
     summariesReportsSubtitle: byId('summariesReportsSubtitle'),

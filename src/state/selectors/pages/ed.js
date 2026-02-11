@@ -1,17 +1,10 @@
-import { byId, byQuery, byQueryAllIn } from '../helpers.js';
+import { byId, byQuery, createPageShellSelectors } from '../helpers.js';
 
 export function createEdPageSelectors() {
   const sectionNav = byQuery('.section-nav');
 
   return {
-    hero: byQuery('header.hero'),
-    title: byId('pageTitle'),
-    status: byId('status'),
-    footerSource: byId('footerSource'),
-    themeToggleBtn: byId('themeToggleBtn'),
-    scrollTopBtn: byId('scrollTopBtn'),
-    sectionNav,
-    sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+    ...createPageShellSelectors({ sectionNav }),
     edHeading: byId('edHeading'),
     edStatus: byId('edStatus'),
     edSearchInput: byId('edSearchInput'),

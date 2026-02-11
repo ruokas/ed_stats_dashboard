@@ -1,18 +1,11 @@
-import { byId, byQuery, byQueryAllIn } from '../helpers.js';
+import { byId, byQuery, byQueryAllIn, createPageShellSelectors } from '../helpers.js';
 
 export function createRecentPageSelectors() {
   const main = byQuery('main.container');
   const sectionNav = byQuery('.section-nav');
 
   return {
-    hero: byQuery('header.hero'),
-    title: byId('pageTitle'),
-    status: byId('status'),
-    footerSource: byId('footerSource'),
-    themeToggleBtn: byId('themeToggleBtn'),
-    scrollTopBtn: byId('scrollTopBtn'),
-    sectionNav,
-    sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+    ...createPageShellSelectors({ sectionNav }),
     tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
     recentHeading: byId('recentHeading'),
     recentSubtitle: byId('recentSubtitle'),

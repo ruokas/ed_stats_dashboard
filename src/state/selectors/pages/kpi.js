@@ -1,4 +1,4 @@
-import { byId, byQuery, byQueryAllIn, byQueryIn } from '../helpers.js';
+import { byId, byQuery, byQueryAllIn, byQueryIn, createPageShellSelectors } from '../helpers.js';
 
 export function createKpiPageSelectors() {
   const main = byQuery('main.container');
@@ -8,14 +8,7 @@ export function createKpiPageSelectors() {
   const kpiHourlyControls = byQueryIn(kpiSection, '.kpi-hourly-controls');
 
   return {
-    hero: byQuery('header.hero'),
-    title: byId('pageTitle'),
-    status: byId('status'),
-    footerSource: byId('footerSource'),
-    themeToggleBtn: byId('themeToggleBtn'),
-    scrollTopBtn: byId('scrollTopBtn'),
-    sectionNav,
-    sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
+    ...createPageShellSelectors({ sectionNav }),
     kpiHeading: byId('kpiHeading'),
     kpiSubtitle: byId('kpiSubtitle'),
     kpiDatePrev: byId('kpiDatePrev'),

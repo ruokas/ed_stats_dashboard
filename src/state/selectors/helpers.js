@@ -25,6 +25,11 @@ export function byQueryAllIn(root, selector) {
 }
 
 export function createDefaultPageSelectors() {
+  const sectionNav = byQuery('.section-nav');
+  return createPageShellSelectors({ sectionNav });
+}
+
+export function createPageShellSelectors({ sectionNav = byQuery('.section-nav') } = {}) {
   return {
     hero: byQuery('header.hero'),
     title: byId('pageTitle'),
@@ -32,7 +37,7 @@ export function createDefaultPageSelectors() {
     footerSource: byId('footerSource'),
     themeToggleBtn: byId('themeToggleBtn'),
     scrollTopBtn: byId('scrollTopBtn'),
-    sectionNav: byQuery('.section-nav'),
-    sectionNavLinks: byQueryAll('.section-nav__link'),
+    sectionNav,
+    sectionNavLinks: byQueryAllIn(sectionNav, '.section-nav__link'),
   };
 }
