@@ -11,16 +11,17 @@ export function createSelectors() {
   return createFullSelectors();
 }
 
+const pageSelectorFactories = {
+  kpi: createKpiPageSelectors,
+  charts: createChartsPageSelectors,
+  summaries: createSummariesPageSelectors,
+  recent: createRecentPageSelectors,
+  feedback: createFeedbackPageSelectors,
+  ed: createEdPageSelectors,
+};
+
 export function createSelectorsForPage(pageId) {
   const normalizedPage = typeof pageId === 'string' ? pageId.trim().toLowerCase() : '';
-  const pageSelectorFactories = {
-    kpi: createKpiPageSelectors,
-    charts: createChartsPageSelectors,
-    summaries: createSummariesPageSelectors,
-    recent: createRecentPageSelectors,
-    feedback: createFeedbackPageSelectors,
-    ed: createEdPageSelectors,
-  };
   const factory = pageSelectorFactories[normalizedPage] || createFallbackPageSelectors;
   return factory();
 }
