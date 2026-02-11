@@ -7,7 +7,7 @@ import { loadSettingsFromConfig } from '../settings.js';
 import { applyTheme, initializeTheme } from '../features/theme.js';
 import { initCompareControls } from '../../../events/compare.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
-import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
+import { storeCopyButtonBaseLabel, setCopyButtonFeedback } from '../clipboard.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
 import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters } from '../state.js';
 import {
@@ -30,6 +30,7 @@ import { DEFAULT_SETTINGS } from '../../default-settings.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
+import { createTableDownloadHandler } from '../table-export.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -326,56 +327,11 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
   compareFeature.syncCompareActivation();
 }
 
-function escapeCsvCell(value) {
-  const text = String(value ?? '');
-  if (/[",\n]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
-
-function triggerDownloadFromBlob(blob, filename) {
-  if (!(blob instanceof Blob) || !filename) {
-    return false;
-  }
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
-  return true;
-}
-
-async function handleTableDownloadClick(event) {
-  const button = event.currentTarget;
-  if (!(button instanceof HTMLElement)) {
-    return;
-  }
-  const targetSelector = getDatasetValue(button, 'tableTarget', '');
-  const table = targetSelector ? document.querySelector(targetSelector) : null;
-  if (!(table instanceof HTMLTableElement)) {
-    setCopyButtonFeedback(button, 'Lentelė nerasta', 'error');
-    return;
-  }
-  const rows = Array.from(table.querySelectorAll('tr'))
-    .filter((row) => !row.hidden)
-    .map((row) => Array.from(row.children).map((cell) => escapeCsvCell(cell.textContent.trim())).join(','))
-    .join('\n');
-  const title = getDatasetValue(button, 'tableTitle', 'Paskutines-dienos');
-  const format = getDatasetValue(button, 'tableDownload', 'csv');
-  if (format === 'csv') {
-    const ok = triggerDownloadFromBlob(new Blob([rows], { type: 'text/csv;charset=utf-8;' }), `${title}.csv`);
-    setCopyButtonFeedback(button, ok ? 'Lentelė parsisiųsta' : 'Klaida parsisiunčiant', ok ? 'success' : 'error');
-    return;
-  }
-  const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Arial;background:#fff;padding:16px;">${table.outerHTML}</div></foreignObject></svg>`;
-  const ok = triggerDownloadFromBlob(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }), `${title}.svg`);
-  setCopyButtonFeedback(button, ok ? 'Lentelė parsisiųsta' : 'Klaida parsisiunčiant', ok ? 'success' : 'error');
-}
+const handleTableDownloadClick = createTableDownloadHandler({
+  getDatasetValue,
+  setCopyButtonFeedback,
+  defaultTitle: 'Paskutines-dienos',
+});
 
 export async function runRecentRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'recent');
