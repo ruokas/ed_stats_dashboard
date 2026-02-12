@@ -66,5 +66,11 @@ describe('renderLastShiftHourlyChartWithTheme', () => {
 
     expect(existingChart.update).toHaveBeenCalledTimes(1);
     expect(existingChart.update).toHaveBeenCalledWith();
+    const tDataset = existingChart.data.datasets.find((dataset) => dataset.label === 'T');
+    const trDataset = existingChart.data.datasets.find((dataset) => dataset.label === 'TR');
+    const chDataset = existingChart.data.datasets.find((dataset) => dataset.label === 'CH');
+    expect(tDataset?.borderDash).toEqual([6, 4]);
+    expect(trDataset?.borderDash).toEqual([6, 4]);
+    expect(chDataset?.borderDash).toEqual([6, 4]);
   });
 });

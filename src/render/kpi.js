@@ -1,40 +1,30 @@
-import { buildKpiCardsModel, buildKpiSummaryModel } from './kpi-model.js';
+import { buildKpiCardsModel } from './kpi-model.js';
 
 export function createKpiRenderer(env) {
   const {
     selectors,
-    dashboardState,
     TEXT,
     escapeHtml,
     formatKpiValue,
     percentFormatter,
-    buildYearMonthMetrics,
     buildLastShiftSummary,
     hideKpiSkeleton,
   } = env;
 
-  function renderKpiPeriodSummary(lastShiftSummary, periodMetrics) {
+  function hideKpiPeriodSummary() {
     const summaryEl = selectors.kpiSummary;
     if (!summaryEl) {
       return;
     }
-    const model = buildKpiSummaryModel({
-      lastShiftSummary,
-      periodMetrics,
-      TEXT,
-      escapeHtml,
-    });
-    summaryEl.innerHTML = model.html;
-    summaryEl.hidden = false;
+    summaryEl.innerHTML = '';
+    summaryEl.hidden = true;
   }
 
   function renderKpis(dailyStats, referenceDailyStats = null) {
     hideKpiSkeleton();
     selectors.kpiGrid.replaceChildren();
-    const windowDays = dashboardState.kpi?.filters?.window;
-    const periodMetrics = buildYearMonthMetrics(dailyStats, windowDays);
     const lastShiftSummary = buildLastShiftSummary(dailyStats, referenceDailyStats);
-    renderKpiPeriodSummary(lastShiftSummary, periodMetrics);
+    hideKpiPeriodSummary();
 
     const model = buildKpiCardsModel({
       lastShiftSummary,
@@ -69,5 +59,5 @@ export function createKpiRenderer(env) {
       selectors.kpiGrid.appendChild(card);
     });
   }
-  return { renderKpiPeriodSummary, renderKpis };
+  return { renderKpis };
 }

@@ -58,6 +58,7 @@ import {
 } from '../state.js';
 import { createTableDownloadHandler, escapeCsvCell } from '../table-export.js';
 import { createStatusSetter } from '../utils/common.js';
+import { loadPluginScript } from './summaries/plugin-loader.js';
 import {
   computeReferralHospitalizedShareByPspcDetailed,
   extractHistoricalRecords,
@@ -67,11 +68,13 @@ import {
 } from './summaries/report-computation.js';
 import { syncReportsControls } from './summaries/report-controls.js';
 import { createReportExportClickHandler } from './summaries/report-export.js';
+import { parsePositiveIntOrDefault } from './summaries/report-filters.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
 let treemapPluginPromise = null;
 let matrixPluginPromise = null;
+const PLUGIN_SCRIPT_TIMEOUT_MS = 8000;
 const setStatus = createStatusSetter(TEXT.status, { showSuccessState: false });
 
 const handleTableDownloadClick = createTableDownloadHandler({
@@ -235,22 +238,9 @@ async function ensureTreemapPlugin(chartLib) {
     return true;
   }
   if (!treemapPluginPromise) {
-    treemapPluginPromise = new Promise((resolve) => {
-      const scriptSrc =
-        'https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.1.0/dist/chartjs-chart-treemap.min.js';
-      const existingScript = document.querySelector(`script[src="${scriptSrc}"]`);
-      if (existingScript) {
-        existingScript.addEventListener('load', () => resolve(true), { once: true });
-        existingScript.addEventListener('error', () => resolve(false), { once: true });
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = scriptSrc;
-      script.defer = true;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
-    });
+    const scriptSrc =
+      'https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.1.0/dist/chartjs-chart-treemap.min.js';
+    treemapPluginPromise = loadPluginScript(scriptSrc, PLUGIN_SCRIPT_TIMEOUT_MS);
   }
   const loaded = await treemapPluginPromise;
   if (!loaded) {
@@ -278,22 +268,9 @@ async function ensureMatrixPlugin(chartLib) {
     return true;
   }
   if (!matrixPluginPromise) {
-    matrixPluginPromise = new Promise((resolve) => {
-      const scriptSrc =
-        'https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js';
-      const existingScript = document.querySelector(`script[src="${scriptSrc}"]`);
-      if (existingScript) {
-        existingScript.addEventListener('load', () => resolve(true), { once: true });
-        existingScript.addEventListener('error', () => resolve(false), { once: true });
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = scriptSrc;
-      script.defer = true;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
-    });
+    const scriptSrc =
+      'https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js';
+    matrixPluginPromise = loadPluginScript(scriptSrc, PLUGIN_SCRIPT_TIMEOUT_MS);
   }
   const loaded = await matrixPluginPromise;
   if (!loaded) {
@@ -1522,10 +1499,8 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
   const ageDistributionRows = ageDistributionBySex.rows.filter(
     (row) => String(row?.label || '') !== 'Nenurodyta'
   );
-  const minGroupSizeRaw = Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10);
-  const minGroupSize = Number.isFinite(minGroupSizeRaw) && minGroupSizeRaw > 0 ? minGroupSizeRaw : 100;
-  const topNRaw = Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10);
-  const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 15;
+  const minGroupSize = parsePositiveIntOrDefault(dashboardState.summariesReportsMinGroupSize, 100);
+  const topN = parsePositiveIntOrDefault(dashboardState.summariesReportsTopN, 15);
   const pspcCrossDetailed = computeReferralHospitalizedShareByPspcDetailed(scopeMeta.records);
   const referralHospitalizedPspcAllRows = pspcCrossDetailed.rows;
   const referralHospitalizedPspcYearlyRows = Array.isArray(referralHospitalizedByPspcYearly?.rows)
@@ -1957,15 +1932,13 @@ export async function runSummariesRuntime(core) {
   }
   if (selectors.summariesReportsTopN) {
     selectors.summariesReportsTopN.addEventListener('change', (event) => {
-      const value = Number.parseInt(String(event.target.value || '15'), 10);
-      dashboardState.summariesReportsTopN = Number.isFinite(value) && value > 0 ? value : 15;
+      dashboardState.summariesReportsTopN = parsePositiveIntOrDefault(event.target.value, 15);
       rerenderReports();
     });
   }
   if (selectors.summariesReportsMinGroupSize) {
     selectors.summariesReportsMinGroupSize.addEventListener('change', (event) => {
-      const value = Number.parseInt(String(event.target.value || '10'), 10);
-      dashboardState.summariesReportsMinGroupSize = Number.isFinite(value) && value > 0 ? value : 100;
+      dashboardState.summariesReportsMinGroupSize = parsePositiveIntOrDefault(event.target.value, 100);
       rerenderReports();
     });
   }

@@ -573,6 +573,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
             data: rotatedSeries.t || [],
             borderColor: '#f2c94c',
             backgroundColor: '#f2c94c',
+            borderDash: [6, 4],
             tension: 0.35,
             fill: false,
             pointRadius(context) {
@@ -587,6 +588,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
             data: rotatedSeries.tr || [],
             borderColor: '#27ae60',
             backgroundColor: '#27ae60',
+            borderDash: [6, 4],
             tension: 0.35,
             fill: false,
             pointRadius(context) {
@@ -601,6 +603,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
             data: rotatedSeries.ch || [],
             borderColor: '#2f80ed',
             backgroundColor: '#2f80ed',
+            borderDash: [6, 4],
             tension: 0.35,
             fill: false,
             pointRadius(context) {

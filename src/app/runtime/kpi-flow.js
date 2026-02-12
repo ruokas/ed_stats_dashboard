@@ -11,7 +11,6 @@ export function createKpiFlow(env) {
     sanitizeKpiFilters,
     getDatasetValue,
     setDatasetValue,
-    weekdayLongFormatter,
     dateKeyToDate,
     formatLocalDateKey,
     computeDailyStats,
@@ -67,19 +66,6 @@ export function createKpiFlow(env) {
       return null;
     }
     return trimmed;
-  }
-
-  function formatKpiDateLabel(dateKey) {
-    const normalized = normalizeKpiDateValue(dateKey);
-    if (!normalized) {
-      return '';
-    }
-    const date = dateKeyToDate(normalized);
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-      return '';
-    }
-    const weekday = weekdayLongFormatter.format(date).toLowerCase();
-    return `${normalized} (${weekday})`;
   }
 
   function getRecordShiftDateKey(record, shiftStartHour) {
@@ -200,12 +186,6 @@ export function createKpiFlow(env) {
 
   function updateKpiSubtitle() {
     if (!selectors.kpiSubtitle) {
-      return;
-    }
-    const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-    if (selectedDate) {
-      const label = formatKpiDateLabel(selectedDate);
-      selectors.kpiSubtitle.textContent = label || selectedDate;
       return;
     }
     selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
@@ -368,7 +348,7 @@ export function createKpiFlow(env) {
 
   function applyKpiFiltersLocally(filters) {
     const normalizedFilters = sanitizeKpiFilters(filters, { getDefaultKpiFilters, KPI_FILTER_LABELS });
-    const _settings = getSettings();
+    const settings = getSettings();
     const windowDays = Number.isFinite(normalizedFilters.window)
       ? normalizedFilters.window
       : DEFAULT_SETTINGS.calculations.windowDays;
@@ -381,7 +361,7 @@ export function createKpiFlow(env) {
     if (hasPrimaryRecords) {
       const scopedRecords = filterRecordsByShiftWindow(dashboardState.primaryRecords, windowDays);
       filteredRecords = scopedRecords.filter((record) => recordMatchesKpiFilters(record, normalizedFilters));
-      filteredDailyStats = computeDailyStats(filteredRecords);
+      filteredDailyStats = computeDailyStats(filteredRecords, settings?.calculations, DEFAULT_SETTINGS);
     } else {
       const scopedDaily = filterDailyStatsByWindow(primaryDailyStats, windowDays);
       filteredDailyStats = scopedDaily.slice();

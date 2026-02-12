@@ -1,5 +1,7 @@
-const STATIC_CACHE = 'ed-static-v20';
-const API_CACHE = 'ed-api-v1';
+// Bump cache versions on release when app shell/static routing changes.
+// Rule of thumb: STATIC_CACHE for HTML/CSS/JS shell changes, API_CACHE for CSV/API strategy changes.
+const STATIC_CACHE = 'ed-static-v21';
+const API_CACHE = 'ed-api-v2';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [
   new URL('./', self.location).pathname,
@@ -19,11 +21,33 @@ const STATIC_ASSETS = [
   new URL('./src/app/runtime.js', self.location).pathname,
 ];
 
+async function precacheStaticAssets() {
+  const cache = await caches.open(STATIC_CACHE);
+  const failures = [];
+  for (const assetPath of STATIC_ASSETS) {
+    try {
+      const request = new Request(assetPath, { cache: 'no-cache' });
+      const response = await fetch(request);
+      if (!response?.ok) {
+        failures.push({ assetPath, status: response?.status || 0 });
+        continue;
+      }
+      await cache.put(request, response.clone());
+    } catch (_error) {
+      failures.push({ assetPath, status: 0 });
+    }
+  }
+  if (failures.length) {
+    console.warn('Service worker precache partial failures:', failures);
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+    precacheStaticAssets()
+      .catch((error) => {
+        console.warn('Service worker precache failed:', error);
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -138,13 +162,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (/\.js($|\?)/i.test(url.pathname)) {
-    event.respondWith(networkFirst(request));
+  if (STATIC_ASSETS.includes(url.pathname)) {
+    event.respondWith(cacheFirst(request));
     return;
   }
 
-  if (STATIC_ASSETS.includes(url.pathname)) {
-    event.respondWith(cacheFirst(request));
+  if (/\.js($|\?)/i.test(url.pathname)) {
+    event.respondWith(networkFirst(request));
     return;
   }
 

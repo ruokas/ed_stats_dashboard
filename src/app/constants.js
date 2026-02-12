@@ -298,7 +298,7 @@ export const TEXT = {
   },
   kpis: {
     title: 'Pagrindiniai rodikliai',
-    subtitle: 'Paskutinė pamaina ir palyginimas su tos savaitės dienos vidurkiu',
+    subtitle: 'Paskutinė pamaina vs vidurkis',
     windowAllLabel: 'Visas laikotarpis',
     windowAllShortLabel: 'viso laik.',
     windowYearSuffix: 'metai',

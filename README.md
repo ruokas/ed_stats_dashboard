@@ -47,8 +47,12 @@ Nuo `code-quality` šakos projektas turi bazinę kokybės infrastruktūrą:
 - `npm run depcruise` – tikrina modulių ciklus ir architektūrines importų taisykles.
 - `npm run knip` – ieško nenaudojamų failų/eksportų/priklausomybių (reikalauja papildomo konfigūravimo brandžiai analizei).
 - `npm run check` – paleidžia `lint + typecheck + test:coverage` vienu veiksmu.
+- `npm run check:strict` – paleidžia `check + depcruise + knip:exports`; skirta prieš release ar didesnius refaktorius.
 
 CI darbo eiga (`.github/workflows/code-quality.yml`) vykdo `npm run check` kiekviename `pull_request` ir `push` į `main`/`code-quality`, bei prideda coverage artifact.
+Praktinė taisyklė:
+- Kasdieniams pakeitimams ir PR vartams naudokite `npm run check`.
+- Prieš „release“ arba keičiant architektūrą naudokite `npm run check:strict`.
 
 ## Konfigūracija
 Skydelis įkelia `config.json` per `fetch`, todėl rekomenduojama jį atverti per lokalų serverį (ne `file://`).
@@ -64,6 +68,7 @@ Skydelis įkelia `config.json` per `fetch`, todėl rekomenduojama jį atverti pe
 - Nginx pavyzdinė konfigūracija su `gzip`, `brotli` ir `Cache-Control` antraštėmis pateikta faile [`nginx.conf`](./nginx.conf). Static failams taikoma 7 dienų talpykla, nes pavadinimai neversijuojami; jei pradėsite naudoti `styles.<hash>.css` ar `data-worker.<hash>.js`, galite ilginti TTL ir pridėti `immutable`.
 - SVG naudojamos ikonoms; jei prireiks nuotraukų, konvertuokite jas į `webp`/`avif` formatus prieš diegimą.
 - Visi `img`/`iframe` elementai automatiškai gauna `loading="lazy"`, nebent nustatytas `data-force-eager` atributas.
+- Service worker cache versijos (`STATIC_CACHE`, `API_CACHE`) didinamos per release, kai keičiasi app shell arba API/CSV talpinimo strategija.
 
 ## Trikčių diagnostika
 - Statuso eilutė praneš apie klaidą, jei nepavyko pasiekti nuotolinio CSV (HTTP 404/403, CORS, tinklo klaidos).

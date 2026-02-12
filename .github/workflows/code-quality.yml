@@ -25,6 +25,7 @@ jobs:
 
       - name: Run lint and tests
         run: npm run check
+      # TODO(stage-2): switch to `npm run check:strict` once strict gate stabilization is complete.
 
       - name: Validate CSS budget
         run: npm run css:budget
