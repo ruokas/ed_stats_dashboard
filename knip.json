@@ -8,9 +8,6 @@
     "scripts/perf-harness.mjs",
     "src/main.js",
     "src/app/runtime.js",
-    "src/app/runtime-full.js",
-    "src/app/full-page-app.js",
-    "src/events/tv.js",
     "src/app/runtime/pages/*.js",
     "src/app/runtime/runtimes/*.js",
     "src/app/runtime/runtimes/summaries/*.js"

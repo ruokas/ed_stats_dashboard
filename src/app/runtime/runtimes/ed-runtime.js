@@ -41,7 +41,6 @@ import { createEdCommentsFeature } from '../features/ed-comments.js';
 import { createEdPanelCoreFeature } from '../features/ed-panel-core.js';
 import { computeFeedbackStats } from '../features/feedback-stats.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { runLegacyFallback } from '../legacy-fallback.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -51,7 +50,6 @@ import {
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
-import { resolveRuntimeMode } from '../runtime-mode.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -363,11 +361,6 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
 }
 
 export async function runEdRuntime(core) {
-  const mode = resolveRuntimeMode(core?.pageId || 'ed');
-  if (mode === 'legacy') {
-    return runLegacyFallback(core, 'ed');
-  }
-
   const pageConfig = core?.pageConfig || { ed: true };
   const selectors = createSelectorsForPage(core?.pageId || 'ed');
   const settings = await loadSettingsFromConfig(DEFAULT_SETTINGS);

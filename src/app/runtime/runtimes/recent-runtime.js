@@ -25,7 +25,6 @@ import { dateKeyToDate, filterDailyStatsByWindow } from '../chart-primitives.js'
 import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
 import { createDataFlow } from '../data-flow.js';
 import { applyTheme, initializeTheme } from '../features/theme.js';
-import { runLegacyFallback } from '../legacy-fallback.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -35,7 +34,6 @@ import {
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
-import { resolveRuntimeMode } from '../runtime-mode.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -55,6 +53,15 @@ function formatValueWithShare(value, total) {
     return numberFormatter.format(safeValue);
   }
   return `${numberFormatter.format(safeValue)} (${percentFormatter.format(safeValue / total)})`;
+}
+
+function formatRoundedValueWithShare(value, total) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const roundedValue = Math.round(safeValue);
+  if (!Number.isFinite(total) || total <= 0) {
+    return numberFormatter.format(roundedValue);
+  }
+  return `${numberFormatter.format(roundedValue)} (${percentFormatter.format(safeValue / total)})`;
 }
 
 function extractCompareMetricsFromRow(row) {
@@ -238,14 +245,15 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
   const avgHosp = daysCount ? totals.hospitalized / daysCount : 0;
   const avgDis = daysCount ? totals.discharged / daysCount : 0;
   const avgStay = totals.durations ? totals.totalTime / totals.durations : 0;
+  const avgTotalRounded = Math.round(avgTotal);
   summaryRow.innerHTML = `
     <td>7 d. vidurkis</td>
-    <td>${numberFormatter.format(avgTotal)}</td>
+    <td>${numberFormatter.format(avgTotalRounded)}</td>
     <td>${decimalFormatter.format(avgStay)}</td>
-    <td>${formatValueWithShare(avgNight, avgTotal)}</td>
-    <td>${formatValueWithShare(avgEms, avgTotal)}</td>
-    <td>${formatValueWithShare(avgHosp, avgTotal)}</td>
-    <td>${formatValueWithShare(avgDis, avgTotal)}</td>
+    <td>${formatRoundedValueWithShare(avgNight, avgTotal)}</td>
+    <td>${formatRoundedValueWithShare(avgEms, avgTotal)}</td>
+    <td>${formatRoundedValueWithShare(avgHosp, avgTotal)}</td>
+    <td>${formatRoundedValueWithShare(avgDis, avgTotal)}</td>
   `;
   selectors.recentTable.appendChild(summaryRow);
 
@@ -294,11 +302,6 @@ const handleTableDownloadClick = createTableDownloadHandler({
 });
 
 export async function runRecentRuntime(core) {
-  const mode = resolveRuntimeMode(core?.pageId || 'recent');
-  if (mode === 'legacy') {
-    return runLegacyFallback(core, 'recent');
-  }
-
   const pageConfig = core?.pageConfig || { recent: true };
   const selectors = createSelectorsForPage(core?.pageId || 'recent');
   const settings = await loadSettingsFromConfig(DEFAULT_SETTINGS);

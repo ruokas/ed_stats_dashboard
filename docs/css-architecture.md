@@ -26,6 +26,7 @@
 - Do not change DOM structure only for styling.
 - Keep contrast and theme behavior equivalent in light/dark mode.
 - Prefer shared component rules and CSS tokens over repeated hardcoded values.
+- For Chart.js blocks, set fixed/min heights on a dedicated wrapper (not on `canvas` directly in auto-height cards).
 
 ## Layering Strategy
 - Declared layers: `tokens`, `base`, `layout`, `components`, `utilities`.

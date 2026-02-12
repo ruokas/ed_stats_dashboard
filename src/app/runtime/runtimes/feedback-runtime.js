@@ -36,11 +36,9 @@ import { setupCopyExportControls } from '../export-controls.js';
 import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
 import { createFeedbackRenderFeature } from '../features/feedback-render.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { runLegacyFallback } from '../legacy-fallback.js';
 import { describeCacheMeta, describeError, downloadCsv } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
-import { resolveRuntimeMode } from '../runtime-mode.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -150,11 +148,6 @@ function renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, raw
 }
 
 export async function runFeedbackRuntime(core) {
-  const mode = resolveRuntimeMode(core?.pageId || 'feedback');
-  if (mode === 'legacy') {
-    return runLegacyFallback(core, 'feedback');
-  }
-
   const pageConfig = core?.pageConfig || { feedback: true };
   const selectors = createSelectorsForPage(core?.pageId || 'feedback');
   const settings = await loadSettingsFromConfig(DEFAULT_SETTINGS);

@@ -81,6 +81,41 @@ const handleTableDownloadClick = createTableDownloadHandler({
   formatFilename: formatExportFilename,
 });
 
+async function handleYearlyTableCopyClick(event) {
+  const button = event?.currentTarget;
+  if (!(button instanceof HTMLElement)) {
+    return;
+  }
+  const targetSelector = getDatasetValue(button, 'tableTarget', '');
+  const table = targetSelector ? document.querySelector(targetSelector) : null;
+  if (!(table instanceof HTMLTableElement)) {
+    setCopyButtonFeedback(button, 'Lentelė nerasta', 'error');
+    return;
+  }
+  const rows = Array.from(table.querySelectorAll('tr'))
+    .filter((row) => !row.hidden)
+    .map((row) =>
+      Array.from(row.children)
+        .map((cell) => escapeCsvCell(cell.textContent.trim()))
+        .join(',')
+    )
+    .join('\n');
+  if (!rows) {
+    setCopyButtonFeedback(button, 'Lentelė tuščia', 'error');
+    return;
+  }
+  try {
+    const ok = await writeTextToClipboard(rows);
+    setCopyButtonFeedback(
+      button,
+      ok ? 'Lentelė nukopijuota' : 'Nepavyko nukopijuoti',
+      ok ? 'success' : 'error'
+    );
+  } catch (_error) {
+    setCopyButtonFeedback(button, 'Nepavyko nukopijuoti', 'error');
+  }
+}
+
 function destroyReportCharts(dashboardState) {
   const charts = dashboardState.summariesReportCharts || {};
   Object.keys(charts).forEach((key) => {
@@ -1903,6 +1938,10 @@ export async function runSummariesRuntime(core) {
     handleYearlyToggle: (event) => handleYearlyToggle(selectors, dashboardState, event),
   });
   initTableDownloadButtons({ selectors, storeCopyButtonBaseLabel, handleTableDownloadClick });
+  if (selectors.yearlyTableCopyButton) {
+    storeCopyButtonBaseLabel(selectors.yearlyTableCopyButton);
+    selectors.yearlyTableCopyButton.addEventListener('click', handleYearlyTableCopyClick);
+  }
   if (Array.isArray(selectors.reportExportButtons)) {
     selectors.reportExportButtons.forEach((button) => {
       button.addEventListener('click', handleReportExportClick);

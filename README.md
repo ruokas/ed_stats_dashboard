@@ -13,7 +13,6 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - 📋 Greitas grafikų kopijavimas į iškarpinę (PNG/SVG), su atsarginėmis „data URL“ kopijomis.
 - 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
 - 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
-- 📺 TV režimas su stambiais rodikliais (Ctrl+Shift+T) ir gyvu laikrodžiu greitam skydo rodymui monitoriuje ar televizoriuje.
 - 🛡️ Aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
 - 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
 - ⚡ Našumo optimizavimas: bendras temos bootstrap iškeltas į `theme-init.js`/`theme-init.css`, trečiųjų šalių skriptai žymimi `defer`, visiems `<img>`/`<iframe>` taikomas `loading="lazy"`.
@@ -29,7 +28,6 @@ Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėli
 - `summaries`: `src/app/runtime/pages/summaries-page.js`
 - `feedback`: `src/app/runtime/pages/feedback-page.js`
 - `ed`: `src/app/runtime/pages/ed-page.js`
-- Legacy monolitas perkeltas i `src/app/full-page-app.js`, o `src/app/runtime-full.js` paliktas kaip suderinamumo shim.
 - Legacy runner kelias pašalintas: nebenaudojami `runtime-legacy` ir `legacy-runner`.
 
 ## Diegimas
@@ -80,7 +78,7 @@ Detalesnis refaktorizavimo tikrinimo sarasas: `docs/refactor-safety-net.md`.
 4. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės persikrauna.
 5. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir lentelės (jei jos nepaslėptos konfigūracijoje) užsipildo.
 6. (Pasirinktinai) Laikinai atjunkite internetą – statusas turi parodyti klaidą, konsolėje matysite klaidos detalizaciją.
-8. Aktyvuokite TV režimą mygtuku „TV režimas“ arba sparčiuoju **Ctrl+Shift+T** – turi atsirasti pilno ekrano kortelės, laikrodis ir triage pasiskirstymo juostos. Išjunkite režimą pakartotinai paspausdami mygtuką arba grįždami į „Bendrą vaizdą“.
+8. Atidarykite visus puslapius (`index.html`, `charts.html`, `recent.html`, `summaries.html`, `feedback.html`, `ed.html`) ir patikrinkite, kad kiekviename užsikrauna duomenys be klaidų konsolėje.
 
 ## Licencija
 Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
