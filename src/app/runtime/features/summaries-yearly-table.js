@@ -31,6 +31,9 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
   }
   const expandedYears = new Set(dashboardState.yearlyExpandedYears);
   const monthlyAll = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
+  const monthlyByKey = new Map(
+    monthlyAll.filter((item) => item && typeof item.month === 'string').map((item) => [item.month, item])
+  );
   const totals = entries.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
   const completeness = entries.map((entry) => isCompleteYearEntry(entry));
   entries.forEach((entry, index) => {
@@ -71,9 +74,18 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
     monthlyAll
       .filter((item) => item?.month?.startsWith(`${entry.year}-`))
       .forEach((monthEntry) => {
+        const [yearPart = '', monthPart = ''] = String(monthEntry?.month || '').split('-');
+        const monthYear = Number.parseInt(yearPart, 10);
+        const prevMonthKey = Number.isFinite(monthYear) && monthPart ? `${monthYear - 1}-${monthPart}` : '';
+        const prevMonthEntry = prevMonthKey ? monthlyByKey.get(prevMonthKey) : null;
         const monthTotal = Number.isFinite(monthEntry.count) ? monthEntry.count : 0;
         const monthAvg = monthEntry.dayCount > 0 ? monthTotal / monthEntry.dayCount : 0;
         const monthStay = monthEntry.durations > 0 ? monthEntry.totalTime / monthEntry.durations : 0;
+        const prevMonthTotal = Number.isFinite(prevMonthEntry?.count) ? prevMonthEntry.count : Number.NaN;
+        const canCompareMonth = Number.isFinite(prevMonthTotal);
+        const monthDiff = canCompareMonth ? monthTotal - prevMonthTotal : Number.NaN;
+        const monthPercent =
+          canCompareMonth && prevMonthTotal !== 0 ? monthDiff / prevMonthTotal : Number.NaN;
         const monthRow = document.createElement('tr');
         monthRow.className = 'yearly-child-row';
         monthRow.hidden = !isExpanded;
@@ -87,7 +99,7 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
           <td>${formatValueWithShare(monthEntry.ems, monthTotal)}</td>
           <td>${formatValueWithShare(monthEntry.hospitalized, monthTotal)}</td>
           <td>${formatValueWithShare(monthEntry.discharged, monthTotal)}</td>
-          <td>—</td>
+          <td>${formatChangeCell(monthDiff, monthPercent, canCompareMonth)}</td>
         `;
         table.appendChild(monthRow);
       });

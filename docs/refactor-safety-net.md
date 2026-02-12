@@ -18,7 +18,7 @@ Use this checklist to keep behavior stable while refactoring.
 6. Reset filters via button or Shift+R.
 7. Toggle theme and verify contrast remains readable.
 8. Open ED panel, search, and close it.
-9. Enable TV mode (Ctrl+Shift+T) and disable it.
+9. Open each page (`index.html`, `charts.html`, `recent.html`, `summaries.html`, `feedback.html`, `ed.html`) and confirm runtime initializes without console errors.
 
 ## Regression checklist (monthly)
 - Auto refresh still runs at configured interval.

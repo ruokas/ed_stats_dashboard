@@ -17,8 +17,6 @@ const STATIC_ASSETS = [
   new URL('./main.js', self.location).pathname,
   new URL('./src/main.js', self.location).pathname,
   new URL('./src/app/runtime.js', self.location).pathname,
-  new URL('./src/app/runtime-full.js', self.location).pathname,
-  new URL('./src/app/full-page-app.js', self.location).pathname,
 ];
 
 self.addEventListener('install', (event) => {

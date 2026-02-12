@@ -16,6 +16,8 @@
     "depcruise": "depcruise --config dependency-cruiser.cjs src",
     "knip": "knip --include files,dependencies,unlisted",
     "knip:exports": "knip --include exports",
+    "css:metrics": "node scripts/css-metrics.mjs",
+    "css:budget": "node scripts/css-metrics.mjs --max-bytes=160000",
     "prepare": "husky",
     "check": "npm run lint && npm run typecheck && npm run test:coverage",
     "check:strict": "npm run check && npm run depcruise && npm run knip:exports"

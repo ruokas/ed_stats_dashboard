@@ -289,7 +289,7 @@ export function renderHourlyChart(env, records, ChartLib, palette) {
     if (typeof applyHourlyYAxisAuto === 'function') {
       applyHourlyYAxisAuto(existingChart);
     }
-    existingChart.update('none');
+    existingChart.update();
     return;
   }
   if (existingChart) {

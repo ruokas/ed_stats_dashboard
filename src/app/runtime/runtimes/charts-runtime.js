@@ -52,7 +52,6 @@ import { createHourlyControlsFeature } from '../features/hourly-controls.js';
 import { applyChartsText } from '../features/text-charts.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
 import { sanitizeChartFilters } from '../filters.js';
-import { runLegacyFallback } from '../legacy-fallback.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -62,7 +61,6 @@ import {
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
-import { resolveRuntimeMode } from '../runtime-mode.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -567,11 +565,6 @@ function initChartsJumpStickyOffset(selectors) {
 }
 
 export async function runChartsRuntime(core) {
-  const mode = resolveRuntimeMode(core?.pageId || 'charts');
-  if (mode === 'legacy') {
-    return runLegacyFallback(core, 'charts');
-  }
-
   const pageConfig = core?.pageConfig || { charts: true, heatmap: true, hourly: true };
   const selectors = createSelectorsForPage(core?.pageId || 'charts');
   const settings = await loadSettingsFromConfig(DEFAULT_SETTINGS);

@@ -1,0 +1,100 @@
+/* Export action controls */
+.report-card__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.report-card__actions .btn {
+  min-width: 44px;
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.report-card__actions :is(.export-icon-btn, .chart-copy-btn, .chart-download-btn) {
+  margin: 0;
+}
+
+.chart-card__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.chart-card__toolbar--actions {
+  justify-content: flex-end;
+}
+
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn) {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  border-radius: var(--component-export-radius);
+  width: var(--component-export-size);
+  height: var(--component-export-size);
+  position: relative;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn) svg {
+  width: var(--component-export-icon-size);
+  height: var(--component-export-icon-size);
+}
+
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn):hover,
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn):focus-visible {
+  background: var(--color-surface);
+  color: var(--color-accent);
+  border-color: var(--state-accent-border-35);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn)::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--component-export-tooltip-radius);
+  padding: var(--component-export-tooltip-padding);
+  font-size: var(--component-export-tooltip-font-size);
+  white-space: nowrap;
+  box-shadow: var(--component-export-tooltip-shadow);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  z-index: 5;
+  top: calc(100% + 6px);
+  right: 0;
+}
+
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn):hover::after,
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn):focus-visible::after,
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn).is-feedback::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn).is-error {
+  color: var(--color-danger);
+  border-color: var(--component-export-error-border);
+}
+
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn).is-error:hover,
+:is(.export-icon-btn, .chart-copy-btn, .chart-download-btn).is-error:focus-visible {
+  color: var(--color-danger);
+  border-color: var(--component-export-error-border-strong);
+}

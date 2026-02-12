@@ -39,5 +39,7 @@ export function createSummariesPageSelectors() {
     yearlyHeading: byId('yearlyHeading'),
     yearlySubtitle: byId('yearlySubtitle'),
     yearlyCaption: byId('yearlyCaption'),
+    yearlyTableCopyButton: byId('yearlyTableCopyButton'),
+    yearlyTableDownloadButton: byId('yearlyTableDownloadButton'),
   };
 }

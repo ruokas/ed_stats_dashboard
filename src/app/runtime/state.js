@@ -24,11 +24,6 @@ export const KPI_FILTER_LABELS = {
   },
 };
 
-export const KPI_FILTER_TOGGLE_LABELS = {
-  show: 'Išskleisti filtrus',
-  hide: 'Sutraukti filtrus',
-};
-
 export const FEEDBACK_FILTER_ALL = 'all';
 export const FEEDBACK_FILTER_MISSING = '__missing__';
 

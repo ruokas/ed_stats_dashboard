@@ -6,7 +6,7 @@ export function escapeCsvCell(value) {
   return text;
 }
 
-export function triggerDownloadFromBlob(blob, filename) {
+function triggerDownloadFromBlob(blob, filename) {
   if (!(blob instanceof Blob) || !filename) {
     return false;
   }

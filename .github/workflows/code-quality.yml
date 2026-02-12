@@ -26,6 +26,9 @@ jobs:
       - name: Run lint and tests
         run: npm run check
 
+      - name: Validate CSS budget
+        run: npm run css:budget
+
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
