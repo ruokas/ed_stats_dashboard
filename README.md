@@ -1,93 +1,241 @@
-# RŠL SMPS statistika
+# ED statistikos skydelis
 
-Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus, paskutinės savaitės kasdienę ir savaitinę suvestines.
+Profesionalus, konfigūruojamas neatidėliotinos pagalbos (ED) veiklos statistikos skydelis, paremtas CSV duomenų šaltiniais ir naršyklėje veikiančiu runtime.
+Projektas pritaikytas tiek kasdienei eksploatacijai ligoninėje, tiek nuosekliam inžineriniam vystymui. RŠL / SMPS naudojimo scenarijus pateikiamas kaip praktinis diegimo pavyzdys, bet architektūra yra bendrinė.
 
-## Savybės
-- 🔄 Vienas HTML failas be papildomų priklausomybių (Chart.js kraunamas iš CDN per klasikinį `<script>`, kad neliktų CORS/MIME kliūčių).
-- ⏱️ Automatinis duomenų atnaujinimas kas 5 min. (be rankinio mygtuko).
-- 🔗 Galimybė kartu naudoti pagrindinį operatyvinį ir papildomą 5 metų istorinį CSV šaltinį.
-- 📊 KPI kortelės su aiškia „Metinis vidurkis“ eilute ir mėnesio palyginimu, stulpelinė bei linijinė diagramos, paskutinės 7 dienos ir savaitinė lentelės.
-- 🗓️ KPI laikotarpio filtras leidžia pasirinkti iki 365 d. langą arba matyti visus duomenis vienu paspaudimu.
-- 🎯 Interaktyvūs KPI filtrai (laikotarpis, pamaina, GMP, išvykimo sprendimas) su aiškia santrauka ir sparčiuoju **Shift+R**.
-- 🔍 Pacientų atsiliepimų filtras pagal tai, kas pildė anketą ir kur ji pildyta – kortelės, grafikas ir lentelė prisitaiko akimirksniu.
-- 📋 Greitas grafikų kopijavimas į iškarpinę (PNG/SVG), su atsarginėmis „data URL“ kopijomis.
-- 🧭 LT lokalė, aiškūs paaiškinimai, pritaikyta klaviatūros ir ekrano skaitytuvų naudotojams.
-- 🖥️ Reagavimas į ekranų pločius (desktop, planšetė, telefonas), „prefers-reduced-motion“ palaikymas.
-- 🛡️ Aiškios klaidų žinutės, padedančios diagnozuoti „Google Sheets“ publikavimo problemas.
-- 📈 Vidutinės buvimo trukmės apskaičiavimas automatiškai ignoruoja >24 val. įrašus, kad ekstremalios vertės nedarkytų rodiklių.
-- ⚡ Našumo optimizavimas: bendras temos bootstrap iškeltas į `theme-init.js`/`theme-init.css`, trečiųjų šalių skriptai žymimi `defer`, visiems `<img>`/`<iframe>` taikomas `loading="lazy"`.
-- 📦 Service worker talpina statinius failus ir CSV atsakymus („stale-while-revalidate“), suteikia HTML atsarginę kopiją be papildomų bibliotekų.
-- ⏱️ `performance.mark/measure` ir `console.table` matavimai leidžia greitai palyginti įkėlimus su ir be talpyklos.
+## Turinys
+- [Kam skirtas šis projektas](#kam-skirtas-šis-projektas)
+- [Pagrindinės galimybės](#pagrindinės-galimybės)
+- [Greitas paleidimas (Quick Start)](#greitas-paleidimas-quick-start)
+- [Konfigūracija](#konfigūracija)
+- [Projekto struktūra ir architektūra](#projekto-struktūra-ir-architektūra)
+- [Kokybės vartai ir kasdienės komandos](#kokybės-vartai-ir-kasdienės-komandos)
+- [Testavimas ir priėmimo scenarijai](#testavimas-ir-priėmimo-scenarijai)
+- [Diegimas ir eksploatacija](#diegimas-ir-eksploatacija)
+- [Trikčių diagnostika](#trikčių-diagnostika)
+- [Indėlis ir darbo tvarka](#indėlis-ir-darbo-tvarka)
+- [Licencija](#licencija)
 
-## Dabartinė architektūra
-- Įėjimo taškas: `main.js` -> `src/main.js` -> `src/app/runtime.js`.
-- Puslapių runtime:
+## Kam skirtas šis projektas
+Šis README vienu metu aptarnauja dvi auditorijas.
+
+- Kūrėjams:
+  - greitas onboarding,
+  - architektūros žemėlapis,
+  - kokybės vartų ir CI reikalavimai,
+  - testavimo ir refaktorizavimo saugos praktika.
+- Operatoriams:
+  - duomenų šaltinių ir `config.json` konfigūravimas,
+  - paleidimas per lokalų / vidinį HTTP serverį,
+  - tipinių incidentų (CSV, HTTP, CORS) diagnostika.
+
+## Pagrindinės galimybės
+
+### Duomenys
+- Krauna operatyvinius ED duomenis iš publikuoto CSV šaltinio.
+- Palaiko papildomą istorinį (pvz., 5 metų) CSV rinkinį ilgalaikiam palyginimui.
+- Duomenų transformacijos atliekamos worker sluoksnyje (`data-worker*.js`) siekiant mažinti UI gijos apkrovą.
+
+### Atvaizdavimas
+- KPI kortelės, diagramos, lentelės ir puslapių sekcijos pagal konfigūraciją.
+- Keli puslapiai su bendra app shell struktūra: `index`, `charts`, `recent`, `summaries`, `feedback`, `ed`.
+- Lokalių tekstų ir UI valdiklių valdymas per `config.json`.
+
+### Filtrai
+- KPI laikotarpio, pamainos, GMP ir išvykimo sprendimo filtrai.
+- Filtrų būsenos santrauka ir greitas atstatymas.
+
+### Eksportas
+- Palaikomas vizualizacijų kopijavimas į iškarpinę.
+- `summaries` ir susijusiuose runtime moduliuose palaikomi ataskaitų / lentelių eksportavimo scenarijai.
+
+### Prieinamumas
+- Navigacija ir valdikliai orientuoti į aiškų klaviatūros naudojimą.
+- Vengiama tik spalva paremtų būsenų ten, kur būtinas semantinis aiškumas.
+
+### Patikimumas
+- Service worker strategija statiniams failams ir CSV atsakymams (stale-while-revalidate principas).
+- Aiškesnė klaidų signalizacija statuso juostoje ir konsolėje.
+
+### Našumas
+- Runtime modulių skaidymas pagal puslapius.
+- Performance matavimai ir medianų skaičiavimas per dokumentuotus harness scenarijus.
+
+## Greitas paleidimas (Quick Start)
+
+### 1) Reikalavimai
+- Node.js `20.x` (atitinka CI konfigūraciją faile `.github/workflows/code-quality.yml`).
+- `npm` (naudojamas `package-lock.json`, todėl rekomenduojamas `npm ci`).
+
+### 2) Priklausomybių įdiegimas
+```bash
+npm ci
+```
+
+### 3) Paleidimas per HTTP serverį (ne `file://`)
+Projektas įkelia `config.json` per `fetch`, todėl `file://` režimas netinka patikimam veikimui.
+
+Vienas paprasčiausių lokalių paleidimo variantų:
+```bash
+npx http-server .
+```
+
+### 4) Pirmas patikrinimas
+- Atidarykite `index.html` per serverio URL (pvz., `http://127.0.0.1:8080/index.html`).
+- Patikrinkite, ar užsikrauna antraštė, KPI, diagramos ir statuso eilutė.
+
+## Konfigūracija
+Pagrindinis konfigūracijos failas yra `config.json`.
+
+### Konfigūracijos šaltinis
+- Numatytoji konfigūracija: `config.json` projekto šaknyje.
+- Alternatyvus kelias: `?config=kelias/iki/config.json`.
+
+### Esminiai blokai
+- `dataSource`: duomenų šaltinio nustatymai.
+- `csv`: CSV stulpelių atitikmenys.
+- `output`: tekstai, sekcijų pavadinimai, rodymo jungikliai.
+- `calculations`: skaičiavimo langai ir KPI elgsena.
+
+### Praktinės taisyklės duomenų laukams
+- Istoriniam rinkiniui pakanka laukų: `Numeris`, `Atvykimo data`, `Išrašymo data`, `Siuntimas`, `GMP`, `Nukreiptas į padalinį`.
+- Jei CSV neturi pamainos lauko (`Diena/naktis`), paros metas gali būti išvedamas iš atvykimo laiko.
+- GMP reikšmės turi būti nuoseklios (`GMP`, `su GMP` ar analogiškai suderintos reikšmės).
+- Tuščias hospitalizavimo laukas traktuojamas kaip išrašymas, jei taip aprašyta konfigūracijos taisyklėse.
+
+## Projekto struktūra ir architektūra
+
+### Įėjimo kelias
+- `main.js -> src/main.js -> src/app/runtime.js`
+
+### Puslapių runtime žemėlapis
 - `kpi`: `src/app/runtime/pages/kpi-page.js`
 - `charts`: `src/app/runtime/pages/charts-page.js`
 - `recent`: `src/app/runtime/pages/recent-page.js`
 - `summaries`: `src/app/runtime/pages/summaries-page.js`
 - `feedback`: `src/app/runtime/pages/feedback-page.js`
 - `ed`: `src/app/runtime/pages/ed-page.js`
-- Legacy runner kelias pašalintas: nebenaudojami `runtime-legacy` ir `legacy-runner`.
 
-## Diegimas
-1. Atsisiųskite saugomą saugyklą arba jos ZIP: `git clone https://example.com/ed_stats_dashboard.git`.
-2. Atidarykite `index.html` pasirinktoje naršyklėje (Chrome, Edge, Firefox).
-3. Greiti pakeitimai atliekami `config.json` faile: atnaujinkite CSV nuorodas ir skaičiavimo parametrus pagal poreikį.
+### Worker sluoksnis
+- Pagrindinis worker įėjimas: `data-worker.js`.
+- Transformacijų moduliai: `data-worker-csv-parse.js`, `data-worker-main-transform.js`, `data-worker-ed-transform.js`, `data-worker-kpi-filters.js`, `data-worker-transforms.js`.
+- Protokolas tarp UI ir worker: `data-worker-protocol.js`.
 
-## Kodo kokybė ir testai
-Nuo `code-quality` šakos projektas turi bazinę kokybės infrastruktūrą:
-- `npm run lint` – paleidžia `Biome` patikrą visam projektui.
-- `npm run lint:fix` – automatiškai sutvarko dalį `Biome` pažeidimų.
-- `npm run format` – performatuoja palaikomus failus.
-- `npm run format:check` – formato patikra nekeičiant failų.
-- `npm run typecheck` – `TypeScript` (`checkJs`) statinė patikra kritiniams moduliams.
-- `npm run test` – paleidžia `Vitest` testus (`jsdom` aplinkoje).
-- `npm run test:coverage` – paleidžia testus su coverage vartais (`70/55/70/70`: lines/branches/functions/statements).
-- `npm run depcruise` – tikrina modulių ciklus ir architektūrines importų taisykles.
-- `npm run knip` – ieško nenaudojamų failų/eksportų/priklausomybių (reikalauja papildomo konfigūravimo brandžiai analizei).
-- `npm run pages:generate` – sugeneruoja `index/charts/recent/summaries/feedback/ed` puslapius iš `templates/page-shell/manifest.json`.
-- `npm run pages:check` – patikrina ar sugeneruoti puslapiai nesiskiria nuo manifest/template šaltinių.
-- `npm run benchmark:worker` – apskaičiuoja worker benchmark medianas iš `worker-bench-runs.json`.
-- `npm run check` – paleidžia `lint + typecheck + test:coverage` vienu veiksmu.
-- `npm run check:strict` – paleidžia `check + depcruise + knip:exports`; skirta prieš release ar didesnius refaktorius.
-- `npm run check:refactor` – paleidžia `check:strict + pages:check + css:budget`; rekomenduojamas prieš merge į `main`.
+### Page shell generavimas
+- Šablonai: `templates/page-shell/`.
+- Manifestas: `templates/page-shell/manifest.json`.
+- Generavimas: `npm run pages:generate`.
+- Nuoseklumo patikra: `npm run pages:check`.
 
-CI darbo eiga (`.github/workflows/code-quality.yml`) vykdo `npm run check:refactor` kiekviename `pull_request` ir `push` į `main`/`code-quality`, bei prideda coverage artifact.
-Praktinė taisyklė:
-- Kasdieniams pakeitimams ir PR vartams naudokite `npm run check`.
-- Prieš „release“ arba keičiant architektūrą naudokite `npm run check:refactor`.
+## Kokybės vartai ir kasdienės komandos
+Žemiau pateiktos komandos atitinka `package.json` `scripts`.
 
-## Konfigūracija
-Skydelis įkelia `config.json` per `fetch`, todėl rekomenduojama jį atverti per lokalų serverį (ne `file://`).
-- Laikinai kitą konfigūraciją galima įkrauti per `?config=kelias/iki/config.json`.
-- Tekstai, sekcijų pavadinimai ir rodymo jungikliai – `config.json` `output` bloke.
-- Duomenų šaltinis, papildomas istorinis CSV ir stulpelių atitikmenys – `config.json` `dataSource` ir `csv` blokuose. Istoriniam rinkiniui pakanka stulpelių **„Numeris“**, **„Atvykimo data“**, **„Išrašymo data“**, **„Siuntimas“**, **„GMP“**, **„Nukreiptas į padalinį“** – „Diena/naktis“ gali nebūti, nes paros metas apskaičiuojamas iš atvykimo laiko.
-- GMP laukas numatytai atpažįsta reikšmes „GMP“, „su GMP“ ir „GMP (su GMP)“, o tuščias hospitalizavimo stulpelis reiškia išrašytą pacientą.
-- Spalvų schema ir kampai – CSS kintamieji `:root` bloke (`index.html`).
-- Grafikai – Chart.js nustatymai `renderCharts()` funkcijoje (`index.html`).
-- Automatinio atnaujinimo intervalas – `AUTO_REFRESH_INTERVAL_MS` kintamasis `index.html` faile (numatyta 5 min.).
+| Komanda | Paskirtis | Kada naudoti |
+| --- | --- | --- |
+| `npm run lint` | Statinė kokybės patikra su Biome | Prieš kiekvieną PR |
+| `npm run lint:fix` | Automatinis dalies lint pažeidimų taisymas | Lokaliam taisymui prieš commit |
+| `npm run format` | Formatavimas su Biome | Kai reikia suvienodinti formatą |
+| `npm run format:check` | Formato patikra nekeičiant failų | CI ir prieš PR |
+| `npm run typecheck` | `tsc --noEmit` (`checkJs`) statinė tipų patikra | Keičiant runtime / data logiką |
+| `npm run test` | Vitest testų vykdymas | Kasdienė lokalioji verifikacija |
+| `npm run test:coverage` | Testai su coverage ataskaita | Prieš merge į pagrindines šakas |
+| `npm run depcruise` | Importų ciklų ir taisyklių patikra | Refaktorių metu |
+| `npm run knip` | Nenaudojamų failų/priklausomybių analizė | Periodinė techninė higiena |
+| `npm run knip:exports` | Nenaudojamų eksportų analizė | Prieš didesnius architektūrinius pokyčius |
+| `npm run css:metrics` | CSS metrikų ataskaita | CSS optimizavimo metu |
+| `npm run css:budget` | CSS biudžeto vartai | Prieš release / refaktorių su UI pokyčiais |
+| `npm run pages:generate` | Sugeneruoja visus HTML puslapius iš page-shell | Keičiant templates arba manifestą |
+| `npm run pages:check` | Patikrina, ar sugeneruoti puslapiai sinchronizuoti | Prieš PR po templates pakeitimų |
+| `npm run benchmark:worker` | Worker benchmark medianų ir p95 skaičiavimas | Vertinant transformacijų našumą |
+| `npm run check` | `lint + typecheck + test:coverage` | Minimalūs kokybės vartai |
+| `npm run check:strict` | `check + depcruise + knip:exports` | Prieš sudėtingesnius merge |
+| `npm run check:refactor` | `check:strict + pages:check + css:budget` | Prieš release ir didelius refaktorius |
 
-## Našumo ir talpyklos rekomendacijos
-- Nginx pavyzdinė konfigūracija su `gzip`, `brotli` ir `Cache-Control` antraštėmis pateikta faile [`nginx.conf`](./nginx.conf). Static failams taikoma 7 dienų talpykla, nes pavadinimai neversijuojami; jei pradėsite naudoti `styles.<hash>.css` ar `data-worker.<hash>.js`, galite ilginti TTL ir pridėti `immutable`.
-- SVG naudojamos ikonoms; jei prireiks nuotraukų, konvertuokite jas į `webp`/`avif` formatus prieš diegimą.
-- Visi `img`/`iframe` elementai automatiškai gauna `loading="lazy"`, nebent nustatytas `data-force-eager` atributas.
-- Service worker cache versijos (`STATIC_CACHE`, `API_CACHE`) didinamos per release, kai keičiasi app shell arba API/CSV talpinimo strategija.
+### Minimalus kasdienis srautas
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run check
+```
+
+### Srautas prieš merge / release
+```bash
+npm run check:refactor
+```
+
+CI (`.github/workflows/code-quality.yml`) vykdo `npm run check:refactor` kiekviename `pull_request` ir `push` į `main` / `code-quality`.
+
+## Testavimas ir priėmimo scenarijai
+
+### Funkcinis smoke test (trumpa versija)
+1. Paleiskite projektą per HTTP serverį ir atidarykite `index.html`.
+2. Patikrinkite, kad užsikrauna KPI, grafikai, lentelės ir statuso eilutė.
+3. Pakeiskite KPI langą (pvz., 14 dienų) ir įsitikinkite, kad reikšmės persiskaičiuoja.
+4. Pakeiskite filtrus (pamaina, GMP, išvykimo sprendimas), tada atkurkite numatytuosius.
+5. Atidarykite visus puslapius: `index.html`, `charts.html`, `recent.html`, `summaries.html`, `feedback.html`, `ed.html`.
+6. Patikrinkite, kad konsolėje nėra kritinių runtime klaidų.
+
+### Išsamios metodikos
+- Refaktorizavimo saugos tinklas: `docs/refactor-safety-net.md`
+- Našumo regresijos kontrolė: `docs/performance-checklist.md`
+- Performance harness ir medianos: `docs/perf-harness.md`
+
+## Diegimas ir eksploatacija
+
+### HTTP serveris / reverse proxy
+- Pavyzdinė serverio konfigūracija pateikta faile `nginx.conf`.
+- Rekomenduojama taikyti suspaudimą (`gzip` / `brotli`) ir aiškias `Cache-Control` antraštes.
+
+### Talpyklos strategija
+- Service worker talpina statinius failus ir API/CSV atsakymus.
+- App shell ar talpyklos strategijos pokyčių metu būtina didinti cache versijas worker faile.
+- Jei pereinama prie hash pavadinimų (`*.hash.js`, `*.hash.css`), galima ilginti static TTL ir naudoti `immutable`.
+
+### Eksploatacinė priežiūra
+- Periodiškai peržiūrėkite benchmark rezultatus (`worker-bench-runs.json` + `npm run benchmark:worker`).
+- Po templates pakeitimų visada vykdykite `npm run pages:generate` ir `npm run pages:check`.
 
 ## Trikčių diagnostika
-- Statuso eilutė praneš apie klaidą, jei nepavyko pasiekti nuotolinio CSV (HTTP 404/403, CORS, tinklo klaidos).
-- Raudonas pranešimas rodo kritinę klaidą. Patikrinkite, ar Google Sheet yra paviešinta per **File → Share → Publish to web → CSV** ir ar nuoroda atsidaro naršyklėje be prisijungimo.
-- Naršyklės konsolėje matysite lokalizuotą klaidos paaiškinimą (pvz., „HTTP 404 – nuoroda nerasta“). Tai padeda greitai sutaisyti leidimų problemas.
 
-## Greitas „smoke test“ sąrašas
-Detalesnis refaktorizavimo tikrinimo sarasas: `docs/refactor-safety-net.md`.
-1. Atidarykite `index.html` ir patikrinkite, kad hero blokas rodo pavadinimą, navigacijos nuorodas ir statuso eilutę.
-2. Pakeiskite `config.json` `calculations.windowDays` reikšmę (pvz., į 14) ir perkraukite puslapį – KPI kortelės bei grafikai turi persiskaičiuoti.
-3. Išbandykite KPI filtrus: pasirinkite, pvz., 14 d. laikotarpį, „Naktinės“ pamainas ir „Tik GMP“ – kortelės turi persiskaičiuoti, o santrauka viršuje parodyti aktyvius filtrus.
-4. Paspauskite mygtuką „Atkurti filtrus“ arba **Shift+R** – reikšmės turi grįžti į numatytąsias, KPI kortelės persikrauna.
-5. Patvirtinkite, kad užsikrovus duomenims KPI kortelės, grafikai ir lentelės (jei jos nepaslėptos konfigūracijoje) užsipildo.
-6. (Pasirinktinai) Laikinai atjunkite internetą – statusas turi parodyti klaidą, konsolėje matysite klaidos detalizaciją.
-8. Atidarykite visus puslapius (`index.html`, `charts.html`, `recent.html`, `summaries.html`, `feedback.html`, `ed.html`) ir patikrinkite, kad kiekviename užsikrauna duomenys be klaidų konsolėje.
+### Dažniausi simptomai ir priežastys
+- HTTP 403/404 įkeliant CSV:
+  - neteisinga nuoroda,
+  - nepaskelbtas (nepublikuotas) šaltinis,
+  - apribotos prieigos teisės.
+- CORS klaidos naršyklėje:
+  - šaltinis neleidžia kryžminių užklausų,
+  - netinkama publikavimo politika.
+- Duomenys neatsinaujina:
+  - pasenusi service worker talpykla,
+  - neatnaujinta cache versija po release.
+
+### Kur tikrinti
+- Statuso eilutė UI viršuje.
+- Naršyklės konsolė (`Network` + `Console`).
+- Duomenų šaltinio publikavimo nustatymai (pvz., Google Sheets "Publish to web").
+
+## Indėlis ir darbo tvarka
+
+### Branch ir PR disciplina
+- Kiekvieną pakeitimą atlikite atskiroje šakoje.
+- PR apraše nurodykite:
+  - kokia problema sprendžiama,
+  - kokie rizikos taškai,
+  - kokius vartus paleidote lokaliai.
+
+### Privalomi patikrinimai prieš PR
+- Mažesniems pakeitimams:
+```bash
+npm run check
+```
+- Didesniems refaktoriams / release klasės pakeitimams:
+```bash
+npm run check:refactor
+```
+
+### Papildoma rekomendacija
+- Jei keičiate dokumentaciją apie našumą ar kokybės vartus, atnaujinkite susijusius `docs/*` failus tame pačiame PR.
 
 ## Licencija
-Projektas licencijuojamas pagal [MIT](./LICENSE) licenciją. Drąsiai naudokite, adaptuokite ir diekite RŠL bei kitose gydymo įstaigose.
+Projektas licencijuotas pagal `MIT` licenciją. Žr. `LICENSE`.
