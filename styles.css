@@ -3843,6 +3843,17 @@ th {
   z-index: 2;
 }
 
+th[data-gydytojai-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+th[data-gydytojai-sort].is-sort-active {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .table-percent {
   margin-left: 6px;
   color: var(--color-text-muted);

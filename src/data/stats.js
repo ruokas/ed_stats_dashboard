@@ -1245,39 +1245,89 @@ function getDoctorScopedMeta(records, options = {}) {
   const scopedMeta = scopeExtendedHistoricalRecords(records, options?.yearFilter ?? 'all', options);
   const scoped = Array.isArray(scopedMeta?.records) ? scopedMeta.records : [];
   const withDoctor = scoped.filter((record) => String(record?.closingDoctorNorm || '').trim().length > 0);
+  const diagnosisGroupOptions = Array.from(
+    new Set(
+      withDoctor
+        .map((record) => normalizeCategoryValue(record?.diagnosisGroup))
+        .filter((value) => value && value !== 'Nenurodyta')
+    )
+  ).sort((a, b) => String(a).localeCompare(String(b), 'lt'));
+  const filtered = withDoctor.filter((record) => matchesDoctorFilters(record, options));
   return {
     scoped,
     withDoctor,
+    filtered,
+    diagnosisGroupOptions,
     yearOptions: Array.isArray(scopedMeta?.yearOptions) ? scopedMeta.yearOptions : [],
     coverage: {
       total: scoped.length,
       withDoctor: withDoctor.length,
+      filtered: filtered.length,
       percent: scoped.length > 0 ? (withDoctor.length / scoped.length) * 100 : 0,
     },
   };
 }
 
-function hashDoctorAlias(value) {
-  const input = String(value || '');
-  let hash = 2166136261;
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+function matchesDoctorFilters(record, options = {}) {
+  const arrivalFilter = String(options?.arrivalFilter || 'all');
+  if (arrivalFilter === 'ems' && record?.ems !== true) {
+    return false;
   }
-  const normalized = Math.abs(hash >>> 0)
-    .toString(36)
-    .toUpperCase()
-    .padStart(4, '0')
-    .slice(0, 4);
-  return `Gyd. ${normalized}`;
+  if (arrivalFilter === 'self' && record?.ems === true) {
+    return false;
+  }
+
+  const dispositionFilter = String(options?.dispositionFilter || 'all');
+  if (dispositionFilter === 'hospitalized' && record?.hospitalized !== true) {
+    return false;
+  }
+  if (dispositionFilter === 'discharged' && record?.hospitalized === true) {
+    return false;
+  }
+
+  const shiftFilter = String(options?.shiftFilter || 'all');
+  if (shiftFilter === 'night' && record?.night !== true) {
+    return false;
+  }
+  if (shiftFilter === 'day' && record?.night === true) {
+    return false;
+  }
+
+  const diagnosisFilter = String(options?.diagnosisGroupFilter || 'all');
+  if (diagnosisFilter !== 'all') {
+    const diagnosisValue = normalizeCategoryValue(record?.diagnosisGroup);
+    if (diagnosisValue !== diagnosisFilter) {
+      return false;
+    }
+  }
+
+  const searchQuery = String(options?.searchQuery || '')
+    .trim()
+    .toLowerCase();
+  if (searchQuery) {
+    const doctorLabel = String(record?.closingDoctorRaw || '')
+      .trim()
+      .toLowerCase();
+    if (!doctorLabel.includes(searchQuery)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
-function getDoctorAlias(record) {
+function getDoctorKey(record) {
   const doctorKey = String(record?.closingDoctorNorm || '').trim();
   if (!doctorKey) {
-    return '';
+    return null;
   }
-  return hashDoctorAlias(doctorKey);
+  const raw = String(record?.closingDoctorRaw || '')
+    .trim()
+    .replace(/\s+/g, ' ');
+  return {
+    key: doctorKey,
+    label: raw || doctorKey,
+  };
 }
 
 function getLosHours(record) {
@@ -1289,6 +1339,22 @@ function getLosHours(record) {
     return null;
   }
   return value;
+}
+
+function getLosBucket(losHours) {
+  if (!Number.isFinite(losHours) || losHours < 0) {
+    return '';
+  }
+  if (losHours < 4) {
+    return 'lt4';
+  }
+  if (losHours < 8) {
+    return '4to8';
+  }
+  if (losHours < 16) {
+    return '8to16';
+  }
+  return 'gt16';
 }
 
 function computeMedian(values) {
@@ -1328,22 +1394,29 @@ export function computeDoctorLeaderboard(records, options = {}) {
   const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 15;
   const byDoctor = new Map();
 
-  meta.withDoctor.forEach((record) => {
-    const alias = getDoctorAlias(record);
-    if (!alias) {
+  meta.filtered.forEach((record) => {
+    const doctor = getDoctorKey(record);
+    if (!doctor) {
       return;
     }
-    if (!byDoctor.has(alias)) {
-      byDoctor.set(alias, {
-        alias,
+    if (!byDoctor.has(doctor.key)) {
+      byDoctor.set(doctor.key, {
+        alias: doctor.label,
         count: 0,
         losValues: [],
         hospitalized: 0,
         day: 0,
         night: 0,
+        losLt4: 0,
+        los4to8: 0,
+        los8to16: 0,
+        losGt16: 0,
       });
     }
-    const bucket = byDoctor.get(alias);
+    const bucket = byDoctor.get(doctor.key);
+    if (!bucket.alias && doctor.label) {
+      bucket.alias = doctor.label;
+    }
     bucket.count += 1;
     if (record?.hospitalized === true) {
       bucket.hospitalized += 1;
@@ -1356,6 +1429,16 @@ export function computeDoctorLeaderboard(records, options = {}) {
     const losHours = getLosHours(record);
     if (Number.isFinite(losHours)) {
       bucket.losValues.push(losHours);
+      const losBucket = getLosBucket(losHours);
+      if (losBucket === 'lt4') {
+        bucket.losLt4 += 1;
+      } else if (losBucket === '4to8') {
+        bucket.los4to8 += 1;
+      } else if (losBucket === '8to16') {
+        bucket.los8to16 += 1;
+      } else if (losBucket === 'gt16') {
+        bucket.losGt16 += 1;
+      }
     }
   });
 
@@ -1364,7 +1447,7 @@ export function computeDoctorLeaderboard(records, options = {}) {
     .map((row) => ({
       alias: row.alias,
       count: row.count,
-      share: meta.withDoctor.length > 0 ? row.count / meta.withDoctor.length : 0,
+      share: meta.filtered.length > 0 ? row.count / meta.filtered.length : 0,
       avgLosHours:
         row.losValues.length > 0
           ? row.losValues.reduce((sum, value) => sum + value, 0) / row.losValues.length
@@ -1373,15 +1456,20 @@ export function computeDoctorLeaderboard(records, options = {}) {
       hospitalizedShare: row.count > 0 ? row.hospitalized / row.count : 0,
       nightShare: row.count > 0 ? row.night / row.count : 0,
       dayShare: row.count > 0 ? row.day / row.count : 0,
+      losLt4Share: row.count > 0 ? row.losLt4 / row.count : 0,
+      los4to8Share: row.count > 0 ? row.los4to8 / row.count : 0,
+      los8to16Share: row.count > 0 ? row.los8to16 / row.count : 0,
+      losGt16Share: row.count > 0 ? row.losGt16 / row.count : 0,
     }));
 
   const sorted = sortDoctorRows(rows, options?.sortBy).slice(0, topN);
-  const pooledLos = meta.withDoctor.map((record) => getLosHours(record)).filter((value) => value != null);
+  const pooledLos = meta.filtered.map((record) => getLosHours(record)).filter((value) => value != null);
   return {
     rows: sorted,
-    totalCasesWithDoctor: meta.withDoctor.length,
+    totalCasesWithDoctor: meta.filtered.length,
     coverage: meta.coverage,
     yearOptions: meta.yearOptions,
+    diagnosisGroupOptions: meta.diagnosisGroupOptions,
     kpis: {
       activeDoctors: sorted.length,
       medianLosHours: computeMedian(pooledLos),
@@ -1396,8 +1484,8 @@ export function computeDoctorYearlyMatrix(records, options = {}) {
   const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 10;
   const yearSet = new Set();
   const bucketMap = new Map();
-  meta.withDoctor.forEach((record) => {
-    const alias = getDoctorAlias(record);
+  meta.filtered.forEach((record) => {
+    const doctor = getDoctorKey(record);
     const reference =
       record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
         ? record.arrival
@@ -1405,15 +1493,18 @@ export function computeDoctorYearlyMatrix(records, options = {}) {
           ? record.discharge
           : null;
     const year = reference ? String(reference.getFullYear()) : '';
-    if (!alias || !/^\d{4}$/.test(year)) {
+    if (!doctor || !/^\d{4}$/.test(year)) {
       return;
     }
     yearSet.add(year);
-    const key = `${alias}|${year}`;
+    const key = `${doctor.key}|${year}`;
     if (!bucketMap.has(key)) {
-      bucketMap.set(key, { alias, year, count: 0, los: [], hosp: 0 });
+      bucketMap.set(key, { key: doctor.key, alias: doctor.label, year, count: 0, los: [], hosp: 0 });
     }
     const bucket = bucketMap.get(key);
+    if (!bucket.alias && doctor.label) {
+      bucket.alias = doctor.label;
+    }
     bucket.count += 1;
     if (record?.hospitalized === true) {
       bucket.hosp += 1;
@@ -1427,17 +1518,22 @@ export function computeDoctorYearlyMatrix(records, options = {}) {
   const years = Array.from(yearSet).sort((a, b) => a.localeCompare(b));
   const totalsByDoctor = new Map();
   bucketMap.forEach((bucket) => {
-    totalsByDoctor.set(bucket.alias, (totalsByDoctor.get(bucket.alias) || 0) + bucket.count);
+    const current = totalsByDoctor.get(bucket.key) || { key: bucket.key, alias: bucket.alias, count: 0 };
+    current.count += bucket.count;
+    if (!current.alias && bucket.alias) {
+      current.alias = bucket.alias;
+    }
+    totalsByDoctor.set(bucket.key, current);
   });
-  const topDoctors = Array.from(totalsByDoctor.entries())
-    .sort((a, b) => b[1] - a[1])
+  const topDoctors = Array.from(totalsByDoctor.values())
+    .sort((a, b) => b.count - a.count)
     .slice(0, topN)
-    .map((entry) => entry[0]);
+    .map((entry) => entry);
 
-  const rows = topDoctors.map((alias) => ({
-    alias,
+  const rows = topDoctors.map((entry) => ({
+    alias: entry.alias,
     yearly: years.map((year) => {
-      const bucket = bucketMap.get(`${alias}|${year}`);
+      const bucket = bucketMap.get(`${entry.key}|${year}`);
       if (!bucket) {
         return { year, count: 0, avgLosHours: null, hospitalizedShare: null };
       }
@@ -1462,9 +1558,9 @@ export function computeDoctorMonthlyTrend(records, options = {}) {
   const selectedAliases = selected === '__top3__' ? topRows.slice(0, 3).map((row) => row.alias) : [selected];
   const aliasSet = new Set(selectedAliases.filter(Boolean));
 
-  meta.withDoctor.forEach((record) => {
-    const alias = getDoctorAlias(record);
-    if (!aliasSet.has(alias)) {
+  meta.filtered.forEach((record) => {
+    const doctor = getDoctorKey(record);
+    if (!doctor || !aliasSet.has(doctor.label)) {
       return;
     }
     const arrival =
@@ -1473,7 +1569,7 @@ export function computeDoctorMonthlyTrend(records, options = {}) {
       return;
     }
     const monthKey = `${arrival.getFullYear()}-${String(arrival.getMonth() + 1).padStart(2, '0')}`;
-    const key = `${alias}|${monthKey}`;
+    const key = `${doctor.label}|${monthKey}`;
     monthly.set(key, (monthly.get(key) || 0) + 1);
   });
 

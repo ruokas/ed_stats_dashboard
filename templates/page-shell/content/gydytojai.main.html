@@ -59,6 +59,44 @@
             <option value="__top3__">TOP 3</option>
           </select>
         </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiArrivalFilter">
+          <span>Atvykimas</span>
+          <select id="gydytojaiArrivalFilter">
+            <option value="all">Visi</option>
+            <option value="ems">Tik GMP</option>
+            <option value="self">Be GMP</option>
+          </select>
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiDispositionFilter">
+          <span>Baigtis</span>
+          <select id="gydytojaiDispositionFilter">
+            <option value="all">Visos</option>
+            <option value="hospitalized">Hospitalizuoti</option>
+            <option value="discharged">Išleisti</option>
+          </select>
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiShiftFilter">
+          <span>Pamaina</span>
+          <select id="gydytojaiShiftFilter">
+            <option value="all">Visos</option>
+            <option value="day">Diena</option>
+            <option value="night">Naktis</option>
+          </select>
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiDiagnosisFilter">
+          <span>Diagnozių grupė</span>
+          <select id="gydytojaiDiagnosisFilter">
+            <option value="all">Visos</option>
+          </select>
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiSearch">
+          <span>Gydytojo paieška</span>
+          <input id="gydytojaiSearch" type="search" placeholder="Įveskite vardą">
+        </label>
+        <div class="summaries-reports-controls__field">
+          <span>&nbsp;</span>
+          <button id="gydytojaiResetFilters" type="button" class="chip-button">Atstatyti filtrus</button>
+        </div>
       </div>
       <p id="gydytojaiCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
 
@@ -91,13 +129,17 @@
           <caption class="sr-only">Gydytojų lyderių lentelė</caption>
           <thead>
             <tr>
-              <th scope="col">Gydytojas</th>
-              <th scope="col">Atvejai</th>
-              <th scope="col">Dalis (%)</th>
-              <th scope="col">Vid. LOS (val.)</th>
-              <th scope="col">Mediana LOS (val.)</th>
-              <th scope="col">Hospitalizacija (%)</th>
-              <th scope="col">Naktiniai (%)</th>
+              <th scope="col" data-gydytojai-sort="alias">Gydytojas</th>
+              <th scope="col" data-gydytojai-sort="count">Atvejai</th>
+              <th scope="col" data-gydytojai-sort="share">Dalis (%)</th>
+              <th scope="col" data-gydytojai-sort="avgLosHours">Vid. LOS (val.)</th>
+              <th scope="col" data-gydytojai-sort="medianLosHours">Mediana LOS (val.)</th>
+              <th scope="col" data-gydytojai-sort="hospitalizedShare">Hospitalizacija (%)</th>
+              <th scope="col">LOS <4 (%)</th>
+              <th scope="col">LOS 4-8 (%)</th>
+              <th scope="col">LOS 8-16 (%)</th>
+              <th scope="col">LOS >16 (%)</th>
+              <th scope="col" data-gydytojai-sort="nightShare">Naktiniai (%)</th>
             </tr>
           </thead>
           <tbody id="gydytojaiLeaderboardBody"></tbody>
@@ -123,7 +165,7 @@
       </div>
       <div class="summaries-report-group__grid summaries-reports-grid">
         <article class="report-card"><div class="report-card__head"><h4>Atvejų skaičius pagal gydytoją</h4></div><canvas id="gydytojaiVolumeChart" height="220"></canvas></article>
-        <article class="report-card"><div class="report-card__head"><h4>Vidutinis LOS pagal gydytoją</h4></div><canvas id="gydytojaiLosChart" height="220"></canvas></article>
+        <article class="report-card"><div class="report-card__head"><h4>LOS intervalų pasiskirstymas pagal gydytoją</h4></div><canvas id="gydytojaiLosChart" height="220"></canvas></article>
         <article class="report-card"><div class="report-card__head"><h4>Hospitalizacijų dalis pagal gydytoją</h4></div><canvas id="gydytojaiHospitalChart" height="220"></canvas></article>
         <article class="report-card"><div class="report-card__head"><h4>Diena/Naktis pagal gydytoją</h4></div><canvas id="gydytojaiMixChart" height="240"></canvas></article>
         <article class="report-card"><div class="report-card__head"><h4>Mėnesinė dinamika</h4></div><canvas id="gydytojaiTrendChart" height="240"></canvas></article>
