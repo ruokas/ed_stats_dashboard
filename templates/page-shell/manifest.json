@@ -45,6 +45,17 @@
       "extraHeadFile": null
     },
     {
+      "file": "gydytojai.html",
+      "bodyAttributes": {
+        "data-page": "gydytojai"
+      },
+      "stylesHref": "styles.css",
+      "mainScriptSrc": "main.js?v=2026-02-08-entry-refresh-1",
+      "mainContentFile": "content/gydytojai.main.html",
+      "afterMainFile": "content/gydytojai.after-main.html",
+      "extraHeadFile": null
+    },
+    {
       "file": "feedback.html",
       "bodyAttributes": {
         "data-page": "feedback"

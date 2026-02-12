@@ -37,6 +37,7 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
     pspc: resolveColumnIndex(headerNormalized, csvRuntime.pspcHeaders),
     diagnosis: resolveColumnIndex(headerNormalized, csvRuntime.diagnosisHeaders),
     referral: resolveColumnIndex(headerNormalized, csvRuntime.referralHeaders),
+    closingDoctor: resolveColumnIndex(headerNormalized, csvRuntime.closingDoctorHeaders),
   };
   const missing = Object.entries(columnIndices)
     .filter(([key, index]) => {
@@ -58,7 +59,8 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
         key === 'address' ||
         key === 'pspc' ||
         key === 'diagnosis' ||
-        key === 'referral'
+        key === 'referral' ||
+        key === 'closingDoctor'
       ) {
         return false;
       }
@@ -135,6 +137,7 @@ function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
     pspc: 'PSPC įstaiga;PSPC istaiga;PSPC',
     diagnosis: 'Galutinės diagnozės;Galutines diagnozes;Galutinė diagnozė;Galutine diagnoze',
     referral: 'Siuntimas;Siuntimas iš;Siuntimo tipas',
+    closingDoctor: 'Uždaręs gydytojas;Uzdares gydytojas;Uzdaręs gydytojas;Uždarė gydytojas',
   };
   const departmentHasValue = csvSettings.department && csvSettings.department.trim().length > 0;
   const cardNumberHasValue = csvSettings.number && csvSettings.number.trim().length > 0;
@@ -155,6 +158,10 @@ function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
     pspcHeaders: toHeaderCandidates(csvSettings.pspc, fallback.pspc || hardDefaults.pspc),
     diagnosisHeaders: toHeaderCandidates(csvSettings.diagnosis, fallback.diagnosis || hardDefaults.diagnosis),
     referralHeaders: toHeaderCandidates(csvSettings.referral, fallback.referral || hardDefaults.referral),
+    closingDoctorHeaders: toHeaderCandidates(
+      csvSettings.closingDoctor,
+      fallback.closingDoctor || hardDefaults.closingDoctor
+    ),
     trueValues: toNormalizedList(csvSettings.trueValues, fallback.trueValues),
     fallbackTrueValues: toNormalizedList(fallback.trueValues, fallback.trueValues),
     hospitalizedValues: toNormalizedList(csvSettings.hospitalizedValues, fallback.hospitalizedValues),
@@ -175,6 +182,7 @@ function buildCsvRuntime(csvSettings = {}, csvDefaults = {}) {
       pspc: csvSettings.pspc || fallback.pspc || hardDefaults.pspc,
       diagnosis: csvSettings.diagnosis || fallback.diagnosis || hardDefaults.diagnosis,
       referral: csvSettings.referral || fallback.referral || hardDefaults.referral,
+      closingDoctor: csvSettings.closingDoctor || fallback.closingDoctor || hardDefaults.closingDoctor,
     },
   };
   runtime.hasHospitalizedValues = runtime.hospitalizedValues.length > 0;
@@ -351,6 +359,14 @@ function normalizeSimpleText(value) {
     return '';
   }
   return String(value).trim().replace(/\s+/g, ' ');
+}
+
+function normalizeClosingDoctorValue(value) {
+  const base = normalizeSimpleText(value);
+  if (!base) {
+    return '';
+  }
+  return normalizeDiacritics(base).toLowerCase();
 }
 
 function normalizeDiacritics(value) {
@@ -701,13 +717,15 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   const pspcRaw = indices.pspc >= 0 ? (normalized[indices.pspc] ?? '') : '';
   const diagnosisRaw = indices.diagnosis >= 0 ? (normalized[indices.diagnosis] ?? '') : '';
   const referralRaw = indices.referral >= 0 ? (normalized[indices.referral] ?? '') : '';
+  const closingDoctorRaw = indices.closingDoctor >= 0 ? (normalized[indices.closingDoctor] ?? '') : '';
   const hasExtendedColumns =
     indices.age >= 0 ||
     indices.sex >= 0 ||
     indices.address >= 0 ||
     indices.pspc >= 0 ||
     indices.diagnosis >= 0 ||
-    indices.referral >= 0;
+    indices.referral >= 0 ||
+    indices.closingDoctor >= 0;
   entry.arrival = parseDate(arrivalRaw);
   entry.discharge = parseDate(dischargeRaw);
   entry.arrivalHasTime = detectHasTime(arrivalRaw);
@@ -732,6 +750,9 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   entry.diagnosisGroup = entry.diagnosisGroups[0] || 'Nenurodyta';
   entry.referral = parseReferralValue(referralRaw);
   entry.referred = entry.referral === 'su siuntimu';
+  entry.closingDoctorRaw = normalizeSimpleText(closingDoctorRaw);
+  entry.closingDoctorNorm = normalizeClosingDoctorValue(closingDoctorRaw);
+  entry.hasClosingDoctor = entry.closingDoctorNorm.length > 0;
   entry.hasExtendedHistoricalFields = hasExtendedColumns;
   return entry;
 }

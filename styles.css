@@ -1370,6 +1370,12 @@ body[data-page="summaries"] #summariesGroupPspcHeading {
   scroll-margin-top: calc(var(--hero-height, 0px) + var(--summaries-jump-nav-height, 52px) + 20px);
 }
 
+body[data-page="gydytojai"] #gydytojaiHeading,
+body[data-page="gydytojai"] #gydytojaiTablesHeading,
+body[data-page="gydytojai"] #gydytojaiChartsHeading {
+  scroll-margin-top: calc(var(--hero-height, 0px) + var(--summaries-jump-nav-height, 52px) + 20px);
+}
+
 .section__subtitle {
   margin: 0;
   font-size: 0.9rem;

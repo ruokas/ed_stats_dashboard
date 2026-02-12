@@ -28,7 +28,8 @@ export const DEFAULT_SETTINGS = {
     dayNight: 'Diena/naktis',
     gmp: 'GMP',
     department: 'Nukreiptas į padalinį',
-    number: 'Numeris',
+
+    closingDoctor: 'Uždaręs gydytojas',
     age: 'Amžius',
     sex: 'Lytis',
     address: 'Adresas',

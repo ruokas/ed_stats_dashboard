@@ -1,0 +1,134 @@
+<main class="container" role="main">
+  <div class="section-band section-band--time-scale">
+    <nav class="gydytojai-jump-nav summaries-jump-nav" aria-label="Gydytojų sekcijos">
+      <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiHeading">Apžvalga</a>
+      <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiTablesHeading">Lentelės</a>
+      <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiChartsHeading">Grafikai</a>
+    </nav>
+
+    <section class="section section--compact" aria-labelledby="gydytojaiHeading" data-section="gydytojai-overview">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="gydytojaiHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                  <path d="M12 12v8" />
+                  <path d="M7 20h10" />
+                  <path d="M4.5 14.5a7.5 7.5 0 0 1 15 0" />
+                </svg>
+              </span>
+              <span class="section-title__text">Gydytojų analizė</span>
+            </h2>
+            <p id="gydytojaiSubtitle" class="section__subtitle">Uždarę gydytojai: apkrova, trukmė ir baigčių struktūra.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="summaries-reports-controls" role="group" aria-label="Gydytojų analizės filtrai">
+        <label class="summaries-reports-controls__field" for="gydytojaiYear">
+          <span>Metai</span>
+          <select id="gydytojaiYear"></select>
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiTopN">
+          <span>TOP N</span>
+          <select id="gydytojaiTopN">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="20">20</option>
+          </select>
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiMinCases">
+          <span>Min. imtis</span>
+          <input id="gydytojaiMinCases" type="number" min="1" max="999" step="1" value="30">
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiSort">
+          <span>Rikiuoti</span>
+          <select id="gydytojaiSort">
+            <option value="volume_desc">Apkrova (mažėjančiai)</option>
+            <option value="avgLos_asc">Vid. trukmė (didėjančiai)</option>
+            <option value="avgLos_desc">Vid. trukmė (mažėjančiai)</option>
+            <option value="hospital_desc">Hospitalizacija % (mažėjančiai)</option>
+          </select>
+        </label>
+        <label class="summaries-reports-controls__field" for="gydytojaiDoctorSelect">
+          <span>Gydytojas trende</span>
+          <select id="gydytojaiDoctorSelect">
+            <option value="__top3__">TOP 3</option>
+          </select>
+        </label>
+      </div>
+      <p id="gydytojaiCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
+
+      <div class="kpi-grid kpi-grid--compact">
+        <article class="kpi-card">
+          <h3 class="kpi-card__title">Aktyvūs gydytojai</h3>
+          <p id="gydytojaiKpiActive" class="kpi-card__value">-</p>
+        </article>
+        <article class="kpi-card">
+          <h3 class="kpi-card__title">Mediana LOS (val.)</h3>
+          <p id="gydytojaiKpiMedianLos" class="kpi-card__value">-</p>
+        </article>
+        <article class="kpi-card">
+          <h3 class="kpi-card__title">Top gydytojo dalis</h3>
+          <p id="gydytojaiKpiTopShare" class="kpi-card__value">-</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section--compact" aria-labelledby="gydytojaiTablesHeading" data-section="gydytojai-tables">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="gydytojaiTablesHeading" class="section__title">Lentelės</h2>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiTablesHeading">
+        <table id="gydytojaiLeaderboardTable">
+          <caption class="sr-only">Gydytojų lyderių lentelė</caption>
+          <thead>
+            <tr>
+              <th scope="col">Gydytojas</th>
+              <th scope="col">Atvejai</th>
+              <th scope="col">Dalis (%)</th>
+              <th scope="col">Vid. LOS (val.)</th>
+              <th scope="col">Mediana LOS (val.)</th>
+              <th scope="col">Hospitalizacija (%)</th>
+              <th scope="col">Naktiniai (%)</th>
+            </tr>
+          </thead>
+          <tbody id="gydytojaiLeaderboardBody"></tbody>
+        </table>
+      </div>
+
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiTablesHeading">
+        <table id="gydytojaiYearlyTable">
+          <caption class="sr-only">Metinė gydytojų dinamika</caption>
+          <thead id="gydytojaiYearlyHead"></thead>
+          <tbody id="gydytojaiYearlyBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section section--compact" aria-labelledby="gydytojaiChartsHeading" data-section="gydytojai-charts">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="gydytojaiChartsHeading" class="section__title">Grafikai</h2>
+          </div>
+        </div>
+      </div>
+      <div class="summaries-report-group__grid summaries-reports-grid">
+        <article class="report-card"><div class="report-card__head"><h4>Atvejų skaičius pagal gydytoją</h4></div><canvas id="gydytojaiVolumeChart" height="220"></canvas></article>
+        <article class="report-card"><div class="report-card__head"><h4>Vidutinis LOS pagal gydytoją</h4></div><canvas id="gydytojaiLosChart" height="220"></canvas></article>
+        <article class="report-card"><div class="report-card__head"><h4>Hospitalizacijų dalis pagal gydytoją</h4></div><canvas id="gydytojaiHospitalChart" height="220"></canvas></article>
+        <article class="report-card"><div class="report-card__head"><h4>Diena/Naktis pagal gydytoją</h4></div><canvas id="gydytojaiMixChart" height="240"></canvas></article>
+        <article class="report-card"><div class="report-card__head"><h4>Mėnesinė dinamika</h4></div><canvas id="gydytojaiTrendChart" height="240"></canvas></article>
+        <article class="report-card"><div class="report-card__head"><h4>Apimtis vs LOS</h4></div><canvas id="gydytojaiScatterChart" height="240"></canvas></article>
+      </div>
+    </section>
+  </div>
+</main>
