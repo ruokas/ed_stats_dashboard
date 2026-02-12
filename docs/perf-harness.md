@@ -70,3 +70,11 @@ Expected input shape:
 ```
 
 The script prints per-operation medians and p95 durations.
+
+## Latest worker sample snapshot (2026-02-12)
+
+From the current repository fixture `worker-bench-runs.json`:
+
+- `transformCsv`: median `120.5ms`
+- `transformEdCsv`: median `88.2ms`
+- `applyKpiFilters`: median `17.9ms`
