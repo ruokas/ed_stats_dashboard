@@ -11,13 +11,15 @@
 - Approximate selector blocks: `1013`
 
 ## Current Snapshot (2026-02-12)
-- CSS bundle size: `146428` bytes total
-- `styles.css`: `136402` bytes
+- CSS bundle size: `145462` bytes total
+- `styles.css`: `119152` bytes
 - `css/navigation.css`: `7198` bytes
 - `css/export-controls.css`: `2828` bytes
-- Lines: `6931` (bundle total; includes legacy spacing/newline blocks)
+- `css/hero.css`: `9375` bytes
+- `css/feedback.css`: `6909` bytes
+- Lines: `6883` (bundle total; includes legacy spacing/newline blocks)
 - Media queries: `26`
-- Approximate selector blocks: `978`
+- Approximate selector blocks: `973`
 
 ## Refactor Rules
 - Do not change class names used by HTML/JS selectors.
