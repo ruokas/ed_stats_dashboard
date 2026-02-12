@@ -51,10 +51,10 @@ export function createKpiRenderer(env) {
           <header class="kpi-card__header">
             <h3 class="kpi-card__title">${cardModel.titleText}</h3>
           </header>
-          <p class="kpi-mainline">
+          <p class="kpi-mainline kpi-mainline--primary">
             ${cardModel.mainLineHtml}
           </p>
-          <div class="kpi-card__details" role="list">${cardModel.detailsHtml}</div>
+          <div class="kpi-card__details kpi-card__details--primary" role="list">${cardModel.detailsHtml}</div>
         `;
       selectors.kpiGrid.appendChild(card);
     });
