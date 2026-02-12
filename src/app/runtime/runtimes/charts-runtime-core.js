@@ -70,6 +70,8 @@ import {
 } from '../state.js';
 import { parseColorToRgb, relativeLuminance, rgbToRgba } from '../utils/color.js';
 import { createStatusSetter } from '../utils/common.js';
+import { createChartsDataFlowConfig } from './charts/data-flow-config.js';
+import { wireChartsRuntimeInteractions } from './charts/runtime-interactions.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -1620,112 +1622,74 @@ export async function runChartsRuntime(core) {
     formatMonthLabelForAxis: null,
   });
 
-  applyChartsText({
+  wireChartsRuntimeInteractions({
+    applyChartsText,
+    initChartControls,
     selectors,
-    TEXT,
+    text: TEXT,
     dashboardState,
     formatDailyCaption,
     updateChartsHospitalTableHeaderSortIndicators,
-    syncHourlyMetricButtons: hourlyControlsFeature.syncHourlyMetricButtons,
-    populateHourlyWeekdayOptions: hourlyControlsFeature.populateHourlyWeekdayOptions,
-    populateHourlyStayOptions: hourlyControlsFeature.populateHourlyStayOptions,
-    syncHourlyDepartmentVisibility: hourlyControlsFeature.syncHourlyDepartmentVisibility,
-    updateHourlyCaption: hourlyControlsFeature.updateHourlyCaption,
+    hourlyControlsFeature,
     populateHeatmapMetricOptions,
     updateHeatmapCaption,
-  });
-
-  initChartControls({
-    selectors,
-    updateChartPeriod: chartFlow.updateChartPeriod,
-    updateChartYear: chartFlow.updateChartYear,
+    chartFlow,
     handleHeatmapMetricChange,
     handleHeatmapFilterChange,
-    handleHourlyMetricClick: hourlyControlsFeature.handleHourlyMetricClick,
-    handleHourlyDepartmentInput: hourlyControlsFeature.handleHourlyDepartmentInput,
-    handleHourlyDepartmentBlur: hourlyControlsFeature.handleHourlyDepartmentBlur,
-    handleHourlyDepartmentKeydown: hourlyControlsFeature.handleHourlyDepartmentKeydown,
-    handleHourlyDepartmentToggle: hourlyControlsFeature.handleHourlyDepartmentToggle,
-    handleHourlyFilterChange: hourlyControlsFeature.handleHourlyFilterChange,
-    handleHourlyCompareToggle: hourlyControlsFeature.handleHourlyCompareToggle,
-    handleHourlyCompareYearsChange: hourlyControlsFeature.handleHourlyCompareYearsChange,
-    handleHourlyCompareSeriesClick: hourlyControlsFeature.handleHourlyCompareSeriesClick,
-    handleHourlyResetFilters: hourlyControlsFeature.handleHourlyResetFilters,
-    handleChartFilterChange: chartFlow.handleChartFilterChange,
-    handleChartSegmentedClick: chartFlow.handleChartSegmentedClick,
-    applyHourlyDepartmentSelection: hourlyControlsFeature.applyHourlyDepartmentSelection,
     handleChartsHospitalTableYearChange,
     handleChartsHospitalTableSearchInput,
     handleChartsHospitalTableHeaderClick,
     handleChartsHospitalTableRowClick,
-  });
-
-  chartFlow.syncChartFilterControls();
-  syncHeatmapFilterControls();
-  updateChartsHospitalTableHeaderSortIndicators();
-
-  const dataFlow = createDataFlow({
-    pageConfig,
-    selectors,
-    dashboardState,
-    TEXT,
-    DEFAULT_SETTINGS,
-    AUTO_REFRESH_INTERVAL_MS,
-    runAfterDomAndIdle,
-    setDatasetValue,
-    setStatus: (type, details) => setStatus(selectors, type, details),
-    showKpiSkeleton: () => {},
-    showChartSkeletons: () => showChartSkeletons(selectors),
-    showEdSkeleton: () => {},
-    createChunkReporter: () => null,
-    fetchData,
-    fetchFeedbackData: async () => [],
-    fetchEdData: async () => null,
-    perfMonitor: runtimeClient.perfMonitor,
-    describeCacheMeta,
-    createEmptyEdSummary: () => ({}),
-    describeError,
-    computeDailyStats,
-    filterDailyStatsByWindow,
-    populateChartYearOptions: (dailyStats) =>
-      populateChartYearOptions({
-        dailyStats,
-        selectors,
-        dashboardState,
-        TEXT,
-        syncChartYearControl: () => syncChartYearControl({ selectors, dashboardState }),
-      }),
-    populateChartsHospitalTableYearOptions,
-    populateHourlyCompareYearOptions: hourlyControlsFeature.populateHourlyCompareYearOptions,
-    populateHeatmapYearOptions,
     syncHeatmapFilterControls,
-    syncKpiFilterControls: () => {},
-    getDefaultChartFilters: createDefaultChartFilters,
-    sanitizeChartFilters,
-    KPI_FILTER_LABELS,
-    syncChartFilterControls: chartFlow.syncChartFilterControls,
-    prepareChartDataForPeriod: chartFlow.prepareChartDataForPeriod,
-    applyKpiFiltersAndRender: async () => {},
-    renderCharts: chartRenderers.renderCharts,
-    renderChartsHospitalTable,
-    getHeatmapData: computeHeatmapDataForFilters,
-    renderRecentTable: () => {},
-    computeMonthlyStats: () => [],
-    renderMonthlyTable: () => {},
-    computeYearlyStats: () => [],
-    renderYearlyTable: () => {},
-    updateFeedbackFilterOptions: () => {},
-    applyFeedbackFiltersAndRender: () => {},
-    applyFeedbackStatusNote: () => {},
-    renderEdDashboard: async () => {},
-    numberFormatter,
-    getSettings: () => settings,
-    getClientConfig: runtimeClient.getClientConfig,
-    getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => {
-      autoRefreshTimerId = id;
-    },
   });
+
+  const dataFlow = createDataFlow(
+    createChartsDataFlowConfig({
+      pageConfig,
+      selectors,
+      dashboardState,
+      text: TEXT,
+      defaultSettings: DEFAULT_SETTINGS,
+      autoRefreshIntervalMs: AUTO_REFRESH_INTERVAL_MS,
+      runAfterDomAndIdle,
+      setDatasetValue,
+      setStatus: (type, details) => setStatus(selectors, type, details),
+      showChartSkeletons: () => showChartSkeletons(selectors),
+      fetchData,
+      perfMonitor: runtimeClient.perfMonitor,
+      describeCacheMeta,
+      describeError,
+      computeDailyStats,
+      filterDailyStatsByWindow,
+      populateChartYearOptions: (dailyStats) =>
+        populateChartYearOptions({
+          dailyStats,
+          selectors,
+          dashboardState,
+          TEXT,
+          syncChartYearControl: () => syncChartYearControl({ selectors, dashboardState }),
+        }),
+      populateChartsHospitalTableYearOptions,
+      populateHourlyCompareYearOptions: hourlyControlsFeature.populateHourlyCompareYearOptions,
+      populateHeatmapYearOptions,
+      syncHeatmapFilterControls,
+      getDefaultChartFilters: createDefaultChartFilters,
+      sanitizeChartFilters,
+      kpiFilterLabels: KPI_FILTER_LABELS,
+      syncChartFilterControls: chartFlow.syncChartFilterControls,
+      prepareChartDataForPeriod: chartFlow.prepareChartDataForPeriod,
+      renderCharts: chartRenderers.renderCharts,
+      renderChartsHospitalTable,
+      getHeatmapData: computeHeatmapDataForFilters,
+      numberFormatter,
+      getSettings: () => settings,
+      getClientConfig: runtimeClient.getClientConfig,
+      getAutoRefreshTimerId: () => autoRefreshTimerId,
+      setAutoRefreshTimerId: (id) => {
+        autoRefreshTimerId = id;
+      },
+    })
+  );
 
   dataFlow.scheduleInitialLoad();
 }

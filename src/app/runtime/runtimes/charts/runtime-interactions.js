@@ -1,0 +1,64 @@
+export function wireChartsRuntimeInteractions({
+  applyChartsText,
+  initChartControls,
+  selectors,
+  text,
+  dashboardState,
+  formatDailyCaption,
+  updateChartsHospitalTableHeaderSortIndicators,
+  hourlyControlsFeature,
+  populateHeatmapMetricOptions,
+  updateHeatmapCaption,
+  chartFlow,
+  handleHeatmapMetricChange,
+  handleHeatmapFilterChange,
+  handleChartsHospitalTableYearChange,
+  handleChartsHospitalTableSearchInput,
+  handleChartsHospitalTableHeaderClick,
+  handleChartsHospitalTableRowClick,
+  syncHeatmapFilterControls,
+}) {
+  applyChartsText({
+    selectors,
+    TEXT: text,
+    dashboardState,
+    formatDailyCaption,
+    updateChartsHospitalTableHeaderSortIndicators,
+    syncHourlyMetricButtons: hourlyControlsFeature.syncHourlyMetricButtons,
+    populateHourlyWeekdayOptions: hourlyControlsFeature.populateHourlyWeekdayOptions,
+    populateHourlyStayOptions: hourlyControlsFeature.populateHourlyStayOptions,
+    syncHourlyDepartmentVisibility: hourlyControlsFeature.syncHourlyDepartmentVisibility,
+    updateHourlyCaption: hourlyControlsFeature.updateHourlyCaption,
+    populateHeatmapMetricOptions,
+    updateHeatmapCaption,
+  });
+
+  initChartControls({
+    selectors,
+    updateChartPeriod: chartFlow.updateChartPeriod,
+    updateChartYear: chartFlow.updateChartYear,
+    handleHeatmapMetricChange,
+    handleHeatmapFilterChange,
+    handleHourlyMetricClick: hourlyControlsFeature.handleHourlyMetricClick,
+    handleHourlyDepartmentInput: hourlyControlsFeature.handleHourlyDepartmentInput,
+    handleHourlyDepartmentBlur: hourlyControlsFeature.handleHourlyDepartmentBlur,
+    handleHourlyDepartmentKeydown: hourlyControlsFeature.handleHourlyDepartmentKeydown,
+    handleHourlyDepartmentToggle: hourlyControlsFeature.handleHourlyDepartmentToggle,
+    handleHourlyFilterChange: hourlyControlsFeature.handleHourlyFilterChange,
+    handleHourlyCompareToggle: hourlyControlsFeature.handleHourlyCompareToggle,
+    handleHourlyCompareYearsChange: hourlyControlsFeature.handleHourlyCompareYearsChange,
+    handleHourlyCompareSeriesClick: hourlyControlsFeature.handleHourlyCompareSeriesClick,
+    handleHourlyResetFilters: hourlyControlsFeature.handleHourlyResetFilters,
+    handleChartFilterChange: chartFlow.handleChartFilterChange,
+    handleChartSegmentedClick: chartFlow.handleChartSegmentedClick,
+    applyHourlyDepartmentSelection: hourlyControlsFeature.applyHourlyDepartmentSelection,
+    handleChartsHospitalTableYearChange,
+    handleChartsHospitalTableSearchInput,
+    handleChartsHospitalTableHeaderClick,
+    handleChartsHospitalTableRowClick,
+  });
+
+  chartFlow.syncChartFilterControls();
+  syncHeatmapFilterControls();
+  updateChartsHospitalTableHeaderSortIndicators();
+}

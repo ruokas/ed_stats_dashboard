@@ -1,0 +1,20 @@
+[
+  {
+    "operation": "transformCsv",
+    "durationMs": 120.5,
+    "rowsIn": 10000,
+    "rowsOut": 10000
+  },
+  {
+    "operation": "transformEdCsv",
+    "durationMs": 88.2,
+    "rowsIn": 5000,
+    "rowsOut": 5000
+  },
+  {
+    "operation": "applyKpiFilters",
+    "durationMs": 17.9,
+    "rowsIn": 10000,
+    "rowsOut": 2400
+  }
+]

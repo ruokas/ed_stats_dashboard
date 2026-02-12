@@ -58,6 +58,7 @@ import {
 } from '../state.js';
 import { createTableDownloadHandler, escapeCsvCell } from '../table-export.js';
 import { createStatusSetter } from '../utils/common.js';
+import { createSummariesDataFlowConfig } from './summaries/data-flow-config.js';
 import { loadPluginScript } from './summaries/plugin-loader.js';
 import {
   computeReferralHospitalizedShareByPspcDetailed,
@@ -69,6 +70,7 @@ import {
 import { syncReportsControls } from './summaries/report-controls.js';
 import { createReportExportClickHandler } from './summaries/report-export.js';
 import { parsePositiveIntOrDefault } from './summaries/report-filters.js';
+import { wireSummariesInteractions } from './summaries/runtime-interactions.js';
 
 const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
@@ -1908,118 +1910,53 @@ export async function runSummariesRuntime(core) {
       initSummariesJumpNavigation(selectors);
     },
   });
-  initYearlyExpand({
-    selectors,
-    handleYearlyToggle: (event) => handleYearlyToggle(selectors, dashboardState, event),
-  });
-  initTableDownloadButtons({ selectors, storeCopyButtonBaseLabel, handleTableDownloadClick });
-  if (selectors.yearlyTableCopyButton) {
-    storeCopyButtonBaseLabel(selectors.yearlyTableCopyButton);
-    selectors.yearlyTableCopyButton.addEventListener('click', handleYearlyTableCopyClick);
-  }
-  if (Array.isArray(selectors.reportExportButtons)) {
-    selectors.reportExportButtons.forEach((button) => {
-      button.addEventListener('click', handleReportExportClick);
-    });
-  }
   rerenderReports = () => renderReports(selectors, dashboardState, settings, exportState);
-  if (selectors.summariesReportsYear) {
-    selectors.summariesReportsYear.addEventListener('change', (event) => {
-      const value = String(event.target.value || 'all');
-      dashboardState.summariesReportsYear = value === 'all' ? 'all' : value;
-      rerenderReports();
-    });
-  }
-  if (selectors.summariesReportsTopN) {
-    selectors.summariesReportsTopN.addEventListener('change', (event) => {
-      dashboardState.summariesReportsTopN = parsePositiveIntOrDefault(event.target.value, 15);
-      rerenderReports();
-    });
-  }
-  if (selectors.summariesReportsMinGroupSize) {
-    selectors.summariesReportsMinGroupSize.addEventListener('change', (event) => {
-      dashboardState.summariesReportsMinGroupSize = parsePositiveIntOrDefault(event.target.value, 100);
-      rerenderReports();
-    });
-  }
-  if (selectors.referralHospitalizedByPspcSort) {
-    selectors.referralHospitalizedByPspcSort.addEventListener('change', (event) => {
-      const value = String(event.target.value || 'desc').toLowerCase();
-      dashboardState.summariesReferralPspcSort = value === 'asc' ? 'asc' : 'desc';
-      rerenderReports();
-    });
-  }
-  if (selectors.referralHospitalizedByPspcMode) {
-    selectors.referralHospitalizedByPspcMode.addEventListener('change', (event) => {
-      const value = String(event.target.value || 'cross').toLowerCase();
-      dashboardState.summariesReferralPspcMode = value === 'trend' ? 'trend' : 'cross';
-      rerenderReports();
-    });
-  }
-  if (selectors.referralHospitalizedByPspcTrendPspc) {
-    selectors.referralHospitalizedByPspcTrendPspc.addEventListener('change', (event) => {
-      const value = String(event.target.value || '__top3__');
-      dashboardState.summariesReferralPspcTrendPspc = value || '__top3__';
-      rerenderReports();
-    });
-  }
-  const dataFlow = createDataFlow({
-    pageConfig,
+  wireSummariesInteractions({
     selectors,
     dashboardState,
-    TEXT,
-    DEFAULT_SETTINGS,
-    AUTO_REFRESH_INTERVAL_MS,
-    runAfterDomAndIdle,
-    setDatasetValue,
-    setStatus: (type, details) => setStatus(selectors, type, details),
-    showKpiSkeleton: () => {},
-    showChartSkeletons: () => {},
-    showEdSkeleton: () => {},
-    createChunkReporter: () => null,
-    fetchData,
-    fetchFeedbackData: async () => [],
-    fetchEdData: async () => null,
-    perfMonitor: runtimeClient.perfMonitor,
-    describeCacheMeta,
-    createEmptyEdSummary: () => ({}),
-    describeError: (error, options = {}) =>
-      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
-    computeDailyStats,
-    filterDailyStatsByWindow: (daily) => (Array.isArray(daily) ? daily : []),
-    populateChartYearOptions: () => {},
-    populateHourlyCompareYearOptions: () => {},
-    populateHeatmapYearOptions: () => {},
-    syncHeatmapFilterControls: () => {},
-    syncKpiFilterControls: () => {},
-    getDefaultChartFilters: createDefaultChartFilters,
-    sanitizeChartFilters: (value) => value,
-    KPI_FILTER_LABELS: { arrival: { all: 'all' }, disposition: { all: 'all' }, cardType: { all: 'all' } },
-    syncChartFilterControls: () => {},
-    prepareChartDataForPeriod: () => ({ daily: [], funnel: null, heatmap: null }),
-    applyKpiFiltersAndRender: async () => {},
-    renderCharts: async () => {},
-    getHeatmapData: () => null,
-    renderRecentTable: () => {},
-    computeMonthlyStats,
-    renderMonthlyTable: () => {},
-    computeYearlyStats,
-    renderYearlyTable: (yearlyStats) => {
-      renderYearlyTable(selectors, dashboardState, yearlyStats, { yearlyEmptyText: TEXT.yearly.empty });
-      rerenderReports();
-    },
-    updateFeedbackFilterOptions: () => {},
-    applyFeedbackFiltersAndRender: () => {},
-    applyFeedbackStatusNote: () => {},
-    renderEdDashboard: async () => {},
-    numberFormatter,
-    getSettings: () => settings,
-    getClientConfig: runtimeClient.getClientConfig,
-    getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => {
-      autoRefreshTimerId = id;
-    },
+    rerenderReports,
+    handleReportExportClick,
+    handleYearlyTableCopyClick,
+    handleTableDownloadClick,
+    storeCopyButtonBaseLabel,
+    initTableDownloadButtons,
+    initYearlyExpand,
+    handleYearlyToggle,
+    parsePositiveIntOrDefault,
   });
+  const dataFlow = createDataFlow(
+    createSummariesDataFlowConfig({
+      pageConfig,
+      selectors,
+      dashboardState,
+      text: TEXT,
+      defaultSettings: DEFAULT_SETTINGS,
+      autoRefreshIntervalMs: AUTO_REFRESH_INTERVAL_MS,
+      runAfterDomAndIdle,
+      setDatasetValue,
+      setStatus: (type, details) => setStatus(selectors, type, details),
+      fetchData,
+      perfMonitor: runtimeClient.perfMonitor,
+      describeCacheMeta,
+      describeError: (error, options = {}) =>
+        describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+      computeDailyStats,
+      getDefaultChartFilters: createDefaultChartFilters,
+      computeMonthlyStats,
+      computeYearlyStats,
+      renderYearlyTable: (yearlyStats) => {
+        renderYearlyTable(selectors, dashboardState, yearlyStats, { yearlyEmptyText: TEXT.yearly.empty });
+        rerenderReports();
+      },
+      numberFormatter,
+      getSettings: () => settings,
+      getClientConfig: runtimeClient.getClientConfig,
+      getAutoRefreshTimerId: () => autoRefreshTimerId,
+      setAutoRefreshTimerId: (id) => {
+        autoRefreshTimerId = id;
+      },
+    })
+  );
   rerenderReports();
   dataFlow.scheduleInitialLoad();
 }
