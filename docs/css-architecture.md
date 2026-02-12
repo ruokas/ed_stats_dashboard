@@ -1,7 +1,7 @@
 # CSS Architecture Guide
 
 ## Scope
-- File: `styles.css`
+- Files: `styles.css` + modular CSS in `css/*.css`
 - Goal: reduce duplication and specificity complexity without changing UI behavior.
 
 ## Baseline (2026-02-12)
@@ -11,10 +11,13 @@
 - Approximate selector blocks: `1013`
 
 ## Current Snapshot (2026-02-12)
-- File size: `144536` bytes
-- Lines: `6944` (includes legacy spacing/newline blocks; size is the primary budget metric)
-- Media queries: `27`
-- Approximate selector blocks: `981`
+- CSS bundle size: `146428` bytes total
+- `styles.css`: `136402` bytes
+- `css/navigation.css`: `7198` bytes
+- `css/export-controls.css`: `2828` bytes
+- Lines: `6931` (bundle total; includes legacy spacing/newline blocks)
+- Media queries: `26`
+- Approximate selector blocks: `978`
 
 ## Refactor Rules
 - Do not change class names used by HTML/JS selectors.
