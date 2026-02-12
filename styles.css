@@ -1,4 +1,6 @@
 /* Base / Global */
+@layer tokens, base, layout, components, utilities;
+
 :root,
 :root[data-theme="light"],
 body[data-theme="light"] {
@@ -71,6 +73,26 @@ body[data-theme="light"] {
   --section-nav-height: 0px;
   --summaries-jump-sticky-top: 56px;
   --summaries-jump-nav-height: 52px;
+  --state-accent-border-34: rgba(47, 91, 234, 0.34);
+  --state-accent-border-35: rgba(37, 99, 235, 0.35);
+  --state-accent-border-36: rgba(47, 91, 234, 0.36);
+  --state-accent-border-38: rgba(47, 91, 234, 0.38);
+  --state-accent-border-42: rgba(47, 91, 234, 0.42);
+  --state-accent-border-44: rgba(47, 91, 234, 0.44);
+  --state-accent-inset-16: inset 0 0 0 1px rgba(47, 91, 234, 0.16);
+  --state-accent-inset-18: inset 0 0 0 1px rgba(47, 91, 234, 0.18);
+  --state-accent-inset-20: inset 0 0 0 1px rgba(47, 91, 234, 0.2);
+  --state-focus-outline: 3px solid var(--nav-focus-ring);
+  --state-focus-offset: 2px;
+  --state-focus-shadow-soft: 0 0 0 2px rgba(255, 255, 255, 0.25);
+  --state-focus-shadow-hero: 0 0 0 3px rgba(144, 174, 255, 0.38);
+  --component-export-size: 32px;
+  --component-export-icon-size: 16px;
+  --component-export-radius: 10px;
+  --component-export-tooltip-radius: 8px;
+  --component-export-tooltip-padding: 6px 10px;
+  --component-export-tooltip-font-size: 0.78rem;
+  --component-export-tooltip-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.45);
   font-family: "Sora", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -141,6 +163,8 @@ body[data-theme="dark"] {
   --report-heatmap: #4ade80;
   --report-correlation-fill: rgba(96, 165, 250, 0.38);
   --report-correlation-stroke: rgba(147, 197, 253, 0.94);
+  --state-focus-shadow-soft: 0 0 0 2px rgba(232, 236, 246, 0.28);
+  --component-export-tooltip-shadow: 0 10px 24px -18px rgba(5, 10, 25, 0.7);
 }
 
 * {
@@ -433,14 +457,14 @@ body[data-theme="dark"] .scroll-top-btn {
 .section-nav__trigger:focus-visible {
   background: var(--nav-chip-hover);
   color: var(--color-accent);
-  border-color: rgba(47, 91, 234, 0.34);
+  border-color: var(--state-accent-border-34);
 }
 
 .section-nav__link:focus-visible,
 .section-nav__trigger:focus-visible {
-  outline: 3px solid var(--nav-focus-ring);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+  outline: var(--state-focus-outline);
+  outline-offset: var(--state-focus-offset);
+  box-shadow: var(--state-focus-shadow-soft);
 }
 
 .section-nav__link.is-active,
@@ -449,8 +473,8 @@ body[data-theme="dark"] .scroll-top-btn {
 .section-nav__trigger[aria-pressed="true"] {
   background: var(--nav-chip-active);
   color: var(--color-accent);
-  border-color: rgba(47, 91, 234, 0.38);
-  box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.16);
+  border-color: var(--state-accent-border-38);
+  box-shadow: var(--state-accent-inset-16);
 }
 
 .section-nav__link[aria-hidden="true"] {
@@ -1750,13 +1774,13 @@ header.hero .section-nav__link:hover,
 header.hero .section-nav__trigger:hover {
   color: var(--hero-chip-active-color);
   background: var(--hero-chip-hover-bg);
-  border-color: rgba(47, 91, 234, 0.36);
+  border-color: var(--state-accent-border-36);
 }
 
 header.hero .section-nav__link:focus-visible,
 header.hero .section-nav__trigger:focus-visible {
   outline-color: rgba(186, 209, 255, 0.7);
-  box-shadow: 0 0 0 3px rgba(144, 174, 255, 0.38);
+  box-shadow: var(--state-focus-shadow-hero);
 }
 
 header.hero .section-nav__link.is-active,
@@ -1765,8 +1789,8 @@ header.hero .section-nav__link[aria-current="page"],
 header.hero .section-nav__trigger[aria-pressed="true"] {
   color: var(--hero-chip-active-color);
   background: var(--hero-chip-active-bg);
-  border-color: rgba(47, 91, 234, 0.44);
-  box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.2);
+  border-color: var(--state-accent-border-44);
+  box-shadow: var(--state-accent-inset-20);
 }
 
 header.hero {
@@ -2437,14 +2461,12 @@ body[data-page="summaries"] #summariesGroupPspcHeading {
   max-width: 720px;
 }
 
-.charts-jump-nav {
+:is(.charts-jump-nav, .summaries-jump-nav) {
   position: sticky;
-  top: var(--charts-jump-sticky-top, 56px);
   z-index: 6;
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
-  margin: 0 0 18px;
   padding: 8px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
@@ -2455,7 +2477,7 @@ body[data-page="summaries"] #summariesGroupPspcHeading {
   scrollbar-width: thin;
 }
 
-.charts-jump-nav__link {
+:is(.charts-jump-nav, .summaries-jump-nav) :is(.charts-jump-nav__link, .summaries-jump-nav__link) {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -2477,76 +2499,32 @@ body[data-page="summaries"] #summariesGroupPspcHeading {
     background-color 0.2s ease;
 }
 
-.charts-jump-nav__link:hover,
-.charts-jump-nav__link:focus-visible {
+:is(.charts-jump-nav, .summaries-jump-nav) :is(.charts-jump-nav__link, .summaries-jump-nav__link):hover,
+:is(.charts-jump-nav, .summaries-jump-nav)
+  :is(.charts-jump-nav__link, .summaries-jump-nav__link):focus-visible {
   color: var(--color-accent);
-  border-color: rgba(47, 91, 234, 0.34);
+  border-color: var(--state-accent-border-34);
   background: var(--color-input-bg);
   outline: none;
 }
 
-.charts-jump-nav__link.is-active,
-.charts-jump-nav__link[aria-current="true"] {
+:is(.charts-jump-nav, .summaries-jump-nav) :is(.charts-jump-nav__link, .summaries-jump-nav__link).is-active,
+:is(.charts-jump-nav, .summaries-jump-nav)
+  :is(.charts-jump-nav__link, .summaries-jump-nav__link)[aria-current="true"] {
   color: var(--color-accent);
-  border-color: rgba(47, 91, 234, 0.42);
+  border-color: var(--state-accent-border-42);
   background: var(--color-input-bg);
-  box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.18);
+  box-shadow: var(--state-accent-inset-18);
+}
+
+.charts-jump-nav {
+  top: var(--charts-jump-sticky-top, 56px);
+  margin: 0 0 18px;
 }
 
 .summaries-jump-nav {
-  position: sticky;
   top: var(--summaries-jump-sticky-top, 56px);
-  z-index: 6;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
   margin: 0 0 14px;
-  padding: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.summaries-jump-nav__link {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  text-decoration: none;
-  font-size: 0.84rem;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-  transition:
-    color 0.2s ease,
-    border-color 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.summaries-jump-nav__link:hover,
-.summaries-jump-nav__link:focus-visible {
-  color: var(--color-accent);
-  border-color: rgba(47, 91, 234, 0.34);
-  background: var(--color-input-bg);
-  outline: none;
-}
-
-.summaries-jump-nav__link.is-active,
-.summaries-jump-nav__link[aria-current="true"] {
-  color: var(--color-accent);
-  border-color: rgba(47, 91, 234, 0.42);
-  background: var(--color-input-bg);
-  box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.18);
 }
 
 .charts-subsection {
@@ -2558,12 +2536,7 @@ body[data-page="summaries"] #summariesGroupPspcHeading {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-body[data-theme="dark"] .charts-jump-nav {
-  background: rgba(20, 25, 39, 0.92);
-  border-color: rgba(121, 147, 199, 0.3);
-}
-
-body[data-theme="dark"] .summaries-jump-nav {
+body[data-theme="dark"] :is(.charts-jump-nav, .summaries-jump-nav) {
   background: rgba(20, 25, 39, 0.92);
   border-color: rgba(121, 147, 199, 0.3);
 }
@@ -2906,6 +2879,10 @@ body[data-theme="dark"] .charts-subsection {
   min-width: 44px;
   min-height: 32px;
   padding: 6px 10px;
+}
+
+.report-card__actions :is(.export-icon-btn, .chart-copy-btn, .chart-download-btn) {
+  margin: 0;
 }
 
 .report-card__inline-filter {
@@ -4196,14 +4173,15 @@ body[data-theme="dark"] .insight-card {
   justify-content: flex-end;
 }
 
+.export-icon-btn,
 .chart-copy-btn,
 .chart-download-btn {
   border: 1px solid var(--color-border);
   background: var(--color-surface-alt);
   color: var(--color-text-muted);
-  border-radius: 10px;
-  width: 32px;
-  height: 32px;
+  border-radius: var(--component-export-radius);
+  width: var(--component-export-size);
+  height: var(--component-export-size);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4217,23 +4195,27 @@ body[data-theme="dark"] .insight-card {
     transform 0.15s ease;
 }
 
+.export-icon-btn svg,
 .chart-copy-btn svg,
 .chart-download-btn svg {
-  width: 16px;
-  height: 16px;
+  width: var(--component-export-icon-size);
+  height: var(--component-export-icon-size);
 }
 
+.export-icon-btn:hover,
+.export-icon-btn:focus-visible,
 .chart-copy-btn:hover,
 .chart-copy-btn:focus-visible,
 .chart-download-btn:hover,
 .chart-download-btn:focus-visible {
   background: var(--color-surface);
   color: var(--color-accent);
-  border-color: rgba(37, 99, 235, 0.35);
+  border-color: var(--state-accent-border-35);
   outline: none;
   transform: translateY(-1px);
 }
 
+.export-icon-btn::after,
 .chart-copy-btn::after,
 .chart-download-btn::after {
   content: attr(data-tooltip);
@@ -4244,11 +4226,11 @@ body[data-theme="dark"] .insight-card {
   background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 0.78rem;
+  border-radius: var(--component-export-tooltip-radius);
+  padding: var(--component-export-tooltip-padding);
+  font-size: var(--component-export-tooltip-font-size);
   white-space: nowrap;
-  box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.45);
+  box-shadow: var(--component-export-tooltip-shadow);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
@@ -4257,6 +4239,9 @@ body[data-theme="dark"] .insight-card {
   right: 0;
 }
 
+.export-icon-btn:hover::after,
+.export-icon-btn:focus-visible::after,
+.export-icon-btn.is-feedback::after,
 .chart-copy-btn:hover::after,
 .chart-copy-btn:focus-visible::after,
 .chart-copy-btn.is-feedback::after,
@@ -4267,12 +4252,15 @@ body[data-theme="dark"] .insight-card {
   transform: translateY(0);
 }
 
+.export-icon-btn.is-error,
 .chart-copy-btn.is-error,
 .chart-download-btn.is-error {
   color: var(--color-danger);
   border-color: rgba(195, 75, 85, 0.35);
 }
 
+.export-icon-btn.is-error:hover,
+.export-icon-btn.is-error:focus-visible,
 .chart-copy-btn.is-error:hover,
 .chart-copy-btn.is-error:focus-visible,
 .chart-download-btn.is-error:hover,
@@ -5714,21 +5702,19 @@ body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:focus-visible {
 }
 
 @media (max-width: 768px) {
+  :is(.charts-jump-nav, .summaries-jump-nav) {
+    padding: 6px;
+  }
+
   .charts-jump-nav {
     margin: 8px 0 14px;
-    padding: 6px;
   }
 
   .summaries-jump-nav {
     margin: 8px 0 12px;
-    padding: 6px;
   }
 
-  .charts-jump-nav__link {
-    min-height: 36px;
-  }
-
-  .summaries-jump-nav__link {
+  :is(.charts-jump-nav__link, .summaries-jump-nav__link) {
     min-height: 36px;
   }
 
@@ -6661,7 +6647,7 @@ body[data-theme="dark"] .btn-secondary[aria-pressed="true"] {
     border-radius: 14px;
   }
 
-  .charts-jump-nav__link {
+  :is(.charts-jump-nav__link, .summaries-jump-nav__link) {
     min-height: 40px;
   }
 
