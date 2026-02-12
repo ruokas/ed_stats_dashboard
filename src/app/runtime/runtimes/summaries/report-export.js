@@ -10,9 +10,9 @@ export function createReportExportClickHandler({
   exportState,
   getDatasetValue,
   setCopyButtonFeedback,
+  writeTextToClipboard,
   formatExportFilename,
   escapeCsvCell,
-  triggerDownloadFromBlob,
 }) {
   return async function handleReportExportClick(event) {
     const button = event.currentTarget;
@@ -26,15 +26,12 @@ export function createReportExportClickHandler({
       setCopyButtonFeedback(button, 'Nėra duomenų eksportui', 'error');
       return;
     }
-    if (format === 'csv') {
+    if (format === 'copy' || format === 'csv') {
       const csv = createRowsCsv(model.headers || [], model.rows || [], escapeCsvCell);
-      const ok = triggerDownloadFromBlob(
-        new Blob([csv], { type: 'text/csv;charset=utf-8;' }),
-        formatExportFilename(model.title, 'csv')
-      );
+      const ok = await writeTextToClipboard(csv);
       setCopyButtonFeedback(
         button,
-        ok ? 'Ataskaita parsisiųsta' : 'Klaida parsisiunčiant',
+        ok ? 'Ataskaita nukopijuota' : 'Nepavyko nukopijuoti',
         ok ? 'success' : 'error'
       );
       return;

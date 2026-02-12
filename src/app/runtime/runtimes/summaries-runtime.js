@@ -26,7 +26,7 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
-import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
+import { setCopyButtonFeedback, storeCopyButtonBaseLabel, writeTextToClipboard } from '../clipboard.js';
 import { createDataFlow } from '../data-flow.js';
 import {
   initSummariesJumpNavigation,
@@ -56,7 +56,7 @@ import {
   createDefaultFeedbackFilters,
   createDefaultKpiFilters,
 } from '../state.js';
-import { createTableDownloadHandler, escapeCsvCell, triggerDownloadFromBlob } from '../table-export.js';
+import { createTableDownloadHandler, escapeCsvCell } from '../table-export.js';
 import { createStatusSetter } from '../utils/common.js';
 import {
   computeReferralHospitalizedShareByPspcDetailed,
@@ -1866,9 +1866,9 @@ export async function runSummariesRuntime(core) {
     exportState,
     getDatasetValue,
     setCopyButtonFeedback,
+    writeTextToClipboard,
     formatExportFilename,
     escapeCsvCell,
-    triggerDownloadFromBlob,
   });
   const { fetchData } = createMainDataHandlers({
     settings,

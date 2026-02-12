@@ -267,8 +267,35 @@
               <div class="report-card__head">
                 <h4>Diagnozių pasiskirstymas pagal dažnį</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="diagnosis">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="diagnosis">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="diagnosis"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="diagnosis"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="diagnosisChart" height="220"></canvas>
@@ -278,8 +305,35 @@
               <div class="report-card__head">
                 <h4>Amžiaus ir diagnozių grupių ryšys</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="ageDiagnosisHeatmap">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="ageDiagnosisHeatmap">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="ageDiagnosisHeatmap"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="ageDiagnosisHeatmap"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="ageDiagnosisHeatmapChart" height="260"></canvas>
@@ -288,8 +342,35 @@
               <div class="report-card__head">
                 <h4>Pacientų pasiskirstymas pagal amžių</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="ageDistribution">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="ageDistribution">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="ageDistribution"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="ageDistribution"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="ageDistributionChart" height="220"></canvas>
@@ -298,8 +379,35 @@
               <div class="report-card__head">
                 <h4>Pasišalinę pacientai (Z76.9)</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="z769Trend">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="z769Trend">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="z769Trend"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="z769Trend"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="z769TrendChart" height="220"></canvas>
@@ -316,8 +424,35 @@
               <div class="report-card__head">
                 <h4>Pacientai su siuntimu</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralTrend">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralTrend">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="referralTrend"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="referralTrend"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="referralTrendChart" height="220"></canvas>
@@ -326,8 +461,35 @@
               <div class="report-card__head">
                 <h4>Siuntimas × baigtis pagal metus</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralDispositionYearly">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralDispositionYearly">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="referralDispositionYearly"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="referralDispositionYearly"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="referralDispositionYearlyChart" height="220"></canvas>
@@ -336,8 +498,35 @@
               <div class="report-card__head">
                 <h4>Siuntimų % pagal mėnesį</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralMonthlyHeatmap">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralMonthlyHeatmap">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="referralMonthlyHeatmap"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="referralMonthlyHeatmap"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="referralMonthlyHeatmapChart" height="260"></canvas>
@@ -366,8 +555,35 @@
                       <option value="asc">Nuo mažiausių %</option>
                     </select>
                   </label>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="referralHospitalizedByPspc">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="referralHospitalizedByPspc">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="referralHospitalizedByPspc"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="referralHospitalizedByPspc"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="referralHospitalizedByPspcChart" height="220"></canvas>
@@ -384,8 +600,35 @@
               <div class="report-card__head">
                 <h4>PSPC: siuntimų ir hospitalizacijų ryšys</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="pspcCorrelation">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="pspcCorrelation">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="pspcCorrelation"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="pspcCorrelation"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="pspcCorrelationChart" height="220"></canvas>
@@ -394,8 +637,35 @@
               <div class="report-card__head">
                 <h4>Pacientų kiekiai pagal PSPC įstaigas</h4>
                 <div class="report-card__actions">
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="csv" data-report-key="pspcDistribution">CSV</button>
-                  <button type="button" class="btn btn-tertiary btn-small" data-report-export="png" data-report-key="pspcDistribution">PNG</button>
+                  <button
+                    type="button"
+                    class="chart-copy-btn"
+                    data-report-export="copy"
+                    data-report-key="pspcDistribution"
+                    data-tooltip="Kopijuoti grafiką"
+                    aria-label="Kopijuoti grafiką"
+                    title="Kopijuoti grafiką"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+                      <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="chart-download-btn"
+                    data-report-export="png"
+                    data-report-key="pspcDistribution"
+                    data-tooltip="Parsisiųsti PNG"
+                    aria-label="Parsisiųsti grafiką PNG formatu"
+                    title="Parsisiųsti PNG"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M8 11l4 4 4-4"></path>
+                      <path d="M4 21h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
               <canvas id="pspcDistributionChart" height="220"></canvas>
@@ -430,4 +700,6 @@
 
 </body>
 </html>
+
+
 
