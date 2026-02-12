@@ -47,3 +47,26 @@ node scripts/perf-harness.mjs perf-runs.json
 ```
 
 Output is grouped by `page + cacheMode` with median values for all tracked metrics.
+
+## Worker Benchmark Summary
+
+When you collect worker-level benchmark runs, aggregate them with:
+
+```bash
+node scripts/benchmark-worker.mjs worker-bench-runs.json
+```
+
+Expected input shape:
+
+```json
+[
+  {
+    "operation": "transformCsv",
+    "durationMs": 143.5,
+    "rowsIn": 18240,
+    "rowsOut": 18240
+  }
+]
+```
+
+The script prints per-operation medians and p95 durations.

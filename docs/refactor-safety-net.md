@@ -19,6 +19,8 @@ Use this checklist to keep behavior stable while refactoring.
 7. Toggle theme and verify contrast remains readable.
 8. Open ED panel, search, and close it.
 9. Open each page (`index.html`, `charts.html`, `recent.html`, `summaries.html`, `feedback.html`, `ed.html`) and confirm runtime initializes without console errors.
+10. Run `npm run pages:check` and confirm generated page shell files are in sync.
+11. Run `npm run check:refactor` and confirm strict gates pass before merge.
 
 ## Regression checklist (monthly)
 - Auto refresh still runs at configured interval.

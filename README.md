@@ -43,16 +43,20 @@ Nuo `code-quality` šakos projektas turi bazinę kokybės infrastruktūrą:
 - `npm run format:check` – formato patikra nekeičiant failų.
 - `npm run typecheck` – `TypeScript` (`checkJs`) statinė patikra kritiniams moduliams.
 - `npm run test` – paleidžia `Vitest` testus (`jsdom` aplinkoje).
-- `npm run test:coverage` – paleidžia testus su coverage vartais.
+- `npm run test:coverage` – paleidžia testus su coverage vartais (`70/55/70/70`: lines/branches/functions/statements).
 - `npm run depcruise` – tikrina modulių ciklus ir architektūrines importų taisykles.
 - `npm run knip` – ieško nenaudojamų failų/eksportų/priklausomybių (reikalauja papildomo konfigūravimo brandžiai analizei).
+- `npm run pages:generate` – sugeneruoja `index/charts/recent/summaries/feedback/ed` puslapius iš `templates/page-shell/manifest.json`.
+- `npm run pages:check` – patikrina ar sugeneruoti puslapiai nesiskiria nuo manifest/template šaltinių.
+- `npm run benchmark:worker` – apskaičiuoja worker benchmark medianas iš `worker-bench-runs.json`.
 - `npm run check` – paleidžia `lint + typecheck + test:coverage` vienu veiksmu.
 - `npm run check:strict` – paleidžia `check + depcruise + knip:exports`; skirta prieš release ar didesnius refaktorius.
+- `npm run check:refactor` – paleidžia `check:strict + pages:check + css:budget`; rekomenduojamas prieš merge į `main`.
 
-CI darbo eiga (`.github/workflows/code-quality.yml`) vykdo `npm run check` kiekviename `pull_request` ir `push` į `main`/`code-quality`, bei prideda coverage artifact.
+CI darbo eiga (`.github/workflows/code-quality.yml`) vykdo `npm run check:refactor` kiekviename `pull_request` ir `push` į `main`/`code-quality`, bei prideda coverage artifact.
 Praktinė taisyklė:
 - Kasdieniams pakeitimams ir PR vartams naudokite `npm run check`.
-- Prieš „release“ arba keičiant architektūrą naudokite `npm run check:strict`.
+- Prieš „release“ arba keičiant architektūrą naudokite `npm run check:refactor`.
 
 ## Konfigūracija
 Skydelis įkelia `config.json` per `fetch`, todėl rekomenduojama jį atverti per lokalų serverį (ne `file://`).

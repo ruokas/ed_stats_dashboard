@@ -1,0 +1,99 @@
+<main class="container" role="main">
+<div class="section-band section-band--trends">
+<section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="recentHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="4" width="17" height="17" rx="2" />
+                  <path d="M8 2.5v3" />
+                  <path d="M16 2.5v3" />
+                  <path d="M3.5 9h17" />
+                  <path d="M12 13v4" />
+                  <path d="M12 13h3" />
+                </svg>
+              </span>
+              <span class="section-title__text">Paskutinės 7 dienos</span>
+            </h2>
+            <p id="recentSubtitle" class="section__subtitle">Kasdienė suvestinė pagal naujausius duomenis</p>
+          </div>
+        </div>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="csv"
+            data-table-target="#recentTableRoot"
+            data-table-title="Paskutinės 7 dienos"
+            aria-label="Parsisiųsti paskutinių 7 dienų lentelę CSV formatu"
+            title="Parsisiųsti CSV"
+          >CSV</button>
+          <button
+            type="button"
+            class="btn btn-tertiary btn-small"
+            data-table-download="png"
+            data-table-target="#recentTableRoot"
+            data-table-title="Paskutinės 7 dienos"
+            aria-label="Parsisiųsti paskutinių 7 dienų lentelę PNG formatu"
+            title="Parsisiųsti PNG"
+          >PNG</button>
+          <button id="compareToggle" type="button" class="btn btn-secondary btn-small">Palyginti</button>
+        </div>
+      </div>
+      <article id="compareCard" class="compare-card" hidden aria-live="polite">
+        <div class="compare-card__header">
+          <h3>Greitas palyginimas</h3>
+          <button id="compareClear" type="button" class="btn btn-tertiary btn-small">Išvalyti</button>
+        </div>
+        <p id="compareSummary" class="compare-card__body">Pasirinkite dvi eilutes lentelėje.</p>
+      </article>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
+        <table id="recentTableRoot" aria-describedby="recentSubtitle">
+          <caption id="recentCaption" class="sr-only">Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė</caption>
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Pacientai</th>
+              <th scope="col">Vid. laikas (val.)</th>
+              <th scope="col">Naktiniai pacientai</th>
+              <th scope="col">GMP</th>
+              <th scope="col">Hospitalizuoti</th>
+              <th scope="col">Išleisti</th>
+            </tr>
+          </thead>
+          <tbody id="recentTable">
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+</div>
+</main>

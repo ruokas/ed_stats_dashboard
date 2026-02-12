@@ -17,10 +17,14 @@
     "knip": "knip --include files,dependencies,unlisted",
     "knip:exports": "knip --include exports",
     "css:metrics": "node scripts/css-metrics.mjs",
-    "css:budget": "node scripts/css-metrics.mjs --max-bytes=160000",
+    "css:budget": "node scripts/css-metrics.mjs --max-bytes=145000",
+    "pages:generate": "node scripts/generate-pages.mjs",
+    "pages:check": "node scripts/check-pages.mjs",
+    "benchmark:worker": "node scripts/benchmark-worker.mjs",
     "prepare": "husky",
     "check": "npm run lint && npm run typecheck && npm run test:coverage",
-    "check:strict": "npm run check && npm run depcruise && npm run knip:exports"
+    "check:strict": "npm run check && npm run depcruise && npm run knip:exports",
+    "check:refactor": "npm run check:strict && npm run pages:check && npm run css:budget"
   },
   "repository": {
     "type": "git",

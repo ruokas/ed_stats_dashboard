@@ -23,12 +23,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint and tests
-        run: npm run check
-      # TODO(stage-2): switch to `npm run check:strict` once strict gate stabilization is complete.
-
-      - name: Validate CSS budget
-        run: npm run css:budget
+      - name: Run strict quality gates
+        run: npm run check:refactor
 
       - name: Upload coverage artifacts
         if: always()

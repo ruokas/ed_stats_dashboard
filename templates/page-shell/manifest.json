@@ -1,0 +1,71 @@
+{
+  "pages": [
+    {
+      "file": "index.html",
+      "bodyAttributes": {
+        "data-page": "kpi"
+      },
+      "stylesHref": "styles.css",
+      "mainScriptSrc": "main.js?v=2026-02-08-entry-refresh-1",
+      "mainContentFile": "content/index.main.html",
+      "afterMainFile": "content/index.after-main.html",
+      "extraHeadFile": null
+    },
+    {
+      "file": "charts.html",
+      "bodyAttributes": {
+        "data-page": "charts"
+      },
+      "stylesHref": "styles.css?v=2026-02-08-charts-jump-sticky-9",
+      "mainScriptSrc": "main.js?v=2026-02-08-entry-refresh-9",
+      "mainContentFile": "content/charts.main.html",
+      "afterMainFile": "content/charts.after-main.html",
+      "extraHeadFile": "partials/charts-extra-head.html"
+    },
+    {
+      "file": "recent.html",
+      "bodyAttributes": {
+        "data-page": "recent"
+      },
+      "stylesHref": "styles.css",
+      "mainScriptSrc": "main.js?v=2026-02-08-entry-refresh-1",
+      "mainContentFile": "content/recent.main.html",
+      "afterMainFile": "content/recent.after-main.html",
+      "extraHeadFile": null
+    },
+    {
+      "file": "summaries.html",
+      "bodyAttributes": {
+        "data-page": "summaries"
+      },
+      "stylesHref": "styles.css",
+      "mainScriptSrc": "main.js?v=2026-02-08-entry-refresh-1",
+      "mainContentFile": "content/summaries.main.html",
+      "afterMainFile": "content/summaries.after-main.html",
+      "extraHeadFile": null
+    },
+    {
+      "file": "feedback.html",
+      "bodyAttributes": {
+        "data-page": "feedback"
+      },
+      "stylesHref": "styles.css",
+      "mainScriptSrc": "main.js?v=2026-02-08-entry-refresh-1",
+      "mainContentFile": "content/feedback.main.html",
+      "afterMainFile": "content/feedback.after-main.html",
+      "extraHeadFile": null
+    },
+    {
+      "file": "ed.html",
+      "bodyAttributes": {
+        "data-page": "ed",
+        "data-fullscreen": "true"
+      },
+      "stylesHref": "styles.css",
+      "mainScriptSrc": "main.js?v=2026-02-08-entry-refresh-1",
+      "mainContentFile": "content/ed.main.html",
+      "afterMainFile": "content/ed.after-main.html",
+      "extraHeadFile": null
+    }
+  ]
+}

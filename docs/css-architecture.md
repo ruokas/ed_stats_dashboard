@@ -5,21 +5,27 @@
 - Goal: reduce duplication and specificity complexity without changing UI behavior.
 
 ## Baseline (2026-02-12)
-- File size: `150461` bytes
-- Lines: `5980`
-- Media queries: `27`
-- Approximate selector blocks: `1013`
-
-## Current Snapshot (2026-02-12)
-- CSS bundle size: `145462` bytes total
-- `styles.css`: `119152` bytes
+- CSS bundle size: `154567` bytes total
+- `styles.css`: `128257` bytes
 - `css/navigation.css`: `7198` bytes
 - `css/export-controls.css`: `2828` bytes
 - `css/hero.css`: `9375` bytes
 - `css/feedback.css`: `6909` bytes
-- Lines: `6883` (bundle total; includes legacy spacing/newline blocks)
+- Lines: `7055`
+- Media queries: `29`
+- Approximate selector blocks: `1003`
+
+## Current Snapshot (2026-02-12, post cleanup)
+- CSS bundle size: `125233` bytes total
+- `styles.css`: `98923` bytes
+- `css/navigation.css`: `7198` bytes
+- `css/export-controls.css`: `2828` bytes
+- `css/hero.css`: `9375` bytes
+- `css/feedback.css`: `6909` bytes
+- Lines: `5926`
 - Media queries: `26`
-- Approximate selector blocks: `973`
+- Approximate selector blocks: `845`
+- Cleanup note: removed legacy selector groups not referenced by current HTML/JS (`ed-tv`, `tab-switcher`, old `insight/trend` variants, legacy `chart-card--ed-modern` legend styles).
 
 ## Refactor Rules
 - Do not change class names used by HTML/JS selectors.
@@ -50,4 +56,5 @@
 ## Continuous Guardrails
 - Metrics: `npm run css:metrics`
 - Budget: `npm run css:budget`
+- Budget target: `<= 145000` bytes (bundle total reported by `css:metrics`)
 - CI runs CSS budget check in `.github/workflows/code-quality.yml`.
