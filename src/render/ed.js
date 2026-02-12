@@ -1,5 +1,8 @@
 import { setDatasetValue } from '../utils/dom.js';
-import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js?v=2026-02-10-feedback-location-split-1';
+import {
+  buildEdDashboardModel,
+  buildEdSectionsModel,
+} from './ed-model.js?v=2026-02-10-feedback-location-split-1';
 
 function formatCardDisplayValue(config, summary, formatEdCardValue) {
   const primaryRaw = summary?.[config.key];
@@ -9,7 +12,7 @@ function formatCardDisplayValue(config, summary, formatEdCardValue) {
   if (config.secondaryKey) {
     const primaryFormatted = formatEdCardValue(primaryRaw, config.format);
     const secondaryFormatted = formatEdCardValue(secondaryRaw, config.format);
-    const suffix = config.format === 'hours' ? ' val.' : (config.format === 'minutes' ? ' min.' : '');
+    const suffix = config.format === 'hours' ? ' val.' : config.format === 'minutes' ? ' min.' : '';
     const primaryText = primaryFormatted != null ? `${primaryFormatted}${suffix}` : '—';
     const secondaryText = secondaryFormatted != null ? `${secondaryFormatted}${suffix}` : '—';
     if (primaryFormatted != null || secondaryFormatted != null) {
@@ -19,9 +22,12 @@ function formatCardDisplayValue(config, summary, formatEdCardValue) {
   } else {
     const formatted = formatEdCardValue(primaryRaw, config.format);
     if (formatted != null) {
-      text = config.format === 'hours'
-        ? `${formatted} val.`
-        : (config.format === 'minutes' ? `${formatted} min.` : formatted);
+      text =
+        config.format === 'hours'
+          ? `${formatted} val.`
+          : config.format === 'minutes'
+            ? `${formatted} min.`
+            : formatted;
       hasValue = true;
     }
   }
@@ -34,10 +40,10 @@ function buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant) 
     secondaryKey: config?.secondaryKey || '',
     metaKey: config?.metaKey || '',
     trendKey: config?.trendKey || '',
-    value: config?.key ? summary?.[config.key] ?? null : null,
-    secondary: config?.secondaryKey ? summary?.[config.secondaryKey] ?? null : null,
-    meta: config?.metaKey ? summary?.[config.metaKey] ?? null : null,
-    trend: config?.trendKey ? summary?.[config.trendKey] ?? null : null,
+    value: config?.key ? (summary?.[config.key] ?? null) : null,
+    secondary: config?.secondaryKey ? (summary?.[config.secondaryKey] ?? null) : null,
+    meta: config?.metaKey ? (summary?.[config.metaKey] ?? null) : null,
+    trend: config?.trendKey ? (summary?.[config.trendKey] ?? null) : null,
   }));
   const dispositionsSnapshot = (Array.isArray(dispositions) ? dispositions : []).map((item) => ({
     label: item?.label || '',
@@ -55,19 +61,18 @@ function buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant) 
   });
 }
 
-function upsertCard(card, config, summary, {
-  renderEdCommentsCard,
-  formatEdCardValue,
-  buildEdCardVisuals,
-}) {
+function upsertCard(card, config, summary, { renderEdCommentsCard, formatEdCardValue, buildEdCardVisuals }) {
   card.className = 'ed-dashboard__card';
   card.setAttribute('role', 'listitem');
   setDatasetValue(card, 'cardKey', config.key || config.type || 'unknown');
-  const nextType = config.type === 'donut'
-    ? 'donut'
-    : (config.type === 'comments'
-      ? 'comments'
-      : (config.type === 'feedback-rotating-metric' ? 'feedback-rotating-metric' : 'default'));
+  const nextType =
+    config.type === 'donut'
+      ? 'donut'
+      : config.type === 'comments'
+        ? 'comments'
+        : config.type === 'feedback-rotating-metric'
+          ? 'feedback-rotating-metric'
+          : 'default';
   const currentType = String(card.dataset?.cardType || '');
   card.classList.toggle('ed-dashboard__card--donut', nextType === 'donut');
   card.classList.toggle('ed-dashboard__card--comments', nextType === 'comments');
@@ -84,7 +89,8 @@ function upsertCard(card, config, summary, {
     card.prepend(title);
   }
   if (nextType === 'feedback-rotating-metric') {
-    title.textContent = String(summary?.feedbackCurrentMonthMetricTitle || config.title || '').trim() || config.title;
+    title.textContent =
+      String(summary?.feedbackCurrentMonthMetricTitle || config.title || '').trim() || config.title;
   } else {
     title.textContent = config.title;
   }
@@ -127,9 +133,10 @@ function upsertCard(card, config, summary, {
         text: String(item?.text || '').trim(),
         respondent: String(item?.respondent || '').trim(),
         location: String(item?.location || '').trim(),
-        receivedAt: item?.receivedAt instanceof Date && !Number.isNaN(item.receivedAt.getTime())
-          ? item.receivedAt.toISOString()
-          : String(item?.receivedAt || ''),
+        receivedAt:
+          item?.receivedAt instanceof Date && !Number.isNaN(item.receivedAt.getTime())
+            ? item.receivedAt.toISOString()
+            : String(item?.receivedAt || ''),
       })),
       meta: typeof metaValue === 'string' ? metaValue.trim() : String(metaValue ?? ''),
       rotateMs: Number(config?.rotateMs) || 0,
@@ -140,7 +147,9 @@ function upsertCard(card, config, summary, {
       return;
     }
     const staleNodes = Array.from(card.children).filter((node) => node !== title);
-    staleNodes.forEach((node) => node.remove());
+    staleNodes.forEach((node) => {
+      node.remove();
+    });
     renderEdCommentsCard(card, config, rawComments, metaValue);
     setDatasetValue(card, 'commentsRenderKey', commentsRenderKey);
     return;
@@ -183,7 +192,7 @@ function upsertCard(card, config, summary, {
       const metricValue = document.createElement('p');
       metricValue.className = 'ed-dashboard__feedback-location-value';
       const formatted = formatEdCardValue(entry?.value, config.format);
-      metricValue.textContent = formatted != null ? formatted : (config.empty || '—');
+      metricValue.textContent = formatted != null ? formatted : config.empty || '—';
       const meta = document.createElement('p');
       meta.className = 'ed-dashboard__feedback-location-meta';
       const count = Number.isFinite(entry?.count) ? Math.max(0, Math.round(entry.count)) : null;
@@ -210,10 +219,7 @@ function upsertCard(card, config, summary, {
     };
     const locationGrid = document.createElement('div');
     locationGrid.className = 'ed-dashboard__feedback-location-grid';
-    locationGrid.append(
-      buildLocationMetricNode(left),
-      buildLocationMetricNode(right),
-    );
+    locationGrid.append(buildLocationMetricNode(left), buildLocationMetricNode(right));
     visualsRoot.replaceChildren(locationGrid);
 
     let meta = card.querySelector('.ed-dashboard__card-meta');
@@ -223,8 +229,9 @@ function upsertCard(card, config, summary, {
       card.appendChild(meta);
     }
     const metaRaw = config.metaKey ? summary?.[config.metaKey] : null;
-    const metaText = typeof metaRaw === 'string' ? metaRaw.trim() : (metaRaw != null ? String(metaRaw).trim() : '');
-    meta.textContent = metaText.length ? metaText : (config.description || '');
+    const metaText =
+      typeof metaRaw === 'string' ? metaRaw.trim() : metaRaw != null ? String(metaRaw).trim() : '';
+    meta.textContent = metaText.length ? metaText : config.description || '';
 
     let indicators = card.querySelector('.ed-dashboard__feedback-indicators');
     if (!indicators) {
@@ -237,15 +244,17 @@ function upsertCard(card, config, summary, {
       ? summary.feedbackCurrentMonthMetricCatalog
       : [];
     const activeKey = String(summary?.feedbackCurrentMonthMetricKey || '');
-    indicators.replaceChildren(...catalog.map((metric) => {
-      const dot = document.createElement('span');
-      dot.className = 'ed-dashboard__feedback-indicator';
-      const isActive = String(metric?.key || '') === activeKey;
-      if (isActive) {
-        dot.classList.add('is-active');
-      }
-      return dot;
-    }));
+    indicators.replaceChildren(
+      ...catalog.map((metric) => {
+        const dot = document.createElement('span');
+        dot.className = 'ed-dashboard__feedback-indicator';
+        const isActive = String(metric?.key || '') === activeKey;
+        if (isActive) {
+          dot.classList.add('is-active');
+        }
+        return dot;
+      })
+    );
     return;
   }
 
@@ -283,11 +292,22 @@ function upsertCard(card, config, summary, {
     card.appendChild(meta);
   }
   const metaRaw = config.metaKey ? summary?.[config.metaKey] : null;
-  const metaText = typeof metaRaw === 'string' ? metaRaw.trim() : (metaRaw != null ? String(metaRaw).trim() : '');
-  meta.textContent = metaText.length ? metaText : (config.description || '');
+  const metaText =
+    typeof metaRaw === 'string' ? metaRaw.trim() : metaRaw != null ? String(metaRaw).trim() : '';
+  meta.textContent = metaText.length ? metaText : config.description || '';
 }
 
-function upsertSection(container, section, sectionIndex, groupedSections, sectionDefinitions, TEXT, createEdSectionIcon, summary, deps) {
+function upsertSection(
+  container,
+  section,
+  sectionIndex,
+  groupedSections,
+  sectionDefinitions,
+  TEXT,
+  createEdSectionIcon,
+  summary,
+  deps
+) {
   const sectionKey = section.key || `section-${sectionIndex}`;
   let sectionEl = container.querySelector(`.ed-dashboard__section[data-section-key="${sectionKey}"]`);
   if (!sectionEl) {
@@ -312,7 +332,9 @@ function upsertSection(container, section, sectionIndex, groupedSections, sectio
       iconWrapper.className = 'ed-dashboard__section-icon';
       header.prepend(iconWrapper);
     }
-    iconWrapper.replaceChildren(createEdSectionIcon(section.icon || (section.key !== 'default' ? section.key : 'default')));
+    iconWrapper.replaceChildren(
+      createEdSectionIcon(section.icon || (section.key !== 'default' ? section.key : 'default'))
+    );
     let textWrapper = header.querySelector('.ed-dashboard__section-header-text');
     if (!textWrapper) {
       textWrapper = document.createElement('div');
@@ -327,7 +349,8 @@ function upsertSection(container, section, sectionIndex, groupedSections, sectio
     }
     sectionLabelId = `edSectionTitle-${String(section.key || sectionIndex).replace(/[^a-z0-9_-]/gi, '') || sectionIndex}`;
     titleEl.id = sectionLabelId;
-    titleEl.textContent = section.title || sectionDefinitions?.default?.title || TEXT.ed.title || 'RŠL SMPS skydelis';
+    titleEl.textContent =
+      section.title || sectionDefinitions?.default?.title || TEXT.ed.title || 'RŠL SMPS skydelis';
     let descriptionEl = textWrapper.querySelector('.ed-dashboard__section-description');
     if (section.description || sectionDefinitions?.default?.description) {
       if (!descriptionEl) {
@@ -359,8 +382,10 @@ function upsertSection(container, section, sectionIndex, groupedSections, sectio
     cardsWrapper.removeAttribute('aria-labelledby');
   }
   const existingCards = new Map(
-    Array.from(cardsWrapper.querySelectorAll('.ed-dashboard__card[data-card-key]'))
-      .map((node) => [String(node.dataset.cardKey || ''), node]),
+    Array.from(cardsWrapper.querySelectorAll('.ed-dashboard__card[data-card-key]')).map((node) => [
+      String(node.dataset.cardKey || ''),
+      node,
+    ])
   );
   const nextCardKeys = new Set();
   (Array.isArray(section.cards) ? section.cards : []).forEach((config) => {
@@ -437,21 +462,31 @@ export function createEdRenderer(env) {
     });
     const { dataset, summary, dispositions, displayVariant, cardConfigs, dispositionsText } = model;
     if (dashboardState?.feedbackMetricCarousel && typeof dashboardState.feedbackMetricCarousel === 'object') {
-      dashboardState.feedbackMetricCarousel.metricCatalog = Array.isArray(summary?.feedbackCurrentMonthMetricCatalog)
+      dashboardState.feedbackMetricCarousel.metricCatalog = Array.isArray(
+        summary?.feedbackCurrentMonthMetricCatalog
+      )
         ? summary.feedbackCurrentMonthMetricCatalog
         : [];
     }
     const renderKey = buildCardRenderKey(cardConfigs, summary, dispositions, displayVariant);
     const mustPatchCards = dashboardState.edCardsRenderKey !== renderKey;
 
-  if (mustPatchCards) {
-      const commentsCurrentlyRendered = Boolean(selectors.edCards.querySelector('.ed-dashboard__card[data-card-key="feedbackComments"]'));
-      const commentsWillBeRendered = cardConfigs.some((config) => String(config?.key || '') === 'feedbackComments');
+    if (mustPatchCards) {
+      const commentsCurrentlyRendered = Boolean(
+        selectors.edCards.querySelector('.ed-dashboard__card[data-card-key="feedbackComments"]')
+      );
+      const commentsWillBeRendered = cardConfigs.some(
+        (config) => String(config?.key || '') === 'feedbackComments'
+      );
       if (commentsCurrentlyRendered && !commentsWillBeRendered) {
         resetEdCommentRotation();
       }
       const { sectionDefinitions, groupedSections } = buildEdSectionsModel({ TEXT, cardConfigs });
-      const activeSectionKeys = new Set((Array.isArray(groupedSections) ? groupedSections : []).map((section, index) => section.key || `section-${index}`));
+      const activeSectionKeys = new Set(
+        (Array.isArray(groupedSections) ? groupedSections : []).map(
+          (section, index) => section.key || `section-${index}`
+        )
+      );
       Array.from(selectors.edCards.querySelectorAll('.ed-dashboard__section')).forEach((sectionEl) => {
         const key = sectionEl.dataset?.sectionKey || '';
         if (!activeSectionKeys.has(key)) {
@@ -471,7 +506,7 @@ export function createEdRenderer(env) {
           TEXT,
           createEdSectionIcon,
           summary,
-          { renderEdCommentsCard, formatEdCardValue, buildEdCardVisuals },
+          { renderEdCommentsCard, formatEdCardValue, buildEdCardVisuals }
         );
       });
       dashboardState.edCardsRenderKey = renderKey;
@@ -497,7 +532,8 @@ export function createEdRenderer(env) {
         selectors.edDispositionsChart.setAttribute('aria-hidden', 'true');
       }
       if (selectors.edDispositionsMessage) {
-        selectors.edDispositionsMessage.textContent = dispositionsText.empty || 'Nepavyko atvaizduoti grafiko.';
+        selectors.edDispositionsMessage.textContent =
+          dispositionsText.empty || 'Nepavyko atvaizduoti grafiko.';
         selectors.edDispositionsMessage.hidden = false;
       }
     }

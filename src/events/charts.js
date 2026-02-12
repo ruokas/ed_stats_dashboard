@@ -62,7 +62,7 @@ export function initChartControls(env) {
     handleChartsHospitalTableRowClick,
   } = env;
 
-  if (selectors.chartPeriodButtons && selectors.chartPeriodButtons.length) {
+  if (selectors.chartPeriodButtons?.length) {
     selectors.chartPeriodButtons.forEach((button) => {
       button.addEventListener('click', () => {
         const period = getDatasetValue(button, 'chartPeriod', '');

@@ -150,16 +150,17 @@ export function createHourlyControlsFeature(deps) {
   function buildHourlyCompareLabel() {
     const years = normalizeHourlyCompareYears(
       dashboardState.hourlyCompareYears?.[0],
-      dashboardState.hourlyCompareYears?.[1],
+      dashboardState.hourlyCompareYears?.[1]
     );
     if (!dashboardState.hourlyCompareEnabled || !years.length) {
       return '';
     }
-    const seriesLabel = dashboardState.hourlyCompareSeries === HOURLY_COMPARE_SERIES_EMS
-      ? 'GMP'
-      : dashboardState.hourlyCompareSeries === HOURLY_COMPARE_SERIES_SELF
-        ? 'Ne GMP'
-        : '';
+    const seriesLabel =
+      dashboardState.hourlyCompareSeries === HOURLY_COMPARE_SERIES_EMS
+        ? 'GMP'
+        : dashboardState.hourlyCompareSeries === HOURLY_COMPARE_SERIES_SELF
+          ? 'Ne GMP'
+          : '';
     const seriesSuffix = seriesLabel ? `, ${seriesLabel}` : '';
     return `Palyginimas: ${years.join(', ')} m.${seriesSuffix}`;
   }
@@ -201,9 +202,10 @@ export function createHourlyControlsFeature(deps) {
       return;
     }
     const label = buildHourlyCaptionLabel(weekdayValue, stayBucket, metricValue, departmentValue);
-    const captionText = typeof TEXT.charts?.hourlyCaption === 'function'
-      ? TEXT.charts.hourlyCaption(label)
-      : (TEXT.charts?.hourlyCaption || 'Vidutinis pacientų skaičius per valandą.');
+    const captionText =
+      typeof TEXT.charts?.hourlyCaption === 'function'
+        ? TEXT.charts.hourlyCaption(label)
+        : TEXT.charts?.hourlyCaption || 'Vidutinis pacientų skaičius per valandą.';
     selectors.hourlyCaption.textContent = captionText;
   }
 
@@ -256,9 +258,10 @@ export function createHourlyControlsFeature(deps) {
     HOURLY_STAY_BUCKETS.forEach((bucket) => {
       const option = document.createElement('option');
       option.value = bucket.key;
-      option.textContent = (typeof labels[bucket.key] === 'string' && labels[bucket.key].trim())
-        ? labels[bucket.key]
-        : getHourlyStayLabel(bucket.key);
+      option.textContent =
+        typeof labels[bucket.key] === 'string' && labels[bucket.key].trim()
+          ? labels[bucket.key]
+          : getHourlyStayLabel(bucket.key);
       select.appendChild(option);
     });
     const current = normalizeHourlyStayBucket(dashboardState.hourlyStayBucket);
@@ -298,8 +301,8 @@ export function createHourlyControlsFeature(deps) {
     const previous = Array.isArray(dashboardState.hourlyDepartmentOptions)
       ? dashboardState.hourlyDepartmentOptions
       : [];
-    const isSame = previous.length === sorted.length
-      && previous.every((value, index) => value === sorted[index]);
+    const isSame =
+      previous.length === sorted.length && previous.every((value, index) => value === sorted[index]);
     if (isSame) {
       return;
     }
@@ -337,7 +340,10 @@ export function createHourlyControlsFeature(deps) {
       option.className = 'hourly-suggestions__item';
       option.setAttribute('role', 'option');
       option.setAttribute('data-index', String(index));
-      option.setAttribute('aria-selected', index === dashboardState.hourlyDepartmentSuggestIndex ? 'true' : 'false');
+      option.setAttribute(
+        'aria-selected',
+        index === dashboardState.hourlyDepartmentSuggestIndex ? 'true' : 'false'
+      );
       option.textContent = item;
       container.appendChild(option);
     });
@@ -354,7 +360,9 @@ export function createHourlyControlsFeature(deps) {
     const options = Array.isArray(dashboardState.hourlyDepartmentOptions)
       ? dashboardState.hourlyDepartmentOptions
       : [];
-    const normalizedQuery = String(query ?? '').trim().toLowerCase();
+    const normalizedQuery = String(query ?? '')
+      .trim()
+      .toLowerCase();
     if (!normalizedQuery && !force) {
       setHourlyDepartmentSuggestions([]);
       return;
@@ -427,7 +435,11 @@ export function createHourlyControlsFeature(deps) {
 
   function matchesHourlyMetric(record, metricValue, departmentValue) {
     const metric = normalizeHourlyMetric(metricValue);
-    if (metric === HOURLY_METRIC_ARRIVALS || metric === HOURLY_METRIC_DISCHARGES || metric === HOURLY_METRIC_BALANCE) {
+    if (
+      metric === HOURLY_METRIC_ARRIVALS ||
+      metric === HOURLY_METRIC_DISCHARGES ||
+      metric === HOURLY_METRIC_BALANCE
+    ) {
       return true;
     }
     if (!record?.hospitalized) {
@@ -459,12 +471,20 @@ export function createHourlyControlsFeature(deps) {
     const allDays = new Set();
     const metric = normalizeHourlyMetric(metricValue);
     (Array.isArray(records) ? records : []).forEach((entry) => {
-      const arrival = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
-      const discharge = entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
-      const arrivalHasTime = entry?.arrivalHasTime === true
-        || (entry?.arrivalHasTime == null && arrival && (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
-      const dischargeHasTime = entry?.dischargeHasTime === true
-        || (entry?.dischargeHasTime == null && discharge && (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
+      const arrival =
+        entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
+      const discharge =
+        entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
+      const arrivalHasTime =
+        entry?.arrivalHasTime === true ||
+        (entry?.arrivalHasTime == null &&
+          arrival &&
+          (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+      const dischargeHasTime =
+        entry?.dischargeHasTime === true ||
+        (entry?.dischargeHasTime == null &&
+          discharge &&
+          (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
       const normalizedWeekday = normalizeHourlyWeekday(weekdayValue);
       if (!matchesHourlyStayBucket(entry, stayBucket)) {
         return;
@@ -539,32 +559,36 @@ export function createHourlyControlsFeature(deps) {
     });
 
     const normalizedWeekday = normalizeHourlyWeekday(weekdayValue);
-    const divisor = normalizedWeekday === HOURLY_WEEKDAY_ALL
-      ? Math.max(1, allDays.size)
-      : Math.max(1, weekdayDays[normalizedWeekday]?.size || 0);
+    const divisor =
+      normalizedWeekday === HOURLY_WEEKDAY_ALL
+        ? Math.max(1, allDays.size)
+        : Math.max(1, weekdayDays[normalizedWeekday]?.size || 0);
 
     const toAverage = (series) => series.map((value) => value / divisor);
-    const netTotals = metric === HOURLY_METRIC_BALANCE
-      ? {
-          all: totals.all.map((value, index) => value - outflowTotals.all[index]),
-          ems: totals.ems.map((value, index) => value - outflowTotals.ems[index]),
-          self: totals.self.map((value, index) => value - outflowTotals.self[index]),
-        }
-      : null;
-    const averages = metric === HOURLY_METRIC_BALANCE && netTotals
-      ? {
-          all: toAverage(netTotals.all),
-          ems: toAverage(netTotals.ems),
-          self: toAverage(netTotals.self),
-        }
-      : {
-          all: toAverage(totals.all),
-          ems: toAverage(totals.ems),
-          self: toAverage(totals.self),
-        };
-    const hasData = metric === HOURLY_METRIC_BALANCE
-      ? (totals.all.some((value) => value > 0) || outflowTotals.all.some((value) => value > 0))
-      : totals.all.some((value) => value > 0);
+    const netTotals =
+      metric === HOURLY_METRIC_BALANCE
+        ? {
+            all: totals.all.map((value, index) => value - outflowTotals.all[index]),
+            ems: totals.ems.map((value, index) => value - outflowTotals.ems[index]),
+            self: totals.self.map((value, index) => value - outflowTotals.self[index]),
+          }
+        : null;
+    const averages =
+      metric === HOURLY_METRIC_BALANCE && netTotals
+        ? {
+            all: toAverage(netTotals.all),
+            ems: toAverage(netTotals.ems),
+            self: toAverage(netTotals.self),
+          }
+        : {
+            all: toAverage(totals.all),
+            ems: toAverage(totals.ems),
+            self: toAverage(totals.self),
+          };
+    const hasData =
+      metric === HOURLY_METRIC_BALANCE
+        ? totals.all.some((value) => value > 0) || outflowTotals.all.some((value) => value > 0)
+        : totals.all.some((value) => value > 0);
     return { averages, hasData, divisor };
   }
 
@@ -598,7 +622,7 @@ export function createHourlyControlsFeature(deps) {
     buildOptions(selectors.hourlyCompareYearB);
     const normalized = normalizeHourlyCompareYears(
       dashboardState.hourlyCompareYears?.[0],
-      dashboardState.hourlyCompareYears?.[1],
+      dashboardState.hourlyCompareYears?.[1]
     );
     dashboardState.hourlyCompareYears = normalized;
     syncHourlyCompareControls();
@@ -635,7 +659,7 @@ export function createHourlyControlsFeature(deps) {
       }
       const normalized = normalizeHourlyCompareYears(
         dashboardState.hourlyCompareYears?.[0],
-        dashboardState.hourlyCompareYears?.[1],
+        dashboardState.hourlyCompareYears?.[1]
       );
       dashboardState.hourlyCompareYears = normalized;
       const [yearA, yearB] = normalized;
@@ -645,7 +669,7 @@ export function createHourlyControlsFeature(deps) {
   }
 
   async function handleHourlyFilterChange() {
-    const metricValue = dashboardState.hourlyMetric;
+    const _metricValue = dashboardState.hourlyMetric;
     const departmentValue = selectors.hourlyDepartmentInput?.value ?? dashboardState.hourlyDepartment;
     const weekdayValue = selectors.hourlyWeekdaySelect?.value ?? dashboardState.hourlyWeekday;
     const stayValue = selectors.hourlyStaySelect?.value ?? dashboardState.hourlyStayBucket;
@@ -669,22 +693,25 @@ export function createHourlyControlsFeature(deps) {
       dashboardState.hourlyWeekday,
       dashboardState.hourlyStayBucket,
       dashboardState.hourlyMetric,
-      dashboardState.hourlyDepartment,
+      dashboardState.hourlyDepartment
     );
     const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
-    const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-      && dashboardState.chartData.baseRecords.length
-      ? dashboardState.chartData.baseRecords
-      : dashboardState.rawRecords;
+    const baseRecords =
+      Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+        ? dashboardState.chartData.baseRecords
+        : dashboardState.rawRecords;
     const hourlyRecords = getHourlyChartRecords(
       baseRecords,
       selectedYear,
       dashboardState.chartFilters || {},
-      dashboardState.chartPeriod,
+      dashboardState.chartPeriod
     );
     const chartRenderers = getChartRenderers();
     chartRenderers.renderHourlyChartWithTheme(hourlyRecords).catch((error) => {
-      const errorInfo = describeError(error, { code: 'HOURLY_CHART', message: 'Nepavyko atnaujinti valandinio grafiko' });
+      const errorInfo = describeError(error, {
+        code: 'HOURLY_CHART',
+        message: 'Nepavyko atnaujinti valandinio grafiko',
+      });
       console.error(errorInfo.log, error);
       showChartError(TEXT.charts?.errorLoading);
     });
@@ -693,9 +720,8 @@ export function createHourlyControlsFeature(deps) {
   function applyHourlyDepartmentSelection(value) {
     dashboardState.hourlyDepartment = normalizeHourlyDepartment(value);
     if (selectors.hourlyDepartmentInput) {
-      selectors.hourlyDepartmentInput.value = dashboardState.hourlyDepartment === 'all'
-        ? ''
-        : dashboardState.hourlyDepartment;
+      selectors.hourlyDepartmentInput.value =
+        dashboardState.hourlyDepartment === 'all' ? '' : dashboardState.hourlyDepartment;
     }
     setHourlyDepartmentSuggestions([]);
     handleHourlyFilterChange();
@@ -707,7 +733,7 @@ export function createHourlyControlsFeature(deps) {
     if (enabled && selectors.hourlyCompareYearA && selectors.hourlyCompareYearB) {
       const normalized = normalizeHourlyCompareYears(
         dashboardState.hourlyCompareYears?.[0],
-        dashboardState.hourlyCompareYears?.[1],
+        dashboardState.hourlyCompareYears?.[1]
       );
       if (!normalized.length) {
         const availableYears = Array.from(selectors.hourlyCompareYearA.options || [])
@@ -720,7 +746,7 @@ export function createHourlyControlsFeature(deps) {
           selectors.hourlyCompareYearB.value = availableYears[1] != null ? String(availableYears[1]) : 'none';
           dashboardState.hourlyCompareYears = normalizeHourlyCompareYears(
             selectors.hourlyCompareYearA.value,
-            selectors.hourlyCompareYearB.value,
+            selectors.hourlyCompareYearB.value
           );
         }
       }
@@ -735,7 +761,7 @@ export function createHourlyControlsFeature(deps) {
     }
     const normalized = normalizeHourlyCompareYears(
       selectors.hourlyCompareYearA.value,
-      selectors.hourlyCompareYearB.value,
+      selectors.hourlyCompareYearB.value
     );
     dashboardState.hourlyCompareYears = normalized;
     if (normalized.length === 1) {
@@ -812,7 +838,7 @@ export function createHourlyControlsFeature(deps) {
       if (active === selectors.hourlyDepartmentInput || active === selectors.hourlyDepartmentToggle) {
         return;
       }
-      if (selectors.hourlyDepartmentSuggestions && selectors.hourlyDepartmentSuggestions.contains(active)) {
+      if (selectors.hourlyDepartmentSuggestions?.contains(active)) {
         return;
       }
       setHourlyDepartmentSuggestions([]);
@@ -820,8 +846,8 @@ export function createHourlyControlsFeature(deps) {
   }
 
   function handleHourlyDepartmentToggle() {
-    const isOpen = selectors.hourlyDepartmentSuggestions
-      && !selectors.hourlyDepartmentSuggestions.hasAttribute('hidden');
+    const isOpen =
+      selectors.hourlyDepartmentSuggestions && !selectors.hourlyDepartmentSuggestions.hasAttribute('hidden');
     if (isOpen) {
       setHourlyDepartmentSuggestions([]);
       if (selectors.hourlyDepartmentToggle) {
@@ -843,19 +869,30 @@ export function createHourlyControlsFeature(deps) {
   }
 
   function handleHourlyDepartmentKeydown(event) {
-    if (!selectors.hourlyDepartmentSuggestions || selectors.hourlyDepartmentSuggestions.hasAttribute('hidden')) {
+    if (
+      !selectors.hourlyDepartmentSuggestions ||
+      selectors.hourlyDepartmentSuggestions.hasAttribute('hidden')
+    ) {
       return;
     }
-    const items = Array.from(selectors.hourlyDepartmentSuggestions.querySelectorAll('.hourly-suggestions__item'));
+    const items = Array.from(
+      selectors.hourlyDepartmentSuggestions.querySelectorAll('.hourly-suggestions__item')
+    );
     if (!items.length) {
       return;
     }
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      dashboardState.hourlyDepartmentSuggestIndex = Math.min(items.length - 1, dashboardState.hourlyDepartmentSuggestIndex + 1);
+      dashboardState.hourlyDepartmentSuggestIndex = Math.min(
+        items.length - 1,
+        dashboardState.hourlyDepartmentSuggestIndex + 1
+      );
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      dashboardState.hourlyDepartmentSuggestIndex = Math.max(0, dashboardState.hourlyDepartmentSuggestIndex - 1);
+      dashboardState.hourlyDepartmentSuggestIndex = Math.max(
+        0,
+        dashboardState.hourlyDepartmentSuggestIndex - 1
+      );
     } else if (event.key === 'Enter') {
       event.preventDefault();
       const active = items[dashboardState.hourlyDepartmentSuggestIndex] || items[0];
@@ -870,7 +907,10 @@ export function createHourlyControlsFeature(deps) {
       return;
     }
     items.forEach((item, index) => {
-      item.setAttribute('aria-selected', index === dashboardState.hourlyDepartmentSuggestIndex ? 'true' : 'false');
+      item.setAttribute(
+        'aria-selected',
+        index === dashboardState.hourlyDepartmentSuggestIndex ? 'true' : 'false'
+      );
     });
   }
 

@@ -1,8 +1,12 @@
 import { renderDailyChart } from './daily.js';
-import { renderHourlyChart, renderHourlyChartWithTheme, renderLastShiftHourlyChartWithTheme } from './hourly.js';
 import { renderDowCharts } from './dow.js';
-import { renderFeedbackTrendChart } from './feedback-trend.js';
 import { renderEdDispositionsChart } from './ed-dispositions.js';
+import { renderFeedbackTrendChart } from './feedback-trend.js';
+import {
+  renderHourlyChart,
+  renderHourlyChartWithTheme,
+  renderLastShiftHourlyChartWithTheme,
+} from './hourly.js';
 
 export function createChartRenderers(env) {
   const {
@@ -32,11 +36,11 @@ export function createChartRenderers(env) {
   const renderDailyChartWithEnv = (...args) => renderDailyChart(env, ...args);
   const renderHourlyChartWithEnv = (...args) => renderHourlyChart(env, ...args);
   const renderHourlyChartWithThemeBound = (records) => renderHourlyChartWithTheme(env, records);
-  const renderLastShiftHourlyChartWithThemeBound = (seriesInfo) => renderLastShiftHourlyChartWithTheme(env, seriesInfo);
+  const renderLastShiftHourlyChartWithThemeBound = (seriesInfo) =>
+    renderLastShiftHourlyChartWithTheme(env, seriesInfo);
   const renderFeedbackTrendChartBound = (monthlyStats) => renderFeedbackTrendChart(env, monthlyStats);
-  const renderEdDispositionsChartBound = (dispositions, text, displayVariant) => (
-    renderEdDispositionsChart(env, dispositions, text, displayVariant)
-  );
+  const renderEdDispositionsChartBound = (dispositions, text, displayVariant) =>
+    renderEdDispositionsChart(env, dispositions, text, displayVariant);
 
   async function renderCharts(dailyStats, funnelTotals, heatmapData) {
     showChartSkeletons();
@@ -63,11 +67,13 @@ export function createChartRenderers(env) {
       const scopedDaily = Array.isArray(dailyStats) ? dailyStats.slice() : [];
       dashboardState.chartData.dailyWindow = scopedDaily;
 
-      const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
-      const baseDailyForFallback = Array.isArray(dashboardState.chartData.baseDaily)
-        && dashboardState.chartData.baseDaily.length
-        ? dashboardState.chartData.baseDaily
-        : dashboardState.dailyStats;
+      const selectedYear = Number.isFinite(dashboardState.chartYear)
+        ? Number(dashboardState.chartYear)
+        : null;
+      const baseDailyForFallback =
+        Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
+          ? dashboardState.chartData.baseDaily
+          : dashboardState.dailyStats;
       const fallbackDaily = filterDailyStatsByYear(baseDailyForFallback, selectedYear);
       const filteredDaily = Array.isArray(dashboardState.chartData.filteredDaily)
         ? dashboardState.chartData.filteredDaily
@@ -77,17 +83,21 @@ export function createChartRenderers(env) {
 
       let heatmapSource = heatmapData ?? null;
       if (!isValidHeatmapData(heatmapSource)) {
-        let fallbackRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
-          && dashboardState.chartData.filteredWindowRecords.length
-          ? dashboardState.chartData.filteredWindowRecords
-          : null;
+        let fallbackRecords =
+          Array.isArray(dashboardState.chartData.filteredWindowRecords) &&
+          dashboardState.chartData.filteredWindowRecords.length
+            ? dashboardState.chartData.filteredWindowRecords
+            : null;
         if (!fallbackRecords || !fallbackRecords.length) {
-          const baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-            && dashboardState.chartData.baseRecords.length
-            ? dashboardState.chartData.baseRecords
-            : dashboardState.rawRecords;
+          const baseRecords =
+            Array.isArray(dashboardState.chartData.baseRecords) && dashboardState.chartData.baseRecords.length
+              ? dashboardState.chartData.baseRecords
+              : dashboardState.rawRecords;
           const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
-          const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, dashboardState.chartFilters || {});
+          const filteredRecords = filterRecordsByChartFilters(
+            yearScopedRecords,
+            dashboardState.chartFilters || {}
+          );
           fallbackRecords = filterRecordsByWindow(filteredRecords, dashboardState.chartPeriod);
         }
         heatmapSource = computeArrivalHeatmap(fallbackRecords);
@@ -115,15 +125,18 @@ export function createChartRenderers(env) {
           selectors.heatmapContainer,
           heatmapSource,
           palette.accent,
-          dashboardState.heatmapMetric,
+          dashboardState.heatmapMetric
         );
         dashboardState.charts.heatmap = selectors.heatmapContainer;
       }
 
-      const hourlyRecords = Array.isArray(dashboardState.chartData.filteredWindowRecords)
-        && dashboardState.chartData.filteredWindowRecords.length
-        ? dashboardState.chartData.filteredWindowRecords
-        : (Array.isArray(dashboardState.rawRecords) ? dashboardState.rawRecords : []);
+      const hourlyRecords =
+        Array.isArray(dashboardState.chartData.filteredWindowRecords) &&
+        dashboardState.chartData.filteredWindowRecords.length
+          ? dashboardState.chartData.filteredWindowRecords
+          : Array.isArray(dashboardState.rawRecords)
+            ? dashboardState.rawRecords
+            : [];
       renderHourlyChartWithEnv(hourlyRecords, Chart, palette);
     } catch (error) {
       console.error('Nepavyko atvaizduoti grafikų:', error);

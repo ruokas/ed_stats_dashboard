@@ -29,12 +29,10 @@ export function applyCommonText({
 
   if (selectors.edNavButton) {
     const edNavLabel = settings.output.tabEdLabel || TEXT.tabs.ed;
-    const openLabel = typeof TEXT.edToggle?.open === 'function'
-      ? TEXT.edToggle.open(edNavLabel)
-      : `Atidaryti ${edNavLabel}`;
-    const closeLabel = typeof TEXT.edToggle?.close === 'function'
-      ? TEXT.edToggle.close(edNavLabel)
-      : `Uždaryti ${edNavLabel}`;
+    const openLabel =
+      typeof TEXT.edToggle?.open === 'function' ? TEXT.edToggle.open(edNavLabel) : `Atidaryti ${edNavLabel}`;
+    const closeLabel =
+      typeof TEXT.edToggle?.close === 'function' ? TEXT.edToggle.close(edNavLabel) : `Uždaryti ${edNavLabel}`;
     setDatasetValue(selectors.edNavButton, 'panelLabel', edNavLabel);
     setDatasetValue(selectors.edNavButton, 'openLabel', openLabel);
     setDatasetValue(selectors.edNavButton, 'closeLabel', closeLabel);
@@ -46,9 +44,10 @@ export function applyCommonText({
 
   if (selectors.closeEdPanelBtn) {
     const overviewLabel = settings.output.tabOverviewLabel || TEXT.tabs.overview;
-    const closeLabel = typeof TEXT.ed?.closeButton === 'function'
-      ? TEXT.ed.closeButton(overviewLabel)
-      : (TEXT.ed?.closeButton || 'Grįžti');
+    const closeLabel =
+      typeof TEXT.ed?.closeButton === 'function'
+        ? TEXT.ed.closeButton(overviewLabel)
+        : TEXT.ed?.closeButton || 'Grįžti';
     selectors.closeEdPanelBtn.setAttribute('aria-label', closeLabel);
     selectors.closeEdPanelBtn.title = closeLabel;
     const labelSpan = selectors.closeEdPanelBtn.querySelector('span');

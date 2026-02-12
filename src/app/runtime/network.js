@@ -21,13 +21,10 @@ export function formatUrlForDiagnostics(rawUrl) {
 }
 
 export function describeError(error, { code = 'UNKNOWN', message, fallbackMessage } = {}) {
-  const normalizedCode = typeof code === 'string' && code.trim()
-    ? code.trim().toUpperCase()
-    : 'UNKNOWN';
-  const baseMessage = message
-    || (typeof error === 'string'
-      ? error
-      : error?.message ?? fallbackMessage ?? 'Nepavyko įkelti duomenų.');
+  const normalizedCode = typeof code === 'string' && code.trim() ? code.trim().toUpperCase() : 'UNKNOWN';
+  const baseMessage =
+    message ||
+    (typeof error === 'string' ? error : (error?.message ?? fallbackMessage ?? 'Nepavyko įkelti duomenų.'));
   const hints = [];
   const diagnostic = typeof error === 'object' && error ? error.diagnostic : null;
 
@@ -37,7 +34,9 @@ export function describeError(error, { code = 'UNKNOWN', message, fallbackMessag
 
   if (diagnostic?.type === 'http') {
     if (diagnostic.status === 404) {
-      hints.push('Patikrinkite, ar „Google Sheet“ paskelbta per „File → Share → Publish to web → CSV“ ir kad naudojamas publikuotas CSV adresas.');
+      hints.push(
+        'Patikrinkite, ar „Google Sheet“ paskelbta per „File → Share → Publish to web → CSV“ ir kad naudojamas publikuotas CSV adresas.'
+      );
     } else if (diagnostic.status === 403) {
       hints.push('Patikrinkite bendrinimo teises – dokumentas turi būti pasiekiamas be prisijungimo.');
     } else if (diagnostic.status === 0) {
@@ -49,7 +48,9 @@ export function describeError(error, { code = 'UNKNOWN', message, fallbackMessag
   }
 
   if (/Failed to fetch/i.test(baseMessage) || /NetworkError/i.test(baseMessage)) {
-    hints.push('Nepavyko pasiekti šaltinio – patikrinkite interneto ryšį ir ar serveris leidžia CORS užklausas iš šio puslapio.');
+    hints.push(
+      'Nepavyko pasiekti šaltinio – patikrinkite interneto ryšį ir ar serveris leidžia CORS užklausas iš šio puslapio.'
+    );
   }
 
   if (/HTML atsakas/i.test(baseMessage)) {
@@ -137,7 +138,7 @@ export async function downloadCsv(url, { cacheInfo = null, onChunk, signal } = {
       if (signal?.aborted) {
         try {
           await reader.cancel();
-        } catch (error) {
+        } catch (_error) {
           // ignore cancellation errors
         }
         throw new DOMException('Užklausa nutraukta.', 'AbortError');

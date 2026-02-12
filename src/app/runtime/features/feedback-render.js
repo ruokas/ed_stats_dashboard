@@ -61,9 +61,7 @@ export function createFeedbackRenderFeature(deps) {
 
     resetFeedbackCommentRotation();
 
-    const cardsConfig = Array.isArray(TEXT.feedback?.cards)
-      ? TEXT.feedback.cards
-      : [];
+    const cardsConfig = Array.isArray(TEXT.feedback?.cards) ? TEXT.feedback.cards : [];
 
     selectors.feedbackCards.replaceChildren();
 
@@ -201,7 +199,8 @@ export function createFeedbackRenderFeature(deps) {
       const row = document.createElement('tr');
       const cell = document.createElement('td');
       cell.colSpan = 8;
-      cell.textContent = TEXT.feedback?.table?.empty || TEXT.feedback?.empty || 'Kol kas nėra apibendrintų atsiliepimų.';
+      cell.textContent =
+        TEXT.feedback?.table?.empty || TEXT.feedback?.empty || 'Kol kas nėra apibendrintų atsiliepimų.';
       row.appendChild(cell);
       selectors.feedbackTable.appendChild(row);
       return;
@@ -260,18 +259,17 @@ export function createFeedbackRenderFeature(deps) {
   }
 
   function renderFeedbackSection(feedbackStats) {
-    const summary = feedbackStats && typeof feedbackStats.summary === 'object'
-      ? feedbackStats.summary
-      : null;
-    const monthly = Array.isArray(feedbackStats?.monthly)
-      ? feedbackStats.monthly
-      : [];
+    const summary = feedbackStats && typeof feedbackStats.summary === 'object' ? feedbackStats.summary : null;
+    const monthly = Array.isArray(feedbackStats?.monthly) ? feedbackStats.monthly : [];
 
     renderFeedbackCards(summary);
     renderFeedbackTable(monthly);
 
     renderFeedbackTrendChart(monthly).catch((error) => {
-      const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_RENDER', message: 'Nepavyko atvaizduoti atsiliepimų trendo' });
+      const errorInfo = describeError(error, {
+        code: 'FEEDBACK_TREND_RENDER',
+        message: 'Nepavyko atvaizduoti atsiliepimų trendo',
+      });
       console.error(errorInfo.log, error);
     });
   }
@@ -285,9 +283,7 @@ export function createFeedbackRenderFeature(deps) {
   }
 
   function getFeedbackTrendMetricConfig() {
-    const configured = Array.isArray(TEXT.feedback?.trend?.metrics)
-      ? TEXT.feedback.trend.metrics
-      : [];
+    const configured = Array.isArray(TEXT.feedback?.trend?.metrics) ? TEXT.feedback.trend.metrics : [];
     const fallback = [
       { key: 'overallAverage', label: 'Bendra patirtis', axis: 'rating', enabledByDefault: true },
       { key: 'doctorsAverage', label: 'Gydytojų darbas', axis: 'rating' },
@@ -307,9 +303,7 @@ export function createFeedbackRenderFeature(deps) {
       seen.add(key);
       unique.push({
         key,
-        label: typeof item?.label === 'string' && item.label.trim()
-          ? item.label.trim()
-          : key,
+        label: typeof item?.label === 'string' && item.label.trim() ? item.label.trim() : key,
         axis: item?.axis === 'responses' ? 'responses' : 'rating',
         enabledByDefault: Boolean(item?.enabledByDefault),
       });
@@ -370,9 +364,10 @@ export function createFeedbackRenderFeature(deps) {
   function getActiveFeedbackTrendCompareMode() {
     const modes = getFeedbackTrendCompareModes();
     const allowed = new Set(modes.map((item) => item.key));
-    const raw = typeof dashboardState.feedback?.trendCompareMode === 'string'
-      ? dashboardState.feedback.trendCompareMode.trim()
-      : '';
+    const raw =
+      typeof dashboardState.feedback?.trendCompareMode === 'string'
+        ? dashboardState.feedback.trendCompareMode.trim()
+        : '';
     if (raw && allowed.has(raw)) {
       return raw;
     }
@@ -416,7 +411,8 @@ export function createFeedbackRenderFeature(deps) {
     const activeMetrics = getActiveFeedbackTrendMetrics();
     const metricCount = activeMetrics.length;
     const activeCompareMode = getActiveFeedbackTrendCompareMode();
-    const compareLabel = getFeedbackTrendCompareModes().find((item) => item.key === activeCompareMode)?.label || '';
+    const compareLabel =
+      getFeedbackTrendCompareModes().find((item) => item.key === activeCompareMode)?.label || '';
     const compareSuffix = activeCompareMode === 'none' ? '' : compareLabel;
     if (typeof builder === 'function') {
       selectors.feedbackTrendSubtitle.textContent = builder(activeWindow, metricCount, compareSuffix);
@@ -431,7 +427,7 @@ export function createFeedbackRenderFeature(deps) {
 
   function syncFeedbackTrendControls() {
     const activeWindow = getActiveFeedbackTrendWindow();
-    if (selectors.feedbackTrendButtons && selectors.feedbackTrendButtons.length) {
+    if (selectors.feedbackTrendButtons?.length) {
       selectors.feedbackTrendButtons.forEach((button) => {
         const months = Number.parseInt(getDatasetValue(button, 'trendMonths', ''), 10);
         const isActive = Number.isFinite(months) ? months === activeWindow : activeWindow == null;
@@ -440,7 +436,7 @@ export function createFeedbackRenderFeature(deps) {
       });
     }
     const activeMetrics = getActiveFeedbackTrendMetrics();
-    if (selectors.feedbackTrendMetricButtons && selectors.feedbackTrendMetricButtons.length) {
+    if (selectors.feedbackTrendMetricButtons?.length) {
       selectors.feedbackTrendMetricButtons.forEach((button) => {
         const key = getDatasetValue(button, 'trendMetric', '');
         const isActive = activeMetrics.includes(key);
@@ -459,20 +455,19 @@ export function createFeedbackRenderFeature(deps) {
   }
 
   function setFeedbackTrendWindow(months) {
-    const normalized = Number.isFinite(months) && months > 0
-      ? Math.max(1, Math.round(months))
-      : null;
+    const normalized = Number.isFinite(months) && months > 0 ? Math.max(1, Math.round(months)) : null;
     if (dashboardState.feedback.trendWindow === normalized) {
       return;
     }
     dashboardState.feedback.trendWindow = normalized;
     syncFeedbackTrendControls();
     updateFeedbackTrendSubtitle();
-    const monthly = Array.isArray(dashboardState.feedback.monthly)
-      ? dashboardState.feedback.monthly
-      : [];
+    const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
     renderFeedbackTrendChart(monthly).catch((error) => {
-      const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_WINDOW', message: 'Nepavyko atnaujinti atsiliepimų trendo laikotarpio' });
+      const errorInfo = describeError(error, {
+        code: 'FEEDBACK_TREND_WINDOW',
+        message: 'Nepavyko atnaujinti atsiliepimų trendo laikotarpio',
+      });
       console.error(errorInfo.log, error);
     });
   }
@@ -489,18 +484,21 @@ export function createFeedbackRenderFeature(deps) {
     });
     const nextMetrics = normalized.length ? normalized : getActiveFeedbackTrendMetrics();
     const currentMetrics = getActiveFeedbackTrendMetrics();
-    if (nextMetrics.length === currentMetrics.length
-      && nextMetrics.every((item, index) => item === currentMetrics[index])) {
+    if (
+      nextMetrics.length === currentMetrics.length &&
+      nextMetrics.every((item, index) => item === currentMetrics[index])
+    ) {
       return;
     }
     dashboardState.feedback.trendMetrics = nextMetrics.slice();
     syncFeedbackTrendControls();
     updateFeedbackTrendSubtitle();
-    const monthly = Array.isArray(dashboardState.feedback.monthly)
-      ? dashboardState.feedback.monthly
-      : [];
+    const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
     renderFeedbackTrendChart(monthly).catch((error) => {
-      const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_METRICS', message: 'Nepavyko atnaujinti atsiliepimų trendo rodiklių' });
+      const errorInfo = describeError(error, {
+        code: 'FEEDBACK_TREND_METRICS',
+        message: 'Nepavyko atnaujinti atsiliepimų trendo rodiklių',
+      });
       console.error(errorInfo.log, error);
     });
   }
@@ -539,11 +537,12 @@ export function createFeedbackRenderFeature(deps) {
     dashboardState.feedback.trendCompareMode = nextMode;
     syncFeedbackTrendControls();
     updateFeedbackTrendSubtitle();
-    const monthly = Array.isArray(dashboardState.feedback.monthly)
-      ? dashboardState.feedback.monthly
-      : [];
+    const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
     renderFeedbackTrendChart(monthly).catch((error) => {
-      const errorInfo = describeError(error, { code: 'FEEDBACK_TREND_COMPARE', message: 'Nepavyko atnaujinti atsiliepimų trendo palyginimo' });
+      const errorInfo = describeError(error, {
+        code: 'FEEDBACK_TREND_COMPARE',
+        message: 'Nepavyko atnaujinti atsiliepimų trendo palyginimo',
+      });
       console.error(errorInfo.log, error);
     });
   }

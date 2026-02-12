@@ -16,5 +16,5 @@ body {
 .theme-transition-block *,
 .theme-transition-block *::before,
 .theme-transition-block *::after {
-  transition: none !important;
+  transition: none;
 }

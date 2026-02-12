@@ -33,7 +33,11 @@ function computeShiftDateKey(referenceDate, shiftStartHour) {
   const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
   const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
   const arrivalMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
-  const shiftAnchor = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const shiftAnchor = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate()
+  );
   if (arrivalMinutes < startMinutes) {
     shiftAnchor.setDate(shiftAnchor.getDate() - 1);
   }
@@ -41,9 +45,12 @@ function computeShiftDateKey(referenceDate, shiftStartHour) {
 }
 
 function getRecordShiftDateKey(record, shiftStartHour) {
-  const referenceDate = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-    ? record.arrival
-    : (record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null);
+  const referenceDate =
+    record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+      ? record.arrival
+      : record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+        ? record.discharge
+        : null;
   return computeShiftDateKey(referenceDate, shiftStartHour);
 }
 
@@ -111,9 +118,10 @@ export function computeHospitalizedByDepartmentAndSpsStay(records, options = {})
     const bucket = bucketMap.get(department);
     const hasArrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
     const hasDischarge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
-    const durationHours = hasArrival && hasDischarge
-      ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
-      : Number.NaN;
+    const durationHours =
+      hasArrival && hasDischarge
+        ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
+        : Number.NaN;
     const durationBucket = resolveBucket(durationHours);
 
     if (durationBucket === 'lt4') {
@@ -147,22 +155,25 @@ export function computeHospitalizedByDepartmentAndSpsStay(records, options = {})
     })
     .filter((row) => row.total > 0);
 
-  const totals = rows.reduce((acc, row) => {
-    acc.count_lt4 += row.count_lt4;
-    acc.count_4_8 += row.count_4_8;
-    acc.count_8_16 += row.count_8_16;
-    acc.count_gt16 += row.count_gt16;
-    acc.count_unclassified += row.count_unclassified;
-    acc.total += row.total;
-    return acc;
-  }, {
-    count_lt4: 0,
-    count_4_8: 0,
-    count_8_16: 0,
-    count_gt16: 0,
-    count_unclassified: 0,
-    total: 0,
-  });
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.count_lt4 += row.count_lt4;
+      acc.count_4_8 += row.count_4_8;
+      acc.count_8_16 += row.count_8_16;
+      acc.count_gt16 += row.count_gt16;
+      acc.count_unclassified += row.count_unclassified;
+      acc.total += row.total;
+      return acc;
+    },
+    {
+      count_lt4: 0,
+      count_4_8: 0,
+      count_8_16: 0,
+      count_gt16: 0,
+      count_unclassified: 0,
+      total: 0,
+    }
+  );
 
   const yearOptions = Array.from(yearSet)
     .filter((year) => /^\d{4}$/.test(year))
@@ -236,9 +247,10 @@ export function computeHospitalizedDepartmentYearlyStayTrend(records, options = 
     const bucket = yearly.get(year);
     const hasArrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
     const hasDischarge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
-    const durationHours = hasArrival && hasDischarge
-      ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
-      : Number.NaN;
+    const durationHours =
+      hasArrival && hasDischarge
+        ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
+        : Number.NaN;
     const durationBucket = resolveBucket(durationHours);
     if (durationBucket === 'lt4') {
       bucket.count_lt4 += 1;

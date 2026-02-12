@@ -1,11 +1,5 @@
 export function initEdPanelControls(env) {
-  const {
-    selectors,
-    dashboardState,
-    setActiveTab,
-    debounce,
-    applyEdSearchFilter,
-  } = env;
+  const { selectors, dashboardState, setActiveTab, debounce, applyEdSearchFilter } = env;
 
   if (selectors.edNavButton) {
     selectors.edNavButton.addEventListener('click', (event) => {

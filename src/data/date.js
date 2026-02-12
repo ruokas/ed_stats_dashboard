@@ -14,7 +14,9 @@ export function parseDate(value) {
     return parsed;
   }
   // Papildoma atrama formoms, kurios vietoje brūkšnių naudoja pasviruosius arba taškus.
-  const slashIso = normalized.match(/^(\d{4})[\/](\d{1,2})[\/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  const slashIso = normalized.match(
+    /^(\d{4})[/](\d{1,2})[/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+  );
   if (slashIso) {
     const [, year, month, day, hour = '0', minute = '0', second = '0'] = slashIso;
     parsed = new Date(
@@ -59,7 +61,9 @@ export function parseDate(value) {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
   // Google Forms CSV dažnai išveda datą „dd/mm/yyyy“ formatu.
-  const slashEuropean = normalized.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  const slashEuropean = normalized.match(
+    /^(\d{1,2})[/](\d{1,2})[/](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+  );
   if (slashEuropean) {
     const [, day, month, year, hour = '0', minute = '0', second = '0'] = slashEuropean;
     parsed = new Date(

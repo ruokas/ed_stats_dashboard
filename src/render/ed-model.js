@@ -16,7 +16,7 @@ export function buildEdDashboardModel({
   enrichSummaryWithOverviewFallback,
 }) {
   const toMonthKey = (value) => {
-    const date = value instanceof Date ? value : (value ? new Date(value) : null);
+    const date = value instanceof Date ? value : value ? new Date(value) : null;
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
       return '';
     }
@@ -29,9 +29,10 @@ export function buildEdDashboardModel({
   const baseComments = Array.isArray(baseDataset?.summary?.feedbackComments)
     ? baseDataset.summary.feedbackComments
     : [];
-  const baseCommentsMeta = typeof baseDataset?.summary?.feedbackCommentsMeta === 'string'
-    ? baseDataset.summary.feedbackCommentsMeta
-    : '';
+  const baseCommentsMeta =
+    typeof baseDataset?.summary?.feedbackCommentsMeta === 'string'
+      ? baseDataset.summary.feedbackCommentsMeta
+      : '';
   const searchQuery = normalizeEdSearchQuery(dashboardState.edSearchQuery);
   const baseRecords = Array.isArray(baseDataset.records) ? baseDataset.records : [];
   let dataset = baseDataset;
@@ -55,15 +56,14 @@ export function buildEdDashboardModel({
     summary.feedbackCommentsMeta = baseCommentsMeta;
   }
   const dispositions = Array.isArray(dataset.dispositions) ? dataset.dispositions : [];
-  const summaryMode = typeof summary?.mode === 'string' ? summary.mode : (dataset.meta?.type || 'legacy');
-  const hasSnapshotMetrics = Number.isFinite(summary?.currentPatients)
-    || Number.isFinite(summary?.occupiedBeds)
-    || Number.isFinite(summary?.nursePatientsPerStaff)
-    || Number.isFinite(summary?.doctorPatientsPerStaff);
-  const computedDisplayVariant = summaryMode === 'snapshot'
-    || (summaryMode === 'hybrid' && hasSnapshotMetrics)
-    ? 'snapshot'
-    : 'legacy';
+  const summaryMode = typeof summary?.mode === 'string' ? summary.mode : dataset.meta?.type || 'legacy';
+  const hasSnapshotMetrics =
+    Number.isFinite(summary?.currentPatients) ||
+    Number.isFinite(summary?.occupiedBeds) ||
+    Number.isFinite(summary?.nursePatientsPerStaff) ||
+    Number.isFinite(summary?.doctorPatientsPerStaff);
+  const computedDisplayVariant =
+    summaryMode === 'snapshot' || (summaryMode === 'hybrid' && hasSnapshotMetrics) ? 'snapshot' : 'legacy';
   const hasRecords = Array.isArray(dataset?.records) && dataset.records.length > 0;
   const hasLegacyTotals = Number.isFinite(summary?.totalPatients) && summary.totalPatients > 0;
   const hasRenderableEdData = hasRecords || hasLegacyTotals || hasSnapshotMetrics;
@@ -72,22 +72,25 @@ export function buildEdDashboardModel({
     dashboardState.edLastDisplayVariant = computedDisplayVariant;
   } else {
     const persistedVariant = dashboardState?.edLastDisplayVariant;
-    displayVariant = persistedVariant === 'legacy' || persistedVariant === 'snapshot'
-      ? persistedVariant
-      : 'snapshot';
+    displayVariant =
+      persistedVariant === 'legacy' || persistedVariant === 'snapshot' ? persistedVariant : 'snapshot';
   }
 
-  const overviewDailyStats = Array.isArray(dashboardState?.kpi?.daily) && dashboardState.kpi.daily.length
-    ? dashboardState.kpi.daily
-    : (Array.isArray(dashboardState.dailyStats) ? dashboardState.dailyStats : []);
+  const overviewDailyStats =
+    Array.isArray(dashboardState?.kpi?.daily) && dashboardState.kpi.daily.length
+      ? dashboardState.kpi.daily
+      : Array.isArray(dashboardState.dailyStats)
+        ? dashboardState.dailyStats
+        : [];
   const configuredWindowRaw = Number.isFinite(Number(dashboardState?.kpi?.filters?.window))
     ? Number(dashboardState.kpi.filters.window)
-    : (Number.isFinite(Number(settings?.calculations?.windowDays))
+    : Number.isFinite(Number(settings?.calculations?.windowDays))
       ? Number(settings.calculations.windowDays)
-      : DEFAULT_KPI_WINDOW_DAYS);
-  const configuredWindow = Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
-    ? configuredWindowRaw
-    : DEFAULT_KPI_WINDOW_DAYS;
+      : DEFAULT_KPI_WINDOW_DAYS;
+  const configuredWindow =
+    Number.isFinite(configuredWindowRaw) && configuredWindowRaw > 0
+      ? configuredWindowRaw
+      : DEFAULT_KPI_WINDOW_DAYS;
   if (overviewDailyStats.length) {
     const overviewMetrics = buildYearMonthMetrics(overviewDailyStats, configuredWindow);
     if (overviewMetrics) {
@@ -97,29 +100,45 @@ export function buildEdDashboardModel({
         ? yearMetrics.avgHospitalizedTime * 60
         : null;
       const monthAvgMinutes = Number.isFinite(monthMetrics?.avgTime) ? monthMetrics.avgTime * 60 : null;
-      const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare) ? yearMetrics.hospitalizedShare : null;
-      const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare) ? monthMetrics.hospitalizedShare : null;
+      const yearHospShare = Number.isFinite(yearMetrics?.hospitalizedShare)
+        ? yearMetrics.hospitalizedShare
+        : null;
+      const monthHospShare = Number.isFinite(monthMetrics?.hospitalizedShare)
+        ? monthMetrics.hospitalizedShare
+        : null;
 
       summary.avgLosMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosMinutes;
-      summary.avgLosHospitalizedMinutes = yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
+      summary.avgLosHospitalizedMinutes =
+        yearHospLosMinutes != null ? yearHospLosMinutes : summary.avgLosHospitalizedMinutes;
       summary.avgLosYearMinutes = yearAvgMinutes != null ? yearAvgMinutes : summary.avgLosYearMinutes;
       summary.avgLosMonthMinutes = monthAvgMinutes != null ? monthAvgMinutes : summary.avgLosMonthMinutes;
       summary.hospitalizedShare = yearHospShare != null ? yearHospShare : summary.hospitalizedShare;
       summary.hospitalizedYearShare = yearHospShare != null ? yearHospShare : summary.hospitalizedYearShare;
-      summary.hospitalizedMonthShare = monthHospShare != null ? monthHospShare : summary.hospitalizedMonthShare;
+      summary.hospitalizedMonthShare =
+        monthHospShare != null ? monthHospShare : summary.hospitalizedMonthShare;
     }
   }
-  const overviewRecords = Array.isArray(dashboardState?.primaryRecords) && dashboardState.primaryRecords.length
-    ? dashboardState.primaryRecords
-    : (Array.isArray(dashboardState?.rawRecords) ? dashboardState.rawRecords : []);
-  enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDailyStats, { windowDays: configuredWindow });
+  const overviewRecords =
+    Array.isArray(dashboardState?.primaryRecords) && dashboardState.primaryRecords.length
+      ? dashboardState.primaryRecords
+      : Array.isArray(dashboardState?.rawRecords)
+        ? dashboardState.rawRecords
+        : [];
+  enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDailyStats, {
+    windowDays: configuredWindow,
+  });
 
   const cardsConfigSource = TEXT.ed.cards || {};
-  const cardConfigs = Array.isArray(cardsConfigSource[displayVariant]) ? cardsConfigSource[displayVariant] : [];
+  const cardConfigs = Array.isArray(cardsConfigSource[displayVariant])
+    ? cardsConfigSource[displayVariant]
+    : [];
   const dispositionsText = TEXT.ed.dispositions?.[displayVariant] || TEXT.ed.dispositions?.legacy || {};
-  const updatedAt = summary.generatedAt instanceof Date && !Number.isNaN(summary.generatedAt.getTime())
-    ? summary.generatedAt
-    : (dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime()) ? dataset.updatedAt : null);
+  const updatedAt =
+    summary.generatedAt instanceof Date && !Number.isNaN(summary.generatedAt.getTime())
+      ? summary.generatedAt
+      : dataset.updatedAt instanceof Date && !Number.isNaN(dataset.updatedAt.getTime())
+        ? dataset.updatedAt
+        : null;
 
   const feedbackMonthly = Array.isArray(dashboardState?.feedback?.monthly)
     ? dashboardState.feedback.monthly
@@ -128,23 +147,25 @@ export function buildEdDashboardModel({
     ? dashboardState.feedback.records
     : [];
   const feedbackRotatingConfig = cardConfigs.find((card) => card?.type === 'feedback-rotating-metric');
-  const feedbackMetricConfig = Array.isArray(feedbackRotatingConfig?.metrics) && feedbackRotatingConfig.metrics.length
-    ? feedbackRotatingConfig.metrics
-    : [
-      { key: 'overallAverage', label: 'Bendra patirtis', countKey: 'overallCount' },
-      { key: 'doctorsAverage', label: 'Gydytojų darbas', countKey: 'doctorsCount' },
-      { key: 'nursesAverage', label: 'Slaugytojų darbas', countKey: 'nursesCount' },
-      { key: 'aidesAverage', label: 'Padėjėjų darbas', countKey: 'aidesResponses' },
-      { key: 'waitingAverage', label: 'Laukimo vertinimas', countKey: 'waitingCount' },
-    ];
+  const feedbackMetricConfig =
+    Array.isArray(feedbackRotatingConfig?.metrics) && feedbackRotatingConfig.metrics.length
+      ? feedbackRotatingConfig.metrics
+      : [
+          { key: 'overallAverage', label: 'Bendra patirtis', countKey: 'overallCount' },
+          { key: 'doctorsAverage', label: 'Gydytojų darbas', countKey: 'doctorsCount' },
+          { key: 'nursesAverage', label: 'Slaugytojų darbas', countKey: 'nursesCount' },
+          { key: 'aidesAverage', label: 'Padėjėjų darbas', countKey: 'aidesResponses' },
+          { key: 'waitingAverage', label: 'Laukimo vertinimas', countKey: 'waitingCount' },
+        ];
   const isValidRating = (value) => Number.isFinite(value) && value >= 1 && value <= 5;
-  const normalizeText = (value) => (typeof value === 'string'
-    ? value
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-    : '');
+  const normalizeText = (value) =>
+    typeof value === 'string'
+      ? value
+          .trim()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+      : '';
   const classifyLocation = (raw) => {
     const value = normalizeText(raw);
     if (!value) return null;
@@ -171,7 +192,9 @@ export function buildEdDashboardModel({
       return isValidRating(record.nursesRating) ? Number(record.nursesRating) : null;
     }
     if (metricKey === 'aidesAverage') {
-      return record.aidesContact === true && isValidRating(record.aidesRating) ? Number(record.aidesRating) : null;
+      return record.aidesContact === true && isValidRating(record.aidesRating)
+        ? Number(record.aidesRating)
+        : null;
     }
     if (metricKey === 'waitingAverage') {
       return isValidRating(record.waitingRating) ? Number(record.waitingRating) : null;
@@ -283,21 +306,21 @@ export function buildEdDashboardModel({
           overallAverage: entry.responses > 0 ? entry.total / entry.responses : null,
         }))
         .sort((a, b) => (a.month > b.month ? 1 : -1));
-      feedbackMonth = monthlyFromRecords.find((entry) => entry.month === currentMonthKey)
-        || monthlyFromRecords[monthlyFromRecords.length - 1]
-        || null;
+      feedbackMonth =
+        monthlyFromRecords.find((entry) => entry.month === currentMonthKey) ||
+        monthlyFromRecords[monthlyFromRecords.length - 1] ||
+        null;
     }
   }
   const feedbackMonthKey = feedbackMonth?.month ? String(feedbackMonth.month) : '';
   const feedbackMonthCounts = buildFeedbackCountsForMonth(feedbackMonthKey);
   const feedbackMonthLabel = feedbackMonth?.month
-    ? (formatMonthLabel(feedbackMonth.month) || feedbackMonth.month)
+    ? formatMonthLabel(feedbackMonth.month) || feedbackMonth.month
     : '';
-  const monthKeysFromRecords = Array.from(new Set(feedbackRecords.map((record) => toMonthKey(record?.receivedAt)).filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b));
-  const feedbackMonthRecordIndex = feedbackMonthKey
-    ? monthKeysFromRecords.findIndex((month) => month === feedbackMonthKey)
-    : -1;
+  const monthKeysFromRecords = Array.from(
+    new Set(feedbackRecords.map((record) => toMonthKey(record?.receivedAt)).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+  const feedbackMonthRecordIndex = feedbackMonthKey ? monthKeysFromRecords.indexOf(feedbackMonthKey) : -1;
   const feedbackIndex = feedbackMonth?.month
     ? feedbackMonthly.findIndex((entry) => entry?.month === feedbackMonth.month)
     : -1;
@@ -317,14 +340,15 @@ export function buildEdDashboardModel({
       }
     }
     const previousMonthLabel = previousMonth?.month
-      ? (formatMonthLabel(previousMonth.month) || previousMonth.month)
+      ? formatMonthLabel(previousMonth.month) || previousMonth.month
       : '';
-    const trend = previousMonth && Number.isFinite(value)
-      ? buildFeedbackTrendInfo(value, Number(previousMonth[metric.key]), {
-        currentLabel: feedbackMonthLabel,
-        previousLabel: previousMonthLabel,
-      })
-      : null;
+    const trend =
+      previousMonth && Number.isFinite(value)
+        ? buildFeedbackTrendInfo(value, Number(previousMonth[metric.key]), {
+            currentLabel: feedbackMonthLabel,
+            previousLabel: previousMonthLabel,
+          })
+        : null;
     const currentLeft = getLocationMetricStats(feedbackMonthKey, metric.key, 'left');
     const currentRight = getLocationMetricStats(feedbackMonthKey, metric.key, 'right');
     const findPreviousLocationValue = (side) => {
@@ -346,18 +370,20 @@ export function buildEdDashboardModel({
     };
     const previousLeft = findPreviousLocationValue('left');
     const previousRight = findPreviousLocationValue('right');
-    const leftTrend = previousLeft && Number.isFinite(currentLeft.average)
-      ? buildFeedbackTrendInfo(Number(currentLeft.average), Number(previousLeft.average), {
-        currentLabel: feedbackMonthLabel,
-        previousLabel: previousLeft.label,
-      })
-      : null;
-    const rightTrend = previousRight && Number.isFinite(currentRight.average)
-      ? buildFeedbackTrendInfo(Number(currentRight.average), Number(previousRight.average), {
-        currentLabel: feedbackMonthLabel,
-        previousLabel: previousRight.label,
-      })
-      : null;
+    const leftTrend =
+      previousLeft && Number.isFinite(currentLeft.average)
+        ? buildFeedbackTrendInfo(Number(currentLeft.average), Number(previousLeft.average), {
+            currentLabel: feedbackMonthLabel,
+            previousLabel: previousLeft.label,
+          })
+        : null;
+    const rightTrend =
+      previousRight && Number.isFinite(currentRight.average)
+        ? buildFeedbackTrendInfo(Number(currentRight.average), Number(previousRight.average), {
+            currentLabel: feedbackMonthLabel,
+            previousLabel: previousRight.label,
+          })
+        : null;
     const metaParts = [];
     if (feedbackMonthLabel) {
       metaParts.push(feedbackMonthLabel);
@@ -393,11 +419,14 @@ export function buildEdDashboardModel({
     };
   });
   summary.feedbackCurrentMonthMetricCatalog = feedbackMetricCatalog;
-  const carousel = dashboardState.feedbackMetricCarousel && typeof dashboardState.feedbackMetricCarousel === 'object'
-    ? dashboardState.feedbackMetricCarousel
-    : { index: 0 };
+  const carousel =
+    dashboardState.feedbackMetricCarousel && typeof dashboardState.feedbackMetricCarousel === 'object'
+      ? dashboardState.feedbackMetricCarousel
+      : { index: 0 };
   const normalizedIndex = feedbackMetricCatalog.length
-    ? ((Number.parseInt(String(carousel.index ?? 0), 10) % feedbackMetricCatalog.length) + feedbackMetricCatalog.length) % feedbackMetricCatalog.length
+    ? ((Number.parseInt(String(carousel.index ?? 0), 10) % feedbackMetricCatalog.length) +
+        feedbackMetricCatalog.length) %
+      feedbackMetricCatalog.length
     : 0;
   carousel.index = normalizedIndex;
   if (dashboardState.feedbackMetricCarousel && typeof dashboardState.feedbackMetricCarousel === 'object') {
@@ -405,7 +434,8 @@ export function buildEdDashboardModel({
   }
   const activeMetric = feedbackMetricCatalog[normalizedIndex] || null;
   summary.feedbackCurrentMonthMetricKey = activeMetric?.key || '';
-  summary.feedbackCurrentMonthMetricTitle = activeMetric?.label || (feedbackRotatingConfig?.title || 'Atsiliepimų rodiklis');
+  summary.feedbackCurrentMonthMetricTitle =
+    activeMetric?.label || feedbackRotatingConfig?.title || 'Atsiliepimų rodiklis';
   summary.feedbackCurrentMonthMetricValue = Number.isFinite(activeMetric?.value) ? activeMetric.value : null;
   summary.feedbackCurrentMonthMetricMeta = activeMetric?.meta || '';
   summary.feedbackCurrentMonthMetricTrend = activeMetric?.trend || null;
@@ -433,14 +463,19 @@ export function buildEdDashboardModel({
 
   const feedbackComments = Array.isArray(dashboardState?.feedback?.summary?.comments)
     ? dashboardState.feedback.summary.comments
-    : (Array.isArray(summary.feedbackComments) ? summary.feedbackComments : []);
+    : Array.isArray(summary.feedbackComments)
+      ? summary.feedbackComments
+      : [];
   const now = new Date();
   const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - 30);
   const recentFeedbackComments = feedbackComments.filter((entry) => {
-    const receivedAt = entry?.receivedAt instanceof Date
-      ? entry.receivedAt
-      : (entry?.receivedAt ? new Date(entry.receivedAt) : null);
+    const receivedAt =
+      entry?.receivedAt instanceof Date
+        ? entry.receivedAt
+        : entry?.receivedAt
+          ? new Date(entry.receivedAt)
+          : null;
     if (!(receivedAt instanceof Date) || Number.isNaN(receivedAt.getTime())) {
       return false;
     }

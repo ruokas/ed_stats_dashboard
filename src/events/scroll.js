@@ -8,8 +8,9 @@ export function initScrollTopButton(env) {
   button.setAttribute('tabindex', '-1');
   updateScrollTopButtonVisibility();
   button.addEventListener('click', () => {
-    const prefersReduced = typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReduced =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (typeof window.scrollTo === 'function') {
       if (!prefersReduced && 'scrollBehavior' in document.documentElement.style) {
         window.scrollTo({ top: 0, behavior: 'smooth' });

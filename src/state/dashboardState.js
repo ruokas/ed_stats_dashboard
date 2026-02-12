@@ -82,7 +82,9 @@ export function createDashboardState({
     },
     chartsHospitalTableWorkerAgg: null,
     heatmapMetric: defaultHeatmapMetric,
-    heatmapFilters: defaultHeatmapFilters ? defaultHeatmapFilters() : { arrival: 'all', disposition: 'all', cardType: 'all' },
+    heatmapFilters: defaultHeatmapFilters
+      ? defaultHeatmapFilters()
+      : { arrival: 'all', disposition: 'all', cardType: 'all' },
     heatmapYear: null,
     hourlyWeekday: 'all',
     hourlyStayBucket: 'all',

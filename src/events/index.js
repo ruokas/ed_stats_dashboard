@@ -1,4 +1,10 @@
-import { initChartControls, initChartCopyButtons, initChartDownloadButtons, initTableDownloadButtons } from './charts.js';
+import { runAfterDomAndIdle } from '../utils/dom.js';
+import {
+  initChartControls,
+  initChartCopyButtons,
+  initChartDownloadButtons,
+  initTableDownloadButtons,
+} from './charts.js';
 import { initCompareControls } from './compare.js';
 import { initEdPanelControls } from './ed.js';
 import * as feedbackEvents from './feedback.js';
@@ -8,16 +14,18 @@ import { initScrollTopButton } from './scroll.js';
 import { initSectionNavigation } from './section-nav.js';
 import { initThemeToggle } from './theme.js';
 import { initYearlyExpand } from './yearly.js';
-import { runAfterDomAndIdle } from '../utils/dom.js';
 
 function runNonCritical(task) {
-  runAfterDomAndIdle(() => {
-    try {
-      task();
-    } catch (error) {
-      console.warn('[UI_EVENTS] Non-critical init failed', error);
-    }
-  }, { timeout: 500 });
+  runAfterDomAndIdle(
+    () => {
+      try {
+        task();
+      } catch (error) {
+        console.warn('[UI_EVENTS] Non-critical init failed', error);
+      }
+    },
+    { timeout: 500 }
+  );
 }
 
 export function createUIEvents(env) {
@@ -42,7 +50,13 @@ export function createUIEvents(env) {
       runNonCritical(() => initChartCopyButtons(env));
       runNonCritical(() => initChartDownloadButtons(env));
     }
-    if (pageConfig.charts || pageConfig.recent || pageConfig.monthly || pageConfig.yearly || pageConfig.feedback) {
+    if (
+      pageConfig.charts ||
+      pageConfig.recent ||
+      pageConfig.monthly ||
+      pageConfig.yearly ||
+      pageConfig.feedback
+    ) {
       runNonCritical(() => initTableDownloadButtons(env));
     }
     if (pageConfig.charts) {

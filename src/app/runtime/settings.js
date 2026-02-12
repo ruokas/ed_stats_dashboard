@@ -21,7 +21,14 @@ export function deepMerge(target, source) {
   Object.keys(source).forEach((key) => {
     const src = source[key];
     const dst = output[key];
-    if (src && typeof src === 'object' && !Array.isArray(src) && dst && typeof dst === 'object' && !Array.isArray(dst)) {
+    if (
+      src &&
+      typeof src === 'object' &&
+      !Array.isArray(src) &&
+      dst &&
+      typeof dst === 'object' &&
+      !Array.isArray(dst)
+    ) {
       output[key] = deepMerge(dst, src);
     } else {
       output[key] = src;
@@ -46,13 +53,13 @@ export function normalizeSettings(rawSettings = {}, DEFAULT_SETTINGS) {
     merged.calculations.windowDays,
     7,
     365,
-    DEFAULT_SETTINGS.calculations.windowDays,
+    DEFAULT_SETTINGS.calculations.windowDays
   );
   merged.calculations.recentDays = clampNumber(
     merged.calculations.recentDays,
     1,
     60,
-    DEFAULT_SETTINGS.calculations.recentDays,
+    DEFAULT_SETTINGS.calculations.recentDays
   );
   return merged;
 }
@@ -60,7 +67,7 @@ export function normalizeSettings(rawSettings = {}, DEFAULT_SETTINGS) {
 export function getRuntimeConfigUrl() {
   const params = new URLSearchParams(window.location.search);
   const paramUrl = params.get('config');
-  return paramUrl && paramUrl.trim() ? paramUrl.trim() : 'config.json';
+  return paramUrl?.trim() ? paramUrl.trim() : 'config.json';
 }
 
 const SETTINGS_SESSION_KEY = 'edDashboard:settings:v1';
@@ -79,14 +86,14 @@ function readSettingsFromSessionCache(configUrl) {
     if (parsed.configUrl !== configUrl) {
       return null;
     }
-    if (!Number.isFinite(parsed.savedAt) || (Date.now() - parsed.savedAt) > SETTINGS_CACHE_TTL_MS) {
+    if (!Number.isFinite(parsed.savedAt) || Date.now() - parsed.savedAt > SETTINGS_CACHE_TTL_MS) {
       return null;
     }
     if (!parsed.settings || typeof parsed.settings !== 'object') {
       return null;
     }
     return parsed.settings;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -96,12 +103,15 @@ function writeSettingsToSessionCache(configUrl, settings) {
     if (!settings || typeof settings !== 'object') {
       return;
     }
-    window.sessionStorage.setItem(SETTINGS_SESSION_KEY, JSON.stringify({
-      configUrl,
-      savedAt: Date.now(),
-      settings,
-    }));
-  } catch (error) {
+    window.sessionStorage.setItem(
+      SETTINGS_SESSION_KEY,
+      JSON.stringify({
+        configUrl,
+        savedAt: Date.now(),
+        settings,
+      })
+    );
+  } catch (_error) {
     // Ignore storage quota and serialization issues.
   }
 }

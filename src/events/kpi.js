@@ -74,8 +74,7 @@ export function initKpiFilters(env) {
     selectors.kpiControls.hidden = false;
     selectors.kpiControls.setAttribute('aria-hidden', 'false');
   }
-  if ((dashboardState.kpi.records && dashboardState.kpi.records.length)
-    || (dashboardState.kpi.daily && dashboardState.kpi.daily.length)) {
+  if (dashboardState.kpi.records?.length || dashboardState.kpi.daily?.length) {
     updateKpiSummary({
       records: dashboardState.kpi.records,
       dailyStats: dashboardState.kpi.daily,

@@ -60,9 +60,7 @@ export function filterDailyStatsByYear(dailyStats, selectedYear) {
       return false;
     }
     const date = dateKeyToDate(entry.date);
-    return date instanceof Date
-      && !Number.isNaN(date.getTime())
-      && date.getUTCFullYear() === selectedYear;
+    return date instanceof Date && !Number.isNaN(date.getTime()) && date.getUTCFullYear() === selectedYear;
   });
 }
 
@@ -74,11 +72,12 @@ export function filterRecordsByYear(records, selectedYear) {
     return records.slice();
   }
   return records.filter((entry) => {
-    const reference = entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())
-      ? entry.arrival
-      : entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())
-        ? entry.discharge
-        : null;
+    const reference =
+      entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())
+        ? entry.arrival
+        : entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())
+          ? entry.discharge
+          : null;
     return reference instanceof Date && reference.getFullYear() === selectedYear;
   });
 }
@@ -98,9 +97,7 @@ export function filterDailyStatsByWindow(dailyStats, days) {
   }
   const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated
-    .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-    .map((item) => item.entry);
+  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
 }
 
 export function buildDailyWindowKeys(dailyStats, days) {
@@ -177,9 +174,7 @@ export function filterRecordsByWindow(records, days) {
   }
   const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated
-    .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-    .map((item) => item.entry);
+  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
 }
 
 export function getAvailableYearsFromDaily(dailyStats) {
@@ -193,7 +188,13 @@ export function getAvailableYearsFromDaily(dailyStats) {
   return Array.from(years).sort((a, b) => b - a);
 }
 
-export function populateChartYearOptions({ dailyStats, selectors, dashboardState, TEXT, syncChartYearControl }) {
+export function populateChartYearOptions({
+  dailyStats,
+  selectors,
+  dashboardState,
+  TEXT,
+  syncChartYearControl,
+}) {
   if (!selectors.chartYearSelect) {
     return;
   }
@@ -226,9 +227,7 @@ export function syncChartYearControl({ selectors, dashboardState }) {
   if (!selectors.chartYearSelect || !selectors.chartYearLabel) {
     return;
   }
-  const value = Number.isFinite(dashboardState.chartYear)
-    ? `${dashboardState.chartYear} m.`
-    : 'Visi metai';
+  const value = Number.isFinite(dashboardState.chartYear) ? `${dashboardState.chartYear} m.` : 'Visi metai';
   selectors.chartYearLabel.textContent = value;
 }
 

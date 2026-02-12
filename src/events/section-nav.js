@@ -1,4 +1,5 @@
 import { getDatasetValue, setDatasetValue } from '../utils/dom.js';
+
 const APP_READY_EVENT = 'app:runtime-ready';
 
 export function initSectionNavigation(env) {
@@ -41,12 +42,13 @@ export function initSectionNavigation(env) {
     const prefetched = new Set();
     const canPrefetch = () => {
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      if (connection && connection.saveData) {
+      if (connection?.saveData) {
         return false;
       }
-      const effectiveType = connection && typeof connection.effectiveType === 'string'
-        ? connection.effectiveType.toLowerCase()
-        : '';
+      const effectiveType =
+        connection && typeof connection.effectiveType === 'string'
+          ? connection.effectiveType.toLowerCase()
+          : '';
       if (effectiveType.includes('2g')) {
         return false;
       }
@@ -136,13 +138,12 @@ export function initSectionNavigation(env) {
       setDatasetValue(selectors.sectionNav, 'scrollWatch', 'bound');
     }
     if (canPrefetch()) {
-      const cpuCount = typeof navigator.hardwareConcurrency === 'number'
-        ? navigator.hardwareConcurrency
-        : 8;
+      const cpuCount = typeof navigator.hardwareConcurrency === 'number' ? navigator.hardwareConcurrency : 8;
       const idlePrefetchLimit = cpuCount <= 4 ? 0 : 1;
-      const idle = typeof window.requestIdleCallback === 'function'
-        ? window.requestIdleCallback.bind(window)
-        : (cb) => window.setTimeout(cb, 250);
+      const idle =
+        typeof window.requestIdleCallback === 'function'
+          ? window.requestIdleCallback.bind(window)
+          : (cb) => window.setTimeout(cb, 250);
       const runIdlePrefetch = () => {
         if (idlePrefetchLimit <= 0) {
           return;
@@ -160,8 +161,8 @@ export function initSectionNavigation(env) {
             });
         });
       };
-      const ready = getDatasetValue(selectors.sectionNav, 'appReady', '') === 'true'
-        || Boolean(window.__edRuntimeReady);
+      const ready =
+        getDatasetValue(selectors.sectionNav, 'appReady', '') === 'true' || Boolean(window.__edRuntimeReady);
       if (ready) {
         runIdlePrefetch();
       } else {

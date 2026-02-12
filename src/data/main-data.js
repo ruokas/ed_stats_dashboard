@@ -1,15 +1,7 @@
 import { computeDailyStats, computeMonthlyStats, computeYearlyStats } from './stats.js';
 
 export function createMainDataHandlers(context) {
-  const {
-    settings,
-    DEFAULT_SETTINGS,
-    dashboardState,
-    downloadCsv,
-    describeError,
-    createTextSignature,
-    formatUrlForDiagnostics,
-  } = context;
+  const { settings, DEFAULT_SETTINGS, dashboardState, downloadCsv, describeError } = context;
 
   const DATA_WORKER_URL = new URL('data-worker.js?v=2026-02-07-3', window.location.href).toString();
   const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
@@ -52,7 +44,7 @@ export function createMainDataHandlers(context) {
     }
     try {
       return JSON.parse(JSON.stringify(agg));
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -86,7 +78,9 @@ export function createMainDataHandlers(context) {
         dstBucket.count_4_8 += Number.isFinite(srcBucket.count_4_8) ? srcBucket.count_4_8 : 0;
         dstBucket.count_8_16 += Number.isFinite(srcBucket.count_8_16) ? srcBucket.count_8_16 : 0;
         dstBucket.count_gt16 += Number.isFinite(srcBucket.count_gt16) ? srcBucket.count_gt16 : 0;
-        dstBucket.count_unclassified += Number.isFinite(srcBucket.count_unclassified) ? srcBucket.count_unclassified : 0;
+        dstBucket.count_unclassified += Number.isFinite(srcBucket.count_unclassified)
+          ? srcBucket.count_unclassified
+          : 0;
         dstBucket.total += Number.isFinite(srcBucket.total) ? srcBucket.total : 0;
       });
     });
@@ -151,7 +145,8 @@ export function createMainDataHandlers(context) {
     if (signal?.aborted) {
       return Promise.reject(new DOMException('Užklausa nutraukta.', 'AbortError'));
     }
-    const jobId = `data-job-${Date.now()}-${dataWorkerCounter += 1}`;
+    dataWorkerCounter += 1;
+    const jobId = `data-job-${Date.now()}-${dataWorkerCounter}`;
     const worker = new Worker(DATA_WORKER_URL);
     return new Promise((resolve, reject) => {
       let abortHandler = null;
@@ -223,7 +218,11 @@ export function createMainDataHandlers(context) {
     return runWorkerJob({ type: 'applyKpiFilters', ...payload });
   }
 
-  async function loadCsvSource(config, workerOptions, { required = false, sourceId = 'primary', label = '' } = {}) {
+  async function loadCsvSource(
+    config,
+    workerOptions,
+    { required = false, sourceId = 'primary', label = '' } = {}
+  ) {
     const trimmedUrl = (config?.url ?? '').trim();
     const missingMessage = config?.missingMessage || 'Nenurodytas duomenų URL.';
     const result = {
@@ -240,14 +239,12 @@ export function createMainDataHandlers(context) {
       error: null,
     };
     const onChunk = typeof config?.onChunk === 'function' ? config.onChunk : null;
-    const onWorkerProgress = typeof config?.onWorkerProgress === 'function'
-      ? config.onWorkerProgress
-      : null;
+    const onWorkerProgress = typeof config?.onWorkerProgress === 'function' ? config.onWorkerProgress : null;
     const signal = config?.signal || null;
     const workerProgressStep = onWorkerProgress
-      ? (Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
+      ? Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
         ? config.workerProgressStep
-        : 400)
+        : 400
       : null;
 
     const assignDataset = (dataset, metaOverrides = {}) => {
@@ -274,17 +271,20 @@ export function createMainDataHandlers(context) {
       let download = await downloadCsv(trimmedUrl, { cacheInfo: cacheEntry, onChunk, signal });
       if (download.status === 304) {
         if (cacheEntry?.records && cacheEntry?.dailyStats) {
-          assignDataset({
-            records: cacheEntry.records,
-            dailyStats: cacheEntry.dailyStats,
-            hospitalByDeptStayAgg: cacheEntry.hospitalByDeptStayAgg,
-          }, {
-            etag: cacheEntry.etag,
-            lastModified: cacheEntry.lastModified,
-            signature: cacheEntry.signature,
-            cacheStatus: download.cacheStatus,
-            fromCache: true,
-          });
+          assignDataset(
+            {
+              records: cacheEntry.records,
+              dailyStats: cacheEntry.dailyStats,
+              hospitalByDeptStayAgg: cacheEntry.hospitalByDeptStayAgg,
+            },
+            {
+              etag: cacheEntry.etag,
+              lastModified: cacheEntry.lastModified,
+              signature: cacheEntry.signature,
+              cacheStatus: download.cacheStatus,
+              fromCache: true,
+            }
+          );
           return result;
         }
         clearDataCache(trimmedUrl);
@@ -296,17 +296,20 @@ export function createMainDataHandlers(context) {
         progressStep: workerProgressStep,
         signal,
       });
-      assignDataset({
-        records: Array.isArray(dataset?.records) ? dataset.records : [],
-        dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
-        hospitalByDeptStayAgg: dataset?.hospitalByDeptStayAgg || null,
-      }, {
-        etag: download.etag,
-        lastModified: download.lastModified,
-        signature: download.signature,
-        cacheStatus: download.cacheStatus,
-        fromCache: false,
-      });
+      assignDataset(
+        {
+          records: Array.isArray(dataset?.records) ? dataset.records : [],
+          dailyStats: Array.isArray(dataset?.dailyStats) ? dataset.dailyStats : [],
+          hospitalByDeptStayAgg: dataset?.hospitalByDeptStayAgg || null,
+        },
+        {
+          etag: download.etag,
+          lastModified: download.lastModified,
+          signature: download.signature,
+          cacheStatus: download.cacheStatus,
+          fromCache: false,
+        }
+      );
       writeDataCache(trimmedUrl, {
         etag: download.etag,
         lastModified: download.lastModified,
@@ -326,17 +329,20 @@ export function createMainDataHandlers(context) {
       result.error = errorInfo.userMessage;
       if (cacheEntry?.records && cacheEntry?.dailyStats) {
         console.warn(`Naudojami talpyklos duomenys dėl klaidos (${sourceId}).`);
-        assignDataset({
-          records: cacheEntry.records,
-          dailyStats: cacheEntry.dailyStats,
-          hospitalByDeptStayAgg: cacheEntry.hospitalByDeptStayAgg,
-        }, {
-          etag: cacheEntry.etag,
-          lastModified: cacheEntry.lastModified,
-          signature: cacheEntry.signature,
-          fromCache: true,
-          fallbackReason: errorInfo.userMessage,
-        });
+        assignDataset(
+          {
+            records: cacheEntry.records,
+            dailyStats: cacheEntry.dailyStats,
+            hospitalByDeptStayAgg: cacheEntry.hospitalByDeptStayAgg,
+          },
+          {
+            etag: cacheEntry.etag,
+            lastModified: cacheEntry.lastModified,
+            signature: cacheEntry.signature,
+            fromCache: true,
+            fallbackReason: errorInfo.userMessage,
+          }
+        );
         return result;
       }
       if (required) {
@@ -360,7 +366,8 @@ export function createMainDataHandlers(context) {
     const workerOptions = {
       csvSettings,
       trueValues: (csvSettings?.trueValues ?? '').trim() || DEFAULT_SETTINGS.csv.trueValues,
-      hospitalizedValues: (csvSettings?.hospitalizedValues ?? '').trim() || DEFAULT_SETTINGS.csv.hospitalizedValues,
+      hospitalizedValues:
+        (csvSettings?.hospitalizedValues ?? '').trim() || DEFAULT_SETTINGS.csv.hospitalizedValues,
       nightKeywords: (csvSettings?.nightKeywords ?? '').trim() || DEFAULT_SETTINGS.csv.nightKeywords,
       dayKeywords: (csvSettings?.dayKeywords ?? '').trim() || DEFAULT_SETTINGS.csv.dayKeywords,
       calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
@@ -369,30 +376,33 @@ export function createMainDataHandlers(context) {
     const historicalEnabled = !skipHistorical && Boolean(historicalConfig?.enabled);
     const historicalLabel = historicalConfig?.label || 'Istorinis CSV';
     let historicalMeta = null;
-    const normalizedHistoricalConfig = historicalEnabled && historicalConfig?.url
-      ? {
-        url: historicalConfig.url,
-        missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
-        onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
-        onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
-        signal,
-      }
-      : null;
-    const historicalShouldAttempt = Boolean(normalizedHistoricalConfig)
-      && (normalizedHistoricalConfig.url ?? '').trim().length > 0;
+    const normalizedHistoricalConfig =
+      historicalEnabled && historicalConfig?.url
+        ? {
+            url: historicalConfig.url,
+            missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
+            onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
+            onWorkerProgress:
+              typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+            signal,
+          }
+        : null;
+    const historicalShouldAttempt =
+      Boolean(normalizedHistoricalConfig) && (normalizedHistoricalConfig.url ?? '').trim().length > 0;
 
     const primaryPromise = loadCsvSource(mainConfig, workerOptions, {
       required: true,
       sourceId: 'primary',
       label: 'Pagrindinis CSV',
     });
-    const historicalPromise = historicalEnabled && historicalShouldAttempt
-      ? loadCsvSource(normalizedHistoricalConfig, workerOptions, {
-        required: false,
-        sourceId: 'historical',
-        label: historicalLabel,
-      })
-      : Promise.resolve(null);
+    const historicalPromise =
+      historicalEnabled && historicalShouldAttempt
+        ? loadCsvSource(normalizedHistoricalConfig, workerOptions, {
+            required: false,
+            sourceId: 'historical',
+            label: historicalLabel,
+          })
+        : Promise.resolve(null);
 
     const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
 
@@ -401,7 +411,7 @@ export function createMainDataHandlers(context) {
     const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
     let combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(primaryResult.hospitalByDeptStayAgg, null);
     let combinedRecords = baseRecords.slice();
-    let usingFallback = false;
+    const usingFallback = false;
     const warnings = [];
     const primaryUrl = (settings?.dataSource?.url ?? '').trim();
     const sources = [
@@ -427,11 +437,17 @@ export function createMainDataHandlers(context) {
       if (historicalShouldAttempt && historicalResult) {
         historicalMeta = historicalResult.meta || null;
         const historicalRecordsRaw = Array.isArray(historicalResult.records) ? historicalResult.records : [];
-        const historicalRecords = historicalRecordsRaw.map((record) => ({ ...record, sourceId: 'historical' }));
+        const historicalRecords = historicalRecordsRaw.map((record) => ({
+          ...record,
+          sourceId: 'historical',
+        }));
         if (historicalRecords.length) {
           combinedRecords = combinedRecords.concat(historicalRecords);
         }
-        combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(combinedHospitalByDeptStayAgg, historicalResult.hospitalByDeptStayAgg);
+        combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(
+          combinedHospitalByDeptStayAgg,
+          historicalResult.hospitalByDeptStayAgg
+        );
         if (historicalResult.error) {
           warnings.push(`${historicalLabel}: ${historicalResult.error}`);
         }
@@ -488,9 +504,10 @@ export function createMainDataHandlers(context) {
     };
 
     const hasBaseDaily = Array.isArray(baseDaily) && baseDaily.length > 0;
-    const combinedDaily = (combinedRecords.length === baseRecords.length && hasBaseDaily)
-      ? baseDaily.slice()
-      : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
+    const combinedDaily =
+      combinedRecords.length === baseRecords.length && hasBaseDaily
+        ? baseDaily.slice()
+        : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
     const combinedYearlyStats = computeYearlyStats(computeMonthlyStats(combinedDaily.slice()));
 
     return {

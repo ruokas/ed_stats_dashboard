@@ -1,35 +1,26 @@
-import { createClientStore, PerfMonitor } from '../../../../app.js';
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
-import { createFeedbackHandlers } from '../../../data/feedback.js';
-import { createEdHandlers } from '../../../data/ed.js';
-import { computeDailyStats } from '../../../data/stats.js';
-import { computeFeedbackStats } from '../features/feedback-stats.js';
-import { createDataFlow } from '../data-flow.js';
-import { createLayoutTools } from '../layout.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { createEdPanelCoreFeature } from '../features/ed-panel-core.js';
-import { createEdCardsFeature } from '../features/ed-cards.js';
-import { createEdCommentsFeature } from '../features/ed-comments.js';
-import { createEdRenderer } from '../../../render/ed.js';
 import { renderEdDispositionsChart as renderEdDispositionsChartModule } from '../../../charts/ed-dispositions.js';
+import { createEdHandlers } from '../../../data/ed.js';
+import {
+  computePercentile,
+  formatHourLabel,
+  formatPercentPointDelta,
+  pickTopHours,
+} from '../../../data/ed-utils.js';
+import { createFeedbackHandlers } from '../../../data/feedback.js';
+import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
+import { computeDailyStats } from '../../../data/stats.js';
+import { createEdRenderer } from '../../../render/ed.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
-import { initThemeToggle } from '../../../events/theme.js';
 import {
   monthFormatter,
   numberFormatter,
   oneDecimalFormatter,
   percentFormatter,
-  shortDateFormatter,
   statusTimeFormatter,
 } from '../../../utils/format.js';
-import { computePercentile, formatHourLabel, formatPercentPointDelta, pickTopHours } from '../../../data/ed-utils.js';
-import { createTextSignature, describeCacheMeta, describeError, downloadCsv, formatUrlForDiagnostics } from '../network.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -43,28 +34,36 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
-import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters } from '../state.js';
+import { dateKeyToUtc, filterDailyStatsByWindow } from '../chart-primitives.js';
+import { createDataFlow } from '../data-flow.js';
+import { createEdCardsFeature } from '../features/ed-cards.js';
+import { createEdCommentsFeature } from '../features/ed-comments.js';
+import { createEdPanelCoreFeature } from '../features/ed-panel-core.js';
+import { computeFeedbackStats } from '../features/feedback-stats.js';
+import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
+import {
+  createTextSignature,
+  describeCacheMeta,
+  describeError,
+  downloadCsv,
+  formatUrlForDiagnostics,
+} from '../network.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
+import { loadSettingsFromConfig } from '../settings.js';
+import {
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+} from '../state.js';
+import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
 
-const clientStore = createClientStore(CLIENT_CONFIG_KEY);
-const perfMonitor = new PerfMonitor();
-let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
 const MIN_ED_SKELETON_VISIBLE_MS = 450;
-
-function parseCandidateList(value, fallback = '') {
-  const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
-  return base.replace(/\r\n/g, '\n').split(/[\n,|;]+/).map((part) => part.trim()).filter(Boolean);
-}
-
-function matchesWildcard(normalized, candidate) {
-  if (!normalized || !candidate) {
-    return false;
-  }
-  const escaped = candidate.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-  const regex = new RegExp(`^${escaped}$`);
-  return regex.test(normalized);
-}
+const setStatus = createStatusSetter(TEXT.status);
 
 function normalizeHeaderToken(value) {
   return String(value ?? '')
@@ -96,7 +95,9 @@ function resolveColumnIndex(headerNormalized, candidates) {
     }
   }
   for (const candidate of list) {
-    const trimmed = String(candidate || '').trim().toLowerCase();
+    const trimmed = String(candidate || '')
+      .trim()
+      .toLowerCase();
     if (!trimmed) {
       continue;
     }
@@ -110,7 +111,9 @@ function resolveColumnIndex(headerNormalized, candidates) {
     if (!folded) {
       continue;
     }
-    const match = normalizedHeader.find((column) => column.foldedOriginal === folded || column.foldedNormalized === folded);
+    const match = normalizedHeader.find(
+      (column) => column.foldedOriginal === folded || column.foldedNormalized === folded
+    );
     if (match) {
       return match.index;
     }
@@ -120,7 +123,9 @@ function resolveColumnIndex(headerNormalized, candidates) {
     if (!folded) {
       continue;
     }
-    const match = normalizedHeader.find((column) => column.foldedOriginal.includes(folded) || column.foldedNormalized.includes(folded));
+    const match = normalizedHeader.find(
+      (column) => column.foldedOriginal.includes(folded) || column.foldedNormalized.includes(folded)
+    );
     if (match) {
       return match.index;
     }
@@ -138,38 +143,6 @@ function formatLocalDateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
-function dateKeyToUtc(dateKey) {
-  if (typeof dateKey !== 'string') {
-    return Number.NaN;
-  }
-  const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
-  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
-    return Number.NaN;
-  }
-  return Date.UTC(parts[0], parts[1] - 1, parts[2]);
-}
-
-function filterDailyStatsByWindow(dailyStats, days) {
-  if (!Array.isArray(dailyStats)) {
-    return [];
-  }
-  if (!Number.isFinite(days) || days <= 0) {
-    return [...dailyStats];
-  }
-  const decorated = dailyStats.map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) })).filter((item) => Number.isFinite(item.utc));
-  if (!decorated.length) {
-    return [];
-  }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-  const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
-}
-
-function dateKeyToDate(dateKey) {
-  const utc = dateKeyToUtc(dateKey);
-  return Number.isFinite(utc) ? new Date(utc) : null;
-}
-
 function buildYearMonthMetrics(dailyStats, windowDays) {
   if (!Array.isArray(dailyStats) || !dailyStats.length) {
     return null;
@@ -183,33 +156,56 @@ function buildYearMonthMetrics(dailyStats, windowDays) {
   }
   const periodEntries = decorated.map((item) => item.entry);
   const [yearStr = '', monthStr = ''] = (periodEntries[periodEntries.length - 1]?.date ?? '').split('-');
-  const monthEntries = monthStr ? periodEntries.filter((entry) => String(entry?.date || '').startsWith(`${yearStr}-${monthStr}`)) : [];
-  const aggregate = (entries) => entries.reduce((acc, entry) => {
-    acc.days += 1;
-    acc.totalCount += Number.isFinite(entry?.count) ? entry.count : 0;
-    acc.totalHospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
-    acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
-    acc.durationCount += Number.isFinite(entry?.durations) ? entry.durations : 0;
-    acc.totalHospitalizedTime += Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
-    acc.hospitalizedDurationCount += Number.isFinite(entry?.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
-    return acc;
-  }, { days: 0, totalCount: 0, totalHospitalized: 0, totalTime: 0, durationCount: 0, totalHospitalizedTime: 0, hospitalizedDurationCount: 0 });
+  const monthEntries = monthStr
+    ? periodEntries.filter((entry) => String(entry?.date || '').startsWith(`${yearStr}-${monthStr}`))
+    : [];
+  const aggregate = (entries) =>
+    entries.reduce(
+      (acc, entry) => {
+        acc.days += 1;
+        acc.totalCount += Number.isFinite(entry?.count) ? entry.count : 0;
+        acc.totalHospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+        acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
+        acc.durationCount += Number.isFinite(entry?.durations) ? entry.durations : 0;
+        acc.totalHospitalizedTime += Number.isFinite(entry?.hospitalizedTime) ? entry.hospitalizedTime : 0;
+        acc.hospitalizedDurationCount += Number.isFinite(entry?.hospitalizedDurations)
+          ? entry.hospitalizedDurations
+          : 0;
+        return acc;
+      },
+      {
+        days: 0,
+        totalCount: 0,
+        totalHospitalized: 0,
+        totalTime: 0,
+        durationCount: 0,
+        totalHospitalizedTime: 0,
+        hospitalizedDurationCount: 0,
+      }
+    );
   const toMetrics = (summary) => ({
     days: summary.days,
     patientsPerDay: summary.days > 0 ? summary.totalCount / summary.days : 0,
     hospitalizedShare: summary.totalCount > 0 ? summary.totalHospitalized / summary.totalCount : null,
     avgTime: summary.durationCount > 0 ? summary.totalTime / summary.durationCount : null,
-    avgHospitalizedTime: summary.hospitalizedDurationCount > 0 ? summary.totalHospitalizedTime / summary.hospitalizedDurationCount : null,
+    avgHospitalizedTime:
+      summary.hospitalizedDurationCount > 0
+        ? summary.totalHospitalizedTime / summary.hospitalizedDurationCount
+        : null,
   });
   const yearMetrics = toMetrics(aggregate(periodEntries));
   const monthMetrics = toMetrics(aggregate(monthEntries));
   const year = Number.parseInt(yearStr, 10);
   const month = Number.parseInt(monthStr, 10);
-  const monthLabel = Number.isFinite(year) && Number.isFinite(month)
-    ? monthFormatter.format(new Date(year, month - 1, 1))
-    : '';
+  const monthLabel =
+    Number.isFinite(year) && Number.isFinite(month)
+      ? monthFormatter.format(new Date(year, month - 1, 1))
+      : '';
   return {
-    yearLabel: Number.isFinite(windowDays) && windowDays > 0 ? `Paskutinės ${windowDays} d.` : TEXT.kpis.windowAllLabel,
+    yearLabel:
+      Number.isFinite(windowDays) && windowDays > 0
+        ? `Paskutinės ${windowDays} d.`
+        : TEXT.kpis.windowAllLabel,
     monthLabel,
     yearMetrics,
     monthMetrics,
@@ -221,7 +217,9 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
     return summary;
   }
   const records = Array.isArray(overviewRecords)
-    ? overviewRecords.filter((record) => record && (record.arrival instanceof Date || record.discharge instanceof Date))
+    ? overviewRecords.filter(
+        (record) => record && (record.arrival instanceof Date || record.discharge instanceof Date)
+      )
     : [];
   if (!records.length) {
     return summary;
@@ -235,8 +233,10 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
   let slowCount = 0;
 
   records.forEach((record) => {
-    const arrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
-    const discharge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
+    const arrival =
+      record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+    const discharge =
+      record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
     const reference = arrival || discharge;
     const dateKey = reference ? formatLocalDateKey(reference) : '';
     if (dateKey) {
@@ -273,8 +273,12 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
     const topArrival = pickTopHours(arrivalHourCounts, 3);
     const topDeparture = pickTopHours(dischargeHourCounts, 3);
     if (topArrival.length || topDeparture.length) {
-      const arrivalText = topArrival.length ? topArrival.map((item) => formatHourLabel(item.hour)).join(', ') : '—';
-      const departureText = topDeparture.length ? topDeparture.map((item) => formatHourLabel(item.hour)).join(', ') : '—';
+      const arrivalText = topArrival.length
+        ? topArrival.map((item) => formatHourLabel(item.hour)).join(', ')
+        : '—';
+      const departureText = topDeparture.length
+        ? topDeparture.map((item) => formatHourLabel(item.hour)).join(', ')
+        : '—';
       summary.peakWindowText = `Atvykimai: ${arrivalText} / Išvykimai: ${departureText}`;
     }
   }
@@ -297,7 +301,12 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
     if (!Number.isFinite(summary.losP90Minutes) && Number.isFinite(losP90)) {
       summary.losP90Minutes = losP90;
     }
-    if (!Number.isFinite(summary.losVariabilityIndex) && Number.isFinite(losMedian) && Number.isFinite(losP90) && losMedian > 0) {
+    if (
+      !Number.isFinite(summary.losVariabilityIndex) &&
+      Number.isFinite(losMedian) &&
+      Number.isFinite(losP90) &&
+      losMedian > 0
+    ) {
       summary.losVariabilityIndex = losP90 / losMedian;
     }
     if (!summary.losPercentilesText && Number.isFinite(losMedian) && Number.isFinite(losP90)) {
@@ -307,7 +316,11 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
       summary.fastLaneShare = losValues.length ? fastCount / losValues.length : null;
       summary.slowLaneShare = losValues.length ? slowCount / losValues.length : null;
     }
-    if (!summary.fastSlowSplitValue && Number.isFinite(summary.fastLaneShare) && Number.isFinite(summary.slowLaneShare)) {
+    if (
+      !summary.fastSlowSplitValue &&
+      Number.isFinite(summary.fastLaneShare) &&
+      Number.isFinite(summary.slowLaneShare)
+    ) {
       summary.fastSlowSplitValue = `Greitieji: ${percentFormatter.format(summary.fastLaneShare)} • Lėtieji: ${percentFormatter.format(summary.slowLaneShare)}`;
     }
   }
@@ -315,16 +328,22 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
   if (!Number.isFinite(summary.avgDailyPatients)) {
     const dailySource = Array.isArray(overviewDailyStats) ? overviewDailyStats : [];
     if (dailySource.length) {
-      const windowDays = Number.isFinite(Number(options.windowDays)) && Number(options.windowDays) > 0 ? Number(options.windowDays) : 30;
+      const windowDays =
+        Number.isFinite(Number(options.windowDays)) && Number(options.windowDays) > 0
+          ? Number(options.windowDays)
+          : 30;
       const scoped = filterDailyStatsByWindow(dailySource, windowDays);
       const effective = scoped.length ? scoped : dailySource;
-      const totals = effective.reduce((acc, entry) => {
-        if (Number.isFinite(entry?.count)) {
-          acc.sum += Number(entry.count);
-          acc.days += 1;
-        }
-        return acc;
-      }, { sum: 0, days: 0 });
+      const totals = effective.reduce(
+        (acc, entry) => {
+          if (Number.isFinite(entry?.count)) {
+            acc.sum += Number(entry.count);
+            acc.days += 1;
+          }
+          return acc;
+        },
+        { sum: 0, days: 0 }
+      );
       if (totals.days > 0) {
         summary.avgDailyPatients = totals.sum / totals.days;
       }
@@ -343,38 +362,10 @@ function enrichSummaryWithOverviewFallback(summary, overviewRecords, overviewDai
   return summary;
 }
 
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
-    return;
-  }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  if (type === 'warning') {
-    statusEl.classList.add('status--warning');
-    statusEl.textContent = details || TEXT.status.success();
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
-}
-
 export async function runEdRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'ed');
   if (mode === 'legacy') {
-    const { startFullPageApp } = await import('../../full-page-app.js?v=2026-02-08-fullpage-refresh-2');
-    return startFullPageApp({ forcePageId: core?.pageId || 'ed', skipGlobalInit: true });
+    return runLegacyFallback(core, 'ed');
   }
 
   const pageConfig = core?.pageConfig || { ed: true };
@@ -421,44 +412,32 @@ export async function runEdRuntime(core) {
     resolveColumnIndex,
   });
 
-  if (selectors.title) {
-    selectors.title.textContent = settings?.output?.title || TEXT.title;
-  }
-  if (selectors.footerSource) {
-    selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  }
-  if (settings?.output?.pageTitle) {
-    document.title = settings.output.pageTitle;
-  }
-  if (selectors.scrollTopBtn) {
-    selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-  }
-
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
-  const toggleTheme = () => {
-    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', {
-      persist: true,
-      themeStorageKey: THEME_STORAGE_KEY,
-    });
-    const currentDispositions = Array.isArray(dashboardState.ed?.dispositions) ? dashboardState.ed.dispositions : [];
-    renderEdDispositionsChartModule({
-      dashboardState,
-      selectors,
-      loadChartJs,
-      getThemePalette,
-      getThemeStyleTarget,
-      percentFormatter,
-    }, currentDispositions, TEXT.ed.dispositions?.legacy || {}, 'legacy').catch(() => {});
-  };
-
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({ selectors, ...layoutTools });
-  initScrollTopButton({
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
+  setupSharedPageUi({
     selectors,
-    updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility,
-    scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
+    onThemeChange: () => {
+      const currentDispositions = Array.isArray(dashboardState.ed?.dispositions)
+        ? dashboardState.ed.dispositions
+        : [];
+      renderEdDispositionsChartModule(
+        {
+          dashboardState,
+          selectors,
+          loadChartJs,
+          getThemePalette,
+          getThemeStyleTarget,
+          percentFormatter,
+        },
+        currentDispositions,
+        TEXT.ed.dispositions?.legacy || {},
+        'legacy'
+      ).catch(() => {});
+    },
   });
-  initThemeToggle({ selectors, toggleTheme });
 
   const edCommentsFeature = createEdCommentsFeature({
     dashboardState,
@@ -505,9 +484,9 @@ export async function runEdRuntime(core) {
     const carousel = dashboardState?.feedbackMetricCarousel;
     const catalog = Array.isArray(carousel?.metricCatalog)
       ? carousel.metricCatalog
-      : (Array.isArray(dashboardState?.ed?.summary?.feedbackCurrentMonthMetricCatalog)
+      : Array.isArray(dashboardState?.ed?.summary?.feedbackCurrentMonthMetricCatalog)
         ? dashboardState.ed.summary.feedbackCurrentMonthMetricCatalog
-        : []);
+        : [];
     if (!carousel || catalog.length <= 1) {
       clearFeedbackMetricCarouselTimer();
       if (carousel) {
@@ -515,19 +494,21 @@ export async function runEdRuntime(core) {
       }
       return;
     }
-    const normalizedIndex = ((Number.parseInt(String(carousel.index ?? 0), 10) % catalog.length) + catalog.length) % catalog.length;
+    const normalizedIndex =
+      ((Number.parseInt(String(carousel.index ?? 0), 10) % catalog.length) + catalog.length) % catalog.length;
     carousel.index = normalizedIndex;
-    const intervalMs = Number.isFinite(Number(carousel.intervalMs)) && Number(carousel.intervalMs) >= 2000
-      ? Number(carousel.intervalMs)
-      : getFeedbackRotationIntervalMs();
+    const intervalMs =
+      Number.isFinite(Number(carousel.intervalMs)) && Number(carousel.intervalMs) >= 2000
+        ? Number(carousel.intervalMs)
+        : getFeedbackRotationIntervalMs();
     carousel.intervalMs = intervalMs;
     clearFeedbackMetricCarouselTimer();
     carousel.timerId = window.setInterval(async () => {
       const activeCatalog = Array.isArray(carousel?.metricCatalog)
         ? carousel.metricCatalog
-        : (Array.isArray(dashboardState?.ed?.summary?.feedbackCurrentMonthMetricCatalog)
+        : Array.isArray(dashboardState?.ed?.summary?.feedbackCurrentMonthMetricCatalog)
           ? dashboardState.ed.summary.feedbackCurrentMonthMetricCatalog
-          : []);
+          : [];
       if (activeCatalog.length <= 1) {
         clearFeedbackMetricCarouselTimer();
         return;
@@ -578,9 +559,7 @@ export async function runEdRuntime(core) {
     const sectionsByKey = new Map();
     const cards = buildEdSkeletonCardCatalog();
     cards.forEach((card) => {
-      const key = typeof card.section === 'string' && card.section.trim()
-        ? card.section.trim()
-        : 'default';
+      const key = typeof card.section === 'string' && card.section.trim() ? card.section.trim() : 'default';
       if (!sectionsByKey.has(key)) {
         const meta = sectionMeta[key] || sectionMeta.default || {};
         sectionsByKey.set(key, {
@@ -592,8 +571,9 @@ export async function runEdRuntime(core) {
       }
       sectionsByKey.get(key).cards.push(card);
     });
-    const sections = Array.from(sectionsByKey.values())
-      .filter((section) => Array.isArray(section.cards) && section.cards.length);
+    const sections = Array.from(sectionsByKey.values()).filter(
+      (section) => Array.isArray(section.cards) && section.cards.length
+    );
     sections.sort((a, b) => {
       const aIndex = sectionOrder.indexOf(a.key);
       const bIndex = sectionOrder.indexOf(b.key);
@@ -745,14 +725,20 @@ export async function runEdRuntime(core) {
     },
     buildFeedbackTrendInfo: edCardsFeature.buildFeedbackTrendInfo,
     buildEdStatus: edPanelCoreFeature.buildEdStatus,
-    renderEdDispositionsChart: (dispositions, text, displayVariant) => renderEdDispositionsChartModule({
-      dashboardState,
-      selectors,
-      loadChartJs,
-      getThemePalette,
-      getThemeStyleTarget,
-      percentFormatter,
-    }, dispositions, text, displayVariant),
+    renderEdDispositionsChart: (dispositions, text, displayVariant) =>
+      renderEdDispositionsChartModule(
+        {
+          dashboardState,
+          selectors,
+          loadChartJs,
+          getThemePalette,
+          getThemeStyleTarget,
+          percentFormatter,
+        },
+        dispositions,
+        text,
+        displayVariant
+      ),
     createEdSectionIcon: edPanelCoreFeature.createEdSectionIcon,
     renderEdCommentsCard: edCommentsFeature.renderEdCommentsCard,
     formatEdCardValue: edCardsFeature.formatEdCardValue,
@@ -787,7 +773,7 @@ export async function runEdRuntime(core) {
     fetchData,
     fetchFeedbackData,
     fetchEdData,
-    perfMonitor,
+    perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary,
     describeError,
@@ -833,9 +819,11 @@ export async function runEdRuntime(core) {
     renderEdDashboard: (edData) => renderEdDashboardRef(edData),
     numberFormatter,
     getSettings: () => settings,
-    getClientConfig: () => clientConfig,
+    getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
 
   dataFlow.scheduleInitialLoad();

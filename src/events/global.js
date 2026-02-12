@@ -1,15 +1,10 @@
 export function initGlobalShortcuts(env) {
-  const {
-    selectors,
-    dashboardState,
-    resetKpiFilters,
-    toggleTheme,
-    setActiveTab,
-  } = env;
+  const { selectors, dashboardState, resetKpiFilters, toggleTheme, setActiveTab } = env;
 
   document.addEventListener('keydown', (event) => {
     if (!event.ctrlKey && !event.metaKey && event.shiftKey && (event.key === 'R' || event.key === 'r')) {
-      const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
+      const tagName =
+        event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
       if (tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
         return;
       }
@@ -27,10 +22,13 @@ export function initGlobalShortcuts(env) {
       }
     }
     if (!event.ctrlKey && !event.metaKey && !event.shiftKey && (event.key === 'A' || event.key === 'a')) {
-      const tagName = event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
-      const isEditable = event.target && typeof event.target === 'object'
-        && 'isContentEditable' in event.target
-        && event.target.isContentEditable === true;
+      const tagName =
+        event.target && 'tagName' in event.target ? String(event.target.tagName).toUpperCase() : '';
+      const isEditable =
+        event.target &&
+        typeof event.target === 'object' &&
+        'isContentEditable' in event.target &&
+        event.target.isContentEditable === true;
       if (tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) {
         return;
       }
@@ -42,7 +40,13 @@ export function initGlobalShortcuts(env) {
         setActiveTab('overview', { restoreFocus: true });
       }
     }
-    if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key === 'Escape' && dashboardState.fullscreen) {
+    if (
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      event.key === 'Escape' &&
+      dashboardState.fullscreen
+    ) {
       event.preventDefault();
       setActiveTab('overview', { restoreFocus: true });
     }

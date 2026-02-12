@@ -1,11 +1,5 @@
 export function createEdCardsFeature(deps) {
-  const {
-    ED_TOTAL_BEDS,
-    numberFormatter,
-    oneDecimalFormatter,
-    percentFormatter,
-    setDatasetValue,
-  } = deps;
+  const { ED_TOTAL_BEDS, numberFormatter, oneDecimalFormatter, percentFormatter, setDatasetValue } = deps;
 
   function formatEdCardValue(rawValue, format) {
     switch (format) {
@@ -162,9 +156,7 @@ export function createEdCardsFeature(deps) {
         arrow: '→',
         text: 'Be pokyčio',
         reference,
-        ariaLabel: reference
-          ? `Pokytis lyginant su ${reference}: be pokyčio`
-          : 'Pokytis: be pokyčio',
+        ariaLabel: reference ? `Pokytis lyginant su ${reference}: be pokyčio` : 'Pokytis: be pokyčio',
       };
     }
 
@@ -181,7 +173,11 @@ export function createEdCardsFeature(deps) {
     };
   }
 
-  function buildFeedbackTrendInfo(currentValue, previousValue, { currentLabel = '', previousLabel = '' } = {}) {
+  function buildFeedbackTrendInfo(
+    currentValue,
+    previousValue,
+    { currentLabel = '', previousLabel = '' } = {}
+  ) {
     if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) {
       return null;
     }
@@ -205,14 +201,14 @@ export function createEdCardsFeature(deps) {
     const previous = oneDecimalFormatter.format(previousValue);
     const current = oneDecimalFormatter.format(currentValue);
     const referenceLabel = previousLabel || 'praėjusiu mėnesiu';
-    const changeSummary = trend === 'neutral'
-      ? 'Pokyčio nėra'
-      : `${sign}${oneDecimalFormatter.format(absDiff)}`;
+    const changeSummary =
+      trend === 'neutral' ? 'Pokyčio nėra' : `${sign}${oneDecimalFormatter.format(absDiff)}`;
     const rangeText = previous && current ? `(${previous} → ${current})` : '';
     const text = [changeSummary, rangeText].filter(Boolean).join(' ');
-    const ariaLabel = trend === 'neutral'
-      ? `Pokyčio nėra lyginant su ${referenceLabel}. Dabartinis: ${current}.`
-      : `Pokytis lyginant su ${referenceLabel}: ${sign}${oneDecimalFormatter.format(absDiff)} (nuo ${previous} iki ${current}).`;
+    const ariaLabel =
+      trend === 'neutral'
+        ? `Pokyčio nėra lyginant su ${referenceLabel}. Dabartinis: ${current}.`
+        : `Pokytis lyginant su ${referenceLabel}: ${sign}${oneDecimalFormatter.format(absDiff)} (nuo ${previous} iki ${current}).`;
 
     return {
       trend,
@@ -263,11 +259,8 @@ export function createEdCardsFeature(deps) {
       const totalBeds = Number.isFinite(ED_TOTAL_BEDS) ? Math.max(ED_TOTAL_BEDS, 0) : 0;
       if (totalBeds > 0) {
         const occupancyShare = Math.max(0, Math.min(1, primaryRaw / totalBeds));
-        const occupancyLevel = occupancyShare > 0.7
-          ? 'critical'
-          : occupancyShare > 0.5
-            ? 'elevated'
-            : 'normal';
+        const occupancyLevel =
+          occupancyShare > 0.7 ? 'critical' : occupancyShare > 0.5 ? 'elevated' : 'normal';
         const progress = document.createElement('div');
         progress.className = 'ed-dashboard__card-progress';
         progress.setAttribute('aria-hidden', 'true');

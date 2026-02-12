@@ -57,7 +57,11 @@ export async function writeTextToClipboard(text) {
 }
 
 export async function writeBlobToClipboard(blob, mimeType) {
-  if (!navigator.clipboard || typeof navigator.clipboard.write !== 'function' || typeof window.ClipboardItem !== 'function') {
+  if (
+    !navigator.clipboard ||
+    typeof navigator.clipboard.write !== 'function' ||
+    typeof window.ClipboardItem !== 'function'
+  ) {
     return false;
   }
   const item = new ClipboardItem({ [mimeType]: blob });

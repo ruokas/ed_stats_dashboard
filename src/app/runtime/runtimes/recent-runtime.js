@@ -1,20 +1,10 @@
-import { createClientStore, PerfMonitor } from '../../../../app.js';
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
 import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
 import { computeDailyStats } from '../../../data/stats.js';
-import { createDataFlow } from '../data-flow.js';
-import { createLayoutTools } from '../layout.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import { applyTheme, initializeTheme } from '../features/theme.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
-import { initThemeToggle } from '../../../events/theme.js';
-import { initCompareControls } from '../../../events/compare.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
-import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
+import { initCompareControls } from '../../../events/compare.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
-import { createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters } from '../state.js';
 import {
   dailyDateFormatter,
   decimalFormatter,
@@ -22,7 +12,6 @@ import {
   oneDecimalFormatter,
   percentFormatter,
 } from '../../../utils/format.js';
-import { createTextSignature, describeCacheMeta, describeError, downloadCsv, formatUrlForDiagnostics } from '../network.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -32,69 +21,33 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { dateKeyToDate, filterDailyStatsByWindow } from '../chart-primitives.js';
+import { setCopyButtonFeedback, storeCopyButtonBaseLabel } from '../clipboard.js';
+import { createDataFlow } from '../data-flow.js';
+import { applyTheme, initializeTheme } from '../features/theme.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
+import {
+  createTextSignature,
+  describeCacheMeta,
+  describeError,
+  downloadCsv,
+  formatUrlForDiagnostics,
+} from '../network.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
+import { loadSettingsFromConfig } from '../settings.js';
+import {
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+} from '../state.js';
+import { createTableDownloadHandler } from '../table-export.js';
+import { createStatusSetter } from '../utils/common.js';
 
-const clientStore = createClientStore(CLIENT_CONFIG_KEY);
-const perfMonitor = new PerfMonitor();
-let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
-
-function dateKeyToUtc(dateKey) {
-  if (typeof dateKey !== 'string') {
-    return Number.NaN;
-  }
-  const parts = dateKey.split('-').map((part) => Number.parseInt(part, 10));
-  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
-    return Number.NaN;
-  }
-  const [year, month, day] = parts;
-  return Date.UTC(year, month - 1, day);
-}
-
-function dateKeyToDate(dateKey) {
-  const utc = dateKeyToUtc(dateKey);
-  return Number.isFinite(utc) ? new Date(utc) : null;
-}
-
-function filterDailyStatsByWindow(dailyStats, days) {
-  if (!Array.isArray(dailyStats)) {
-    return [];
-  }
-  if (!Number.isFinite(days) || days <= 0) {
-    return [...dailyStats];
-  }
-  const decorated = dailyStats
-    .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
-    .filter((item) => Number.isFinite(item.utc));
-  if (!decorated.length) {
-    return [];
-  }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
-  const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
-}
-
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
-    return;
-  }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
-}
+const setStatus = createStatusSetter(TEXT.status);
 
 function formatValueWithShare(value, total) {
   const safeValue = Number.isFinite(value) ? value : 0;
@@ -262,17 +215,20 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
 
   const sorted = [...recentDailyStats].sort((a, b) => (a.date > b.date ? -1 : 1));
   const daysCount = sorted.length;
-  const totals = sorted.reduce((acc, entry) => {
-    const total = Number.isFinite(entry?.count) ? entry.count : 0;
-    acc.total += total;
-    acc.night += Number.isFinite(entry?.night) ? entry.night : 0;
-    acc.ems += Number.isFinite(entry?.ems) ? entry.ems : 0;
-    acc.hospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
-    acc.discharged += Number.isFinite(entry?.discharged) ? entry.discharged : 0;
-    acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
-    acc.durations += Number.isFinite(entry?.durations) ? entry.durations : 0;
-    return acc;
-  }, { total: 0, night: 0, ems: 0, hospitalized: 0, discharged: 0, totalTime: 0, durations: 0 });
+  const totals = sorted.reduce(
+    (acc, entry) => {
+      const total = Number.isFinite(entry?.count) ? entry.count : 0;
+      acc.total += total;
+      acc.night += Number.isFinite(entry?.night) ? entry.night : 0;
+      acc.ems += Number.isFinite(entry?.ems) ? entry.ems : 0;
+      acc.hospitalized += Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0;
+      acc.discharged += Number.isFinite(entry?.discharged) ? entry.discharged : 0;
+      acc.totalTime += Number.isFinite(entry?.totalTime) ? entry.totalTime : 0;
+      acc.durations += Number.isFinite(entry?.durations) ? entry.durations : 0;
+      return acc;
+    },
+    { total: 0, night: 0, ems: 0, hospitalized: 0, discharged: 0, totalTime: 0, durations: 0 }
+  );
 
   const summaryRow = document.createElement('tr');
   summaryRow.classList.add('table-row--summary');
@@ -331,62 +287,16 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
   compareFeature.syncCompareActivation();
 }
 
-function escapeCsvCell(value) {
-  const text = String(value ?? '');
-  if (/[",\n]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
-
-function triggerDownloadFromBlob(blob, filename) {
-  if (!(blob instanceof Blob) || !filename) {
-    return false;
-  }
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
-  return true;
-}
-
-async function handleTableDownloadClick(event) {
-  const button = event.currentTarget;
-  if (!(button instanceof HTMLElement)) {
-    return;
-  }
-  const targetSelector = getDatasetValue(button, 'tableTarget', '');
-  const table = targetSelector ? document.querySelector(targetSelector) : null;
-  if (!(table instanceof HTMLTableElement)) {
-    setCopyButtonFeedback(button, 'Lentelė nerasta', 'error');
-    return;
-  }
-  const rows = Array.from(table.querySelectorAll('tr'))
-    .filter((row) => !row.hidden)
-    .map((row) => Array.from(row.children).map((cell) => escapeCsvCell(cell.textContent.trim())).join(','))
-    .join('\n');
-  const title = getDatasetValue(button, 'tableTitle', 'Paskutines-dienos');
-  const format = getDatasetValue(button, 'tableDownload', 'csv');
-  if (format === 'csv') {
-    const ok = triggerDownloadFromBlob(new Blob([rows], { type: 'text/csv;charset=utf-8;' }), `${title}.csv`);
-    setCopyButtonFeedback(button, ok ? 'Lentelė parsisiųsta' : 'Klaida parsisiunčiant', ok ? 'success' : 'error');
-    return;
-  }
-  const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Arial;background:#fff;padding:16px;">${table.outerHTML}</div></foreignObject></svg>`;
-  const ok = triggerDownloadFromBlob(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }), `${title}.svg`);
-  setCopyButtonFeedback(button, ok ? 'Lentelė parsisiųsta' : 'Klaida parsisiunčiant', ok ? 'success' : 'error');
-}
+const handleTableDownloadClick = createTableDownloadHandler({
+  getDatasetValue,
+  setCopyButtonFeedback,
+  defaultTitle: 'Paskutines-dienos',
+});
 
 export async function runRecentRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'recent');
   if (mode === 'legacy') {
-    const { startFullPageApp } = await import('../../full-page-app.js?v=2026-02-08-fullpage-refresh-2');
-    return startFullPageApp({ forcePageId: core?.pageId || 'recent', skipGlobalInit: true });
+    return runLegacyFallback(core, 'recent');
   }
 
   const pageConfig = core?.pageConfig || { recent: true };
@@ -408,40 +318,20 @@ export async function runRecentRuntime(core) {
     DEFAULT_SETTINGS,
     dashboardState,
     downloadCsv,
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     createTextSignature,
     formatUrlForDiagnostics,
   });
 
-  if (selectors.title) {
-    selectors.title.textContent = settings?.output?.title || TEXT.title;
-  }
-  if (selectors.footerSource) {
-    selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  }
-  if (settings?.output?.pageTitle) {
-    document.title = settings.output.pageTitle;
-  }
-  if (selectors.scrollTopBtn) {
-    selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-  }
-
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
-  const toggleTheme = () => {
-    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', {
-      persist: true,
-      themeStorageKey: THEME_STORAGE_KEY,
-    });
-  };
-
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({ selectors, ...layoutTools });
-  initScrollTopButton({
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
+  setupSharedPageUi({
     selectors,
-    updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility,
-    scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
   });
-  initThemeToggle({ selectors, toggleTheme });
   initCompareControls({
     selectors,
     dashboardState,
@@ -469,10 +359,11 @@ export async function runRecentRuntime(core) {
     fetchData,
     fetchFeedbackData: async () => [],
     fetchEdData: async () => null,
-    perfMonitor,
+    perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
-    describeError: (error, options = {}) => describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
+    describeError: (error, options = {}) =>
+      describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     computeDailyStats,
     filterDailyStatsByWindow,
     populateChartYearOptions: () => {},
@@ -499,9 +390,11 @@ export async function runRecentRuntime(core) {
     renderEdDashboard: async () => {},
     numberFormatter,
     getSettings: () => settings,
-    getClientConfig: () => clientConfig,
+    getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
   compareFeature.setCompareMode(false);
   dataFlow.scheduleInitialLoad();

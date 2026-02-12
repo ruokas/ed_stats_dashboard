@@ -2,13 +2,13 @@
   const storageKey = 'edDashboardTheme';
   const root = document.documentElement;
 
-  const preferDark = () => window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const preferDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches;
 
   const getStoredTheme = () => {
     try {
       const value = localStorage.getItem(storageKey);
       return value === 'dark' || value === 'light' ? value : null;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   };
@@ -28,7 +28,7 @@
             document.body.setAttribute('data-theme', theme);
           }
         },
-        { once: true },
+        { once: true }
       );
     }
   };

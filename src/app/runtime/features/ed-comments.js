@@ -1,9 +1,5 @@
 export function createEdCommentsFeature(deps) {
-  const {
-    dashboardState,
-    TEXT,
-    statusTimeFormatter,
-  } = deps;
+  const { dashboardState, TEXT, statusTimeFormatter } = deps;
 
   function resetEdCommentRotation() {
     const rotation = dashboardState?.ed?.commentRotation;
@@ -88,9 +84,10 @@ export function createEdCommentsFeature(deps) {
 
     if (!rotation.entries.length) {
       content.textContent = cardConfig.empty || TEXT.ed?.empty || '—';
-      meta.textContent = typeof fallbackMeta === 'string' && fallbackMeta.trim().length
-        ? fallbackMeta.trim()
-        : (cardConfig.description || '');
+      meta.textContent =
+        typeof fallbackMeta === 'string' && fallbackMeta.trim().length
+          ? fallbackMeta.trim()
+          : cardConfig.description || '';
       rotationIndicator.hidden = true;
       applyEdCommentAutoScroll(wrapper);
       return;
@@ -99,7 +96,7 @@ export function createEdCommentsFeature(deps) {
     rotationIndicator.hidden = false;
 
     const renderEntry = (entry) => {
-      content.textContent = entry?.text || (cardConfig.empty || TEXT.ed?.empty || '—');
+      content.textContent = entry?.text || cardConfig.empty || TEXT.ed?.empty || '—';
       const metaParts = [];
       if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
         metaParts.push(statusTimeFormatter.format(entry.receivedAt));
@@ -141,7 +138,9 @@ export function createEdCommentsFeature(deps) {
       }
     };
 
-    const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 10000;
+    const rotateMs = Number.isFinite(Number(cardConfig.rotateMs))
+      ? Math.max(3000, Number(cardConfig.rotateMs))
+      : 10000;
 
     const advance = () => {
       const entryIndex = rotation.index;

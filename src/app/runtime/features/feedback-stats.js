@@ -1,18 +1,12 @@
 export function computeFeedbackStats(records, options = {}) {
-  const {
-    FEEDBACK_RATING_MIN,
-    FEEDBACK_RATING_MAX,
-    formatLocalDateKey,
-  } = options;
+  const { FEEDBACK_RATING_MIN, FEEDBACK_RATING_MAX, formatLocalDateKey } = options;
 
   const list = Array.isArray(records) ? records.filter(Boolean) : [];
-  const sorted = list
-    .slice()
-    .sort((a, b) => {
-      const aTime = a?.receivedAt instanceof Date ? a.receivedAt.getTime() : -Infinity;
-      const bTime = b?.receivedAt instanceof Date ? b.receivedAt.getTime() : -Infinity;
-      return bTime - aTime;
-    });
+  const sorted = list.slice().sort((a, b) => {
+    const aTime = a?.receivedAt instanceof Date ? a.receivedAt.getTime() : -Infinity;
+    const bTime = b?.receivedAt instanceof Date ? b.receivedAt.getTime() : -Infinity;
+    return bTime - aTime;
+  });
 
   const comments = sorted
     .map((entry) => {
@@ -20,9 +14,10 @@ export function computeFeedbackStats(records, options = {}) {
       if (!text) {
         return null;
       }
-      const receivedAt = entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())
-        ? entry.receivedAt
-        : null;
+      const receivedAt =
+        entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())
+          ? entry.receivedAt
+          : null;
       return {
         text,
         receivedAt,
@@ -33,15 +28,16 @@ export function computeFeedbackStats(records, options = {}) {
     .filter(Boolean);
 
   const totalResponses = sorted.length;
-  const collectValues = (key, predicate = null) => sorted
-    .filter((entry) => (typeof predicate === 'function' ? predicate(entry) : true))
-    .map((entry) => {
-      const value = entry?.[key];
-      return Number.isFinite(value) ? Number(value) : null;
-    })
-    .filter((value) => Number.isFinite(value)
-      && value >= FEEDBACK_RATING_MIN
-      && value <= FEEDBACK_RATING_MAX);
+  const collectValues = (key, predicate = null) =>
+    sorted
+      .filter((entry) => (typeof predicate === 'function' ? predicate(entry) : true))
+      .map((entry) => {
+        const value = entry?.[key];
+        return Number.isFinite(value) ? Number(value) : null;
+      })
+      .filter(
+        (value) => Number.isFinite(value) && value >= FEEDBACK_RATING_MIN && value <= FEEDBACK_RATING_MAX
+      );
 
   const overallRatings = collectValues('overallRating');
   const doctorsRatings = collectValues('doctorsRating');
@@ -49,13 +45,12 @@ export function computeFeedbackStats(records, options = {}) {
   const aidesRatings = collectValues('aidesRating', (entry) => entry?.aidesContact === true);
   const waitingRatings = collectValues('waitingRating');
 
-  const average = (values) => (values.length
-    ? values.reduce((sum, value) => sum + value, 0) / values.length
-    : null);
+  const average = (values) =>
+    values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 
-  const contactResponses = sorted
-    .filter((entry) => entry?.aidesContact === true || entry?.aidesContact === false)
-    .length;
+  const contactResponses = sorted.filter(
+    (entry) => entry?.aidesContact === true || entry?.aidesContact === false
+  ).length;
   const contactYes = sorted.filter((entry) => entry?.aidesContact === true).length;
   const contactShare = contactResponses > 0 ? contactYes / contactResponses : null;
 
@@ -94,34 +89,44 @@ export function computeFeedbackStats(records, options = {}) {
     const bucket = monthlyMap.get(monthKey);
     bucket.responses += 1;
 
-    if (Number.isFinite(entry?.overallRating)
-      && entry.overallRating >= FEEDBACK_RATING_MIN
-      && entry.overallRating <= FEEDBACK_RATING_MAX) {
+    if (
+      Number.isFinite(entry?.overallRating) &&
+      entry.overallRating >= FEEDBACK_RATING_MIN &&
+      entry.overallRating <= FEEDBACK_RATING_MAX
+    ) {
       bucket.overallSum += Number(entry.overallRating);
       bucket.overallCount += 1;
     }
-    if (Number.isFinite(entry?.doctorsRating)
-      && entry.doctorsRating >= FEEDBACK_RATING_MIN
-      && entry.doctorsRating <= FEEDBACK_RATING_MAX) {
+    if (
+      Number.isFinite(entry?.doctorsRating) &&
+      entry.doctorsRating >= FEEDBACK_RATING_MIN &&
+      entry.doctorsRating <= FEEDBACK_RATING_MAX
+    ) {
       bucket.doctorsSum += Number(entry.doctorsRating);
       bucket.doctorsCount += 1;
     }
-    if (Number.isFinite(entry?.nursesRating)
-      && entry.nursesRating >= FEEDBACK_RATING_MIN
-      && entry.nursesRating <= FEEDBACK_RATING_MAX) {
+    if (
+      Number.isFinite(entry?.nursesRating) &&
+      entry.nursesRating >= FEEDBACK_RATING_MIN &&
+      entry.nursesRating <= FEEDBACK_RATING_MAX
+    ) {
       bucket.nursesSum += Number(entry.nursesRating);
       bucket.nursesCount += 1;
     }
-    if (entry?.aidesContact === true
-      && Number.isFinite(entry?.aidesRating)
-      && entry.aidesRating >= FEEDBACK_RATING_MIN
-      && entry.aidesRating <= FEEDBACK_RATING_MAX) {
+    if (
+      entry?.aidesContact === true &&
+      Number.isFinite(entry?.aidesRating) &&
+      entry.aidesRating >= FEEDBACK_RATING_MIN &&
+      entry.aidesRating <= FEEDBACK_RATING_MAX
+    ) {
       bucket.aidesSum += Number(entry.aidesRating);
       bucket.aidesCount += 1;
     }
-    if (Number.isFinite(entry?.waitingRating)
-      && entry.waitingRating >= FEEDBACK_RATING_MIN
-      && entry.waitingRating <= FEEDBACK_RATING_MAX) {
+    if (
+      Number.isFinite(entry?.waitingRating) &&
+      entry.waitingRating >= FEEDBACK_RATING_MIN &&
+      entry.waitingRating <= FEEDBACK_RATING_MAX
+    ) {
       bucket.waitingSum += Number(entry.waitingRating);
       bucket.waitingCount += 1;
     }

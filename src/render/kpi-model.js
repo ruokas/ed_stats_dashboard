@@ -1,9 +1,4 @@
-export function buildKpiSummaryModel({
-  lastShiftSummary,
-  periodMetrics,
-  TEXT,
-  escapeHtml,
-}) {
+export function buildKpiSummaryModel({ lastShiftSummary, TEXT, escapeHtml }) {
   if (!lastShiftSummary) {
     return {
       isEmpty: true,
@@ -11,17 +6,14 @@ export function buildKpiSummaryModel({
     };
   }
 
-  const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string'
-    ? lastShiftSummary.weekdayLabel
-    : '';
-  const periodText = lastShiftSummary.dateLabel
-    || TEXT.kpis.summary.periodFallback
-    || TEXT.kpis.summary.unknownPeriod;
+  const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string' ? lastShiftSummary.weekdayLabel : '';
+  const periodText =
+    lastShiftSummary.dateLabel || TEXT.kpis.summary.periodFallback || TEXT.kpis.summary.unknownPeriod;
   const referenceText = weekdayLabel
-    ? (typeof TEXT.kpis.summary.weekdayReference === 'function'
+    ? typeof TEXT.kpis.summary.weekdayReference === 'function'
       ? TEXT.kpis.summary.weekdayReference(weekdayLabel)
-      : `${TEXT.kpis.summary.reference} (${weekdayLabel})`)
-    : (TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference);
+      : `${TEXT.kpis.summary.reference} (${weekdayLabel})`
+    : TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference;
 
   const summaryItems = [
     {
@@ -34,12 +26,16 @@ export function buildKpiSummaryModel({
     },
   ];
 
-  const summaryRows = summaryItems.map((item) => `
+  const summaryRows = summaryItems
+    .map(
+      (item) => `
       <div class="kpi-summary__item">
         <dt>${escapeHtml(item.label)}</dt>
         <dd>${item.value}</dd>
       </div>
-    `).join('');
+    `
+    )
+    .join('');
 
   return {
     isEmpty: false,
@@ -52,13 +48,7 @@ export function buildKpiSummaryModel({
   };
 }
 
-export function buildKpiCardsModel({
-  lastShiftSummary,
-  TEXT,
-  escapeHtml,
-  formatKpiValue,
-  percentFormatter,
-}) {
+export function buildKpiCardsModel({ lastShiftSummary, TEXT, escapeHtml, formatKpiValue, percentFormatter }) {
   if (!lastShiftSummary) {
     return {
       emptyHtml: `
@@ -88,14 +78,12 @@ export function buildKpiCardsModel({
     };
   }
 
-  const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string'
-    ? lastShiftSummary.weekdayLabel
-    : '';
+  const weekdayLabel = typeof lastShiftSummary.weekdayLabel === 'string' ? lastShiftSummary.weekdayLabel : '';
   const referenceText = weekdayLabel
-    ? (typeof TEXT.kpis.summary.weekdayReference === 'function'
+    ? typeof TEXT.kpis.summary.weekdayReference === 'function'
       ? TEXT.kpis.summary.weekdayReference(weekdayLabel)
-      : `${TEXT.kpis.summary.reference} (${weekdayLabel})`)
-    : (TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference);
+      : `${TEXT.kpis.summary.reference} (${weekdayLabel})`
+    : TEXT.kpis.summary.referenceFallback || TEXT.kpis.summary.reference;
 
   const detailWrapper = (label, valueHtml, extraClass = '', ariaLabel) => {
     const aria = ariaLabel ? ` aria-label="${escapeHtml(ariaLabel)}"` : '';
@@ -117,18 +105,20 @@ export function buildKpiCardsModel({
     const averageShareValue = Number.isFinite(metric.averageShare) ? metric.averageShare : null;
 
     const titleText = config.label ? escapeHtml(config.label) : '';
-    const mainLabel = typeof config.mainLabel === 'string'
-      ? config.mainLabel
-      : (typeof TEXT.kpis.mainValueLabel === 'string' ? TEXT.kpis.mainValueLabel : '');
+    const mainLabel =
+      typeof config.mainLabel === 'string'
+        ? config.mainLabel
+        : typeof TEXT.kpis.mainValueLabel === 'string'
+          ? TEXT.kpis.mainValueLabel
+          : '';
     const mainLabelHtml = mainLabel
       ? `<span class="kpi-mainline__label">${escapeHtml(mainLabel)}</span>`
       : '';
-    const shareBadge = shareValue != null
-      ? `<span class="kpi-mainline__share">(${percentFormatter.format(shareValue)})</span>`
-      : '';
-    const unitHtml = config.unitLabel
-      ? `<span class="kpi-unit">${escapeHtml(config.unitLabel)}</span>`
-      : '';
+    const shareBadge =
+      shareValue != null
+        ? `<span class="kpi-mainline__share">(${percentFormatter.format(shareValue)})</span>`
+        : '';
+    const unitHtml = config.unitLabel ? `<span class="kpi-unit">${escapeHtml(config.unitLabel)}</span>` : '';
     const mainValueHtml = Number.isFinite(rawValue)
       ? `<strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>${unitHtml}${shareBadge}`
       : `<span class="kpi-empty">${TEXT.kpis.primaryNoData || TEXT.kpis.noYearData}</span>`;
@@ -145,58 +135,69 @@ export function buildKpiCardsModel({
         trend = 'down';
         arrow = '↓';
       }
-      const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
+      const sign = diff > 0 ? '+' : diff < 0 ? '−' : '';
       const formattedDiff = formatKpiValue(Math.abs(diff), valueFormat);
-      const deltaContext = typeof TEXT.kpis.deltaContext === 'function'
-        ? TEXT.kpis.deltaContext(referenceText, weekdayLabel)
-        : TEXT.kpis.deltaContext;
+      const deltaContext =
+        typeof TEXT.kpis.deltaContext === 'function'
+          ? TEXT.kpis.deltaContext(referenceText, weekdayLabel)
+          : TEXT.kpis.deltaContext;
       const contextHtml = deltaContext
         ? `<span class="kpi-detail__context">${escapeHtml(deltaContext)}</span>`
         : '';
-      const deltaAria = diff > 0
-        ? `Skirtumas lyginant su ${referenceText}: padidėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
-        : diff < 0
-          ? `Skirtumas lyginant su ${referenceText}: sumažėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
-          : `Skirtumo nėra lyginant su ${referenceText}.`;
+      const deltaAria =
+        diff > 0
+          ? `Skirtumas lyginant su ${referenceText}: padidėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
+          : diff < 0
+            ? `Skirtumas lyginant su ${referenceText}: sumažėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
+            : `Skirtumo nėra lyginant su ${referenceText}.`;
       const deltaValueHtml = `
         <span class="kpi-detail__icon" aria-hidden="true">${arrow}</span>
         <strong>${sign}${formattedDiff}</strong>${contextHtml}
       `;
-      details.push(detailWrapper(
-        TEXT.kpis.detailLabels?.delta || 'Skirtumas',
-        deltaValueHtml,
-        `kpi-detail--delta-${trend}`,
-        deltaAria,
-      ));
+      details.push(
+        detailWrapper(
+          TEXT.kpis.detailLabels?.delta || 'Skirtumas',
+          deltaValueHtml,
+          `kpi-detail--delta-${trend}`,
+          deltaAria
+        )
+      );
     } else {
-      details.push(detailWrapper(
-        TEXT.kpis.detailLabels?.delta || 'Skirtumas',
-        `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
-        'kpi-detail--muted',
-      ));
+      details.push(
+        detailWrapper(
+          TEXT.kpis.detailLabels?.delta || 'Skirtumas',
+          `<span class="kpi-empty">${TEXT.kpis.deltaNoData}</span>`,
+          'kpi-detail--muted'
+        )
+      );
     }
 
-    const averageLabel = typeof TEXT.kpis.detailLabels?.average === 'function'
-      ? TEXT.kpis.detailLabels.average(weekdayLabel)
-      : (TEXT.kpis.detailLabels?.average || 'Vidurkis');
-    const averageContextRaw = typeof TEXT.kpis.detailLabels?.averageContext === 'function'
-      ? TEXT.kpis.detailLabels.averageContext(weekdayLabel)
-      : (TEXT.kpis.detailLabels?.averageContext || '');
+    const averageLabel =
+      typeof TEXT.kpis.detailLabels?.average === 'function'
+        ? TEXT.kpis.detailLabels.average(weekdayLabel)
+        : TEXT.kpis.detailLabels?.average || 'Vidurkis';
+    const averageContextRaw =
+      typeof TEXT.kpis.detailLabels?.averageContext === 'function'
+        ? TEXT.kpis.detailLabels.averageContext(weekdayLabel)
+        : TEXT.kpis.detailLabels?.averageContext || '';
     const averageContextHtml = averageContextRaw
       ? `<span class="kpi-detail__context">${escapeHtml(averageContextRaw)}</span>`
       : '';
     if (Number.isFinite(averageValue)) {
-      const averageShareHtml = averageShareValue != null
-        ? `<span class="kpi-detail__share">(${percentFormatter.format(averageShareValue)})</span>`
-        : '';
+      const averageShareHtml =
+        averageShareValue != null
+          ? `<span class="kpi-detail__share">(${percentFormatter.format(averageShareValue)})</span>`
+          : '';
       const averageValueHtml = `<strong>${formatKpiValue(averageValue, valueFormat)}</strong>${averageContextHtml}${averageShareHtml}`;
       details.push(detailWrapper(averageLabel, averageValueHtml));
     } else {
-      details.push(detailWrapper(
-        averageLabel,
-        `<span class="kpi-empty">${TEXT.kpis.averageNoData}</span>`,
-        'kpi-detail--muted',
-      ));
+      details.push(
+        detailWrapper(
+          averageLabel,
+          `<span class="kpi-empty">${TEXT.kpis.averageNoData}</span>`,
+          'kpi-detail--muted'
+        )
+      );
     }
 
     cards.push({

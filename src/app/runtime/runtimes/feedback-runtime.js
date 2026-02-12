@@ -1,23 +1,14 @@
-import { createClientStore, PerfMonitor } from '../../../../app.js';
-import { createSelectorsForPage } from '../../../state/selectors.js';
-import { createDashboardState } from '../../../state/dashboardState.js';
-import { createFeedbackHandlers } from '../../../data/feedback.js';
-import { createDataFlow } from '../data-flow.js';
-import { createLayoutTools } from '../layout.js';
-import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
-import { createFeedbackRenderFeature } from '../features/feedback-render.js';
-import { createCopyExportFeature } from '../features/copy-export.js';
-import { loadSettingsFromConfig } from '../settings.js';
-import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { initSectionNavigation } from '../../../events/section-nav.js';
-import { initScrollTopButton } from '../../../events/scroll.js';
-import { initThemeToggle } from '../../../events/theme.js';
-import { initChartCopyButtons, initChartDownloadButtons, initTableDownloadButtons } from '../../../events/charts.js';
-import { initFeedbackFilters, initFeedbackTableScrollAffordance, initFeedbackTrendControls } from '../../../events/feedback.js';
 import { renderFeedbackTrendChart as renderFeedbackTrendChartModule } from '../../../charts/feedback-trend.js';
+import { createFeedbackHandlers } from '../../../data/feedback.js';
+import {
+  initFeedbackFilters,
+  initFeedbackTableScrollAffordance,
+  initFeedbackTrendControls,
+} from '../../../events/feedback.js';
+import { createDashboardState } from '../../../state/dashboardState.js';
+import { createSelectorsForPage } from '../../../state/selectors.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
-import { setCopyButtonFeedback, storeCopyButtonBaseLabel, writeBlobToClipboard, writeTextToClipboard } from '../clipboard.js';
 import {
   capitalizeSentence,
   decimalFormatter,
@@ -28,8 +19,6 @@ import {
   statusTimeFormatter,
   textCollator,
 } from '../../../utils/format.js';
-import { describeCacheMeta, describeError, downloadCsv } from '../network.js';
-import { FEEDBACK_FILTER_ALL, FEEDBACK_FILTER_MISSING, createDefaultChartFilters, createDefaultFeedbackFilters, createDefaultKpiFilters } from '../state.js';
 import {
   AUTO_REFRESH_INTERVAL_MS,
   CLIENT_CONFIG_KEY,
@@ -42,30 +31,29 @@ import {
   THEME_STORAGE_KEY,
 } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { createDataFlow } from '../data-flow.js';
+import { setupCopyExportControls } from '../export-controls.js';
+import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
+import { createFeedbackRenderFeature } from '../features/feedback-render.js';
+import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
+import { runLegacyFallback } from '../legacy-fallback.js';
+import { describeCacheMeta, describeError, downloadCsv } from '../network.js';
+import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
+import { createRuntimeClientContext } from '../runtime-client.js';
 import { resolveRuntimeMode } from '../runtime-mode.js';
+import { loadSettingsFromConfig } from '../settings.js';
+import {
+  createDefaultChartFilters,
+  createDefaultFeedbackFilters,
+  createDefaultKpiFilters,
+  FEEDBACK_FILTER_ALL,
+  FEEDBACK_FILTER_MISSING,
+} from '../state.js';
+import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
 
-const clientStore = createClientStore(CLIENT_CONFIG_KEY);
-const perfMonitor = new PerfMonitor();
-let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
 let autoRefreshTimerId = null;
-
-function parseCandidateList(value, fallback = '') {
-  const base = value && String(value).trim().length ? String(value) : String(fallback ?? '');
-  return base
-    .replace(/\r\n/g, '\n')
-    .split(/[\n,|;]+/)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-}
-
-function matchesWildcard(normalized, candidate) {
-  if (!normalized || !candidate) {
-    return false;
-  }
-  const escaped = candidate.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-  const regex = new RegExp(`^${escaped}$`);
-  return regex.test(normalized);
-}
+const setStatus = createStatusSetter(TEXT.status);
 
 function formatLocalDateKey(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -88,33 +76,6 @@ function formatMonthLabel(monthKey) {
     return monthKey;
   }
   return capitalizeSentence(monthFormatter.format(new Date(year, month - 1, 1)));
-}
-
-function setStatus(selectors, type, details = '') {
-  const statusEl = selectors.status;
-  if (!statusEl) {
-    return;
-  }
-  statusEl.textContent = '';
-  statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
-  if (type === 'loading') {
-    statusEl.classList.add('status--loading');
-    statusEl.setAttribute('aria-label', TEXT.status.loading);
-    return;
-  }
-  statusEl.removeAttribute('aria-label');
-  if (type === 'error') {
-    statusEl.classList.add('status--error');
-    statusEl.textContent = details ? TEXT.status.errorDetails(details) : TEXT.status.error;
-    return;
-  }
-  if (type === 'warning') {
-    statusEl.classList.add('status--warning');
-    statusEl.textContent = details || TEXT.status.success();
-    return;
-  }
-  statusEl.classList.add('status--success');
-  statusEl.textContent = TEXT.status.success();
 }
 
 function resetFeedbackCommentRotation(dashboardState) {
@@ -155,7 +116,7 @@ function renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, raw
   }
 
   const renderEntry = (entry) => {
-    content.textContent = entry?.text || (cardConfig.empty || TEXT.feedback?.empty || '—');
+    content.textContent = entry?.text || cardConfig.empty || TEXT.feedback?.empty || '—';
     const metaParts = [];
     if (entry?.receivedAt instanceof Date && !Number.isNaN(entry.receivedAt.getTime())) {
       metaParts.push(statusTimeFormatter.format(entry.receivedAt));
@@ -172,7 +133,9 @@ function renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, raw
     meta.textContent = metaParts.join(' • ');
   };
 
-  const rotateMs = Number.isFinite(Number(cardConfig.rotateMs)) ? Math.max(3000, Number(cardConfig.rotateMs)) : 10000;
+  const rotateMs = Number.isFinite(Number(cardConfig.rotateMs))
+    ? Math.max(3000, Number(cardConfig.rotateMs))
+    : 10000;
   const advance = () => {
     const entry = rotation.entries[rotation.index] || rotation.entries[0];
     renderEntry(entry);
@@ -189,8 +152,7 @@ function renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, raw
 export async function runFeedbackRuntime(core) {
   const mode = resolveRuntimeMode(core?.pageId || 'feedback');
   if (mode === 'legacy') {
-    const { startFullPageApp } = await import('../../full-page-app.js?v=2026-02-08-fullpage-refresh-2');
-    return startFullPageApp({ forcePageId: core?.pageId || 'feedback', skipGlobalInit: true });
+    return runLegacyFallback(core, 'feedback');
   }
 
   const pageConfig = core?.pageConfig || { feedback: true };
@@ -220,74 +182,54 @@ export async function runFeedbackRuntime(core) {
     FEEDBACK_LEGACY_MAX,
   });
 
-  if (selectors.title) {
-    selectors.title.textContent = settings?.output?.title || TEXT.title;
-  }
-  if (selectors.footerSource) {
-    selectors.footerSource.textContent = settings?.output?.footerSource || DEFAULT_FOOTER_SOURCE;
-  }
-  if (settings?.output?.pageTitle) {
-    document.title = settings.output.pageTitle;
-  }
-  if (selectors.scrollTopBtn) {
-    selectors.scrollTopBtn.textContent = settings?.output?.scrollTopLabel || TEXT.scrollTop;
-  }
-
-  initializeTheme(dashboardState, selectors, { themeStorageKey: THEME_STORAGE_KEY });
-  const toggleTheme = () => {
-    applyTheme(dashboardState, selectors, dashboardState.theme === 'dark' ? 'light' : 'dark', {
-      persist: true,
-      themeStorageKey: THEME_STORAGE_KEY,
-    });
-    const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
-    feedbackRenderFeature.renderFeedbackTrendChart(monthly).catch((error) => {
-      const info = describeError(error, { code: 'FEEDBACK_TREND_THEME' });
-      console.error(info.log, error);
-    });
-  };
-
-  const layoutTools = createLayoutTools({ selectors });
-  initSectionNavigation({
+  applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
+  setupSharedPageUi({
     selectors,
-    ...layoutTools,
+    dashboardState,
+    initializeTheme,
+    applyTheme,
+    themeStorageKey: THEME_STORAGE_KEY,
+    onThemeChange: () => {
+      const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
+      feedbackRenderFeature.renderFeedbackTrendChart(monthly).catch((error) => {
+        const info = describeError(error, { code: 'FEEDBACK_TREND_THEME' });
+        console.error(info.log, error);
+      });
+    },
   });
-  initScrollTopButton({
-    selectors,
-    updateScrollTopButtonVisibility: layoutTools.updateScrollTopButtonVisibility,
-    scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate,
-  });
-  initThemeToggle({ selectors, toggleTheme });
 
-  const copyExportFeature = createCopyExportFeature({
+  setupCopyExportControls({
+    selectors,
     getDatasetValue,
     setDatasetValue,
-    setCopyButtonFeedback,
-    writeBlobToClipboard,
-    writeTextToClipboard,
     describeError,
   });
 
   let feedbackRenderFeature = null;
   const chartRenderers = {
     renderFeedbackTrendChart(monthlyStats, records) {
-      return renderFeedbackTrendChartModule({
-        dashboardState,
-        selectors,
-        TEXT,
-        loadChartJs,
-        getThemePalette,
-        getThemeStyleTarget,
-        syncFeedbackTrendControls: () => feedbackRenderFeature.syncFeedbackTrendControls(),
-        updateFeedbackTrendSubtitle: () => feedbackRenderFeature.updateFeedbackTrendSubtitle(),
-        getActiveFeedbackTrendWindow: () => feedbackRenderFeature.getActiveFeedbackTrendWindow(),
-        getActiveFeedbackTrendMetrics: () => feedbackRenderFeature.getActiveFeedbackTrendMetrics(),
-        getActiveFeedbackTrendCompareMode: () => feedbackRenderFeature.getActiveFeedbackTrendCompareMode(),
-        getFeedbackTrendMetricConfig: () => feedbackRenderFeature.getFeedbackTrendMetricConfig(),
-        getFeedbackTrendCompareConfig: () => feedbackRenderFeature.getFeedbackTrendCompareConfig(),
-        formatMonthLabel,
-        numberFormatter,
-        oneDecimalFormatter,
-      }, monthlyStats, records);
+      return renderFeedbackTrendChartModule(
+        {
+          dashboardState,
+          selectors,
+          TEXT,
+          loadChartJs,
+          getThemePalette,
+          getThemeStyleTarget,
+          syncFeedbackTrendControls: () => feedbackRenderFeature.syncFeedbackTrendControls(),
+          updateFeedbackTrendSubtitle: () => feedbackRenderFeature.updateFeedbackTrendSubtitle(),
+          getActiveFeedbackTrendWindow: () => feedbackRenderFeature.getActiveFeedbackTrendWindow(),
+          getActiveFeedbackTrendMetrics: () => feedbackRenderFeature.getActiveFeedbackTrendMetrics(),
+          getActiveFeedbackTrendCompareMode: () => feedbackRenderFeature.getActiveFeedbackTrendCompareMode(),
+          getFeedbackTrendMetricConfig: () => feedbackRenderFeature.getFeedbackTrendMetricConfig(),
+          getFeedbackTrendCompareConfig: () => feedbackRenderFeature.getFeedbackTrendCompareConfig(),
+          formatMonthLabel,
+          numberFormatter,
+          oneDecimalFormatter,
+        },
+        monthlyStats,
+        records
+      );
     },
   };
 
@@ -304,9 +246,8 @@ export async function runFeedbackRuntime(core) {
     describeError,
     getChartRenderers: () => chartRenderers,
     resetFeedbackCommentRotation: () => resetFeedbackCommentRotation(dashboardState),
-    renderFeedbackCommentsCard: (cardElement, cardConfig, rawComments) => (
-      renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, rawComments)
-    ),
+    renderFeedbackCommentsCard: (cardElement, cardConfig, rawComments) =>
+      renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, rawComments),
   });
 
   const feedbackPanelFeature = createFeedbackPanelFeature({
@@ -343,22 +284,6 @@ export async function runFeedbackRuntime(core) {
     setFeedbackTrendCompareMode: feedbackRenderFeature.setFeedbackTrendCompareMode,
   });
   initFeedbackTableScrollAffordance({ selectors });
-  initChartCopyButtons({
-    selectors,
-    storeCopyButtonBaseLabel,
-    handleChartCopyClick: copyExportFeature.handleChartCopyClick,
-  });
-  initChartDownloadButtons({
-    selectors,
-    storeCopyButtonBaseLabel,
-    handleChartDownloadClick: copyExportFeature.handleChartDownloadClick,
-  });
-  initTableDownloadButtons({
-    selectors,
-    storeCopyButtonBaseLabel,
-    handleTableDownloadClick: copyExportFeature.handleTableDownloadClick,
-  });
-
   const applyFeedbackStatusNote = () => {
     if (dashboardState.usingFallback) {
       return;
@@ -390,7 +315,7 @@ export async function runFeedbackRuntime(core) {
     fetchData: async () => ({}),
     fetchFeedbackData,
     fetchEdData: async () => null,
-    perfMonitor,
+    perfMonitor: runtimeClient.perfMonitor,
     describeCacheMeta,
     createEmptyEdSummary: () => ({}),
     describeError,
@@ -422,9 +347,11 @@ export async function runFeedbackRuntime(core) {
     renderEdDashboard: async () => {},
     numberFormatter,
     getSettings: () => settings,
-    getClientConfig: () => clientConfig,
+    getClientConfig: runtimeClient.getClientConfig,
     getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => { autoRefreshTimerId = id; },
+    setAutoRefreshTimerId: (id) => {
+      autoRefreshTimerId = id;
+    },
   });
 
   dataFlow.scheduleInitialLoad();

@@ -1,4 +1,10 @@
-import { DEFAULT_ED_SOURCE_URL, DEFAULT_FOOTER_SOURCE, DEFAULT_KPI_WINDOW_DAYS, DEFAULT_PAGE_TITLE, TEXT } from './constants.js';
+import {
+  DEFAULT_ED_SOURCE_URL,
+  DEFAULT_FOOTER_SOURCE,
+  DEFAULT_KPI_WINDOW_DAYS,
+  DEFAULT_PAGE_TITLE,
+  TEXT,
+} from './constants.js';
 
 export const DEFAULT_SETTINGS = {
   dataSource: {

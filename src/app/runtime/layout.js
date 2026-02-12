@@ -8,9 +8,8 @@ export function createLayoutTools({ selectors }) {
     activeHeadingId: '',
   };
 
-  const sectionNavCompactQuery = typeof window.matchMedia === 'function'
-    ? window.matchMedia('(max-width: 640px)')
-    : null;
+  const sectionNavCompactQuery =
+    typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 640px)') : null;
 
   const sectionVisibility = new Map();
   const layoutMetrics = { hero: 0, nav: 0 };
@@ -54,7 +53,7 @@ export function createLayoutTools({ selectors }) {
     if (typeof window.pageYOffset === 'number') {
       return window.pageYOffset;
     }
-    return (document.documentElement && document.documentElement.scrollTop) || (document.body && document.body.scrollTop) || 0;
+    return document.documentElement?.scrollTop || document.body?.scrollTop || 0;
   }
 
   function updateScrollTopButtonVisibility() {
@@ -77,9 +76,10 @@ export function createLayoutTools({ selectors }) {
     if (scrollTopState.rafHandle) {
       return;
     }
-    const raf = typeof window.requestAnimationFrame === 'function'
-      ? window.requestAnimationFrame.bind(window)
-      : (cb) => window.setTimeout(cb, 16);
+    const raf =
+      typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (cb) => window.setTimeout(cb, 16);
     scrollTopState.rafHandle = raf(() => {
       scrollTopState.rafHandle = null;
       updateScrollTopButtonVisibility();
@@ -103,7 +103,9 @@ export function createLayoutTools({ selectors }) {
     if (!sectionNavState.initialized) {
       return;
     }
-    const visibleItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden') && !item.link.hidden);
+    const visibleItems = sectionNavState.items.filter(
+      (item) => item.section && !item.section.hasAttribute('hidden') && !item.link.hidden
+    );
     if (!visibleItems.length) {
       updateActiveNavLink('');
       return;
@@ -120,9 +122,10 @@ export function createLayoutTools({ selectors }) {
         }
         return a.top - b.top;
       });
-    const best = sorted.find((candidate) => candidate.ratio > 0)
-      ?? sorted.find((candidate) => candidate.top >= 0)
-      ?? sorted[0];
+    const best =
+      sorted.find((candidate) => candidate.ratio > 0) ??
+      sorted.find((candidate) => candidate.top >= 0) ??
+      sorted[0];
     if (best && best.item.headingId !== sectionNavState.activeHeadingId) {
       updateActiveNavLink(best.item.headingId);
     }
@@ -133,9 +136,8 @@ export function createLayoutTools({ selectors }) {
       return;
     }
 
-    const isCompact = typeof forceCompact === 'boolean'
-      ? forceCompact
-      : Boolean(sectionNavCompactQuery?.matches);
+    const isCompact =
+      typeof forceCompact === 'boolean' ? forceCompact : Boolean(sectionNavCompactQuery?.matches);
 
     selectors.sectionNav.classList.toggle('section-nav--compact', isCompact);
 
@@ -171,10 +173,14 @@ export function createLayoutTools({ selectors }) {
         resolve();
         return;
       }
-      window.addEventListener('load', () => {
-        layoutStylesReady = true;
-        resolve();
-      }, { once: true });
+      window.addEventListener(
+        'load',
+        () => {
+          layoutStylesReady = true;
+          resolve();
+        },
+        { once: true }
+      );
     });
     return layoutStylesReadyPromise;
   }
@@ -187,28 +193,35 @@ export function createLayoutTools({ selectors }) {
       sectionObserver.disconnect();
       sectionObserver = null;
     }
-    const observedItems = sectionNavState.items.filter((item) => item.section && !item.section.hasAttribute('hidden'));
+    const observedItems = sectionNavState.items.filter(
+      (item) => item.section && !item.section.hasAttribute('hidden')
+    );
     if (!observedItems.length) {
       return;
     }
-    sectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const item = sectionNavState.itemBySection.get(entry.target);
-        if (!item) {
-          return;
-        }
-        if (!entry.isIntersecting) {
-          sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
-          return;
-        }
-        sectionVisibility.set(item.headingId, {
-          ratio: entry.intersectionRatio,
-          top: entry.boundingClientRect.top,
+    sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const item = sectionNavState.itemBySection.get(entry.target);
+          if (!item) {
+            return;
+          }
+          if (!entry.isIntersecting) {
+            sectionVisibility.set(item.headingId, { ratio: 0, top: Number.POSITIVE_INFINITY });
+            return;
+          }
+          sectionVisibility.set(item.headingId, {
+            ratio: entry.intersectionRatio,
+            top: entry.boundingClientRect.top,
+          });
         });
-      });
-      evaluateActiveSection();
-    }, { rootMargin: '-40% 0px -40% 0px', threshold: [0, 0.1, 0.25, 0.5, 1] });
-    observedItems.forEach((item) => sectionObserver.observe(item.section));
+        evaluateActiveSection();
+      },
+      { rootMargin: '-40% 0px -40% 0px', threshold: [0, 0.1, 0.25, 0.5, 1] }
+    );
+    observedItems.forEach((item) => {
+      sectionObserver.observe(item.section);
+    });
   }
 
   function scheduleLayoutRefresh() {
@@ -247,13 +260,21 @@ export function createLayoutTools({ selectors }) {
     if (!event || !event.target) {
       return;
     }
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
+    if (
+      event.key !== 'ArrowLeft' &&
+      event.key !== 'ArrowRight' &&
+      event.key !== 'Home' &&
+      event.key !== 'End'
+    ) {
       return;
     }
     event.preventDefault();
     const visibleLinks = sectionNavState.items
       .map((item) => item.link)
-      .filter((link) => link && !link.hidden && !link.hasAttribute('hidden') && link.getAttribute('aria-hidden') !== 'true');
+      .filter(
+        (link) =>
+          link && !link.hidden && !link.hasAttribute('hidden') && link.getAttribute('aria-hidden') !== 'true'
+      );
     if (!visibleLinks.length) {
       return;
     }
@@ -312,7 +333,9 @@ export function createLayoutTools({ selectors }) {
       const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
       updateActiveNavLink(firstVisible?.headingId || '');
     } else {
-      const activeItem = sectionNavState.items.find((item) => item.headingId === sectionNavState.activeHeadingId);
+      const activeItem = sectionNavState.items.find(
+        (item) => item.headingId === sectionNavState.activeHeadingId
+      );
       if (!activeItem || activeItem.link.hidden) {
         const firstVisible = sectionNavState.items.find((item) => !item.link.hidden);
         updateActiveNavLink(firstVisible?.headingId || '');

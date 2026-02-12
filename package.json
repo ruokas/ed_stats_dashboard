@@ -1,0 +1,51 @@
+{
+  "name": "ed_stats_dashboard",
+  "version": "1.0.0",
+  "description": "Modernizuotas vieno HTML failo informacinis skydelis, kuris užkrauna neatidėliotinos pagalbos skyriaus duomenis iš „Google Sheets“ CSV ir pateikia pagrindinius rodiklius, grafikus, paskutinės savaitės kasdienę ir savaitinę suvestines.",
+  "main": "main.js",
+  "scripts": {
+    "lint": "biome check . --files-ignore-unknown=true",
+    "lint:fix": "biome check . --write --files-ignore-unknown=true",
+    "format": "biome format . --write --files-ignore-unknown=true",
+    "format:check": "biome format . --files-ignore-unknown=true",
+    "lint:all": "biome check . --files-ignore-unknown=true",
+    "typecheck": "tsc --project tsconfig.checkjs.json --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "depcruise": "depcruise --config dependency-cruiser.cjs src",
+    "knip": "knip --include files,dependencies,unlisted",
+    "knip:exports": "knip --include exports",
+    "prepare": "husky",
+    "check": "npm run lint && npm run typecheck && npm run test:coverage",
+    "check:strict": "npm run check && npm run depcruise && npm run knip:exports"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ruokas/ed_stats_dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ruokas/ed_stats_dashboard/issues"
+  },
+  "homepage": "https://github.com/ruokas/ed_stats_dashboard#readme",
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.14",
+    "@vitest/coverage-v8": "^4.0.18",
+    "dependency-cruiser": "^16.10.4",
+    "husky": "^9.1.7",
+    "jsdom": "^28.0.0",
+    "knip": "^5.64.1",
+    "lint-staged": "^16.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,json,md,yml,yaml}": [
+      "biome check --write --files-ignore-unknown=true"
+    ]
+  }
+}

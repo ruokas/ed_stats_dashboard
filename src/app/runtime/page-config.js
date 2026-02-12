@@ -27,5 +27,5 @@ export function shouldPreloadChartJs(pageId) {
 
 export function resolvePageId(rawPageId) {
   const normalized = typeof rawPageId === 'string' ? rawPageId.trim().toLowerCase() : '';
-  return Object.prototype.hasOwnProperty.call(PAGE_CONFIG, normalized) ? normalized : 'kpi';
+  return Object.hasOwn(PAGE_CONFIG, normalized) ? normalized : 'kpi';
 }

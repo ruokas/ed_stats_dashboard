@@ -33,7 +33,11 @@ function computeShiftDateKey(referenceDate, shiftStartHour) {
   const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
   const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
   const arrivalMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
-  const shiftAnchor = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const shiftAnchor = new Date(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate()
+  );
   if (arrivalMinutes < startMinutes) {
     shiftAnchor.setDate(shiftAnchor.getDate() - 1);
   }
@@ -94,7 +98,9 @@ function hasUsableSegmentValue(record, segmentBy) {
     return false;
   }
   if (segmentBy === 'ageBand') {
-    return typeof record.ageBand === 'string' && record.ageBand !== 'unknown' && record.ageBand.trim().length > 0;
+    return (
+      typeof record.ageBand === 'string' && record.ageBand !== 'unknown' && record.ageBand.trim().length > 0
+    );
   }
   if (segmentBy === 'sex') {
     return typeof record.sex === 'string' && record.sex !== 'unknown' && record.sex.trim().length > 0;
@@ -144,12 +150,14 @@ function createInsightRows(rows) {
     };
   }
   const largestGroup = [...visible].sort((a, b) => (b.count || 0) - (a.count || 0))[0] || null;
-  const longestStay = [...visible]
-    .filter((row) => Number.isFinite(row.avgStayHours))
-    .sort((a, b) => (b.avgStayHours || 0) - (a.avgStayHours || 0))[0] || null;
-  const highestHospitalizedShare = [...visible]
-    .filter((row) => Number.isFinite(row.hospitalizedShare))
-    .sort((a, b) => (b.hospitalizedShare || 0) - (a.hospitalizedShare || 0))[0] || null;
+  const longestStay =
+    [...visible]
+      .filter((row) => Number.isFinite(row.avgStayHours))
+      .sort((a, b) => (b.avgStayHours || 0) - (a.avgStayHours || 0))[0] || null;
+  const highestHospitalizedShare =
+    [...visible]
+      .filter((row) => Number.isFinite(row.hospitalizedShare))
+      .sort((a, b) => (b.hospitalizedShare || 0) - (a.hospitalizedShare || 0))[0] || null;
   return {
     largestGroup,
     longestStay,
@@ -174,9 +182,12 @@ export function computeSegmentedSummaryStats(records, options = {}) {
   let totalDurationCount = 0;
 
   list.forEach((record) => {
-    const reference = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-      ? record.arrival
-      : (record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null);
+    const reference =
+      record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+        ? record.arrival
+        : record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+          ? record.discharge
+          : null;
     const dateKey = computeShiftDateKey(reference, shiftStartHour);
     if (!dateKey) {
       return;
@@ -269,27 +280,32 @@ export function computeSegmentedSummaryStats(records, options = {}) {
 
   if (smallRows.length) {
     const mergedDaySet = new Set();
-    const merged = smallRows.reduce((acc, row) => {
-      acc.count += row.count;
-      acc.emsCount += row.emsCount;
-      acc.hospitalizedCount += row.hospitalizedCount;
-      acc.dischargedCount += row.dischargedCount;
-      acc.referredCount += row.referredCount;
-      acc.durationCount += row.durationCount;
-      acc.totalDurationHours += row.totalDurationHours;
-      if (row.daySet instanceof Set) {
-        row.daySet.forEach((dayKey) => mergedDaySet.add(dayKey));
+    const merged = smallRows.reduce(
+      (acc, row) => {
+        acc.count += row.count;
+        acc.emsCount += row.emsCount;
+        acc.hospitalizedCount += row.hospitalizedCount;
+        acc.dischargedCount += row.dischargedCount;
+        acc.referredCount += row.referredCount;
+        acc.durationCount += row.durationCount;
+        acc.totalDurationHours += row.totalDurationHours;
+        if (row.daySet instanceof Set) {
+          row.daySet.forEach((dayKey) => {
+            mergedDaySet.add(dayKey);
+          });
+        }
+        return acc;
+      },
+      {
+        count: 0,
+        emsCount: 0,
+        hospitalizedCount: 0,
+        dischargedCount: 0,
+        referredCount: 0,
+        durationCount: 0,
+        totalDurationHours: 0,
       }
-      return acc;
-    }, {
-      count: 0,
-      emsCount: 0,
-      hospitalizedCount: 0,
-      dischargedCount: 0,
-      referredCount: 0,
-      durationCount: 0,
-      totalDurationHours: 0,
-    });
+    );
     rows = rows.concat({
       groupKey: 'small-groups',
       label: 'Kita / maža imtis',
@@ -311,7 +327,7 @@ export function computeSegmentedSummaryStats(records, options = {}) {
     });
   }
 
-  rows = rows.map(({ daySet, ...row }) => row);
+  const rowsWithoutDaySet = rows.map(({ daySet, ...row }) => row);
 
   const yearOptions = Array.from(yearSet)
     .filter((year) => /^\d{4}$/.test(year))
@@ -326,7 +342,7 @@ export function computeSegmentedSummaryStats(records, options = {}) {
     minGroupSize,
     totalCount,
     overallAvgStayHours,
-    rows,
+    rows: rowsWithoutDaySet,
     yearOptions,
     insights,
   };
@@ -336,11 +352,12 @@ export function computeDailyStats(data, calculationSettings, defaultSettings) {
   const shiftStartHour = resolveShiftStartHour(calculationSettings, defaultSettings);
   const dailyMap = new Map();
   data.forEach((record) => {
-    const reference = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-      ? record.arrival
-      : record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
-        ? record.discharge
-        : null;
+    const reference =
+      record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+        ? record.arrival
+        : record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+          ? record.discharge
+          : null;
     const dateKey = computeShiftDateKey(reference, shiftStartHour);
     if (!dateKey) {
       return;
@@ -371,7 +388,8 @@ export function computeDailyStats(data, calculationSettings, defaultSettings) {
     }
     if (record.arrival instanceof Date && record.discharge instanceof Date) {
       const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
-      if (Number.isFinite(duration) && duration >= 0 && duration <= 24) { // ignoruojame >24 val. buvimo laikus
+      if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
+        // ignoruojame >24 val. buvimo laikus
         summary.totalTime += duration;
         summary.durations += 1;
         if (record.hospitalized) {
@@ -382,11 +400,15 @@ export function computeDailyStats(data, calculationSettings, defaultSettings) {
     }
   });
 
-  return Array.from(dailyMap.values()).sort((a, b) => (a.date > b.date ? 1 : -1)).map((item) => ({
-    ...item,
-    avgTime: item.durations ? item.totalTime / item.durations : 0,
-    avgHospitalizedTime: item.hospitalizedDurations ? item.hospitalizedTime / item.hospitalizedDurations : 0,
-  }));
+  return Array.from(dailyMap.values())
+    .sort((a, b) => (a.date > b.date ? 1 : -1))
+    .map((item) => ({
+      ...item,
+      avgTime: item.durations ? item.totalTime / item.durations : 0,
+      avgHospitalizedTime: item.hospitalizedDurations
+        ? item.hospitalizedTime / item.hospitalizedDurations
+        : 0,
+    }));
 }
 
 export function computeMonthlyStats(daily) {
@@ -462,7 +484,9 @@ export function computeYearlyStats(monthlyStats) {
     bucket.totalTime += Number.isFinite(entry.totalTime) ? entry.totalTime : 0;
     bucket.durations += Number.isFinite(entry.durations) ? entry.durations : 0;
     bucket.hospitalizedTime += Number.isFinite(entry.hospitalizedTime) ? entry.hospitalizedTime : 0;
-    bucket.hospitalizedDurations += Number.isFinite(entry.hospitalizedDurations) ? entry.hospitalizedDurations : 0;
+    bucket.hospitalizedDurations += Number.isFinite(entry.hospitalizedDurations)
+      ? entry.hospitalizedDurations
+      : 0;
     bucket.dayCount += Number.isFinite(entry.dayCount) ? entry.dayCount : 0;
     bucket.monthCount += 1;
   });
@@ -471,9 +495,12 @@ export function computeYearlyStats(monthlyStats) {
 }
 
 function getRecordShiftDateKey(record, shiftStartHour) {
-  const reference = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
-    ? record.arrival
-    : (record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null);
+  const reference =
+    record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+      ? record.arrival
+      : record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+        ? record.discharge
+        : null;
   return computeShiftDateKey(reference, shiftStartHour);
 }
 
@@ -489,8 +516,14 @@ function getScopedRecords(records, options = {}) {
   const precomputedScopedMeta = options?.scopedMeta;
   if (precomputedScopedMeta && Array.isArray(precomputedScopedMeta.scoped)) {
     const coverageBase = precomputedScopedMeta.coverage || {};
-    const total = Number.isFinite(coverageBase.total) ? coverageBase.total : (Array.isArray(records) ? records.length : 0);
-    const extended = Number.isFinite(coverageBase.extended) ? coverageBase.extended : precomputedScopedMeta.scoped.length;
+    const total = Number.isFinite(coverageBase.total)
+      ? coverageBase.total
+      : Array.isArray(records)
+        ? records.length
+        : 0;
+    const extended = Number.isFinite(coverageBase.extended)
+      ? coverageBase.extended
+      : precomputedScopedMeta.scoped.length;
     return {
       scoped: precomputedScopedMeta.scoped,
       yearOptions: Array.isArray(precomputedScopedMeta.yearOptions) ? precomputedScopedMeta.yearOptions : [],
@@ -581,7 +614,7 @@ export function collapseSmallGroups(rows, minGroupSize = 10, otherLabel = 'Kita 
   if (!mergedCount) {
     return regular;
   }
-  return regular.concat({ label: otherLabel, count: mergedCount, share: null, collapsed: true });
+  return regular.concat({ label: otherLabel, count: mergedCount, share: null });
 }
 
 function toSortedRows(map, total, topN) {
@@ -608,7 +641,6 @@ function toSortedRows(map, total, topN) {
       label: 'Kita / maža imtis',
       count: otherCount,
       share: total > 0 ? otherCount / total : 0,
-      collapsed: true,
     });
   }
   return head;
@@ -636,9 +668,10 @@ function computeYearlyTrend(records, getCategory, categoryOrder = null) {
     bucket.total += 1;
     bucket.values[category] = (bucket.values[category] || 0) + 1;
   });
-  const categories = Array.isArray(categoryOrder) && categoryOrder.length
-    ? categoryOrder.filter((category) => categoriesSet.has(category) || category === 'Nenurodyta')
-    : Array.from(categoriesSet).sort((a, b) => String(a).localeCompare(String(b), 'lt'));
+  const categories =
+    Array.isArray(categoryOrder) && categoryOrder.length
+      ? categoryOrder.filter((category) => categoriesSet.has(category) || category === 'Nenurodyta')
+      : Array.from(categoriesSet).sort((a, b) => String(a).localeCompare(String(b), 'lt'));
   const rows = Array.from(yearly.values())
     .sort((a, b) => a.year - b.year)
     .map((entry) => {
@@ -734,7 +767,9 @@ export function computeDiagnosisFrequency(records, options = {}) {
 export function computeDiagnosisCodeYearlyShare(records, code, options = {}) {
   const scopedMeta = getScopedRecords(records, options);
   const scoped = withYearDecorations(scopedMeta.scoped, scopedMeta.shiftStartHour);
-  const targetCode = String(code || '').trim().toUpperCase();
+  const targetCode = String(code || '')
+    .trim()
+    .toUpperCase();
   const yearly = new Map();
   scoped.forEach((record) => {
     const year = Number.parseInt(String(record?.__year || ''), 10);
@@ -747,7 +782,11 @@ export function computeDiagnosisCodeYearlyShare(records, code, options = {}) {
     const bucket = yearly.get(year);
     bucket.total += 1;
     const codes = Array.isArray(record?.diagnosisCodes)
-      ? record.diagnosisCodes.map((item) => String(item || '').trim().toUpperCase())
+      ? record.diagnosisCodes.map((item) =>
+          String(item || '')
+            .trim()
+            .toUpperCase()
+        )
       : [];
     if (targetCode && codes.some((item) => item === targetCode || item.startsWith(`${targetCode}.`))) {
       bucket.matched += 1;
@@ -772,13 +811,17 @@ export function computeDiagnosisCodeYearlyShare(records, code, options = {}) {
 export function computeReferralYearlyTrend(records, options = {}) {
   const scopedMeta = getScopedRecords(records, options);
   const scoped = withYearDecorations(scopedMeta.scoped, scopedMeta.shiftStartHour);
-  const trend = computeYearlyTrend(scoped, (record) => {
-    const value = normalizeCategoryValue(record?.referral);
-    if (value === 'su siuntimu' || value === 'be siuntimo') {
-      return value;
-    }
-    return 'Nenurodyta';
-  }, ['su siuntimu', 'be siuntimo', 'Nenurodyta']);
+  const trend = computeYearlyTrend(
+    scoped,
+    (record) => {
+      const value = normalizeCategoryValue(record?.referral);
+      if (value === 'su siuntimu' || value === 'be siuntimo') {
+        return value;
+      }
+      return 'Nenurodyta';
+    },
+    ['su siuntimu', 'be siuntimo', 'Nenurodyta']
+  );
   return {
     ...trend,
     yearOptions: scopedMeta.yearOptions,
@@ -795,7 +838,8 @@ export function computeReferralDispositionYearlyTrend(records, options = {}) {
     if (!Number.isFinite(year)) {
       return;
     }
-    const referral = normalizeCategoryValue(record?.referral) === 'su siuntimu' ? 'su siuntimu' : 'be siuntimo';
+    const referral =
+      normalizeCategoryValue(record?.referral) === 'su siuntimu' ? 'su siuntimu' : 'be siuntimo';
     const disposition = record?.hospitalized === true ? 'hospitalizuoti' : 'isleisti';
     if (!yearly.has(year)) {
       yearly.set(year, {
@@ -857,7 +901,7 @@ export function computeReferralMonthlyHeatmap(records, options = {}) {
   });
 
   const rows = Array.from(monthMap.values())
-    .sort((a, b) => (a.year - b.year) || (a.month - b.month))
+    .sort((a, b) => a.year - b.year || a.month - b.month)
     .map((entry) => ({
       year: entry.year,
       month: entry.month,
@@ -922,16 +966,24 @@ export function computeAgeDiagnosisHeatmap(records, options = {}) {
       : [];
     const fromCodes = Array.isArray(record?.diagnosisCodes)
       ? record.diagnosisCodes
-        .map((item) => String(item || '').trim().toUpperCase())
-        .filter(Boolean)
-        .map((code) => code.charAt(0))
+          .map((item) =>
+            String(item || '')
+              .trim()
+              .toUpperCase()
+          )
+          .filter(Boolean)
+          .map((code) => code.charAt(0))
       : [];
     const source = fromGroups.length ? fromGroups : fromCodes;
     const groups = new Set(
       source
-        .map((item) => String(item || '').trim().toUpperCase())
+        .map((item) =>
+          String(item || '')
+            .trim()
+            .toUpperCase()
+        )
         .filter(Boolean)
-        .filter((item) => !excludePrefixes.some((prefix) => item.startsWith(prefix))),
+        .filter((item) => !excludePrefixes.some((prefix) => item.startsWith(prefix)))
     );
     if (!groups.size) {
       return;
@@ -983,7 +1035,15 @@ export function computeAgeDiagnosisHeatmap(records, options = {}) {
 export function computeAgeYearlyTrend(records, options = {}) {
   const scopedMeta = getScopedRecords(records, options);
   const scoped = withYearDecorations(scopedMeta.scoped, scopedMeta.shiftStartHour);
-  const trend = computeYearlyTrend(scoped, (record) => normalizeCategoryValue(record?.ageBand), ['0-17', '18-34', '35-49', '50-64', '65-79', '80+', 'Nenurodyta']);
+  const trend = computeYearlyTrend(scoped, (record) => normalizeCategoryValue(record?.ageBand), [
+    '0-17',
+    '18-34',
+    '35-49',
+    '50-64',
+    '65-79',
+    '80+',
+    'Nenurodyta',
+  ]);
   return {
     ...trend,
     yearOptions: scopedMeta.yearOptions,
@@ -1069,7 +1129,9 @@ export function computePspcReferralHospitalizationCorrelation(records, options =
 
 export function computeReferralHospitalizedShareByPspc(records, options = {}) {
   const scopedMeta = getScopedRecords(records, options);
-  const scoped = scopedMeta.scoped.filter((record) => normalizeCategoryValue(record?.referral) === 'su siuntimu');
+  const scoped = scopedMeta.scoped.filter(
+    (record) => normalizeCategoryValue(record?.referral) === 'su siuntimu'
+  );
   const bucketMap = new Map();
   scoped.forEach((record) => {
     const pspc = normalizeCategoryValue(record?.pspc);
@@ -1107,7 +1169,9 @@ export function computeReferralHospitalizedShareByPspc(records, options = {}) {
         return sortDirection === 'asc' ? a.share - b.share : b.share - a.share;
       }
       if (a.referredTotal !== b.referredTotal) {
-        return sortDirection === 'asc' ? a.referredTotal - b.referredTotal : b.referredTotal - a.referredTotal;
+        return sortDirection === 'asc'
+          ? a.referredTotal - b.referredTotal
+          : b.referredTotal - a.referredTotal;
       }
       return String(a.label).localeCompare(String(b.label), 'lt');
     })
@@ -1127,10 +1191,14 @@ export function computePspcYearlyTrend(records, options = {}) {
   const topN = Number.parseInt(String(options?.topN ?? 15), 10);
   const counts = groupByKey(scoped, (record) => normalizeCategoryValue(record?.pspc));
   const topCategories = toSortedRows(counts, scoped.length, topN).map((row) => row.label);
-  const trend = computeYearlyTrend(scoped, (record) => {
-    const category = normalizeCategoryValue(record?.pspc);
-    return topCategories.includes(category) ? category : 'Kita / maža imtis';
-  }, topCategories.concat('Kita / maža imtis'));
+  const trend = computeYearlyTrend(
+    scoped,
+    (record) => {
+      const category = normalizeCategoryValue(record?.pspc);
+      return topCategories.includes(category) ? category : 'Kita / maža imtis';
+    },
+    topCategories.concat('Kita / maža imtis')
+  );
   return {
     ...trend,
     yearOptions: scopedMeta.yearOptions,
@@ -1161,7 +1229,11 @@ export function computeSexDistribution(records, options = {}) {
 export function computeSexYearlyTrend(records, options = {}) {
   const scopedMeta = getScopedRecords(records, options);
   const scoped = withYearDecorations(scopedMeta.scoped, scopedMeta.shiftStartHour);
-  const trend = computeYearlyTrend(scoped, (record) => normalizeCategoryValue(record?.sex), ['Vyras', 'Moteris', 'Kita/Nenurodyta']);
+  const trend = computeYearlyTrend(scoped, (record) => normalizeCategoryValue(record?.sex), [
+    'Vyras',
+    'Moteris',
+    'Kita/Nenurodyta',
+  ]);
   return {
     ...trend,
     yearOptions: scopedMeta.yearOptions,

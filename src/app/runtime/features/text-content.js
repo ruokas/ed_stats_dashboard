@@ -1,8 +1,8 @@
-import { applyCommonText } from './text-common.js';
-import { applyKpiText } from './text-kpi.js';
 import { applyChartsText } from './text-charts.js';
-import { applyFeedbackText } from './text-feedback.js';
+import { applyCommonText } from './text-common.js';
 import { applyEdText } from './text-ed.js';
+import { applyFeedbackText } from './text-feedback.js';
+import { applyKpiText } from './text-kpi.js';
 
 export function createTextContentFeature(deps) {
   const { common, kpi, charts, feedback, ed } = deps;
