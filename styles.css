@@ -3922,6 +3922,119 @@ th[data-gydytojai-sort].is-sort-active {
   gap: 6px;
 }
 
+.gydytojai-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 6px;
+}
+
+.gydytojai-filter-panel {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-soft);
+}
+
+.gydytojai-filter-panel__head {
+  margin-bottom: 10px;
+}
+
+.gydytojai-filter-panel__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gydytojai-filter-panel__title {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.gydytojai-loading-inline {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.gydytojai-loading-inline[hidden] {
+  display: none !important;
+}
+
+.gydytojai-filter-panel__subtitle {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.gydytojai-filter-panel__primary .summaries-reports-controls__field {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.gydytojai-filter-panel__secondary {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--color-border) 65%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.gydytojai-filter-panel__secondary-title {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  min-width: 110px;
+}
+
+.gydytojai-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gydytojai-filter-panel .chip-button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.gydytojai-filter-chip {
+  font-size: 0.82rem;
+}
+
+.gydytojai-chart-toggles {
+  margin-bottom: 12px;
+}
+
+.gydytojai-chart-toggles__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gydytojai-chart-chip.is-muted {
+  opacity: 0.5;
+}
+
 .gydytojai-annual-suggestions {
   display: flex;
   flex-direction: column;

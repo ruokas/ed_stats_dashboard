@@ -188,16 +188,17 @@ describe('page selector factories', () => {
       <p id="gydytojaiSubtitle"></p>
       <p id="gydytojaiCoverage"></p>
       <div id="gydytojaiLoadingState"></div>
-      <select id="gydytojaiYear"></select>
-      <select id="gydytojaiTopN"></select>
-      <input id="gydytojaiMinCases" />
-      <select id="gydytojaiSort"></select>
-      <select id="gydytojaiDoctorSelect"></select>
-      <select id="gydytojaiArrivalFilter"></select>
-      <select id="gydytojaiDispositionFilter"></select>
-      <select id="gydytojaiShiftFilter"></select>
+      <div id="gydytojaiFilterChips"></div>
+      <div id="gydytojaiYearChips"></div>
+      <button data-gydytojai-topn="15"></button>
+      <button data-gydytojai-mincases="30"></button>
+      <button data-gydytojai-sortby="volume_desc"></button>
+      <button data-gydytojai-arrival="all"></button>
+      <button data-gydytojai-disposition="all"></button>
+      <button data-gydytojai-shift="all"></button>
       <input id="gydytojaiSearch" />
       <button id="gydytojaiResetFilters"></button>
+      <div id="gydytojaiActiveFilters"></div>
       <table id="gydytojaiLeaderboardTable"></table>
       <tbody id="gydytojaiLeaderboardBody"></tbody>
       <section id="gydytojaiAnnualSection"></section>
@@ -216,6 +217,8 @@ describe('page selector factories', () => {
       <canvas id="gydytojaiHospitalChart"></canvas>
       <canvas id="gydytojaiMixChart"></canvas>
       <canvas id="gydytojaiScatterChart"></canvas>
+      <div id="gydytojaiChartDoctorToggles"></div>
+      <button id="gydytojaiChartDoctorsReset"></button>
       <button data-report-export="copy"></button>
       <button data-table-download="any"></button>
     `);
@@ -225,6 +228,12 @@ describe('page selector factories', () => {
     expect(selectors.gydytojaiAnnualSection).not.toBeNull();
     expect(selectors.gydytojaiAnnualCards).not.toBeNull();
     expect(selectors.gydytojaiAnnualSuggestions).not.toBeNull();
+    expect(selectors.gydytojaiActiveFilters).not.toBeNull();
+    expect(selectors.gydytojaiChartDoctorToggles).not.toBeNull();
+    expect(selectors.gydytojaiTopNButtons).toHaveLength(1);
+    expect(selectors.gydytojaiMinCasesButtons).toHaveLength(1);
+    expect(selectors.gydytojaiSortButtons).toHaveLength(1);
+    expect(selectors.gydytojaiArrivalButtons).toHaveLength(1);
     expect(selectors.reportExportButtons).toHaveLength(1);
     expect(selectors.tableDownloadButtons).toHaveLength(1);
     expect(selectors.jumpLinks).toHaveLength(1);

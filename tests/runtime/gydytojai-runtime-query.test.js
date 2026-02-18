@@ -7,7 +7,7 @@ import {
 describe('gydytojai runtime query helpers', () => {
   test('parses valid query values', () => {
     const state = getDoctorPageStateFromQuery(
-      '?y=2025&top=20&min=40&sort=avgLos_desc&doc=Jonas&arr=ems&disp=hospitalized&shift=night&q=jon&tsort=losGt16Share_asc&am=nightShare&as=yoy_up&ad=Jonas, Ona'
+      '?y=2025&top=20&min=40&sort=avgLos_desc&arr=ems&disp=hospitalized&shift=night&q=jon&tsort=losGt16Share_asc&am=nightShare&as=yoy_up&ad=Jonas, Ona'
     );
     expect(state.year).toBe('2025');
     expect(state.topN).toBe(20);
@@ -39,7 +39,6 @@ describe('gydytojai runtime query helpers', () => {
       topN: 15,
       minCases: 30,
       sort: 'volume_desc',
-      doctor: '__top3__',
       arrival: 'all',
       disposition: 'all',
       shift: 'all',
@@ -56,7 +55,6 @@ describe('gydytojai runtime query helpers', () => {
       topN: 15,
       minCases: 30,
       sort: 'volume_desc',
-      doctor: '__top3__',
       arrival: 'all',
       disposition: 'all',
       shift: 'all',

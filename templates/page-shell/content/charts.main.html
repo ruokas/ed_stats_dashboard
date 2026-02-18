@@ -468,22 +468,35 @@
         <div class="section__actions">
           <button
             type="button"
-            class="btn btn-tertiary btn-small"
-            data-table-download="csv"
+            class="chart-copy-btn"
+            data-table-download="copy"
             data-table-target="#chartsHospitalTableRoot"
             data-table-title="Stacionarizacijos pagal skyrių ir SPS trukmę"
-            aria-label="Parsisiųsti stacionarizacijų lentelę CSV formatu"
-            title="Parsisiųsti CSV"
-          >CSV</button>
+            data-tooltip="Kopijuoti (PNG)"
+            aria-label="Nukopijuoti stacionarizacijų lentelę PNG formatu"
+            title="Nukopijuoti PNG"
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+              <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+            </svg>
+          </button>
           <button
             type="button"
-            class="btn btn-tertiary btn-small"
+            class="chart-download-btn"
             data-table-download="png"
             data-table-target="#chartsHospitalTableRoot"
             data-table-title="Stacionarizacijos pagal skyrių ir SPS trukmę"
+            data-tooltip="Parsisiųsti PNG"
             aria-label="Parsisiųsti stacionarizacijų lentelę PNG formatu"
             title="Parsisiųsti PNG"
-          >PNG</button>
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v12"></path>
+              <path d="M8 11l4 4 4-4"></path>
+              <path d="M4 21h16"></path>
+            </svg>
+          </button>
         </div>
       </div>
 

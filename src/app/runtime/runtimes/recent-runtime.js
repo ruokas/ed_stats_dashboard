@@ -261,6 +261,8 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
     const row = document.createElement('tr');
     const dateValue = dateKeyToDate(entry.date);
     const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
+    const weekday = dateValue instanceof Date ? dateValue.getDay() : null;
+    const isWeekend = weekday === 0 || weekday === 6;
     const total = Number.isFinite(entry.count) ? entry.count : 0;
     const avgStayEntry = entry.durations ? entry.totalTime / entry.durations : 0;
     const hospShare = total > 0 ? entry.hospitalized / total : 0;
@@ -268,6 +270,9 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
 
     const dateCell = document.createElement('td');
     dateCell.textContent = displayDate;
+    if (isWeekend) {
+      row.classList.add('table-row--weekend');
+    }
     const totalCell = document.createElement('td');
     totalCell.textContent = numberFormatter.format(total);
     const stayCell = document.createElement('td');

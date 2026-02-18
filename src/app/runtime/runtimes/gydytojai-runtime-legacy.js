@@ -38,7 +38,6 @@ const DEFAULT_DOCTOR_PAGE_STATE = {
   topN: 15,
   minCases: 30,
   sort: 'volume_desc',
-  doctor: '__top3__',
   arrival: 'all',
   disposition: 'all',
   shift: 'all',
@@ -94,7 +93,6 @@ export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PA
       new Set(['volume_desc', 'avgLos_asc', 'avgLos_desc', 'hospital_desc']),
       defaults.sort
     ),
-    doctor: params.get('doc') || defaults.doctor,
     arrival: normalizeAllowed(params.get('arr'), new Set(['all', 'ems', 'self']), defaults.arrival),
     disposition: normalizeAllowed(
       params.get('disp'),
@@ -151,9 +149,6 @@ export function buildDoctorPageQuery(state) {
   if (state.sort && state.sort !== DEFAULT_DOCTOR_PAGE_STATE.sort) {
     params.set('sort', String(state.sort));
   }
-  if (state.doctor && state.doctor !== DEFAULT_DOCTOR_PAGE_STATE.doctor) {
-    params.set('doc', String(state.doctor));
-  }
   if (state.arrival && state.arrival !== DEFAULT_DOCTOR_PAGE_STATE.arrival) {
     params.set('arr', String(state.arrival));
   }
@@ -188,7 +183,6 @@ function syncDoctorPageQueryFromState(dashboardState) {
     topN: dashboardState.doctorsTopN,
     minCases: dashboardState.doctorsMinCases,
     sort: dashboardState.doctorsSort,
-    doctor: dashboardState.doctorsSelected,
     arrival: dashboardState.doctorsArrivalFilter,
     disposition: dashboardState.doctorsDispositionFilter,
     shift: dashboardState.doctorsShiftFilter,
@@ -210,77 +204,83 @@ function extractHistoricalRecords(dashboardState) {
   return tagged.length ? tagged : all.filter((record) => record?.hasExtendedHistoricalFields === true);
 }
 
-function applyDoctorControls(selectors, dashboardState, yearOptions, topRows) {
-  if (selectors.gydytojaiYear) {
-    const select = selectors.gydytojaiYear;
-    const previous = String(dashboardState.doctorsYear || 'all');
-    select.replaceChildren();
-    const allOption = document.createElement('option');
-    allOption.value = 'all';
-    allOption.textContent = 'Visi metai';
-    select.appendChild(allOption);
+function applyDoctorControls(selectors, dashboardState, yearOptions) {
+  const previousYear = String(dashboardState.doctorsYear || 'all');
+  const allowedYears = new Set(['all']);
+  (Array.isArray(yearOptions) ? yearOptions : []).forEach((year) => {
+    const normalizedYear = String(year).trim();
+    if (/^\d{4}$/.test(normalizedYear)) {
+      allowedYears.add(normalizedYear);
+    }
+  });
+  dashboardState.doctorsYear = allowedYears.has(previousYear) ? previousYear : 'all';
+
+  if (selectors.gydytojaiYearChips instanceof HTMLElement) {
+    selectors.gydytojaiYearChips.replaceChildren();
+    const allButton = document.createElement('button');
+    allButton.type = 'button';
+    allButton.className = 'chip-button';
+    allButton.setAttribute('data-gydytojai-year', 'all');
+    allButton.textContent = 'Visi metai';
+    selectors.gydytojaiYearChips.appendChild(allButton);
     (Array.isArray(yearOptions) ? yearOptions : []).forEach((year) => {
-      const option = document.createElement('option');
-      option.value = String(year);
-      option.textContent = String(year);
-      select.appendChild(option);
-    });
-    const hasPrevious = Array.from(select.options).some((option) => option.value === previous);
-    select.value = hasPrevious ? previous : 'all';
-    dashboardState.doctorsYear = select.value;
-  }
-
-  if (selectors.gydytojaiTopN) {
-    selectors.gydytojaiTopN.value = String(dashboardState.doctorsTopN || 15);
-  }
-  if (selectors.gydytojaiMinCases) {
-    selectors.gydytojaiMinCases.value = String(dashboardState.doctorsMinCases || 30);
-  }
-  if (selectors.gydytojaiSort) {
-    selectors.gydytojaiSort.value = String(dashboardState.doctorsSort || 'volume_desc');
-  }
-
-  if (selectors.gydytojaiDoctorSelect) {
-    const select = selectors.gydytojaiDoctorSelect;
-    const previous = String(dashboardState.doctorsSelected || '__top3__');
-    select.replaceChildren();
-    const topOption = document.createElement('option');
-    topOption.value = '__top3__';
-    topOption.textContent = 'TOP 3';
-    select.appendChild(topOption);
-    (Array.isArray(topRows) ? topRows : []).forEach((row) => {
-      const alias = String(row?.alias || '').trim();
-      if (!alias) {
+      const normalizedYear = String(year).trim();
+      if (!/^\d{4}$/.test(normalizedYear)) {
         return;
       }
-      const option = document.createElement('option');
-      option.value = alias;
-      option.textContent = alias;
-      select.appendChild(option);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'chip-button';
+      button.setAttribute('data-gydytojai-year', normalizedYear);
+      button.textContent = normalizedYear;
+      selectors.gydytojaiYearChips.appendChild(button);
     });
-    const hasPrevious = Array.from(select.options).some((option) => option.value === previous);
-    select.value = hasPrevious ? previous : '__top3__';
-    dashboardState.doctorsSelected = select.value;
   }
 
-  if (selectors.gydytojaiArrivalFilter) {
-    selectors.gydytojaiArrivalFilter.value = String(dashboardState.doctorsArrivalFilter || 'all');
+  const setPressed = (buttons, currentValue, getValue) => {
+    (Array.isArray(buttons) ? buttons : []).forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const value = String(getValue(button) || '');
+      const active = value === String(currentValue);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  };
+  if (selectors.gydytojaiYearChips instanceof HTMLElement) {
+    setPressed(
+      Array.from(selectors.gydytojaiYearChips.querySelectorAll('[data-gydytojai-year]')),
+      dashboardState.doctorsYear,
+      (button) => button.getAttribute('data-gydytojai-year')
+    );
   }
-  if (selectors.gydytojaiDispositionFilter) {
-    selectors.gydytojaiDispositionFilter.value = String(dashboardState.doctorsDispositionFilter || 'all');
-  }
-  if (selectors.gydytojaiShiftFilter) {
-    selectors.gydytojaiShiftFilter.value = String(dashboardState.doctorsShiftFilter || 'all');
-  }
+  setPressed(selectors.gydytojaiTopNButtons, dashboardState.doctorsTopN, (button) =>
+    button.getAttribute('data-gydytojai-topn')
+  );
+  setPressed(selectors.gydytojaiMinCasesButtons, dashboardState.doctorsMinCases, (button) =>
+    button.getAttribute('data-gydytojai-mincases')
+  );
+  setPressed(selectors.gydytojaiSortButtons, dashboardState.doctorsSort, (button) =>
+    button.getAttribute('data-gydytojai-sortby')
+  );
+  setPressed(selectors.gydytojaiArrivalButtons, dashboardState.doctorsArrivalFilter, (button) =>
+    button.getAttribute('data-gydytojai-arrival')
+  );
+  setPressed(selectors.gydytojaiDispositionButtons, dashboardState.doctorsDispositionFilter, (button) =>
+    button.getAttribute('data-gydytojai-disposition')
+  );
+  setPressed(selectors.gydytojaiShiftButtons, dashboardState.doctorsShiftFilter, (button) =>
+    button.getAttribute('data-gydytojai-shift')
+  );
   if (selectors.gydytojaiSearch) {
     selectors.gydytojaiSearch.value = String(dashboardState.doctorsSearch || '');
   }
-  if (selectors.gydytojaiAnnualMetric) {
-    selectors.gydytojaiAnnualMetric.value = String(dashboardState.doctorsAnnualMetric || 'count');
-  }
-  if (selectors.gydytojaiAnnualSort) {
-    selectors.gydytojaiAnnualSort.value = String(dashboardState.doctorsAnnualSort || 'latest_desc');
-  }
+  setPressed(selectors.gydytojaiAnnualMetricButtons, dashboardState.doctorsAnnualMetric, (button) =>
+    button.getAttribute('data-gydytojai-annual-metric')
+  );
+  setPressed(selectors.gydytojaiAnnualSortButtons, dashboardState.doctorsAnnualSort, (button) =>
+    button.getAttribute('data-gydytojai-annual-sort')
+  );
   if (selectors.gydytojaiAnnualDoctorInput) {
     selectors.gydytojaiAnnualDoctorInput.value = String(dashboardState.doctorsAnnualSearchInput || '');
   }
@@ -301,6 +301,9 @@ function setCoverage(selectors, model) {
 function setLoadingVisualState(selectors, isLoading) {
   if (selectors.gydytojaiLoadingState instanceof HTMLElement) {
     selectors.gydytojaiLoadingState.hidden = !isLoading;
+  }
+  if (selectors.gydytojaiLoadingInline instanceof HTMLElement) {
+    selectors.gydytojaiLoadingInline.hidden = !isLoading;
   }
   const main = document.querySelector('main.container');
   if (main instanceof HTMLElement) {
@@ -363,11 +366,132 @@ function renderLeaderboardTable(selectors, rows, tableSort) {
 
 function buildDoctorFilterSummary(dashboardState) {
   const year = dashboardState.doctorsYear === 'all' ? 'Visi metai' : String(dashboardState.doctorsYear);
-  const doctor =
-    dashboardState.doctorsSelected && dashboardState.doctorsSelected !== '__top3__'
-      ? String(dashboardState.doctorsSelected)
-      : 'TOP 3';
-  return `Metai: ${year} | TOP N: ${dashboardState.doctorsTopN} | Min. imtis: ${dashboardState.doctorsMinCases} | Rikiavimas: ${dashboardState.doctorsSort} | Gydytojas: ${doctor}`;
+  return `Metai: ${year} | TOP N: ${dashboardState.doctorsTopN} | Min. imtis: ${dashboardState.doctorsMinCases} | Rikiavimas: ${dashboardState.doctorsSort}`;
+}
+
+function getActiveDoctorFilterChips(dashboardState) {
+  const chips = [];
+  if (String(dashboardState?.doctorsYear || 'all') !== 'all') {
+    chips.push({
+      key: 'year',
+      label: `Metai: ${dashboardState.doctorsYear}`,
+    });
+  }
+  if (Number(dashboardState?.doctorsTopN || 15) !== 15) {
+    chips.push({
+      key: 'topN',
+      label: `TOP N: ${dashboardState.doctorsTopN}`,
+    });
+  }
+  if (Number(dashboardState?.doctorsMinCases || 30) !== 30) {
+    chips.push({
+      key: 'minCases',
+      label: `Min. imtis: ${dashboardState.doctorsMinCases}`,
+    });
+  }
+  if (String(dashboardState?.doctorsSort || 'volume_desc') !== 'volume_desc') {
+    const sortMap = {
+      volume_desc: 'Apkrova',
+      avgLos_asc: 'Vid. trukmė didėjančiai',
+      avgLos_desc: 'Vid. trukmė mažėjančiai',
+      hospital_desc: 'Hospitalizacija mažėjančiai',
+    };
+    const label = sortMap[String(dashboardState.doctorsSort)] || String(dashboardState.doctorsSort);
+    chips.push({
+      key: 'sort',
+      label: `Rikiavimas: ${label}`,
+    });
+  }
+  if (String(dashboardState?.doctorsArrivalFilter || 'all') !== 'all') {
+    const arrivalMap = { ems: 'Tik GMP', self: 'Be GMP' };
+    chips.push({
+      key: 'arrival',
+      label: `Atvykimas: ${arrivalMap[String(dashboardState.doctorsArrivalFilter)] || dashboardState.doctorsArrivalFilter}`,
+    });
+  }
+  if (String(dashboardState?.doctorsDispositionFilter || 'all') !== 'all') {
+    const dispositionMap = { hospitalized: 'Hospitalizuoti', discharged: 'Išleisti' };
+    chips.push({
+      key: 'disposition',
+      label: `Baigtis: ${dispositionMap[String(dashboardState.doctorsDispositionFilter)] || dashboardState.doctorsDispositionFilter}`,
+    });
+  }
+  if (String(dashboardState?.doctorsShiftFilter || 'all') !== 'all') {
+    const shiftMap = { day: 'Diena', night: 'Naktis' };
+    chips.push({
+      key: 'shift',
+      label: `Pamaina: ${shiftMap[String(dashboardState.doctorsShiftFilter)] || dashboardState.doctorsShiftFilter}`,
+    });
+  }
+  const search = String(dashboardState?.doctorsSearchDebounced || dashboardState?.doctorsSearch || '').trim();
+  if (search) {
+    chips.push({
+      key: 'search',
+      label: `Paieška: ${search}`,
+    });
+  }
+  return chips;
+}
+
+function renderActiveDoctorFilters(selectors, dashboardState) {
+  const host = selectors?.gydytojaiActiveFilters;
+  if (!(host instanceof HTMLElement)) {
+    return;
+  }
+  const chips = getActiveDoctorFilterChips(dashboardState);
+  host.replaceChildren();
+  if (!chips.length) {
+    const empty = document.createElement('p');
+    empty.className = 'summaries-reports-coverage';
+    empty.textContent = 'Aktyvių filtrų nėra.';
+    host.appendChild(empty);
+    return;
+  }
+  chips.forEach((chip) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'chip-button gydytojai-filter-chip';
+    button.setAttribute('data-filter-remove', chip.key);
+    button.textContent = `${chip.label} ×`;
+    host.appendChild(button);
+  });
+}
+
+function getVisibleDoctorRowsForCharts(rows, hiddenAliases) {
+  const hidden = new Set(
+    (Array.isArray(hiddenAliases) ? hiddenAliases : []).map((alias) => normalizeDoctorAliasToken(alias))
+  );
+  return (Array.isArray(rows) ? rows : []).filter(
+    (row) => !hidden.has(normalizeDoctorAliasToken(row?.alias))
+  );
+}
+
+function renderDoctorChartToggles(selectors, dashboardState, rows) {
+  const host = selectors?.gydytojaiChartDoctorToggles;
+  if (!(host instanceof HTMLElement)) {
+    return;
+  }
+  const aliases = (Array.isArray(rows) ? rows : [])
+    .map((row) => String(row?.alias || '').trim())
+    .filter(Boolean);
+  const aliasSet = new Set(aliases.map((alias) => normalizeDoctorAliasToken(alias)));
+  dashboardState.doctorsChartsHiddenAliases = (dashboardState.doctorsChartsHiddenAliases || []).filter(
+    (alias) => aliasSet.has(normalizeDoctorAliasToken(alias))
+  );
+  const hiddenSet = new Set(
+    (dashboardState.doctorsChartsHiddenAliases || []).map((alias) => normalizeDoctorAliasToken(alias))
+  );
+  host.replaceChildren();
+  aliases.forEach((alias) => {
+    const hidden = hiddenSet.has(normalizeDoctorAliasToken(alias));
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `chip-button gydytojai-chart-chip${hidden ? ' is-muted' : ''}`;
+    chip.setAttribute('data-chart-doctor-toggle', alias);
+    chip.setAttribute('aria-pressed', hidden ? 'false' : 'true');
+    chip.textContent = alias;
+    host.appendChild(chip);
+  });
 }
 
 function setDoctorExportState(exportState, selectors, dashboardState, models) {
@@ -1014,37 +1138,59 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
 }
 
 function wireInteractions(selectors, dashboardState, rerender, handleReportExportClick) {
-  selectors.gydytojaiYear?.addEventListener('change', (event) => {
-    dashboardState.doctorsYear = String(event.target.value || 'all');
-    rerender();
-  });
-  selectors.gydytojaiTopN?.addEventListener('change', (event) => {
-    dashboardState.doctorsTopN = parsePositiveInt(event.target.value, 15);
-    rerender();
-  });
-  selectors.gydytojaiMinCases?.addEventListener('change', (event) => {
-    dashboardState.doctorsMinCases = parsePositiveInt(event.target.value, 30);
-    rerender();
-  });
-  selectors.gydytojaiSort?.addEventListener('change', (event) => {
-    dashboardState.doctorsSort = String(event.target.value || 'volume_desc');
-    rerender();
-  });
-  selectors.gydytojaiDoctorSelect?.addEventListener('change', (event) => {
-    dashboardState.doctorsSelected = String(event.target.value || '__top3__');
-    rerender();
-  });
-  selectors.gydytojaiArrivalFilter?.addEventListener('change', (event) => {
-    dashboardState.doctorsArrivalFilter = String(event.target.value || 'all');
-    rerender();
-  });
-  selectors.gydytojaiDispositionFilter?.addEventListener('change', (event) => {
-    dashboardState.doctorsDispositionFilter = String(event.target.value || 'all');
-    rerender();
-  });
-  selectors.gydytojaiShiftFilter?.addEventListener('change', (event) => {
-    dashboardState.doctorsShiftFilter = String(event.target.value || 'all');
-    rerender();
+  selectors.gydytojaiFilterChips?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const yearChip = target.closest('[data-gydytojai-year]');
+    if (yearChip instanceof HTMLElement) {
+      dashboardState.doctorsYear = String(yearChip.getAttribute('data-gydytojai-year') || 'all');
+      rerender();
+      return;
+    }
+    const topNChip = target.closest('[data-gydytojai-topn]');
+    if (topNChip instanceof HTMLElement) {
+      dashboardState.doctorsTopN = parsePositiveInt(topNChip.getAttribute('data-gydytojai-topn'), 15);
+      rerender();
+      return;
+    }
+    const minCasesChip = target.closest('[data-gydytojai-mincases]');
+    if (minCasesChip instanceof HTMLElement) {
+      dashboardState.doctorsMinCases = parsePositiveInt(
+        minCasesChip.getAttribute('data-gydytojai-mincases'),
+        30
+      );
+      rerender();
+      return;
+    }
+    const sortChip = target.closest('[data-gydytojai-sortby]');
+    if (sortChip instanceof HTMLElement) {
+      dashboardState.doctorsSort = String(sortChip.getAttribute('data-gydytojai-sortby') || 'volume_desc');
+      rerender();
+      return;
+    }
+    const arrivalChip = target.closest('[data-gydytojai-arrival]');
+    if (arrivalChip instanceof HTMLElement) {
+      dashboardState.doctorsArrivalFilter = String(
+        arrivalChip.getAttribute('data-gydytojai-arrival') || 'all'
+      );
+      rerender();
+      return;
+    }
+    const dispositionChip = target.closest('[data-gydytojai-disposition]');
+    if (dispositionChip instanceof HTMLElement) {
+      dashboardState.doctorsDispositionFilter = String(
+        dispositionChip.getAttribute('data-gydytojai-disposition') || 'all'
+      );
+      rerender();
+      return;
+    }
+    const shiftChip = target.closest('[data-gydytojai-shift]');
+    if (shiftChip instanceof HTMLElement) {
+      dashboardState.doctorsShiftFilter = String(shiftChip.getAttribute('data-gydytojai-shift') || 'all');
+      rerender();
+    }
   });
   selectors.gydytojaiSearch?.addEventListener('input', (event) => {
     const pendingValue = String(event.target.value || '').trim();
@@ -1072,12 +1218,34 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsSearchDebounced = dashboardState.doctorsSearch;
     rerender();
   });
-  selectors.gydytojaiAnnualMetric?.addEventListener('change', (event) => {
-    dashboardState.doctorsAnnualMetric = normalizeAnnualMetric(event.target.value, 'count');
+  selectors.gydytojaiAnnualMetric?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const button = target.closest('[data-gydytojai-annual-metric]');
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+    dashboardState.doctorsAnnualMetric = normalizeAnnualMetric(
+      button.getAttribute('data-gydytojai-annual-metric'),
+      'count'
+    );
     rerender();
   });
-  selectors.gydytojaiAnnualSort?.addEventListener('change', (event) => {
-    dashboardState.doctorsAnnualSort = normalizeAnnualSort(event.target.value, 'latest_desc');
+  selectors.gydytojaiAnnualSort?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const button = target.closest('[data-gydytojai-annual-sort]');
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+    dashboardState.doctorsAnnualSort = normalizeAnnualSort(
+      button.getAttribute('data-gydytojai-annual-sort'),
+      'latest_desc'
+    );
     rerender();
   });
   const refreshAnnualSuggestions = () => renderAnnualDoctorSuggestions(selectors, dashboardState);
@@ -1223,18 +1391,85 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     );
     rerender();
   });
+  selectors.gydytojaiActiveFilters?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const button = target.closest('[data-filter-remove]');
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+    const key = String(button.getAttribute('data-filter-remove') || '').trim();
+    if (key === 'year') {
+      dashboardState.doctorsYear = 'all';
+    } else if (key === 'topN') {
+      dashboardState.doctorsTopN = 15;
+    } else if (key === 'minCases') {
+      dashboardState.doctorsMinCases = 30;
+    } else if (key === 'sort') {
+      dashboardState.doctorsSort = 'volume_desc';
+    } else if (key === 'arrival') {
+      dashboardState.doctorsArrivalFilter = 'all';
+    } else if (key === 'disposition') {
+      dashboardState.doctorsDispositionFilter = 'all';
+    } else if (key === 'shift') {
+      dashboardState.doctorsShiftFilter = 'all';
+    } else if (key === 'search') {
+      dashboardState.doctorsSearch = '';
+      dashboardState.doctorsSearchDebounced = '';
+      if (dashboardState.doctorsSearchDebounceTimer) {
+        window.clearTimeout(dashboardState.doctorsSearchDebounceTimer);
+        dashboardState.doctorsSearchDebounceTimer = null;
+      }
+      if (selectors.gydytojaiSearch instanceof HTMLInputElement) {
+        selectors.gydytojaiSearch.value = '';
+      }
+    }
+    rerender();
+  });
+  selectors.gydytojaiChartDoctorToggles?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const button = target.closest('[data-chart-doctor-toggle]');
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+    const alias = String(button.getAttribute('data-chart-doctor-toggle') || '').trim();
+    if (!alias) {
+      return;
+    }
+    const hidden = Array.isArray(dashboardState.doctorsChartsHiddenAliases)
+      ? dashboardState.doctorsChartsHiddenAliases.slice()
+      : [];
+    const normalized = normalizeDoctorAliasToken(alias);
+    const index = hidden.findIndex((entry) => normalizeDoctorAliasToken(entry) === normalized);
+    if (index >= 0) {
+      hidden.splice(index, 1);
+    } else {
+      hidden.push(alias);
+    }
+    dashboardState.doctorsChartsHiddenAliases = hidden;
+    rerender();
+  });
+  selectors.gydytojaiChartDoctorsReset?.addEventListener('click', () => {
+    dashboardState.doctorsChartsHiddenAliases = [];
+    rerender();
+  });
   selectors.gydytojaiResetFilters?.addEventListener('click', () => {
     dashboardState.doctorsYear = 'all';
     dashboardState.doctorsTopN = 15;
     dashboardState.doctorsMinCases = 30;
     dashboardState.doctorsSort = 'volume_desc';
-    dashboardState.doctorsSelected = '__top3__';
     dashboardState.doctorsArrivalFilter = 'all';
     dashboardState.doctorsDispositionFilter = 'all';
     dashboardState.doctorsShiftFilter = 'all';
     dashboardState.doctorsSearch = '';
     dashboardState.doctorsSearchDebounced = '';
     dashboardState.doctorsTableSort = 'count_desc';
+    dashboardState.doctorsChartsHiddenAliases = [];
     dashboardState.doctorsAnnualMetric = 'count';
     dashboardState.doctorsAnnualSort = 'latest_desc';
     dashboardState.doctorsAnnualSelected = [];
@@ -1293,7 +1528,6 @@ export async function runGydytojaiRuntime(core) {
   dashboardState.doctorsTopN = fromQuery.topN;
   dashboardState.doctorsMinCases = fromQuery.minCases;
   dashboardState.doctorsSort = fromQuery.sort;
-  dashboardState.doctorsSelected = fromQuery.doctor;
   dashboardState.doctorsArrivalFilter = fromQuery.arrival;
   dashboardState.doctorsDispositionFilter = fromQuery.disposition;
   dashboardState.doctorsShiftFilter = fromQuery.shift;
@@ -1347,7 +1581,16 @@ export async function runGydytojaiRuntime(core) {
   });
 
   let chartLib = null;
+  let initialLoadPending = true;
+  let loadingStartedAt = 0;
+  const minLoadingVisibleMs = 250;
   const render = async () => {
+    if (
+      initialLoadPending &&
+      (!Array.isArray(dashboardState.rawRecords) || dashboardState.rawRecords.length === 0)
+    ) {
+      return;
+    }
     syncDoctorPageQueryFromState(dashboardState);
     const records = extractHistoricalRecords(dashboardState);
     const options = {
@@ -1357,7 +1600,6 @@ export async function runGydytojaiRuntime(core) {
       sortBy: dashboardState.doctorsSort,
       calculations: settings?.calculations,
       defaultSettings: DEFAULT_SETTINGS,
-      selectedDoctor: dashboardState.doctorsSelected,
       arrivalFilter: dashboardState.doctorsArrivalFilter,
       dispositionFilter: dashboardState.doctorsDispositionFilter,
       shiftFilter: dashboardState.doctorsShiftFilter,
@@ -1383,27 +1625,43 @@ export async function runGydytojaiRuntime(core) {
     dashboardState.doctorsAnnualAvailable = Array.isArray(annual?.meta?.availableDoctors)
       ? annual.meta.availableDoctors
       : [];
-    applyDoctorControls(selectors, dashboardState, leaderboard.yearOptions, leaderboard.rows);
+    applyDoctorControls(selectors, dashboardState, leaderboard.yearOptions);
+    renderActiveDoctorFilters(selectors, dashboardState);
+    renderDoctorChartToggles(selectors, dashboardState, leaderboard.rows);
+    const visibleLeaderboardRows = getVisibleDoctorRowsForCharts(
+      leaderboard.rows,
+      dashboardState.doctorsChartsHiddenAliases
+    );
+    const visibleAliases = new Set(
+      visibleLeaderboardRows.map((row) => normalizeDoctorAliasToken(row?.alias))
+    );
+    const chartModels = {
+      leaderboard: { ...leaderboard, rows: visibleLeaderboardRows },
+      mix: {
+        ...mix,
+        rows: (mix.rows || []).filter((row) => visibleAliases.has(normalizeDoctorAliasToken(row?.alias))),
+      },
+      hospital: {
+        ...hospital,
+        rows: (hospital.rows || []).filter((row) =>
+          visibleAliases.has(normalizeDoctorAliasToken(row?.alias))
+        ),
+      },
+      scatter: {
+        ...scatter,
+        rows: (scatter.rows || []).filter((row) => visibleAliases.has(normalizeDoctorAliasToken(row?.alias))),
+      },
+    };
     setCoverage(selectors, leaderboard);
     renderLeaderboardTable(selectors, leaderboard.rows, dashboardState.doctorsTableSort);
     updateSortHeaderState(selectors, dashboardState.doctorsTableSort);
-    setDoctorExportState(exportState, selectors, dashboardState, {
-      leaderboard,
-      mix,
-      hospital,
-      scatter,
-    });
+    setDoctorExportState(exportState, selectors, dashboardState, chartModels);
 
     chartLib = chartLib || (await loadChartJs());
     if (!chartLib) {
       return;
     }
-    renderCharts(dashboardState, chartLib, selectors, {
-      leaderboard,
-      mix,
-      hospital,
-      scatter,
-    });
+    renderCharts(dashboardState, chartLib, selectors, chartModels);
     renderAnnualSelectedChips(selectors, dashboardState, annual);
     renderAnnualDoctorSuggestions(selectors, dashboardState);
     renderDoctorAnnualSmallMultiples(
@@ -1420,16 +1678,29 @@ export async function runGydytojaiRuntime(core) {
   const rerender = () => {
     renderToken += 1;
     const token = renderToken;
+    loadingStartedAt = Date.now();
     setLoadingVisualState(selectors, true);
-    render()
-      .catch((error) => {
-        console.error('Nepavyko perskaičiuoti gydytojų rodiklių:', error);
-      })
-      .finally(() => {
-        if (token === renderToken) {
-          setLoadingVisualState(selectors, false);
-        }
-      });
+    const schedule =
+      typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => window.setTimeout(callback, 0);
+    schedule(() => {
+      render()
+        .catch((error) => {
+          console.error('Nepavyko perskaičiuoti gydytojų rodiklių:', error);
+        })
+        .finally(() => {
+          if (token === renderToken && !initialLoadPending) {
+            const elapsed = Date.now() - loadingStartedAt;
+            const waitMs = Math.max(0, minLoadingVisibleMs - elapsed);
+            window.setTimeout(() => {
+              if (token === renderToken && !initialLoadPending) {
+                setLoadingVisualState(selectors, false);
+              }
+            }, waitMs);
+          }
+        });
+    });
   };
 
   wireInteractions(selectors, dashboardState, rerender, handleReportExportClick);
@@ -1440,10 +1711,13 @@ export async function runGydytojaiRuntime(core) {
     const data = await fetchData({ skipHistorical: false });
     dashboardState.rawRecords = Array.isArray(data?.records) ? data.records : [];
     await render();
+    initialLoadPending = false;
+    dashboardState.hasLoadedOnce = true;
     setLoadingVisualState(selectors, false);
     setStatus(selectors, 'ready');
   } catch (error) {
     console.error('Nepavyko įkelti gydytojų puslapio:', error);
+    initialLoadPending = false;
     setLoadingVisualState(selectors, false);
     setStatus(selectors, 'error', error?.message || TEXT.status.error);
   }
