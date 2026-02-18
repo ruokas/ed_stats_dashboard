@@ -1386,6 +1386,56 @@ function sortDoctorRows(rows, sortBy = 'volume_desc') {
   });
 }
 
+function getAllDoctorRowsForFilters(records, options = {}) {
+  const baseline = computeDoctorLeaderboard(records, {
+    ...options,
+    minCases: 1,
+    topN: Number.MAX_SAFE_INTEGER,
+    sortBy: 'volume_desc',
+  });
+  return Array.isArray(baseline?.rows) ? baseline.rows : [];
+}
+
+function computeAverageDoctorMetrics(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) {
+    return {
+      count: 0,
+      avgLosHours: null,
+      hospitalizedShare: null,
+      nightShare: null,
+    };
+  }
+  let countSum = 0;
+  let losSum = 0;
+  let losCount = 0;
+  let hospitalSum = 0;
+  let hospitalCount = 0;
+  let nightSum = 0;
+  let nightCount = 0;
+  list.forEach((row) => {
+    countSum += Number(row?.count || 0);
+    if (Number.isFinite(row?.avgLosHours)) {
+      losSum += Number(row.avgLosHours);
+      losCount += 1;
+    }
+    if (Number.isFinite(row?.hospitalizedShare)) {
+      hospitalSum += Number(row.hospitalizedShare);
+      hospitalCount += 1;
+    }
+    if (Number.isFinite(row?.nightShare)) {
+      nightSum += Number(row.nightShare);
+      nightCount += 1;
+    }
+  });
+  return {
+    count: countSum / list.length,
+    avgLosHours: losCount > 0 ? losSum / losCount : null,
+    hospitalizedShare: hospitalCount > 0 ? hospitalSum / hospitalCount : null,
+    nightShare: nightCount > 0 ? nightSum / nightCount : null,
+  };
+}
+
 export function computeDoctorLeaderboard(records, options = {}) {
   const meta = getDoctorScopedMeta(records, options);
   const minCasesRaw = Number.parseInt(String(options?.minCases ?? 30), 10);
@@ -1622,6 +1672,387 @@ export function computeDoctorVolumeVsLosScatter(records, options = {}) {
         avgLosHours: row.avgLosHours,
         hospitalizedShare: row.hospitalizedShare,
       })),
+  };
+}
+
+function getDoctorMetricValue(point, metric) {
+  if (!point || typeof point !== 'object') {
+    return null;
+  }
+  if (metric === 'hospitalizedShare') {
+    return Number.isFinite(point.hospitalizedShare) ? Number(point.hospitalizedShare) : null;
+  }
+  if (metric === 'avgLosHours') {
+    return Number.isFinite(point.avgLosHours) ? Number(point.avgLosHours) : null;
+  }
+  if (metric === 'nightShare') {
+    return Number.isFinite(point.nightShare) ? Number(point.nightShare) : null;
+  }
+  return Number.isFinite(point.count) ? Number(point.count) : null;
+}
+
+function resolveDoctorTrend(metric, deltaAbs) {
+  if (!Number.isFinite(deltaAbs)) {
+    return 'na';
+  }
+  const threshold = metric === 'count' ? 1 : metric === 'avgLosHours' ? 0.1 : 0.005;
+  if (Math.abs(deltaAbs) <= threshold) {
+    return 'flat';
+  }
+  return deltaAbs > 0 ? 'up' : 'down';
+}
+
+export function computeDoctorYearlySmallMultiples(records, options = {}) {
+  const metric =
+    String(options?.metric || 'count') === 'hospitalizedShare'
+      ? 'hospitalizedShare'
+      : String(options?.metric || 'count') === 'avgLosHours'
+        ? 'avgLosHours'
+        : String(options?.metric || 'count') === 'nightShare'
+          ? 'nightShare'
+          : 'count';
+  const topNRaw = Number.parseInt(String(options?.topN ?? 12), 10);
+  const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 12;
+  const minCasesRaw = Number.parseInt(String(options?.minCases ?? 30), 10);
+  const minCases = Number.isFinite(minCasesRaw) && minCasesRaw > 0 ? minCasesRaw : 30;
+  const minYearCountRaw = Number.parseInt(String(options?.minYearCount ?? 2), 10);
+  const minYearCount = Number.isFinite(minYearCountRaw) && minYearCountRaw > 0 ? minYearCountRaw : 2;
+  const selectedDoctors = (Array.isArray(options?.selectedDoctors) ? options.selectedDoctors : [])
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+  const selectedDoctorSet = new Set(selectedDoctors.map((value) => value.toLowerCase()));
+  const meta = getDoctorScopedMeta(records, {
+    ...options,
+    yearFilter: 'all',
+  });
+  const yearSet = new Set();
+  const bucketByDoctorYear = new Map();
+  const totalsByDoctor = new Map();
+
+  meta.filtered.forEach((record) => {
+    const doctor = getDoctorKey(record);
+    const arrival =
+      record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+    if (!doctor || !arrival) {
+      return;
+    }
+    const year = String(arrival.getFullYear());
+    if (!/^\d{4}$/.test(year)) {
+      return;
+    }
+    yearSet.add(year);
+    const doctorYearKey = `${doctor.key}|${year}`;
+    if (!bucketByDoctorYear.has(doctorYearKey)) {
+      bucketByDoctorYear.set(doctorYearKey, {
+        doctorKey: doctor.key,
+        alias: doctor.label,
+        year,
+        count: 0,
+        hosp: 0,
+        night: 0,
+        losSum: 0,
+        losCount: 0,
+      });
+    }
+    const bucket = bucketByDoctorYear.get(doctorYearKey);
+    bucket.count += 1;
+    if (record?.hospitalized === true) {
+      bucket.hosp += 1;
+    }
+    if (record?.night === true) {
+      bucket.night += 1;
+    }
+    const los = getLosHours(record);
+    if (Number.isFinite(los)) {
+      bucket.losSum += los;
+      bucket.losCount += 1;
+    }
+    if (!totalsByDoctor.has(doctor.key)) {
+      totalsByDoctor.set(doctor.key, { doctorKey: doctor.key, alias: doctor.label, total: 0 });
+    }
+    const totalEntry = totalsByDoctor.get(doctor.key);
+    totalEntry.total += 1;
+  });
+
+  const years = Array.from(yearSet).sort((a, b) => a.localeCompare(b));
+  const availableDoctors = Array.from(totalsByDoctor.values())
+    .filter((entry) => Number(entry?.total || 0) >= minCases)
+    .sort((a, b) => Number(b.total || 0) - Number(a.total || 0))
+    .map((entry) => ({
+      doctorKey: entry.doctorKey,
+      alias: entry.alias,
+      total: Number(entry.total || 0),
+    }));
+  if (!selectedDoctorSet.size) {
+    return {
+      years,
+      cards: [],
+      coverage: meta.coverage,
+      yearOptions: meta.yearOptions,
+      meta: {
+        metric,
+        topN,
+        minCases,
+        minYearCount,
+        yearScope: 'all_years',
+        requiresSelection: true,
+        availableDoctors,
+        missingSelected: [],
+      },
+    };
+  }
+  const topDoctors = availableDoctors
+    .filter((entry) => selectedDoctorSet.has(String(entry.alias || '').toLowerCase()))
+    .slice(0, topN)
+    .map((entry) => ({
+      doctorKey: String(entry.doctorKey || '').trim(),
+      alias: entry.alias,
+      total: entry.total,
+    }));
+
+  const cards = topDoctors
+    .map((doctor) => {
+      const points = years.map((year) => {
+        const bucket = bucketByDoctorYear.get(`${doctor.doctorKey}|${year}`) || null;
+        const count = Number(bucket?.count || 0);
+        const hospitalizedShare = count > 0 ? Number(bucket.hosp || 0) / count : null;
+        const nightShare = count > 0 ? Number(bucket.night || 0) / count : null;
+        const avgLosHours =
+          Number(bucket?.losCount || 0) > 0 ? Number(bucket.losSum || 0) / Number(bucket.losCount) : null;
+        return {
+          year,
+          count,
+          hospitalizedShare,
+          avgLosHours,
+          nightShare,
+          unreliable: count > 0 && count < minCases,
+        };
+      });
+      const validPoints = points.filter((point) => Number.isFinite(getDoctorMetricValue(point, metric)));
+      if (validPoints.length < minYearCount) {
+        return null;
+      }
+      const latest = validPoints[validPoints.length - 1] || null;
+      const previous = validPoints.length > 1 ? validPoints[validPoints.length - 2] : null;
+      const latestValue = getDoctorMetricValue(latest, metric);
+      const previousValue = getDoctorMetricValue(previous, metric);
+      const yoyDeltaAbs =
+        Number.isFinite(latestValue) && Number.isFinite(previousValue)
+          ? Number(latestValue) - Number(previousValue)
+          : null;
+      const yoyDeltaPct =
+        Number.isFinite(yoyDeltaAbs) && Number.isFinite(previousValue) && Number(previousValue) > 0
+          ? (Number(yoyDeltaAbs) / Number(previousValue)) * 100
+          : null;
+      return {
+        doctorKey: String(doctor.doctorKey || '').toLowerCase(),
+        alias: doctor.alias,
+        points,
+        latestValue,
+        previousValue,
+        yoyDeltaAbs,
+        yoyDeltaPct,
+        trend: resolveDoctorTrend(metric, yoyDeltaAbs),
+        sampleByYear: points.map((point) => ({ year: point.year, n: Number(point.count || 0) })),
+      };
+    })
+    .filter(Boolean);
+  const existingAliases = new Set(availableDoctors.map((entry) => String(entry.alias || '').toLowerCase()));
+  const missingSelected = selectedDoctors.filter(
+    (alias) => !existingAliases.has(String(alias).toLowerCase())
+  );
+
+  return {
+    years,
+    cards,
+    coverage: meta.coverage,
+    yearOptions: meta.yearOptions,
+    meta: {
+      metric,
+      topN,
+      minCases,
+      minYearCount,
+      yearScope: 'all_years',
+      requiresSelection: false,
+      availableDoctors,
+      missingSelected,
+    },
+  };
+}
+
+function computeMoMPercent(currentValue, previousValue) {
+  const current = Number(currentValue);
+  const previous = Number(previousValue);
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) {
+    return null;
+  }
+  return ((current - previous) / previous) * 100;
+}
+
+export function computeDoctorMoMChanges(records, options = {}) {
+  const meta = getDoctorScopedMeta(records, options);
+  const topRows = computeDoctorLeaderboard(records, options).rows;
+  const monthlyBuckets = new Map();
+
+  meta.filtered.forEach((record) => {
+    const doctor = getDoctorKey(record);
+    const arrival =
+      record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+    if (!doctor || !arrival) {
+      return;
+    }
+    const monthKey = `${arrival.getFullYear()}-${String(arrival.getMonth() + 1).padStart(2, '0')}`;
+    const bucketKey = `${doctor.label}|${monthKey}`;
+    if (!monthlyBuckets.has(bucketKey)) {
+      monthlyBuckets.set(bucketKey, {
+        count: 0,
+        losSum: 0,
+        losCount: 0,
+      });
+    }
+    const bucket = monthlyBuckets.get(bucketKey);
+    bucket.count += 1;
+    const los = getLosHours(record);
+    if (Number.isFinite(los)) {
+      bucket.losSum += los;
+      bucket.losCount += 1;
+    }
+  });
+
+  const months = Array.from(
+    new Set(
+      Array.from(monthlyBuckets.keys())
+        .map((key) => key.split('|')[1])
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+  if (months.length < 2) {
+    return {
+      months,
+      previousMonth: null,
+      currentMonth: null,
+      rows: topRows.map((row) => ({
+        alias: row.alias,
+        prevCases: 0,
+        currentCases: 0,
+        casesMoMPct: null,
+        prevAvgLosHours: null,
+        currentAvgLosHours: null,
+        avgLosMoMPct: null,
+      })),
+      coverage: meta.coverage,
+    };
+  }
+
+  const currentMonth = months[months.length - 1];
+  const previousMonth = months[months.length - 2];
+  const rows = topRows.map((row) => {
+    const previous = monthlyBuckets.get(`${row.alias}|${previousMonth}`) || null;
+    const current = monthlyBuckets.get(`${row.alias}|${currentMonth}`) || null;
+    const prevCases = Number(previous?.count || 0);
+    const currentCases = Number(current?.count || 0);
+    const prevAvgLosHours =
+      Number(previous?.losCount || 0) > 0 ? Number(previous.losSum || 0) / Number(previous.losCount) : null;
+    const currentAvgLosHours =
+      Number(current?.losCount || 0) > 0 ? Number(current.losSum || 0) / Number(current.losCount) : null;
+    return {
+      alias: row.alias,
+      prevCases,
+      currentCases,
+      casesMoMPct: computeMoMPercent(currentCases, prevCases),
+      prevAvgLosHours,
+      currentAvgLosHours,
+      avgLosMoMPct: computeMoMPercent(currentAvgLosHours, prevAvgLosHours),
+    };
+  });
+
+  return {
+    months,
+    previousMonth,
+    currentMonth,
+    rows,
+    coverage: meta.coverage,
+  };
+}
+
+export function computeDoctorComparisonPanel(records, options = {}) {
+  const selectedDoctor = String(options?.selectedDoctor || '').trim();
+  if (!selectedDoctor || selectedDoctor === '__top3__') {
+    return {
+      hasSelection: false,
+      selectedAlias: '',
+      selected: null,
+      overallAverage: null,
+      delta: null,
+    };
+  }
+  const allRows = getAllDoctorRowsForFilters(records, options);
+  const selected = allRows.find((row) => String(row?.alias || '') === selectedDoctor) || null;
+  const overallAverage = computeAverageDoctorMetrics(allRows);
+  if (!selected) {
+    return {
+      hasSelection: false,
+      selectedAlias: selectedDoctor,
+      selected: null,
+      overallAverage,
+      delta: null,
+    };
+  }
+  return {
+    hasSelection: true,
+    selectedAlias: selected.alias,
+    selected: {
+      count: Number(selected.count || 0),
+      avgLosHours: Number.isFinite(selected.avgLosHours) ? Number(selected.avgLosHours) : null,
+      hospitalizedShare: Number.isFinite(selected.hospitalizedShare)
+        ? Number(selected.hospitalizedShare)
+        : null,
+      nightShare: Number.isFinite(selected.nightShare) ? Number(selected.nightShare) : null,
+    },
+    overallAverage,
+    delta: {
+      count: Number(selected.count || 0) - Number(overallAverage.count || 0),
+      avgLosHours:
+        Number.isFinite(selected.avgLosHours) && Number.isFinite(overallAverage.avgLosHours)
+          ? Number(selected.avgLosHours) - Number(overallAverage.avgLosHours)
+          : null,
+      hospitalizedShare:
+        Number.isFinite(selected.hospitalizedShare) && Number.isFinite(overallAverage.hospitalizedShare)
+          ? Number(selected.hospitalizedShare) - Number(overallAverage.hospitalizedShare)
+          : null,
+      nightShare:
+        Number.isFinite(selected.nightShare) && Number.isFinite(overallAverage.nightShare)
+          ? Number(selected.nightShare) - Number(overallAverage.nightShare)
+          : null,
+    },
+  };
+}
+
+export function computeDoctorKpiDeltas(records, options = {}) {
+  const current = computeDoctorLeaderboard(records, options);
+  const meta = getDoctorScopedMeta(records, options);
+  const baselineRows = getAllDoctorRowsForFilters(records, options);
+  const pooledLos = meta.filtered.map((record) => getLosHours(record)).filter((value) => value != null);
+  const baseline = {
+    activeDoctors: baselineRows.length,
+    medianLosHours: computeMedian(pooledLos),
+    topDoctorShare: baselineRows.length > 0 ? Number(baselineRows[0]?.share || 0) : 0,
+  };
+  const currentKpis = current?.kpis || {};
+  return {
+    current: currentKpis,
+    baseline,
+    delta: {
+      activeDoctors: Number(currentKpis.activeDoctors || 0) - Number(baseline.activeDoctors || 0),
+      medianLosHours:
+        Number.isFinite(currentKpis.medianLosHours) && Number.isFinite(baseline.medianLosHours)
+          ? Number(currentKpis.medianLosHours) - Number(baseline.medianLosHours)
+          : null,
+      topDoctorShare:
+        Number.isFinite(currentKpis.topDoctorShare) && Number.isFinite(baseline.topDoctorShare)
+          ? Number(currentKpis.topDoctorShare) - Number(baseline.topDoctorShare)
+          : null,
+    },
   };
 }
 

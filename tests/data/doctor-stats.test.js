@@ -1,8 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import {
+  computeDoctorComparisonPanel,
+  computeDoctorKpiDeltas,
   computeDoctorLeaderboard,
+  computeDoctorMoMChanges,
   computeDoctorMonthlyTrend,
   computeDoctorYearlyMatrix,
+  computeDoctorYearlySmallMultiples,
 } from '../../src/data/stats.js';
 
 function createRecord({
@@ -132,5 +136,78 @@ describe('doctor stats', () => {
     expect(empty.rows).toHaveLength(0);
     expect(empty.kpis.activeDoctors).toBe(0);
     expect(empty.totalCasesWithDoctor).toBe(0);
+  });
+
+  test('computes MoM for top doctors with both metrics', () => {
+    const mom = computeDoctorMoMChanges(records, {
+      topN: 5,
+      minCases: 1,
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(mom.currentMonth).toBeTruthy();
+    expect(mom.previousMonth).toBeTruthy();
+    expect(mom.rows.length).toBeGreaterThan(0);
+    expect('casesMoMPct' in mom.rows[0]).toBe(true);
+    expect('avgLosMoMPct' in mom.rows[0]).toBe(true);
+  });
+
+  test('builds selected doctor vs overall comparison model', () => {
+    const comparison = computeDoctorComparisonPanel(records, {
+      selectedDoctor: 'jonas jonaitis',
+      minCases: 1,
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(comparison.hasSelection).toBe(true);
+    expect(comparison.selectedAlias.toLowerCase()).toContain('jonas');
+    expect(comparison.overallAverage).toBeTruthy();
+    expect(comparison.delta).toBeTruthy();
+  });
+
+  test('computes KPI deltas against baseline', () => {
+    const deltaModel = computeDoctorKpiDeltas(records, {
+      topN: 5,
+      minCases: 1,
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(deltaModel.current).toBeTruthy();
+    expect(deltaModel.baseline).toBeTruthy();
+    expect(deltaModel.delta).toBeTruthy();
+    expect(deltaModel.delta.activeDoctors).toBeTypeOf('number');
+  });
+
+  test('computes yearly small-multiples cards with YoY metadata', () => {
+    const annual = computeDoctorYearlySmallMultiples(records, {
+      topN: 5,
+      minCases: 1,
+      minYearCount: 2,
+      metric: 'count',
+      yearScope: 'all_years',
+      selectedDoctors: ['jonas jonaitis', 'ona onaite'],
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(annual.years).toEqual(['2025', '2026']);
+    expect(annual.cards.length).toBeGreaterThan(0);
+    expect(annual.cards[0].points.length).toBe(2);
+    expect(['up', 'down', 'flat', 'na']).toContain(annual.cards[0].trend);
+    expect(annual.meta.metric).toBe('count');
+  });
+
+  test('yearly small-multiples requires explicit doctor selection', () => {
+    const annual = computeDoctorYearlySmallMultiples(records, {
+      topN: 5,
+      minCases: 1,
+      minYearCount: 2,
+      metric: 'count',
+      yearScope: 'all_years',
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(annual.cards).toHaveLength(0);
+    expect(annual.meta.requiresSelection).toBe(true);
+    expect(annual.meta.availableDoctors.length).toBeGreaterThan(0);
   });
 });

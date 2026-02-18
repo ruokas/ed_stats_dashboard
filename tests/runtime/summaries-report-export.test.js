@@ -62,6 +62,36 @@ describe('summaries report export helpers', () => {
     expect(setCopyButtonFeedback).toHaveBeenCalledWith(button, 'Ataskaita nukopijuota', 'success');
   });
 
+  test('handler prefixes copy payload with preface lines when provided', async () => {
+    const button = document.createElement('button');
+    const writeTextToClipboard = vi.fn().mockResolvedValue(true);
+    const handler = createReportExportClickHandler({
+      exportState: {
+        diagnosis: {
+          title: 'Diagnozės',
+          headers: ['Diagnozė'],
+          rows: [['A00']],
+          prefaceLines: ['# Filtrai: Metai=2025'],
+        },
+      },
+      getDatasetValue: (_element, key, fallback) => {
+        if (key === 'reportKey') {
+          return 'diagnosis';
+        }
+        if (key === 'reportExport') {
+          return 'copy';
+        }
+        return fallback;
+      },
+      setCopyButtonFeedback: vi.fn(),
+      writeTextToClipboard,
+      formatExportFilename: (title, ext) => `${title}.${ext}`,
+      escapeCsvCell: (value) => String(value),
+    });
+    await handler({ currentTarget: button });
+    expect(writeTextToClipboard).toHaveBeenCalledWith('# Filtrai: Metai=2025\n\nDiagnozė\nA00');
+  });
+
   test('handler reports clipboard failure for csv export mode', async () => {
     const button = document.createElement('button');
     const setCopyButtonFeedback = vi.fn();

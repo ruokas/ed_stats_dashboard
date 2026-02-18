@@ -3,6 +3,7 @@
     <nav class="gydytojai-jump-nav summaries-jump-nav" aria-label="Gydytojų sekcijos">
       <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiHeading">Apžvalga</a>
       <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiTablesHeading">Lentelės</a>
+      <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiAnnualHeading">Metinė dinamika</a>
       <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiChartsHeading">Grafikai</a>
     </nav>
 
@@ -53,12 +54,6 @@
             <option value="hospital_desc">Hospitalizacija % (mažėjančiai)</option>
           </select>
         </label>
-        <label class="summaries-reports-controls__field" for="gydytojaiDoctorSelect">
-          <span>Gydytojas trende</span>
-          <select id="gydytojaiDoctorSelect">
-            <option value="__top3__">TOP 3</option>
-          </select>
-        </label>
         <label class="summaries-reports-controls__field" for="gydytojaiArrivalFilter">
           <span>Atvykimas</span>
           <select id="gydytojaiArrivalFilter">
@@ -83,12 +78,6 @@
             <option value="night">Naktis</option>
           </select>
         </label>
-        <label class="summaries-reports-controls__field" for="gydytojaiDiagnosisFilter">
-          <span>Diagnozių grupė</span>
-          <select id="gydytojaiDiagnosisFilter">
-            <option value="all">Visos</option>
-          </select>
-        </label>
         <label class="summaries-reports-controls__field" for="gydytojaiSearch">
           <span>Gydytojo paieška</span>
           <input id="gydytojaiSearch" type="search" placeholder="Įveskite vardą">
@@ -99,21 +88,19 @@
         </div>
       </div>
       <p id="gydytojaiCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
-
-      <div class="kpi-grid kpi-grid--compact">
-        <article class="kpi-card">
-          <h3 class="kpi-card__title">Aktyvūs gydytojai</h3>
-          <p id="gydytojaiKpiActive" class="kpi-card__value">-</p>
-        </article>
-        <article class="kpi-card">
-          <h3 class="kpi-card__title">Mediana LOS (val.)</h3>
-          <p id="gydytojaiKpiMedianLos" class="kpi-card__value">-</p>
-        </article>
-        <article class="kpi-card">
-          <h3 class="kpi-card__title">Top gydytojo dalis</h3>
-          <p id="gydytojaiKpiTopShare" class="kpi-card__value">-</p>
-        </article>
+      <div id="gydytojaiLoadingState" class="gydytojai-loading" aria-live="polite" hidden>
+        <p class="gydytojai-loading__label">Kraunami gydytojų duomenys...</p>
+        <div class="gydytojai-loading__grid">
+          <span class="skeleton skeleton--value"></span>
+          <span class="skeleton skeleton--value"></span>
+          <span class="skeleton skeleton--value"></span>
+        </div>
+        <div class="gydytojai-loading__charts">
+          <span class="skeleton skeleton--chart-area"></span>
+          <span class="skeleton skeleton--chart-area"></span>
+        </div>
       </div>
+
     </section>
 
     <section class="section section--compact" aria-labelledby="gydytojaiTablesHeading" data-section="gydytojai-tables">
@@ -135,25 +122,63 @@
               <th scope="col" data-gydytojai-sort="avgLosHours">Vid. LOS (val.)</th>
               <th scope="col" data-gydytojai-sort="medianLosHours">Mediana LOS (val.)</th>
               <th scope="col" data-gydytojai-sort="hospitalizedShare">Hospitalizacija (%)</th>
-              <th scope="col">LOS <4 (%)</th>
-              <th scope="col">LOS 4-8 (%)</th>
-              <th scope="col">LOS 8-16 (%)</th>
-              <th scope="col">LOS >16 (%)</th>
+              <th scope="col" data-gydytojai-sort="losLt4Share">LOS <4 (%)</th>
+              <th scope="col" data-gydytojai-sort="los4to8Share">LOS 4-8 (%)</th>
+              <th scope="col" data-gydytojai-sort="los8to16Share">LOS 8-16 (%)</th>
+              <th scope="col" data-gydytojai-sort="losGt16Share">LOS >16 (%)</th>
               <th scope="col" data-gydytojai-sort="nightShare">Naktiniai (%)</th>
             </tr>
           </thead>
           <tbody id="gydytojaiLeaderboardBody"></tbody>
         </table>
       </div>
-
-      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiTablesHeading">
-        <table id="gydytojaiYearlyTable">
-          <caption class="sr-only">Metinė gydytojų dinamika</caption>
-          <thead id="gydytojaiYearlyHead"></thead>
-          <tbody id="gydytojaiYearlyBody"></tbody>
-        </table>
-      </div>
     </section>
+
+    <section id="gydytojaiAnnualSection" class="section section--compact gydytojai-annual" aria-labelledby="gydytojaiAnnualHeading" data-section="gydytojai-annual">
+        <div class="section__header">
+          <div class="section__heading">
+            <div class="section__title-row">
+              <h2 id="gydytojaiAnnualHeading" class="section__title">Metinė dinamika pagal gydytoją (TOP N)</h2>
+            </div>
+          </div>
+        </div>
+        <div class="summaries-reports-controls" role="group" aria-label="Metinės dinamikos valdikliai">
+          <label class="summaries-reports-controls__field" for="gydytojaiAnnualMetric">
+            <span>Metrika</span>
+            <select id="gydytojaiAnnualMetric">
+              <option value="count" selected>Atvejų sk.</option>
+              <option value="hospitalizedShare">Hospitalizacija %</option>
+              <option value="avgLosHours">Vid. LOS (val.)</option>
+              <option value="nightShare">Naktiniai %</option>
+            </select>
+          </label>
+          <label class="summaries-reports-controls__field" for="gydytojaiAnnualSort">
+            <span>Rikiuoti</span>
+            <select id="gydytojaiAnnualSort">
+              <option value="latest_desc" selected>Paskutinių metų reikšmė</option>
+              <option value="yoy_up">Didžiausias augimas (YoY)</option>
+              <option value="yoy_down">Didžiausias kritimas (YoY)</option>
+            </select>
+          </label>
+          <label class="summaries-reports-controls__field" for="gydytojaiAnnualDoctorInput">
+            <span>Gydytojo įvedimas</span>
+            <input id="gydytojaiAnnualDoctorInput" type="search" placeholder="Įveskite gydytojo vardą">
+            <div id="gydytojaiAnnualSuggestions" class="gydytojai-annual-suggestions" role="listbox" aria-label="Gydytojų pasiūlymai"></div>
+          </label>
+          <div class="summaries-reports-controls__field">
+            <span>&nbsp;</span>
+            <button id="gydytojaiAnnualAddDoctor" type="button" class="chip-button">Pridėti gydytoją</button>
+          </div>
+          <div class="summaries-reports-controls__field">
+            <span>&nbsp;</span>
+            <button id="gydytojaiAnnualClearDoctors" type="button" class="chip-button">Išvalyti pasirinkimus</button>
+          </div>
+        </div>
+        <p id="gydytojaiAnnualSelectionHelp" class="summaries-reports-coverage" aria-live="polite">Įveskite bent 1 gydytoją metinei dinamikai.</p>
+        <div id="gydytojaiAnnualSelected" class="gydytojai-annual-selected" aria-live="polite"></div>
+        <p id="gydytojaiAnnualEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Nepakanka bent 2 metų duomenų pagal aktyvius filtrus.</p>
+        <div id="gydytojaiAnnualCards" class="gydytojai-annual-grid" aria-live="polite"></div>
+      </section>
 
     <section class="section section--compact" aria-labelledby="gydytojaiChartsHeading" data-section="gydytojai-charts">
       <div class="section__header">
@@ -164,12 +189,56 @@
         </div>
       </div>
       <div class="summaries-report-group__grid summaries-reports-grid">
-        <article class="report-card"><div class="report-card__head"><h4>Atvejų skaičius pagal gydytoją</h4></div><canvas id="gydytojaiVolumeChart" height="220"></canvas></article>
-        <article class="report-card"><div class="report-card__head"><h4>LOS intervalų pasiskirstymas pagal gydytoją</h4></div><canvas id="gydytojaiLosChart" height="220"></canvas></article>
-        <article class="report-card"><div class="report-card__head"><h4>Hospitalizacijų dalis pagal gydytoją</h4></div><canvas id="gydytojaiHospitalChart" height="220"></canvas></article>
-        <article class="report-card"><div class="report-card__head"><h4>Diena/Naktis pagal gydytoją</h4></div><canvas id="gydytojaiMixChart" height="240"></canvas></article>
-        <article class="report-card"><div class="report-card__head"><h4>Mėnesinė dinamika</h4></div><canvas id="gydytojaiTrendChart" height="240"></canvas></article>
-        <article class="report-card"><div class="report-card__head"><h4>Apimtis vs LOS</h4></div><canvas id="gydytojaiScatterChart" height="240"></canvas></article>
+        <article class="report-card">
+          <div class="report-card__head">
+            <h4>Atvejų skaičius pagal gydytoją</h4>
+            <div class="report-card__actions">
+              <button type="button" class="chart-copy-btn" data-report-export="copy" data-report-key="volume" data-tooltip="Kopijuoti grafiką" aria-label="Kopijuoti grafiką" title="Kopijuoti grafiką"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><rect x="4" y="4" width="11" height="11" rx="2"></rect></svg></button>
+              <button type="button" class="chart-download-btn" data-report-export="png" data-report-key="volume" data-tooltip="Parsisiųsti PNG" aria-label="Parsisiųsti grafiką PNG formatu" title="Parsisiųsti PNG"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M8 11l4 4 4-4"></path><path d="M4 21h16"></path></svg></button>
+            </div>
+          </div>
+          <canvas id="gydytojaiVolumeChart" height="220"></canvas>
+        </article>
+        <article class="report-card">
+          <div class="report-card__head">
+            <h4>LOS intervalų pasiskirstymas pagal gydytoją</h4>
+            <div class="report-card__actions">
+              <button type="button" class="chart-copy-btn" data-report-export="copy" data-report-key="los" data-tooltip="Kopijuoti grafiką" aria-label="Kopijuoti grafiką" title="Kopijuoti grafiką"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><rect x="4" y="4" width="11" height="11" rx="2"></rect></svg></button>
+              <button type="button" class="chart-download-btn" data-report-export="png" data-report-key="los" data-tooltip="Parsisiųsti PNG" aria-label="Parsisiųsti grafiką PNG formatu" title="Parsisiųsti PNG"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M8 11l4 4 4-4"></path><path d="M4 21h16"></path></svg></button>
+            </div>
+          </div>
+          <canvas id="gydytojaiLosChart" height="220"></canvas>
+        </article>
+        <article class="report-card">
+          <div class="report-card__head">
+            <h4>Hospitalizacijų dalis pagal gydytoją</h4>
+            <div class="report-card__actions">
+              <button type="button" class="chart-copy-btn" data-report-export="copy" data-report-key="hospital" data-tooltip="Kopijuoti grafiką" aria-label="Kopijuoti grafiką" title="Kopijuoti grafiką"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><rect x="4" y="4" width="11" height="11" rx="2"></rect></svg></button>
+              <button type="button" class="chart-download-btn" data-report-export="png" data-report-key="hospital" data-tooltip="Parsisiųsti PNG" aria-label="Parsisiųsti grafiką PNG formatu" title="Parsisiųsti PNG"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M8 11l4 4 4-4"></path><path d="M4 21h16"></path></svg></button>
+            </div>
+          </div>
+          <canvas id="gydytojaiHospitalChart" height="220"></canvas>
+        </article>
+        <article class="report-card">
+          <div class="report-card__head">
+            <h4>Diena/Naktis pagal gydytoją</h4>
+            <div class="report-card__actions">
+              <button type="button" class="chart-copy-btn" data-report-export="copy" data-report-key="mix" data-tooltip="Kopijuoti grafiką" aria-label="Kopijuoti grafiką" title="Kopijuoti grafiką"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><rect x="4" y="4" width="11" height="11" rx="2"></rect></svg></button>
+              <button type="button" class="chart-download-btn" data-report-export="png" data-report-key="mix" data-tooltip="Parsisiųsti PNG" aria-label="Parsisiųsti grafiką PNG formatu" title="Parsisiųsti PNG"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M8 11l4 4 4-4"></path><path d="M4 21h16"></path></svg></button>
+            </div>
+          </div>
+          <canvas id="gydytojaiMixChart" height="240"></canvas>
+        </article>
+        <article class="report-card">
+          <div class="report-card__head">
+            <h4>Apimtis vs LOS</h4>
+            <div class="report-card__actions">
+              <button type="button" class="chart-copy-btn" data-report-export="copy" data-report-key="scatter" data-tooltip="Kopijuoti grafiką" aria-label="Kopijuoti grafiką" title="Kopijuoti grafiką"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><rect x="4" y="4" width="11" height="11" rx="2"></rect></svg></button>
+              <button type="button" class="chart-download-btn" data-report-export="png" data-report-key="scatter" data-tooltip="Parsisiųsti PNG" aria-label="Parsisiųsti grafiką PNG formatu" title="Parsisiųsti PNG"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M8 11l4 4 4-4"></path><path d="M4 21h16"></path></svg></button>
+            </div>
+          </div>
+          <canvas id="gydytojaiScatterChart" height="240"></canvas>
+        </article>
       </div>
     </section>
   </div>

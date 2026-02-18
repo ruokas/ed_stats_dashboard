@@ -31,6 +31,10 @@ function wrapTextLines(ctx, text, maxWidth) {
 }
 
 function resolveReportTitle(button, model) {
+  const customTitle = String(model?.exportTitle || '').trim();
+  if (customTitle) {
+    return customTitle;
+  }
   const card = button?.closest?.('.report-card');
   const heading = card?.querySelector?.('.report-card__head h4, .report-card__head h3');
   const headingText = String(heading?.textContent || '').trim();
@@ -117,7 +121,11 @@ export function createReportExportClickHandler({
     }
     if (format === 'copy' || format === 'csv') {
       const csv = createRowsCsv(model.headers || [], model.rows || [], escapeCsvCell);
-      const ok = await writeTextToClipboard(csv);
+      const prefaceLines = Array.isArray(model.prefaceLines)
+        ? model.prefaceLines.map((line) => String(line || '').trim()).filter(Boolean)
+        : [];
+      const payload = prefaceLines.length ? `${prefaceLines.join('\n')}\n\n${csv}` : csv;
+      const ok = await writeTextToClipboard(payload);
       setCopyButtonFeedback(
         button,
         ok ? 'Ataskaita nukopijuota' : 'Nepavyko nukopijuoti',

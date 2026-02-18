@@ -3,20 +3,22 @@ import {
   computeDoctorDayNightMix,
   computeDoctorHospitalizationShare,
   computeDoctorLeaderboard,
-  computeDoctorMonthlyTrend,
   computeDoctorVolumeVsLosScatter,
-  computeDoctorYearlyMatrix,
+  computeDoctorYearlySmallMultiples,
 } from '../../../data/stats.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
-import { numberFormatter, oneDecimalFormatter, percentFormatter } from '../../../utils/format.js';
+import { getDatasetValue } from '../../../utils/dom.js';
+import { numberFormatter, oneDecimalFormatter } from '../../../utils/format.js';
 import { DEFAULT_FOOTER_SOURCE, DEFAULT_KPI_WINDOW_DAYS, TEXT, THEME_STORAGE_KEY } from '../../constants.js';
 import { DEFAULT_SETTINGS } from '../../default-settings.js';
+import { setCopyButtonFeedback, storeCopyButtonBaseLabel, writeTextToClipboard } from '../clipboard.js';
 import {
   initSummariesJumpNavigation,
   initSummariesJumpStickyOffset,
 } from '../features/summaries-jump-navigation.js';
+import { formatExportFilename } from '../features/summaries-runtime-helpers.js';
 import { applyTheme, initializeTheme } from '../features/theme.js';
 import { createTextSignature, describeError, downloadCsv, formatUrlForDiagnostics } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
@@ -26,7 +28,9 @@ import {
   createDefaultFeedbackFilters,
   createDefaultKpiFilters,
 } from '../state.js';
+import { escapeCsvCell } from '../table-export.js';
 import { createStatusSetter } from '../utils/common.js';
+import { createReportExportClickHandler } from './summaries/report-export.js';
 
 const setStatus = createStatusSetter(TEXT.status, { showSuccessState: false });
 const DEFAULT_DOCTOR_PAGE_STATE = {
@@ -38,14 +42,40 @@ const DEFAULT_DOCTOR_PAGE_STATE = {
   arrival: 'all',
   disposition: 'all',
   shift: 'all',
-  diagnosis: 'all',
   search: '',
   tableSort: 'count_desc',
+  annualMetric: 'count',
+  annualSort: 'latest_desc',
+  annualDoctors: [],
 };
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(String(value ?? ''), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function normalizeAnnualMetric(value, fallback = 'count') {
+  const token = String(value ?? '').trim();
+  if (token === 'hospitalizedShare' || token === 'avgLosHours' || token === 'nightShare') {
+    return token;
+  }
+  return fallback;
+}
+
+function normalizeAnnualSort(value, fallback = 'latest_desc') {
+  const token = String(value ?? '').trim();
+  if (token === 'yoy_up' || token === 'yoy_down') {
+    return token;
+  }
+  return fallback;
+}
+
+function parseDoctorSelectionParam(value) {
+  return String(value || '')
+    .split(',')
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .slice(0, 12);
 }
 
 function normalizeAllowed(value, allowed, fallback) {
@@ -72,7 +102,6 @@ export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PA
       defaults.disposition
     ),
     shift: normalizeAllowed(params.get('shift'), new Set(['all', 'day', 'night']), defaults.shift),
-    diagnosis: params.get('diag') || defaults.diagnosis,
     search: String(params.get('q') || defaults.search).trim(),
     tableSort: normalizeAllowed(
       params.get('tsort'),
@@ -89,11 +118,22 @@ export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PA
         'medianLosHours_asc',
         'hospitalizedShare_desc',
         'hospitalizedShare_asc',
+        'losLt4Share_desc',
+        'losLt4Share_asc',
+        'los4to8Share_desc',
+        'los4to8Share_asc',
+        'los8to16Share_desc',
+        'los8to16Share_asc',
+        'losGt16Share_desc',
+        'losGt16Share_asc',
         'nightShare_desc',
         'nightShare_asc',
       ]),
       defaults.tableSort
     ),
+    annualMetric: normalizeAnnualMetric(params.get('am'), defaults.annualMetric),
+    annualSort: normalizeAnnualSort(params.get('as'), defaults.annualSort),
+    annualDoctors: parseDoctorSelectionParam(params.get('ad')),
   };
 }
 
@@ -123,14 +163,20 @@ export function buildDoctorPageQuery(state) {
   if (state.shift && state.shift !== DEFAULT_DOCTOR_PAGE_STATE.shift) {
     params.set('shift', String(state.shift));
   }
-  if (state.diagnosis && state.diagnosis !== DEFAULT_DOCTOR_PAGE_STATE.diagnosis) {
-    params.set('diag', String(state.diagnosis));
-  }
   if (state.search) {
     params.set('q', String(state.search));
   }
   if (state.tableSort && state.tableSort !== DEFAULT_DOCTOR_PAGE_STATE.tableSort) {
     params.set('tsort', String(state.tableSort));
+  }
+  if (state.annualMetric && state.annualMetric !== DEFAULT_DOCTOR_PAGE_STATE.annualMetric) {
+    params.set('am', String(state.annualMetric));
+  }
+  if (state.annualSort && state.annualSort !== DEFAULT_DOCTOR_PAGE_STATE.annualSort) {
+    params.set('as', String(state.annualSort));
+  }
+  if (Array.isArray(state.annualDoctors) && state.annualDoctors.length) {
+    params.set('ad', state.annualDoctors.join(','));
   }
   const encoded = params.toString();
   return encoded ? `?${encoded}` : '';
@@ -146,9 +192,11 @@ function syncDoctorPageQueryFromState(dashboardState) {
     arrival: dashboardState.doctorsArrivalFilter,
     disposition: dashboardState.doctorsDispositionFilter,
     shift: dashboardState.doctorsShiftFilter,
-    diagnosis: dashboardState.doctorsDiagnosisFilter,
     search: dashboardState.doctorsSearch,
     tableSort: dashboardState.doctorsTableSort,
+    annualMetric: dashboardState.doctorsAnnualMetric,
+    annualSort: dashboardState.doctorsAnnualSort,
+    annualDoctors: dashboardState.doctorsAnnualSelected,
   });
   const nextUrl = `${window.location.pathname}${query}${window.location.hash || ''}`;
   if (nextUrl !== `${window.location.pathname}${window.location.search}${window.location.hash || ''}`) {
@@ -162,7 +210,7 @@ function extractHistoricalRecords(dashboardState) {
   return tagged.length ? tagged : all.filter((record) => record?.hasExtendedHistoricalFields === true);
 }
 
-function applyDoctorControls(selectors, dashboardState, yearOptions, topRows, diagnosisOptions) {
+function applyDoctorControls(selectors, dashboardState, yearOptions, topRows) {
   if (selectors.gydytojaiYear) {
     const select = selectors.gydytojaiYear;
     const previous = String(dashboardState.doctorsYear || 'all');
@@ -224,41 +272,17 @@ function applyDoctorControls(selectors, dashboardState, yearOptions, topRows, di
   if (selectors.gydytojaiShiftFilter) {
     selectors.gydytojaiShiftFilter.value = String(dashboardState.doctorsShiftFilter || 'all');
   }
-  if (selectors.gydytojaiDiagnosisFilter) {
-    const select = selectors.gydytojaiDiagnosisFilter;
-    const previous = String(dashboardState.doctorsDiagnosisFilter || 'all');
-    select.replaceChildren();
-    const allOption = document.createElement('option');
-    allOption.value = 'all';
-    allOption.textContent = 'Visos';
-    select.appendChild(allOption);
-    (Array.isArray(diagnosisOptions) ? diagnosisOptions : []).forEach((item) => {
-      const option = document.createElement('option');
-      option.value = item;
-      option.textContent = item;
-      select.appendChild(option);
-    });
-    const hasPrevious = Array.from(select.options).some((option) => option.value === previous);
-    select.value = hasPrevious ? previous : 'all';
-    dashboardState.doctorsDiagnosisFilter = select.value;
-  }
   if (selectors.gydytojaiSearch) {
     selectors.gydytojaiSearch.value = String(dashboardState.doctorsSearch || '');
   }
-}
-
-function setKpis(selectors, model) {
-  const kpis = model?.kpis || {};
-  if (selectors.gydytojaiKpiActive) {
-    selectors.gydytojaiKpiActive.textContent = numberFormatter.format(Number(kpis.activeDoctors || 0));
+  if (selectors.gydytojaiAnnualMetric) {
+    selectors.gydytojaiAnnualMetric.value = String(dashboardState.doctorsAnnualMetric || 'count');
   }
-  if (selectors.gydytojaiKpiMedianLos) {
-    selectors.gydytojaiKpiMedianLos.textContent = Number.isFinite(kpis.medianLosHours)
-      ? oneDecimalFormatter.format(kpis.medianLosHours)
-      : '-';
+  if (selectors.gydytojaiAnnualSort) {
+    selectors.gydytojaiAnnualSort.value = String(dashboardState.doctorsAnnualSort || 'latest_desc');
   }
-  if (selectors.gydytojaiKpiTopShare) {
-    selectors.gydytojaiKpiTopShare.textContent = percentFormatter.format(Number(kpis.topDoctorShare || 0));
+  if (selectors.gydytojaiAnnualDoctorInput) {
+    selectors.gydytojaiAnnualDoctorInput.value = String(dashboardState.doctorsAnnualSearchInput || '');
   }
 }
 
@@ -272,6 +296,20 @@ function setCoverage(selectors, model) {
   const filtered = Number(coverage.filtered || 0);
   const percent = Number(coverage.percent || 0);
   selectors.gydytojaiCoverage.textContent = `Su uždariusiu gydytoju: ${withDoctor} iš ${total} (${oneDecimalFormatter.format(percent)}%). Po aktyvių filtrų: ${filtered}.`;
+}
+
+function setLoadingVisualState(selectors, isLoading) {
+  if (selectors.gydytojaiLoadingState instanceof HTMLElement) {
+    selectors.gydytojaiLoadingState.hidden = !isLoading;
+  }
+  const main = document.querySelector('main.container');
+  if (main instanceof HTMLElement) {
+    if (isLoading) {
+      main.setAttribute('aria-busy', 'true');
+    } else {
+      main.removeAttribute('aria-busy');
+    }
+  }
 }
 
 function sortLeaderboardRows(rows, tableSort) {
@@ -323,45 +361,441 @@ function renderLeaderboardTable(selectors, rows, tableSort) {
   });
 }
 
-function renderYearlyTable(selectors, model) {
-  if (!selectors.gydytojaiYearlyHead || !selectors.gydytojaiYearlyBody) {
-    return;
+function buildDoctorFilterSummary(dashboardState) {
+  const year = dashboardState.doctorsYear === 'all' ? 'Visi metai' : String(dashboardState.doctorsYear);
+  const doctor =
+    dashboardState.doctorsSelected && dashboardState.doctorsSelected !== '__top3__'
+      ? String(dashboardState.doctorsSelected)
+      : 'TOP 3';
+  return `Metai: ${year} | TOP N: ${dashboardState.doctorsTopN} | Min. imtis: ${dashboardState.doctorsMinCases} | Rikiavimas: ${dashboardState.doctorsSort} | Gydytojas: ${doctor}`;
+}
+
+function setDoctorExportState(exportState, selectors, dashboardState, models) {
+  const filterSummary = buildDoctorFilterSummary(dashboardState);
+  const prefaceLines = [`# Filtrai: ${filterSummary}`];
+  const leaderboardRows = Array.isArray(models?.leaderboard?.rows) ? models.leaderboard.rows : [];
+  const mixRows = Array.isArray(models?.mix?.rows) ? models.mix.rows : [];
+  const scatterRows = Array.isArray(models?.scatter?.rows) ? models.scatter.rows : [];
+
+  exportState.volume = {
+    title: 'Atvejų skaičius pagal gydytoją',
+    exportTitle: `Atvejų skaičius pagal gydytoją | ${filterSummary}`,
+    prefaceLines,
+    headers: ['Gydytojas', 'Atvejai'],
+    rows: leaderboardRows.map((row) => [row.alias, numberFormatter.format(row.count)]),
+    target: selectors.gydytojaiVolumeChart,
+  };
+  exportState.los = {
+    title: 'LOS intervalų pasiskirstymas pagal gydytoją',
+    exportTitle: `LOS intervalų pasiskirstymas pagal gydytoją | ${filterSummary}`,
+    prefaceLines,
+    headers: ['Gydytojas', 'LOS <4 (%)', 'LOS 4-8 (%)', 'LOS 8-16 (%)', 'LOS >16 (%)'],
+    rows: leaderboardRows.map((row) => [
+      row.alias,
+      oneDecimalFormatter.format(row.losLt4Share * 100),
+      oneDecimalFormatter.format(row.los4to8Share * 100),
+      oneDecimalFormatter.format(row.los8to16Share * 100),
+      oneDecimalFormatter.format(row.losGt16Share * 100),
+    ]),
+    target: selectors.gydytojaiLosChart,
+  };
+  exportState.hospital = {
+    title: 'Hospitalizacijų dalis pagal gydytoją',
+    exportTitle: `Hospitalizacijų dalis pagal gydytoją | ${filterSummary}`,
+    prefaceLines,
+    headers: ['Gydytojas', 'Hospitalizacija (%)'],
+    rows: leaderboardRows.map((row) => [row.alias, oneDecimalFormatter.format(row.hospitalizedShare * 100)]),
+    target: selectors.gydytojaiHospitalChart,
+  };
+  exportState.mix = {
+    title: 'Diena/Naktis pagal gydytoją',
+    exportTitle: `Diena/Naktis pagal gydytoją | ${filterSummary}`,
+    prefaceLines,
+    headers: ['Gydytojas', 'Diena (%)', 'Naktis (%)'],
+    rows: mixRows.map((row) => [
+      row.alias,
+      oneDecimalFormatter.format(row.dayShare * 100),
+      oneDecimalFormatter.format(row.nightShare * 100),
+    ]),
+    target: selectors.gydytojaiMixChart,
+  };
+  delete exportState.trend;
+  exportState.scatter = {
+    title: 'Apimtis vs LOS',
+    exportTitle: `Apimtis vs LOS | ${filterSummary}`,
+    prefaceLines,
+    headers: ['Gydytojas', 'Atvejai', 'Vid. LOS (val.)'],
+    rows: scatterRows.map((row) => [
+      row.alias,
+      numberFormatter.format(row.count),
+      oneDecimalFormatter.format(row.avgLosHours),
+    ]),
+    target: selectors.gydytojaiScatterChart,
+  };
+}
+
+function getAnnualMetricConfig(metric) {
+  if (metric === 'hospitalizedShare') {
+    return {
+      label: 'Hospitalizacija',
+      format: (value) => `${oneDecimalFormatter.format(Number(value) * 100)}%`,
+      short: '%',
+    };
   }
-  const years = Array.isArray(model?.years) ? model.years : [];
-  const rows = Array.isArray(model?.rows) ? model.rows : [];
-  selectors.gydytojaiYearlyHead.innerHTML = '';
-  selectors.gydytojaiYearlyBody.innerHTML = '';
-
-  const headRow = document.createElement('tr');
-  headRow.appendChild(Object.assign(document.createElement('th'), { textContent: 'Gydytojas' }));
-  years.forEach((year) => {
-    const th = document.createElement('th');
-    th.textContent = String(year);
-    headRow.appendChild(th);
-  });
-  selectors.gydytojaiYearlyHead.appendChild(headRow);
-
-  if (!rows.length) {
-    const row = document.createElement('tr');
-    row.innerHTML = `<td colspan="${Math.max(1, years.length + 1)}">Nepakanka duomenų.</td>`;
-    selectors.gydytojaiYearlyBody.appendChild(row);
-    return;
+  if (metric === 'avgLosHours') {
+    return {
+      label: 'Vid. LOS',
+      format: (value) => `${oneDecimalFormatter.format(value)} val.`,
+      short: 'val.',
+    };
   }
+  if (metric === 'nightShare') {
+    return {
+      label: 'Naktiniai',
+      format: (value) => `${oneDecimalFormatter.format(Number(value) * 100)}%`,
+      short: '%',
+    };
+  }
+  return {
+    label: 'Atvejų sk.',
+    format: (value) => numberFormatter.format(Number(value || 0)),
+    short: '',
+  };
+}
 
-  rows.forEach((entry) => {
-    const tr = document.createElement('tr');
-    const label = document.createElement('td');
-    label.textContent = entry.alias;
-    tr.appendChild(label);
-    (entry.yearly || []).forEach((yearCell) => {
-      const td = document.createElement('td');
-      const avg = Number.isFinite(yearCell?.avgLosHours)
-        ? oneDecimalFormatter.format(yearCell.avgLosHours)
-        : '-';
-      td.textContent = `${numberFormatter.format(Number(yearCell?.count || 0))} / ${avg}`;
-      tr.appendChild(td);
+function formatAnnualDelta(metric, deltaAbs, deltaPct) {
+  if (!Number.isFinite(deltaAbs)) {
+    return 'YoY: N/A';
+  }
+  const absPrefix = deltaAbs > 0 ? '+' : '';
+  if (metric === 'count') {
+    const pctLabel = Number.isFinite(deltaPct)
+      ? ` (${deltaPct >= 0 ? '+' : ''}${oneDecimalFormatter.format(deltaPct)}%)`
+      : '';
+    return `YoY: ${absPrefix}${numberFormatter.format(Math.round(deltaAbs))}${pctLabel}`;
+  }
+  const scaledAbs = metric === 'avgLosHours' ? deltaAbs : deltaAbs * 100;
+  const unit = metric === 'avgLosHours' ? ' val.' : ' p.p.';
+  const pctLabel = Number.isFinite(deltaPct)
+    ? ` (${deltaPct >= 0 ? '+' : ''}${oneDecimalFormatter.format(deltaPct)}%)`
+    : '';
+  return `YoY: ${scaledAbs >= 0 ? '+' : ''}${oneDecimalFormatter.format(scaledAbs)}${unit}${pctLabel}`;
+}
+
+function getTrendSymbol(trend) {
+  if (trend === 'up') {
+    return '↑';
+  }
+  if (trend === 'down') {
+    return '↓';
+  }
+  if (trend === 'flat') {
+    return '↔';
+  }
+  return '·';
+}
+
+function sortAnnualCards(cards, mode) {
+  const list = Array.isArray(cards) ? cards.slice() : [];
+  const toNumberOr = (value, fallback) => (Number.isFinite(value) ? Number(value) : fallback);
+  if (mode === 'yoy_up') {
+    return list.sort((a, b) => toNumberOr(b?.yoyDeltaPct, -Infinity) - toNumberOr(a?.yoyDeltaPct, -Infinity));
+  }
+  if (mode === 'yoy_down') {
+    return list.sort((a, b) => toNumberOr(a?.yoyDeltaPct, Infinity) - toNumberOr(b?.yoyDeltaPct, Infinity));
+  }
+  return list.sort((a, b) => toNumberOr(b?.latestValue, -Infinity) - toNumberOr(a?.latestValue, -Infinity));
+}
+
+function buildAnnualExportPreface(dashboardState, metricLabel) {
+  const selected = Array.isArray(dashboardState.doctorsAnnualSelected)
+    ? dashboardState.doctorsAnnualSelected
+    : [];
+  return [
+    `# Filtrai: ${buildDoctorFilterSummary(dashboardState)}`,
+    `# Metinė dinamika: metrika=${metricLabel}; rikiavimas=${dashboardState.doctorsAnnualSort}; pasirinkta=${selected.join('; ')}`,
+  ];
+}
+
+function normalizeDoctorAliasToken(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function resolveAnnualDoctorAlias(inputValue, availableDoctors) {
+  const query = normalizeDoctorAliasToken(inputValue);
+  if (!query) {
+    return '';
+  }
+  const list = Array.isArray(availableDoctors) ? availableDoctors : [];
+  const exact = list.find((entry) => normalizeDoctorAliasToken(entry?.alias) === query);
+  if (exact?.alias) {
+    return String(exact.alias);
+  }
+  const startsWith = list.find((entry) => normalizeDoctorAliasToken(entry?.alias).startsWith(query));
+  if (startsWith?.alias) {
+    return String(startsWith.alias);
+  }
+  const contains = list.find((entry) => normalizeDoctorAliasToken(entry?.alias).includes(query));
+  return contains?.alias ? String(contains.alias) : '';
+}
+
+function getAnnualDoctorSuggestions(dashboardState, limit = 8) {
+  const query = normalizeDoctorAliasToken(dashboardState?.doctorsAnnualSearchInput);
+  const selected = Array.isArray(dashboardState?.doctorsAnnualSelected)
+    ? dashboardState.doctorsAnnualSelected
+    : [];
+  const selectedSet = new Set(selected.map((value) => normalizeDoctorAliasToken(value)));
+  const available = Array.isArray(dashboardState?.doctorsAnnualAvailable)
+    ? dashboardState.doctorsAnnualAvailable
+    : [];
+  const list = available
+    .filter((entry) => {
+      const alias = String(entry?.alias || '').trim();
+      if (!alias || selectedSet.has(normalizeDoctorAliasToken(alias))) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      return normalizeDoctorAliasToken(alias).includes(query);
+    })
+    .map((entry) => {
+      const alias = String(entry?.alias || '').trim();
+      const normalized = normalizeDoctorAliasToken(alias);
+      let rank = 2;
+      if (query && normalized === query) {
+        rank = 0;
+      } else if (query && normalized.startsWith(query)) {
+        rank = 1;
+      }
+      return {
+        alias,
+        total: Number(entry?.total || 0),
+        rank,
+      };
+    })
+    .sort((a, b) => {
+      if (a.rank !== b.rank) {
+        return a.rank - b.rank;
+      }
+      if (a.total !== b.total) {
+        return b.total - a.total;
+      }
+      return a.alias.localeCompare(b.alias, 'lt');
     });
-    selectors.gydytojaiYearlyBody.appendChild(tr);
+  return list.slice(0, Math.max(1, Number(limit) || 8));
+}
+
+function renderAnnualDoctorSuggestions(selectors, dashboardState) {
+  const host = selectors?.gydytojaiAnnualSuggestions;
+  if (!(host instanceof HTMLElement)) {
+    return [];
+  }
+  const input = selectors?.gydytojaiAnnualDoctorInput;
+  const query = normalizeDoctorAliasToken(dashboardState?.doctorsAnnualSearchInput);
+  const shouldShow = query.length > 0 || (input instanceof HTMLElement && document.activeElement === input);
+  if (!shouldShow) {
+    host.replaceChildren();
+    host.hidden = true;
+    dashboardState.doctorsAnnualSuggestIndex = -1;
+    return [];
+  }
+  const suggestions = getAnnualDoctorSuggestions(dashboardState);
+  host.replaceChildren();
+  if (!suggestions.length) {
+    host.hidden = true;
+    dashboardState.doctorsAnnualSuggestIndex = -1;
+    return suggestions;
+  }
+  const currentIndex = Number.isFinite(dashboardState.doctorsAnnualSuggestIndex)
+    ? Number(dashboardState.doctorsAnnualSuggestIndex)
+    : 0;
+  const nextIndex = currentIndex >= 0 && currentIndex < suggestions.length ? currentIndex : 0;
+  dashboardState.doctorsAnnualSuggestIndex = nextIndex;
+  suggestions.forEach((entry, index) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = `gydytojai-annual-suggestion${index === nextIndex ? ' is-active' : ''}`;
+    option.setAttribute('data-annual-suggest', entry.alias);
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', index === nextIndex ? 'true' : 'false');
+    option.textContent = `${entry.alias} (n=${numberFormatter.format(entry.total)})`;
+    host.appendChild(option);
+  });
+  host.hidden = false;
+  return suggestions;
+}
+
+function renderAnnualSelectedChips(selectors, dashboardState, annualModel) {
+  if (!selectors.gydytojaiAnnualSelected || !selectors.gydytojaiAnnualSelectionHelp) {
+    return;
+  }
+  const selected = Array.isArray(dashboardState.doctorsAnnualSelected)
+    ? dashboardState.doctorsAnnualSelected
+    : [];
+  selectors.gydytojaiAnnualSelected.replaceChildren();
+  const missingSelected = Array.isArray(annualModel?.meta?.missingSelected)
+    ? annualModel.meta.missingSelected
+    : [];
+  selected.forEach((alias) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `chip-button gydytojai-annual-chip${missingSelected.includes(alias) ? ' is-error' : ''}`;
+    chip.setAttribute('data-annual-remove', alias);
+    chip.textContent = alias;
+    selectors.gydytojaiAnnualSelected.appendChild(chip);
+  });
+  if (!selected.length) {
+    selectors.gydytojaiAnnualSelectionHelp.textContent = 'Įveskite bent 1 gydytoją metinei dinamikai.';
+  } else if (missingSelected.length) {
+    selectors.gydytojaiAnnualSelectionHelp.textContent = `Nerasta pagal filtrus: ${missingSelected.join(', ')}`;
+  } else {
+    selectors.gydytojaiAnnualSelectionHelp.textContent = `Pasirinkta gydytojų: ${selected.length}.`;
+  }
+}
+
+function destroyAnnualCardCharts(dashboardState) {
+  const refs = dashboardState?.doctorsAnnualCardsChartRefs || {};
+  Object.keys(refs).forEach((key) => {
+    const chart = refs[key];
+    if (chart && typeof chart.destroy === 'function') {
+      chart.destroy();
+    }
+    refs[key] = null;
+  });
+}
+
+function renderDoctorAnnualSmallMultiples(
+  selectors,
+  dashboardState,
+  chartLib,
+  annualModel,
+  exportState,
+  handleReportExportClick
+) {
+  if (!selectors.gydytojaiAnnualCards || !selectors.gydytojaiAnnualEmpty) {
+    return;
+  }
+  const metric = String(dashboardState.doctorsAnnualMetric || 'count');
+  const metricConfig = getAnnualMetricConfig(metric);
+  const cards = sortAnnualCards(annualModel?.cards || [], dashboardState.doctorsAnnualSort);
+  const selected = Array.isArray(dashboardState.doctorsAnnualSelected)
+    ? dashboardState.doctorsAnnualSelected
+    : [];
+  selectors.gydytojaiAnnualCards.replaceChildren();
+  if (!selected.length) {
+    selectors.gydytojaiAnnualEmpty.hidden = true;
+    destroyAnnualCardCharts(dashboardState);
+    Object.keys(exportState)
+      .filter((key) => key.startsWith('annual:'))
+      .forEach((key) => {
+        delete exportState[key];
+      });
+    return;
+  }
+  if (!cards.length) {
+    selectors.gydytojaiAnnualEmpty.hidden = false;
+    selectors.gydytojaiAnnualEmpty.textContent = 'Nepakanka bent 2 metų duomenų pagal aktyvius filtrus.';
+    destroyAnnualCardCharts(dashboardState);
+    Object.keys(exportState)
+      .filter((key) => key.startsWith('annual:'))
+      .forEach((key) => {
+        delete exportState[key];
+      });
+    return;
+  }
+  selectors.gydytojaiAnnualEmpty.hidden = true;
+  destroyAnnualCardCharts(dashboardState);
+  Object.keys(exportState)
+    .filter((key) => key.startsWith('annual:'))
+    .forEach((key) => {
+      delete exportState[key];
+    });
+
+  const refs = dashboardState.doctorsAnnualCardsChartRefs || {};
+  dashboardState.doctorsAnnualCardsChartRefs = refs;
+  cards.forEach((card, index) => {
+    const key = `annual:${String(card?.doctorKey || index)}`;
+    const latestLabel = Number.isFinite(card?.latestValue) ? metricConfig.format(card.latestValue) : 'N/A';
+    const wrapper = document.createElement('article');
+    wrapper.className = 'report-card gydytojai-annual-card';
+    wrapper.innerHTML = `
+      <div class="report-card__head">
+        <h4>${card.alias}</h4>
+        <div class="report-card__actions">
+          <button type="button" class="chart-copy-btn" data-report-export="copy" data-report-key="${key}" data-tooltip="Kopijuoti grafiką" aria-label="Kopijuoti metinę kortelę" title="Kopijuoti metinę kortelę"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><rect x="4" y="4" width="11" height="11" rx="2"></rect></svg></button>
+          <button type="button" class="chart-download-btn" data-report-export="png" data-report-key="${key}" data-tooltip="Parsisiųsti PNG" aria-label="Parsisiųsti metinę kortelę PNG" title="Parsisiųsti metinę kortelę PNG"><svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M8 11l4 4 4-4"></path><path d="M4 21h16"></path></svg></button>
+        </div>
+      </div>
+      <p class="gydytojai-annual-card__meta">
+        <strong>${latestLabel}</strong>
+        <span>${formatAnnualDelta(metric, card?.yoyDeltaAbs, card?.yoyDeltaPct)}</span>
+        <span>${getTrendSymbol(card?.trend)}</span>
+      </p>
+      <canvas class="gydytojai-annual-card__chart" height="120"></canvas>
+      <p class="report-card__hint">Metai: ${(card.points || []).map((point) => point.year).join(', ')}</p>
+    `;
+    selectors.gydytojaiAnnualCards.appendChild(wrapper);
+
+    const canvas = wrapper.querySelector('canvas');
+    if (canvas instanceof HTMLCanvasElement) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        refs[key] = new chartLib(ctx, {
+          type: 'line',
+          data: {
+            labels: (card.points || []).map((point) => point.year),
+            datasets: [
+              {
+                label: metricConfig.label,
+                data: (card.points || []).map((point) => {
+                  const value = point?.[metric];
+                  if (!Number.isFinite(value)) {
+                    return null;
+                  }
+                  return metric === 'count' || metric === 'avgLosHours' ? Number(value) : Number(value) * 100;
+                }),
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.16)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
+              y: { ticks: { maxTicksLimit: 5 } },
+            },
+          },
+        });
+      }
+    }
+
+    exportState[key] = {
+      title: `Metinė dinamika - ${card.alias}`,
+      exportTitle: `Metinė dinamika - ${card.alias}`,
+      prefaceLines: buildAnnualExportPreface(dashboardState, metricConfig.label),
+      headers: ['Metai', metricConfig.label, 'Imtis (n)'],
+      rows: (card.points || []).map((point) => {
+        const metricValue = point?.[metric];
+        const renderedValue = Number.isFinite(metricValue) ? metricConfig.format(metricValue) : 'N/A';
+        return [point.year, renderedValue, numberFormatter.format(Number(point?.count || 0))];
+      }),
+      target: canvas,
+    };
+
+    Array.from(wrapper.querySelectorAll('[data-report-export]')).forEach((button) => {
+      storeCopyButtonBaseLabel(button);
+      button.addEventListener('click', handleReportExportClick);
+    });
   });
 }
 
@@ -385,7 +819,7 @@ function updateSortHeaderState(selectors, tableSort) {
 
 function upsertChart(chartMap, slot, chartLib, canvas, config) {
   if (!(canvas instanceof HTMLCanvasElement)) {
-    return;
+    return null;
   }
   const existing = chartMap[slot];
   if (existing && typeof existing.destroy === 'function') {
@@ -393,14 +827,63 @@ function upsertChart(chartMap, slot, chartLib, canvas, config) {
   }
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    return;
+    return null;
   }
   chartMap[slot] = new chartLib(ctx, config);
+  return chartMap[slot];
+}
+
+function sortLosRowsByVisibleGroups(rows, visibleKeys) {
+  const list = Array.isArray(rows) ? rows.slice() : [];
+  const keys = Array.isArray(visibleKeys) && visibleKeys.length ? visibleKeys : ['losGt16Share'];
+  return list.sort((a, b) => {
+    const scoreA = keys.reduce((sum, key) => sum + Number(a?.[key] || 0), 0);
+    const scoreB = keys.reduce((sum, key) => sum + Number(b?.[key] || 0), 0);
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA;
+    }
+    return Number(b?.losGt16Share || 0) - Number(a?.losGt16Share || 0);
+  });
+}
+
+function applyLosChartDynamicSort(chart, sourceRows) {
+  if (!chart || !Array.isArray(sourceRows) || !sourceRows.length) {
+    return;
+  }
+  const datasets = Array.isArray(chart.data?.datasets) ? chart.data.datasets : [];
+  const visibleKeys = datasets
+    .map((dataset, index) =>
+      typeof chart.isDatasetVisible === 'function' && chart.isDatasetVisible(index)
+        ? String(dataset?.losKey || '').trim()
+        : ''
+    )
+    .filter(Boolean);
+  const sortedRows = sortLosRowsByVisibleGroups(sourceRows, visibleKeys);
+  chart.data.labels = sortedRows.map((row) => row.alias);
+  datasets.forEach((dataset) => {
+    const key = String(dataset?.losKey || '').trim();
+    if (!key) {
+      return;
+    }
+    dataset.data = sortedRows.map((row) => Number(row?.[key] || 0) * 100);
+  });
 }
 
 function renderCharts(dashboardState, chartLib, selectors, models) {
   const rows = models?.leaderboard?.rows || [];
   const labels = rows.map((row) => row.alias);
+  const losSortedRows = [...rows].sort((a, b) => {
+    const aValue = Number(a?.losGt16Share || 0);
+    const bValue = Number(b?.losGt16Share || 0);
+    if (aValue !== bValue) {
+      return bValue - aValue;
+    }
+    return Number(b?.los8to16Share || 0) - Number(a?.los8to16Share || 0);
+  });
+  const hospitalSortedRows = [...rows].sort(
+    (a, b) => (b.hospitalizedShare || 0) - (a.hospitalizedShare || 0)
+  );
+  const mixSortedRows = [...rows].sort((a, b) => (b.nightShare || 0) - (a.nightShare || 0));
   upsertChart(dashboardState.doctorsCharts, 'volume', chartLib, selectors.gydytojaiVolumeChart, {
     type: 'bar',
     data: {
@@ -410,32 +893,69 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
   });
 
-  upsertChart(dashboardState.doctorsCharts, 'los', chartLib, selectors.gydytojaiLosChart, {
+  const losChart = upsertChart(dashboardState.doctorsCharts, 'los', chartLib, selectors.gydytojaiLosChart, {
     type: 'bar',
     data: {
-      labels,
+      labels: losSortedRows.map((row) => row.alias),
       datasets: [
-        { label: '<4 val.', data: rows.map((row) => row.losLt4Share * 100), backgroundColor: '#16a34a' },
-        { label: '4-8 val.', data: rows.map((row) => row.los4to8Share * 100), backgroundColor: '#0ea5e9' },
-        { label: '8-16 val.', data: rows.map((row) => row.los8to16Share * 100), backgroundColor: '#f59e0b' },
-        { label: '>16 val.', data: rows.map((row) => row.losGt16Share * 100), backgroundColor: '#ef4444' },
+        {
+          label: '<4 val.',
+          losKey: 'losLt4Share',
+          data: losSortedRows.map((row) => row.losLt4Share * 100),
+          backgroundColor: '#16a34a',
+        },
+        {
+          label: '4-8 val.',
+          losKey: 'los4to8Share',
+          data: losSortedRows.map((row) => row.los4to8Share * 100),
+          backgroundColor: '#0ea5e9',
+        },
+        {
+          label: '8-16 val.',
+          losKey: 'los8to16Share',
+          data: losSortedRows.map((row) => row.los8to16Share * 100),
+          backgroundColor: '#f59e0b',
+        },
+        {
+          label: '>16 val.',
+          losKey: 'losGt16Share',
+          data: losSortedRows.map((row) => row.losGt16Share * 100),
+          backgroundColor: '#ef4444',
+        },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          onClick: (event, legendItem, legend) => {
+            const defaultClick = chartLib?.defaults?.plugins?.legend?.onClick;
+            if (typeof defaultClick === 'function') {
+              defaultClick(event, legendItem, legend);
+            }
+            const legendChart = legend?.chart;
+            if (!legendChart) {
+              return;
+            }
+            applyLosChartDynamicSort(legendChart, rows);
+            legendChart.update();
+          },
+        },
+      },
       scales: { x: { stacked: true }, y: { stacked: true, max: 100 } },
     },
   });
+  applyLosChartDynamicSort(losChart, rows);
 
   upsertChart(dashboardState.doctorsCharts, 'hospital', chartLib, selectors.gydytojaiHospitalChart, {
     type: 'bar',
     data: {
-      labels,
+      labels: hospitalSortedRows.map((row) => row.alias),
       datasets: [
         {
           label: 'Hospitalizacija %',
-          data: rows.map((row) => row.hospitalizedShare * 100),
+          data: hospitalSortedRows.map((row) => row.hospitalizedShare * 100),
           backgroundColor: '#ef4444',
         },
       ],
@@ -443,7 +963,7 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
   });
 
-  const mixRows = models?.mix?.rows || [];
+  const mixRows = mixSortedRows;
   upsertChart(dashboardState.doctorsCharts, 'mix', chartLib, selectors.gydytojaiMixChart, {
     type: 'bar',
     data: {
@@ -458,22 +978,6 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
       maintainAspectRatio: false,
       scales: { x: { stacked: true }, y: { stacked: true } },
     },
-  });
-
-  const trend = models?.trend || {};
-  upsertChart(dashboardState.doctorsCharts, 'trend', chartLib, selectors.gydytojaiTrendChart, {
-    type: 'line',
-    data: {
-      labels: trend.months || [],
-      datasets: (trend.series || []).map((series, index) => ({
-        label: series.alias,
-        data: (series.points || []).map((point) => point.count),
-        borderColor: ['#2563eb', '#ef4444', '#16a34a'][index % 3],
-        backgroundColor: 'transparent',
-        tension: 0.3,
-      })),
-    },
-    options: { responsive: true, maintainAspectRatio: false },
   });
 
   const scatter = models?.scatter?.rows || [];
@@ -509,7 +1013,7 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
   });
 }
 
-function wireInteractions(selectors, dashboardState, rerender) {
+function wireInteractions(selectors, dashboardState, rerender, handleReportExportClick) {
   selectors.gydytojaiYear?.addEventListener('change', (event) => {
     dashboardState.doctorsYear = String(event.target.value || 'all');
     rerender();
@@ -542,12 +1046,181 @@ function wireInteractions(selectors, dashboardState, rerender) {
     dashboardState.doctorsShiftFilter = String(event.target.value || 'all');
     rerender();
   });
-  selectors.gydytojaiDiagnosisFilter?.addEventListener('change', (event) => {
-    dashboardState.doctorsDiagnosisFilter = String(event.target.value || 'all');
+  selectors.gydytojaiSearch?.addEventListener('input', (event) => {
+    const pendingValue = String(event.target.value || '').trim();
+    dashboardState.doctorsSearch = pendingValue;
+    if (dashboardState.doctorsSearchDebounceTimer) {
+      window.clearTimeout(dashboardState.doctorsSearchDebounceTimer);
+      dashboardState.doctorsSearchDebounceTimer = null;
+    }
+    dashboardState.doctorsSearchDebounceTimer = window.setTimeout(() => {
+      dashboardState.doctorsSearchDebounced = pendingValue;
+      dashboardState.doctorsSearchDebounceTimer = null;
+      rerender();
+    }, 250);
+  });
+  selectors.gydytojaiSearch?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+    event.preventDefault();
+    if (dashboardState.doctorsSearchDebounceTimer) {
+      window.clearTimeout(dashboardState.doctorsSearchDebounceTimer);
+      dashboardState.doctorsSearchDebounceTimer = null;
+    }
+    dashboardState.doctorsSearch = String(selectors.gydytojaiSearch?.value || '').trim();
+    dashboardState.doctorsSearchDebounced = dashboardState.doctorsSearch;
     rerender();
   });
-  selectors.gydytojaiSearch?.addEventListener('input', (event) => {
-    dashboardState.doctorsSearch = String(event.target.value || '').trim();
+  selectors.gydytojaiAnnualMetric?.addEventListener('change', (event) => {
+    dashboardState.doctorsAnnualMetric = normalizeAnnualMetric(event.target.value, 'count');
+    rerender();
+  });
+  selectors.gydytojaiAnnualSort?.addEventListener('change', (event) => {
+    dashboardState.doctorsAnnualSort = normalizeAnnualSort(event.target.value, 'latest_desc');
+    rerender();
+  });
+  const refreshAnnualSuggestions = () => renderAnnualDoctorSuggestions(selectors, dashboardState);
+  selectors.gydytojaiAnnualDoctorInput?.addEventListener('input', (event) => {
+    dashboardState.doctorsAnnualSearchInput = String(event.target.value || '');
+    dashboardState.doctorsAnnualSuggestIndex = 0;
+    refreshAnnualSuggestions();
+  });
+  selectors.gydytojaiAnnualDoctorInput?.addEventListener('focus', () => {
+    refreshAnnualSuggestions();
+  });
+  selectors.gydytojaiAnnualDoctorInput?.addEventListener('blur', () => {
+    window.setTimeout(() => {
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLElement &&
+        selectors.gydytojaiAnnualSuggestions instanceof HTMLElement &&
+        selectors.gydytojaiAnnualSuggestions.contains(active)
+      ) {
+        return;
+      }
+      if (selectors.gydytojaiAnnualSuggestions instanceof HTMLElement) {
+        selectors.gydytojaiAnnualSuggestions.replaceChildren();
+        selectors.gydytojaiAnnualSuggestions.hidden = true;
+      }
+      dashboardState.doctorsAnnualSuggestIndex = -1;
+    }, 100);
+  });
+  selectors.gydytojaiAnnualSuggestions?.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+  });
+  const addAnnualDoctor = (overrideAlias = '') => {
+    const alias =
+      String(overrideAlias || '').trim() ||
+      resolveAnnualDoctorAlias(
+        dashboardState.doctorsAnnualSearchInput || selectors.gydytojaiAnnualDoctorInput?.value,
+        dashboardState.doctorsAnnualAvailable
+      );
+    if (!alias) {
+      if (selectors.gydytojaiAnnualSelectionHelp) {
+        selectors.gydytojaiAnnualSelectionHelp.textContent = 'Nerasta gydytojo pagal įvestį.';
+      }
+      refreshAnnualSuggestions();
+      return;
+    }
+    const selected = Array.isArray(dashboardState.doctorsAnnualSelected)
+      ? dashboardState.doctorsAnnualSelected.slice()
+      : [];
+    if (selected.some((entry) => normalizeDoctorAliasToken(entry) === normalizeDoctorAliasToken(alias))) {
+      return;
+    }
+    if (selected.length >= 12) {
+      if (selectors.gydytojaiAnnualSelectionHelp) {
+        selectors.gydytojaiAnnualSelectionHelp.textContent = 'Pasiektas maksimalus 12 gydytojų limitas.';
+      }
+      return;
+    }
+    selected.push(alias);
+    dashboardState.doctorsAnnualSelected = selected;
+    dashboardState.doctorsAnnualSearchInput = '';
+    dashboardState.doctorsAnnualSuggestIndex = -1;
+    if (selectors.gydytojaiAnnualDoctorInput) {
+      selectors.gydytojaiAnnualDoctorInput.value = '';
+    }
+    refreshAnnualSuggestions();
+    rerender();
+  };
+  selectors.gydytojaiAnnualAddDoctor?.addEventListener('click', () => addAnnualDoctor());
+  selectors.gydytojaiAnnualDoctorInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const suggestions = refreshAnnualSuggestions();
+      if (!suggestions.length) {
+        return;
+      }
+      event.preventDefault();
+      const delta = event.key === 'ArrowDown' ? 1 : -1;
+      const current = Number.isFinite(dashboardState.doctorsAnnualSuggestIndex)
+        ? Number(dashboardState.doctorsAnnualSuggestIndex)
+        : 0;
+      dashboardState.doctorsAnnualSuggestIndex = (current + delta + suggestions.length) % suggestions.length;
+      refreshAnnualSuggestions();
+      return;
+    }
+    if (event.key === 'Escape') {
+      if (selectors.gydytojaiAnnualSuggestions instanceof HTMLElement) {
+        selectors.gydytojaiAnnualSuggestions.replaceChildren();
+        selectors.gydytojaiAnnualSuggestions.hidden = true;
+      }
+      dashboardState.doctorsAnnualSuggestIndex = -1;
+      return;
+    }
+    if (event.key !== 'Enter') {
+      return;
+    }
+    event.preventDefault();
+    const suggestions = refreshAnnualSuggestions();
+    const index = Number.isFinite(dashboardState.doctorsAnnualSuggestIndex)
+      ? Number(dashboardState.doctorsAnnualSuggestIndex)
+      : -1;
+    const picked = index >= 0 && index < suggestions.length ? suggestions[index].alias : '';
+    addAnnualDoctor(picked);
+  });
+  selectors.gydytojaiAnnualSuggestions?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const option = target.closest('[data-annual-suggest]');
+    if (!(option instanceof HTMLElement)) {
+      return;
+    }
+    const alias = String(option.getAttribute('data-annual-suggest') || '').trim();
+    if (!alias) {
+      return;
+    }
+    addAnnualDoctor(alias);
+  });
+  selectors.gydytojaiAnnualClearDoctors?.addEventListener('click', () => {
+    dashboardState.doctorsAnnualSelected = [];
+    dashboardState.doctorsAnnualSearchInput = '';
+    dashboardState.doctorsAnnualSuggestIndex = -1;
+    if (selectors.gydytojaiAnnualDoctorInput) {
+      selectors.gydytojaiAnnualDoctorInput.value = '';
+    }
+    refreshAnnualSuggestions();
+    rerender();
+  });
+  selectors.gydytojaiAnnualSelected?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const chip = target.closest('[data-annual-remove]');
+    if (!(chip instanceof HTMLElement)) {
+      return;
+    }
+    const alias = String(chip.getAttribute('data-annual-remove') || '').trim();
+    if (!alias) {
+      return;
+    }
+    dashboardState.doctorsAnnualSelected = (dashboardState.doctorsAnnualSelected || []).filter(
+      (entry) => normalizeDoctorAliasToken(entry) !== normalizeDoctorAliasToken(alias)
+    );
     rerender();
   });
   selectors.gydytojaiResetFilters?.addEventListener('click', () => {
@@ -559,11 +1232,23 @@ function wireInteractions(selectors, dashboardState, rerender) {
     dashboardState.doctorsArrivalFilter = 'all';
     dashboardState.doctorsDispositionFilter = 'all';
     dashboardState.doctorsShiftFilter = 'all';
-    dashboardState.doctorsDiagnosisFilter = 'all';
     dashboardState.doctorsSearch = '';
+    dashboardState.doctorsSearchDebounced = '';
     dashboardState.doctorsTableSort = 'count_desc';
+    dashboardState.doctorsAnnualMetric = 'count';
+    dashboardState.doctorsAnnualSort = 'latest_desc';
+    dashboardState.doctorsAnnualSelected = [];
+    dashboardState.doctorsAnnualSearchInput = '';
+    dashboardState.doctorsAnnualSuggestIndex = -1;
     rerender();
   });
+
+  if (Array.isArray(selectors.reportExportButtons)) {
+    selectors.reportExportButtons.forEach((button) => {
+      storeCopyButtonBaseLabel(button);
+      button.addEventListener('click', handleReportExportClick);
+    });
+  }
 
   const table = selectors.gydytojaiLeaderboardTable;
   if (table instanceof HTMLTableElement) {
@@ -612,9 +1297,24 @@ export async function runGydytojaiRuntime(core) {
   dashboardState.doctorsArrivalFilter = fromQuery.arrival;
   dashboardState.doctorsDispositionFilter = fromQuery.disposition;
   dashboardState.doctorsShiftFilter = fromQuery.shift;
-  dashboardState.doctorsDiagnosisFilter = fromQuery.diagnosis;
   dashboardState.doctorsSearch = fromQuery.search;
+  dashboardState.doctorsSearchDebounced = fromQuery.search;
   dashboardState.doctorsTableSort = fromQuery.tableSort;
+  dashboardState.doctorsAnnualMetric = fromQuery.annualMetric;
+  dashboardState.doctorsAnnualSort = fromQuery.annualSort;
+  dashboardState.doctorsAnnualSelected = Array.isArray(fromQuery.annualDoctors)
+    ? fromQuery.annualDoctors
+    : [];
+  const exportState = dashboardState.doctorsExportState || {};
+  dashboardState.doctorsExportState = exportState;
+  const handleReportExportClick = createReportExportClickHandler({
+    exportState,
+    getDatasetValue,
+    setCopyButtonFeedback,
+    writeTextToClipboard,
+    formatExportFilename,
+    escapeCsvCell,
+  });
 
   applyCommonPageShellText({ selectors, settings, text: TEXT, defaultFooterSource: DEFAULT_FOOTER_SOURCE });
   setupSharedPageUi({
@@ -661,29 +1361,38 @@ export async function runGydytojaiRuntime(core) {
       arrivalFilter: dashboardState.doctorsArrivalFilter,
       dispositionFilter: dashboardState.doctorsDispositionFilter,
       shiftFilter: dashboardState.doctorsShiftFilter,
-      diagnosisGroupFilter: dashboardState.doctorsDiagnosisFilter,
-      searchQuery: dashboardState.doctorsSearch,
+      searchQuery: dashboardState.doctorsSearchDebounced,
     };
 
     const leaderboard = computeDoctorLeaderboard(records, options);
-    const yearly = computeDoctorYearlyMatrix(records, options);
     const mix = computeDoctorDayNightMix(records, options);
     const hospital = computeDoctorHospitalizationShare(records, options);
-    const trend = computeDoctorMonthlyTrend(records, options);
     const scatter = computeDoctorVolumeVsLosScatter(records, options);
-
-    applyDoctorControls(
-      selectors,
-      dashboardState,
-      yearly.yearOptions,
-      leaderboard.rows,
-      leaderboard.diagnosisGroupOptions
-    );
+    const annual = computeDoctorYearlySmallMultiples(records, {
+      ...options,
+      yearScope: 'all_years',
+      yearFilter: 'all',
+      metric: dashboardState.doctorsAnnualMetric,
+      topN: Math.max(
+        1,
+        Array.isArray(dashboardState.doctorsAnnualSelected) ? dashboardState.doctorsAnnualSelected.length : 1
+      ),
+      minYearCount: dashboardState.doctorsAnnualMinYearCount,
+      selectedDoctors: dashboardState.doctorsAnnualSelected,
+    });
+    dashboardState.doctorsAnnualAvailable = Array.isArray(annual?.meta?.availableDoctors)
+      ? annual.meta.availableDoctors
+      : [];
+    applyDoctorControls(selectors, dashboardState, leaderboard.yearOptions, leaderboard.rows);
     setCoverage(selectors, leaderboard);
-    setKpis(selectors, leaderboard);
     renderLeaderboardTable(selectors, leaderboard.rows, dashboardState.doctorsTableSort);
     updateSortHeaderState(selectors, dashboardState.doctorsTableSort);
-    renderYearlyTable(selectors, yearly);
+    setDoctorExportState(exportState, selectors, dashboardState, {
+      leaderboard,
+      mix,
+      hospital,
+      scatter,
+    });
 
     chartLib = chartLib || (await loadChartJs());
     if (!chartLib) {
@@ -691,28 +1400,51 @@ export async function runGydytojaiRuntime(core) {
     }
     renderCharts(dashboardState, chartLib, selectors, {
       leaderboard,
-      yearly,
       mix,
       hospital,
-      trend,
       scatter,
     });
+    renderAnnualSelectedChips(selectors, dashboardState, annual);
+    renderAnnualDoctorSuggestions(selectors, dashboardState);
+    renderDoctorAnnualSmallMultiples(
+      selectors,
+      dashboardState,
+      chartLib,
+      annual,
+      exportState,
+      handleReportExportClick
+    );
   };
 
-  wireInteractions(selectors, dashboardState, () => {
-    render().catch((error) => {
-      console.error('Nepavyko perskaičiuoti gydytojų rodiklių:', error);
-    });
-  });
+  let renderToken = 0;
+  const rerender = () => {
+    renderToken += 1;
+    const token = renderToken;
+    setLoadingVisualState(selectors, true);
+    render()
+      .catch((error) => {
+        console.error('Nepavyko perskaičiuoti gydytojų rodiklių:', error);
+      })
+      .finally(() => {
+        if (token === renderToken) {
+          setLoadingVisualState(selectors, false);
+        }
+      });
+  };
+
+  wireInteractions(selectors, dashboardState, rerender, handleReportExportClick);
 
   try {
     setStatus(selectors, 'loading');
+    setLoadingVisualState(selectors, true);
     const data = await fetchData({ skipHistorical: false });
     dashboardState.rawRecords = Array.isArray(data?.records) ? data.records : [];
     await render();
+    setLoadingVisualState(selectors, false);
     setStatus(selectors, 'ready');
   } catch (error) {
     console.error('Nepavyko įkelti gydytojų puslapio:', error);
+    setLoadingVisualState(selectors, false);
     setStatus(selectors, 'error', error?.message || TEXT.status.error);
   }
 }
