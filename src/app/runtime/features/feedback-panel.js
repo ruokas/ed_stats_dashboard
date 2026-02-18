@@ -17,6 +17,7 @@ export function createFeedbackPanelFeature(deps) {
     getDatasetValue,
     setDatasetValue,
     renderFeedbackSection,
+    onFeedbackStateChange = null,
   } = deps;
 
   function sanitizeFeedbackFilters(filters, options = {}) {
@@ -344,6 +345,9 @@ export function createFeedbackPanelFeature(deps) {
     dashboardState.feedback.monthly = feedbackStats.monthly;
     renderFeedbackSection(feedbackStats);
     updateFeedbackFiltersSummary(feedbackStats.summary);
+    if (typeof onFeedbackStateChange === 'function') {
+      onFeedbackStateChange();
+    }
     return feedbackStats;
   }
 

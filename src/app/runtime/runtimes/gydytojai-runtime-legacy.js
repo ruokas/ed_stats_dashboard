@@ -20,6 +20,8 @@ import {
 } from '../features/summaries-jump-navigation.js';
 import { formatExportFilename } from '../features/summaries-runtime-helpers.js';
 import { applyTheme, initializeTheme } from '../features/theme.js';
+import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
+import { createDebouncedHandler, syncAriaPressed } from '../filters/ui-sync.js';
 import { createTextSignature, describeError, downloadCsv, formatUrlForDiagnostics } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { loadSettingsFromConfig } from '../settings.js';
@@ -83,26 +85,35 @@ function normalizeAllowed(value, allowed, fallback) {
 }
 
 export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PAGE_STATE) {
+  const parsed = parseFromQuery('gydytojai', search);
   const params = new URLSearchParams(String(search || ''));
   return {
-    year: params.get('y') || defaults.year,
-    topN: parsePositiveInt(params.get('top'), defaults.topN),
-    minCases: parsePositiveInt(params.get('min'), defaults.minCases),
+    year: String(parsed.year || params.get('y') || defaults.year),
+    topN: parsePositiveInt(parsed.topN ?? params.get('top'), defaults.topN),
+    minCases: parsePositiveInt(parsed.minCases ?? params.get('min'), defaults.minCases),
     sort: normalizeAllowed(
-      params.get('sort'),
+      parsed.sort ?? params.get('sort'),
       new Set(['volume_desc', 'avgLos_asc', 'avgLos_desc', 'hospital_desc']),
       defaults.sort
     ),
-    arrival: normalizeAllowed(params.get('arr'), new Set(['all', 'ems', 'self']), defaults.arrival),
+    arrival: normalizeAllowed(
+      parsed.arrival ?? params.get('arr'),
+      new Set(['all', 'ems', 'self']),
+      defaults.arrival
+    ),
     disposition: normalizeAllowed(
-      params.get('disp'),
+      parsed.disposition ?? params.get('disp'),
       new Set(['all', 'hospitalized', 'discharged']),
       defaults.disposition
     ),
-    shift: normalizeAllowed(params.get('shift'), new Set(['all', 'day', 'night']), defaults.shift),
-    search: String(params.get('q') || defaults.search).trim(),
+    shift: normalizeAllowed(
+      parsed.shift ?? params.get('shift'),
+      new Set(['all', 'day', 'night']),
+      defaults.shift
+    ),
+    search: String((parsed.search ?? params.get('q')) || defaults.search).trim(),
     tableSort: normalizeAllowed(
-      params.get('tsort'),
+      parsed.tableSort ?? params.get('tsort'),
       new Set([
         'alias_asc',
         'alias_desc',
@@ -129,52 +140,33 @@ export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PA
       ]),
       defaults.tableSort
     ),
-    annualMetric: normalizeAnnualMetric(params.get('am'), defaults.annualMetric),
-    annualSort: normalizeAnnualSort(params.get('as'), defaults.annualSort),
-    annualDoctors: parseDoctorSelectionParam(params.get('ad')),
+    annualMetric: normalizeAnnualMetric(parsed.annualMetric ?? params.get('am'), defaults.annualMetric),
+    annualSort: normalizeAnnualSort(parsed.annualSort ?? params.get('as'), defaults.annualSort),
+    annualDoctors: Array.isArray(parsed.annualDoctors)
+      ? parsed.annualDoctors.slice(0, 12)
+      : parseDoctorSelectionParam(params.get('ad')),
   };
 }
 
 export function buildDoctorPageQuery(state) {
-  const params = new URLSearchParams();
-  if (state.year && state.year !== 'all') {
-    params.set('y', String(state.year));
-  }
-  if (Number(state.topN) !== DEFAULT_DOCTOR_PAGE_STATE.topN) {
-    params.set('top', String(state.topN));
-  }
-  if (Number(state.minCases) !== DEFAULT_DOCTOR_PAGE_STATE.minCases) {
-    params.set('min', String(state.minCases));
-  }
-  if (state.sort && state.sort !== DEFAULT_DOCTOR_PAGE_STATE.sort) {
-    params.set('sort', String(state.sort));
-  }
-  if (state.arrival && state.arrival !== DEFAULT_DOCTOR_PAGE_STATE.arrival) {
-    params.set('arr', String(state.arrival));
-  }
-  if (state.disposition && state.disposition !== DEFAULT_DOCTOR_PAGE_STATE.disposition) {
-    params.set('disp', String(state.disposition));
-  }
-  if (state.shift && state.shift !== DEFAULT_DOCTOR_PAGE_STATE.shift) {
-    params.set('shift', String(state.shift));
-  }
-  if (state.search) {
-    params.set('q', String(state.search));
-  }
-  if (state.tableSort && state.tableSort !== DEFAULT_DOCTOR_PAGE_STATE.tableSort) {
-    params.set('tsort', String(state.tableSort));
-  }
-  if (state.annualMetric && state.annualMetric !== DEFAULT_DOCTOR_PAGE_STATE.annualMetric) {
-    params.set('am', String(state.annualMetric));
-  }
-  if (state.annualSort && state.annualSort !== DEFAULT_DOCTOR_PAGE_STATE.annualSort) {
-    params.set('as', String(state.annualSort));
-  }
-  if (Array.isArray(state.annualDoctors) && state.annualDoctors.length) {
-    params.set('ad', state.annualDoctors.join(','));
-  }
-  const encoded = params.toString();
-  return encoded ? `?${encoded}` : '';
+  return serializeToQuery(
+    'gydytojai',
+    {
+      year: state.year,
+      topN: state.topN,
+      minCases: state.minCases,
+      sort: state.sort,
+      arrival: state.arrival,
+      disposition: state.disposition,
+      shift: state.shift,
+      search: state.search,
+      tableSort: state.tableSort,
+      annualMetric: state.annualMetric,
+      annualSort: state.annualSort,
+      annualDoctors: state.annualDoctors,
+    },
+    DEFAULT_DOCTOR_PAGE_STATE
+  );
 }
 
 function syncDoctorPageQueryFromState(dashboardState) {
@@ -192,10 +184,7 @@ function syncDoctorPageQueryFromState(dashboardState) {
     annualSort: dashboardState.doctorsAnnualSort,
     annualDoctors: dashboardState.doctorsAnnualSelected,
   });
-  const nextUrl = `${window.location.pathname}${query}${window.location.hash || ''}`;
-  if (nextUrl !== `${window.location.pathname}${window.location.search}${window.location.hash || ''}`) {
-    window.history.replaceState(null, '', nextUrl);
-  }
+  replaceUrlQuery(query);
 }
 
 function extractHistoricalRecords(dashboardState) {
@@ -237,16 +226,8 @@ function applyDoctorControls(selectors, dashboardState, yearOptions) {
     });
   }
 
-  const setPressed = (buttons, currentValue, getValue) => {
-    (Array.isArray(buttons) ? buttons : []).forEach((button) => {
-      if (!(button instanceof HTMLElement)) {
-        return;
-      }
-      const value = String(getValue(button) || '');
-      const active = value === String(currentValue);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-  };
+  const setPressed = (buttons, currentValue, getValue) =>
+    syncAriaPressed(buttons, (button) => String(getValue(button) || ''), String(currentValue));
   if (selectors.gydytojaiYearChips instanceof HTMLElement) {
     setPressed(
       Array.from(selectors.gydytojaiYearChips.querySelectorAll('[data-gydytojai-year]')),
@@ -1138,6 +1119,11 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
 }
 
 function wireInteractions(selectors, dashboardState, rerender, handleReportExportClick) {
+  const applySearchWithDebounce = createDebouncedHandler(() => {
+    dashboardState.doctorsSearchDebounced = String(dashboardState.doctorsSearch || '').trim();
+    rerender();
+  }, 250);
+
   selectors.gydytojaiFilterChips?.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
@@ -1193,27 +1179,15 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     }
   });
   selectors.gydytojaiSearch?.addEventListener('input', (event) => {
-    const pendingValue = String(event.target.value || '').trim();
-    dashboardState.doctorsSearch = pendingValue;
-    if (dashboardState.doctorsSearchDebounceTimer) {
-      window.clearTimeout(dashboardState.doctorsSearchDebounceTimer);
-      dashboardState.doctorsSearchDebounceTimer = null;
-    }
-    dashboardState.doctorsSearchDebounceTimer = window.setTimeout(() => {
-      dashboardState.doctorsSearchDebounced = pendingValue;
-      dashboardState.doctorsSearchDebounceTimer = null;
-      rerender();
-    }, 250);
+    dashboardState.doctorsSearch = String(event.target.value || '').trim();
+    applySearchWithDebounce();
   });
   selectors.gydytojaiSearch?.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') {
       return;
     }
     event.preventDefault();
-    if (dashboardState.doctorsSearchDebounceTimer) {
-      window.clearTimeout(dashboardState.doctorsSearchDebounceTimer);
-      dashboardState.doctorsSearchDebounceTimer = null;
-    }
+    applySearchWithDebounce.cancel?.();
     dashboardState.doctorsSearch = String(selectors.gydytojaiSearch?.value || '').trim();
     dashboardState.doctorsSearchDebounced = dashboardState.doctorsSearch;
     rerender();
@@ -1418,10 +1392,7 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     } else if (key === 'search') {
       dashboardState.doctorsSearch = '';
       dashboardState.doctorsSearchDebounced = '';
-      if (dashboardState.doctorsSearchDebounceTimer) {
-        window.clearTimeout(dashboardState.doctorsSearchDebounceTimer);
-        dashboardState.doctorsSearchDebounceTimer = null;
-      }
+      applySearchWithDebounce.cancel?.();
       if (selectors.gydytojaiSearch instanceof HTMLInputElement) {
         selectors.gydytojaiSearch.value = '';
       }
@@ -1468,6 +1439,7 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsShiftFilter = 'all';
     dashboardState.doctorsSearch = '';
     dashboardState.doctorsSearchDebounced = '';
+    applySearchWithDebounce.cancel?.();
     dashboardState.doctorsTableSort = 'count_desc';
     dashboardState.doctorsChartsHiddenAliases = [];
     dashboardState.doctorsAnnualMetric = 'count';

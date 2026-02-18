@@ -25,9 +25,20 @@ export function createKpiFlow(env) {
     runKpiWorkerJob,
     buildLastShiftSummary,
     toSentenceCase,
+    onKpiStateChange = null,
   } = env;
 
   let kpiWorkerJobToken = 0;
+
+  function notifyKpiStateChange() {
+    if (typeof onKpiStateChange !== 'function') {
+      return;
+    }
+    onKpiStateChange({
+      ...(dashboardState.kpi?.filters || {}),
+      selectedDate: dashboardState.kpi?.selectedDate || null,
+    });
+  }
 
   function getSelectedDateDailyCache(recordsRef, selectedDate, shiftStartHour) {
     const kpiState = dashboardState.kpi || {};
@@ -623,6 +634,7 @@ export function createKpiFlow(env) {
   }
 
   async function applyKpiFiltersAndRender() {
+    notifyKpiStateChange();
     const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters, {
       getDefaultKpiFilters,
       KPI_FILTER_LABELS,
@@ -742,6 +754,7 @@ export function createKpiFlow(env) {
     }
     const normalized = normalizeKpiDateValue(target.value);
     dashboardState.kpi.selectedDate = normalized;
+    notifyKpiStateChange();
     syncKpiDateNavigation();
     updateKpiSubtitle();
     void applyKpiFiltersAndRender();
@@ -749,6 +762,7 @@ export function createKpiFlow(env) {
 
   function handleKpiDateClear() {
     dashboardState.kpi.selectedDate = null;
+    notifyKpiStateChange();
     if (selectors.kpiDateInput) {
       selectors.kpiDateInput.value = '';
     }
@@ -782,6 +796,7 @@ export function createKpiFlow(env) {
     }
     const nextDate = available[nextIndex];
     dashboardState.kpi.selectedDate = nextDate;
+    notifyKpiStateChange();
     if (selectors.kpiDateInput) {
       selectors.kpiDateInput.value = nextDate;
     }
@@ -841,6 +856,7 @@ export function createKpiFlow(env) {
 
   function resetKpiFilters({ fromKeyboard } = {}) {
     dashboardState.kpi.filters = getDefaultKpiFilters();
+    notifyKpiStateChange();
     refreshKpiWindowOptions();
     syncKpiFilterControls();
     void applyKpiFiltersAndRender();

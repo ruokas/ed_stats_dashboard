@@ -41,6 +41,8 @@ import {
 } from '../features/summaries-runtime-helpers.js';
 import { handleYearlyToggle, renderYearlyTable } from '../features/summaries-yearly-table.js';
 import { applyTheme, initializeTheme } from '../features/theme.js';
+import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
+import { buildFilterSummary } from '../filters/summary.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -1873,6 +1875,75 @@ export async function runSummariesRuntime(core) {
     hourlyMetricArrivals: 'arrivals',
     hourlyCompareSeriesAll: 'all',
   });
+  const getSummariesDefaults = () => ({
+    year: 'all',
+    topN: 15,
+    minGroup: 100,
+    pspcSort: 'desc',
+    pspcMode: 'cross',
+    pspcTrend: '__top3__',
+  });
+  const getSummariesFiltersState = () => ({
+    year: dashboardState.summariesReportsYear,
+    topN: dashboardState.summariesReportsTopN,
+    minGroup: dashboardState.summariesReportsMinGroupSize,
+    pspcSort: dashboardState.summariesReferralPspcSort,
+    pspcMode: dashboardState.summariesReferralPspcMode,
+    pspcTrend: dashboardState.summariesReferralPspcTrendPspc,
+  });
+  const persistSummariesQuery = () => {
+    replaceUrlQuery(serializeToQuery('summaries', getSummariesFiltersState(), getSummariesDefaults()));
+  };
+  const updateSummariesFiltersSummary = () => {
+    if (!selectors.summariesReportsFiltersSummary) {
+      return;
+    }
+    const defaults = getSummariesDefaults();
+    const parts = [];
+    if (dashboardState.summariesReportsYear !== defaults.year) {
+      parts.push(`Metai: ${dashboardState.summariesReportsYear}`);
+    }
+    if (dashboardState.summariesReportsTopN !== defaults.topN) {
+      parts.push(`TOP N: ${dashboardState.summariesReportsTopN}`);
+    }
+    if (dashboardState.summariesReportsMinGroupSize !== defaults.minGroup) {
+      parts.push(`Min. imtis: ${dashboardState.summariesReportsMinGroupSize}`);
+    }
+    if (dashboardState.summariesReferralPspcMode !== defaults.pspcMode) {
+      parts.push(`PSPC režimas: ${dashboardState.summariesReferralPspcMode}`);
+    }
+    const text = buildFilterSummary({
+      entries: parts,
+      emptyText: 'Rodomi numatytieji ataskaitų filtrai',
+    });
+    selectors.summariesReportsFiltersSummary.textContent = text;
+    selectors.summariesReportsFiltersSummary.dataset.default = parts.length ? 'false' : 'true';
+  };
+  const resetSummariesFilters = () => {
+    const defaults = getSummariesDefaults();
+    dashboardState.summariesReportsYear = defaults.year;
+    dashboardState.summariesReportsTopN = defaults.topN;
+    dashboardState.summariesReportsMinGroupSize = defaults.minGroup;
+    dashboardState.summariesReferralPspcSort = defaults.pspcSort;
+    dashboardState.summariesReferralPspcMode = defaults.pspcMode;
+    dashboardState.summariesReferralPspcTrendPspc = defaults.pspcTrend;
+  };
+  const parsedSummaries = parseFromQuery('summaries', window.location.search);
+  if (Object.keys(parsedSummaries).length) {
+    dashboardState.summariesReportsYear =
+      typeof parsedSummaries.year === 'string' && parsedSummaries.year.trim()
+        ? parsedSummaries.year.trim()
+        : dashboardState.summariesReportsYear;
+    dashboardState.summariesReportsTopN = parsePositiveIntOrDefault(parsedSummaries.topN, 15);
+    dashboardState.summariesReportsMinGroupSize = parsePositiveIntOrDefault(parsedSummaries.minGroup, 100);
+    dashboardState.summariesReferralPspcSort =
+      parsedSummaries.pspcSort === 'asc' ? 'asc' : dashboardState.summariesReferralPspcSort;
+    dashboardState.summariesReferralPspcMode =
+      parsedSummaries.pspcMode === 'trend' ? 'trend' : dashboardState.summariesReferralPspcMode;
+    if (typeof parsedSummaries.pspcTrend === 'string' && parsedSummaries.pspcTrend.trim()) {
+      dashboardState.summariesReferralPspcTrendPspc = parsedSummaries.pspcTrend.trim();
+    }
+  }
   const exportState = {};
   const handleReportExportClick = createReportExportClickHandler({
     exportState,
@@ -1923,6 +1994,9 @@ export async function runSummariesRuntime(core) {
     initYearlyExpand,
     handleYearlyToggle,
     parsePositiveIntOrDefault,
+    onFiltersStateChange: persistSummariesQuery,
+    resetSummariesFilters,
+    updateSummariesFiltersSummary,
   });
   const dataFlow = createDataFlow(
     createSummariesDataFlowConfig({
@@ -1958,5 +2032,7 @@ export async function runSummariesRuntime(core) {
     })
   );
   rerenderReports();
+  updateSummariesFiltersSummary();
+  persistSummariesQuery();
   dataFlow.scheduleInitialLoad();
 }

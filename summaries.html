@@ -260,7 +260,8 @@
           </div>
         </div>
       </div>
-      <div class="summaries-reports-controls" role="group" aria-label="Papildomų ataskaitų filtrai">
+      <div class="filter-panel" role="region" aria-label="Papildomų ataskaitų filtrai">
+      <div class="summaries-reports-controls filter-panel__primary" role="group" aria-label="Papildomų ataskaitų filtrai">
         <label class="summaries-reports-controls__field" for="summariesReportsYear">
           <span>Metai</span>
           <select id="summariesReportsYear"></select>
@@ -278,6 +279,11 @@
           <span>Min. grupės imtis</span>
           <input id="summariesReportsMinGroupSize" type="number" min="1" max="999" step="1" value="100">
         </label>
+      </div>
+      <div class="summaries-reports-controls__actions filter-panel__actions">
+        <button type="button" id="summariesReportsReset" class="btn btn-secondary btn-small">Atkurti filtrus</button>
+        <p id="summariesReportsFiltersSummary" class="feedback-filters__summary" aria-live="polite" data-default="true"></p>
+      </div>
       </div>
       <p id="summariesReportsCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
       <div class="summaries-report-groups">

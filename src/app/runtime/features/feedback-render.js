@@ -13,6 +13,7 @@ export function createFeedbackRenderFeature(deps) {
     getChartRenderers,
     resetFeedbackCommentRotation,
     renderFeedbackCommentsCard,
+    onFeedbackTrendStateChange = null,
   } = deps;
 
   function formatFeedbackCardValue(value, format) {
@@ -460,6 +461,9 @@ export function createFeedbackRenderFeature(deps) {
       return;
     }
     dashboardState.feedback.trendWindow = normalized;
+    if (typeof onFeedbackTrendStateChange === 'function') {
+      onFeedbackTrendStateChange();
+    }
     syncFeedbackTrendControls();
     updateFeedbackTrendSubtitle();
     const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
@@ -491,6 +495,9 @@ export function createFeedbackRenderFeature(deps) {
       return;
     }
     dashboardState.feedback.trendMetrics = nextMetrics.slice();
+    if (typeof onFeedbackTrendStateChange === 'function') {
+      onFeedbackTrendStateChange();
+    }
     syncFeedbackTrendControls();
     updateFeedbackTrendSubtitle();
     const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];
@@ -535,6 +542,9 @@ export function createFeedbackRenderFeature(deps) {
       return;
     }
     dashboardState.feedback.trendCompareMode = nextMode;
+    if (typeof onFeedbackTrendStateChange === 'function') {
+      onFeedbackTrendStateChange();
+    }
     syncFeedbackTrendControls();
     updateFeedbackTrendSubtitle();
     const monthly = Array.isArray(dashboardState.feedback.monthly) ? dashboardState.feedback.monthly : [];

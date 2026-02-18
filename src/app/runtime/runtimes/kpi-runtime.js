@@ -28,6 +28,9 @@ import { DEFAULT_SETTINGS } from '../../default-settings.js';
 import { dateKeyToDate, dateKeyToUtc, filterDailyStatsByWindow } from '../chart-primitives.js';
 import { createDataFlow } from '../data-flow.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
+import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
+import { resetToDefaults } from '../filters/reset.js';
+import { sanitizePageFilters } from '../filters/sanitize.js';
 import { sanitizeKpiFilters } from '../filters.js';
 import { createKpiFlow } from '../kpi-flow.js';
 import {
@@ -488,6 +491,46 @@ export async function runKpiRuntime(core) {
     hourlyMetricArrivals: 'arrivals',
     hourlyCompareSeriesAll: 'all',
   });
+  const persistKpiQuery = (nextState) => {
+    const defaults = { ...getDefaultKpiFilters(), selectedDate: null };
+    const query = serializeToQuery('kpi', nextState, defaults);
+    replaceUrlQuery(query);
+  };
+  const parsedKpiQuery = parseFromQuery('kpi', window.location.search);
+  if (Object.keys(parsedKpiQuery).length) {
+    const normalized = sanitizePageFilters(
+      'kpi',
+      {
+        ...parsedKpiQuery,
+        window: parsedKpiQuery.window,
+      },
+      {
+        getDefaultKpiFilters,
+        KPI_FILTER_LABELS,
+      }
+    );
+    const resetBase = resetToDefaults(
+      'kpi',
+      { ...getDefaultKpiFilters(), selectedDate: null },
+      {
+        getDefaultKpiFilters,
+        KPI_FILTER_LABELS,
+      }
+    );
+    dashboardState.kpi.filters = {
+      ...dashboardState.kpi.filters,
+      ...resetBase,
+      window: normalized.window,
+      shift: normalized.shift,
+      arrival: normalized.arrival,
+      disposition: normalized.disposition,
+      cardType: normalized.cardType,
+    };
+    dashboardState.kpi.selectedDate =
+      typeof parsedKpiQuery.selectedDate === 'string' && parsedKpiQuery.selectedDate.trim()
+        ? parsedKpiQuery.selectedDate.trim()
+        : null;
+  }
 
   const { fetchData, runKpiWorkerJob } = createMainDataHandlers({
     settings,
@@ -565,6 +608,7 @@ export async function runKpiRuntime(core) {
     runKpiWorkerJob,
     buildLastShiftSummary,
     toSentenceCase,
+    onKpiStateChange: persistKpiQuery,
   });
 
   const dataFlow = createDataFlow({
@@ -652,4 +696,8 @@ export async function runKpiRuntime(core) {
 
   runtimeClient.updateClientConfig({ pageId });
   dataFlow.scheduleInitialLoad();
+  persistKpiQuery({
+    ...(dashboardState.kpi?.filters || {}),
+    selectedDate: dashboardState.kpi?.selectedDate || null,
+  });
 }

@@ -226,13 +226,7 @@ export function getAvailableYearsFromDaily(dailyStats) {
   return Array.from(years).sort((a, b) => b - a);
 }
 
-export function populateChartYearOptions({
-  dailyStats,
-  selectors,
-  dashboardState,
-  TEXT,
-  syncChartYearControl,
-}) {
+export function populateChartYearOptions({ dailyStats, selectors, dashboardState, syncChartYearControl }) {
   if (!selectors.chartYearSelect) {
     return;
   }
@@ -240,7 +234,7 @@ export function populateChartYearOptions({
   selectors.chartYearSelect.replaceChildren();
   const defaultOption = document.createElement('option');
   defaultOption.value = 'all';
-  defaultOption.textContent = TEXT.charts.yearFilterAll;
+  defaultOption.textContent = 'Visi';
   selectors.chartYearSelect.appendChild(defaultOption);
   years.forEach((year) => {
     const option = document.createElement('option');
@@ -248,6 +242,25 @@ export function populateChartYearOptions({
     option.textContent = `${year} m.`;
     selectors.chartYearSelect.appendChild(option);
   });
+  if (selectors.chartYearGroup) {
+    selectors.chartYearGroup.replaceChildren();
+    const allButton = document.createElement('button');
+    allButton.type = 'button';
+    allButton.className = 'chip-button';
+    setDatasetValue(allButton, 'chartYear', 'all');
+    allButton.setAttribute('aria-pressed', 'false');
+    allButton.textContent = 'Visi';
+    selectors.chartYearGroup.appendChild(allButton);
+    years.forEach((year) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'chip-button';
+      setDatasetValue(button, 'chartYear', String(year));
+      button.setAttribute('aria-pressed', 'false');
+      button.textContent = `${year}`;
+      selectors.chartYearGroup.appendChild(button);
+    });
+  }
   const currentYear = Number.isFinite(dashboardState.chartYear) ? dashboardState.chartYear : null;
   const hasCurrent = Number.isFinite(currentYear) && years.includes(currentYear);
   if (hasCurrent) {
@@ -262,21 +275,89 @@ export function populateChartYearOptions({
 }
 
 export function syncChartYearControl({ selectors, dashboardState }) {
-  if (!selectors.chartYearSelect || !selectors.chartYearLabel) {
+  if (!selectors.chartYearSelect) {
     return;
   }
-  const value = Number.isFinite(dashboardState.chartYear) ? `${dashboardState.chartYear} m.` : 'Visi metai';
-  selectors.chartYearLabel.textContent = value;
+  const selectedYear = Number.isFinite(dashboardState.chartYear) ? dashboardState.chartYear : null;
+  selectors.chartYearSelect.value = selectedYear == null ? 'all' : String(selectedYear);
+  const yearButtons = Array.from(selectors.chartYearGroup?.querySelectorAll('[data-chart-year]') || []);
+  yearButtons.forEach((button) => {
+    const value = String(getDatasetValue(button, 'chartYear', '') || '').trim();
+    const isActive =
+      (value === 'all' && selectedYear == null) ||
+      (value !== 'all' && Number.parseInt(value, 10) === selectedYear);
+    button.setAttribute('aria-pressed', String(isActive));
+    setDatasetValue(button, 'active', String(isActive));
+  });
+  syncChartTimeScopeSummary({
+    selectors,
+    period: Number.isFinite(dashboardState.chartPeriod) ? dashboardState.chartPeriod : 0,
+    year: selectedYear,
+  });
 }
 
 export function syncChartPeriodButtons({ selectors, period }) {
   if (!selectors.chartPeriodButtons || !selectors.chartPeriodButtons.length) {
     return;
   }
+  const normalizedPeriod = Number.isFinite(Number(period)) ? Number(period) : 0;
+  let activeMoreLabel = '';
   selectors.chartPeriodButtons.forEach((button) => {
-    const value = Number.parseInt(getDatasetValue(button, 'chartPeriod', ''), 10);
-    const isActive = Number.isFinite(value) && value === period;
+    const rawValue = String(getDatasetValue(button, 'chartPeriod', '') || '').trim();
+    const numericValue = Number.parseInt(rawValue, 10);
+    const isAll = rawValue === 'all';
+    const isActive = isAll
+      ? normalizedPeriod === 0
+      : Number.isFinite(numericValue) && numericValue === normalizedPeriod;
     button.setAttribute('aria-pressed', String(isActive));
     setDatasetValue(button, 'active', String(isActive));
+    if (
+      isActive &&
+      button.closest('.chart-period__more-menu') &&
+      typeof button.textContent === 'string' &&
+      button.textContent.trim()
+    ) {
+      activeMoreLabel = button.textContent.trim();
+    }
   });
+  const periodRoot = selectors.chartPeriodButtons[0]?.closest?.('#chartPeriodGroup');
+  if (!(periodRoot instanceof HTMLElement)) {
+    return;
+  }
+  const moreToggle = periodRoot.querySelector('.chart-period__more-toggle');
+  if (!(moreToggle instanceof HTMLElement)) {
+    return;
+  }
+  const hasActiveMore = Boolean(activeMoreLabel);
+  moreToggle.textContent = hasActiveMore ? `Daugiau: ${activeMoreLabel}` : 'Daugiau';
+  moreToggle.setAttribute('aria-pressed', String(hasActiveMore));
+  setDatasetValue(moreToggle, 'active', String(hasActiveMore));
+  syncChartTimeScopeSummary({
+    selectors,
+    period: normalizedPeriod,
+    year: Number.isFinite(selectors.chartYearSelect?.valueAsNumber)
+      ? selectors.chartYearSelect.valueAsNumber
+      : Number.parseInt(String(selectors.chartYearSelect?.value || ''), 10),
+  });
+}
+
+function resolvePeriodSummaryLabel(selectors, period) {
+  const normalizedPeriod = Number.isFinite(Number(period)) ? Number(period) : 0;
+  const activeButton = Array.isArray(selectors.chartPeriodButtons)
+    ? selectors.chartPeriodButtons.find((button) => button.getAttribute('aria-pressed') === 'true')
+    : null;
+  if (activeButton && typeof activeButton.textContent === 'string' && activeButton.textContent.trim()) {
+    return activeButton.textContent.trim();
+  }
+  return normalizedPeriod === 0 ? 'Visi' : `${normalizedPeriod} d.`;
+}
+
+function syncChartTimeScopeSummary({ selectors, period, year }) {
+  if (!selectors.chartTimeScopeSummary) {
+    return;
+  }
+  const periodLabel = resolvePeriodSummaryLabel(selectors, period);
+  const numericYear = Number.isFinite(Number(year)) ? Number(year) : null;
+  const yearLabel = numericYear == null ? 'Visi metai' : `${numericYear} m.`;
+  selectors.chartTimeScopeSummary.textContent = `${periodLabel} • ${yearLabel}`;
 }

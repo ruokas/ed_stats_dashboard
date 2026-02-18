@@ -156,15 +156,15 @@
         </div>
       </div>
 
-      <section class="gydytojai-filter-panel" aria-label="Gydytojų filtrų panelė">
-        <header class="gydytojai-filter-panel__head">
-          <div class="gydytojai-filter-panel__title-row">
-            <h3 class="gydytojai-filter-panel__title">Filtrai</h3>
+      <section class="filter-panel gydytojai-filter-panel" aria-label="Gydytojų filtrų panelė">
+        <header class="filter-panel__head gydytojai-filter-panel__head">
+          <div class="filter-panel__title-row gydytojai-filter-panel__title-row">
+            <h3 class="filter-panel__title gydytojai-filter-panel__title">Filtrai</h3>
             <span id="gydytojaiLoadingInline" class="gydytojai-loading-inline" hidden>Atnaujinama…</span>
           </div>
-          <p class="gydytojai-filter-panel__subtitle">Pasirinkite analizės pjūvį, tada peržiūrėkite aktyvius filtrus žemiau.</p>
+          <p class="filter-panel__subtitle gydytojai-filter-panel__subtitle">Pasirinkite analizės pjūvį, tada peržiūrėkite aktyvius filtrus žemiau.</p>
         </header>
-        <div id="gydytojaiFilterChips" class="summaries-reports-controls gydytojai-filter-panel__primary" role="group" aria-label="Gydytojų analizės filtrai">
+        <div id="gydytojaiFilterChips" class="summaries-reports-controls filter-panel__primary gydytojai-filter-panel__primary" role="group" aria-label="Gydytojų analizės filtrai">
           <div class="summaries-reports-controls__field">
             <span>Metai</span>
             <div id="gydytojaiYearChips" class="gydytojai-filter-group" role="group" aria-label="Metų filtras"></div>
@@ -226,10 +226,12 @@
             <input id="gydytojaiSearch" type="search" placeholder="Įveskite vardą">
           </label>
         </div>
-        <div class="gydytojai-filter-panel__secondary">
-          <p class="gydytojai-filter-panel__secondary-title">Aktyvūs filtrai</p>
-          <div id="gydytojaiActiveFilters" class="gydytojai-active-filters" aria-live="polite"></div>
-          <button id="gydytojaiResetFilters" type="button" class="chip-button chip-button--ghost">Atstatyti filtrus</button>
+        <div class="filter-panel__summary gydytojai-filter-panel__secondary">
+          <p class="filter-panel__summary-title gydytojai-filter-panel__secondary-title">Aktyvūs filtrai</p>
+          <div id="gydytojaiActiveFilters" class="gydytojai-active-filters filter-panel__summary-body" aria-live="polite"></div>
+          <div class="filter-panel__actions">
+            <button id="gydytojaiResetFilters" type="button" class="btn btn-secondary btn-small">Atkurti filtrus</button>
+          </div>
         </div>
       </section>
       <p id="gydytojaiCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
@@ -267,10 +269,10 @@
               <th scope="col" data-gydytojai-sort="avgLosHours">Vid. LOS (val.)</th>
               <th scope="col" data-gydytojai-sort="medianLosHours">Mediana LOS (val.)</th>
               <th scope="col" data-gydytojai-sort="hospitalizedShare">Hospitalizacija (%)</th>
-              <th scope="col" data-gydytojai-sort="losLt4Share">LOS <4 (%)</th>
+              <th scope="col" data-gydytojai-sort="losLt4Share">LOS &lt;4 (%)</th>
               <th scope="col" data-gydytojai-sort="los4to8Share">LOS 4-8 (%)</th>
               <th scope="col" data-gydytojai-sort="los8to16Share">LOS 8-16 (%)</th>
-              <th scope="col" data-gydytojai-sort="losGt16Share">LOS >16 (%)</th>
+              <th scope="col" data-gydytojai-sort="losGt16Share">LOS &gt;16 (%)</th>
               <th scope="col" data-gydytojai-sort="nightShare">Naktiniai (%)</th>
             </tr>
           </thead>
@@ -287,12 +289,12 @@
             </div>
           </div>
         </div>
-        <section class="gydytojai-filter-panel gydytojai-filter-panel--annual" aria-label="Metinės dinamikos filtrų panelė">
-          <header class="gydytojai-filter-panel__head">
-            <h3 class="gydytojai-filter-panel__title">Metinės dinamikos filtrai</h3>
-            <p class="gydytojai-filter-panel__subtitle">Pasirinkite metriką, rikiavimą ir gydytojus metinei dinamikai.</p>
+        <section class="filter-panel gydytojai-filter-panel gydytojai-filter-panel--annual" aria-label="Metinės dinamikos filtrų panelė">
+          <header class="filter-panel__head gydytojai-filter-panel__head">
+            <h3 class="filter-panel__title gydytojai-filter-panel__title">Metinės dinamikos filtrai</h3>
+            <p class="filter-panel__subtitle gydytojai-filter-panel__subtitle">Pasirinkite metriką, rikiavimą ir gydytojus metinei dinamikai.</p>
           </header>
-          <div class="summaries-reports-controls gydytojai-filter-panel__primary" role="group" aria-label="Metinės dinamikos valdikliai">
+          <div class="summaries-reports-controls filter-panel__primary gydytojai-filter-panel__primary" role="group" aria-label="Metinės dinamikos valdikliai">
             <div class="summaries-reports-controls__field">
               <span>Metrika</span>
               <div id="gydytojaiAnnualMetric" class="gydytojai-filter-group" role="group" aria-label="Metinės dinamikos metrika">
@@ -324,10 +326,10 @@
               <button id="gydytojaiAnnualClearDoctors" type="button" class="chip-button chip-button--ghost">Išvalyti pasirinkimus</button>
             </div>
           </div>
-          <div class="gydytojai-filter-panel__secondary">
-            <p class="gydytojai-filter-panel__secondary-title">Pasirinkti gydytojai</p>
+          <div class="filter-panel__summary gydytojai-filter-panel__secondary">
+            <p class="filter-panel__summary-title gydytojai-filter-panel__secondary-title">Pasirinkti gydytojai</p>
             <p id="gydytojaiAnnualSelectionHelp" class="summaries-reports-coverage" aria-live="polite">Įveskite bent 1 gydytoją metinei dinamikai.</p>
-            <div id="gydytojaiAnnualSelected" class="gydytojai-annual-selected" aria-live="polite"></div>
+            <div id="gydytojaiAnnualSelected" class="gydytojai-annual-selected filter-panel__summary-body" aria-live="polite"></div>
           </div>
         </section>
         <p id="gydytojaiAnnualEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Nepakanka bent 2 metų duomenų pagal aktyvius filtrus.</p>

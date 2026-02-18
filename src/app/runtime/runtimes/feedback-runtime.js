@@ -36,6 +36,7 @@ import { setupCopyExportControls } from '../export-controls.js';
 import { createFeedbackPanelFeature } from '../features/feedback-panel.js';
 import { createFeedbackRenderFeature } from '../features/feedback-render.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
+import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
 import { describeCacheMeta, describeError, downloadCsv } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
 import { createRuntimeClientContext } from '../runtime-client.js';
@@ -160,6 +161,45 @@ export async function runFeedbackRuntime(core) {
     hourlyMetricArrivals: 'arrivals',
     hourlyCompareSeriesAll: 'all',
   });
+  const feedbackDefaults = {
+    respondent: FEEDBACK_FILTER_ALL,
+    location: FEEDBACK_FILTER_ALL,
+    trendWindow: 6,
+    trendMetrics: ['overallAverage'],
+    trendCompareMode: 'none',
+  };
+  const persistFeedbackQuery = () => {
+    replaceUrlQuery(
+      serializeToQuery(
+        'feedback',
+        {
+          respondent: dashboardState.feedback.filters?.respondent,
+          location: dashboardState.feedback.filters?.location,
+          trendWindow: dashboardState.feedback.trendWindow,
+          trendMetrics: dashboardState.feedback.trendMetrics,
+          trendCompareMode: dashboardState.feedback.trendCompareMode,
+        },
+        feedbackDefaults
+      )
+    );
+  };
+  const parsedFeedbackQuery = parseFromQuery('feedback', window.location.search);
+  if (Object.keys(parsedFeedbackQuery).length) {
+    dashboardState.feedback.filters = {
+      ...dashboardState.feedback.filters,
+      respondent: parsedFeedbackQuery.respondent || dashboardState.feedback.filters.respondent,
+      location: parsedFeedbackQuery.location || dashboardState.feedback.filters.location,
+    };
+    if (Number.isFinite(parsedFeedbackQuery.trendWindow)) {
+      dashboardState.feedback.trendWindow = parsedFeedbackQuery.trendWindow;
+    }
+    if (Array.isArray(parsedFeedbackQuery.trendMetrics) && parsedFeedbackQuery.trendMetrics.length) {
+      dashboardState.feedback.trendMetrics = parsedFeedbackQuery.trendMetrics;
+    }
+    if (typeof parsedFeedbackQuery.trendCompareMode === 'string' && parsedFeedbackQuery.trendCompareMode) {
+      dashboardState.feedback.trendCompareMode = parsedFeedbackQuery.trendCompareMode;
+    }
+  }
 
   const { fetchFeedbackData } = createFeedbackHandlers({
     settings,
@@ -238,6 +278,7 @@ export async function runFeedbackRuntime(core) {
     setDatasetValue,
     describeError,
     getChartRenderers: () => chartRenderers,
+    onFeedbackTrendStateChange: persistFeedbackQuery,
     resetFeedbackCommentRotation: () => resetFeedbackCommentRotation(dashboardState),
     renderFeedbackCommentsCard: (cardElement, cardConfig, rawComments) =>
       renderFeedbackCommentsCard(dashboardState, cardElement, cardConfig, rawComments),
@@ -259,6 +300,7 @@ export async function runFeedbackRuntime(core) {
     getDatasetValue,
     setDatasetValue,
     renderFeedbackSection: feedbackRenderFeature.renderFeedbackSection,
+    onFeedbackStateChange: persistFeedbackQuery,
   });
 
   initFeedbackFilters({
@@ -277,6 +319,19 @@ export async function runFeedbackRuntime(core) {
     setFeedbackTrendCompareMode: feedbackRenderFeature.setFeedbackTrendCompareMode,
   });
   initFeedbackTableScrollAffordance({ selectors });
+  if (selectors.feedbackFiltersReset) {
+    selectors.feedbackFiltersReset.addEventListener('click', () => {
+      dashboardState.feedback.filters = createDefaultFeedbackFilters();
+      feedbackPanelFeature.applyFeedbackFiltersAndRender();
+      dashboardState.feedback.trendWindow = feedbackDefaults.trendWindow;
+      dashboardState.feedback.trendMetrics = feedbackDefaults.trendMetrics.slice();
+      dashboardState.feedback.trendCompareMode = feedbackDefaults.trendCompareMode;
+      feedbackRenderFeature.syncFeedbackTrendControls();
+      feedbackRenderFeature.updateFeedbackTrendSubtitle();
+      feedbackRenderFeature.renderFeedbackTrendChart(dashboardState.feedback.monthly || []).catch(() => {});
+      persistFeedbackQuery();
+    });
+  }
   const applyFeedbackStatusNote = () => {
     if (dashboardState.usingFallback) {
       return;
@@ -348,4 +403,5 @@ export async function runFeedbackRuntime(core) {
   });
 
   dataFlow.scheduleInitialLoad();
+  persistFeedbackQuery();
 }
