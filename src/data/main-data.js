@@ -102,6 +102,24 @@ export function createMainDataHandlers(context) {
     };
   }
 
+  function attachSourceId(records, sourceId) {
+    const list = Array.isArray(records) ? records : [];
+    const tagged = new Array(list.length);
+    for (let index = 0; index < list.length; index += 1) {
+      const record = list[index];
+      if (!record || typeof record !== 'object') {
+        tagged[index] = { sourceId };
+        continue;
+      }
+      if (record.sourceId === sourceId) {
+        tagged[index] = record;
+        continue;
+      }
+      tagged[index] = { ...record, sourceId };
+    }
+    return tagged;
+  }
+
   function readDataCache(url) {
     const key = getDataCacheKey(url);
     if (!key) {
@@ -417,7 +435,7 @@ export function createMainDataHandlers(context) {
     const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
 
     const baseRecordsRaw = Array.isArray(primaryResult.records) ? primaryResult.records : [];
-    const baseRecords = baseRecordsRaw.map((record) => ({ ...record, sourceId: 'primary' }));
+    const baseRecords = attachSourceId(baseRecordsRaw, 'primary');
     const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
     let combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(primaryResult.hospitalByDeptStayAgg, null);
     let combinedRecords = baseRecords.slice();
@@ -447,12 +465,20 @@ export function createMainDataHandlers(context) {
       if (historicalShouldAttempt && historicalResult) {
         historicalMeta = historicalResult.meta || null;
         const historicalRecordsRaw = Array.isArray(historicalResult.records) ? historicalResult.records : [];
-        const historicalRecords = historicalRecordsRaw.map((record) => ({
-          ...record,
-          sourceId: 'historical',
-        }));
+        const historicalRecords = attachSourceId(historicalRecordsRaw, 'historical');
         if (historicalRecords.length) {
-          combinedRecords = combinedRecords.concat(historicalRecords);
+          if (combinedRecords.length === 0) {
+            combinedRecords = historicalRecords.slice();
+          } else {
+            const merged = new Array(combinedRecords.length + historicalRecords.length);
+            for (let index = 0; index < combinedRecords.length; index += 1) {
+              merged[index] = combinedRecords[index];
+            }
+            for (let index = 0; index < historicalRecords.length; index += 1) {
+              merged[combinedRecords.length + index] = historicalRecords[index];
+            }
+            combinedRecords = merged;
+          }
         }
         combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(
           combinedHospitalByDeptStayAgg,

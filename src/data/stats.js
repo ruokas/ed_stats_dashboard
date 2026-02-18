@@ -684,6 +684,22 @@ function normalizeCategoryValue(value) {
   return text || 'Nenurodyta';
 }
 
+function buildPrefixMatcher(prefixes) {
+  const list = Array.isArray(prefixes) ? prefixes.filter(Boolean) : [];
+  if (!list.length) {
+    return () => false;
+  }
+  return (value) => {
+    const text = String(value || '');
+    for (let index = 0; index < list.length; index += 1) {
+      if (text.startsWith(list[index])) {
+        return true;
+      }
+    }
+    return false;
+  };
+}
+
 function computeYearlyTrend(records, getCategory, categoryOrder = null) {
   const yearly = new Map();
   const categoriesSet = new Set();
@@ -770,6 +786,7 @@ export function computeDiagnosisFrequency(records, options = {}) {
   const excludePrefixes = Array.isArray(options?.excludePrefixes)
     ? options.excludePrefixes.map((item) => String(item || '').toUpperCase()).filter(Boolean)
     : [];
+  const shouldExclude = buildPrefixMatcher(excludePrefixes);
   const counts = new Map();
   scoped.forEach((record) => {
     const codes = Array.isArray(record?.diagnosisCodes)
@@ -779,13 +796,17 @@ export function computeDiagnosisFrequency(records, options = {}) {
       counts.set('Nenurodyta', (counts.get('Nenurodyta') || 0) + 1);
       return;
     }
-    const unique = new Set(codes.map((code) => String(code).trim().toUpperCase()));
-    unique.forEach((code) => {
-      if (excludePrefixes.some((prefix) => code.startsWith(prefix))) {
-        return;
+    const unique = new Set();
+    for (let index = 0; index < codes.length; index += 1) {
+      const normalized = String(codes[index] || '')
+        .trim()
+        .toUpperCase();
+      if (!normalized || unique.has(normalized) || shouldExclude(normalized)) {
+        continue;
       }
-      counts.set(code, (counts.get(code) || 0) + 1);
-    });
+      unique.add(normalized);
+      counts.set(normalized, (counts.get(normalized) || 0) + 1);
+    }
   });
   const rows = toSortedRows(counts, totalPatients, Number.parseInt(String(options?.topN ?? 15), 10));
   return {
@@ -980,6 +1001,7 @@ export function computeAgeDiagnosisHeatmap(records, options = {}) {
   const excludePrefixes = Array.isArray(options?.excludePrefixes)
     ? options.excludePrefixes.map((item) => String(item || '').toUpperCase()).filter(Boolean)
     : [];
+  const shouldExclude = buildPrefixMatcher(excludePrefixes);
   const topNRaw = Number.parseInt(String(options?.topN ?? 12), 10);
   const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 12;
 
@@ -1008,16 +1030,16 @@ export function computeAgeDiagnosisHeatmap(records, options = {}) {
           .map((code) => code.charAt(0))
       : [];
     const source = fromGroups.length ? fromGroups : fromCodes;
-    const groups = new Set(
-      source
-        .map((item) =>
-          String(item || '')
-            .trim()
-            .toUpperCase()
-        )
-        .filter(Boolean)
-        .filter((item) => !excludePrefixes.some((prefix) => item.startsWith(prefix)))
-    );
+    const groups = new Set();
+    for (let index = 0; index < source.length; index += 1) {
+      const normalized = String(source[index] || '')
+        .trim()
+        .toUpperCase();
+      if (!normalized || shouldExclude(normalized)) {
+        continue;
+      }
+      groups.add(normalized);
+    }
     if (!groups.size) {
       return;
     }

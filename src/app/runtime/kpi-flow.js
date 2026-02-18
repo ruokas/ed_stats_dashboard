@@ -29,6 +29,54 @@ export function createKpiFlow(env) {
 
   let kpiWorkerJobToken = 0;
 
+  function getSelectedDateDailyCache(recordsRef, selectedDate, shiftStartHour) {
+    const kpiState = dashboardState.kpi || {};
+    const key = `${selectedDate || ''}|${shiftStartHour}`;
+    if (
+      kpiState.selectedDateDailyRefRecords === recordsRef &&
+      kpiState.selectedDateDailyKey === key &&
+      Array.isArray(kpiState.selectedDateDailyStats)
+    ) {
+      return kpiState.selectedDateDailyStats;
+    }
+    return null;
+  }
+
+  function setSelectedDateDailyCache(recordsRef, selectedDate, shiftStartHour, dailyStats) {
+    const kpiState = dashboardState.kpi || {};
+    kpiState.selectedDateDailyRefRecords = recordsRef;
+    kpiState.selectedDateDailyKey = `${selectedDate || ''}|${shiftStartHour}`;
+    kpiState.selectedDateDailyStats = Array.isArray(dailyStats) ? dailyStats : [];
+  }
+
+  function resolveDateFilteredData(baseRecords, baseDailyStats, selectedDate, settings) {
+    if (!selectedDate) {
+      return {
+        records: baseRecords,
+        dailyStats: baseDailyStats,
+      };
+    }
+    const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
+    const dateFilteredRecords = filterKpiRecordsByDate(baseRecords, selectedDate, shiftStartHour);
+    const cachedDailyStats = getSelectedDateDailyCache(baseRecords, selectedDate, shiftStartHour);
+    if (cachedDailyStats) {
+      return {
+        records: dateFilteredRecords,
+        dailyStats: cachedDailyStats,
+      };
+    }
+    const computedDailyStats = computeDailyStats(
+      dateFilteredRecords,
+      settings?.calculations,
+      DEFAULT_SETTINGS
+    );
+    setSelectedDateDailyCache(baseRecords, selectedDate, shiftStartHour, computedDailyStats);
+    return {
+      records: dateFilteredRecords,
+      dailyStats: computedDailyStats,
+    };
+  }
+
   function resolveShiftStartHour(calculationSettings) {
     const fallback = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
       ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
@@ -608,13 +656,14 @@ export function createKpiFlow(env) {
       ensureDefaultKpiDateSelection(filteredRecords);
       syncKpiDateNavigation(filteredRecords);
       const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-      const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-      const dateFilteredRecords = selectedDate
-        ? filterKpiRecordsByDate(filteredRecords, selectedDate, shiftStartHour)
-        : filteredRecords;
-      const dateFilteredDailyStats = selectedDate
-        ? computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS)
-        : filteredDailyStats;
+      const dateFiltered = resolveDateFilteredData(
+        filteredRecords,
+        filteredDailyStats,
+        selectedDate,
+        settings
+      );
+      const dateFilteredRecords = dateFiltered.records;
+      const dateFilteredDailyStats = dateFiltered.dailyStats;
       renderKpis(dateFilteredDailyStats, filteredDailyStats);
       const lastShiftRecords = selectedDate ? dateFilteredRecords : filteredRecords;
       const lastShiftDaily = selectedDate ? dateFilteredDailyStats : filteredDailyStats;
@@ -640,13 +689,14 @@ export function createKpiFlow(env) {
       ensureDefaultKpiDateSelection(fallback.records);
       syncKpiDateNavigation(fallback.records);
       const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-      const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-      const dateFilteredRecords = selectedDate
-        ? filterKpiRecordsByDate(fallback.records, selectedDate, shiftStartHour)
-        : fallback.records;
-      const dateFilteredDailyStats = selectedDate
-        ? computeDailyStats(dateFilteredRecords, settings?.calculations, DEFAULT_SETTINGS)
-        : fallback.dailyStats;
+      const dateFiltered = resolveDateFilteredData(
+        fallback.records,
+        fallback.dailyStats,
+        selectedDate,
+        settings
+      );
+      const dateFilteredRecords = dateFiltered.records;
+      const dateFilteredDailyStats = dateFiltered.dailyStats;
       renderKpis(dateFilteredDailyStats, fallback.dailyStats);
       const lastShiftRecords = selectedDate ? dateFilteredRecords : fallback.records;
       const lastShiftDaily = selectedDate ? dateFilteredDailyStats : fallback.dailyStats;
@@ -771,14 +821,8 @@ export function createKpiFlow(env) {
     const baseDaily = Array.isArray(dashboardState.kpi?.daily) ? dashboardState.kpi.daily : [];
     if (selectedDate) {
       const settings = getSettings();
-      const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-      const dateFilteredRecords = filterKpiRecordsByDate(baseRecords, selectedDate, shiftStartHour);
-      const dateFilteredDailyStats = computeDailyStats(
-        dateFilteredRecords,
-        settings?.calculations,
-        DEFAULT_SETTINGS
-      );
-      renderLastShiftHourlyChart(dateFilteredRecords, dateFilteredDailyStats);
+      const dateFiltered = resolveDateFilteredData(baseRecords, baseDaily, selectedDate, settings);
+      renderLastShiftHourlyChart(dateFiltered.records, dateFiltered.dailyStats);
       return;
     }
     renderLastShiftHourlyChart(baseRecords, baseDaily);
