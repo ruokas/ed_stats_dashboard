@@ -89,28 +89,54 @@ export function filterDailyStatsByWindow(dailyStats, days) {
   if (!Number.isFinite(days) || days <= 0) {
     return [...dailyStats];
   }
-  const decorated = dailyStats
-    .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
-    .filter((item) => Number.isFinite(item.utc));
-  if (!decorated.length) {
+  const eligibleEntries = [];
+  const eligibleUtc = [];
+  let endUtc = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < dailyStats.length; index += 1) {
+    const entry = dailyStats[index];
+    const utc = dateKeyToUtc(entry?.date);
+    if (!Number.isFinite(utc)) {
+      continue;
+    }
+    eligibleEntries.push(entry);
+    eligibleUtc.push(utc);
+    if (utc > endUtc) {
+      endUtc = utc;
+    }
+  }
+  if (!eligibleEntries.length || !Number.isFinite(endUtc)) {
     return [];
   }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
+  const scoped = [];
+  for (let index = 0; index < eligibleEntries.length; index += 1) {
+    const utc = eligibleUtc[index];
+    if (utc >= startUtc && utc <= endUtc) {
+      scoped.push(eligibleEntries[index]);
+    }
+  }
+  return scoped;
 }
 
 export function buildDailyWindowKeys(dailyStats, days) {
   if (!Array.isArray(dailyStats) || !Number.isFinite(days) || days <= 0) {
     return [];
   }
-  const decorated = dailyStats
-    .map((entry) => ({ utc: dateKeyToUtc(entry?.date) }))
-    .filter((item) => Number.isFinite(item.utc));
-  if (!decorated.length) {
+  let endUtc = Number.NEGATIVE_INFINITY;
+  let hasValid = false;
+  for (let index = 0; index < dailyStats.length; index += 1) {
+    const utc = dateKeyToUtc(dailyStats[index]?.date);
+    if (!Number.isFinite(utc)) {
+      continue;
+    }
+    hasValid = true;
+    if (utc > endUtc) {
+      endUtc = utc;
+    }
+  }
+  if (!hasValid || !Number.isFinite(endUtc)) {
     return [];
   }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
   const keys = [];
   for (let i = 0; i < days; i += 1) {
@@ -151,30 +177,42 @@ export function filterRecordsByWindow(records, days) {
   if (!Number.isFinite(days) || days <= 0) {
     return records.slice();
   }
-  const decorated = records
-    .map((entry) => {
-      let reference = null;
-      if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
-        reference = entry.arrival;
-      } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
-        reference = entry.discharge;
-      }
-      if (!reference) {
-        return null;
-      }
-      const utc = Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate());
-      if (!Number.isFinite(utc)) {
-        return null;
-      }
-      return { entry, utc };
-    })
-    .filter(Boolean);
-  if (!decorated.length) {
+  const eligibleEntries = [];
+  const eligibleUtc = [];
+  let endUtc = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < records.length; index += 1) {
+    const entry = records[index];
+    let reference = null;
+    if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
+      reference = entry.arrival;
+    } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
+      reference = entry.discharge;
+    }
+    if (!reference) {
+      continue;
+    }
+    const utc = Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate());
+    if (!Number.isFinite(utc)) {
+      continue;
+    }
+    eligibleEntries.push(entry);
+    eligibleUtc.push(utc);
+    if (utc > endUtc) {
+      endUtc = utc;
+    }
+  }
+  if (!eligibleEntries.length || !Number.isFinite(endUtc)) {
     return [];
   }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
+  const scoped = [];
+  for (let index = 0; index < eligibleEntries.length; index += 1) {
+    const utc = eligibleUtc[index];
+    if (utc >= startUtc && utc <= endUtc) {
+      scoped.push(eligibleEntries[index]);
+    }
+  }
+  return scoped;
 }
 
 export function getAvailableYearsFromDaily(dailyStats) {

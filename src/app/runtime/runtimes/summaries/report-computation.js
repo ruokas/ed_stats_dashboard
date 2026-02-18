@@ -17,10 +17,21 @@ export function extractHistoricalRecords(dashboardState) {
   if (cache.recordsRef === allRecords && Array.isArray(cache.records)) {
     return cache.records;
   }
-  const byTag = allRecords.filter((record) => record?.sourceId === 'historical');
-  const records = byTag.length
-    ? byTag
-    : allRecords.filter((record) => record?.hasExtendedHistoricalFields === true);
+  const byTag = [];
+  const byExtended = [];
+  for (let index = 0; index < allRecords.length; index += 1) {
+    const record = allRecords[index];
+    if (!record) {
+      continue;
+    }
+    if (record.sourceId === 'historical') {
+      byTag.push(record);
+    }
+    if (record.hasExtendedHistoricalFields === true) {
+      byExtended.push(record);
+    }
+  }
+  const records = byTag.length ? byTag : byExtended;
   dashboardState.summariesHistoricalRecordsCache = {
     recordsRef: allRecords,
     records,
@@ -142,7 +153,7 @@ export function sortPspcRows(rows, direction = 'desc') {
 }
 
 function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
-  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  const list = Array.isArray(records) ? records : [];
   const shiftStartHourRaw = Number(options?.shiftStartHour);
   const shiftStartHour = Number.isFinite(shiftStartHourRaw) ? shiftStartHourRaw : 7;
   const getShiftAdjustedYear = (record) => {
@@ -170,6 +181,9 @@ function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
   const byPspc = new Map();
 
   list.forEach((record) => {
+    if (!record) {
+      return;
+    }
     const year = getShiftAdjustedYear(record);
     if (!/^\d{4}$/.test(year)) {
       return;
@@ -241,9 +255,12 @@ function computeReferralHospitalizedShareByPspcYearly(records, options = {}) {
 }
 
 export function computeReferralHospitalizedShareByPspcDetailed(records) {
-  const list = Array.isArray(records) ? records.filter(Boolean) : [];
+  const list = Array.isArray(records) ? records : [];
   const byPspc = new Map();
   list.forEach((record) => {
+    if (!record) {
+      return;
+    }
     const referralValue = String(record?.referral || '')
       .trim()
       .toLowerCase();

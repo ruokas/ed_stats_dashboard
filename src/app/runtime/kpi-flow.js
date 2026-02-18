@@ -81,6 +81,17 @@ export function createKpiFlow(env) {
   }
 
   function collectAvailableShiftDateKeys(records) {
+    const kpiState = dashboardState.kpi || {};
+    if (
+      kpiState.availableDateRecordsRef === records &&
+      Array.isArray(kpiState.availableDateKeys) &&
+      kpiState.availableDateIndexMap instanceof Map
+    ) {
+      return {
+        keys: kpiState.availableDateKeys,
+        indexMap: kpiState.availableDateIndexMap,
+      };
+    }
     const settings = getSettings();
     const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
     const keys = new Set();
@@ -90,7 +101,15 @@ export function createKpiFlow(env) {
         keys.add(key);
       }
     });
-    return Array.from(keys).sort((a, b) => a.localeCompare(b));
+    const sortedKeys = Array.from(keys).sort((a, b) => a.localeCompare(b));
+    const indexMap = new Map();
+    for (let index = 0; index < sortedKeys.length; index += 1) {
+      indexMap.set(sortedKeys[index], index);
+    }
+    kpiState.availableDateRecordsRef = records;
+    kpiState.availableDateKeys = sortedKeys;
+    kpiState.availableDateIndexMap = indexMap;
+    return { keys: sortedKeys, indexMap };
   }
 
   function syncKpiDateNavigation(records = dashboardState.kpi?.records) {
@@ -99,9 +118,13 @@ export function createKpiFlow(env) {
     if (!hasPrev && !hasNext) {
       return;
     }
-    const available = collectAvailableShiftDateKeys(records);
+    const availableMeta = collectAvailableShiftDateKeys(records);
+    const available = availableMeta.keys;
     const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-    const selectedIndex = selectedDate ? available.indexOf(selectedDate) : -1;
+    const selectedIndex =
+      selectedDate && availableMeta.indexMap.has(selectedDate)
+        ? availableMeta.indexMap.get(selectedDate)
+        : -1;
     const hasAny = available.length > 0;
 
     const prevDisabled = !hasAny || (selectedIndex >= 0 && selectedIndex <= 0);
@@ -153,35 +176,47 @@ export function createKpiFlow(env) {
     }
     const settings = getSettings();
     const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
-    const decorated = records
-      .map((entry) => {
-        let reference = null;
-        if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
-          reference = entry.arrival;
-        } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
-          reference = entry.discharge;
-        }
-        if (!reference) {
-          return null;
-        }
-        const dateKey = computeShiftDateKeyForArrival(reference, shiftStartHour);
-        const date = dateKey ? dateKeyToDate(dateKey) : null;
-        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-          return null;
-        }
-        const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-        if (!Number.isFinite(utc)) {
-          return null;
-        }
-        return { entry, utc };
-      })
-      .filter(Boolean);
-    if (!decorated.length) {
+    const eligibleEntries = [];
+    const eligibleUtc = [];
+    let endUtc = Number.NEGATIVE_INFINITY;
+    for (let index = 0; index < records.length; index += 1) {
+      const entry = records[index];
+      let reference = null;
+      if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
+        reference = entry.arrival;
+      } else if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
+        reference = entry.discharge;
+      }
+      if (!reference) {
+        continue;
+      }
+      const dateKey = computeShiftDateKeyForArrival(reference, shiftStartHour);
+      const date = dateKey ? dateKeyToDate(dateKey) : null;
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        continue;
+      }
+      const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+      if (!Number.isFinite(utc)) {
+        continue;
+      }
+      eligibleEntries.push(entry);
+      eligibleUtc.push(utc);
+      if (utc > endUtc) {
+        endUtc = utc;
+      }
+    }
+    if (!eligibleEntries.length || !Number.isFinite(endUtc)) {
       return [];
     }
-    const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
     const startUtc = endUtc - (days - 1) * 86400000;
-    return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
+    const scoped = [];
+    for (let index = 0; index < eligibleEntries.length; index += 1) {
+      const utc = eligibleUtc[index];
+      if (utc >= startUtc && utc <= endUtc) {
+        scoped.push(eligibleEntries[index]);
+      }
+    }
+    return scoped;
   }
 
   function updateKpiSubtitle() {
@@ -674,13 +709,17 @@ export function createKpiFlow(env) {
 
   function handleKpiDateStep(step) {
     const direction = Number(step) < 0 ? -1 : 1;
-    const available = collectAvailableShiftDateKeys(dashboardState.kpi?.records);
+    const availableMeta = collectAvailableShiftDateKeys(dashboardState.kpi?.records);
+    const available = availableMeta.keys;
     if (!available.length) {
       syncKpiDateNavigation(dashboardState.kpi?.records);
       return;
     }
     const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-    const selectedIndex = selectedDate ? available.indexOf(selectedDate) : -1;
+    const selectedIndex =
+      selectedDate && availableMeta.indexMap.has(selectedDate)
+        ? availableMeta.indexMap.get(selectedDate)
+        : -1;
     let nextIndex;
     if (selectedIndex < 0) {
       nextIndex = direction < 0 ? available.length - 1 : 0;

@@ -1,3 +1,14 @@
+const ALLOWED_SEGMENT_BY = new Set(['ageBand', 'sex', 'addressArea', 'pspc', 'diagnosisGroup']);
+const AGE_BAND_ORDER = new Map([
+  ['0-17', 0],
+  ['18-39', 1],
+  ['40-64', 2],
+  ['65-79', 3],
+  ['80+', 4],
+  ['unknown', 5],
+  ['Nenurodyta', 5],
+]);
+
 export function formatLocalDateKey(date) {
   if (!(date instanceof Date)) {
     return '';
@@ -45,8 +56,7 @@ function computeShiftDateKey(referenceDate, shiftStartHour) {
 }
 
 function normalizeSegmentBy(value) {
-  const allowed = new Set(['ageBand', 'sex', 'addressArea', 'pspc', 'diagnosisGroup']);
-  return allowed.has(value) ? value : 'ageBand';
+  return ALLOWED_SEGMENT_BY.has(value) ? value : 'ageBand';
 }
 
 function normalizeReferralFilter(value) {
@@ -122,17 +132,8 @@ function compareSegmentRows(a, b, segmentBy) {
     return (b?.count || 0) - (a?.count || 0);
   }
   if (segmentBy === 'ageBand') {
-    const order = new Map([
-      ['0-17', 0],
-      ['18-39', 1],
-      ['40-64', 2],
-      ['65-79', 3],
-      ['80+', 4],
-      ['unknown', 5],
-      ['Nenurodyta', 5],
-    ]);
-    const indexA = order.has(a?.groupKey) ? order.get(a.groupKey) : 10;
-    const indexB = order.has(b?.groupKey) ? order.get(b.groupKey) : 10;
+    const indexA = AGE_BAND_ORDER.has(a?.groupKey) ? AGE_BAND_ORDER.get(a.groupKey) : 10;
+    const indexB = AGE_BAND_ORDER.has(b?.groupKey) ? AGE_BAND_ORDER.get(b.groupKey) : 10;
     if (indexA !== indexB) {
       return indexA - indexB;
     }
@@ -141,23 +142,39 @@ function compareSegmentRows(a, b, segmentBy) {
 }
 
 function createInsightRows(rows) {
-  const visible = Array.isArray(rows) ? rows.filter((row) => row && row.label !== 'Kita / maža imtis') : [];
-  if (!visible.length) {
+  const visible = Array.isArray(rows) ? rows : [];
+  let largestGroup = null;
+  let longestStay = null;
+  let highestHospitalizedShare = null;
+  for (let index = 0; index < visible.length; index += 1) {
+    const row = visible[index];
+    if (!row || row.label === 'Kita / maža imtis') {
+      continue;
+    }
+    if (!largestGroup || (Number(row.count) || 0) > (Number(largestGroup.count) || 0)) {
+      largestGroup = row;
+    }
+    if (
+      Number.isFinite(row.avgStayHours) &&
+      (!longestStay || Number(row.avgStayHours) > Number(longestStay.avgStayHours))
+    ) {
+      longestStay = row;
+    }
+    if (
+      Number.isFinite(row.hospitalizedShare) &&
+      (!highestHospitalizedShare ||
+        Number(row.hospitalizedShare) > Number(highestHospitalizedShare.hospitalizedShare))
+    ) {
+      highestHospitalizedShare = row;
+    }
+  }
+  if (!largestGroup && !longestStay && !highestHospitalizedShare) {
     return {
       largestGroup: null,
       longestStay: null,
       highestHospitalizedShare: null,
     };
   }
-  const largestGroup = [...visible].sort((a, b) => (b.count || 0) - (a.count || 0))[0] || null;
-  const longestStay =
-    [...visible]
-      .filter((row) => Number.isFinite(row.avgStayHours))
-      .sort((a, b) => (b.avgStayHours || 0) - (a.avgStayHours || 0))[0] || null;
-  const highestHospitalizedShare =
-    [...visible]
-      .filter((row) => Number.isFinite(row.hospitalizedShare))
-      .sort((a, b) => (b.hospitalizedShare || 0) - (a.hospitalizedShare || 0))[0] || null;
   return {
     largestGroup,
     longestStay,
@@ -543,24 +560,28 @@ function getScopedRecords(records, options = {}) {
   const shiftStartHour = resolveShiftStartHour(calculations, defaultSettings);
   const yearFilter = normalizeYearFilterValue(options?.yearFilter);
   const years = new Set();
-  const scoped = list.filter((record) => {
+  const scoped = [];
+  let extendedCount = 0;
+  for (let index = 0; index < list.length; index += 1) {
+    const record = list[index];
     if (!record || record.hasExtendedHistoricalFields !== true) {
-      return false;
+      continue;
     }
+    extendedCount += 1;
     const dateKey = getRecordShiftDateKey(record, shiftStartHour);
     if (!dateKey) {
-      return false;
+      continue;
     }
     const year = dateKey.slice(0, 4);
     if (!/^\d{4}$/.test(year)) {
-      return false;
+      continue;
     }
     years.add(year);
     if (yearFilter !== 'all' && year !== yearFilter) {
-      return false;
+      continue;
     }
-    return true;
-  });
+    scoped.push(record);
+  }
   const yearOptions = Array.from(years).sort((a, b) => (a > b ? -1 : 1));
   return {
     scoped,
@@ -569,7 +590,7 @@ function getScopedRecords(records, options = {}) {
     shiftStartHour,
     coverage: {
       total: list.length,
-      extended: list.filter((record) => record?.hasExtendedHistoricalFields === true).length,
+      extended: extendedCount,
     },
   };
 }
@@ -605,12 +626,24 @@ export function collapseSmallGroups(rows, minGroupSize = 10, otherLabel = 'Kita 
   const list = Array.isArray(rows) ? rows : [];
   const thresholdRaw = Number.parseInt(String(minGroupSize ?? 10), 10);
   const threshold = Number.isFinite(thresholdRaw) && thresholdRaw > 0 ? thresholdRaw : 10;
-  const regular = list.filter((row) => Number.isFinite(row?.count) && row.count >= threshold);
-  const small = list.filter((row) => !Number.isFinite(row?.count) || row.count < threshold);
-  if (!small.length) {
+  const regular = [];
+  let hasSmall = false;
+  let mergedCount = 0;
+  for (let index = 0; index < list.length; index += 1) {
+    const row = list[index];
+    const count = Number.isFinite(row?.count) ? row.count : Number.NaN;
+    if (Number.isFinite(count) && count >= threshold) {
+      regular.push(row);
+      continue;
+    }
+    hasSmall = true;
+    if (Number.isFinite(count)) {
+      mergedCount += count;
+    }
+  }
+  if (!hasSmall) {
     return regular;
   }
-  const mergedCount = small.reduce((sum, row) => sum + (Number.isFinite(row?.count) ? row.count : 0), 0);
   if (!mergedCount) {
     return regular;
   }
@@ -2038,7 +2071,7 @@ export function computeDoctorKpiDeltas(records, options = {}) {
     medianLosHours: computeMedian(pooledLos),
     topDoctorShare: baselineRows.length > 0 ? Number(baselineRows[0]?.share || 0) : 0,
   };
-  const currentKpis = current?.kpis || {};
+  const currentKpis = current?.kpis || { activeDoctors: 0, medianLosHours: null, topDoctorShare: 0 };
   return {
     current: currentKpis,
     baseline,
