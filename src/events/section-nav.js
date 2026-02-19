@@ -41,7 +41,7 @@ export function initSectionNavigation(env) {
     setDatasetValue(selectors.sectionNav, 'navMode', 'mpa');
     const prefetched = new Set();
     const canPrefetch = () => {
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const connection = navigator.connection;
       if (connection?.saveData) {
         return false;
       }

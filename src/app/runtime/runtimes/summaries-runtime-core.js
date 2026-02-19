@@ -1,3 +1,3 @@
-import { runSummariesRuntime } from './summaries-runtime-legacy.js';
+import { runSummariesRuntime } from './summaries-runtime-impl.js';
 
 export { runSummariesRuntime };

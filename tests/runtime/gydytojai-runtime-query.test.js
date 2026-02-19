@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   buildDoctorPageQuery,
   getDoctorPageStateFromQuery,
-} from '../../src/app/runtime/runtimes/gydytojai-runtime-legacy.js';
+} from '../../src/app/runtime/runtimes/gydytojai-runtime-impl.js';
 
 describe('gydytojai runtime query helpers', () => {
   test('parses valid query values', () => {

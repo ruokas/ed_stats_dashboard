@@ -1,3 +1,3 @@
-import { runGydytojaiRuntime } from './gydytojai-runtime-legacy.js';
+import { runGydytojaiRuntime } from './gydytojai-runtime-impl.js';
 
 export { runGydytojaiRuntime };
