@@ -553,6 +553,7 @@ export async function runKpiRuntime(core) {
     buildYearMonthMetrics,
     buildLastShiftSummary,
     hideKpiSkeleton: () => hideKpiSkeleton(selectors),
+    settings,
   });
 
   const renderLastShiftHourlyChartWithThemeBound = (seriesInfo) =>

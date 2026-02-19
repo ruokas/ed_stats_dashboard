@@ -47,6 +47,10 @@ export const DEFAULT_SETTINGS = {
     nightStartHour: 20,
     nightEndHour: 7,
   },
+  metrics: {
+    enabledMetricIds: null,
+    overrides: {},
+  },
   output: {
     pageTitle: DEFAULT_PAGE_TITLE,
     title: TEXT.title,

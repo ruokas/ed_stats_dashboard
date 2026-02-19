@@ -32,6 +32,10 @@
     "nightStartHour": 20,
     "nightEndHour": 7
   },
+  "metrics": {
+    "enabledMetricIds": null,
+    "overrides": {}
+  },
   "output": {
     "pageTitle": "RŠL SMPS statistika",
     "title": "RŠL SMPS statistika",
