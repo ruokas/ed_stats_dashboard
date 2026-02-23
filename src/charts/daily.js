@@ -11,7 +11,6 @@ export function renderDailyChart(env, dailyStats, period, ChartLib, palette) {
     shortDateFormatter,
     dateKeyToDate,
     isWeekendDateKey,
-    computeMonthlyStats,
     formatMonthLabel,
     formatDailyCaption,
     syncChartPeriodButtons,
@@ -19,18 +18,30 @@ export function renderDailyChart(env, dailyStats, period, ChartLib, palette) {
 
   const Chart = ChartLib;
   const themePalette = palette || getThemePalette();
+  const normalizeDailyBaseCaption = (value) =>
+    String(value || 'Kasdieniai pacientu srautai')
+      .replace(/\s*\([^)]*\)\s*$/u, '')
+      .trim();
   const normalizedPeriod = Number.isFinite(Number(period)) ? Math.max(0, Number(period)) : 30;
   dashboardState.chartPeriod = normalizedPeriod;
   syncChartPeriodButtons(normalizedPeriod);
   const compareGmp = dashboardState.chartFilters?.compareGmp === true;
-  const isMonthlyTrend = normalizedPeriod === 365 || normalizedPeriod === 0;
+  const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+  const isYearMode = Number.isFinite(selectedYear);
+  const isMonthlyTrend = isYearMode || normalizedPeriod === 365 || normalizedPeriod === 0;
+  const baseCaption = normalizeDailyBaseCaption(TEXT.charts.dailyCaption);
+  const captionText = isYearMode
+    ? `${baseCaption} (${selectedYear} m. menesine dinamika)`
+    : formatDailyCaption(normalizedPeriod);
   if (selectors.dailyCaption) {
-    selectors.dailyCaption.textContent = formatDailyCaption(normalizedPeriod);
+    selectors.dailyCaption.textContent = captionText;
   }
   const scopedData = Array.isArray(dailyStats)
-    ? normalizedPeriod === 0
+    ? isYearMode
       ? dailyStats.slice()
-      : dailyStats.slice(-normalizedPeriod)
+      : normalizedPeriod === 0
+        ? dailyStats.slice()
+        : dailyStats.slice(-normalizedPeriod)
     : [];
   if (selectors.dailyCaptionContext) {
     const lastEntry = scopedData.length ? scopedData[scopedData.length - 1] : null;
@@ -80,8 +91,103 @@ export function renderDailyChart(env, dailyStats, period, ChartLib, palette) {
   let useWeekendColors = true;
 
   if (isMonthlyTrend) {
-    const monthlyStats = computeMonthlyStats(scopedData);
-    const monthlyWindow = monthlyStats.length > 12 ? monthlyStats.slice(-12) : monthlyStats;
+    const monthlyMap = new Map();
+    const resolveYearMonth = (rawDate) => {
+      const raw = String(rawDate || '').trim();
+      const direct = raw.match(/^(\d{4})[-/.](\d{1,2})/);
+      if (direct) {
+        const year = Number.parseInt(direct[1], 10);
+        const month = Number.parseInt(direct[2], 10);
+        if (Number.isFinite(year) && Number.isFinite(month) && month >= 1 && month <= 12) {
+          return { year, month };
+        }
+      }
+      const utcDate = dateKeyToDate(raw);
+      if (utcDate instanceof Date && !Number.isNaN(utcDate.getTime())) {
+        return { year: utcDate.getUTCFullYear(), month: utcDate.getUTCMonth() + 1 };
+      }
+      const fallbackDate = new Date(raw);
+      if (fallbackDate instanceof Date && !Number.isNaN(fallbackDate.getTime())) {
+        return { year: fallbackDate.getUTCFullYear(), month: fallbackDate.getUTCMonth() + 1 };
+      }
+      return null;
+    };
+    scopedData.forEach((entry) => {
+      const resolved = resolveYearMonth(entry?.date);
+      if (!resolved) {
+        return;
+      }
+      const monthKey = `${resolved.year}-${String(resolved.month).padStart(2, '0')}`;
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, {
+          month: monthKey,
+          count: 0,
+          night: 0,
+          ems: 0,
+          discharged: 0,
+          hospitalized: 0,
+          totalTime: 0,
+          durations: 0,
+          hospitalizedTime: 0,
+          hospitalizedDurations: 0,
+          dayCount: 0,
+        });
+      }
+      const bucket = monthlyMap.get(monthKey);
+      bucket.count += Number.isFinite(Number(entry?.count)) ? Number(entry.count) : 0;
+      bucket.night += Number.isFinite(Number(entry?.night)) ? Number(entry.night) : 0;
+      bucket.ems += Number.isFinite(Number(entry?.ems)) ? Number(entry.ems) : 0;
+      bucket.dayCount += 1;
+    });
+    const monthlyStats = Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month));
+    const normalizeMonthKey = (value) => {
+      const raw = String(value || '').trim();
+      const match = raw.match(/^(\d{4})-(\d{1,2})/);
+      if (!match) {
+        return '';
+      }
+      const year = Number.parseInt(match[1], 10);
+      const month = Number.parseInt(match[2], 10);
+      if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+        return '';
+      }
+      return `${year}-${String(month).padStart(2, '0')}`;
+    };
+    const resolvedYear = isYearMode
+      ? selectedYear
+      : monthlyStats.reduce((latest, entry) => {
+          const normalizedMonth = normalizeMonthKey(entry?.month);
+          const year = Number.parseInt(normalizedMonth.slice(0, 4), 10);
+          return Number.isFinite(year) && year > latest ? year : latest;
+        }, Number.NEGATIVE_INFINITY);
+    const monthlyLookup = new Map(
+      monthlyStats
+        .map((entry) => ({ key: normalizeMonthKey(entry?.month), entry }))
+        .filter((item) => Boolean(item.key))
+        .map((item) => [item.key, item.entry])
+    );
+    const monthlyWindow = Number.isFinite(resolvedYear)
+      ? Array.from({ length: 12 }, (_, index) => {
+          const month = `${resolvedYear}-${String(index + 1).padStart(2, '0')}`;
+          const entry = monthlyLookup.get(month);
+          if (entry) {
+            return entry;
+          }
+          return {
+            month,
+            count: 0,
+            night: 0,
+            ems: 0,
+            discharged: 0,
+            hospitalized: 0,
+            totalTime: 0,
+            durations: 0,
+            hospitalizedTime: 0,
+            hospitalizedDurations: 0,
+            dayCount: 0,
+          };
+        })
+      : [];
     labels = monthlyWindow.map((entry) => {
       const date =
         typeof entry?.month === 'string'
@@ -275,7 +381,7 @@ export function renderDailyChart(env, dailyStats, period, ChartLib, palette) {
     existingChart.data.labels = chartConfig.data.labels;
     existingChart.data.datasets = chartConfig.data.datasets;
     existingChart.options = chartConfig.options;
-    existingChart.update('none');
+    existingChart.update();
     return;
   }
   if (existingChart && typeof existingChart.destroy === 'function') {

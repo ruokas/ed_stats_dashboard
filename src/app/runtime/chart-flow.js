@@ -27,7 +27,19 @@ export function createChartFlow({
   formatDailyCaption,
   renderCharts,
   getSettings,
+  onFiltersStateChange = null,
 }) {
+  function notifyFiltersStateChange() {
+    if (typeof onFiltersStateChange !== 'function') {
+      return;
+    }
+    onFiltersStateChange({
+      chartPeriod: dashboardState.chartPeriod,
+      chartYear: dashboardState.chartYear,
+      chartFilters: { ...(dashboardState.chartFilters || {}) },
+    });
+  }
+
   function syncChartSegmentedButtons(compareActive = false) {
     const filters = sanitizeChartFilters(dashboardState.chartFilters, {
       getDefaultChartFilters,
@@ -69,6 +81,16 @@ export function createChartFlow({
           return;
         }
         button.setAttribute('aria-pressed', String(value === filters.cardType));
+      });
+    }
+    if (Array.isArray(selectors.chartFilterCompareButtons) && selectors.chartFilterCompareButtons.length) {
+      selectors.chartFilterCompareButtons.forEach((button) => {
+        const mode = String(getDatasetValue(button, 'chartCompareGmp', '') || '').trim();
+        if (!mode) {
+          return;
+        }
+        const isActive = mode === 'on' ? compareActive : !compareActive;
+        button.setAttribute('aria-pressed', String(isActive));
       });
     }
   }
@@ -147,6 +169,7 @@ export function createChartFlow({
       KPI_FILTER_LABELS,
     });
     dashboardState.chartFilters = { ...sanitized };
+    notifyFiltersStateChange();
     syncChartFilterControls();
     const hasBaseData =
       (Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length) ||
@@ -177,6 +200,7 @@ export function createChartFlow({
       return;
     }
     dashboardState.chartPeriod = isAll ? 0 : numeric;
+    notifyFiltersStateChange();
     syncChartPeriodButtons(dashboardState.chartPeriod);
     if (selectors.dailyCaption) {
       selectors.dailyCaption.textContent = formatDailyCaption(dashboardState.chartPeriod);
@@ -207,6 +231,7 @@ export function createChartFlow({
     const numeric = Number.isFinite(year) ? Math.trunc(year) : Number.parseInt(String(year), 10);
     const normalized = Number.isFinite(numeric) ? numeric : null;
     dashboardState.chartYear = normalized;
+    notifyFiltersStateChange();
     syncChartYearControl();
     if (normalized != null) {
       dashboardState.chartPeriod = 0;
@@ -249,6 +274,7 @@ export function createChartFlow({
         ? dashboardState.chartData.baseRecords
         : dashboardState.rawRecords;
     const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
+    const isYearMode = Number.isFinite(selectedYear);
     const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
     const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters, {
       getDefaultChartFilters,
@@ -259,19 +285,38 @@ export function createChartFlow({
       ? { ...sanitizedFilters, arrival: 'all' }
       : sanitizedFilters;
     const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, effectiveFilters);
-    const filteredDaily = computeDailyStats(filteredRecords, settings?.calculations, DEFAULT_SETTINGS);
+    const filteredDailyFromRecords = computeDailyStats(
+      filteredRecords,
+      settings?.calculations,
+      DEFAULT_SETTINGS
+    );
+    const fallbackDaily = filterDailyStatsByYear(baseDaily, selectedYear);
+    const hasActivePatientFilters =
+      sanitizedFilters.compareGmp === true ||
+      sanitizedFilters.arrival !== 'all' ||
+      sanitizedFilters.disposition !== 'all' ||
+      sanitizedFilters.cardType !== 'all';
+    const filteredDaily = isYearMode
+      ? hasActivePatientFilters
+        ? filteredDailyFromRecords
+        : fallbackDaily.length
+          ? fallbackDaily
+          : filteredDailyFromRecords
+      : filteredDailyFromRecords.length || hasActivePatientFilters
+        ? filteredDailyFromRecords
+        : fallbackDaily;
     let scopedDaily = filteredDaily.slice();
     let scopedRecords = filteredRecords.slice();
-    if (normalized > 0) {
+    if (normalized > 0 && !isYearMode) {
       const windowKeys = buildDailyWindowKeys(filteredDaily, normalized);
       scopedDaily = windowKeys.length
         ? fillDailyStatsWindow(filteredDaily, windowKeys)
         : filterDailyStatsByWindow(filteredDaily, normalized);
+      if (!scopedDaily.length && Array.isArray(filteredDaily) && filteredDaily.length) {
+        scopedDaily = filteredDaily.slice(-normalized);
+      }
       scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
     }
-    const fallbackDaily = filteredDaily.length
-      ? filteredDaily
-      : filterDailyStatsByYear(baseDaily, selectedYear);
     const funnelData = computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
     const heatmapData = computeArrivalHeatmap(scopedRecords);
 
@@ -306,6 +351,7 @@ export function createChartFlow({
       filters.arrival = 'all';
     }
     dashboardState.chartFilters = filters;
+    notifyFiltersStateChange();
     void applyChartFilters();
   }
 
@@ -333,6 +379,12 @@ export function createChartFlow({
     if (cardType && selectors.chartFilterCardType) {
       selectors.chartFilterCardType.value = cardType;
       selectors.chartFilterCardType.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+    const compareMode = String(getDatasetValue(button, 'chartCompareGmp', '') || '').trim();
+    if (compareMode && selectors.chartFilterCompareGmp) {
+      selectors.chartFilterCompareGmp.checked = compareMode === 'on';
+      selectors.chartFilterCompareGmp.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
 

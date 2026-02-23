@@ -71,6 +71,17 @@
               </span>
               <span class="section-nav__label">Suvestinės</span>
             </a>
+            <a class="section-nav__link" data-nav-link href="gydytojai.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                  <path d="M12 12v8" />
+                  <path d="M7 20h10" />
+                  <path d="M4.5 14.5a7.5 7.5 0 0 1 15 0" />
+                </svg>
+              </span>
+              <span class="section-nav__label">Gydytojai</span>
+            </a>
             <a class="section-nav__link" data-nav-link href="feedback.html">
               <span class="section-nav__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -249,7 +260,8 @@
           </div>
         </div>
       </div>
-      <div class="summaries-reports-controls" role="group" aria-label="Papildomų ataskaitų filtrai">
+      <div class="filter-panel" role="region" aria-label="Papildomų ataskaitų filtrai">
+      <div class="summaries-reports-controls filter-panel__primary" role="group" aria-label="Papildomų ataskaitų filtrai">
         <label class="summaries-reports-controls__field" for="summariesReportsYear">
           <span>Metai</span>
           <select id="summariesReportsYear"></select>
@@ -267,6 +279,11 @@
           <span>Min. grupės imtis</span>
           <input id="summariesReportsMinGroupSize" type="number" min="1" max="999" step="1" value="100">
         </label>
+      </div>
+      <div class="summaries-reports-controls__actions filter-panel__actions">
+        <button type="button" id="summariesReportsReset" class="btn btn-secondary btn-small">Atkurti filtrus</button>
+        <p id="summariesReportsFiltersSummary" class="feedback-filters__summary" aria-live="polite" data-default="true"></p>
+      </div>
       </div>
       <p id="summariesReportsCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
       <div class="summaries-report-groups">

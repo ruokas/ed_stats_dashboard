@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createDashboardState } from '../../src/state/dashboardState.js';
 import { createEdPageSelectors } from '../../src/state/selectors/pages/ed.js';
 import { createFeedbackPageSelectors } from '../../src/state/selectors/pages/feedback.js';
+import { createGydytojaiPageSelectors } from '../../src/state/selectors/pages/gydytojai.js';
 import { createKpiPageSelectors } from '../../src/state/selectors/pages/kpi.js';
 import { createSummariesPageSelectors } from '../../src/state/selectors/pages/summaries.js';
 
@@ -178,6 +179,64 @@ describe('page selector factories', () => {
     expect(selectors.feedbackTrendMetricButtons).toHaveLength(1);
     expect(selectors.chartCopyButtons).toHaveLength(1);
     expect(selectors.chartDownloadButtons).toHaveLength(1);
+  });
+
+  it('creates gydytojai page selectors', () => {
+    renderShell(`
+      <nav class="gydytojai-jump-nav"><a class="gydytojai-jump-nav__link"></a></nav>
+      <h2 id="gydytojaiHeading"></h2>
+      <p id="gydytojaiSubtitle"></p>
+      <p id="gydytojaiCoverage"></p>
+      <div id="gydytojaiLoadingState"></div>
+      <div id="gydytojaiFilterChips"></div>
+      <div id="gydytojaiYearChips"></div>
+      <button data-gydytojai-topn="15"></button>
+      <button data-gydytojai-mincases="30"></button>
+      <button data-gydytojai-sortby="volume_desc"></button>
+      <button data-gydytojai-arrival="all"></button>
+      <button data-gydytojai-disposition="all"></button>
+      <button data-gydytojai-shift="all"></button>
+      <input id="gydytojaiSearch" />
+      <button id="gydytojaiResetFilters"></button>
+      <div id="gydytojaiActiveFilters"></div>
+      <table id="gydytojaiLeaderboardTable"></table>
+      <tbody id="gydytojaiLeaderboardBody"></tbody>
+      <section id="gydytojaiAnnualSection"></section>
+      <select id="gydytojaiAnnualMetric"></select>
+      <select id="gydytojaiAnnualSort"></select>
+      <input id="gydytojaiAnnualDoctorInput" />
+      <div id="gydytojaiAnnualSuggestions"></div>
+      <button id="gydytojaiAnnualAddDoctor"></button>
+      <button id="gydytojaiAnnualClearDoctors"></button>
+      <p id="gydytojaiAnnualSelectionHelp"></p>
+      <div id="gydytojaiAnnualSelected"></div>
+      <div id="gydytojaiAnnualCards"></div>
+      <p id="gydytojaiAnnualEmpty"></p>
+      <canvas id="gydytojaiVolumeChart"></canvas>
+      <canvas id="gydytojaiLosChart"></canvas>
+      <canvas id="gydytojaiHospitalChart"></canvas>
+      <canvas id="gydytojaiMixChart"></canvas>
+      <canvas id="gydytojaiScatterChart"></canvas>
+      <div id="gydytojaiChartDoctorToggles"></div>
+      <button id="gydytojaiChartDoctorsReset"></button>
+      <button data-report-export="copy"></button>
+      <button data-table-download="any"></button>
+    `);
+
+    const selectors = createGydytojaiPageSelectors();
+    expect(selectors.gydytojaiHeading).not.toBeNull();
+    expect(selectors.gydytojaiAnnualSection).not.toBeNull();
+    expect(selectors.gydytojaiAnnualCards).not.toBeNull();
+    expect(selectors.gydytojaiAnnualSuggestions).not.toBeNull();
+    expect(selectors.gydytojaiActiveFilters).not.toBeNull();
+    expect(selectors.gydytojaiChartDoctorToggles).not.toBeNull();
+    expect(selectors.gydytojaiTopNButtons).toHaveLength(1);
+    expect(selectors.gydytojaiMinCasesButtons).toHaveLength(1);
+    expect(selectors.gydytojaiSortButtons).toHaveLength(1);
+    expect(selectors.gydytojaiArrivalButtons).toHaveLength(1);
+    expect(selectors.reportExportButtons).toHaveLength(1);
+    expect(selectors.tableDownloadButtons).toHaveLength(1);
+    expect(selectors.jumpLinks).toHaveLength(1);
   });
 
   it('creates ED page selectors', () => {

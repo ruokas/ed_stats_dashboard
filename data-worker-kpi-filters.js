@@ -93,31 +93,43 @@ function filterRecordsByWindow(records, days, calculations = {}, calculationDefa
     return records.slice();
   }
   const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
-  const decorated = records
-    .map((entry) => {
-      const hasArrival = entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime());
-      const hasDischarge = entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime());
-      const reference = hasArrival ? entry.arrival : hasDischarge ? entry.discharge : null;
-      if (!reference) {
-        return null;
-      }
-      const dateKey = computeShiftDateKey(reference, shiftStartHour);
-      if (!dateKey) {
-        return null;
-      }
-      const utc = dateKeyToUtc(dateKey);
-      if (!Number.isFinite(utc)) {
-        return null;
-      }
-      return { entry, utc };
-    })
-    .filter(Boolean);
-  if (!decorated.length) {
+  const eligibleEntries = [];
+  const eligibleUtc = [];
+  let endUtc = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < records.length; index += 1) {
+    const entry = records[index];
+    const hasArrival = entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime());
+    const hasDischarge = entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime());
+    const reference = hasArrival ? entry.arrival : hasDischarge ? entry.discharge : null;
+    if (!reference) {
+      continue;
+    }
+    const dateKey = computeShiftDateKey(reference, shiftStartHour);
+    if (!dateKey) {
+      continue;
+    }
+    const utc = dateKeyToUtc(dateKey);
+    if (!Number.isFinite(utc)) {
+      continue;
+    }
+    eligibleEntries.push(entry);
+    eligibleUtc.push(utc);
+    if (utc > endUtc) {
+      endUtc = utc;
+    }
+  }
+  if (!eligibleEntries.length || !Number.isFinite(endUtc)) {
     return [];
   }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated.filter((item) => item.utc >= startUtc && item.utc <= endUtc).map((item) => item.entry);
+  const scoped = [];
+  for (let index = 0; index < eligibleEntries.length; index += 1) {
+    const utc = eligibleUtc[index];
+    if (utc >= startUtc && utc <= endUtc) {
+      scoped.push(eligibleEntries[index]);
+    }
+  }
+  return scoped;
 }
 
 function filterDailyStatsByWindow(dailyStats, days) {
@@ -127,17 +139,33 @@ function filterDailyStatsByWindow(dailyStats, days) {
   if (!Number.isFinite(days) || days <= 0) {
     return dailyStats.map((entry) => ({ ...entry }));
   }
-  const decorated = dailyStats
-    .map((entry) => ({ entry, utc: dateKeyToUtc(entry?.date) }))
-    .filter((item) => Number.isFinite(item.utc));
-  if (!decorated.length) {
+  const eligibleEntries = [];
+  const eligibleUtc = [];
+  let endUtc = Number.NEGATIVE_INFINITY;
+  for (let index = 0; index < dailyStats.length; index += 1) {
+    const entry = dailyStats[index];
+    const utc = dateKeyToUtc(entry?.date);
+    if (!Number.isFinite(utc)) {
+      continue;
+    }
+    eligibleEntries.push(entry);
+    eligibleUtc.push(utc);
+    if (utc > endUtc) {
+      endUtc = utc;
+    }
+  }
+  if (!eligibleEntries.length || !Number.isFinite(endUtc)) {
     return [];
   }
-  const endUtc = decorated.reduce((max, item) => Math.max(max, item.utc), decorated[0].utc);
   const startUtc = endUtc - (days - 1) * 86400000;
-  return decorated
-    .filter((item) => item.utc >= startUtc && item.utc <= endUtc)
-    .map((item) => ({ ...item.entry }));
+  const scoped = [];
+  for (let index = 0; index < eligibleEntries.length; index += 1) {
+    const utc = eligibleUtc[index];
+    if (utc >= startUtc && utc <= endUtc) {
+      scoped.push({ ...eligibleEntries[index] });
+    }
+  }
+  return scoped;
 }
 
 function applyKpiFiltersInWorker(data = {}) {

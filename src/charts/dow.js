@@ -220,7 +220,7 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
           existingChart.data.labels = chartConfig.data.labels;
           existingChart.data.datasets = chartConfig.data.datasets;
           existingChart.options = chartConfig.options;
-          existingChart.update('none');
+          existingChart.update();
         } else {
           if (existingChart && typeof existingChart.destroy === 'function') {
             existingChart.destroy();
@@ -343,7 +343,7 @@ export function renderDowCharts(env, Chart, palette, scopedDaily) {
           existingChart.data.labels = chartConfig.data.labels;
           existingChart.data.datasets = chartConfig.data.datasets;
           existingChart.options = chartConfig.options;
-          existingChart.update('none');
+          existingChart.update();
         } else {
           if (existingChart && typeof existingChart.destroy === 'function') {
             existingChart.destroy();

@@ -28,7 +28,8 @@ export const DEFAULT_SETTINGS = {
     dayNight: 'Diena/naktis',
     gmp: 'GMP',
     department: 'Nukreiptas į padalinį',
-    number: 'Numeris',
+
+    closingDoctor: 'Uždaręs gydytojas',
     age: 'Amžius',
     sex: 'Lytis',
     address: 'Adresas',
@@ -45,6 +46,10 @@ export const DEFAULT_SETTINGS = {
     recentDays: 7,
     nightStartHour: 20,
     nightEndHour: 7,
+  },
+  metrics: {
+    enabledMetricIds: null,
+    overrides: {},
   },
   output: {
     pageTitle: DEFAULT_PAGE_TITLE,

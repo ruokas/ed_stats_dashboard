@@ -20,6 +20,7 @@
     "gmp": "GMP",
     "department": "Nukreiptas į padalinį",
     "number": "Numeris",
+    "closingDoctor": "Uždaręs gydytojas",
     "trueValues": "1,true,taip,t,yes,y,GMP,su GMP,GMP (su GMP)",
     "hospitalizedValues": "",
     "nightKeywords": "nakt,night",
@@ -30,6 +31,10 @@
     "recentDays": 7,
     "nightStartHour": 20,
     "nightEndHour": 7
+  },
+  "metrics": {
+    "enabledMetricIds": null,
+    "overrides": {}
   },
   "output": {
     "pageTitle": "RŠL SMPS statistika",

@@ -13,6 +13,8 @@ export function createSummariesPageSelectors() {
     summariesReportsYear: byId('summariesReportsYear'),
     summariesReportsTopN: byId('summariesReportsTopN'),
     summariesReportsMinGroupSize: byId('summariesReportsMinGroupSize'),
+    summariesReportsReset: byId('summariesReportsReset'),
+    summariesReportsFiltersSummary: byId('summariesReportsFiltersSummary'),
     referralHospitalizedByPspcMode: byId('referralHospitalizedByPspcMode'),
     referralHospitalizedByPspcTrendPspc: byId('referralHospitalizedByPspcTrendPspc'),
     referralHospitalizedByPspcSort: byId('referralHospitalizedByPspcSort'),

@@ -15,38 +15,37 @@ export function createMainDataHandlers(context) {
     return `${DATA_CACHE_PREFIX}${encodeURIComponent(url)}`;
   }
 
-  function cloneCacheRecords(records) {
-    if (!Array.isArray(records)) {
-      return [];
-    }
-    return records.map((record) => {
-      const entry = { ...record };
-      if (entry.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime())) {
-        entry.arrival = new Date(entry.arrival.getTime());
-      }
-      if (entry.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime())) {
-        entry.discharge = new Date(entry.discharge.getTime());
-      }
-      return entry;
-    });
-  }
-
-  function cloneCacheDailyStats(dailyStats) {
-    if (!Array.isArray(dailyStats)) {
-      return [];
-    }
-    return dailyStats.map((item) => ({ ...item }));
-  }
-
   function cloneHospitalByDeptStayAgg(agg) {
     if (!agg || typeof agg !== 'object') {
       return null;
     }
-    try {
-      return JSON.parse(JSON.stringify(agg));
-    } catch (_error) {
-      return null;
+    const byYear = agg.byYear && typeof agg.byYear === 'object' ? agg.byYear : null;
+    if (!byYear) {
+      return { byYear: Object.create(null) };
     }
+    const clone = { byYear: Object.create(null) };
+    const yearKeys = Object.keys(byYear);
+    for (let i = 0; i < yearKeys.length; i += 1) {
+      const yearKey = yearKeys[i];
+      const yearSource = byYear[yearKey] && typeof byYear[yearKey] === 'object' ? byYear[yearKey] : {};
+      clone.byYear[yearKey] = Object.create(null);
+      const departments = Object.keys(yearSource);
+      for (let j = 0; j < departments.length; j += 1) {
+        const department = departments[j];
+        const srcBucket = yearSource[department] || {};
+        clone.byYear[yearKey][department] = {
+          count_lt4: Number.isFinite(srcBucket.count_lt4) ? srcBucket.count_lt4 : 0,
+          count_4_8: Number.isFinite(srcBucket.count_4_8) ? srcBucket.count_4_8 : 0,
+          count_8_16: Number.isFinite(srcBucket.count_8_16) ? srcBucket.count_8_16 : 0,
+          count_gt16: Number.isFinite(srcBucket.count_gt16) ? srcBucket.count_gt16 : 0,
+          count_unclassified: Number.isFinite(srcBucket.count_unclassified)
+            ? srcBucket.count_unclassified
+            : 0,
+          total: Number.isFinite(srcBucket.total) ? srcBucket.total : 0,
+        };
+      }
+    }
+    return clone;
   }
 
   function mergeHospitalByDeptStayAgg(baseAgg, extraAgg) {
@@ -87,24 +86,38 @@ export function createMainDataHandlers(context) {
     return target;
   }
 
-  function cloneCacheEntry(entry) {
+  function createCacheEntry(entry) {
     const timestamp = typeof entry?.timestamp === 'number' ? entry.timestamp : Date.now();
     return {
       etag: entry?.etag || '',
       lastModified: entry?.lastModified || '',
       signature: entry?.signature || '',
       timestamp,
-      records: cloneCacheRecords(entry?.records),
-      dailyStats: cloneCacheDailyStats(entry?.dailyStats),
-      hospitalByDeptStayAgg: cloneHospitalByDeptStayAgg(entry?.hospitalByDeptStayAgg),
+      records: Array.isArray(entry?.records) ? entry.records : [],
+      dailyStats: Array.isArray(entry?.dailyStats) ? entry.dailyStats : [],
+      hospitalByDeptStayAgg:
+        entry?.hospitalByDeptStayAgg && typeof entry.hospitalByDeptStayAgg === 'object'
+          ? entry.hospitalByDeptStayAgg
+          : null,
     };
   }
 
-  function rememberCacheEntry(key, entry) {
-    if (!key) {
-      return;
+  function attachSourceId(records, sourceId) {
+    const list = Array.isArray(records) ? records : [];
+    const tagged = new Array(list.length);
+    for (let index = 0; index < list.length; index += 1) {
+      const record = list[index];
+      if (!record || typeof record !== 'object') {
+        tagged[index] = { sourceId };
+        continue;
+      }
+      if (record.sourceId === sourceId) {
+        tagged[index] = record;
+        continue;
+      }
+      tagged[index] = { ...record, sourceId };
     }
-    inMemoryDataCache.set(key, cloneCacheEntry(entry));
+    return tagged;
   }
 
   function readDataCache(url) {
@@ -114,7 +127,19 @@ export function createMainDataHandlers(context) {
     }
 
     if (inMemoryDataCache.has(key)) {
-      return cloneCacheEntry(inMemoryDataCache.get(key));
+      const cached = inMemoryDataCache.get(key);
+      return {
+        etag: cached?.etag || '',
+        lastModified: cached?.lastModified || '',
+        signature: cached?.signature || '',
+        timestamp: typeof cached?.timestamp === 'number' ? cached.timestamp : Date.now(),
+        records: Array.isArray(cached?.records) ? cached.records : [],
+        dailyStats: Array.isArray(cached?.dailyStats) ? cached.dailyStats : [],
+        hospitalByDeptStayAgg:
+          cached?.hospitalByDeptStayAgg && typeof cached.hospitalByDeptStayAgg === 'object'
+            ? cached.hospitalByDeptStayAgg
+            : null,
+      };
     }
     return null;
   }
@@ -125,8 +150,8 @@ export function createMainDataHandlers(context) {
       return;
     }
 
-    const entry = cloneCacheEntry({ ...payload, timestamp: Date.now() });
-    rememberCacheEntry(key, entry);
+    const entry = createCacheEntry({ ...payload, timestamp: Date.now() });
+    inMemoryDataCache.set(key, entry);
   }
 
   function clearDataCache(url) {
@@ -250,7 +275,10 @@ export function createMainDataHandlers(context) {
     const assignDataset = (dataset, metaOverrides = {}) => {
       result.records = dataset.records;
       result.dailyStats = dataset.dailyStats;
-      result.hospitalByDeptStayAgg = cloneHospitalByDeptStayAgg(dataset.hospitalByDeptStayAgg);
+      result.hospitalByDeptStayAgg =
+        dataset?.hospitalByDeptStayAgg && typeof dataset.hospitalByDeptStayAgg === 'object'
+          ? dataset.hospitalByDeptStayAgg
+          : null;
       result.meta = { ...result.meta, ...metaOverrides };
     };
 
@@ -407,7 +435,7 @@ export function createMainDataHandlers(context) {
     const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
 
     const baseRecordsRaw = Array.isArray(primaryResult.records) ? primaryResult.records : [];
-    const baseRecords = baseRecordsRaw.map((record) => ({ ...record, sourceId: 'primary' }));
+    const baseRecords = attachSourceId(baseRecordsRaw, 'primary');
     const baseDaily = Array.isArray(primaryResult.dailyStats) ? primaryResult.dailyStats : [];
     let combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(primaryResult.hospitalByDeptStayAgg, null);
     let combinedRecords = baseRecords.slice();
@@ -437,12 +465,20 @@ export function createMainDataHandlers(context) {
       if (historicalShouldAttempt && historicalResult) {
         historicalMeta = historicalResult.meta || null;
         const historicalRecordsRaw = Array.isArray(historicalResult.records) ? historicalResult.records : [];
-        const historicalRecords = historicalRecordsRaw.map((record) => ({
-          ...record,
-          sourceId: 'historical',
-        }));
+        const historicalRecords = attachSourceId(historicalRecordsRaw, 'historical');
         if (historicalRecords.length) {
-          combinedRecords = combinedRecords.concat(historicalRecords);
+          if (combinedRecords.length === 0) {
+            combinedRecords = historicalRecords.slice();
+          } else {
+            const merged = new Array(combinedRecords.length + historicalRecords.length);
+            for (let index = 0; index < combinedRecords.length; index += 1) {
+              merged[index] = combinedRecords[index];
+            }
+            for (let index = 0; index < historicalRecords.length; index += 1) {
+              merged[combinedRecords.length + index] = historicalRecords[index];
+            }
+            combinedRecords = merged;
+          }
         }
         combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(
           combinedHospitalByDeptStayAgg,

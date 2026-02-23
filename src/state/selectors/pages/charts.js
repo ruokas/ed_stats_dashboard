@@ -5,6 +5,7 @@ export function createChartsPageSelectors() {
   const sectionNav = byQuery('.section-nav');
   const chartSection = byQuery('[data-section="chart"]');
   const chartPeriodGroup = byId('chartPeriodGroup');
+  const chartYearGroup = byId('chartYearGroup');
   const chartFiltersForm = byId('chartFiltersForm');
   const hourlyCompareSeriesGroup = byQueryIn(chartSection, '.hourly-compare-series');
   const chartsJumpNav = byQueryIn(main, '.charts-jump-nav');
@@ -48,7 +49,10 @@ export function createChartsPageSelectors() {
     heatmapYearSelect: byId('heatmapYear'),
     chartYearLabel: byId('chartYearLabel'),
     chartYearSelect: byId('chartYear'),
+    chartYearGroup,
     chartPeriodButtons: byQueryAllIn(chartPeriodGroup, '[data-chart-period]'),
+    chartTimeScopeSummary: byId('chartTimeScopeSummary'),
+    chartFiltersReset: byId('chartFiltersReset'),
     chartFiltersSummary: byId('chartFiltersSummary'),
     chartFiltersForm,
     chartFilterArrival: byId('chartArrival'),
@@ -57,6 +61,7 @@ export function createChartsPageSelectors() {
     chartFilterDispositionButtons: byQueryAllIn(chartFiltersForm, '[data-chart-disposition]'),
     chartFilterCardType: byId('chartCardType'),
     chartFilterCardTypeButtons: byQueryAllIn(chartFiltersForm, '[data-chart-card-type]'),
+    chartFilterCompareButtons: byQueryAllIn(chartFiltersForm, '[data-chart-compare-gmp]'),
     chartFilterCompareGmp: byId('chartCompareGmp'),
     chartsJumpNav,
     chartsJumpLinks: byQueryAllIn(chartsJumpNav, '.charts-jump-nav__link'),

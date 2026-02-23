@@ -55,6 +55,7 @@ export function initChartControls(env) {
     handleHourlyResetFilters,
     handleChartFilterChange,
     handleChartSegmentedClick,
+    handleChartFiltersReset,
     applyHourlyDepartmentSelection,
     handleChartsHospitalTableYearChange,
     handleChartsHospitalTableSearchInput,
@@ -67,6 +68,10 @@ export function initChartControls(env) {
       button.addEventListener('click', () => {
         const period = getDatasetValue(button, 'chartPeriod', '');
         updateChartPeriod(period);
+        const dropdown = button.closest('details.chart-period__more');
+        if (dropdown instanceof HTMLDetailsElement) {
+          dropdown.open = false;
+        }
       });
     });
   }
@@ -79,6 +84,24 @@ export function initChartControls(env) {
       } else {
         updateChartYear(value);
       }
+    });
+  }
+  if (selectors.chartYearGroup) {
+    selectors.chartYearGroup.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const button = target.closest('[data-chart-year]');
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const value = String(getDatasetValue(button, 'chartYear', '') || '').trim();
+      if (value === 'all') {
+        updateChartYear(null);
+        return;
+      }
+      updateChartYear(value);
     });
   }
 
@@ -197,5 +220,13 @@ export function initChartControls(env) {
     selectors.chartFilterCardTypeButtons.forEach((button) => {
       button.addEventListener('click', handleChartSegmentedClick);
     });
+  }
+  if (Array.isArray(selectors.chartFilterCompareButtons)) {
+    selectors.chartFilterCompareButtons.forEach((button) => {
+      button.addEventListener('click', handleChartSegmentedClick);
+    });
+  }
+  if (selectors.chartFiltersReset) {
+    selectors.chartFiltersReset.addEventListener('click', handleChartFiltersReset);
   }
 }

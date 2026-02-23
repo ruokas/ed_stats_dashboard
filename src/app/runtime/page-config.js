@@ -1,10 +1,11 @@
-const RUNTIME_VERSION = '2026-02-08-runtime-refresh-3';
+const RUNTIME_VERSION = '2026-02-12-runtime-refresh-4';
 
 export const PAGE_CONFIG = {
   kpi: { kpi: true },
   charts: { charts: true, heatmap: true, hourly: true },
   recent: { recent: true },
   summaries: { monthly: false, yearly: true },
+  gydytojai: { doctors: true },
   feedback: { feedback: true },
   ed: { ed: true, tv: false },
 };
@@ -14,6 +15,7 @@ export const RUNTIME_MODULE_BY_PAGE = {
   charts: `./runtime/pages/charts-page.js?v=${RUNTIME_VERSION}`,
   recent: `./runtime/pages/recent-page.js?v=${RUNTIME_VERSION}`,
   summaries: `./runtime/pages/summaries-page.js?v=${RUNTIME_VERSION}`,
+  gydytojai: `./runtime/pages/gydytojai-page.js?v=${RUNTIME_VERSION}`,
   feedback: `./runtime/pages/feedback-page.js?v=${RUNTIME_VERSION}`,
   ed: `./runtime/pages/ed-page.js?v=${RUNTIME_VERSION}`,
 };

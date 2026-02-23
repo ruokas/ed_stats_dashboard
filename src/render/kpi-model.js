@@ -1,4 +1,12 @@
-export function buildKpiCardsModel({ lastShiftSummary, TEXT, escapeHtml, formatKpiValue, percentFormatter }) {
+export function buildKpiCardsModel({
+  lastShiftSummary,
+  TEXT,
+  escapeHtml,
+  formatKpiValue,
+  percentFormatter,
+  cardsConfig: cardsConfigOverride = null,
+  resolveMetricById = null,
+}) {
   if (!lastShiftSummary) {
     return {
       emptyHtml: `
@@ -13,7 +21,12 @@ export function buildKpiCardsModel({ lastShiftSummary, TEXT, escapeHtml, formatK
     };
   }
 
-  const cardsConfig = Array.isArray(TEXT.kpis.cards) ? TEXT.kpis.cards : [];
+  const cardsConfig =
+    Array.isArray(cardsConfigOverride) && cardsConfigOverride.length
+      ? cardsConfigOverride
+      : Array.isArray(TEXT.kpis.cards)
+        ? TEXT.kpis.cards
+        : [];
   if (!cardsConfig.length) {
     return {
       emptyHtml: `
@@ -50,14 +63,39 @@ export function buildKpiCardsModel({ lastShiftSummary, TEXT, escapeHtml, formatK
       return;
     }
 
+    const resolvedMetric =
+      typeof resolveMetricById === 'function' ? resolveMetricById(config.metricKey, lastShiftSummary) : null;
     const metric = lastShiftSummary.metrics?.[config.metricKey] || {};
-    const rawValue = Number.isFinite(metric.value) ? metric.value : null;
-    const averageValue = Number.isFinite(metric.average) ? metric.average : null;
-    const valueFormat = config.format || 'integer';
-    const shareValue = Number.isFinite(metric.share) ? metric.share : null;
-    const averageShareValue = Number.isFinite(metric.averageShare) ? metric.averageShare : null;
+    const rawValue = Number.isFinite(resolvedMetric?.value)
+      ? resolvedMetric.value
+      : Number.isFinite(metric.value)
+        ? metric.value
+        : null;
+    const averageValue = Number.isFinite(resolvedMetric?.average)
+      ? resolvedMetric.average
+      : Number.isFinite(metric.average)
+        ? metric.average
+        : null;
+    const valueFormat =
+      typeof resolvedMetric?.format === 'string' && resolvedMetric.format
+        ? resolvedMetric.format
+        : config.format || 'integer';
+    const shareValue = Number.isFinite(resolvedMetric?.share)
+      ? resolvedMetric.share
+      : Number.isFinite(metric.share)
+        ? metric.share
+        : null;
+    const averageShareValue = Number.isFinite(resolvedMetric?.averageShare)
+      ? resolvedMetric.averageShare
+      : Number.isFinite(metric.averageShare)
+        ? metric.averageShare
+        : null;
 
-    const titleText = config.label ? escapeHtml(config.label) : '';
+    const titleText = resolvedMetric?.label
+      ? escapeHtml(resolvedMetric.label)
+      : config.label
+        ? escapeHtml(config.label)
+        : '';
     const mainLabel =
       typeof config.mainLabel === 'string'
         ? config.mainLabel
@@ -71,7 +109,11 @@ export function buildKpiCardsModel({ lastShiftSummary, TEXT, escapeHtml, formatK
       shareValue != null
         ? `<span class="kpi-mainline__share">(${percentFormatter.format(shareValue)})</span>`
         : '';
-    const unitHtml = config.unitLabel ? `<span class="kpi-unit">${escapeHtml(config.unitLabel)}</span>` : '';
+    const unitLabel =
+      typeof resolvedMetric?.unit === 'string' && resolvedMetric.unit
+        ? resolvedMetric.unit
+        : config.unitLabel;
+    const unitHtml = unitLabel ? `<span class="kpi-unit">${escapeHtml(unitLabel)}</span>` : '';
     const mainValueHtml = Number.isFinite(rawValue)
       ? `<span class="kpi-mainline__metric"><strong class="kpi-main-value">${formatKpiValue(rawValue, valueFormat)}</strong>${unitHtml}</span>${shareBadge}`
       : `<span class="kpi-empty">${TEXT.kpis.primaryNoData || TEXT.kpis.noYearData}</span>`;
@@ -115,10 +157,10 @@ export function buildKpiCardsModel({ lastShiftSummary, TEXT, escapeHtml, formatK
       detailClass = 'kpi-detail--comparison';
       detailAria =
         diff > 0
-          ? `Skirtumas lyginant su ${referenceText}: padidėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}. ${referenceText}: ${formatKpiValue(averageValue, valueFormat)}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
+          ? `Skirtumas lyginant su ${referenceText}: padidėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}. ${referenceText}: ${formatKpiValue(averageValue, valueFormat)}${unitLabel ? ` ${unitLabel}` : ''}.`
           : diff < 0
-            ? `Skirtumas lyginant su ${referenceText}: sumažėjo ${formattedDiff}${config.unitLabel ? ` ${config.unitLabel}` : ''}. ${referenceText}: ${formatKpiValue(averageValue, valueFormat)}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`
-            : `Skirtumo nėra lyginant su ${referenceText}. ${referenceText}: ${formatKpiValue(averageValue, valueFormat)}${config.unitLabel ? ` ${config.unitLabel}` : ''}.`;
+            ? `Skirtumas lyginant su ${referenceText}: sumažėjo ${formattedDiff}${unitLabel ? ` ${unitLabel}` : ''}. ${referenceText}: ${formatKpiValue(averageValue, valueFormat)}${unitLabel ? ` ${unitLabel}` : ''}.`
+            : `Skirtumo nėra lyginant su ${referenceText}. ${referenceText}: ${formatKpiValue(averageValue, valueFormat)}${unitLabel ? ` ${unitLabel}` : ''}.`;
     } else {
       deltaTokenHtml = `
         <span class="kpi-detail__token kpi-detail__token--delta">

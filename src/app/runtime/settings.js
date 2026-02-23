@@ -61,6 +61,41 @@ export function normalizeSettings(rawSettings = {}, DEFAULT_SETTINGS) {
     60,
     DEFAULT_SETTINGS.calculations.recentDays
   );
+  const rawMetrics = merged.metrics && typeof merged.metrics === 'object' ? merged.metrics : {};
+  const enabledIds = Array.isArray(rawMetrics.enabledMetricIds)
+    ? Array.from(
+        new Set(
+          rawMetrics.enabledMetricIds
+            .map((id) => (typeof id === 'string' ? id.trim() : ''))
+            .filter((id) => id.length > 0)
+        )
+      )
+    : null;
+  const rawOverrides =
+    rawMetrics.overrides && typeof rawMetrics.overrides === 'object' ? rawMetrics.overrides : {};
+  const normalizedOverrides = {};
+  Object.keys(rawOverrides).forEach((metricId) => {
+    const key = String(metricId || '').trim();
+    if (!key) {
+      return;
+    }
+    const source = rawOverrides[metricId];
+    if (!source || typeof source !== 'object') {
+      return;
+    }
+    const label = typeof source.label === 'string' ? source.label.trim() : '';
+    const target = Number(source.target);
+    const warnThreshold = Number(source.warnThreshold);
+    normalizedOverrides[key] = {
+      ...(label ? { label } : {}),
+      ...(Number.isFinite(target) ? { target } : {}),
+      ...(Number.isFinite(warnThreshold) ? { warnThreshold } : {}),
+    };
+  });
+  merged.metrics = {
+    enabledMetricIds: enabledIds?.length ? enabledIds : null,
+    overrides: normalizedOverrides,
+  };
   return merged;
 }
 

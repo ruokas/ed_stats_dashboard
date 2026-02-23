@@ -22,24 +22,37 @@
             <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
           </div>
         </div>
-        <div class="section__actions chart-controls">
-          <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
-            <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
-            <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
-            <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
-            <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
-            <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
-            <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
-            <button type="button" class="chip-button" data-chart-period="all" aria-pressed="false">Visas laikotarpis</button>
+        <div class="section__actions chart-controls filter-panel">
+          <div class="time-scope-control">
+            <p class="time-scope-control__title">Laiko pjūvis</p>
+            <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
+              <button type="button" class="chip-button" data-chart-period="7" aria-pressed="false">7 d.</button>
+              <button type="button" class="chip-button" data-chart-period="14" aria-pressed="false">14 d.</button>
+              <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
+              <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
+              <details class="chart-period__more">
+                <summary class="chip-button chart-period__more-toggle">Daugiau</summary>
+                <div class="chart-period__more-menu" role="group" aria-label="Papildomi laikotarpiai">
+                  <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
+                  <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
+                  <button type="button" class="chip-button" data-chart-period="all" aria-pressed="false">Visi</button>
+                </div>
+              </details>
+            </div>
+            <div class="chart-year-group">
+              <span id="chartYearLabel">Metai</span>
+              <div id="chartYearGroup" class="chart-year-chips" role="group" aria-label="Pasirinkite metus"></div>
+              <select id="chartYear" class="sr-only" aria-label="Filtruoti grafikus pagal kalendorinius metus">
+                <option value="all">Visi</option>
+              </select>
+            </div>
+            <p id="chartTimeScopeSummary" class="time-scope-control__summary" aria-live="polite"></p>
           </div>
-          <label class="chart-year-filter" for="chartYear">
-            <span id="chartYearLabel">Metai</span>
-            <select id="chartYear" aria-label="Filtruoti grafikus pagal kalendorinius metus">
-              <option value="all">Visi metai</option>
-            </select>
-          </label>
-          <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true"></p>
-          <form id="chartFiltersForm" class="chart-filters" aria-label="Filtruoti grafikus">
+          <div class="filter-panel__actions chart-controls__actions">
+            <button type="button" id="chartFiltersReset" class="btn btn-secondary btn-small chart-filters__reset">Atkurti filtrus</button>
+            <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true"></p>
+          </div>
+          <form id="chartFiltersForm" class="chart-filters filter-panel__primary" aria-label="Filtruoti grafikus">
             <label class="chart-filter" for="chartArrival">
               <span>Atvykimo tipas</span>
               <div class="segmented-control chart-filter__segmented" role="group" aria-label="Atvykimo tipas">
@@ -83,10 +96,11 @@
             </label>
             <label class="chart-filter chart-filter--toggle" for="chartCompareGmp">
               <span>Palyginti GMP</span>
-              <div class="chart-toggle">
-                <input id="chartCompareGmp" name="compareGmp" type="checkbox" aria-label="Palyginti GMP ir be GMP">
-                <span>GMP / be GMP</span>
+              <div class="segmented-control chart-filter__segmented chart-filter__segmented--toggle" role="group" aria-label="GMP palyginimas">
+                <button type="button" class="segmented-control__button" data-chart-compare-gmp="off" aria-pressed="true">Išjungta</button>
+                <button type="button" class="segmented-control__button" data-chart-compare-gmp="on" aria-pressed="false">GMP / be GMP</button>
               </div>
+              <input id="chartCompareGmp" name="compareGmp" type="checkbox" class="sr-only" aria-label="Palyginti GMP ir be GMP">
             </label>
           </form>
         </div>
@@ -138,7 +152,7 @@
             <canvas id="dailyChart" aria-labelledby="dailyChartTitle"></canvas>
           </div>
           <figcaption id="dailyChartTitle">
-            <span id="dailyChartLabel" class="chart-caption__label">Kasdieniai pacientai (paskutinės 30 dienų)</span>
+            <span id="dailyChartLabel" class="chart-caption__label">Kasdieniai pacientų srautai</span>
             <span id="dailyChartContext" class="chart-caption__context"></span>
           </figcaption>
         </figure>
@@ -468,22 +482,35 @@
         <div class="section__actions">
           <button
             type="button"
-            class="btn btn-tertiary btn-small"
-            data-table-download="csv"
+            class="chart-copy-btn"
+            data-table-download="copy"
             data-table-target="#chartsHospitalTableRoot"
             data-table-title="Stacionarizacijos pagal skyrių ir SPS trukmę"
-            aria-label="Parsisiųsti stacionarizacijų lentelę CSV formatu"
-            title="Parsisiųsti CSV"
-          >CSV</button>
+            data-tooltip="Kopijuoti (PNG)"
+            aria-label="Nukopijuoti stacionarizacijų lentelę PNG formatu"
+            title="Nukopijuoti PNG"
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+              <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+            </svg>
+          </button>
           <button
             type="button"
-            class="btn btn-tertiary btn-small"
+            class="chart-download-btn"
             data-table-download="png"
             data-table-target="#chartsHospitalTableRoot"
             data-table-title="Stacionarizacijos pagal skyrių ir SPS trukmę"
+            data-tooltip="Parsisiųsti PNG"
             aria-label="Parsisiųsti stacionarizacijų lentelę PNG formatu"
             title="Parsisiųsti PNG"
-          >PNG</button>
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v12"></path>
+              <path d="M8 11l4 4 4-4"></path>
+              <path d="M4 21h16"></path>
+            </svg>
+          </button>
         </div>
       </div>
 

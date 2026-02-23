@@ -2,6 +2,7 @@ import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-
 import { computeDailyStats } from '../../../data/stats.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
 import { initCompareControls } from '../../../events/compare.js';
+import { getRecentCompareMetricLabel } from '../../../metrics/recent-compare.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
 import { getDatasetValue, runAfterDomAndIdle, setDatasetValue } from '../../../utils/dom.js';
@@ -84,7 +85,9 @@ function extractCompareMetricsFromRow(row) {
   };
 }
 
-function createRecentCompareFeature({ selectors, dashboardState }) {
+function createRecentCompareFeature({ selectors, dashboardState, settings }) {
+  const compareLabels = TEXT.compare?.metrics || {};
+
   function updateCompareSummary() {
     if (!selectors.compareSummary) {
       return;
@@ -117,13 +120,17 @@ function createRecentCompareFeature({ selectors, dashboardState }) {
     const avgStayDiff = newer.avgStay - older.avgStay;
     const emsShareDiff = (newer.emsShare - older.emsShare) * 100;
     const hospShareDiff = (newer.hospShare - older.hospShare) * 100;
+    const totalLabel = getRecentCompareMetricLabel('total', compareLabels, settings);
+    const avgStayLabel = getRecentCompareMetricLabel('avgStay', compareLabels, settings);
+    const emsShareLabel = getRecentCompareMetricLabel('emsShare', compareLabels, settings);
+    const hospShareLabel = getRecentCompareMetricLabel('hospShare', compareLabels, settings);
     selectors.compareSummary.innerHTML = `
       <strong>${summaryTitle}</strong>
       <ul>
-        <li><strong>${TEXT.compare.metrics.total}:</strong> ${numberFormatter.format(newer.total)} vs ${numberFormatter.format(older.total)} (Δ ${diffToText(totalDiff, (val) => numberFormatter.format(Math.round(val)))})</li>
-        <li><strong>${TEXT.compare.metrics.avgStay}:</strong> ${decimalFormatter.format(newer.avgStay)} vs ${decimalFormatter.format(older.avgStay)} (Δ ${diffToText(avgStayDiff, (val) => decimalFormatter.format(val), ' val.')})</li>
-        <li><strong>${TEXT.compare.metrics.emsShare}:</strong> ${percentFormatter.format(newer.emsShare)} vs ${percentFormatter.format(older.emsShare)} (Δ ${diffToText(emsShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.')})</li>
-        <li><strong>${TEXT.compare.metrics.hospShare}:</strong> ${percentFormatter.format(newer.hospShare)} vs ${percentFormatter.format(older.hospShare)} (Δ ${diffToText(hospShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.')})</li>
+        <li><strong>${totalLabel}:</strong> ${numberFormatter.format(newer.total)} vs ${numberFormatter.format(older.total)} (Δ ${diffToText(totalDiff, (val) => numberFormatter.format(Math.round(val)))})</li>
+        <li><strong>${avgStayLabel}:</strong> ${decimalFormatter.format(newer.avgStay)} vs ${decimalFormatter.format(older.avgStay)} (Δ ${diffToText(avgStayDiff, (val) => decimalFormatter.format(val), ' val.')})</li>
+        <li><strong>${emsShareLabel}:</strong> ${percentFormatter.format(newer.emsShare)} vs ${percentFormatter.format(older.emsShare)} (Δ ${diffToText(emsShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.')})</li>
+        <li><strong>${hospShareLabel}:</strong> ${percentFormatter.format(newer.hospShare)} vs ${percentFormatter.format(older.hospShare)} (Δ ${diffToText(hospShareDiff, (val) => oneDecimalFormatter.format(val), ' p. p.')})</li>
       </ul>
     `;
   }
@@ -261,6 +268,8 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
     const row = document.createElement('tr');
     const dateValue = dateKeyToDate(entry.date);
     const displayDate = dateValue ? dailyDateFormatter.format(dateValue) : entry.date;
+    const weekday = dateValue instanceof Date ? dateValue.getDay() : null;
+    const isWeekend = weekday === 0 || weekday === 6;
     const total = Number.isFinite(entry.count) ? entry.count : 0;
     const avgStayEntry = entry.durations ? entry.totalTime / entry.durations : 0;
     const hospShare = total > 0 ? entry.hospitalized / total : 0;
@@ -268,6 +277,9 @@ function renderRecentTable(selectors, compareFeature, recentDailyStats) {
 
     const dateCell = document.createElement('td');
     dateCell.textContent = displayDate;
+    if (isWeekend) {
+      row.classList.add('table-row--weekend');
+    }
     const totalCell = document.createElement('td');
     totalCell.textContent = numberFormatter.format(total);
     const stayCell = document.createElement('td');
@@ -314,7 +326,7 @@ export async function runRecentRuntime(core) {
     hourlyMetricArrivals: 'arrivals',
     hourlyCompareSeriesAll: 'all',
   });
-  const compareFeature = createRecentCompareFeature({ selectors, dashboardState });
+  const compareFeature = createRecentCompareFeature({ selectors, dashboardState, settings });
 
   const { fetchData } = createMainDataHandlers({
     settings,

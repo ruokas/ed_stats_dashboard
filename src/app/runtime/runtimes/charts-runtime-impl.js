@@ -6,6 +6,8 @@ import {
   computeHospitalizedDepartmentYearlyStayTrend,
 } from '../../../data/stats.js';
 import { initChartControls } from '../../../events/charts.js';
+import { getMetricLabelOverride, isMetricEnabled } from '../../../metrics/catalog-overrides.js';
+import { getMetricById, getMetricSurfaceMeta, getMetricsBySurface } from '../../../metrics/index.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
@@ -51,6 +53,8 @@ import { createFunnelCanvasFeature } from '../features/funnel-canvas.js';
 import { createHourlyControlsFeature } from '../features/hourly-controls.js';
 import { applyChartsText } from '../features/text-charts.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
+import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
+import { createDebouncedHandler } from '../filters/ui-sync.js';
 import { sanitizeChartFilters } from '../filters.js';
 import {
   createTextSignature,
@@ -88,8 +92,11 @@ const HEATMAP_WEEKDAY_FULL = [
   'Sekmadienis',
 ];
 const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Trec', 'Ketv', 'Penkt', 'Sest', 'Sekm'];
-const HEATMAP_METRIC_KEYS = ['arrivals', 'discharges', 'hospitalized', 'avgDuration'];
-const DEFAULT_HEATMAP_METRIC = 'arrivals';
+const HEATMAP_METRICS = getMetricsBySurface('heatmap');
+const HEATMAP_METRIC_KEYS = HEATMAP_METRICS.map((metric) => metric.id);
+const DEFAULT_HEATMAP_METRIC = HEATMAP_METRIC_KEYS.includes('arrivals')
+  ? 'arrivals'
+  : HEATMAP_METRIC_KEYS[0] || 'arrivals';
 const HOURLY_WEEKDAY_ALL = 'all';
 const HOURLY_STAY_BUCKET_ALL = 'all';
 const HOURLY_METRIC_ARRIVALS = 'arrivals';
@@ -579,6 +586,133 @@ export async function runChartsRuntime(core) {
     hourlyMetricArrivals: HOURLY_METRIC_ARRIVALS,
     hourlyCompareSeriesAll: HOURLY_COMPARE_SERIES_ALL,
   });
+  const getEnabledHeatmapMetricKeys = () => {
+    const enabled = HEATMAP_METRIC_KEYS.filter((metricId) => isMetricEnabled(settings, metricId));
+    return enabled.length ? enabled : HEATMAP_METRIC_KEYS;
+  };
+  const getDefaultHeatmapMetric = () => {
+    const enabled = getEnabledHeatmapMetricKeys();
+    return enabled.includes('arrivals') ? 'arrivals' : enabled[0] || DEFAULT_HEATMAP_METRIC;
+  };
+  const getChartsDefaults = () => ({
+    chartPeriod: 30,
+    chartYear: null,
+    arrival: 'all',
+    disposition: 'all',
+    cardType: 'all',
+    compareGmp: false,
+    heatmapMetric: getDefaultHeatmapMetric(),
+    heatmapArrival: 'all',
+    heatmapDisposition: 'all',
+    heatmapCardType: 'all',
+    heatmapYear: null,
+    hourlyWeekday: HOURLY_WEEKDAY_ALL,
+    hourlyStayBucket: HOURLY_STAY_BUCKET_ALL,
+    hourlyMetric: HOURLY_METRIC_ARRIVALS,
+    hourlyDepartment: 'all',
+    hourlyCompareEnabled: false,
+    hourlyCompareYearA: null,
+    hourlyCompareYearB: null,
+    hourlyCompareSeries: HOURLY_COMPARE_SERIES_ALL,
+    hospitalYear: 'all',
+    hospitalSort: 'total_desc',
+    hospitalSearch: '',
+    hospitalDepartment: '',
+  });
+  const persistChartsQuery = () => {
+    const state = {
+      chartPeriod: dashboardState.chartPeriod,
+      chartYear: dashboardState.chartYear,
+      arrival: dashboardState.chartFilters?.arrival,
+      disposition: dashboardState.chartFilters?.disposition,
+      cardType: dashboardState.chartFilters?.cardType,
+      compareGmp: dashboardState.chartFilters?.compareGmp,
+      heatmapMetric: dashboardState.heatmapMetric,
+      heatmapArrival: dashboardState.heatmapFilters?.arrival,
+      heatmapDisposition: dashboardState.heatmapFilters?.disposition,
+      heatmapCardType: dashboardState.heatmapFilters?.cardType,
+      heatmapYear: dashboardState.heatmapYear,
+      hourlyWeekday: dashboardState.hourlyWeekday,
+      hourlyStayBucket: dashboardState.hourlyStayBucket,
+      hourlyMetric: dashboardState.hourlyMetric,
+      hourlyDepartment: dashboardState.hourlyDepartment,
+      hourlyCompareEnabled: dashboardState.hourlyCompareEnabled,
+      hourlyCompareYearA: dashboardState.hourlyCompareYears?.[0] ?? null,
+      hourlyCompareYearB: dashboardState.hourlyCompareYears?.[1] ?? null,
+      hourlyCompareSeries: dashboardState.hourlyCompareSeries,
+      hospitalYear: dashboardState.chartsHospitalTableYear,
+      hospitalSort: dashboardState.chartsHospitalTableSort,
+      hospitalSearch: dashboardState.chartsHospitalTableSearch,
+      hospitalDepartment: dashboardState.chartsHospitalTableDepartment,
+    };
+    replaceUrlQuery(serializeToQuery('charts', state, getChartsDefaults()));
+  };
+  const parsedChartsQuery = parseFromQuery('charts', window.location.search);
+  if (Object.keys(parsedChartsQuery).length) {
+    dashboardState.chartPeriod =
+      Number.isFinite(parsedChartsQuery.chartPeriod) && parsedChartsQuery.chartPeriod >= 0
+        ? parsedChartsQuery.chartPeriod
+        : dashboardState.chartPeriod;
+    dashboardState.chartYear = Number.isFinite(parsedChartsQuery.chartYear)
+      ? parsedChartsQuery.chartYear
+      : null;
+    dashboardState.chartFilters = sanitizeChartFilters(
+      {
+        ...dashboardState.chartFilters,
+        arrival: parsedChartsQuery.arrival ?? dashboardState.chartFilters.arrival,
+        disposition: parsedChartsQuery.disposition ?? dashboardState.chartFilters.disposition,
+        cardType: parsedChartsQuery.cardType ?? dashboardState.chartFilters.cardType,
+        compareGmp:
+          parsedChartsQuery.compareGmp != null
+            ? parsedChartsQuery.compareGmp
+            : dashboardState.chartFilters.compareGmp,
+      },
+      { getDefaultChartFilters: createDefaultChartFilters, KPI_FILTER_LABELS }
+    );
+    dashboardState.heatmapMetric = parsedChartsQuery.heatmapMetric || dashboardState.heatmapMetric;
+    dashboardState.heatmapFilters = sanitizeHeatmapFilters({
+      arrival: parsedChartsQuery.heatmapArrival ?? dashboardState.heatmapFilters.arrival,
+      disposition: parsedChartsQuery.heatmapDisposition ?? dashboardState.heatmapFilters.disposition,
+      cardType: parsedChartsQuery.heatmapCardType ?? dashboardState.heatmapFilters.cardType,
+    });
+    dashboardState.heatmapYear = Number.isFinite(parsedChartsQuery.heatmapYear)
+      ? parsedChartsQuery.heatmapYear
+      : null;
+    dashboardState.hourlyWeekday =
+      parsedChartsQuery.hourlyWeekday == null
+        ? dashboardState.hourlyWeekday
+        : parsedChartsQuery.hourlyWeekday;
+    dashboardState.hourlyStayBucket =
+      parsedChartsQuery.hourlyStayBucket == null
+        ? dashboardState.hourlyStayBucket
+        : parsedChartsQuery.hourlyStayBucket;
+    dashboardState.hourlyMetric =
+      parsedChartsQuery.hourlyMetric == null ? dashboardState.hourlyMetric : parsedChartsQuery.hourlyMetric;
+    dashboardState.hourlyDepartment =
+      parsedChartsQuery.hourlyDepartment == null
+        ? dashboardState.hourlyDepartment
+        : parsedChartsQuery.hourlyDepartment;
+    dashboardState.hourlyCompareEnabled = Boolean(parsedChartsQuery.hourlyCompareEnabled);
+    dashboardState.hourlyCompareYears = [
+      parsedChartsQuery.hourlyCompareYearA,
+      parsedChartsQuery.hourlyCompareYearB,
+    ].filter((year) => Number.isFinite(year));
+    dashboardState.hourlyCompareSeries =
+      parsedChartsQuery.hourlyCompareSeries == null
+        ? dashboardState.hourlyCompareSeries
+        : parsedChartsQuery.hourlyCompareSeries;
+    dashboardState.chartsHospitalTableYear =
+      parsedChartsQuery.hospitalYear == null ? 'all' : parsedChartsQuery.hospitalYear;
+    dashboardState.chartsHospitalTableSort =
+      parsedChartsQuery.hospitalSort == null
+        ? dashboardState.chartsHospitalTableSort
+        : parsedChartsQuery.hospitalSort;
+    dashboardState.chartsHospitalTableSearch = parsedChartsQuery.hospitalSearch || '';
+    dashboardState.chartsHospitalTableDepartment = parsedChartsQuery.hospitalDepartment || '';
+  }
+  dashboardState.heatmapMetric = getEnabledHeatmapMetricKeys().includes(dashboardState.heatmapMetric)
+    ? dashboardState.heatmapMetric
+    : getDefaultHeatmapMetric();
 
   const { fetchData } = createMainDataHandlers({
     settings,
@@ -611,7 +745,9 @@ export async function runChartsRuntime(core) {
   });
 
   const formatDailyCaption = (period) => {
-    const base = TEXT.charts.dailyCaption || 'Kasdieniai pacientu srautai';
+    const base = String(TEXT.charts.dailyCaption || 'Kasdieniai pacientu srautai')
+      .replace(/\s*\([^)]*\)\s*$/u, '')
+      .trim();
     const normalized = Number.isFinite(period) ? Math.round(period) : null;
     if (normalized === 365) return `${base} (menesine dinamika)`;
     if (normalized === 0) return `${base} (visas laikotarpis)`;
@@ -619,7 +755,21 @@ export async function runChartsRuntime(core) {
     return `${base} (paskutines ${numberFormatter.format(normalized)} dienos)`;
   };
 
+  const getHeatmapMetricDefinition = (metricKey) => {
+    const key = typeof metricKey === 'string' ? metricKey.trim() : '';
+    if (!key) {
+      return null;
+    }
+    return getMetricById(key);
+  };
+
   const getHeatmapMetricLabel = (metricKey) => {
+    const definition = getHeatmapMetricDefinition(metricKey);
+    const baseCatalogLabel = getMetricSurfaceMeta(definition, 'heatmap')?.label || definition?.label || '';
+    const catalogLabel = getMetricLabelOverride(settings, metricKey, baseCatalogLabel);
+    if (typeof catalogLabel === 'string' && catalogLabel.trim()) {
+      return catalogLabel;
+    }
     const options = TEXT.charts?.heatmapMetricOptions || {};
     if (typeof options[metricKey] === 'string' && options[metricKey].trim()) {
       return options[metricKey];
@@ -627,16 +777,27 @@ export async function runChartsRuntime(core) {
     if (typeof metricKey === 'string' && metricKey.trim()) {
       return metricKey.trim();
     }
-    const fallbackKey = DEFAULT_HEATMAP_METRIC;
+    const fallbackKey = getDefaultHeatmapMetric();
     return typeof options[fallbackKey] === 'string' ? options[fallbackKey] : 'Rodiklis';
   };
 
   const getHeatmapMetricUnit = (metricKey) => {
+    const definition = getHeatmapMetricDefinition(metricKey);
+    const catalogUnit = getMetricSurfaceMeta(definition, 'heatmap')?.unit || definition?.unit || '';
+    if (typeof catalogUnit === 'string' && catalogUnit.trim()) {
+      return catalogUnit;
+    }
     const units = TEXT.charts?.heatmapMetricUnits || {};
     return typeof units[metricKey] === 'string' ? units[metricKey] : '';
   };
 
   const getHeatmapMetricDescription = (metricKey) => {
+    const definition = getHeatmapMetricDefinition(metricKey);
+    const catalogDescription =
+      getMetricSurfaceMeta(definition, 'heatmap')?.description || definition?.description;
+    if (typeof catalogDescription === 'string' && catalogDescription.trim()) {
+      return catalogDescription;
+    }
     const descriptions = TEXT.charts?.heatmapMetricDescriptions || {};
     return typeof descriptions[metricKey] === 'string' ? descriptions[metricKey] : '';
   };
@@ -655,22 +816,23 @@ export async function runChartsRuntime(core) {
   };
 
   const normalizeHeatmapMetricKey = (metricKey, metrics = {}) => {
+    const enabledKeys = getEnabledHeatmapMetricKeys();
     const hasMetrics = metrics && typeof metrics === 'object' && Object.keys(metrics).length > 0;
-    if (typeof metricKey === 'string' && HEATMAP_METRIC_KEYS.includes(metricKey)) {
+    if (typeof metricKey === 'string' && enabledKeys.includes(metricKey)) {
       if (!hasMetrics || metrics[metricKey]) {
         return metricKey;
       }
     }
     if (hasMetrics) {
-      const available = HEATMAP_METRIC_KEYS.find((key) => metrics[key]);
+      const available = enabledKeys.find((key) => metrics[key]);
       if (available) {
         return available;
       }
     }
-    if (typeof metricKey === 'string' && HEATMAP_METRIC_KEYS.includes(metricKey)) {
+    if (typeof metricKey === 'string' && enabledKeys.includes(metricKey)) {
       return metricKey;
     }
-    return DEFAULT_HEATMAP_METRIC;
+    return getDefaultHeatmapMetric();
   };
 
   const formatHeatmapMetricValue = (value) => {
@@ -715,7 +877,7 @@ export async function runChartsRuntime(core) {
       return;
     }
     selectors.heatmapMetricSelect.replaceChildren();
-    HEATMAP_METRIC_KEYS.forEach((key) => {
+    getEnabledHeatmapMetricKeys().forEach((key) => {
       const option = document.createElement('option');
       option.value = key;
       option.textContent = getHeatmapMetricLabel(key);
@@ -791,6 +953,7 @@ export async function runChartsRuntime(core) {
   const handleHeatmapMetricChange = (event) => {
     dashboardState.heatmapMetric = normalizeHeatmapMetricKey(event?.target?.value);
     updateHeatmapCaption(dashboardState.heatmapMetric);
+    persistChartsQuery();
     applyHeatmapFiltersAndRender();
   };
 
@@ -812,6 +975,7 @@ export async function runChartsRuntime(core) {
     }
     dashboardState.heatmapFilters = sanitizeHeatmapFilters(filters);
     syncHeatmapFilterControls();
+    persistChartsQuery();
     applyHeatmapFiltersAndRender();
   };
 
@@ -1312,13 +1476,15 @@ export async function runChartsRuntime(core) {
   const handleChartsHospitalTableYearChange = (event) => {
     const value = String(event?.target?.value || 'all');
     dashboardState.chartsHospitalTableYear = value === 'all' ? 'all' : Number.parseInt(value, 10);
+    persistChartsQuery();
     renderChartsHospitalTable(dashboardState.rawRecords);
   };
 
-  const handleChartsHospitalTableSearchInput = (event) => {
+  const handleChartsHospitalTableSearchInput = createDebouncedHandler((event) => {
     dashboardState.chartsHospitalTableSearch = String(event?.target?.value || '');
+    persistChartsQuery();
     renderChartsHospitalTable(dashboardState.rawRecords);
-  };
+  }, 250);
 
   const handleChartsHospitalTableHeaderClick = (event) => {
     const target = event?.target;
@@ -1337,6 +1503,7 @@ export async function runChartsRuntime(core) {
     const nextDir =
       current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : key === 'name' ? 'asc' : 'desc';
     dashboardState.chartsHospitalTableSort = normalizeChartsHospitalTableSort(`${key}_${nextDir}`);
+    persistChartsQuery();
     renderChartsHospitalTable(dashboardState.rawRecords);
   };
 
@@ -1355,6 +1522,7 @@ export async function runChartsRuntime(core) {
     }
     const current = normalizeChartsHospitalTableDepartment(dashboardState.chartsHospitalTableDepartment);
     dashboardState.chartsHospitalTableDepartment = current === department ? '' : department;
+    persistChartsQuery();
     renderChartsHospitalTable(dashboardState.rawRecords);
   };
 
@@ -1414,6 +1582,7 @@ export async function runChartsRuntime(core) {
     formatDailyCaption,
     renderCharts: (...args) => chartRenderers.renderCharts(...args),
     getSettings: () => settings,
+    onFiltersStateChange: () => persistChartsQuery(),
   });
 
   const hourlyControlsFeature = createHourlyControlsFeature({
@@ -1464,7 +1633,7 @@ export async function runChartsRuntime(core) {
   const isValidHeatmapData = (heatmapData) =>
     Boolean(
       heatmapData?.metrics &&
-        HEATMAP_METRIC_KEYS.some((key) => Array.isArray(heatmapData.metrics[key]?.matrix))
+        getEnabledHeatmapMetricKeys().some((key) => Array.isArray(heatmapData.metrics[key]?.matrix))
     );
   const renderArrivalHeatmap = (container, heatmapData, accentColor, metricKey) => {
     if (!container) return;
@@ -1472,7 +1641,7 @@ export async function runChartsRuntime(core) {
     const metrics = heatmapData && typeof heatmapData === 'object' ? heatmapData.metrics || {} : {};
     let selectedMetric = normalizeHeatmapMetricKey(metricKey, metrics);
     if (!metrics[selectedMetric]) {
-      selectedMetric = normalizeHeatmapMetricKey(DEFAULT_HEATMAP_METRIC, metrics);
+      selectedMetric = normalizeHeatmapMetricKey(getDefaultHeatmapMetric(), metrics);
     }
     if (selectors.heatmapMetricSelect) {
       selectors.heatmapMetricSelect.value = selectedMetric;
@@ -1599,8 +1768,8 @@ export async function runChartsRuntime(core) {
     formatMonthLabel: (monthKey) => monthKey,
     formatDailyCaption,
     syncChartPeriodButtons: (period) => syncChartPeriodButtons({ selectors, period }),
-    HEATMAP_METRIC_KEYS,
-    DEFAULT_HEATMAP_METRIC,
+    HEATMAP_METRIC_KEYS: getEnabledHeatmapMetricKeys(),
+    DEFAULT_HEATMAP_METRIC: getDefaultHeatmapMetric(),
     HEATMAP_HOURS,
     HOURLY_STAY_BUCKET_ALL,
     HOURLY_COMPARE_SERIES,
@@ -1622,6 +1791,74 @@ export async function runChartsRuntime(core) {
     formatMonthLabelForAxis: null,
   });
 
+  const persistAfter =
+    (handler) =>
+    (...args) => {
+      const result = handler(...args);
+      persistChartsQuery();
+      return result;
+    };
+
+  const hourlyControlsWithPersistence = {
+    ...hourlyControlsFeature,
+    handleHourlyMetricClick: persistAfter(hourlyControlsFeature.handleHourlyMetricClick),
+    handleHourlyDepartmentInput: persistAfter(hourlyControlsFeature.handleHourlyDepartmentInput),
+    handleHourlyFilterChange: persistAfter(hourlyControlsFeature.handleHourlyFilterChange),
+    handleHourlyCompareToggle: persistAfter(hourlyControlsFeature.handleHourlyCompareToggle),
+    handleHourlyCompareYearsChange: persistAfter(hourlyControlsFeature.handleHourlyCompareYearsChange),
+    handleHourlyCompareSeriesClick: persistAfter(hourlyControlsFeature.handleHourlyCompareSeriesClick),
+    handleHourlyResetFilters: persistAfter(hourlyControlsFeature.handleHourlyResetFilters),
+    applyHourlyDepartmentSelection: persistAfter(hourlyControlsFeature.applyHourlyDepartmentSelection),
+  };
+
+  const handleChartFiltersReset = () => {
+    const defaults = getChartsDefaults();
+    dashboardState.chartPeriod = defaults.chartPeriod;
+    dashboardState.chartYear = defaults.chartYear;
+    dashboardState.chartFilters = createDefaultChartFilters();
+    dashboardState.heatmapMetric = defaults.heatmapMetric;
+    dashboardState.heatmapFilters = sanitizeHeatmapFilters({
+      arrival: defaults.heatmapArrival,
+      disposition: defaults.heatmapDisposition,
+      cardType: defaults.heatmapCardType,
+    });
+    dashboardState.heatmapYear = defaults.heatmapYear;
+    dashboardState.hourlyWeekday = defaults.hourlyWeekday;
+    dashboardState.hourlyStayBucket = defaults.hourlyStayBucket;
+    dashboardState.hourlyMetric = defaults.hourlyMetric;
+    dashboardState.hourlyDepartment = defaults.hourlyDepartment;
+    dashboardState.hourlyCompareEnabled = defaults.hourlyCompareEnabled;
+    dashboardState.hourlyCompareYears = [];
+    dashboardState.hourlyCompareSeries = defaults.hourlyCompareSeries;
+    dashboardState.chartsHospitalTableYear = defaults.hospitalYear;
+    dashboardState.chartsHospitalTableSort = defaults.hospitalSort;
+    dashboardState.chartsHospitalTableSearch = defaults.hospitalSearch;
+    dashboardState.chartsHospitalTableDepartment = defaults.hospitalDepartment;
+    if (selectors.chartsHospitalTableSearch instanceof HTMLInputElement) {
+      selectors.chartsHospitalTableSearch.value = '';
+    }
+    chartFlow.syncChartFilterControls();
+    syncChartPeriodButtons({ selectors, period: dashboardState.chartPeriod });
+    syncChartYearControl({ selectors, dashboardState });
+    populateHeatmapMetricOptions();
+    updateHeatmapCaption(dashboardState.heatmapMetric);
+    syncHeatmapFilterControls();
+    hourlyControlsFeature.syncHourlyMetricButtons();
+    hourlyControlsFeature.syncHourlyCompareControls();
+    hourlyControlsFeature.syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
+    hourlyControlsFeature.updateHourlyCaption(
+      dashboardState.hourlyWeekday,
+      dashboardState.hourlyStayBucket,
+      dashboardState.hourlyMetric,
+      dashboardState.hourlyDepartment
+    );
+    chartFlow.applyChartFilters();
+    applyHeatmapFiltersAndRender();
+    hourlyControlsFeature.handleHourlyFilterChange();
+    renderChartsHospitalTable(dashboardState.rawRecords);
+    persistChartsQuery();
+  };
+
   wireChartsRuntimeInteractions({
     applyChartsText,
     initChartControls,
@@ -1630,12 +1867,13 @@ export async function runChartsRuntime(core) {
     dashboardState,
     formatDailyCaption,
     updateChartsHospitalTableHeaderSortIndicators,
-    hourlyControlsFeature,
+    hourlyControlsFeature: hourlyControlsWithPersistence,
     populateHeatmapMetricOptions,
     updateHeatmapCaption,
     chartFlow,
     handleHeatmapMetricChange,
     handleHeatmapFilterChange,
+    handleChartFiltersReset,
     handleChartsHospitalTableYearChange,
     handleChartsHospitalTableSearchInput,
     handleChartsHospitalTableHeaderClick,
@@ -1666,7 +1904,6 @@ export async function runChartsRuntime(core) {
           dailyStats,
           selectors,
           dashboardState,
-          TEXT,
           syncChartYearControl: () => syncChartYearControl({ selectors, dashboardState }),
         }),
       populateChartsHospitalTableYearOptions,
@@ -1692,4 +1929,5 @@ export async function runChartsRuntime(core) {
   );
 
   dataFlow.scheduleInitialLoad();
+  persistChartsQuery();
 }

@@ -10,6 +10,8 @@ function getRunnerExportName(pageId) {
       return 'runRecentPage';
     case 'summaries':
       return 'runSummariesPage';
+    case 'gydytojai':
+      return 'runGydytojaiPage';
     case 'feedback':
       return 'runFeedbackPage';
     case 'ed':

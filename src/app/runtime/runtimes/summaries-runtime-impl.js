@@ -6,6 +6,7 @@ import {
 } from '../../../data/stats.js?v=2026-02-07-monthly-heatmap-1';
 import { initTableDownloadButtons } from '../../../events/charts.js';
 import { initYearlyExpand } from '../../../events/yearly.js';
+import { getSummariesReportTitle } from '../../../metrics/summaries-report.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
 import { loadChartJs } from '../../../utils/chart-loader.js';
@@ -41,6 +42,8 @@ import {
 } from '../features/summaries-runtime-helpers.js';
 import { handleYearlyToggle, renderYearlyTable } from '../features/summaries-yearly-table.js';
 import { applyTheme, initializeTheme } from '../features/theme.js';
+import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
+import { buildFilterSummary } from '../filters/summary.js';
 import {
   createTextSignature,
   describeCacheMeta,
@@ -85,6 +88,10 @@ const handleTableDownloadClick = createTableDownloadHandler({
   defaultTitle: 'Lentelė',
   formatFilename: formatExportFilename,
 });
+
+function getReportCardTitle(reportKey, fallback, settings) {
+  return getSummariesReportTitle(reportKey, TEXT.summariesReports?.cards || {}, settings) || fallback;
+}
 
 async function handleYearlyTableCopyClick(event) {
   const button = event?.currentTarget;
@@ -1687,13 +1694,13 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     { dynamicYAxis: true }
   );
   exportState.diagnosis = {
-    title: TEXT.summariesReports?.cards?.diagnosis || 'Diagnozės',
+    title: getReportCardTitle('diagnosis', 'Diagnozės', settings),
     headers: ['Diagnozė', 'Procentas (%)'],
     rows: diagnosisPercentRows.map((row) => [row.label, oneDecimalFormatter.format(row.percent)]),
     target: selectors.diagnosisChart,
   };
   exportState.ageDiagnosisHeatmap = {
-    title: TEXT.summariesReports?.cards?.ageDiagnosisHeatmap || 'Amžiaus ir diagnozių grupių ryšys',
+    title: getReportCardTitle('ageDiagnosisHeatmap', 'Amžiaus ir diagnozių grupių ryšys', settings),
     headers: [
       'Amžiaus grupė',
       'Diagnozių grupė',
@@ -1711,19 +1718,19 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     target: selectors.ageDiagnosisHeatmapChart,
   };
   exportState.z769Trend = {
-    title: 'Pasišalinę pacientai (Z76.9)',
+    title: getReportCardTitle('z769Trend', 'Pasišalinę pacientai (Z76.9)', settings),
     headers: ['Metai', 'Procentas (%)'],
     rows: z769Rows.map((row) => [row.year, oneDecimalFormatter.format(row.percent)]),
     target: selectors.z769TrendChart,
   };
   exportState.referralTrend = {
-    title: TEXT.summariesReports?.cards?.referralTrend || 'Pacientai su siuntimu',
+    title: getReportCardTitle('referralTrend', 'Pacientai su siuntimu', settings),
     headers: ['Metai', 'Pacientai su siuntimu (%)'],
     rows: referralPercentRows.map((row) => [row.year, oneDecimalFormatter.format(row.percent)]),
     target: selectors.referralTrendChart,
   };
   exportState.referralDispositionYearly = {
-    title: TEXT.summariesReports?.cards?.referralDispositionYearly || 'Siuntimas × baigtis pagal metus',
+    title: getReportCardTitle('referralDispositionYearly', 'Siuntimas × baigtis pagal metus', settings),
     headers: ['Metai', 'Grupė', 'Hospitalizuoti (%)', 'Išleisti (%)', 'Imtis (n)'],
     rows: referralDispositionYearly.rows.flatMap((row) => {
       const suTotal = Number(row?.totals?.['su siuntimu'] || 0);
@@ -1752,7 +1759,7 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     target: selectors.referralDispositionYearlyChart,
   };
   exportState.referralMonthlyHeatmap = {
-    title: TEXT.summariesReports?.cards?.referralMonthlyHeatmap || 'Siuntimų % pagal mėnesį',
+    title: getReportCardTitle('referralMonthlyHeatmap', 'Siuntimų % pagal mėnesį', settings),
     headers: ['Metai', 'Mėnuo', 'Siuntimų dalis (%)', 'Pacientai (n)', 'Su siuntimu (n)'],
     rows: referralMonthlyHeatmap.rows.map((row) => [
       row.year,
@@ -1773,7 +1780,11 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
       selectedRows = referralHospitalizedPspcTrendCandidates.slice(0, 3);
     }
     exportState.referralHospitalizedByPspc = {
-      title: `${TEXT.summariesReports?.cards?.referralHospitalizedByPspc || 'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC'} (metinė dinamika)`,
+      title: `${getReportCardTitle(
+        'referralHospitalizedByPspc',
+        'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC',
+        settings
+      )} (metinė dinamika)`,
       headers: [
         'PSPC',
         'Metai',
@@ -1794,9 +1805,11 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     };
   } else {
     exportState.referralHospitalizedByPspc = {
-      title:
-        TEXT.summariesReports?.cards?.referralHospitalizedByPspc ||
+      title: getReportCardTitle(
+        'referralHospitalizedByPspc',
         'Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC',
+        settings
+      ),
       headers: [
         'PSPC',
         'Hospitalizuota iš su siuntimu (%)',
@@ -1813,7 +1826,7 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     };
   }
   exportState.pspcCorrelation = {
-    title: TEXT.summariesReports?.cards?.pspcCorrelation || 'PSPC: siuntimų ir hospitalizacijų ryšys',
+    title: getReportCardTitle('pspcCorrelation', 'PSPC: siuntimų ir hospitalizacijų ryšys', settings),
     headers: [
       'PSPC',
       'Siuntimų dalis (%)',
@@ -1833,7 +1846,7 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     target: selectors.pspcCorrelationChart,
   };
   exportState.ageDistribution = {
-    title: TEXT.summariesReports?.cards?.ageDistribution || 'Amžius',
+    title: getReportCardTitle('ageDistribution', 'Amžius', settings),
     headers: [
       'Amžiaus grupė',
       'Iš viso (%)',
@@ -1853,7 +1866,7 @@ async function renderReports(selectors, dashboardState, settings, exportState) {
     target: selectors.ageDistributionChart,
   };
   exportState.pspcDistribution = {
-    title: TEXT.summariesReports?.cards?.pspcDistribution || 'PSPC',
+    title: getReportCardTitle('pspcDistribution', 'PSPC', settings),
     headers: ['PSPC', 'Procentas (%)'],
     rows: pspcPercentRows.map((row) => [row.label, oneDecimalFormatter.format(row.percent)]),
     target: selectors.pspcDistributionChart,
@@ -1873,6 +1886,75 @@ export async function runSummariesRuntime(core) {
     hourlyMetricArrivals: 'arrivals',
     hourlyCompareSeriesAll: 'all',
   });
+  const getSummariesDefaults = () => ({
+    year: 'all',
+    topN: 15,
+    minGroup: 100,
+    pspcSort: 'desc',
+    pspcMode: 'cross',
+    pspcTrend: '__top3__',
+  });
+  const getSummariesFiltersState = () => ({
+    year: dashboardState.summariesReportsYear,
+    topN: dashboardState.summariesReportsTopN,
+    minGroup: dashboardState.summariesReportsMinGroupSize,
+    pspcSort: dashboardState.summariesReferralPspcSort,
+    pspcMode: dashboardState.summariesReferralPspcMode,
+    pspcTrend: dashboardState.summariesReferralPspcTrendPspc,
+  });
+  const persistSummariesQuery = () => {
+    replaceUrlQuery(serializeToQuery('summaries', getSummariesFiltersState(), getSummariesDefaults()));
+  };
+  const updateSummariesFiltersSummary = () => {
+    if (!selectors.summariesReportsFiltersSummary) {
+      return;
+    }
+    const defaults = getSummariesDefaults();
+    const parts = [];
+    if (dashboardState.summariesReportsYear !== defaults.year) {
+      parts.push(`Metai: ${dashboardState.summariesReportsYear}`);
+    }
+    if (dashboardState.summariesReportsTopN !== defaults.topN) {
+      parts.push(`TOP N: ${dashboardState.summariesReportsTopN}`);
+    }
+    if (dashboardState.summariesReportsMinGroupSize !== defaults.minGroup) {
+      parts.push(`Min. imtis: ${dashboardState.summariesReportsMinGroupSize}`);
+    }
+    if (dashboardState.summariesReferralPspcMode !== defaults.pspcMode) {
+      parts.push(`PSPC režimas: ${dashboardState.summariesReferralPspcMode}`);
+    }
+    const text = buildFilterSummary({
+      entries: parts,
+      emptyText: 'Rodomi numatytieji ataskaitų filtrai',
+    });
+    selectors.summariesReportsFiltersSummary.textContent = text;
+    selectors.summariesReportsFiltersSummary.dataset.default = parts.length ? 'false' : 'true';
+  };
+  const resetSummariesFilters = () => {
+    const defaults = getSummariesDefaults();
+    dashboardState.summariesReportsYear = defaults.year;
+    dashboardState.summariesReportsTopN = defaults.topN;
+    dashboardState.summariesReportsMinGroupSize = defaults.minGroup;
+    dashboardState.summariesReferralPspcSort = defaults.pspcSort;
+    dashboardState.summariesReferralPspcMode = defaults.pspcMode;
+    dashboardState.summariesReferralPspcTrendPspc = defaults.pspcTrend;
+  };
+  const parsedSummaries = parseFromQuery('summaries', window.location.search);
+  if (Object.keys(parsedSummaries).length) {
+    dashboardState.summariesReportsYear =
+      typeof parsedSummaries.year === 'string' && parsedSummaries.year.trim()
+        ? parsedSummaries.year.trim()
+        : dashboardState.summariesReportsYear;
+    dashboardState.summariesReportsTopN = parsePositiveIntOrDefault(parsedSummaries.topN, 15);
+    dashboardState.summariesReportsMinGroupSize = parsePositiveIntOrDefault(parsedSummaries.minGroup, 100);
+    dashboardState.summariesReferralPspcSort =
+      parsedSummaries.pspcSort === 'asc' ? 'asc' : dashboardState.summariesReferralPspcSort;
+    dashboardState.summariesReferralPspcMode =
+      parsedSummaries.pspcMode === 'trend' ? 'trend' : dashboardState.summariesReferralPspcMode;
+    if (typeof parsedSummaries.pspcTrend === 'string' && parsedSummaries.pspcTrend.trim()) {
+      dashboardState.summariesReferralPspcTrendPspc = parsedSummaries.pspcTrend.trim();
+    }
+  }
   const exportState = {};
   const handleReportExportClick = createReportExportClickHandler({
     exportState,
@@ -1923,6 +2005,9 @@ export async function runSummariesRuntime(core) {
     initYearlyExpand,
     handleYearlyToggle,
     parsePositiveIntOrDefault,
+    onFiltersStateChange: persistSummariesQuery,
+    resetSummariesFilters,
+    updateSummariesFiltersSummary,
   });
   const dataFlow = createDataFlow(
     createSummariesDataFlowConfig({
@@ -1958,5 +2043,7 @@ export async function runSummariesRuntime(core) {
     })
   );
   rerenderReports();
+  updateSummariesFiltersSummary();
+  persistSummariesQuery();
   dataFlow.scheduleInitialLoad();
 }

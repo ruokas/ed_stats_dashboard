@@ -1,3 +1,6 @@
+import { getMetricLabelOverride, isMetricEnabled } from '../metrics/catalog-overrides.js';
+import { getMetricsBySurface } from '../metrics/index.js';
+import { resolveMetric } from '../metrics/resolve-metric.js';
 import { buildKpiCardsModel } from './kpi-model.js';
 
 export function createKpiRenderer(env) {
@@ -9,7 +12,24 @@ export function createKpiRenderer(env) {
     percentFormatter,
     buildLastShiftSummary,
     hideKpiSkeleton,
+    settings,
   } = env;
+  const catalogKpiCards = getMetricsBySurface('kpi-card')
+    .filter((metric) => isMetricEnabled(settings, metric.id))
+    .map((metric) => ({
+      metricKey: metric.id,
+      label: getMetricLabelOverride(settings, metric.id, metric.label),
+      format: metric.format,
+      unitLabel: metric.unit,
+    }));
+
+  function resolveKpiMetricById(metricId, lastShiftSummary) {
+    return resolveMetric({
+      metricId,
+      context: { lastShiftSummary },
+      formatValue: formatKpiValue,
+    });
+  }
 
   function hideKpiPeriodSummary() {
     const summaryEl = selectors.kpiSummary;
@@ -32,6 +52,8 @@ export function createKpiRenderer(env) {
       escapeHtml,
       formatKpiValue,
       percentFormatter,
+      cardsConfig: catalogKpiCards,
+      resolveMetricById: resolveKpiMetricById,
     });
 
     if (model.emptyHtml) {

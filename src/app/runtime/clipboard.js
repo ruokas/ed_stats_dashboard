@@ -39,21 +39,15 @@ export function setCopyButtonFeedback(button, message, tone = 'success') {
 }
 
 export async function writeTextToClipboard(text) {
-  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+  if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+    return false;
+  }
+  try {
     await navigator.clipboard.writeText(text);
     return true;
+  } catch {
+    return false;
   }
-  const fallback = document.createElement('textarea');
-  fallback.value = text;
-  fallback.setAttribute('readonly', 'readonly');
-  fallback.style.position = 'fixed';
-  fallback.style.opacity = '0';
-  fallback.style.pointerEvents = 'none';
-  document.body.appendChild(fallback);
-  fallback.select();
-  const success = document.execCommand('copy');
-  document.body.removeChild(fallback);
-  return success;
 }
 
 export async function writeBlobToClipboard(blob, mimeType) {

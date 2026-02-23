@@ -988,14 +988,19 @@ export function createCopyExportFeature(deps) {
     try {
       const format = getDatasetValue(button, 'tableDownload', 'csv');
       let ok = false;
-      if (format === 'png') {
+      if (format === 'copy') {
+        const backgroundColor = resolveCopyBackgroundColor(table);
+        const exportCanvas = buildTableExportCanvas(table, titleInfo, backgroundColor);
+        const result = exportCanvas ? await copyCanvasToClipboard(exportCanvas) : { ok: false };
+        ok = Boolean(result?.ok);
+      } else if (format === 'png') {
         ok = await downloadTableAsPng(table, titleInfo);
       } else {
         ok = await downloadTableAsCsv(table, titleInfo);
       }
       setCopyButtonFeedback(
         button,
-        ok ? 'Lentelė parsisiųsta' : 'Klaida parsisiunčiant',
+        ok ? (format === 'copy' ? 'Lentelė nukopijuota' : 'Lentelė parsisiųsta') : 'Klaida parsisiunčiant',
         ok ? 'success' : 'error'
       );
     } catch (error) {

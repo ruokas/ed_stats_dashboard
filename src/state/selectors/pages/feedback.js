@@ -14,6 +14,7 @@ export function createFeedbackPageSelectors() {
     feedbackSubtitle: byId('feedbackSubtitle'),
     feedbackDescription: byId('feedbackDescription'),
     feedbackFiltersSummary: byId('feedbackFiltersSummary'),
+    feedbackFiltersReset: byId('feedbackFiltersReset'),
     feedbackRespondentFilter: byId('feedbackRespondentFilter'),
     feedbackRespondentLabel: byId('feedbackRespondentLabel'),
     feedbackRespondentChips: byId('feedbackRespondentChips'),

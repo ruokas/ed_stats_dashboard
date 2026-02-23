@@ -71,6 +71,17 @@
               </span>
               <span class="section-nav__label">Suvestinės</span>
             </a>
+            <a class="section-nav__link" data-nav-link href="gydytojai.html">
+              <span class="section-nav__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                  <path d="M12 12v8" />
+                  <path d="M7 20h10" />
+                  <path d="M4.5 14.5a7.5 7.5 0 0 1 15 0" />
+                </svg>
+              </span>
+              <span class="section-nav__label">Gydytojai</span>
+            </a>
             <a class="section-nav__link" data-nav-link href="feedback.html">
               <span class="section-nav__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -141,22 +152,35 @@
         <div class="section__actions">
           <button
             type="button"
-            class="btn btn-tertiary btn-small"
-            data-table-download="csv"
+            class="chart-copy-btn"
+            data-table-download="copy"
             data-table-target="#recentTableRoot"
             data-table-title="Paskutinės 7 dienos"
-            aria-label="Parsisiųsti paskutinių 7 dienų lentelę CSV formatu"
-            title="Parsisiųsti CSV"
-          >CSV</button>
+            aria-label="Nukopijuoti paskutinių 7 dienų lentelę PNG formatu"
+            title="Nukopijuoti PNG"
+            data-tooltip="Kopijuoti (PNG)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+              <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+            </svg>
+          </button>
           <button
             type="button"
-            class="btn btn-tertiary btn-small"
+            class="chart-download-btn"
             data-table-download="png"
             data-table-target="#recentTableRoot"
             data-table-title="Paskutinės 7 dienos"
             aria-label="Parsisiųsti paskutinių 7 dienų lentelę PNG formatu"
             title="Parsisiųsti PNG"
-          >PNG</button>
+            data-tooltip="Parsisiųsti PNG"
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v12"></path>
+              <path d="M8 11l4 4 4-4"></path>
+              <path d="M4 21h16"></path>
+            </svg>
+          </button>
           <button id="compareToggle" type="button" class="btn btn-secondary btn-small">Palyginti</button>
         </div>
       </div>

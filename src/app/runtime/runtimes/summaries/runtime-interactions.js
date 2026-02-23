@@ -10,7 +10,18 @@ export function wireSummariesInteractions({
   initYearlyExpand,
   handleYearlyToggle,
   parsePositiveIntOrDefault,
+  onFiltersStateChange = null,
+  resetSummariesFilters = null,
+  updateSummariesFiltersSummary = null,
 }) {
+  const emitFiltersChanged = () => {
+    if (typeof onFiltersStateChange === 'function') {
+      onFiltersStateChange();
+    }
+    if (typeof updateSummariesFiltersSummary === 'function') {
+      updateSummariesFiltersSummary();
+    }
+  };
   initYearlyExpand({
     selectors,
     handleYearlyToggle: (event) => handleYearlyToggle(selectors, dashboardState, event),
@@ -29,18 +40,21 @@ export function wireSummariesInteractions({
     selectors.summariesReportsYear.addEventListener('change', (event) => {
       const value = String(event.target.value || 'all');
       dashboardState.summariesReportsYear = value === 'all' ? 'all' : value;
+      emitFiltersChanged();
       rerenderReports();
     });
   }
   if (selectors.summariesReportsTopN) {
     selectors.summariesReportsTopN.addEventListener('change', (event) => {
       dashboardState.summariesReportsTopN = parsePositiveIntOrDefault(event.target.value, 15);
+      emitFiltersChanged();
       rerenderReports();
     });
   }
   if (selectors.summariesReportsMinGroupSize) {
     selectors.summariesReportsMinGroupSize.addEventListener('change', (event) => {
       dashboardState.summariesReportsMinGroupSize = parsePositiveIntOrDefault(event.target.value, 100);
+      emitFiltersChanged();
       rerenderReports();
     });
   }
@@ -48,6 +62,7 @@ export function wireSummariesInteractions({
     selectors.referralHospitalizedByPspcSort.addEventListener('change', (event) => {
       const value = String(event.target.value || 'desc').toLowerCase();
       dashboardState.summariesReferralPspcSort = value === 'asc' ? 'asc' : 'desc';
+      emitFiltersChanged();
       rerenderReports();
     });
   }
@@ -55,6 +70,7 @@ export function wireSummariesInteractions({
     selectors.referralHospitalizedByPspcMode.addEventListener('change', (event) => {
       const value = String(event.target.value || 'cross').toLowerCase();
       dashboardState.summariesReferralPspcMode = value === 'trend' ? 'trend' : 'cross';
+      emitFiltersChanged();
       rerenderReports();
     });
   }
@@ -62,7 +78,16 @@ export function wireSummariesInteractions({
     selectors.referralHospitalizedByPspcTrendPspc.addEventListener('change', (event) => {
       const value = String(event.target.value || '__top3__');
       dashboardState.summariesReferralPspcTrendPspc = value || '__top3__';
+      emitFiltersChanged();
       rerenderReports();
     });
   }
+  if (selectors.summariesReportsReset && typeof resetSummariesFilters === 'function') {
+    selectors.summariesReportsReset.addEventListener('click', () => {
+      resetSummariesFilters();
+      emitFiltersChanged();
+      rerenderReports();
+    });
+  }
+  emitFiltersChanged();
 }
