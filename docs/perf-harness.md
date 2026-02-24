@@ -7,6 +7,8 @@ Collect repeatable before/after performance runs for every page and compute medi
 - `app:startup-total`
 - `app:router-import`
 - `app:page-runner`
+- `app:charts-first-visible` (charts page)
+- `app:charts-secondary-complete` (charts page)
 
 ## Run Matrix
 - Pages: `index.html`, `charts.html`, `recent.html`, `summaries.html`, `feedback.html`, `ed.html`
@@ -47,6 +49,34 @@ node scripts/perf-harness.mjs perf-runs.json
 ```
 
 Output is grouped by `page + cacheMode` with median values for all tracked metrics.
+
+## Charts Startup Deep-Dive (Cold-Load)
+
+For `charts.html` cold-load optimization work, also capture:
+
+- `app:charts-first-visible`
+- `app:charts-secondary-complete`
+
+And (when profiling is enabled) capture `PerfMonitor` rows from console for:
+
+- `charts-data-fetch`
+- `charts-main-prepare`
+- `charts-primary-render`
+- `charts-secondary-render`
+- `charts-hospital-table-render`
+
+Quick console helpers:
+
+```js
+performance.getEntriesByType('measure')
+  .filter((entry) => entry.name.startsWith('app:'))
+  .map((entry) => ({ metric: entry.name, ms: Number(entry.duration.toFixed(2)) }));
+```
+
+```js
+// PerfMonitor writes console.table rows automatically when profiling is enabled.
+// Copy the relevant charts-* rows for before/after comparisons.
+```
 
 ## Worker Benchmark Summary
 

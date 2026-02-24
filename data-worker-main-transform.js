@@ -13,6 +13,8 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
       : 500;
   const reportProgress =
     typeof progressOptions.reportProgress === 'function' ? progressOptions.reportProgress : null;
+  const reportPartial =
+    typeof progressOptions.reportPartial === 'function' ? progressOptions.reportPartial : null;
   const { rows, delimiter } = parseCsv(text);
   if (!rows.length) {
     throw new Error('CSV failas tuščias.');
@@ -74,6 +76,7 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   const totalRows = dataRows.length;
   const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
   const hospitalByDeptStayAgg = createHospitalizedDeptStayAgg();
+  const dailyMap = new Map();
   const records = [];
   for (let index = 0; index < dataRows.length; index += 1) {
     const cols = dataRows[index];
@@ -87,12 +90,16 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
       calculationDefaults
     );
     records.push(record);
+    accumulateDailyStatsMap(dailyMap, record, shiftStartHour);
     accumulateHospitalizedDeptStayAgg(hospitalByDeptStayAgg, record, shiftStartHour);
     if (reportProgress && ((index + 1) % progressStep === 0 || index + 1 === totalRows)) {
       reportProgress(index + 1, totalRows);
     }
   }
-  const dailyStats = computeDailyStats(records, calculations, calculationDefaults);
+  const dailyStats = finalizeDailyStatsMap(dailyMap);
+  if (reportPartial) {
+    reportPartial('dailyStatsReady', { dailyStats });
+  }
   return { records, dailyStats, hospitalByDeptStayAgg };
 }
 
@@ -810,52 +817,55 @@ function computeShiftDateKey(referenceDate, shiftStartHour) {
   return formatLocalDateKey(shiftAnchor);
 }
 
-function computeDailyStats(data, calculations, defaults) {
-  const shiftStartHour = resolveShiftStartHour(calculations, defaults);
-  const dailyMap = new Map();
-  data.forEach((record) => {
-    const hasArrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
-    const hasDischarge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
-    const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
-    const dateKey = computeShiftDateKey(reference, shiftStartHour);
-    if (!dateKey) {
-      return;
-    }
-    if (!dailyMap.has(dateKey)) {
-      dailyMap.set(dateKey, {
-        date: dateKey,
-        count: 0,
-        night: 0,
-        ems: 0,
-        discharged: 0,
-        hospitalized: 0,
-        totalTime: 0,
-        durations: 0,
-        hospitalizedTime: 0,
-        hospitalizedDurations: 0,
-      });
-    }
-    const summary = dailyMap.get(dateKey);
-    summary.count += 1;
-    summary.night += record.night ? 1 : 0;
-    summary.ems += record.ems ? 1 : 0;
-    if (record.hospitalized) {
-      summary.hospitalized += 1;
-    } else {
-      summary.discharged += 1;
-    }
-    if (hasArrival && hasDischarge) {
-      const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
-      if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
-        summary.totalTime += duration;
-        summary.durations += 1;
-        if (record.hospitalized) {
-          summary.hospitalizedTime += duration;
-          summary.hospitalizedDurations += 1;
-        }
+function ensureDailyStatsBucket(dailyMap, dateKey) {
+  if (!dailyMap.has(dateKey)) {
+    dailyMap.set(dateKey, {
+      date: dateKey,
+      count: 0,
+      night: 0,
+      ems: 0,
+      discharged: 0,
+      hospitalized: 0,
+      totalTime: 0,
+      durations: 0,
+      hospitalizedTime: 0,
+      hospitalizedDurations: 0,
+    });
+  }
+  return dailyMap.get(dateKey);
+}
+
+function accumulateDailyStatsMap(dailyMap, record, shiftStartHour) {
+  const hasArrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
+  const hasDischarge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
+  const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
+  const dateKey = computeShiftDateKey(reference, shiftStartHour);
+  if (!dateKey) {
+    return;
+  }
+  const summary = ensureDailyStatsBucket(dailyMap, dateKey);
+  summary.count += 1;
+  summary.night += record.night ? 1 : 0;
+  summary.ems += record.ems ? 1 : 0;
+  if (record.hospitalized) {
+    summary.hospitalized += 1;
+  } else {
+    summary.discharged += 1;
+  }
+  if (hasArrival && hasDischarge) {
+    const duration = (record.discharge.getTime() - record.arrival.getTime()) / 3600000;
+    if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
+      summary.totalTime += duration;
+      summary.durations += 1;
+      if (record.hospitalized) {
+        summary.hospitalizedTime += duration;
+        summary.hospitalizedDurations += 1;
       }
     }
-  });
+  }
+}
+
+function finalizeDailyStatsMap(dailyMap) {
   return Array.from(dailyMap.values())
     .sort((a, b) => (a.date > b.date ? 1 : -1))
     .map((item) => ({
@@ -865,6 +875,15 @@ function computeDailyStats(data, calculations, defaults) {
         ? item.hospitalizedTime / item.hospitalizedDurations
         : 0,
     }));
+}
+
+function _computeDailyStats(data, calculations, defaults) {
+  const shiftStartHour = resolveShiftStartHour(calculations, defaults);
+  const dailyMap = new Map();
+  data.forEach((record) => {
+    accumulateDailyStatsMap(dailyMap, record, shiftStartHour);
+  });
+  return finalizeDailyStatsMap(dailyMap);
 }
 
 function createHospitalizedDeptStayAgg() {

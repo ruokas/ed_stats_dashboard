@@ -10,6 +10,7 @@ describe('createChartsDataFlowConfig', () => {
     const describeError = vi.fn();
     const computeDailyStats = vi.fn();
     const filterDailyStatsByWindow = vi.fn();
+    const mergeDailyStatsSeries = vi.fn();
     const populateChartYearOptions = vi.fn();
     const populateChartsHospitalTableYearOptions = vi.fn();
     const populateHourlyCompareYearOptions = vi.fn();
@@ -18,9 +19,13 @@ describe('createChartsDataFlowConfig', () => {
     const sanitizeChartFilters = vi.fn();
     const syncChartFilterControls = vi.fn();
     const prepareChartDataForPeriod = vi.fn();
+    const renderChartsPrimary = vi.fn();
+    const renderChartsSecondary = vi.fn();
     const renderCharts = vi.fn();
     const renderChartsHospitalTable = vi.fn();
     const getHeatmapData = vi.fn();
+    const onChartsPrimaryVisible = vi.fn();
+    const scheduleChartsSecondaryRender = vi.fn();
     const getSettings = vi.fn();
     const getClientConfig = vi.fn();
     const getAutoRefreshTimerId = vi.fn();
@@ -43,6 +48,7 @@ describe('createChartsDataFlowConfig', () => {
       describeError,
       computeDailyStats,
       filterDailyStatsByWindow,
+      mergeDailyStatsSeries,
       populateChartYearOptions,
       populateChartsHospitalTableYearOptions,
       populateHourlyCompareYearOptions,
@@ -53,9 +59,13 @@ describe('createChartsDataFlowConfig', () => {
       kpiFilterLabels: { arrival: { all: 'all' }, disposition: { all: 'all' }, cardType: { all: 'all' } },
       syncChartFilterControls,
       prepareChartDataForPeriod,
+      renderChartsPrimary,
+      renderChartsSecondary,
       renderCharts,
       renderChartsHospitalTable,
       getHeatmapData,
+      onChartsPrimaryVisible,
+      scheduleChartsSecondaryRender,
       numberFormatter: Intl.NumberFormat(),
       getSettings,
       getClientConfig,
@@ -72,12 +82,17 @@ describe('createChartsDataFlowConfig', () => {
     expect(config.chartHooks.populateChartYearOptions).toBe(populateChartYearOptions);
     expect(config.chartHooks.syncChartFilterControls).toBe(syncChartFilterControls);
     expect(config.chartHooks.prepareChartDataForPeriod).toBe(prepareChartDataForPeriod);
+    expect(config.chartHooks.renderChartsPrimary).toBe(renderChartsPrimary);
+    expect(config.chartHooks.renderChartsSecondary).toBe(renderChartsSecondary);
     expect(config.chartHooks.renderCharts).toBe(renderCharts);
     expect(config.chartHooks.renderChartsHospitalTable).toBe(renderChartsHospitalTable);
     expect(config.chartHooks.getHeatmapData).toBe(getHeatmapData);
+    expect(config.chartHooks.onChartsPrimaryVisible).toBe(onChartsPrimaryVisible);
+    expect(config.chartHooks.scheduleChartsSecondaryRender).toBe(scheduleChartsSecondaryRender);
     expect(config.dataHooks.fetchData).toBe(fetchData);
     expect(config.dataHooks.describeError).toBe(describeError);
     expect(config.dataHooks.computeDailyStats).toBe(computeDailyStats);
     expect(config.dataHooks.filterDailyStatsByWindow).toBe(filterDailyStatsByWindow);
+    expect(config.dataHooks.mergeDailyStatsSeries).toBe(mergeDailyStatsSeries);
   });
 });

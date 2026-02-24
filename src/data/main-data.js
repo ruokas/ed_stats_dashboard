@@ -120,6 +120,52 @@ export function createMainDataHandlers(context) {
     return tagged;
   }
 
+  function mergeDailyStatsSeries(seriesList = []) {
+    const mergedByDate = new Map();
+    for (let i = 0; i < seriesList.length; i += 1) {
+      const list = Array.isArray(seriesList[i]) ? seriesList[i] : [];
+      for (let j = 0; j < list.length; j += 1) {
+        const row = list[j];
+        const date = typeof row?.date === 'string' ? row.date : '';
+        if (!date) {
+          continue;
+        }
+        if (!mergedByDate.has(date)) {
+          mergedByDate.set(date, {
+            date,
+            count: 0,
+            night: 0,
+            ems: 0,
+            discharged: 0,
+            hospitalized: 0,
+            totalTime: 0,
+            durations: 0,
+            hospitalizedTime: 0,
+            hospitalizedDurations: 0,
+          });
+        }
+        const target = mergedByDate.get(date);
+        target.count += Number(row?.count || 0);
+        target.night += Number(row?.night || 0);
+        target.ems += Number(row?.ems || 0);
+        target.discharged += Number(row?.discharged || 0);
+        target.hospitalized += Number(row?.hospitalized || 0);
+        target.totalTime += Number(row?.totalTime || 0);
+        target.durations += Number(row?.durations || 0);
+        target.hospitalizedTime += Number(row?.hospitalizedTime || 0);
+        target.hospitalizedDurations += Number(row?.hospitalizedDurations || 0);
+      }
+    }
+    return Array.from(mergedByDate.values())
+      .sort((a, b) => (a.date > b.date ? 1 : -1))
+      .map((row) => ({
+        ...row,
+        avgTime: row.durations > 0 ? row.totalTime / row.durations : 0,
+        avgHospitalizedTime:
+          row.hospitalizedDurations > 0 ? row.hospitalizedTime / row.hospitalizedDurations : 0,
+      }));
+  }
+
   function readDataCache(url) {
     const key = getDataCacheKey(url);
     if (!key) {
@@ -163,7 +209,7 @@ export function createMainDataHandlers(context) {
     inMemoryDataCache.delete(key);
   }
 
-  function runWorkerJob(message, { onProgress, signal } = {}) {
+  function runWorkerJob(message, { onProgress, onPartialResult, signal } = {}) {
     if (typeof Worker !== 'function') {
       return Promise.reject(new Error('Naršyklė nepalaiko Web Worker.'));
     }
@@ -193,6 +239,15 @@ export function createMainDataHandlers(context) {
         if (data.status === 'progress') {
           if (typeof onProgress === 'function') {
             onProgress(data.payload || {});
+          }
+          return;
+        }
+        if (data.status === 'partial') {
+          if (typeof onPartialResult === 'function') {
+            onPartialResult({
+              phase: data.phase || '',
+              payload: data.payload || null,
+            });
           }
           return;
         }
@@ -266,6 +321,7 @@ export function createMainDataHandlers(context) {
     const onChunk = typeof config?.onChunk === 'function' ? config.onChunk : null;
     const onWorkerProgress = typeof config?.onWorkerProgress === 'function' ? config.onWorkerProgress : null;
     const signal = config?.signal || null;
+    const onPartialResult = typeof config?.onPartialResult === 'function' ? config.onPartialResult : null;
     const workerProgressStep = onWorkerProgress
       ? Number.isInteger(config?.workerProgressStep) && config.workerProgressStep > 0
         ? config.workerProgressStep
@@ -321,6 +377,17 @@ export function createMainDataHandlers(context) {
 
       const dataset = await runDataWorker(download.text, workerOptions, {
         onProgress: onWorkerProgress,
+        onPartialResult:
+          typeof onPartialResult === 'function'
+            ? (partial) => {
+                onPartialResult({
+                  sourceId,
+                  label: label || sourceId,
+                  phase: partial?.phase || '',
+                  payload: partial?.payload || null,
+                });
+              }
+            : null,
         progressStep: workerProgressStep,
         signal,
       });
@@ -381,6 +448,7 @@ export function createMainDataHandlers(context) {
   }
 
   async function fetchData(options = {}) {
+    const includeYearlyStats = options?.includeYearlyStats !== false;
     const skipHistorical = options?.skipHistorical === true;
     const csvSettings = settings?.csv || DEFAULT_SETTINGS.csv;
     const signal = options?.signal || null;
@@ -389,6 +457,7 @@ export function createMainDataHandlers(context) {
       missingMessage: 'Nenurodytas pagrindinis duomenų URL.',
       onChunk: typeof options?.onPrimaryChunk === 'function' ? options.onPrimaryChunk : null,
       onWorkerProgress: typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+      onPartialResult: typeof options?.onPrimaryPartial === 'function' ? options.onPrimaryPartial : null,
       signal,
     };
     const workerOptions = {
@@ -412,6 +481,8 @@ export function createMainDataHandlers(context) {
             onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
             onWorkerProgress:
               typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+            onPartialResult:
+              typeof options?.onHistoricalPartial === 'function' ? options.onHistoricalPartial : null,
             signal,
           }
         : null;
@@ -544,7 +615,9 @@ export function createMainDataHandlers(context) {
       combinedRecords.length === baseRecords.length && hasBaseDaily
         ? baseDaily.slice()
         : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
-    const combinedYearlyStats = computeYearlyStats(computeMonthlyStats(combinedDaily.slice()));
+    const combinedYearlyStats = includeYearlyStats
+      ? computeYearlyStats(computeMonthlyStats(combinedDaily.slice()))
+      : [];
 
     return {
       records: combinedRecords,
@@ -561,5 +634,6 @@ export function createMainDataHandlers(context) {
     fetchData,
     runDataWorker,
     runKpiWorkerJob,
+    mergeDailyStatsSeries,
   };
 }

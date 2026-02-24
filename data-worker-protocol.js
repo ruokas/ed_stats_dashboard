@@ -27,7 +27,8 @@
 /**
  * @typedef {{
  *   id: string;
- *   status: 'success' | 'error' | 'progress';
+ *   status: 'success' | 'error' | 'progress' | 'partial';
+ *   phase?: string;
  *   payload?: unknown;
  *   error?: { message: string; name?: string; stack?: string };
  * }} WorkerResponse
@@ -62,6 +63,22 @@ function createProgressReporter(id, step = 500) {
   };
 }
 
+function createPartialReporter(id) {
+  return (phase = '', payload = null) => {
+    if (!id || !phase) {
+      return;
+    }
+    /** @type {WorkerResponse} */
+    const partialMessage = {
+      id,
+      status: 'partial',
+      phase: String(phase),
+      payload,
+    };
+    self.postMessage(partialMessage);
+  };
+}
+
 /**
  * @param {MessageEvent<WorkerRequest>} event
  */
@@ -76,7 +93,12 @@ function handleWorkerMessage(event) {
       const { csvText, options, progressStep } = event.data;
       const reportProgress =
         Number.isInteger(progressStep) && progressStep > 0 ? createProgressReporter(id, progressStep) : null;
-      payload = transformCsvWithStats(csvText, options, { reportProgress, progressStep });
+      const reportPartial = createPartialReporter(id);
+      payload = transformCsvWithStats(csvText, options, {
+        reportProgress,
+        reportPartial,
+        progressStep,
+      });
     } else if (type === 'transformEdCsv') {
       const { csvText, options } = event.data;
       payload = transformEdCsvWithSummary(csvText, options || {});

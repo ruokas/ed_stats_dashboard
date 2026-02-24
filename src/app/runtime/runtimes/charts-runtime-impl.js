@@ -740,7 +740,7 @@ export async function runChartsRuntime(core) {
     ? dashboardState.heatmapMetric
     : getDefaultHeatmapMetric();
 
-  const { fetchData } = createMainDataHandlers({
+  const { fetchData, mergeDailyStatsSeries } = createMainDataHandlers({
     settings,
     DEFAULT_SETTINGS,
     dashboardState,
@@ -965,7 +965,43 @@ export async function runChartsRuntime(core) {
     });
   };
 
+  const markChartsSectionVisible = (section, { scheduleSecondary = false, reason = 'interaction' } = {}) => {
+    const key =
+      section === 'heatmap'
+        ? 'heatmapVisible'
+        : section === 'hourly'
+          ? 'hourlyVisible'
+          : section === 'hospital'
+            ? 'hospitalVisible'
+            : null;
+    if (!key) {
+      return false;
+    }
+    const previousFlags = dashboardState.chartsSectionRenderFlags || {};
+    const changed = !previousFlags[key];
+    if (changed) {
+      dashboardState.chartsSectionRenderFlags = {
+        ...previousFlags,
+        [key]: true,
+      };
+    }
+    if (
+      (section === 'heatmap' || section === 'hourly') &&
+      dashboardState.chartsSecondaryVisibilityObserver &&
+      dashboardState.chartsSectionRenderFlags?.heatmapVisible &&
+      dashboardState.chartsSectionRenderFlags?.hourlyVisible
+    ) {
+      dashboardState.chartsSecondaryVisibilityObserver.disconnect();
+      dashboardState.chartsSecondaryVisibilityObserver = null;
+    }
+    if (scheduleSecondary) {
+      scheduleChartsSecondaryRender({ reason });
+    }
+    return changed;
+  };
+
   const applyHeatmapFiltersAndRender = () => {
+    markChartsSectionVisible('heatmap');
     const palette = getThemePalette();
     renderArrivalHeatmap(
       selectors.heatmapContainer,
@@ -976,6 +1012,7 @@ export async function runChartsRuntime(core) {
   };
 
   const handleHeatmapMetricChange = (event) => {
+    markChartsSectionVisible('heatmap');
     dashboardState.heatmapMetric = normalizeHeatmapMetricKey(event?.target?.value);
     updateHeatmapCaption(dashboardState.heatmapMetric);
     persistChartsQuery();
@@ -1434,10 +1471,24 @@ export async function runChartsRuntime(core) {
     selectors.chartsHospitalTableYear.value = String(dashboardState.chartsHospitalTableYear ?? 'all');
   };
 
-  const renderChartsHospitalTable = (records = dashboardState.rawRecords) => {
+  const renderChartsHospitalTable = (records = dashboardState.rawRecords, options = {}) => {
     if (!selectors.chartsHospitalTableBody) {
       return;
     }
+    const forceRender = options?.force === true;
+    const isVisible = Boolean(dashboardState.chartsSectionRenderFlags?.hospitalVisible);
+    if (!forceRender && !isVisible) {
+      if (selectors.chartsHospitalTableCaption) {
+        selectors.chartsHospitalTableCaption.textContent =
+          TEXT?.charts?.hospitalTable?.caption || 'Lentelė bus įkelta priartėjus prie skyriaus.';
+      }
+      return;
+    }
+    dashboardState.chartsHospitalTableHasRendered = true;
+    dashboardState.chartsStartupPhases = {
+      ...(dashboardState.chartsStartupPhases || {}),
+      hospitalRendered: true,
+    };
     const yearFilter =
       dashboardState.chartsHospitalTableYear == null ? 'all' : dashboardState.chartsHospitalTableYear;
     const searchQuery = String(dashboardState.chartsHospitalTableSearch || '')
@@ -1506,16 +1557,24 @@ export async function runChartsRuntime(core) {
   };
 
   const handleChartsHospitalTableYearChange = (event) => {
+    dashboardState.chartsSectionRenderFlags = {
+      ...(dashboardState.chartsSectionRenderFlags || {}),
+      hospitalVisible: true,
+    };
     const value = String(event?.target?.value || 'all');
     dashboardState.chartsHospitalTableYear = value === 'all' ? 'all' : Number.parseInt(value, 10);
     persistChartsQuery();
-    renderChartsHospitalTable(dashboardState.rawRecords);
+    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
   };
 
   const handleChartsHospitalTableSearchInput = createDebouncedHandler((event) => {
+    dashboardState.chartsSectionRenderFlags = {
+      ...(dashboardState.chartsSectionRenderFlags || {}),
+      hospitalVisible: true,
+    };
     dashboardState.chartsHospitalTableSearch = String(event?.target?.value || '');
     persistChartsQuery();
-    renderChartsHospitalTable(dashboardState.rawRecords);
+    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
   }, 250);
 
   const handleChartsHospitalTableHeaderClick = (event) => {
@@ -1527,6 +1586,10 @@ export async function runChartsRuntime(core) {
     if (!header) {
       return;
     }
+    dashboardState.chartsSectionRenderFlags = {
+      ...(dashboardState.chartsSectionRenderFlags || {}),
+      hospitalVisible: true,
+    };
     const key = String(header.getAttribute('data-charts-hospital-sort') || '').trim();
     if (!key) {
       return;
@@ -1536,7 +1599,7 @@ export async function runChartsRuntime(core) {
       current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : key === 'name' ? 'asc' : 'desc';
     dashboardState.chartsHospitalTableSort = normalizeChartsHospitalTableSort(`${key}_${nextDir}`);
     persistChartsQuery();
-    renderChartsHospitalTable(dashboardState.rawRecords);
+    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
   };
 
   const handleChartsHospitalTableRowClick = (event) => {
@@ -1544,6 +1607,10 @@ export async function runChartsRuntime(core) {
     if (!(target instanceof Element)) {
       return;
     }
+    dashboardState.chartsSectionRenderFlags = {
+      ...(dashboardState.chartsSectionRenderFlags || {}),
+      hospitalVisible: true,
+    };
     const row = target.closest('tr[data-department]');
     if (!row) {
       return;
@@ -1555,7 +1622,7 @@ export async function runChartsRuntime(core) {
     const current = normalizeChartsHospitalTableDepartment(dashboardState.chartsHospitalTableDepartment);
     dashboardState.chartsHospitalTableDepartment = current === department ? '' : department;
     persistChartsQuery();
-    renderChartsHospitalTable(dashboardState.rawRecords);
+    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
   };
 
   const updateDailyPeriodSummary = (dailyStats) => {
@@ -1821,11 +1888,204 @@ export async function runChartsRuntime(core) {
     updateFeedbackTrendSubtitle: () => {},
     getActiveFeedbackTrendWindow: () => 6,
     formatMonthLabelForAxis: null,
+    onChartsPrimaryVisible: () => handleChartsPrimaryVisible(),
   });
 
+  const dispatchChartsLifecycleEvent = (name, detail = {}) => {
+    if (typeof window?.dispatchEvent !== 'function' || typeof window?.CustomEvent !== 'function') {
+      return;
+    }
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  };
+
+  const markChartsPerfPoint = (name) => {
+    if (typeof performance?.mark !== 'function') {
+      return;
+    }
+    try {
+      performance.mark(name);
+    } catch (_error) {
+      // ignore
+    }
+  };
+
+  const ensureChartsHospitalVisibilityObserver = () => {
+    if (!(selectors.chartsHospitalTableRoot instanceof HTMLElement)) {
+      return;
+    }
+    if (dashboardState.chartsHospitalTableVisibilityObserver) {
+      return;
+    }
+    if (typeof window.IntersectionObserver !== 'function') {
+      dashboardState.chartsSectionRenderFlags = {
+        ...(dashboardState.chartsSectionRenderFlags || {}),
+        hospitalVisible: true,
+      };
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0);
+        if (!visible) {
+          return;
+        }
+        dashboardState.chartsSectionRenderFlags = {
+          ...(dashboardState.chartsSectionRenderFlags || {}),
+          hospitalVisible: true,
+        };
+        renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
+        if (dashboardState.chartsHospitalTableVisibilityObserver) {
+          dashboardState.chartsHospitalTableVisibilityObserver.disconnect();
+          dashboardState.chartsHospitalTableVisibilityObserver = null;
+        }
+      },
+      { root: null, rootMargin: '200px 0px', threshold: [0, 0.01] }
+    );
+    observer.observe(selectors.chartsHospitalTableRoot);
+    dashboardState.chartsHospitalTableVisibilityObserver = observer;
+  };
+
+  const ensureChartsSecondaryVisibilityObserver = () => {
+    const heatmapTarget = selectors.heatmapContainer;
+    const hourlyTarget = document.getElementById('hourlyChart');
+    if (
+      dashboardState.chartsSectionRenderFlags?.heatmapVisible &&
+      dashboardState.chartsSectionRenderFlags?.hourlyVisible
+    ) {
+      return;
+    }
+    if (!(heatmapTarget instanceof HTMLElement) && !(hourlyTarget instanceof HTMLElement)) {
+      return;
+    }
+    if (dashboardState.chartsSecondaryVisibilityObserver) {
+      return;
+    }
+    if (typeof window.IntersectionObserver !== 'function') {
+      dashboardState.chartsSectionRenderFlags = {
+        ...(dashboardState.chartsSectionRenderFlags || {}),
+        heatmapVisible: true,
+        hourlyVisible: true,
+      };
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let didReveal = false;
+        for (const entry of entries) {
+          if (!(entry.isIntersecting || entry.intersectionRatio > 0)) {
+            continue;
+          }
+          if (entry.target === heatmapTarget) {
+            didReveal = markChartsSectionVisible('heatmap') || didReveal;
+          } else if (entry.target === hourlyTarget) {
+            didReveal = markChartsSectionVisible('hourly') || didReveal;
+          }
+        }
+        if (didReveal) {
+          scheduleChartsSecondaryRender({ reason: 'visibility' });
+        }
+      },
+      { root: null, rootMargin: '200px 0px', threshold: [0, 0.01] }
+    );
+    if (heatmapTarget instanceof HTMLElement) {
+      observer.observe(heatmapTarget);
+    }
+    if (hourlyTarget instanceof HTMLElement) {
+      observer.observe(hourlyTarget);
+    }
+    dashboardState.chartsSecondaryVisibilityObserver = observer;
+  };
+
+  const scheduleChartsSecondaryRender = ({ reason = 'runtime' } = {}) => {
+    dashboardState.chartsDeferredRenderToken = Number(dashboardState.chartsDeferredRenderToken || 0) + 1;
+    const token = dashboardState.chartsDeferredRenderToken;
+    dashboardState.chartsDeferredRenderReason = reason;
+    if (dashboardState.chartsSecondaryRenderScheduled) {
+      return;
+    }
+    dashboardState.chartsSecondaryRenderScheduled = true;
+    runAfterDomAndIdle(
+      async () => {
+        dashboardState.chartsSecondaryRenderScheduled = false;
+        if (token !== dashboardState.chartsDeferredRenderToken) {
+          scheduleChartsSecondaryRender({
+            reason: dashboardState.chartsDeferredRenderReason || reason,
+          });
+          return;
+        }
+        ensureChartsSecondaryVisibilityObserver();
+        const sectionFlags = dashboardState.chartsSectionRenderFlags || {};
+        const renderHeatmap = Boolean(sectionFlags.heatmapVisible);
+        const renderHourly = Boolean(sectionFlags.hourlyVisible);
+        if (!renderHeatmap && !renderHourly) {
+          return;
+        }
+        const secondaryPerfHandle =
+          runtimeClient?.perfMonitor?.start?.('charts-secondary-render', { priežastis: reason }) || null;
+        await chartRenderers.renderChartsSecondary({
+          heatmapData: renderHeatmap ? computeHeatmapDataForFilters() : null,
+          allowReuse: true,
+          renderHeatmap,
+          renderHourly,
+        });
+        runtimeClient?.perfMonitor?.finish?.(secondaryPerfHandle, { priežastis: reason });
+        const updatedFlags = dashboardState.chartsSectionRenderFlags || {};
+        const secondaryComplete = Boolean(updatedFlags.heatmapRendered && updatedFlags.hourlyRendered);
+        dashboardState.chartsStartupPhases = {
+          ...(dashboardState.chartsStartupPhases || {}),
+          secondaryComplete,
+        };
+        if (secondaryComplete) {
+          markChartsPerfPoint('app-charts-secondary-complete');
+          dispatchChartsLifecycleEvent('app:charts-secondary-complete', {
+            reason,
+          });
+        }
+        if (dashboardState.chartsHospitalRenderScheduled) {
+          return;
+        }
+        dashboardState.chartsHospitalRenderScheduled = true;
+        runAfterDomAndIdle(
+          () => {
+            dashboardState.chartsHospitalRenderScheduled = false;
+            if (token !== dashboardState.chartsDeferredRenderToken) {
+              return;
+            }
+            ensureChartsHospitalVisibilityObserver();
+            if (dashboardState.chartsSectionRenderFlags?.hospitalVisible) {
+              const hospitalPerfHandle =
+                runtimeClient?.perfMonitor?.start?.('charts-hospital-table-render', { priežastis: reason }) ||
+                null;
+              renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
+              runtimeClient?.perfMonitor?.finish?.(hospitalPerfHandle, { priežastis: reason });
+            }
+          },
+          { timeout: 2000 }
+        );
+      },
+      { timeout: 1200 }
+    );
+  };
+
+  const handleChartsPrimaryVisible = () => {
+    if (dashboardState.chartsStartupPhases?.primaryVisible) {
+      return;
+    }
+    dashboardState.chartsStartupPhases = {
+      ...(dashboardState.chartsStartupPhases || {}),
+      primaryVisible: true,
+    };
+    dashboardState.chartsFirstVisibleAt = Date.now();
+    markChartsPerfPoint('app-charts-primary-visible');
+    dispatchChartsLifecycleEvent('app:charts-primary-visible', {});
+  };
+
   const persistAfter =
-    (handler) =>
+    (handler, { section = null } = {}) =>
     (...args) => {
+      if (section) {
+        markChartsSectionVisible(section);
+      }
       const result = handler(...args);
       persistChartsQuery();
       return result;
@@ -1833,14 +2093,30 @@ export async function runChartsRuntime(core) {
 
   const hourlyControlsWithPersistence = {
     ...hourlyControlsFeature,
-    handleHourlyMetricClick: persistAfter(hourlyControlsFeature.handleHourlyMetricClick),
-    handleHourlyDepartmentInput: persistAfter(hourlyControlsFeature.handleHourlyDepartmentInput),
-    handleHourlyFilterChange: persistAfter(hourlyControlsFeature.handleHourlyFilterChange),
-    handleHourlyCompareToggle: persistAfter(hourlyControlsFeature.handleHourlyCompareToggle),
-    handleHourlyCompareYearsChange: persistAfter(hourlyControlsFeature.handleHourlyCompareYearsChange),
-    handleHourlyCompareSeriesClick: persistAfter(hourlyControlsFeature.handleHourlyCompareSeriesClick),
-    handleHourlyResetFilters: persistAfter(hourlyControlsFeature.handleHourlyResetFilters),
-    applyHourlyDepartmentSelection: persistAfter(hourlyControlsFeature.applyHourlyDepartmentSelection),
+    handleHourlyMetricClick: persistAfter(hourlyControlsFeature.handleHourlyMetricClick, {
+      section: 'hourly',
+    }),
+    handleHourlyDepartmentInput: persistAfter(hourlyControlsFeature.handleHourlyDepartmentInput, {
+      section: 'hourly',
+    }),
+    handleHourlyFilterChange: persistAfter(hourlyControlsFeature.handleHourlyFilterChange, {
+      section: 'hourly',
+    }),
+    handleHourlyCompareToggle: persistAfter(hourlyControlsFeature.handleHourlyCompareToggle, {
+      section: 'hourly',
+    }),
+    handleHourlyCompareYearsChange: persistAfter(hourlyControlsFeature.handleHourlyCompareYearsChange, {
+      section: 'hourly',
+    }),
+    handleHourlyCompareSeriesClick: persistAfter(hourlyControlsFeature.handleHourlyCompareSeriesClick, {
+      section: 'hourly',
+    }),
+    handleHourlyResetFilters: persistAfter(hourlyControlsFeature.handleHourlyResetFilters, {
+      section: 'hourly',
+    }),
+    applyHourlyDepartmentSelection: persistAfter(hourlyControlsFeature.applyHourlyDepartmentSelection, {
+      section: 'hourly',
+    }),
   };
 
   const handleChartFiltersReset = () => {
@@ -1885,9 +2161,15 @@ export async function runChartsRuntime(core) {
       dashboardState.hourlyDepartment
     );
     chartFlow.applyChartFilters();
+    markChartsSectionVisible('heatmap');
     applyHeatmapFiltersAndRender();
+    markChartsSectionVisible('hourly');
     hourlyControlsFeature.handleHourlyFilterChange();
-    renderChartsHospitalTable(dashboardState.rawRecords);
+    dashboardState.chartsSectionRenderFlags = {
+      ...(dashboardState.chartsSectionRenderFlags || {}),
+      hospitalVisible: true,
+    };
+    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
     persistChartsQuery();
   };
 
@@ -1931,6 +2213,7 @@ export async function runChartsRuntime(core) {
       describeError,
       computeDailyStats,
       filterDailyStatsByWindow,
+      mergeDailyStatsSeries,
       populateChartYearOptions: (dailyStats) =>
         populateChartYearOptions({
           dailyStats,
@@ -1947,9 +2230,13 @@ export async function runChartsRuntime(core) {
       kpiFilterLabels: KPI_FILTER_LABELS,
       syncChartFilterControls: chartFlow.syncChartFilterControls,
       prepareChartDataForPeriod: chartFlow.prepareChartDataForPeriod,
+      renderChartsPrimary: chartRenderers.renderChartsPrimary,
+      renderChartsSecondary: chartRenderers.renderChartsSecondary,
       renderCharts: chartRenderers.renderCharts,
       renderChartsHospitalTable,
       getHeatmapData: computeHeatmapDataForFilters,
+      onChartsPrimaryVisible: handleChartsPrimaryVisible,
+      scheduleChartsSecondaryRender,
       numberFormatter,
       getSettings: () => settings,
       getClientConfig: runtimeClient.getClientConfig,
@@ -1960,6 +2247,9 @@ export async function runChartsRuntime(core) {
     })
   );
 
+  void loadChartJs();
+  ensureChartsSecondaryVisibilityObserver();
+  ensureChartsHospitalVisibilityObserver();
   dataFlow.scheduleInitialLoad();
   persistChartsQuery();
 }

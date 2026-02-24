@@ -36,6 +36,10 @@ function isProfilingEnabled() {
 
 export async function startApp() {
   const profilingEnabled = isProfilingEnabled();
+  const chartsLifecycleMeasureState = {
+    firstVisibleMeasured: false,
+    secondaryMeasured: false,
+  };
   const mark = (name) => {
     if (!profilingEnabled || typeof performance?.mark !== 'function') {
       return;
@@ -54,6 +58,32 @@ export async function startApp() {
   initializeLazyLoading();
 
   const pageId = resolvePageId(document.body?.dataset?.page);
+  if (profilingEnabled && pageId === 'charts' && typeof window?.addEventListener === 'function') {
+    window.addEventListener(
+      'app:charts-primary-visible',
+      () => {
+        if (chartsLifecycleMeasureState.firstVisibleMeasured) {
+          return;
+        }
+        chartsLifecycleMeasureState.firstVisibleMeasured = true;
+        mark('app-charts-primary-visible');
+        measure('app:charts-first-visible', 'app-start-entered', 'app-charts-primary-visible');
+      },
+      { once: true }
+    );
+    window.addEventListener(
+      'app:charts-secondary-complete',
+      () => {
+        if (chartsLifecycleMeasureState.secondaryMeasured) {
+          return;
+        }
+        chartsLifecycleMeasureState.secondaryMeasured = true;
+        mark('app-charts-secondary-complete');
+        measure('app:charts-secondary-complete', 'app-start-entered', 'app-charts-secondary-complete');
+      },
+      { once: true }
+    );
+  }
   if (shouldPreloadChartJs(pageId)) {
     preloadChartJs();
   }
