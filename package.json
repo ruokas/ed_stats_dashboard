@@ -22,6 +22,8 @@
     "pages:check": "node scripts/check-pages.mjs",
     "metrics:check": "node scripts/check-metrics-catalog.mjs",
     "benchmark:worker": "node scripts/benchmark-worker.mjs",
+    "benchmark:doctor": "node scripts/benchmark-doctor-stats.mjs",
+    "benchmark:kpi-render": "node scripts/benchmark-kpi-render.mjs",
     "prepare": "husky",
     "check": "npm run lint && npm run typecheck && npm run test:coverage",
     "check:strict": "npm run check && npm run depcruise && npm run knip:exports && npm run metrics:check",

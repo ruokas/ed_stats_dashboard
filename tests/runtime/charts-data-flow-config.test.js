@@ -63,31 +63,21 @@ describe('createChartsDataFlowConfig', () => {
       setAutoRefreshTimerId,
     });
 
-    expect(config.fetchData).toBe(fetchData);
-    expect(config.describeError).toBe(describeError);
-    expect(config.computeDailyStats).toBe(computeDailyStats);
-    expect(config.filterDailyStatsByWindow).toBe(filterDailyStatsByWindow);
-    expect(config.populateChartYearOptions).toBe(populateChartYearOptions);
-    expect(config.renderCharts).toBe(renderCharts);
-    expect(config.renderChartsHospitalTable).toBe(renderChartsHospitalTable);
-    expect(config.getHeatmapData).toBe(getHeatmapData);
-    expect(config.syncChartFilterControls).toBe(syncChartFilterControls);
-    expect(config.prepareChartDataForPeriod).toBe(prepareChartDataForPeriod);
-    expect(config.getSettings).toBe(getSettings);
-    expect(config.getClientConfig).toBe(getClientConfig);
-    expect(config.getAutoRefreshTimerId).toBe(getAutoRefreshTimerId);
-    expect(config.setAutoRefreshTimerId).toBe(setAutoRefreshTimerId);
-    expect(config.showChartSkeletons).toBe(showChartSkeletons);
-    expect(config.setStatus).toBe(setStatus);
-
-    await config.fetchFeedbackData();
-    await config.fetchEdData();
-    await config.applyKpiFiltersAndRender();
-    await config.renderEdDashboard();
-
-    expect(config.fetchFeedbackData).toBeTypeOf('function');
-    expect(config.fetchEdData).toBeTypeOf('function');
-    expect(config.applyKpiFiltersAndRender).toBeTypeOf('function');
-    expect(config.renderEdDashboard).toBeTypeOf('function');
+    expect(config.uiHooks.setStatus).toBe(setStatus);
+    expect(config.uiHooks.getSettings).toBe(getSettings);
+    expect(config.uiHooks.getClientConfig).toBe(getClientConfig);
+    expect(config.uiHooks.getAutoRefreshTimerId).toBe(getAutoRefreshTimerId);
+    expect(config.uiHooks.setAutoRefreshTimerId).toBe(setAutoRefreshTimerId);
+    expect(config.chartHooks.showChartSkeletons).toBe(showChartSkeletons);
+    expect(config.chartHooks.populateChartYearOptions).toBe(populateChartYearOptions);
+    expect(config.chartHooks.syncChartFilterControls).toBe(syncChartFilterControls);
+    expect(config.chartHooks.prepareChartDataForPeriod).toBe(prepareChartDataForPeriod);
+    expect(config.chartHooks.renderCharts).toBe(renderCharts);
+    expect(config.chartHooks.renderChartsHospitalTable).toBe(renderChartsHospitalTable);
+    expect(config.chartHooks.getHeatmapData).toBe(getHeatmapData);
+    expect(config.dataHooks.fetchData).toBe(fetchData);
+    expect(config.dataHooks.describeError).toBe(describeError);
+    expect(config.dataHooks.computeDailyStats).toBe(computeDailyStats);
+    expect(config.dataHooks.filterDailyStatsByWindow).toBe(filterDailyStatsByWindow);
   });
 });

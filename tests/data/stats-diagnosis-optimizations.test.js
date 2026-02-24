@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { computeAgeDiagnosisHeatmap, computeDiagnosisFrequency } from '../../src/data/stats.js';
+import {
+  computeAgeDiagnosisHeatmap,
+  computeDiagnosisFrequency,
+  scopeExtendedHistoricalRecords,
+} from '../../src/data/stats.js';
 
 function record({ ageBand, diagnosisCodes, diagnosisGroups, arrival = '2026-02-10T08:00:00' }) {
   return {
@@ -54,5 +58,55 @@ describe('stats diagnosis computation', () => {
     expect(result.diagnosisGroups).toContain('C');
     expect(getCell('18-34', 'A-B')).toBe(1);
     expect(getCell('35-49', 'C')).toBe(1);
+  });
+
+  it('accepts precomputed scopedMeta without changing diagnosis outputs', () => {
+    const records = [
+      record({ ageBand: '18-34', diagnosisCodes: ['A00', 'B10'] }),
+      record({ ageBand: '35-49', diagnosisCodes: ['B10', 'C12'] }),
+    ];
+    const scoped = scopeExtendedHistoricalRecords(records, 'all');
+    const scopedMeta = {
+      scoped: scoped.records,
+      yearOptions: scoped.yearOptions,
+      yearFilter: scoped.yearFilter,
+      shiftStartHour: scoped.shiftStartHour,
+      coverage: {
+        total: scoped.coverage.total,
+        extended: scoped.coverage.extended,
+      },
+    };
+
+    const normal = computeDiagnosisFrequency(records, { topN: 10 });
+    const withScopedMeta = computeDiagnosisFrequency(records, { topN: 10, scopedMeta });
+
+    expect(withScopedMeta).toEqual(normal);
+  });
+
+  it('does not rescan input records when precomputed scopedMeta is provided', () => {
+    const records = [
+      record({ ageBand: '18-34', diagnosisCodes: ['A00', 'B10'] }),
+      record({ ageBand: '35-49', diagnosisCodes: ['B10', 'C12'] }),
+    ];
+    const scoped = scopeExtendedHistoricalRecords(records, 'all');
+    const scopedMeta = {
+      scoped: scoped.records,
+      yearOptions: scoped.yearOptions,
+      yearFilter: scoped.yearFilter,
+      shiftStartHour: scoped.shiftStartHour,
+      coverage: {
+        total: scoped.coverage.total,
+        extended: scoped.coverage.extended,
+      },
+    };
+    const poisonRecords = new Proxy([], {
+      get() {
+        throw new Error('should not read records when scopedMeta is provided');
+      },
+    });
+
+    const result = computeDiagnosisFrequency(poisonRecords, { topN: 10, scopedMeta });
+
+    expect(result.rows.length).toBeGreaterThan(0);
   });
 });

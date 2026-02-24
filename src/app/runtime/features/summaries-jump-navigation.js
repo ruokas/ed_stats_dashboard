@@ -1,3 +1,5 @@
+import { initJumpStickyOffset } from './jump-sticky-offset.js';
+
 export function initSummariesJumpNavigation(selectors) {
   const nav = selectors?.summariesJumpNav;
   const links = Array.isArray(selectors?.summariesJumpLinks) ? selectors.summariesJumpLinks : [];
@@ -150,39 +152,11 @@ export function initSummariesJumpNavigation(selectors) {
 }
 
 export function initSummariesJumpStickyOffset(selectors) {
-  const jumpNav = selectors?.summariesJumpNav;
-  if (!(jumpNav instanceof HTMLElement)) {
-    return;
-  }
-
-  const applyOffset = () => {
-    const hero = selectors?.hero;
-    const measuredHeroHeight = hero instanceof HTMLElement ? hero.getBoundingClientRect().height : 0;
-    const cssHeroHeight =
-      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hero-height')) || 0;
-    const heroHeight = measuredHeroHeight > 0 ? measuredHeroHeight : cssHeroHeight;
-    const offset = Math.max(56, Math.ceil(heroHeight) + 2);
-    jumpNav.style.setProperty('--summaries-jump-sticky-top', `${offset}px`);
-    document.documentElement.style.setProperty('--summaries-jump-sticky-top', `${offset}px`);
-    const jumpNavHeight = jumpNav.getBoundingClientRect().height;
-    if (Number.isFinite(jumpNavHeight) && jumpNavHeight > 0) {
-      document.documentElement.style.setProperty(
-        '--summaries-jump-nav-height',
-        `${Math.ceil(jumpNavHeight)}px`
-      );
-    }
-  };
-
-  applyOffset();
-  if (typeof window.requestAnimationFrame === 'function') {
-    window.requestAnimationFrame(applyOffset);
-  } else {
-    window.setTimeout(applyOffset, 0);
-  }
-  window.addEventListener('resize', applyOffset, { passive: true });
-  window.addEventListener('orientationchange', applyOffset, { passive: true });
-  window.addEventListener('load', applyOffset, { passive: true });
-  if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
-    window.visualViewport.addEventListener('resize', applyOffset, { passive: true });
-  }
+  initJumpStickyOffset({
+    jumpNav: selectors?.summariesJumpNav,
+    hero: selectors?.hero,
+    jumpNavStickyTopVar: '--summaries-jump-sticky-top',
+    documentStickyTopVar: '--summaries-jump-sticky-top',
+    documentJumpNavHeightVar: '--summaries-jump-nav-height',
+  });
 }

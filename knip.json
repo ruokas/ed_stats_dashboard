@@ -22,5 +22,15 @@
     "src/app/runtime/chart-primitives.js": ["exports"],
     "src/app/runtime/settings.js": ["exports"]
   },
-  "ignore": ["coverage/**", "docs/**", ".husky/**"]
+  "ignore": [
+    "coverage/**",
+    "docs/**",
+    ".husky/**",
+    "data-worker-csv-parse.js",
+    "data-worker-ed-transform.js",
+    "data-worker-kpi-filters.js",
+    "data-worker-main-transform.js",
+    "data-worker-protocol.js",
+    "data-worker-transforms.js"
+  ]
 }

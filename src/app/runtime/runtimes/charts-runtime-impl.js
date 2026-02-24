@@ -51,6 +51,7 @@ import { createDataFlow } from '../data-flow.js';
 import { setupCopyExportControls } from '../export-controls.js';
 import { createFunnelCanvasFeature } from '../features/funnel-canvas.js';
 import { createHourlyControlsFeature } from '../features/hourly-controls.js';
+import { initJumpStickyOffset } from '../features/jump-sticky-offset.js';
 import { applyChartsText } from '../features/text-charts.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
 import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
@@ -539,38 +540,12 @@ function initChartsJumpNavigation(selectors) {
 }
 
 function initChartsJumpStickyOffset(selectors) {
-  const jumpNav = selectors?.chartsJumpNav;
-  if (!(jumpNav instanceof HTMLElement)) {
-    return;
-  }
-
-  const applyOffset = () => {
-    const hero = selectors?.hero;
-    const measuredHeroHeight = hero instanceof HTMLElement ? hero.getBoundingClientRect().height : 0;
-    const cssHeroHeight =
-      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hero-height')) || 0;
-    const heroHeight = measuredHeroHeight > 0 ? measuredHeroHeight : cssHeroHeight;
-    const offset = Math.max(56, Math.ceil(heroHeight) + 2);
-    jumpNav.style.setProperty('--charts-jump-sticky-top', `${offset}px`);
-    const jumpNavHeight = jumpNav.getBoundingClientRect().height;
-    if (Number.isFinite(jumpNavHeight) && jumpNavHeight > 0) {
-      document.documentElement.style.setProperty('--charts-jump-nav-height', `${Math.ceil(jumpNavHeight)}px`);
-    }
-  };
-
-  applyOffset();
-  if (typeof window.requestAnimationFrame === 'function') {
-    window.requestAnimationFrame(applyOffset);
-  } else {
-    window.setTimeout(applyOffset, 0);
-  }
-
-  window.addEventListener('resize', applyOffset, { passive: true });
-  window.addEventListener('orientationchange', applyOffset, { passive: true });
-  window.addEventListener('load', applyOffset, { passive: true });
-  if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
-    window.visualViewport.addEventListener('resize', applyOffset, { passive: true });
-  }
+  initJumpStickyOffset({
+    jumpNav: selectors?.chartsJumpNav,
+    hero: selectors?.hero,
+    jumpNavStickyTopVar: '--charts-jump-sticky-top',
+    documentJumpNavHeightVar: '--charts-jump-nav-height',
+  });
 }
 
 export async function runChartsRuntime(core) {

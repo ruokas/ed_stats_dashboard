@@ -71,6 +71,44 @@ Expected input shape:
 
 The script prints per-operation medians and p95 durations.
 
+## Doctor Stats Render-Path Benchmark
+
+To compare repeated doctor dashboard computations with and without the shared stats compute context:
+
+```bash
+npm run benchmark:doctor -- --records=50000 --runs=10
+```
+
+Optional flags:
+
+- `--records=<n>` synthetic historical records to generate (default `50000`)
+- `--runs=<n>` measured runs (default `10`)
+- `--warmup=<n>` warmup runs before measuring (default `2`)
+
+The script prints median/p95 durations for:
+
+- `baseline` (no shared compute context)
+- `sharedComputeContext` (reuses scoped + doctor aggregates across helper calls)
+
+## KPI Renderer DOM Benchmark
+
+To compare the legacy full-rebuild KPI renderer behavior against the current incremental renderer:
+
+```bash
+npm run benchmark:kpi-render -- --iterations=200 --runs=8
+```
+
+Optional flags:
+
+- `--iterations=<n>` render calls per measured run (default `200`)
+- `--runs=<n>` measured runs (default `8`)
+- `--warmup=<n>` warmup runs (default `2`)
+
+Scenarios reported:
+
+- `identical` (same KPI payload repeatedly; exercises render short-circuiting)
+- `alternating` (payload changes between two values; exercises node reuse/update path)
+
 ## Latest worker sample snapshot (2026-02-12)
 
 From the current repository fixture `worker-bench-runs.json`:

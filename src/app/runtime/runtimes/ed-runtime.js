@@ -756,67 +756,51 @@ export async function runEdRuntime(core) {
     TEXT,
     DEFAULT_SETTINGS,
     AUTO_REFRESH_INTERVAL_MS,
-    runAfterDomAndIdle,
-    setDatasetValue,
-    setStatus: (type, details) => setStatus(selectors, type, details),
-    showKpiSkeleton: () => {},
-    showChartSkeletons: () => {},
-    showEdSkeleton,
-    createChunkReporter: () => null,
-    fetchData,
-    fetchFeedbackData,
-    fetchEdData,
-    perfMonitor: runtimeClient.perfMonitor,
-    describeCacheMeta,
-    createEmptyEdSummary,
-    describeError,
-    computeDailyStats,
-    filterDailyStatsByWindow,
-    populateChartYearOptions: () => {},
-    populateChartsHospitalTableYearOptions: () => {},
-    populateHourlyCompareYearOptions: () => {},
-    populateHeatmapYearOptions: () => {},
-    syncHeatmapFilterControls: () => {},
-    syncKpiFilterControls: () => {},
-    getDefaultChartFilters: createDefaultChartFilters,
-    sanitizeChartFilters: (value) => value,
-    KPI_FILTER_LABELS: { arrival: { all: 'all' }, disposition: { all: 'all' }, cardType: { all: 'all' } },
-    syncChartFilterControls: () => {},
-    prepareChartDataForPeriod: () => ({ daily: [], funnel: null, heatmap: null }),
-    applyKpiFiltersAndRender: async () => {},
-    renderCharts: async () => {},
-    renderChartsHospitalTable: () => {},
-    getHeatmapData: () => null,
-    renderRecentTable: () => {},
-    computeMonthlyStats: () => [],
-    renderMonthlyTable: () => {},
-    computeYearlyStats: () => [],
-    renderYearlyTable: () => {},
-    updateFeedbackFilterOptions: () => {},
-    applyFeedbackFiltersAndRender: () => {
-      const records = Array.isArray(dashboardState.feedback.records) ? dashboardState.feedback.records : [];
-      const stats = computeFeedbackStats(records, {
-        FEEDBACK_RATING_MIN,
-        FEEDBACK_RATING_MAX,
-        formatLocalDateKey,
-      });
-      dashboardState.feedback.summary = stats.summary;
-      dashboardState.feedback.monthly = stats.monthly;
+    uiHooks: {
+      runAfterDomAndIdle,
+      setDatasetValue,
+      setStatus: (type, details) => setStatus(selectors, type, details),
+      getSettings: () => settings,
+      getClientConfig: runtimeClient.getClientConfig,
+      getAutoRefreshTimerId: () => autoRefreshTimerId,
+      setAutoRefreshTimerId: (id) => {
+        autoRefreshTimerId = id;
+      },
     },
-    applyFeedbackStatusNote: () => {
-      if (dashboardState.feedback.usingFallback) {
-        const reason = dashboardState.feedback.lastErrorMessage || TEXT.status.error;
-        setStatus(selectors, 'warning', TEXT.feedback.status.fallback(reason));
-      }
+    feedbackHooks: {
+      applyFeedbackFiltersAndRender: () => {
+        const records = Array.isArray(dashboardState.feedback.records) ? dashboardState.feedback.records : [];
+        const stats = computeFeedbackStats(records, {
+          FEEDBACK_RATING_MIN,
+          FEEDBACK_RATING_MAX,
+          formatLocalDateKey,
+        });
+        dashboardState.feedback.summary = stats.summary;
+        dashboardState.feedback.monthly = stats.monthly;
+      },
+      applyFeedbackStatusNote: () => {
+        if (dashboardState.feedback.usingFallback) {
+          const reason = dashboardState.feedback.lastErrorMessage || TEXT.status.error;
+          setStatus(selectors, 'warning', TEXT.feedback.status.fallback(reason));
+        }
+      },
     },
-    renderEdDashboard: (edData) => renderEdDashboardRef(edData),
+    edHooks: {
+      showEdSkeleton,
+      createEmptyEdSummary,
+      renderEdDashboard: (edData) => renderEdDashboardRef(edData),
+    },
+    dataHooks: {
+      fetchData,
+      fetchFeedbackData,
+      fetchEdData,
+      perfMonitor: runtimeClient.perfMonitor,
+      describeCacheMeta,
+      describeError,
+      computeDailyStats,
+      filterDailyStatsByWindow,
+    },
     numberFormatter,
-    getSettings: () => settings,
-    getClientConfig: runtimeClient.getClientConfig,
-    getAutoRefreshTimerId: () => autoRefreshTimerId,
-    setAutoRefreshTimerId: (id) => {
-      autoRefreshTimerId = id;
-    },
   });
 
   dataFlow.scheduleInitialLoad();

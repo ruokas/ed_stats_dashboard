@@ -29,6 +29,7 @@ export function createKpiFlow(env) {
   } = env;
 
   let kpiWorkerJobToken = 0;
+  let lastKpiUiRenderSignature = null;
 
   function notifyKpiStateChange() {
     if (typeof onKpiStateChange !== 'function') {
@@ -633,6 +634,134 @@ export function createKpiFlow(env) {
     });
   }
 
+  function fingerprintKpiRecords(records) {
+    const list = Array.isArray(records) ? records : [];
+    if (!list.length) {
+      return '0';
+    }
+    const first = list[0];
+    const middle = list[Math.floor(list.length / 2)];
+    const last = list[list.length - 1];
+    const encodeRecord = (record) => {
+      const arrivalMs =
+        record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime())
+          ? record.arrival.getTime()
+          : '';
+      const dischargeMs =
+        record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime())
+          ? record.discharge.getTime()
+          : '';
+      return [
+        arrivalMs,
+        dischargeMs,
+        record?.hospitalized === true ? 1 : 0,
+        record?.night === true ? 1 : 0,
+        String(record?.cardType || ''),
+      ].join(':');
+    };
+    return [list.length, encodeRecord(first), encodeRecord(middle), encodeRecord(last)].join('|');
+  }
+
+  function fingerprintKpiDailyStats(dailyStats) {
+    const list = Array.isArray(dailyStats) ? dailyStats : [];
+    if (!list.length) {
+      return '0';
+    }
+    const first = list[0];
+    const middle = list[Math.floor(list.length / 2)];
+    const last = list[list.length - 1];
+    const encodeDaily = (entry) =>
+      [
+        String(entry?.date || entry?.dateKey || ''),
+        Number.isFinite(Number(entry?.count)) ? Number(entry.count) : '',
+      ].join(':');
+    return [list.length, encodeDaily(first), encodeDaily(middle), encodeDaily(last)].join('|');
+  }
+
+  function buildKpiUiRenderSignature({
+    filteredRecords,
+    filteredDailyStats,
+    dateFilteredRecords,
+    dateFilteredDailyStats,
+    selectedDate,
+    effectiveWindow,
+    settings,
+  }) {
+    const filters = dashboardState.kpi?.filters || {};
+    const windowDays = selectedDate ? null : effectiveWindow;
+    const shiftStartHour = Number(
+      settings?.calculations?.shiftStartHour ?? settings?.calculations?.nightEndHour ?? ''
+    );
+    return {
+      filteredRecordsKey: fingerprintKpiRecords(filteredRecords),
+      filteredDailyKey: fingerprintKpiDailyStats(filteredDailyStats),
+      dateFilteredRecordsKey: fingerprintKpiRecords(dateFilteredRecords),
+      dateFilteredDailyKey: fingerprintKpiDailyStats(dateFilteredDailyStats),
+      selectedDate: selectedDate || '',
+      windowDays: Number.isFinite(windowDays) ? Number(windowDays) : null,
+      lastShiftMetric: String(dashboardState.kpi?.lastShiftHourlyMetric || 'arrivals'),
+      shiftStartHour: Number.isFinite(shiftStartHour) ? shiftStartHour : null,
+      filtersKey: [
+        String(filters.shift || ''),
+        String(filters.arrival || ''),
+        String(filters.disposition || ''),
+        String(filters.cardType || ''),
+        Number.isFinite(Number(filters.window)) ? Number(filters.window) : '',
+      ].join('|'),
+    };
+  }
+
+  function isSameKpiUiRenderSignature(a, b) {
+    if (!a || !b) {
+      return false;
+    }
+    return (
+      a.filteredRecordsKey === b.filteredRecordsKey &&
+      a.filteredDailyKey === b.filteredDailyKey &&
+      a.dateFilteredRecordsKey === b.dateFilteredRecordsKey &&
+      a.dateFilteredDailyKey === b.dateFilteredDailyKey &&
+      a.selectedDate === b.selectedDate &&
+      a.windowDays === b.windowDays &&
+      a.lastShiftMetric === b.lastShiftMetric &&
+      a.shiftStartHour === b.shiftStartHour &&
+      a.filtersKey === b.filtersKey
+    );
+  }
+
+  function commitKpiFilterResult({ filteredRecords, filteredDailyStats, effectiveWindow, settings }) {
+    dashboardState.kpi.records = filteredRecords;
+    dashboardState.kpi.daily = filteredDailyStats;
+    ensureDefaultKpiDateSelection(filteredRecords);
+    syncKpiDateNavigation(filteredRecords);
+    const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+    const dateFiltered = resolveDateFilteredData(filteredRecords, filteredDailyStats, selectedDate, settings);
+    const dateFilteredRecords = dateFiltered.records;
+    const dateFilteredDailyStats = dateFiltered.dailyStats;
+    const nextUiSignature = buildKpiUiRenderSignature({
+      filteredRecords,
+      filteredDailyStats,
+      dateFilteredRecords,
+      dateFilteredDailyStats,
+      selectedDate,
+      effectiveWindow,
+      settings,
+    });
+    if (isSameKpiUiRenderSignature(lastKpiUiRenderSignature, nextUiSignature)) {
+      return;
+    }
+    renderKpis(dateFilteredDailyStats, filteredDailyStats);
+    const lastShiftRecords = selectedDate ? dateFilteredRecords : filteredRecords;
+    const lastShiftDaily = selectedDate ? dateFilteredDailyStats : filteredDailyStats;
+    renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
+    updateKpiSummary({
+      records: dateFilteredRecords,
+      dailyStats: dateFilteredDailyStats,
+      windowDays: selectedDate ? null : effectiveWindow,
+    });
+    updateKpiSubtitle();
+    lastKpiUiRenderSignature = nextUiSignature;
+  }
+
   async function applyKpiFiltersAndRender() {
     notifyKpiStateChange();
     const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters, {
@@ -663,29 +792,12 @@ export function createKpiFlow(env) {
       const filteredRecords = Array.isArray(result?.records) ? result.records : [];
       const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
       const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
-      dashboardState.kpi.records = filteredRecords;
-      dashboardState.kpi.daily = filteredDailyStats;
-      ensureDefaultKpiDateSelection(filteredRecords);
-      syncKpiDateNavigation(filteredRecords);
-      const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-      const dateFiltered = resolveDateFilteredData(
+      commitKpiFilterResult({
         filteredRecords,
         filteredDailyStats,
-        selectedDate,
-        settings
-      );
-      const dateFilteredRecords = dateFiltered.records;
-      const dateFilteredDailyStats = dateFiltered.dailyStats;
-      renderKpis(dateFilteredDailyStats, filteredDailyStats);
-      const lastShiftRecords = selectedDate ? dateFilteredRecords : filteredRecords;
-      const lastShiftDaily = selectedDate ? dateFilteredDailyStats : filteredDailyStats;
-      renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
-      updateKpiSummary({
-        records: dateFilteredRecords,
-        dailyStats: dateFilteredDailyStats,
-        windowDays: selectedDate ? null : effectiveWindow,
+        effectiveWindow,
+        settings,
       });
-      updateKpiSubtitle();
     } catch (error) {
       const errorInfo = describeError(error, {
         code: 'KPI_WORKER',
@@ -696,29 +808,12 @@ export function createKpiFlow(env) {
         return;
       }
       const fallback = applyKpiFiltersLocally(normalizedFilters);
-      dashboardState.kpi.records = fallback.records;
-      dashboardState.kpi.daily = fallback.dailyStats;
-      ensureDefaultKpiDateSelection(fallback.records);
-      syncKpiDateNavigation(fallback.records);
-      const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
-      const dateFiltered = resolveDateFilteredData(
-        fallback.records,
-        fallback.dailyStats,
-        selectedDate,
-        settings
-      );
-      const dateFilteredRecords = dateFiltered.records;
-      const dateFilteredDailyStats = dateFiltered.dailyStats;
-      renderKpis(dateFilteredDailyStats, fallback.dailyStats);
-      const lastShiftRecords = selectedDate ? dateFilteredRecords : fallback.records;
-      const lastShiftDaily = selectedDate ? dateFilteredDailyStats : fallback.dailyStats;
-      renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
-      updateKpiSummary({
-        records: dateFilteredRecords,
-        dailyStats: dateFilteredDailyStats,
-        windowDays: selectedDate ? null : fallback.windowDays,
+      commitKpiFilterResult({
+        filteredRecords: fallback.records,
+        filteredDailyStats: fallback.dailyStats,
+        effectiveWindow: fallback.windowDays,
+        settings,
       });
-      updateKpiSubtitle();
     }
   }
 

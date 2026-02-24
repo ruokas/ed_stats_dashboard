@@ -5,6 +5,7 @@ import {
   computeDoctorLeaderboard,
   computeDoctorVolumeVsLosScatter,
   computeDoctorYearlySmallMultiples,
+  createStatsComputeContext,
 } from '../../../data/stats.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
@@ -1577,13 +1578,18 @@ export async function runGydytojaiRuntime(core) {
       shiftFilter: dashboardState.doctorsShiftFilter,
       searchQuery: dashboardState.doctorsSearchDebounced,
     };
-
-    const leaderboard = computeDoctorLeaderboard(records, options);
-    const mix = computeDoctorDayNightMix(records, options);
-    const hospital = computeDoctorHospitalizationShare(records, options);
-    const scatter = computeDoctorVolumeVsLosScatter(records, options);
-    const annual = computeDoctorYearlySmallMultiples(records, {
+    const statsComputeContext = createStatsComputeContext();
+    const sharedOptions = {
       ...options,
+      computeContext: statsComputeContext,
+    };
+
+    const leaderboard = computeDoctorLeaderboard(records, sharedOptions);
+    const mix = computeDoctorDayNightMix(records, sharedOptions);
+    const hospital = computeDoctorHospitalizationShare(records, sharedOptions);
+    const scatter = computeDoctorVolumeVsLosScatter(records, sharedOptions);
+    const annual = computeDoctorYearlySmallMultiples(records, {
+      ...sharedOptions,
       yearScope: 'all_years',
       yearFilter: 'all',
       metric: dashboardState.doctorsAnnualMetric,

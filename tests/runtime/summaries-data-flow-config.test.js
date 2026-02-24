@@ -31,18 +31,12 @@ describe('createSummariesDataFlowConfig', () => {
       setAutoRefreshTimerId: vi.fn(),
     });
 
-    expect(config.renderYearlyTable).toBe(renderYearlyTable);
-    expect(config.computeMonthlyStats).toBeTypeOf('function');
-    expect(config.computeYearlyStats).toBeTypeOf('function');
-    expect(config.filterDailyStatsByWindow([{ x: 1 }])).toEqual([{ x: 1 }]);
-    expect(config.filterDailyStatsByWindow(null)).toEqual([]);
-    expect(config.getHeatmapData()).toBeNull();
-    expect(config.prepareChartDataForPeriod()).toEqual({ daily: [], funnel: null, heatmap: null });
-
-    await config.fetchFeedbackData();
-    await config.fetchEdData();
-    await config.applyKpiFiltersAndRender();
-    await config.renderCharts();
-    await config.renderEdDashboard();
+    expect(config.uiHooks.setStatus).toBeTypeOf('function');
+    expect(config.chartHooks.getDefaultChartFilters).toBeTypeOf('function');
+    expect(config.dataHooks.renderYearlyTable).toBe(renderYearlyTable);
+    expect(config.dataHooks.computeMonthlyStats).toBeTypeOf('function');
+    expect(config.dataHooks.computeYearlyStats).toBeTypeOf('function');
+    expect(config.dataHooks.filterDailyStatsByWindow([{ x: 1 }])).toEqual([{ x: 1 }]);
+    expect(config.dataHooks.filterDailyStatsByWindow(null)).toEqual([]);
   });
 });

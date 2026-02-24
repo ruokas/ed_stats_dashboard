@@ -7,6 +7,7 @@ import {
   computeDoctorMonthlyTrend,
   computeDoctorYearlyMatrix,
   computeDoctorYearlySmallMultiples,
+  createStatsComputeContext,
 } from '../../src/data/stats.js';
 
 function createRecord({
@@ -176,6 +177,77 @@ describe('doctor stats', () => {
     expect(deltaModel.baseline).toBeTruthy();
     expect(deltaModel.delta).toBeTruthy();
     expect(deltaModel.delta.activeDoctors).toBeTypeOf('number');
+  });
+
+  test('reuses provided doctorAggregate without reading records', () => {
+    const poisonRecords = new Proxy([], {
+      get() {
+        throw new Error('records should not be read when doctorAggregate is provided');
+      },
+    });
+    const doctorAggregate = {
+      meta: {
+        filtered: [{}, {}],
+        coverage: { total: 2, withDoctor: 2, filtered: 2, percent: 100 },
+        yearOptions: ['2025'],
+        diagnosisGroupOptions: ['I'],
+      },
+      rowsAll: [
+        {
+          alias: 'jonas jonaitis',
+          count: 2,
+          share: 1,
+          avgLosHours: 2,
+          medianLosHours: 2,
+          hospitalizedShare: 0.5,
+          nightShare: 0.5,
+          dayShare: 0.5,
+          losLt4Share: 1,
+          los4to8Share: 0,
+          los8to16Share: 0,
+          losGt16Share: 0,
+        },
+      ],
+      rowsSortedByVolume: [],
+      pooledLos: [1, 3],
+      monthlyByAlias: new Map(),
+      months: [],
+    };
+
+    const result = computeDoctorKpiDeltas(poisonRecords, {
+      doctorAggregate,
+      minCases: 1,
+      topN: 5,
+    });
+
+    expect(result.current.activeDoctors).toBe(1);
+    expect(result.baseline.activeDoctors).toBe(1);
+    expect(result.baseline.medianLosHours).toBe(2);
+  });
+
+  test('produces equivalent doctor outputs when reusing a shared compute context', () => {
+    const baseOptions = {
+      topN: 5,
+      minCases: 1,
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    };
+    const baseline = {
+      leaderboard: computeDoctorLeaderboard(records, baseOptions),
+      trend: computeDoctorMonthlyTrend(records, { ...baseOptions, selectedDoctor: '__top3__' }),
+      mom: computeDoctorMoMChanges(records, baseOptions),
+      delta: computeDoctorKpiDeltas(records, baseOptions),
+    };
+    const computeContext = createStatsComputeContext();
+    const sharedOptions = { ...baseOptions, computeContext };
+    const reused = {
+      leaderboard: computeDoctorLeaderboard(records, sharedOptions),
+      trend: computeDoctorMonthlyTrend(records, { ...sharedOptions, selectedDoctor: '__top3__' }),
+      mom: computeDoctorMoMChanges(records, sharedOptions),
+      delta: computeDoctorKpiDeltas(records, sharedOptions),
+    };
+
+    expect(reused).toEqual(baseline);
   });
 
   test('computes yearly small-multiples cards with YoY metadata', () => {

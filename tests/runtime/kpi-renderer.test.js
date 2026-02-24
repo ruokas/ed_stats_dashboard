@@ -81,4 +81,36 @@ describe('createKpiRenderer', () => {
     expect(selectors.kpiGrid.querySelectorAll('.kpi-card')).toHaveLength(1);
     expect(selectors.kpiGrid.textContent).toContain('Nėra duomenų');
   });
+
+  it('reuses KPI card nodes and skips identical rerender updates', () => {
+    document.body.innerHTML = '<div id="kpiGrid"></div><div id="kpiSummary"></div>';
+    const selectors = {
+      kpiGrid: document.getElementById('kpiGrid'),
+      kpiSummary: document.getElementById('kpiSummary'),
+    };
+    const replaceChildrenSpy = vi.spyOn(selectors.kpiGrid, 'replaceChildren');
+    const renderer = createKpiRenderer({
+      selectors,
+      TEXT: createText(),
+      escapeHtml: (value) => String(value),
+      formatKpiValue: (value) => String(Math.round(value)),
+      percentFormatter: { format: (value) => `${Math.round(value * 100)}%` },
+      buildLastShiftSummary: () => ({
+        weekdayLabel: 'Trečiadienis',
+        metrics: {
+          total: { value: 11, average: 9 },
+        },
+      }),
+      hideKpiSkeleton: () => {},
+    });
+
+    renderer.renderKpis([]);
+    const firstCard = selectors.kpiGrid.querySelector('.kpi-card');
+    renderer.renderKpis([]);
+    const secondCard = selectors.kpiGrid.querySelector('.kpi-card');
+
+    expect(firstCard).toBeTruthy();
+    expect(secondCard).toBe(firstCard);
+    expect(replaceChildrenSpy).toHaveBeenCalledTimes(1);
+  });
 });
