@@ -156,6 +156,57 @@ function sanitizeHeatmapFilters(filters) {
   return normalized;
 }
 
+export function buildHeatmapFilterCacheKey(year, filters = {}) {
+  const normalized = sanitizeHeatmapFilters(filters);
+  const yearKey = Number.isFinite(year) ? String(Math.trunc(year)) : 'all';
+  return [yearKey, normalized.arrival, normalized.disposition, normalized.cardType].join('|');
+}
+
+export function resolveCachedHeatmapFilterData({
+  chartData,
+  rawRecords,
+  filterRecordsByYearFn = filterRecordsByYear,
+  filterRecordsByHeatmapFiltersFn = filterRecordsByHeatmapFilters,
+  computeArrivalHeatmapFn = computeArrivalHeatmap,
+  heatmapYear = null,
+  heatmapFilters = {},
+}) {
+  const safeChartData = chartData && typeof chartData === 'object' ? chartData : {};
+  const baseRecords =
+    Array.isArray(safeChartData.baseRecords) && safeChartData.baseRecords.length
+      ? safeChartData.baseRecords
+      : Array.isArray(rawRecords)
+        ? rawRecords
+        : [];
+  const selectedYear = Number.isFinite(heatmapYear) ? Number(heatmapYear) : null;
+  const normalizedFilters = sanitizeHeatmapFilters(heatmapFilters);
+  const key = buildHeatmapFilterCacheKey(selectedYear, normalizedFilters);
+  const cache =
+    safeChartData.heatmapFilterCache &&
+    typeof safeChartData.heatmapFilterCache === 'object' &&
+    safeChartData.heatmapFilterCache.byKey instanceof Map
+      ? safeChartData.heatmapFilterCache
+      : null;
+  if (!cache || cache.recordsRef !== baseRecords) {
+    safeChartData.heatmapFilterCache = {
+      recordsRef: baseRecords,
+      byKey: new Map(),
+    };
+  }
+  const activeCache = safeChartData.heatmapFilterCache;
+  if (activeCache.byKey.has(key)) {
+    const cached = activeCache.byKey.get(key);
+    safeChartData.heatmap = cached;
+    return cached;
+  }
+  const yearScoped = filterRecordsByYearFn(baseRecords, selectedYear);
+  const filtered = filterRecordsByHeatmapFiltersFn(yearScoped, normalizedFilters);
+  const data = computeArrivalHeatmapFn(filtered);
+  activeCache.byKey.set(key, data);
+  safeChartData.heatmap = data;
+  return data;
+}
+
 function filterRecordsByHeatmapFilters(records, filters) {
   const normalized = sanitizeHeatmapFilters(filters);
   return (Array.isArray(records) ? records : []).filter((record) =>
@@ -902,17 +953,16 @@ export async function runChartsRuntime(core) {
   };
 
   const computeHeatmapDataForFilters = () => {
-    const baseRecords = (dashboardState.chartData.baseRecords || []).length
-      ? dashboardState.chartData.baseRecords
-      : dashboardState.rawRecords;
-    const selectedYear = Number.isFinite(dashboardState.heatmapYear)
-      ? Number(dashboardState.heatmapYear)
-      : null;
-    const yearScoped = filterRecordsByYear(baseRecords, selectedYear);
-    const filtered = filterRecordsByHeatmapFilters(yearScoped, dashboardState.heatmapFilters);
-    const data = computeArrivalHeatmap(filtered);
-    dashboardState.chartData.heatmap = data;
-    return data;
+    dashboardState.heatmapFilters = sanitizeHeatmapFilters(dashboardState.heatmapFilters);
+    return resolveCachedHeatmapFilterData({
+      chartData: dashboardState.chartData,
+      rawRecords: dashboardState.rawRecords,
+      heatmapYear: dashboardState.heatmapYear,
+      heatmapFilters: dashboardState.heatmapFilters,
+      filterRecordsByYearFn: filterRecordsByYear,
+      filterRecordsByHeatmapFiltersFn: filterRecordsByHeatmapFilters,
+      computeArrivalHeatmapFn: computeArrivalHeatmap,
+    });
   };
 
   const applyHeatmapFiltersAndRender = () => {
@@ -929,7 +979,14 @@ export async function runChartsRuntime(core) {
     dashboardState.heatmapMetric = normalizeHeatmapMetricKey(event?.target?.value);
     updateHeatmapCaption(dashboardState.heatmapMetric);
     persistChartsQuery();
-    applyHeatmapFiltersAndRender();
+    const palette = getThemePalette();
+    const currentData = dashboardState.chartData?.heatmap || computeHeatmapDataForFilters();
+    renderArrivalHeatmap(
+      selectors.heatmapContainer,
+      currentData,
+      palette.accent,
+      dashboardState.heatmapMetric
+    );
   };
 
   const handleHeatmapFilterChange = (event) => {

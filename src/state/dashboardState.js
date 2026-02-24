@@ -78,6 +78,12 @@ export function createDashboardState({
       key: '',
       value: null,
     },
+    summariesReportsDerivedCache: {
+      recordsRef: null,
+      key: '',
+      value: null,
+    },
+    summariesReportsLastRenderContext: null,
     summariesReportCharts: {
       diagnosisFrequency: null,
       ageDiagnosisHeatmap: null,
@@ -138,6 +144,17 @@ export function createDashboardState({
       filteredDaily: [],
       filteredRecords: [],
       filteredWindowRecords: [],
+      cache: {
+        yearScoped: null,
+        filtered: null,
+        windowed: null,
+        funnel: null,
+        heatmap: null,
+      },
+      heatmapFilterCache: {
+        recordsRef: null,
+        byKey: new Map(),
+      },
     },
     theme: 'light',
     fullscreen: false,

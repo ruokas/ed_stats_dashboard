@@ -29,6 +29,70 @@ export function createChartFlow({
   getSettings,
   onFiltersStateChange = null,
 }) {
+  function ensureChartDerivedCache() {
+    if (!dashboardState.chartData || typeof dashboardState.chartData !== 'object') {
+      dashboardState.chartData = {};
+    }
+    const chartData = dashboardState.chartData;
+    if (!chartData.cache || typeof chartData.cache !== 'object') {
+      chartData.cache = {
+        yearScoped: null,
+        filtered: null,
+        windowed: null,
+        funnel: null,
+        heatmap: null,
+      };
+    }
+    return chartData.cache;
+  }
+
+  function buildChartFilterCacheKey(filters = {}) {
+    return [
+      String(filters.arrival || 'all'),
+      String(filters.disposition || 'all'),
+      String(filters.cardType || 'all'),
+      filters.compareGmp ? '1' : '0',
+    ].join('|');
+  }
+
+  function buildChartSettingsCacheKey(settings) {
+    try {
+      return JSON.stringify(settings?.calculations || {});
+    } catch (_error) {
+      return '';
+    }
+  }
+
+  function invalidateChartDerivedCache(reason = 'all') {
+    const cache = ensureChartDerivedCache();
+    if (reason === 'period') {
+      cache.windowed = null;
+      cache.funnel = null;
+      cache.heatmap = null;
+      return;
+    }
+    if (reason === 'filters') {
+      cache.filtered = null;
+      cache.windowed = null;
+      cache.funnel = null;
+      cache.heatmap = null;
+      return;
+    }
+    if (reason === 'year') {
+      cache.yearScoped = null;
+      cache.filtered = null;
+      cache.windowed = null;
+      cache.funnel = null;
+      cache.heatmap = null;
+      return;
+    }
+    cache.yearScoped = null;
+    cache.filtered = null;
+    cache.windowed = null;
+    cache.funnel = null;
+    cache.heatmap = null;
+  }
+
   function notifyFiltersStateChange() {
     if (typeof onFiltersStateChange !== 'function') {
       return;
@@ -164,11 +228,19 @@ export function createChartFlow({
   }
 
   function applyChartFilters() {
+    const previousSanitized = sanitizeChartFilters(dashboardState.chartFilters, {
+      getDefaultChartFilters,
+      KPI_FILTER_LABELS,
+    });
+    const previousFilterKey = buildChartFilterCacheKey(previousSanitized);
     const sanitized = sanitizeChartFilters(dashboardState.chartFilters, {
       getDefaultChartFilters,
       KPI_FILTER_LABELS,
     });
     dashboardState.chartFilters = { ...sanitized };
+    if (buildChartFilterCacheKey(sanitized) !== previousFilterKey) {
+      invalidateChartDerivedCache('filters');
+    }
     notifyFiltersStateChange();
     syncChartFilterControls();
     const hasBaseData =
@@ -193,6 +265,9 @@ export function createChartFlow({
   }
 
   function updateChartPeriod(period) {
+    const previousPeriod = Number.isFinite(Number(dashboardState.chartPeriod))
+      ? Math.max(0, Number(dashboardState.chartPeriod))
+      : 30;
     const rawValue = String(period);
     const isAll = rawValue === 'all';
     const numeric = Number.parseInt(rawValue, 10);
@@ -200,6 +275,9 @@ export function createChartFlow({
       return;
     }
     dashboardState.chartPeriod = isAll ? 0 : numeric;
+    if (dashboardState.chartPeriod !== previousPeriod) {
+      invalidateChartDerivedCache('period');
+    }
     notifyFiltersStateChange();
     syncChartPeriodButtons(dashboardState.chartPeriod);
     if (selectors.dailyCaption) {
@@ -228,9 +306,13 @@ export function createChartFlow({
   }
 
   function updateChartYear(year) {
+    const previousYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
     const numeric = Number.isFinite(year) ? Math.trunc(year) : Number.parseInt(String(year), 10);
     const normalized = Number.isFinite(numeric) ? numeric : null;
     dashboardState.chartYear = normalized;
+    if (normalized !== previousYear) {
+      invalidateChartDerivedCache('year');
+    }
     notifyFiltersStateChange();
     syncChartYearControl();
     if (normalized != null) {
@@ -265,6 +347,7 @@ export function createChartFlow({
   function prepareChartDataForPeriod(period) {
     const normalized = Number.isFinite(Number(period)) ? Math.max(0, Number(period)) : 30;
     const settings = getSettings();
+    const cache = ensureChartDerivedCache();
     const baseDaily =
       Array.isArray(dashboardState.chartData.baseDaily) && dashboardState.chartData.baseDaily.length
         ? dashboardState.chartData.baseDaily
@@ -275,7 +358,6 @@ export function createChartFlow({
         : dashboardState.rawRecords;
     const selectedYear = Number.isFinite(dashboardState.chartYear) ? Number(dashboardState.chartYear) : null;
     const isYearMode = Number.isFinite(selectedYear);
-    const yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
     const sanitizedFilters = sanitizeChartFilters(dashboardState.chartFilters, {
       getDefaultChartFilters,
       KPI_FILTER_LABELS,
@@ -284,13 +366,56 @@ export function createChartFlow({
     const effectiveFilters = sanitizedFilters.compareGmp
       ? { ...sanitizedFilters, arrival: 'all' }
       : sanitizedFilters;
-    const filteredRecords = filterRecordsByChartFilters(yearScopedRecords, effectiveFilters);
-    const filteredDailyFromRecords = computeDailyStats(
-      filteredRecords,
-      settings?.calculations,
-      DEFAULT_SETTINGS
-    );
-    const fallbackDaily = filterDailyStatsByYear(baseDaily, selectedYear);
+    const yearKey = selectedYear == null ? 'all' : String(selectedYear);
+    const filtersKey = buildChartFilterCacheKey(effectiveFilters);
+    const settingsKey = buildChartSettingsCacheKey(settings);
+
+    const yearScopedStageKey = `${yearKey}`;
+    let yearScopedRecords;
+    if (
+      cache.yearScoped &&
+      cache.yearScoped.baseRecordsRef === baseRecords &&
+      cache.yearScoped.key === yearScopedStageKey
+    ) {
+      yearScopedRecords = cache.yearScoped.records;
+    } else {
+      yearScopedRecords = filterRecordsByYear(baseRecords, selectedYear);
+      cache.yearScoped = {
+        baseRecordsRef: baseRecords,
+        key: yearScopedStageKey,
+        records: yearScopedRecords,
+      };
+    }
+
+    const filteredStageKey = [yearKey, filtersKey, settingsKey].join('|');
+    let filteredRecords;
+    let filteredDailyFromRecords;
+    let fallbackDaily;
+    if (
+      cache.filtered &&
+      cache.filtered.baseRecordsRef === baseRecords &&
+      cache.filtered.baseDailyRef === baseDaily &&
+      cache.filtered.yearScopedRef === yearScopedRecords &&
+      cache.filtered.key === filteredStageKey
+    ) {
+      filteredRecords = cache.filtered.filteredRecords;
+      filteredDailyFromRecords = cache.filtered.filteredDailyFromRecords;
+      fallbackDaily = cache.filtered.fallbackDaily;
+    } else {
+      filteredRecords = filterRecordsByChartFilters(yearScopedRecords, effectiveFilters);
+      filteredDailyFromRecords = computeDailyStats(filteredRecords, settings?.calculations, DEFAULT_SETTINGS);
+      fallbackDaily = filterDailyStatsByYear(baseDaily, selectedYear);
+      cache.filtered = {
+        baseRecordsRef: baseRecords,
+        baseDailyRef: baseDaily,
+        yearScopedRef: yearScopedRecords,
+        key: filteredStageKey,
+        filteredRecords,
+        filteredDailyFromRecords,
+        fallbackDaily,
+      };
+    }
+
     const hasActivePatientFilters =
       sanitizedFilters.compareGmp === true ||
       sanitizedFilters.arrival !== 'all' ||
@@ -305,20 +430,68 @@ export function createChartFlow({
       : filteredDailyFromRecords.length || hasActivePatientFilters
         ? filteredDailyFromRecords
         : fallbackDaily;
-    let scopedDaily = filteredDaily.slice();
-    let scopedRecords = filteredRecords.slice();
-    if (normalized > 0 && !isYearMode) {
-      const windowKeys = buildDailyWindowKeys(filteredDaily, normalized);
-      scopedDaily = windowKeys.length
-        ? fillDailyStatsWindow(filteredDaily, windowKeys)
-        : filterDailyStatsByWindow(filteredDaily, normalized);
-      if (!scopedDaily.length && Array.isArray(filteredDaily) && filteredDaily.length) {
-        scopedDaily = filteredDaily.slice(-normalized);
+    const windowedStageKey = [filteredStageKey, String(normalized), isYearMode ? 'year' : 'window'].join('|');
+    let scopedDaily;
+    let scopedRecords;
+    if (
+      cache.windowed &&
+      cache.windowed.filteredRecordsRef === filteredRecords &&
+      cache.windowed.filteredDailyRef === filteredDaily &&
+      cache.windowed.key === windowedStageKey
+    ) {
+      scopedDaily = cache.windowed.scopedDaily;
+      scopedRecords = cache.windowed.scopedRecords;
+    } else {
+      scopedDaily = filteredDaily.slice();
+      scopedRecords = filteredRecords.slice();
+      if (normalized > 0 && !isYearMode) {
+        const windowKeys = buildDailyWindowKeys(filteredDaily, normalized);
+        scopedDaily = windowKeys.length
+          ? fillDailyStatsWindow(filteredDaily, windowKeys)
+          : filterDailyStatsByWindow(filteredDaily, normalized);
+        if (!scopedDaily.length && Array.isArray(filteredDaily) && filteredDaily.length) {
+          scopedDaily = filteredDaily.slice(-normalized);
+        }
+        scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
       }
-      scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
+      cache.windowed = {
+        filteredRecordsRef: filteredRecords,
+        filteredDailyRef: filteredDaily,
+        key: windowedStageKey,
+        scopedDaily,
+        scopedRecords,
+      };
     }
-    const funnelData = computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
-    const heatmapData = computeArrivalHeatmap(scopedRecords);
+
+    const funnelStageKey = [windowedStageKey, yearKey].join('|');
+    let funnelData;
+    if (
+      cache.funnel &&
+      cache.funnel.scopedDailyRef === scopedDaily &&
+      cache.funnel.fallbackDailyRef === fallbackDaily &&
+      cache.funnel.key === funnelStageKey
+    ) {
+      funnelData = cache.funnel.value;
+    } else {
+      funnelData = computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
+      cache.funnel = {
+        scopedDailyRef: scopedDaily,
+        fallbackDailyRef: fallbackDaily,
+        key: funnelStageKey,
+        value: funnelData,
+      };
+    }
+
+    let heatmapData;
+    if (cache.heatmap && cache.heatmap.scopedRecordsRef === scopedRecords) {
+      heatmapData = cache.heatmap.value;
+    } else {
+      heatmapData = computeArrivalHeatmap(scopedRecords);
+      cache.heatmap = {
+        scopedRecordsRef: scopedRecords,
+        value: heatmapData,
+      };
+    }
 
     dashboardState.chartData.filteredRecords = filteredRecords;
     dashboardState.chartData.filteredDaily = filteredDaily;
@@ -389,6 +562,9 @@ export function createChartFlow({
   }
 
   return {
+    buildChartFilterCacheKey,
+    buildChartSettingsCacheKey,
+    invalidateChartDerivedCache,
     syncChartFilterControls,
     updateChartFiltersSummary,
     applyChartFilters,
