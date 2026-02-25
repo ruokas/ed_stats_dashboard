@@ -54,6 +54,9 @@ const DEFAULT_DOCTOR_PAGE_STATE = {
   annualMetric: 'count',
   annualSort: 'latest_desc',
   annualDoctors: [],
+  specialtyAnnualMetric: 'count',
+  specialtyAnnualSort: 'latest_desc',
+  specialtyAnnualSelected: [],
 };
 
 function parsePositiveInt(value, fallback) {
@@ -165,6 +168,17 @@ export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PA
     annualDoctors: Array.isArray(parsed.annualDoctors)
       ? parsed.annualDoctors.slice(0, 12)
       : parseDoctorSelectionParam(params.get('ad')),
+    specialtyAnnualMetric: normalizeSpecialtyAnnualMetric(
+      parsed.specialtyAnnualMetric ?? params.get('sam'),
+      defaults.specialtyAnnualMetric
+    ),
+    specialtyAnnualSort: normalizeAnnualSort(
+      parsed.specialtyAnnualSort ?? params.get('sas'),
+      defaults.specialtyAnnualSort
+    ),
+    specialtyAnnualSelected: Array.isArray(parsed.specialtyAnnualSelected)
+      ? parsed.specialtyAnnualSelected.slice(0, 12)
+      : parseDoctorSelectionParam(params.get('sase')),
   };
 }
 
@@ -185,6 +199,9 @@ export function buildDoctorPageQuery(state) {
       annualMetric: state.annualMetric,
       annualSort: state.annualSort,
       annualDoctors: state.annualDoctors,
+      specialtyAnnualMetric: state.specialtyAnnualMetric,
+      specialtyAnnualSort: state.specialtyAnnualSort,
+      specialtyAnnualSelected: state.specialtyAnnualSelected,
     },
     DEFAULT_DOCTOR_PAGE_STATE
   );
@@ -205,6 +222,9 @@ function syncDoctorPageQueryFromState(dashboardState) {
     annualMetric: dashboardState.doctorsAnnualMetric,
     annualSort: dashboardState.doctorsAnnualSort,
     annualDoctors: dashboardState.doctorsAnnualSelected,
+    specialtyAnnualMetric: dashboardState.doctorsSpecialtyAnnualMetric,
+    specialtyAnnualSort: dashboardState.doctorsSpecialtyAnnualSort,
+    specialtyAnnualSelected: dashboardState.doctorsSpecialtyAnnualSelected,
   });
   replaceUrlQuery(query);
 }
@@ -2209,6 +2229,11 @@ export async function runGydytojaiRuntime(core) {
   dashboardState.doctorsAnnualSort = fromQuery.annualSort;
   dashboardState.doctorsAnnualSelected = Array.isArray(fromQuery.annualDoctors)
     ? fromQuery.annualDoctors
+    : [];
+  dashboardState.doctorsSpecialtyAnnualMetric = fromQuery.specialtyAnnualMetric;
+  dashboardState.doctorsSpecialtyAnnualSort = fromQuery.specialtyAnnualSort;
+  dashboardState.doctorsSpecialtyAnnualSelected = Array.isArray(fromQuery.specialtyAnnualSelected)
+    ? fromQuery.specialtyAnnualSelected
     : [];
   const exportState = dashboardState.doctorsExportState || {};
   dashboardState.doctorsExportState = exportState;

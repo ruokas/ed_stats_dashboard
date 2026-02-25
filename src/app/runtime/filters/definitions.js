@@ -94,6 +94,9 @@ export const FILTER_SCHEMAS = {
       annualMetric: { type: 'string', queryKey: 'am' },
       annualSort: { type: 'string', queryKey: 'as' },
       annualDoctors: { type: 'csv', queryKey: 'ad' },
+      specialtyAnnualMetric: { type: 'string', queryKey: 'sam' },
+      specialtyAnnualSort: { type: 'string', queryKey: 'sas' },
+      specialtyAnnualSelected: { type: 'csv', queryKey: 'sase' },
     },
   },
 };
