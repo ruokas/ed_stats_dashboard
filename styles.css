@@ -4005,15 +4005,40 @@ th {
   z-index: 2;
 }
 
-th[data-gydytojai-sort] {
+th[data-gydytojai-sort],
+th[data-gydytojai-specialty-sort] {
   cursor: pointer;
   user-select: none;
 }
 
-th[data-gydytojai-sort].is-sort-active {
+th[data-gydytojai-sort].is-sort-active,
+th[data-gydytojai-specialty-sort].is-sort-active {
   color: var(--color-text);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+th[data-gydytojai-sort][aria-sort],
+th[data-gydytojai-specialty-sort][aria-sort] {
+  white-space: nowrap;
+}
+
+th[data-gydytojai-sort][aria-sort]::after,
+th[data-gydytojai-specialty-sort][aria-sort]::after {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.8em;
+  color: var(--color-text);
+}
+
+th[data-gydytojai-sort][aria-sort="ascending"]::after,
+th[data-gydytojai-specialty-sort][aria-sort="ascending"]::after {
+  content: "↑";
+}
+
+th[data-gydytojai-sort][aria-sort="descending"]::after,
+th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
+  content: "↓";
 }
 
 .gydytojai-loading {

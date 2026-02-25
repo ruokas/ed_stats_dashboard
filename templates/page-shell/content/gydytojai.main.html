@@ -92,6 +92,10 @@
               <button type="button" class="chip-button" data-gydytojai-shift="night" aria-pressed="false">Naktis</button>
             </div>
           </div>
+          <div class="summaries-reports-controls__field">
+            <span>Specialybė</span>
+            <div id="gydytojaiSpecialtyChips" class="gydytojai-filter-group" role="group" aria-label="Specialybės filtras"></div>
+          </div>
           <label class="summaries-reports-controls__field" for="gydytojaiSearch">
             <span>Gydytojo paieška</span>
             <input id="gydytojaiSearch" type="search" placeholder="Įveskite vardą">
@@ -105,6 +109,7 @@
           </div>
         </div>
       </section>
+      <div id="gydytojaiSpecialtyWarning" class="report-card" role="status" aria-live="polite" hidden></div>
       <p id="gydytojaiCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
       <div id="gydytojaiLoadingState" class="gydytojai-loading" aria-live="polite" hidden>
         <p class="gydytojai-loading__label">Kraunami gydytojų duomenys...</p>
@@ -119,6 +124,38 @@
         </div>
       </div>
 
+    </section>
+
+    <section id="gydytojaiSpecialtySection" class="section section--compact" aria-labelledby="gydytojaiSpecialtyHeading" data-section="gydytojai-specialty" hidden>
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="gydytojaiSpecialtyHeading" class="section__title">Specialybių palyginimas</h2>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiSpecialtyHeading">
+        <table id="gydytojaiSpecialtyTable">
+          <caption class="sr-only">Specialybių palyginimo lentelė</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-gydytojai-specialty-sort="alias">Specialybė</th>
+              <th scope="col" data-gydytojai-specialty-sort="count">Atvejai</th>
+              <th scope="col" data-gydytojai-specialty-sort="share">Dalis (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="avgLosHours">Vid. LOS (val.)</th>
+              <th scope="col" data-gydytojai-specialty-sort="medianLosHours">Mediana LOS (val.)</th>
+              <th scope="col" data-gydytojai-specialty-sort="hospitalizedShare">Hospitalizacija (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="losLt4Share">LOS &lt;4 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="los4to8Share">LOS 4-8 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="los8to16Share">LOS 8-16 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="losGt16Share">LOS &gt;16 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="nightShare">Naktiniai (%)</th>
+            </tr>
+          </thead>
+          <tbody id="gydytojaiSpecialtyBody"></tbody>
+        </table>
+      </div>
+      <p id="gydytojaiSpecialtyEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Specialybių palyginimui nepakanka duomenų.</p>
     </section>
 
     <section class="section section--compact" aria-labelledby="gydytojaiTablesHeading" data-section="gydytojai-tables">
@@ -152,7 +189,7 @@
       </div>
     </section>
 
-    <section id="gydytojaiAnnualSection" class="section section--compact gydytojai-annual" aria-labelledby="gydytojaiAnnualHeading" data-section="gydytojai-annual">
+      <section id="gydytojaiAnnualSection" class="section section--compact gydytojai-annual" aria-labelledby="gydytojaiAnnualHeading" data-section="gydytojai-annual">
         <div class="section__header">
           <div class="section__heading">
             <div class="section__title-row">
@@ -205,6 +242,68 @@
         </section>
         <p id="gydytojaiAnnualEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Nepakanka bent 2 metų duomenų pagal aktyvius filtrus.</p>
         <div id="gydytojaiAnnualCards" class="gydytojai-annual-grid" aria-live="polite"></div>
+      </section>
+
+    <section id="gydytojaiSpecialtyAnnualSection" class="section section--compact gydytojai-annual" aria-labelledby="gydytojaiSpecialtyAnnualHeading" data-section="gydytojai-specialty-annual">
+        <div class="section__header">
+          <div class="section__heading">
+            <div class="section__title-row">
+              <h2 id="gydytojaiSpecialtyAnnualHeading" class="section__title">Metinė dinamika pagal specialybes</h2>
+            </div>
+          </div>
+        </div>
+        <section class="filter-panel gydytojai-filter-panel gydytojai-filter-panel--annual" aria-label="Specialybių metinės dinamikos valdikliai">
+          <header class="filter-panel__head gydytojai-filter-panel__head">
+            <h3 class="filter-panel__title gydytojai-filter-panel__title">Specialybių metinės dinamikos filtrai</h3>
+            <p class="filter-panel__subtitle gydytojai-filter-panel__subtitle">Pasirinkite specialybes, KPI ir rikiavimą. LOS grupėms rodoma 100% stacked kompozicija.</p>
+          </header>
+          <div class="summaries-reports-controls filter-panel__primary gydytojai-filter-panel__primary" role="group" aria-label="Specialybių metinės dinamikos valdikliai">
+            <div class="summaries-reports-controls__field">
+              <span>Metrika</span>
+              <div id="gydytojaiSpecialtyAnnualMetric" class="gydytojai-filter-group" role="group" aria-label="Specialybių metinės dinamikos metrika">
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-metric="count" aria-pressed="true">Atvejų sk.</button>
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-metric="hospitalizedShare" aria-pressed="false">Hospitalizacija %</button>
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-metric="avgLosHours" aria-pressed="false">Vid. LOS (val.)</button>
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-metric="nightShare" aria-pressed="false">Naktiniai %</button>
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-metric="losGroups" aria-pressed="false">LOS grupės (%)</button>
+              </div>
+            </div>
+            <div class="summaries-reports-controls__field">
+              <span>Rikiuoti</span>
+              <div id="gydytojaiSpecialtyAnnualSort" class="gydytojai-filter-group" role="group" aria-label="Specialybių metinės dinamikos rikiavimas">
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-sort="latest_desc" aria-pressed="true">Paskutinių metų reikšmė</button>
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-sort="yoy_up" aria-pressed="false">Didžiausias augimas (YoY)</button>
+                <button type="button" class="chip-button" data-gydytojai-specialty-annual-sort="yoy_down" aria-pressed="false">Didžiausias kritimas (YoY)</button>
+              </div>
+            </div>
+            <div class="summaries-reports-controls__field">
+              <span>Pasirinktos specialybės</span>
+              <div id="gydytojaiSpecialtyAnnualSelected" class="gydytojai-filter-group" role="group" aria-label="Specialybių pasirinkimas"></div>
+            </div>
+            <div class="summaries-reports-controls__field">
+              <span>&nbsp;</span>
+              <button id="gydytojaiSpecialtyAnnualClear" type="button" class="chip-button chip-button--ghost">Išvalyti pasirinkimus</button>
+            </div>
+          </div>
+        </section>
+        <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiSpecialtyAnnualHeading">
+          <table>
+            <caption class="sr-only">Specialybių metinės dinamikos suvestinė</caption>
+            <thead>
+              <tr>
+                <th>Specialybė</th>
+                <th>Paskutiniai metai</th>
+                <th>Praėję metai</th>
+                <th>YoY abs.</th>
+                <th>YoY %</th>
+                <th>Imtis (n)</th>
+              </tr>
+            </thead>
+            <tbody id="gydytojaiSpecialtyAnnualSummaryBody"></tbody>
+          </table>
+        </div>
+        <p id="gydytojaiSpecialtyAnnualEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Pasirinkite bent 1 specialybę metinei dinamikai.</p>
+        <div id="gydytojaiSpecialtyAnnualCards" class="gydytojai-annual-grid" aria-live="polite"></div>
       </section>
 
     <section class="section section--compact" aria-labelledby="gydytojaiChartsHeading" data-section="gydytojai-charts">

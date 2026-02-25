@@ -8,8 +8,6 @@
   <link rel="apple-touch-icon" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
       rel="preload"
       as="style"
@@ -171,12 +169,9 @@
           >PNG</button>
         </div>
       </div>
-      <div class="feedback-controls filter-panel" role="region" aria-labelledby="feedbackFiltersTitle">
-        <div class="filter-panel__actions">
-          <button type="button" id="feedbackFiltersReset" class="btn btn-secondary btn-small">Atkurti filtrus</button>
-          <p id="feedbackFiltersSummary" class="feedback-filters__summary" aria-live="polite" data-default="true">Rodomi visi atsakymai</p>
-        </div>
-        <div id="feedbackFilters" class="feedback-filters filter-panel__primary" role="group" aria-labelledby="feedbackFiltersTitle">
+      <div class="feedback-controls" role="region" aria-labelledby="feedbackFiltersTitle">
+        <p id="feedbackFiltersSummary" class="feedback-filters__summary" aria-live="polite" data-default="true">Rodomi visi atsakymai</p>
+        <div id="feedbackFilters" class="feedback-filters" role="group" aria-labelledby="feedbackFiltersTitle">
           <h3 id="feedbackFiltersTitle" class="sr-only">Atsiliepimų filtrai</h3>
           <div class="feedback-filters__field">
             <label id="feedbackRespondentLabel" for="feedbackRespondentFilter">Kas pildo anketą</label>

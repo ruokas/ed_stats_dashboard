@@ -7,7 +7,7 @@ import {
 describe('gydytojai runtime query helpers', () => {
   test('parses valid query values', () => {
     const state = getDoctorPageStateFromQuery(
-      '?y=2025&top=20&min=40&sort=avgLos_desc&arr=ems&disp=hospitalized&shift=night&q=jon&tsort=losGt16Share_asc&am=nightShare&as=yoy_up&ad=Jonas, Ona'
+      '?y=2025&top=20&min=40&sort=avgLos_desc&arr=ems&disp=hospitalized&shift=night&sp=resident&q=jon&tsort=losGt16Share_asc&am=nightShare&as=yoy_up&ad=Jonas, Ona'
     );
     expect(state.year).toBe('2025');
     expect(state.topN).toBe(20);
@@ -16,6 +16,7 @@ describe('gydytojai runtime query helpers', () => {
     expect(state.arrival).toBe('ems');
     expect(state.disposition).toBe('hospitalized');
     expect(state.shift).toBe('night');
+    expect(state.specialty).toBe('resident');
     expect(state.tableSort).toBe('losGt16Share_asc');
     expect(state.annualMetric).toBe('nightShare');
     expect(state.annualSort).toBe('yoy_up');
@@ -42,6 +43,7 @@ describe('gydytojai runtime query helpers', () => {
       arrival: 'all',
       disposition: 'all',
       shift: 'all',
+      specialty: 'all',
       search: '',
       tableSort: 'count_desc',
       annualMetric: 'count',
@@ -58,6 +60,7 @@ describe('gydytojai runtime query helpers', () => {
       arrival: 'all',
       disposition: 'all',
       shift: 'all',
+      specialty: 'resident',
       search: '',
       tableSort: 'count_desc',
       annualMetric: 'nightShare',
@@ -66,6 +69,7 @@ describe('gydytojai runtime query helpers', () => {
     });
     expect(annualQuery).toContain('am=nightShare');
     expect(annualQuery).toContain('as=yoy_up');
+    expect(annualQuery).toContain('sp=resident');
     expect(annualQuery).toContain('ad=Jonas%2COna');
   });
 });

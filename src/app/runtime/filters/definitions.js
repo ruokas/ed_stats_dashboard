@@ -88,6 +88,7 @@ export const FILTER_SCHEMAS = {
         allowed: ['all', 'hospitalized', 'discharged'],
       },
       shift: { type: 'enum', queryKey: 'shift', allowed: ['all', 'day', 'night'] },
+      specialty: { type: 'string', queryKey: 'sp' },
       search: { type: 'string', queryKey: 'q' },
       tableSort: { type: 'string', queryKey: 'tsort' },
       annualMetric: { type: 'string', queryKey: 'am' },

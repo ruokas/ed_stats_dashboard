@@ -196,9 +196,15 @@ describe('page selector factories', () => {
       <button data-gydytojai-arrival="all"></button>
       <button data-gydytojai-disposition="all"></button>
       <button data-gydytojai-shift="all"></button>
+      <div id="gydytojaiSpecialtyChips"></div>
+      <div id="gydytojaiSpecialtyWarning"></div>
       <input id="gydytojaiSearch" />
       <button id="gydytojaiResetFilters"></button>
       <div id="gydytojaiActiveFilters"></div>
+      <section id="gydytojaiSpecialtySection"></section>
+      <table id="gydytojaiSpecialtyTable"></table>
+      <tbody id="gydytojaiSpecialtyBody"></tbody>
+      <p id="gydytojaiSpecialtyEmpty"></p>
       <table id="gydytojaiLeaderboardTable"></table>
       <tbody id="gydytojaiLeaderboardBody"></tbody>
       <section id="gydytojaiAnnualSection"></section>
@@ -229,6 +235,8 @@ describe('page selector factories', () => {
     expect(selectors.gydytojaiAnnualCards).not.toBeNull();
     expect(selectors.gydytojaiAnnualSuggestions).not.toBeNull();
     expect(selectors.gydytojaiActiveFilters).not.toBeNull();
+    expect(selectors.gydytojaiSpecialtyChips).not.toBeNull();
+    expect(selectors.gydytojaiSpecialtyTable).not.toBeNull();
     expect(selectors.gydytojaiChartDoctorToggles).not.toBeNull();
     expect(selectors.gydytojaiTopNButtons).toHaveLength(1);
     expect(selectors.gydytojaiMinCasesButtons).toHaveLength(1);

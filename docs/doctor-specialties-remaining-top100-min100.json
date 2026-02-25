@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-02-25T14:52:42.223Z",
+  "basedOn": {
+    "historicalCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?output=csv",
+    "configFile": "config.json",
+    "allowedGroupIds": [
+      "emergency_doctor",
+      "emergency_resident",
+      "medical_doctor",
+      "other_specialist",
+      "surgery",
+      "trauma",
+      "trauma_resident"
+    ],
+    "note": "Computed against current historical CSV and current config mappings. Placeholder periods are ignored; custom group IDs from config are treated as valid.",
+    "minTotalCasesFilter": 100,
+    "sourceFile": "docs/doctor-specialties-remaining-top100.json"
+  },
+  "summary": {
+    "recordsWithDoctor": 224490,
+    "doctorsSeen": 416,
+    "mappedDoctors": 125,
+    "unmappedDoctors": 291,
+    "remainingDoctors": 291,
+    "top100Count": 100,
+    "totalRemainingCasesAllDoctors": 3352,
+    "totalRemainingCasesTop100": 2922,
+    "fullyUnmappedInTop100": 100,
+    "partiallyMappedInTop100": 0,
+    "top100CountBeforeMinTotalCasesFilter": 100,
+    "top100CountAfterMinTotalCasesFilter": 0,
+    "totalRemainingCasesAfterMinTotalCasesFilter": 0,
+    "fullyUnmappedAfterMinTotalCasesFilter": 0,
+    "partiallyMappedAfterMinTotalCasesFilter": 0
+  },
+  "doctors": []
+}

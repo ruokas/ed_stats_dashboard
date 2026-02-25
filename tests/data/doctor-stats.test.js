@@ -5,6 +5,7 @@ import {
   computeDoctorLeaderboard,
   computeDoctorMoMChanges,
   computeDoctorMonthlyTrend,
+  computeDoctorSpecialtyLeaderboard,
   computeDoctorYearlyMatrix,
   computeDoctorYearlySmallMultiples,
   createStatsComputeContext,
@@ -70,6 +71,23 @@ describe('doctor stats', () => {
       diagnosisGroup: 'I',
     }),
   ];
+
+  const doctorSpecialtyResolver = {
+    resolveSpecialtyForRecord(record) {
+      const doctor = String(record?.closingDoctorNorm || '');
+      const arrival = record?.arrival instanceof Date ? record.arrival : null;
+      const year = arrival ? arrival.getFullYear() : null;
+      if (doctor === 'jonas jonaitis') {
+        return year === 2025
+          ? { id: 'resident', label: 'Resident' }
+          : { id: 'emergency', label: 'Emergency' };
+      }
+      if (doctor === 'ona onaite') {
+        return { id: 'surgery', label: 'Surgery' };
+      }
+      return null;
+    },
+  };
 
   test('computeDoctorLeaderboard returns real doctor labels and kpis', () => {
     const result = computeDoctorLeaderboard(records, {
@@ -137,6 +155,52 @@ describe('doctor stats', () => {
     expect(empty.rows).toHaveLength(0);
     expect(empty.kpis.activeDoctors).toBe(0);
     expect(empty.totalCasesWithDoctor).toBe(0);
+  });
+
+  test('supports specialty grouping and specialty filter', () => {
+    const grouped = computeDoctorSpecialtyLeaderboard(records, {
+      minCases: 1,
+      doctorSpecialtyResolver,
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(grouped.rows.map((row) => row.specialtyId).sort()).toEqual(['emergency', 'resident', 'surgery']);
+    expect(grouped.rows.find((row) => row.specialtyId === 'emergency')?.count).toBe(1);
+    expect(grouped.rows.find((row) => row.specialtyId === 'resident')?.count).toBe(2);
+    expect(grouped.rows.find((row) => row.specialtyId === 'surgery')?.count).toBe(2);
+
+    const filtered = computeDoctorLeaderboard(records, {
+      topN: 10,
+      minCases: 1,
+      specialtyFilter: 'resident',
+      doctorSpecialtyResolver,
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(filtered.rows).toHaveLength(1);
+    expect(filtered.rows[0].alias.toLowerCase()).toContain('jonas');
+    expect(filtered.totalCasesWithDoctor).toBe(2);
+  });
+
+  test('can exclude unmapped cases from doctor stats when specialty mode requires mapping', () => {
+    const partialResolver = {
+      resolveSpecialtyForRecord(record) {
+        return String(record?.closingDoctorNorm || '') === 'jonas jonaitis'
+          ? { id: 'emergency', label: 'Emergency' }
+          : null;
+      },
+    };
+    const result = computeDoctorLeaderboard(records, {
+      topN: 10,
+      minCases: 1,
+      requireMappedSpecialty: true,
+      doctorSpecialtyResolver: partialResolver,
+      calculations: { shiftStartHour: 7 },
+      defaultSettings: { calculations: { nightEndHour: 7 } },
+    });
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].alias.toLowerCase()).toContain('jonas');
+    expect(result.totalCasesWithDoctor).toBe(3);
   });
 
   test('computes MoM for top doctors with both metrics', () => {

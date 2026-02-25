@@ -32,6 +32,6436 @@
     "nightStartHour": 20,
     "nightEndHour": 7
   },
+  "doctors": {
+    "specialties": {
+      "enabled": true,
+      "strict": true,
+      "excludeUnmappedFromStats": true,
+      "effectiveDateField": "arrival",
+      "groups": [
+        {
+          "id": "emergency_doctor",
+          "label": "Skubiosios medicinos gydytojas"
+        },
+        {
+          "id": "surgery",
+          "label": "Chirurgas"
+        },
+        {
+          "id": "trauma",
+          "label": "Traumatologas"
+        },
+        {
+          "id": "trauma_resident",
+          "label": "Traumatologijos rezidentas"
+        },
+        {
+          "id": "medical_doctor",
+          "label": "Medicinos gydytojas"
+        },
+        {
+          "id": "emergency_resident",
+          "label": "Skubiosios medicinos rezidentas"
+        },
+        {
+          "id": "other_specialist",
+          "label": "Kitas specialistas"
+        }
+      ],
+      "assignments": [
+        {
+          "doctorNorm": "kucinskiene jurate 6428",
+          "doctorRaw": "KUČINSKIENĖ JŪRATĖ 6428",
+          "observedCaseCount": 15409,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2025-12-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vasiliauskaite vaida 33729",
+          "doctorRaw": "VASILIAUSKAITĖ VAIDA 33729",
+          "observedCaseCount": 12503,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-12-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kazlauskaite rolanda 31674",
+          "doctorRaw": "KAZLAUSKAITĖ ROLANDA 31674",
+          "observedCaseCount": 8464,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2025-06-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "banys martynas 33260",
+          "doctorRaw": "BANYS MARTYNAS 33260",
+          "observedCaseCount": 8245,
+          "observedFrom": "2022-07-04",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-07-04",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mockevicius rokas 34642",
+          "doctorRaw": "MOCKEVIČIUS ROKAS 34642",
+          "observedCaseCount": 6601,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "linkeviciene nida 17087",
+          "doctorRaw": "LINKEVIČIENĖ NIDA 17087",
+          "observedCaseCount": 5291,
+          "observedFrom": "2021-01-07",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-07",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kilcauskas karolis 35290",
+          "doctorRaw": "KILČAUSKAS KAROLIS 35290",
+          "observedCaseCount": 5252,
+          "observedFrom": "2022-07-04",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-07-04",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "daugela deividas 35965",
+          "doctorRaw": "DAUGĖLA DEIVIDAS 35965",
+          "observedCaseCount": 4918,
+          "observedFrom": "2021-07-13",
+          "observedTo": "2025-12-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-13",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "neimanas lukas 35292",
+          "doctorRaw": "NEIMANAS LUKAS 35292",
+          "observedCaseCount": 4855,
+          "observedFrom": "2023-05-02",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-05-02",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lapinskas justas 36000",
+          "doctorRaw": "LAPINSKAS JUSTAS 36000",
+          "observedCaseCount": 4671,
+          "observedFrom": "2021-10-06",
+          "observedTo": "2025-12-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-06",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "raliene karolina 32326",
+          "doctorRaw": "RALIENĖ KAROLINA 32326",
+          "observedCaseCount": 4202,
+          "observedFrom": "2021-03-16",
+          "observedTo": "2025-12-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-16",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ziulpa benas 34622",
+          "doctorRaw": "ŽIULPA BENAS 34622",
+          "observedCaseCount": 4090,
+          "observedFrom": "2021-01-09",
+          "observedTo": "2025-12-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-09",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "balciunas domas 34732",
+          "doctorRaw": "BALČIŪNAS DOMAS 34732",
+          "observedCaseCount": 4049,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-12-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zaremba martynas 35954",
+          "doctorRaw": "ZAREMBA MARTYNAS 35954",
+          "observedCaseCount": 4045,
+          "observedFrom": "2022-11-08",
+          "observedTo": "2025-03-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-11-08",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "krilius arvydas 2738",
+          "doctorRaw": "KRILIUS ARVYDAS 2738",
+          "observedCaseCount": 3994,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2022-06-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "fallahzadeh shadi 36346",
+          "doctorRaw": "FALLAHZADEH SHADI 36346",
+          "observedCaseCount": 3864,
+          "observedFrom": "2024-05-01",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-05-01",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zarskis edgaras 33964",
+          "doctorRaw": "ŽARSKIS EDGARAS 33964",
+          "observedCaseCount": 3851,
+          "observedFrom": "2021-01-11",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-11",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jasinas gediminas 34553",
+          "doctorRaw": "JAŠINAS GEDIMINAS 34553",
+          "observedCaseCount": 3822,
+          "observedFrom": "2021-01-18",
+          "observedTo": "2025-12-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-18",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ivanavicius vytautas 16892",
+          "doctorRaw": "IVANAVIČIUS VYTAUTAS 16892",
+          "observedCaseCount": 3776,
+          "observedFrom": "2021-01-03",
+          "observedTo": "2024-12-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-03",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kuliavaite ieva 33850",
+          "doctorRaw": "KULIAVAITĖ IEVA 33850",
+          "observedCaseCount": 3702,
+          "observedFrom": "2021-01-10",
+          "observedTo": "2025-12-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-10",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "martisius andrius 35990",
+          "doctorRaw": "MARTIŠIUS ANDRIUS 35990",
+          "observedCaseCount": 3574,
+          "observedFrom": "2022-11-13",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-11-13",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "barilaite gabija 34234",
+          "doctorRaw": "BARILAITĖ GABIJA 34234",
+          "observedCaseCount": 3421,
+          "observedFrom": "2023-09-11",
+          "observedTo": "2025-12-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-09-11",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jankauskas darius 7050",
+          "doctorRaw": "JANKAUSKAS DARIUS 7050",
+          "observedCaseCount": 3249,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "beinaraviciute greta 35585",
+          "doctorRaw": "BEINARAVIČIŪTĖ GRETA 35585",
+          "observedCaseCount": 2887,
+          "observedFrom": "2023-06-04",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-06-04",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dambrauskas lukas 34420",
+          "doctorRaw": "DAMBRAUSKAS LUKAS 34420",
+          "observedCaseCount": 2713,
+          "observedFrom": "2021-01-09",
+          "observedTo": "2025-12-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-09",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "marcinkevicius jonas 35518",
+          "doctorRaw": "MARCINKEVIČIUS JONAS 35518",
+          "observedCaseCount": 2615,
+          "observedFrom": "2021-03-27",
+          "observedTo": "2024-11-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-27",
+              "to": null,
+              "specialtyId": "trauma_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jarusevicius andrius 36193",
+          "doctorRaw": "JARUŠEVIČIUS ANDRIUS 36193",
+          "observedCaseCount": 2493,
+          "observedFrom": "2023-11-10",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-11-10",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "masys sarunas 34624",
+          "doctorRaw": "MASYS ŠARŪNAS 34624",
+          "observedCaseCount": 2489,
+          "observedFrom": "2021-04-01",
+          "observedTo": "2025-12-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-01",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kausaite dominyka 35911",
+          "doctorRaw": "KAUŠAITĖ DOMINYKA 35911",
+          "observedCaseCount": 2423,
+          "observedFrom": "2021-10-09",
+          "observedTo": "2025-12-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-09",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "venckus mykolas 34763",
+          "doctorRaw": "VENCKUS MYKOLAS 34763",
+          "observedCaseCount": 2348,
+          "observedFrom": "2021-04-11",
+          "observedTo": "2025-12-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-11",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kersyte erika 33766",
+          "doctorRaw": "KERŠYTĖ ERIKA 33766",
+          "observedCaseCount": 2288,
+          "observedFrom": "2021-01-16",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-16",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "talackaite simona 36620",
+          "doctorRaw": "TALAČKAITĖ SIMONA 36620",
+          "observedCaseCount": 2231,
+          "observedFrom": "2023-02-13",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-02-13",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "staskunas mantas 36010",
+          "doctorRaw": "STAŠKŪNAS MANTAS 36010",
+          "observedCaseCount": 2146,
+          "observedFrom": "2023-01-05",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-01-05",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "varzinskas karolis 35021",
+          "doctorRaw": "VARŽINSKAS KAROLIS 35021",
+          "observedCaseCount": 2122,
+          "observedFrom": "2021-02-24",
+          "observedTo": "2023-04-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-24",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "aleinikov andrej 32035",
+          "doctorRaw": "ALEINIKOV ANDREJ 32035",
+          "observedCaseCount": 2052,
+          "observedFrom": "2021-01-08",
+          "observedTo": "2025-07-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-08",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "daraska titas 35051",
+          "doctorRaw": "DARAŠKA TITAS 35051",
+          "observedCaseCount": 2008,
+          "observedFrom": "2021-03-20",
+          "observedTo": "2023-10-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-20",
+              "to": null,
+              "specialtyId": "trauma_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "litvinaite-moguleviciene egle 33376",
+          "doctorRaw": "LITVINAITĖ-MOGULEVIČIENĖ EGLĖ 33376",
+          "observedCaseCount": 1954,
+          "observedFrom": "2021-04-10",
+          "observedTo": "2025-12-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-10",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rimkute laima 33014",
+          "doctorRaw": "RIMKUTĖ LAIMA 33014",
+          "observedCaseCount": 1887,
+          "observedFrom": "2021-01-15",
+          "observedTo": "2025-12-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-15",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ziulpiene ieva 33812",
+          "doctorRaw": "ŽIULPIENĖ IEVA 33812",
+          "observedCaseCount": 1834,
+          "observedFrom": "2021-01-29",
+          "observedTo": "2023-11-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-29",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "giedraitiene inga 32598",
+          "doctorRaw": "GIEDRAITIENĖ INGA 32598",
+          "observedCaseCount": 1822,
+          "observedFrom": "2021-01-15",
+          "observedTo": "2025-01-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-15",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pazusis matas 36015",
+          "doctorRaw": "PAŽUSIS MATAS 36015",
+          "observedCaseCount": 1764,
+          "observedFrom": "2022-03-08",
+          "observedTo": "2025-12-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-03-08",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "galkuviene toma 33317",
+          "doctorRaw": "GALKUVIENĖ TOMA 33317",
+          "observedCaseCount": 1746,
+          "observedFrom": "2023-05-10",
+          "observedTo": "2025-12-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-05-10",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sokolovas gerardas 35863",
+          "doctorRaw": "SOKOLOVAS GERARDAS 35863",
+          "observedCaseCount": 1691,
+          "observedFrom": "2022-04-27",
+          "observedTo": "2023-08-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-04-27",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dabkeviciene gene 6467",
+          "doctorRaw": "DABKEVIČIENĖ GENĖ 6467",
+          "observedCaseCount": 1654,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2024-07-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sauliene deimante 34621",
+          "doctorRaw": "ŠAULIENĖ DEIMANTĖ 34621",
+          "observedCaseCount": 1615,
+          "observedFrom": "2021-08-19",
+          "observedTo": "2023-06-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-08-19",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jackiene kotryna 36470",
+          "doctorRaw": "JACKIENĖ KOTRYNA 36470",
+          "observedCaseCount": 1547,
+          "observedFrom": "2023-12-03",
+          "observedTo": "2025-08-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-12-03",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sasnauskaite jolita 35269",
+          "doctorRaw": "SASNAUSKAITĖ JOLITA 35269",
+          "observedCaseCount": 1536,
+          "observedFrom": "2021-01-08",
+          "observedTo": "2023-08-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-08",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "makunaite gabija 34854",
+          "doctorRaw": "MAKŪNAITĖ GABIJA 34854",
+          "observedCaseCount": 1516,
+          "observedFrom": "2021-11-28",
+          "observedTo": "2024-06-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-28",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vitkunaite kornelija 34279",
+          "doctorRaw": "VITKŪNAITĖ KORNELIJA 34279",
+          "observedCaseCount": 1474,
+          "observedFrom": "2021-01-09",
+          "observedTo": "2023-11-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-09",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baltraitis paulius 32392",
+          "doctorRaw": "BALTRAITIS PAULIUS 32392",
+          "observedCaseCount": 1416,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-12-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bajelis adomas 34401",
+          "doctorRaw": "BAJELIS ADOMAS 34401",
+          "observedCaseCount": 1310,
+          "observedFrom": "2022-09-11",
+          "observedTo": "2024-12-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-11",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gaupsaite akvile 35861",
+          "doctorRaw": "GAUPŠAITĖ AKVILĖ 35861",
+          "observedCaseCount": 1298,
+          "observedFrom": "2022-01-18",
+          "observedTo": "2024-01-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-01-18",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sakalauskas edmundas 25956",
+          "doctorRaw": "SAKALAUSKAS EDMUNDAS 25956",
+          "observedCaseCount": 1298,
+          "observedFrom": "2021-08-04",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-08-04",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tumonis martynas 33038",
+          "doctorRaw": "TUMONIS MARTYNAS 33038",
+          "observedCaseCount": 1292,
+          "observedFrom": "2021-04-09",
+          "observedTo": "2025-12-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-09",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jackeviciene jurate 12546",
+          "doctorRaw": "JACKEVIČIENĖ JŪRATĖ 12546",
+          "observedCaseCount": 1191,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "budryte egle 34771",
+          "doctorRaw": "BUDRYTĖ EGLĖ 34771",
+          "observedCaseCount": 1168,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2023-01-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pazdrazdyte laura 36185",
+          "doctorRaw": "PAZDRAZDYTĖ LAURA 36185",
+          "observedCaseCount": 1157,
+          "observedFrom": "2024-01-15",
+          "observedTo": "2025-08-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-01-15",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rekus algirdas 36040",
+          "doctorRaw": "RĖKUS ALGIRDAS 36040",
+          "observedCaseCount": 1142,
+          "observedFrom": "2022-06-06",
+          "observedTo": "2023-06-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-06-06",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "klumbys juozas 32473",
+          "doctorRaw": "KLUMBYS JUOZAS 32473",
+          "observedCaseCount": 1109,
+          "observedFrom": "2021-01-07",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-07",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lideikis justas 34425",
+          "doctorRaw": "LIDEIKIS JUSTAS 34425",
+          "observedCaseCount": 1094,
+          "observedFrom": "2021-01-09",
+          "observedTo": "2022-08-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-09",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jankaityte guoda 36315",
+          "doctorRaw": "JANKAITYTĖ GUODA 36315",
+          "observedCaseCount": 1050,
+          "observedFrom": "2021-11-13",
+          "observedTo": "2023-07-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-13",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bernotaite-morkune austeja 35926",
+          "doctorRaw": "BERNOTAITĖ-MORKŪNĖ AUSTĖJA 35926",
+          "observedCaseCount": 1034,
+          "observedFrom": "2024-09-03",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-09-03",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pakstys audrius 32523",
+          "doctorRaw": "PAKŠTYS AUDRIUS 32523",
+          "observedCaseCount": 1019,
+          "observedFrom": "2021-01-24",
+          "observedTo": "2023-10-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-24",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "arcabas kipras 36599",
+          "doctorRaw": "ARCABAS KIPRAS 36599",
+          "observedCaseCount": 995,
+          "observedFrom": "2024-05-10",
+          "observedTo": "2025-12-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-05-10",
+              "to": null,
+              "specialtyId": "trauma_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "savickis romualdas 33920",
+          "doctorRaw": "SAVICKIS ROMUALDAS 33920",
+          "observedCaseCount": 961,
+          "observedFrom": "2021-04-14",
+          "observedTo": "2024-02-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-14",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zizyte justina 26559",
+          "doctorRaw": "ŽIŽYTĖ JUSTINA 26559",
+          "observedCaseCount": 961,
+          "observedFrom": "2021-10-05",
+          "observedTo": "2025-12-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-05",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "radziuniene rasma 25320",
+          "doctorRaw": "RADŽIŪNIENĖ RASMA 25320",
+          "observedCaseCount": 933,
+          "observedFrom": "2021-01-03",
+          "observedTo": "2023-03-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-03",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bogusevice agne 33905",
+          "doctorRaw": "BOGUŠEVIČĖ AGNĖ 33905",
+          "observedCaseCount": 872,
+          "observedFrom": "2021-07-23",
+          "observedTo": "2025-02-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-23",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rimkus vilius 30270",
+          "doctorRaw": "RIMKUS VILIUS 30270",
+          "observedCaseCount": 780,
+          "observedFrom": "2021-02-22",
+          "observedTo": "2025-12-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-22",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "cibulske vaida 34675",
+          "doctorRaw": "CIBULSKĖ VAIDA 34675",
+          "observedCaseCount": 775,
+          "observedFrom": "2023-12-01",
+          "observedTo": "2024-10-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-12-01",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "stragauskiene henrieta 36569",
+          "doctorRaw": "STRAGAUSKIENĖ HENRIETA 36569",
+          "observedCaseCount": 760,
+          "observedFrom": "2024-03-01",
+          "observedTo": "2025-08-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-03-01",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "joksaite judita 36473",
+          "doctorRaw": "JOKŠAITĖ JUDITA 36473",
+          "observedCaseCount": 751,
+          "observedFrom": "2024-01-11",
+          "observedTo": "2025-05-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-01-11",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "scefanavicius edvinas 35056",
+          "doctorRaw": "ŠČEFANAVIČIUS EDVINAS 35056",
+          "observedCaseCount": 746,
+          "observedFrom": "2021-10-02",
+          "observedTo": "2023-12-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-02",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kristopaitis justas 35790",
+          "doctorRaw": "KRIŠTOPAITIS JUSTAS 35790",
+          "observedCaseCount": 690,
+          "observedFrom": "2021-10-23",
+          "observedTo": "2024-02-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-23",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "santaris vytautas 4658",
+          "doctorRaw": "ŠANTARIS VYTAUTAS 4658",
+          "observedCaseCount": 687,
+          "observedFrom": "2021-01-25",
+          "observedTo": "2025-12-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-25",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "medisauskas kipras 34515",
+          "doctorRaw": "MEDIŠAUSKAS KIPRAS 34515",
+          "observedCaseCount": 674,
+          "observedFrom": "2025-04-18",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-04-18",
+              "to": null,
+              "specialtyId": "trauma_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "firantaite gintare 35594",
+          "doctorRaw": "FIRANTAITĖ GINTARĖ 35594",
+          "observedCaseCount": 658,
+          "observedFrom": "2022-11-15",
+          "observedTo": "2024-04-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-11-15",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ellikas marius 32826",
+          "doctorRaw": "ELLIKAS MARIUS 32826",
+          "observedCaseCount": 633,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2021-08-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "salkauskaite aiste 35260",
+          "doctorRaw": "ŠALKAUSKAITĖ AISTĖ 35260",
+          "observedCaseCount": 608,
+          "observedFrom": "2021-10-09",
+          "observedTo": "2023-06-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-09",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kaulinis evaldas 32461",
+          "doctorRaw": "KAULINIS EVALDAS 32461",
+          "observedCaseCount": 602,
+          "observedFrom": "2023-04-17",
+          "observedTo": "2025-12-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-04-17",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jasine zemyna 36555",
+          "doctorRaw": "JAŠINĖ ŽEMYNA 36555",
+          "observedCaseCount": 551,
+          "observedFrom": "2022-12-15",
+          "observedTo": "2025-08-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-12-15",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ziaukas vilius 37693",
+          "doctorRaw": "ŽIAUKAS VILIUS 37693",
+          "observedCaseCount": 549,
+          "observedFrom": "2025-03-14",
+          "observedTo": "2025-12-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-03-14",
+              "to": null,
+              "specialtyId": "trauma_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sumskiene gabija 33448",
+          "doctorRaw": "ŠUMSKIENĖ GABIJA 33448",
+          "observedCaseCount": 541,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2021-06-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vienazindiene migle 33261",
+          "doctorRaw": "VIENAŽINDIENĖ MIGLĖ 33261",
+          "observedCaseCount": 529,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2023-02-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mickevicius gintautas 24224",
+          "doctorRaw": "MICKEVIČIUS GINTAUTAS 24224",
+          "observedCaseCount": 501,
+          "observedFrom": "2021-01-14",
+          "observedTo": "2025-11-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-14",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zekiene jovita 25790",
+          "doctorRaw": "ŽĖKIENĖ JOVITA 25790",
+          "observedCaseCount": 497,
+          "observedFrom": "2022-08-17",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-08-17",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "staskunas rokas 38368",
+          "doctorRaw": "STAŠKŪNAS ROKAS 38368",
+          "observedCaseCount": 472,
+          "observedFrom": "2025-09-01",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-09-01",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bereisaite dovile 35059",
+          "doctorRaw": "BEREIŠAITĖ DOVILĖ 35059",
+          "observedCaseCount": 464,
+          "observedFrom": "2021-01-09",
+          "observedTo": "2022-06-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-09",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "stancikas martynas 24265",
+          "doctorRaw": "STANČIKAS MARTYNAS 24265",
+          "observedCaseCount": 461,
+          "observedFrom": "2023-02-01",
+          "observedTo": "2025-10-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-02-01",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vilkyte akvile 32016",
+          "doctorRaw": "VILKYTĖ AKVILĖ 32016",
+          "observedCaseCount": 449,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2022-09-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "taluntis tomas 34197",
+          "doctorRaw": "TALUNTIS TOMAS 34197",
+          "observedCaseCount": 418,
+          "observedFrom": "2021-01-09",
+          "observedTo": "2021-08-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-09",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lukauskas andrius 34916",
+          "doctorRaw": "LUKAUSKAS ANDRIUS 34916",
+          "observedCaseCount": 410,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2021-07-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jakutaviciene monika 33720",
+          "doctorRaw": "JAKUTAVIČIENĖ MONIKA 33720",
+          "observedCaseCount": 405,
+          "observedFrom": "2021-01-07",
+          "observedTo": "2021-07-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-07",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zemaityte elzbieta 33049",
+          "doctorRaw": "ŽEMAITYTĖ ELŽBIETA 33049",
+          "observedCaseCount": 401,
+          "observedFrom": "2021-01-08",
+          "observedTo": "2021-09-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-08",
+              "to": null,
+              "specialtyId": "emergency_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bielskis algimantas 3753",
+          "doctorRaw": "BIELSKIS ALGIMANTAS 3753",
+          "observedCaseCount": 388,
+          "observedFrom": "2021-01-29",
+          "observedTo": "2025-12-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-29",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "liutkevicius arturas 21607",
+          "doctorRaw": "LIUTKEVIČIUS ARTŪRAS 21607",
+          "observedCaseCount": 374,
+          "observedFrom": "2021-01-29",
+          "observedTo": "2025-12-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-29",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tvarusyte-cvirkiene alina 32002",
+          "doctorRaw": "TVARUŠYTĖ-CVIRKIENĖ ALINA 32002",
+          "observedCaseCount": 317,
+          "observedFrom": "2021-10-19",
+          "observedTo": "2023-02-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-19",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vitkauskas zydrunas 23675",
+          "doctorRaw": "VITKAUSKAS ŽYDRŪNAS 23675",
+          "observedCaseCount": 306,
+          "observedFrom": "2021-01-07",
+          "observedTo": "2022-09-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-07",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gadeikyte arvile 34944",
+          "doctorRaw": "GADEIKYTĖ ARVILĖ 34944",
+          "observedCaseCount": 297,
+          "observedFrom": "2022-05-09",
+          "observedTo": "2022-09-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-05-09",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jurgelevicius marius 34924",
+          "doctorRaw": "JURGELEVIČIUS MARIUS 34924",
+          "observedCaseCount": 295,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2021-07-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mazutavicius vytautas 30533",
+          "doctorRaw": "MAŽUTAVIČIUS VYTAUTAS 30533",
+          "observedCaseCount": 293,
+          "observedFrom": "2021-04-21",
+          "observedTo": "2022-09-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-21",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "valinciute asta 33502",
+          "doctorRaw": "VALINČIŪTĖ ASTA 33502",
+          "observedCaseCount": 289,
+          "observedFrom": "2021-05-11",
+          "observedTo": "2021-10-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-11",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "buseckyte agne 35586",
+          "doctorRaw": "BUŠECKYTĖ AGNĖ 35586",
+          "observedCaseCount": 288,
+          "observedFrom": "2021-07-01",
+          "observedTo": "2021-09-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-01",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tamasauskiene gintare 34748",
+          "doctorRaw": "TAMAŠAUSKIENĖ GINTARĖ 34748",
+          "observedCaseCount": 275,
+          "observedFrom": "2021-11-09",
+          "observedTo": "2022-08-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-09",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jasinskas vytautas 35124",
+          "doctorRaw": "JAŠINSKAS VYTAUTAS 35124",
+          "observedCaseCount": 257,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2021-07-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bukucinskiene angele aniceta 10790",
+          "doctorRaw": "BUKUČINSKIENĖ ANGELĖ ANICETA 10790",
+          "observedCaseCount": 240,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-03-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sapalas alfonsas 4649",
+          "doctorRaw": "ŠAPALAS ALFONSAS 4649",
+          "observedCaseCount": 216,
+          "observedFrom": "2022-04-07",
+          "observedTo": "2025-08-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-04-07",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "smirnovas arturas 34738",
+          "doctorRaw": "SMIRNOVAS ARTŪRAS 34738",
+          "observedCaseCount": 214,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2021-06-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "medical_doctor"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rimkus arunas 4585",
+          "doctorRaw": "RIMKUS ARŪNAS 4585",
+          "observedCaseCount": 210,
+          "observedFrom": "2021-02-02",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-02",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dambrauskas mindaugas 30184",
+          "doctorRaw": "DAMBRAUSKAS MINDAUGAS 30184",
+          "observedCaseCount": 196,
+          "observedFrom": "2021-01-17",
+          "observedTo": "2022-09-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-17",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "steimantaite migle 35217",
+          "doctorRaw": "ŠTEIMANTAITĖ MIGLĖ 35217",
+          "observedCaseCount": 185,
+          "observedFrom": "2021-01-27",
+          "observedTo": "2021-05-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-27",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pavlaviciene ilona 10402",
+          "doctorRaw": "PAVLAVIČIENĖ ILONA 10402",
+          "observedCaseCount": 180,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2025-11-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tamasauskaite zita 18386",
+          "doctorRaw": "TAMAŠAUSKAITĖ ZITA 18386",
+          "observedCaseCount": 159,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-10-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kuznecova jelena 15396",
+          "doctorRaw": "KUZNECOVA JELENA 15396",
+          "observedCaseCount": 151,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-12-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "valanciute ugne 36610",
+          "doctorRaw": "VALANČIŪTĖ UGNĖ 36610",
+          "observedCaseCount": 150,
+          "observedFrom": "2022-10-03",
+          "observedTo": "2023-02-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-10-03",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vasyliene asta 16970",
+          "doctorRaw": "VASYLIENĖ ASTA 16970",
+          "observedCaseCount": 148,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2025-12-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "paliukiene jane 11273",
+          "doctorRaw": "PALIUKIENĖ JANĖ 11273",
+          "observedCaseCount": 139,
+          "observedFrom": "2021-02-09",
+          "observedTo": "2025-12-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-09",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kascenas evaldas 25918",
+          "doctorRaw": "KASCĖNAS EVALDAS 25918",
+          "observedCaseCount": 138,
+          "observedFrom": "2021-01-03",
+          "observedTo": "2023-02-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-03",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kutra nerijus 30371",
+          "doctorRaw": "KUTRA NERIJUS 30371",
+          "observedCaseCount": 136,
+          "observedFrom": "2021-01-11",
+          "observedTo": "2022-05-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-11",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kuliavas adomas 34365",
+          "doctorRaw": "KULIAVAS ADOMAS 34365",
+          "observedCaseCount": 132,
+          "observedFrom": "2021-01-12",
+          "observedTo": "2021-06-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-12",
+              "to": null,
+              "specialtyId": "emergency_resident"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jautakiene daiva 17356",
+          "doctorRaw": "JAUTAKIENĖ DAIVA 17356",
+          "observedCaseCount": 128,
+          "observedFrom": "2021-02-15",
+          "observedTo": "2024-07-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-15",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "karsokiene loreta 19682",
+          "doctorRaw": "KARSOKIENĖ LORETA 19682",
+          "observedCaseCount": 128,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2025-09-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "maldziute diana 34766",
+          "doctorRaw": "MALDŽIŪTĖ DIANA 34766",
+          "observedCaseCount": 122,
+          "observedFrom": "2024-07-09",
+          "observedTo": "2025-11-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-07-09",
+              "to": null,
+              "specialtyId": "surgery"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lukasevicius gediminas 26471",
+          "doctorRaw": "LUKAŠEVIČIUS GEDIMINAS 26471",
+          "observedCaseCount": 118,
+          "observedFrom": "2021-01-21",
+          "observedTo": "2021-09-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-21",
+              "to": null,
+              "specialtyId": "trauma"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kazlauskiene asta 17692",
+          "doctorRaw": "KAZLAUSKIENĖ ASTA 17692",
+          "observedCaseCount": 117,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2025-11-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baniukaitiene aurelija 30187",
+          "doctorRaw": "BANIUKAITIENĖ AURELIJA 30187",
+          "observedCaseCount": 113,
+          "observedFrom": "2021-02-14",
+          "observedTo": "2025-08-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-14",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "norvaisas ernestas 20848",
+          "doctorRaw": "NORVAIŠAS ERNESTAS 20848",
+          "observedCaseCount": 105,
+          "observedFrom": "2021-01-13",
+          "observedTo": "2024-05-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "domarkiene jurgita 23165",
+          "doctorRaw": "DOMARKIENĖ JURGITA 23165",
+          "observedCaseCount": 104,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2025-05-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "juskaite-domeikiene reda 19906",
+          "doctorRaw": "JUŠKAITĖ-DOMEIKIENĖ REDA 19906",
+          "observedCaseCount": 100,
+          "observedFrom": "2021-01-11",
+          "observedTo": "2025-12-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-11",
+              "to": null,
+              "specialtyId": "other_specialist"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bajorinas darius 33255",
+          "doctorRaw": "BAJORINAS DARIUS 33255",
+          "observedCaseCount": 95,
+          "observedFrom": "2021-01-07",
+          "observedTo": "2025-05-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sakalis mangirdas 33919",
+          "doctorRaw": "SAKALIS MANGIRDAS 33919",
+          "observedCaseCount": 92,
+          "observedFrom": "2021-01-07",
+          "observedTo": "2025-12-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "stankuniene jolita 31352",
+          "doctorRaw": "STANKŪNIENĖ JOLITA 31352",
+          "observedCaseCount": 90,
+          "observedFrom": "2021-10-14",
+          "observedTo": "2025-11-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "antuseva jelena 26410",
+          "doctorRaw": "ANTUŠEVA JELENA 26410",
+          "observedCaseCount": 80,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2025-10-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gedminas martynas 32828",
+          "doctorRaw": "GEDMINAS MARTYNAS 32828",
+          "observedCaseCount": 78,
+          "observedFrom": "2021-01-03",
+          "observedTo": "2021-02-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "buivydas eligijus 36458",
+          "doctorRaw": "BUIVYDAS ELIGIJUS 36458",
+          "observedCaseCount": 75,
+          "observedFrom": "2023-11-10",
+          "observedTo": "2023-12-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-11-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "strupeikis erikas 33929",
+          "doctorRaw": "STRUPEIKIS ERIKAS 33929",
+          "observedCaseCount": 70,
+          "observedFrom": "2021-02-23",
+          "observedTo": "2023-06-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "margelis ernest 34196",
+          "doctorRaw": "MARGELIS ERNEST 34196",
+          "observedCaseCount": 69,
+          "observedFrom": "2021-01-13",
+          "observedTo": "2021-03-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vanseviciene idile 31332",
+          "doctorRaw": "VANSEVIČIENĖ IDILĖ 31332",
+          "observedCaseCount": 67,
+          "observedFrom": "2021-01-12",
+          "observedTo": "2024-10-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "klepsyte-janauskiene evelina 31488",
+          "doctorRaw": "KLEPŠYTĖ-JANAUSKIENĖ EVELINA 31488",
+          "observedCaseCount": 59,
+          "observedFrom": "2021-01-10",
+          "observedTo": "2025-05-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "karveliene viktorija 34565",
+          "doctorRaw": "KARVELIENĖ VIKTORIJA 34565",
+          "observedCaseCount": 56,
+          "observedFrom": "2021-01-24",
+          "observedTo": "2021-02-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "basijokas algirdas 24971",
+          "doctorRaw": "BASIJOKAS ALGIRDAS 24971",
+          "observedCaseCount": 55,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2021-08-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "grazeliene jurate 12415",
+          "doctorRaw": "GRAŽELIENĖ JŪRATĖ 12415",
+          "observedCaseCount": 55,
+          "observedFrom": "2021-06-08",
+          "observedTo": "2025-11-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-06-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "minadze ilo 22417",
+          "doctorRaw": "MINADZĖ ILO 22417",
+          "observedCaseCount": 54,
+          "observedFrom": "2021-04-11",
+          "observedTo": "2025-12-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ellikiene anele 33440",
+          "doctorRaw": "ELLIKIENĖ ANELĖ 33440",
+          "observedCaseCount": 52,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2021-01-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "brazyte vilma 30067",
+          "doctorRaw": "BRAZYTĖ VILMA 30067",
+          "observedCaseCount": 51,
+          "observedFrom": "2021-01-19",
+          "observedTo": "2022-08-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lukosius andrius 34617",
+          "doctorRaw": "LUKOŠIUS ANDRIUS 34617",
+          "observedCaseCount": 49,
+          "observedFrom": "2022-12-21",
+          "observedTo": "2025-11-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-12-21",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vitkauskas raimondas 16173",
+          "doctorRaw": "VITKAUSKAS RAIMONDAS 16173",
+          "observedCaseCount": 49,
+          "observedFrom": "2021-01-07",
+          "observedTo": "2023-07-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "volkovas petras 11271",
+          "doctorRaw": "VOLKOVAS PETRAS 11271",
+          "observedCaseCount": 47,
+          "observedFrom": "2021-01-22",
+          "observedTo": "2024-01-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bykova gitana 30173",
+          "doctorRaw": "BYKOVA GITANA 30173",
+          "observedCaseCount": 46,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2024-03-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bulavas saulius 13405",
+          "doctorRaw": "BULAVAS SAULIUS 13405",
+          "observedCaseCount": 46,
+          "observedFrom": "2021-01-03",
+          "observedTo": "2021-10-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rickuviene irena 14054",
+          "doctorRaw": "RIČKUVIENĖ IRENA 14054",
+          "observedCaseCount": 46,
+          "observedFrom": "2021-02-25",
+          "observedTo": "2025-12-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vainauskas vidas 33494",
+          "doctorRaw": "VAINAUSKAS VIDAS 33494",
+          "observedCaseCount": 45,
+          "observedFrom": "2021-02-04",
+          "observedTo": "2025-02-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jautakis virginijus 16037",
+          "doctorRaw": "JAUTAKIS VIRGINIJUS 16037",
+          "observedCaseCount": 44,
+          "observedFrom": "2021-02-15",
+          "observedTo": "2021-10-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "skruodys gintaras 13881",
+          "doctorRaw": "SKRUODYS GINTARAS 13881",
+          "observedCaseCount": 44,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2021-10-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "blauzdziunas audrius 17646",
+          "doctorRaw": "BLAUZDŽIŪNAS AUDRIUS 17646",
+          "observedCaseCount": 43,
+          "observedFrom": "2021-12-03",
+          "observedTo": "2025-10-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-12-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kopusta rolandas 18717",
+          "doctorRaw": "KOPŪSTA ROLANDAS 18717",
+          "observedCaseCount": 43,
+          "observedFrom": "2021-02-19",
+          "observedTo": "2021-10-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "virsutiene indra 26551",
+          "doctorRaw": "VIRŠUTIENĖ INDRA 26551",
+          "observedCaseCount": 43,
+          "observedFrom": "2021-01-03",
+          "observedTo": "2022-08-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kurtine lina 22299",
+          "doctorRaw": "KURTINĖ LINA 22299",
+          "observedCaseCount": 42,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2024-12-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "simavicius andrius 21494",
+          "doctorRaw": "SIMAVIČIUS ANDRIUS 21494",
+          "observedCaseCount": 42,
+          "observedFrom": "2021-01-28",
+          "observedTo": "2025-12-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "persina-zymantiene ieva 23443",
+          "doctorRaw": "PERŠINA-ŽYMANTIENĖ IEVA 23443",
+          "observedCaseCount": 41,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2025-09-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "slunksnis vytautas 30578",
+          "doctorRaw": "SLUNKSNIS VYTAUTAS 30578",
+          "observedCaseCount": 41,
+          "observedFrom": "2021-02-28",
+          "observedTo": "2021-10-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baltraitiene emilija 35489",
+          "doctorRaw": "BALTRAITIENĖ EMILIJA 35489",
+          "observedCaseCount": 40,
+          "observedFrom": "2022-01-02",
+          "observedTo": "2022-01-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kavaliauskas eugenijus 23348",
+          "doctorRaw": "KAVALIAUSKAS EUGENIJUS 23348",
+          "observedCaseCount": 40,
+          "observedFrom": "2021-01-14",
+          "observedTo": "2025-08-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "matulas kestutis 32152",
+          "doctorRaw": "MATULAS KĘSTUTIS 32152",
+          "observedCaseCount": 40,
+          "observedFrom": "2021-05-31",
+          "observedTo": "2025-12-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-31",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rasteniene ieva 24244",
+          "doctorRaw": "RASTENIENĖ IEVA 24244",
+          "observedCaseCount": 40,
+          "observedFrom": "2021-01-30",
+          "observedTo": "2025-06-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "silkuniene birute 34281",
+          "doctorRaw": "ŠILKŪNIENĖ BIRUTĖ 34281",
+          "observedCaseCount": 40,
+          "observedFrom": "2022-09-22",
+          "observedTo": "2023-07-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kameneckas laurynas 25914",
+          "doctorRaw": "KAMENECKAS LAURYNAS 25914",
+          "observedCaseCount": 38,
+          "observedFrom": "2021-01-15",
+          "observedTo": "2025-08-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kaminskiene rasa 24680",
+          "doctorRaw": "KAMINSKIENĖ RASA 24680",
+          "observedCaseCount": 37,
+          "observedFrom": "2021-01-09",
+          "observedTo": "2023-03-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gasiunas dovydas 35238",
+          "doctorRaw": "GASIŪNAS DOVYDAS 35238",
+          "observedCaseCount": 36,
+          "observedFrom": "2022-08-12",
+          "observedTo": "2024-05-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-08-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaiciulis paulius 32592",
+          "doctorRaw": "VAIČIULIS PAULIUS 32592",
+          "observedCaseCount": 36,
+          "observedFrom": "2021-04-10",
+          "observedTo": "2025-10-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "paskevicius sigitas 20725",
+          "doctorRaw": "PAŠKEVIČIUS SIGITAS 20725",
+          "observedCaseCount": 34,
+          "observedFrom": "2021-02-18",
+          "observedTo": "2021-10-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bridziute -skuciene lina 23067",
+          "doctorRaw": "BRIDŽIŪTĖ -SKUČIENĖ LINA 23067",
+          "observedCaseCount": 33,
+          "observedFrom": "2021-03-11",
+          "observedTo": "2024-12-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "taujanskiene vaidota 4667",
+          "doctorRaw": "TAUJANSKIENĖ VAIDOTA 4667",
+          "observedCaseCount": 33,
+          "observedFrom": "2021-02-18",
+          "observedTo": "2021-08-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zibutis aurimas 32029",
+          "doctorRaw": "ŽIBUTIS AURIMAS 32029",
+          "observedCaseCount": 33,
+          "observedFrom": "2021-01-22",
+          "observedTo": "2025-12-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mackeliene irina 10740",
+          "doctorRaw": "MACKELIENĖ IRINA 10740",
+          "observedCaseCount": 32,
+          "observedFrom": "2021-03-10",
+          "observedTo": "2023-08-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kazlauskiene jurate 12540",
+          "doctorRaw": "KAZLAUSKIENĖ JŪRATĖ 12540",
+          "observedCaseCount": 31,
+          "observedFrom": "2021-02-12",
+          "observedTo": "2025-11-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bielko vida 15823",
+          "doctorRaw": "BIELKO VIDA 15823",
+          "observedCaseCount": 30,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2025-04-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaitkus justinas 32918",
+          "doctorRaw": "VAITKUS JUSTINAS 32918",
+          "observedCaseCount": 30,
+          "observedFrom": "2021-03-27",
+          "observedTo": "2024-04-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "greiciene dalia 31231",
+          "doctorRaw": "GREIČIENĖ DALIA 31231",
+          "observedCaseCount": 29,
+          "observedFrom": "2021-02-08",
+          "observedTo": "2023-08-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vieversyte zivile 34850",
+          "doctorRaw": "VIEVERSYTĖ ŽIVILĖ 34850",
+          "observedCaseCount": 27,
+          "observedFrom": "2022-06-25",
+          "observedTo": "2023-11-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-06-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vilutiene alyte 24969",
+          "doctorRaw": "VILUTIENĖ ALYTĖ 24969",
+          "observedCaseCount": 27,
+          "observedFrom": "2021-08-10",
+          "observedTo": "2025-09-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-08-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jurkevicius lukas 32846",
+          "doctorRaw": "JURKEVIČIUS LUKAS 32846",
+          "observedCaseCount": 26,
+          "observedFrom": "2021-01-20",
+          "observedTo": "2021-01-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rukstelis nerijus 30273",
+          "doctorRaw": "RŪKŠTELIS NERIJUS 30273",
+          "observedCaseCount": 26,
+          "observedFrom": "2021-02-01",
+          "observedTo": "2021-10-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "budrius gintaras 15191",
+          "doctorRaw": "BUDRIUS GINTARAS 15191",
+          "observedCaseCount": 25,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2025-09-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "merkelyte danute 4328",
+          "doctorRaw": "MERKELYTĖ DANUTĖ 4328",
+          "observedCaseCount": 25,
+          "observedFrom": "2021-04-13",
+          "observedTo": "2024-05-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "norkus rimantas 9320",
+          "doctorRaw": "NORKUS RIMANTAS 9320",
+          "observedCaseCount": 25,
+          "observedFrom": "2021-01-21",
+          "observedTo": "2023-06-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-21",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaidelys lukas 35522",
+          "doctorRaw": "VAIDELYS LUKAS 35522",
+          "observedCaseCount": 25,
+          "observedFrom": "2023-08-07",
+          "observedTo": "2025-04-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-08-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zabarskas arnoldas 30312",
+          "doctorRaw": "ZABARSKAS ARNOLDAS 30312",
+          "observedCaseCount": 25,
+          "observedFrom": "2021-01-13",
+          "observedTo": "2025-07-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "grazeniene milda 16519",
+          "doctorRaw": "GRAŽĖNIENĖ MILDA 16519",
+          "observedCaseCount": 24,
+          "observedFrom": "2021-04-17",
+          "observedTo": "2025-03-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "joteika tautvydas 35638",
+          "doctorRaw": "JOTEIKA TAUTVYDAS 35638",
+          "observedCaseCount": 24,
+          "observedFrom": "2024-10-03",
+          "observedTo": "2025-12-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-10-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jurenas jonas 34844",
+          "doctorRaw": "JURĖNAS JONAS 34844",
+          "observedCaseCount": 24,
+          "observedFrom": "2022-08-12",
+          "observedTo": "2025-08-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-08-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "norgeliene elena 32135",
+          "doctorRaw": "NORGĖLIENĖ ELENA 32135",
+          "observedCaseCount": 24,
+          "observedFrom": "2021-01-31",
+          "observedTo": "2021-07-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-31",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "balciuniene valdareza 13194",
+          "doctorRaw": "BALČIŪNIENĖ VALDAREZA 13194",
+          "observedCaseCount": 23,
+          "observedFrom": "2021-12-04",
+          "observedTo": "2025-12-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-12-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mickute gabriele 32730",
+          "doctorRaw": "MICKUTĖ GABRIELĖ 32730",
+          "observedCaseCount": 23,
+          "observedFrom": "2024-12-20",
+          "observedTo": "2024-12-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-12-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jadzeviciene danute 16507",
+          "doctorRaw": "JADZEVIČIENĖ DANUTĖ 16507",
+          "observedCaseCount": 22,
+          "observedFrom": "2021-01-22",
+          "observedTo": "2021-07-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "laukaityte dovile 36635",
+          "doctorRaw": "LAUKAITYTĖ DOVILĖ 36635",
+          "observedCaseCount": 22,
+          "observedFrom": "2022-09-12",
+          "observedTo": "2022-09-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baranauskiene vilma 20843",
+          "doctorRaw": "BARANAUSKIENĖ VILMA 20843",
+          "observedCaseCount": 21,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2025-02-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "satkauskas mindaugas 21610",
+          "doctorRaw": "ŠATKAUSKAS MINDAUGAS 21610",
+          "observedCaseCount": 21,
+          "observedFrom": "2021-02-23",
+          "observedTo": "2021-10-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "skrodenis remigijus 15350",
+          "doctorRaw": "SKRODENIS REMIGIJUS 15350",
+          "observedCaseCount": 21,
+          "observedFrom": "2021-02-03",
+          "observedTo": "2025-06-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "valanciute daina 18355",
+          "doctorRaw": "VALANČIŪTĖ DAINA 18355",
+          "observedCaseCount": 21,
+          "observedFrom": "2021-04-17",
+          "observedTo": "2025-10-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tamute justina sl039796",
+          "doctorRaw": "TAMUTĖ JUSTINA SL039796",
+          "observedCaseCount": 20,
+          "observedFrom": "2023-06-30",
+          "observedTo": "2024-06-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-06-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bruzas tomas 34372",
+          "doctorRaw": "BRUŽAS TOMAS 34372",
+          "observedCaseCount": 17,
+          "observedFrom": "2021-11-22",
+          "observedTo": "2025-12-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lobinas tomas 34554",
+          "doctorRaw": "LOBINAS TOMAS 34554",
+          "observedCaseCount": 17,
+          "observedFrom": "2022-09-07",
+          "observedTo": "2025-09-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "naciene rimante 32134",
+          "doctorRaw": "NACIENĖ RIMANTĖ 32134",
+          "observedCaseCount": 17,
+          "observedFrom": "2022-09-24",
+          "observedTo": "2025-11-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "brazlauskas airidas 35508",
+          "doctorRaw": "BRAZLAUSKAS AIRIDAS 35508",
+          "observedCaseCount": 16,
+          "observedFrom": "2023-07-04",
+          "observedTo": "2025-11-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-07-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "maksimaviciene antanina 10741",
+          "doctorRaw": "MAKSIMAVIČIENĖ ANTANINA 10741",
+          "observedCaseCount": 16,
+          "observedFrom": "2021-01-17",
+          "observedTo": "2022-09-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "galvanauskaite erika 33312",
+          "doctorRaw": "GALVANAUSKAITĖ ERIKA 33312",
+          "observedCaseCount": 14,
+          "observedFrom": "2021-04-09",
+          "observedTo": "2024-03-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "juodele linas 23601",
+          "doctorRaw": "JUODELĖ LINAS 23601",
+          "observedCaseCount": 14,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2022-02-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ptasinskas tomas 33715",
+          "doctorRaw": "PTAŠINSKAS TOMAS 33715",
+          "observedCaseCount": 14,
+          "observedFrom": "2021-11-22",
+          "observedTo": "2025-07-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "valkeriene gintare 24826",
+          "doctorRaw": "VALKERIENĖ GINTARĖ 24826",
+          "observedCaseCount": 14,
+          "observedFrom": "2021-03-19",
+          "observedTo": "2023-05-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dainius kestutis 12421",
+          "doctorRaw": "DAINIUS KĘSTUTIS 12421",
+          "observedCaseCount": 13,
+          "observedFrom": "2021-04-05",
+          "observedTo": "2025-11-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dulksniene larisa 4857",
+          "doctorRaw": "DULKSNIENĖ LARISA 4857",
+          "observedCaseCount": 13,
+          "observedFrom": "2021-01-23",
+          "observedTo": "2023-12-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "miskinis raimundas 21404",
+          "doctorRaw": "MIŠKINIS RAIMUNDAS 21404",
+          "observedCaseCount": 13,
+          "observedFrom": "2021-08-20",
+          "observedTo": "2023-11-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-08-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mockaitiene kristina sl027393",
+          "doctorRaw": "MOCKAITIENĖ KRISTINA SL027393",
+          "observedCaseCount": 13,
+          "observedFrom": "2023-09-26",
+          "observedTo": "2025-12-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-09-26",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "domanaitis darius 30842",
+          "doctorRaw": "DOMANAITIS DARIUS 30842",
+          "observedCaseCount": 12,
+          "observedFrom": "2021-05-06",
+          "observedTo": "2025-05-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kazlauskas andrius 12404",
+          "doctorRaw": "KAZLAUSKAS ANDRIUS 12404",
+          "observedCaseCount": 12,
+          "observedFrom": "2021-01-11",
+          "observedTo": "2025-12-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "stasiunaite monika 33758",
+          "doctorRaw": "STASIŪNAITĖ MONIKA 33758",
+          "observedCaseCount": 12,
+          "observedFrom": "2021-07-05",
+          "observedTo": "2025-10-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sukys algirdas 14762",
+          "doctorRaw": "ŠUKYS ALGIRDAS 14762",
+          "observedCaseCount": 12,
+          "observedFrom": "2021-01-29",
+          "observedTo": "2021-09-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jucys raimondas 13814",
+          "doctorRaw": "JUCYS RAIMONDAS 13814",
+          "observedCaseCount": 11,
+          "observedFrom": "2021-02-18",
+          "observedTo": "2022-07-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "chamsin mohamad 33989",
+          "doctorRaw": "CHAMSIN MOHAMAD 33989",
+          "observedCaseCount": 10,
+          "observedFrom": "2022-11-17",
+          "observedTo": "2025-07-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-11-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kuleviciene edita 16518",
+          "doctorRaw": "KULEVIČIENĖ EDITA 16518",
+          "observedCaseCount": 10,
+          "observedFrom": "2021-02-11",
+          "observedTo": "2024-07-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "morkunaite banga sl036385",
+          "doctorRaw": "MORKŪNAITĖ BANGA SL036385",
+          "observedCaseCount": 10,
+          "observedFrom": "2024-10-25",
+          "observedTo": "2025-09-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-10-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "platukis tautvydas 33902",
+          "doctorRaw": "PLATŪKIS TAUTVYDAS 33902",
+          "observedCaseCount": 10,
+          "observedFrom": "2023-04-05",
+          "observedTo": "2025-09-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-04-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baltrusaityte austeja sl037302",
+          "doctorRaw": "BALTRUŠAITYTĖ AUSTĖJA SL037302",
+          "observedCaseCount": 9,
+          "observedFrom": "2022-06-24",
+          "observedTo": "2025-12-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-06-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gedmontaite dalia 11046",
+          "doctorRaw": "GEDMONTAITĖ DALIA 11046",
+          "observedCaseCount": 9,
+          "observedFrom": "2021-01-27",
+          "observedTo": "2025-05-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jurgelenas tadas 34296",
+          "doctorRaw": "JURGELĖNAS TADAS 34296",
+          "observedCaseCount": 9,
+          "observedFrom": "2022-12-01",
+          "observedTo": "2025-08-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-12-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "smalinskas vilmantas 30958",
+          "doctorRaw": "SMALINSKAS VILMANTAS 30958",
+          "observedCaseCount": 9,
+          "observedFrom": "2021-03-29",
+          "observedTo": "2025-11-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zakrevskaja tatjana 16109",
+          "doctorRaw": "ZAKREVSKAJA TATJANA 16109",
+          "observedCaseCount": 9,
+          "observedFrom": "2021-01-19",
+          "observedTo": "2025-09-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "acute gitana 20197",
+          "doctorRaw": "ACUTĖ GITANA 20197",
+          "observedCaseCount": 8,
+          "observedFrom": "2021-08-30",
+          "observedTo": "2025-07-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-08-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "boguziene emilija 30699",
+          "doctorRaw": "BOGUŽIENĖ EMILIJA 30699",
+          "observedCaseCount": 8,
+          "observedFrom": "2021-02-05",
+          "observedTo": "2023-05-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sniuoliene rolanda 6483",
+          "doctorRaw": "ŠNIUOLIENĖ ROLANDA 6483",
+          "observedCaseCount": 8,
+          "observedFrom": "2021-04-29",
+          "observedTo": "2024-05-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "beinoriene svaiga mp000640",
+          "doctorRaw": "BEINORIENĖ SVAIGA MP000640",
+          "observedCaseCount": 7,
+          "observedFrom": "2023-06-04",
+          "observedTo": "2025-10-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-06-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "domarkas alvydas 10723",
+          "doctorRaw": "DOMARKAS ALVYDAS 10723",
+          "observedCaseCount": 7,
+          "observedFrom": "2021-06-14",
+          "observedTo": "2024-11-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-06-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dzenkaitis petras 20146",
+          "doctorRaw": "DŽENKAITIS PETRAS 20146",
+          "observedCaseCount": 7,
+          "observedFrom": "2021-07-27",
+          "observedTo": "2025-12-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kaminskiene marija 30289",
+          "doctorRaw": "KAMINSKIENĖ MARIJA 30289",
+          "observedCaseCount": 7,
+          "observedFrom": "2021-02-17",
+          "observedTo": "2022-08-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "steimoniene aiste sl035040",
+          "doctorRaw": "ŠTEIMONIENĖ AISTĖ SL035040",
+          "observedCaseCount": 7,
+          "observedFrom": "2021-01-27",
+          "observedTo": "2025-10-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaitiekunas egidijus 34404",
+          "doctorRaw": "VAITIEKŪNAS EGIDIJUS 34404",
+          "observedCaseCount": 7,
+          "observedFrom": "2023-05-15",
+          "observedTo": "2025-09-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-05-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bajoriene milda 30410",
+          "doctorRaw": "BAJORIENĖ MILDA 30410",
+          "observedCaseCount": 6,
+          "observedFrom": "2025-06-18",
+          "observedTo": "2025-12-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-06-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "banioniene kristina 33429",
+          "doctorRaw": "BANIONIENĖ KRISTINA 33429",
+          "observedCaseCount": 6,
+          "observedFrom": "2021-01-11",
+          "observedTo": "2022-10-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dailyda visvaldas 16945",
+          "doctorRaw": "DAILYDA VISVALDAS 16945",
+          "observedCaseCount": 6,
+          "observedFrom": "2021-04-18",
+          "observedTo": "2022-01-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ivanauskaite gitana kt000190",
+          "doctorRaw": "IVANAUSKAITĖ GITANA KT000190",
+          "observedCaseCount": 6,
+          "observedFrom": "2021-03-01",
+          "observedTo": "2022-05-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jukoniene daniele 35560",
+          "doctorRaw": "JUKONIENĖ DANIELĖ 35560",
+          "observedCaseCount": 6,
+          "observedFrom": "2021-03-30",
+          "observedTo": "2021-08-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "katiniene inga 24750",
+          "doctorRaw": "KATINIENĖ INGA 24750",
+          "observedCaseCount": 6,
+          "observedFrom": "2024-06-09",
+          "observedTo": "2025-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-06-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "paceviciene edita 30342",
+          "doctorRaw": "PACEVIČIENĖ EDITA 30342",
+          "observedCaseCount": 6,
+          "observedFrom": "2022-09-20",
+          "observedTo": "2025-08-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rackelyte kamile 35694",
+          "doctorRaw": "RAČKELYTĖ KAMILĖ 35694",
+          "observedCaseCount": 6,
+          "observedFrom": "2023-11-01",
+          "observedTo": "2024-09-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-11-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "verkuleviciene nida 18806",
+          "doctorRaw": "VERKULEVIČIENĖ NIDA 18806",
+          "observedCaseCount": 6,
+          "observedFrom": "2021-01-20",
+          "observedTo": "2024-10-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "adomaitiene nomeda 16463",
+          "doctorRaw": "ADOMAITIENĖ NOMEDA 16463",
+          "observedCaseCount": 5,
+          "observedFrom": "2022-12-06",
+          "observedTo": "2025-04-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-12-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "aleknaviciene gabriele sl033694",
+          "doctorRaw": "ALEKNAVIČIENĖ GABRIELĖ SL033694",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-05-31",
+          "observedTo": "2022-08-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-31",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "danelius kestutis 26429",
+          "doctorRaw": "DANELIUS KĘSTUTIS 26429",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-05-25",
+          "observedTo": "2021-08-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gimzauskaite agne 32830",
+          "doctorRaw": "GIMŽAUSKAITĖ AGNĖ 32830",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-10-08",
+          "observedTo": "2025-12-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ivanoviene rasa 26449",
+          "doctorRaw": "IVANOVIENĖ RASA 26449",
+          "observedCaseCount": 5,
+          "observedFrom": "2022-11-21",
+          "observedTo": "2024-01-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-11-21",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jarulaitiene ilona 16516",
+          "doctorRaw": "JARULAITIENĖ ILONA 16516",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-05-07",
+          "observedTo": "2024-05-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jokubonis kristijonas 33328",
+          "doctorRaw": "JOKŪBONIS KRISTIJONAS 33328",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-01-22",
+          "observedTo": "2021-10-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kausas aidas 4444",
+          "doctorRaw": "KAUŠAS AIDAS 4444",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-01-04",
+          "observedTo": "2024-10-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kneizyte raminta sl037726",
+          "doctorRaw": "KNEIŽYTĖ RAMINTA SL037726",
+          "observedCaseCount": 5,
+          "observedFrom": "2022-05-25",
+          "observedTo": "2024-01-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-05-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lapinskiene birute sl026198",
+          "doctorRaw": "LAPINSKIENĖ BIRUTĖ SL026198",
+          "observedCaseCount": 5,
+          "observedFrom": "2022-05-15",
+          "observedTo": "2025-07-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-05-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "narkys vidmantas 16522",
+          "doctorRaw": "NARKYS VIDMANTAS 16522",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-01-18",
+          "observedTo": "2025-06-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "putriunas giedrius 36149",
+          "doctorRaw": "PUTRIŪNAS GIEDRIUS 36149",
+          "observedCaseCount": 5,
+          "observedFrom": "2025-08-04",
+          "observedTo": "2025-11-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-08-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaiciuliene dovile 33434",
+          "doctorRaw": "VAIČIULIENĖ DOVILĖ 33434",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2023-01-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "venckus povilas 4681",
+          "doctorRaw": "VENCKUS POVILAS 4681",
+          "observedCaseCount": 5,
+          "observedFrom": "2021-01-11",
+          "observedTo": "2021-10-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "adamonyte karolina 34530",
+          "doctorRaw": "ADAMONYTĖ KAROLINA 34530",
+          "observedCaseCount": 4,
+          "observedFrom": "2022-03-10",
+          "observedTo": "2025-09-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-03-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bokoce igne 32422",
+          "doctorRaw": "BOKOČĖ IGNĖ 32422",
+          "observedCaseCount": 4,
+          "observedFrom": "2024-03-22",
+          "observedTo": "2025-10-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-03-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "danilevicius tadas 23861",
+          "doctorRaw": "DANILEVIČIUS TADAS 23861",
+          "observedCaseCount": 4,
+          "observedFrom": "2021-11-23",
+          "observedTo": "2024-04-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dulinskiene ineta 32431",
+          "doctorRaw": "DULINSKIENĖ INETA 32431",
+          "observedCaseCount": 4,
+          "observedFrom": "2022-11-18",
+          "observedTo": "2023-04-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-11-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gadeikis eugenijus 4482",
+          "doctorRaw": "GADEIKIS EUGENIJUS 4482",
+          "observedCaseCount": 4,
+          "observedFrom": "2022-08-02",
+          "observedTo": "2022-08-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-08-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "griciute laima 16910",
+          "doctorRaw": "GRICIŪTĖ LAIMA 16910",
+          "observedCaseCount": 4,
+          "observedFrom": "2021-01-15",
+          "observedTo": "2022-03-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jankauskas antanas 23594",
+          "doctorRaw": "JANKAUSKAS ANTANAS 23594",
+          "observedCaseCount": 4,
+          "observedFrom": "2023-09-27",
+          "observedTo": "2024-09-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-09-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "juodelis giedrius 32845",
+          "doctorRaw": "JUODELIS GIEDRIUS 32845",
+          "observedCaseCount": 4,
+          "observedFrom": "2022-08-28",
+          "observedTo": "2024-07-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-08-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kucinskas laurynas 34602",
+          "doctorRaw": "KUČINSKAS LAURYNAS 34602",
+          "observedCaseCount": 4,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2022-12-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "liberiene daiva sl031835",
+          "doctorRaw": "LIBERIENĖ DAIVA SL031835",
+          "observedCaseCount": 4,
+          "observedFrom": "2025-01-20",
+          "observedTo": "2025-08-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-01-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mazutaviciute agne 33872",
+          "doctorRaw": "MAŽUTAVIČIŪTĖ AGNĖ 33872",
+          "observedCaseCount": 4,
+          "observedFrom": "2021-07-25",
+          "observedTo": "2021-11-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tarasevicius rytis 34586",
+          "doctorRaw": "TARASEVIČIUS RYTIS 34586",
+          "observedCaseCount": 4,
+          "observedFrom": "2023-05-19",
+          "observedTo": "2023-10-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-05-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "balce rita 32453",
+          "doctorRaw": "BALČĖ RITA 32453",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-03-08",
+          "observedTo": "2024-11-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-03-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baltrusaitiene egidija 4424",
+          "doctorRaw": "BALTRUŠAITIENĖ EGIDIJA 4424",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-02-04",
+          "observedTo": "2024-02-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "banaityte-baleisiene indre 33259",
+          "doctorRaw": "BANAITYTĖ-BALEIŠIENĖ INDRĖ 33259",
+          "observedCaseCount": 3,
+          "observedFrom": "2025-01-17",
+          "observedTo": "2025-10-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-01-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "birutis justas 32408",
+          "doctorRaw": "BIRUTIS JUSTAS 32408",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-01-05",
+          "observedTo": "2023-08-22",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bogusiene angele sl026278",
+          "doctorRaw": "BOGUŠIENĖ ANGELĖ SL026278",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-03-10",
+          "observedTo": "2024-06-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dambrauskaite ausra 15658",
+          "doctorRaw": "DAMBRAUSKAITĖ AUŠRA 15658",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-04-28",
+          "observedTo": "2024-01-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-04-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dambrauskiene monika 26455",
+          "doctorRaw": "DAMBRAUSKIENĖ MONIKA 26455",
+          "observedCaseCount": 3,
+          "observedFrom": "2022-06-19",
+          "observedTo": "2022-07-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-06-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "daraskiene vilma sl035918",
+          "doctorRaw": "DARAŠKIENĖ VILMA SL035918",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-06-27",
+          "observedTo": "2023-04-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-06-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "domantaite greta 35103",
+          "doctorRaw": "DOMANTAITĖ GRETA 35103",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-02-21",
+          "observedTo": "2021-06-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-21",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "golubovas gintaras 25900",
+          "doctorRaw": "GOLUBOVAS GINTARAS 25900",
+          "observedCaseCount": 3,
+          "observedFrom": "2022-10-30",
+          "observedTo": "2025-10-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-10-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "idzelyte iveta 35553",
+          "doctorRaw": "IDZELYTĖ IVETA 35553",
+          "observedCaseCount": 3,
+          "observedFrom": "2025-03-26",
+          "observedTo": "2025-11-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-03-26",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jonuska benediktas 34061",
+          "doctorRaw": "JONUŠKA BENEDIKTAS 34061",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-02-28",
+          "observedTo": "2025-11-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-02-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kiltinavicius raimondas 35667",
+          "doctorRaw": "KILTINAVIČIUS RAIMONDAS 35667",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-02-19",
+          "observedTo": "2023-10-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-02-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kirdeikiene daina 4643",
+          "doctorRaw": "KIRDEIKIENĖ DAINA 4643",
+          "observedCaseCount": 3,
+          "observedFrom": "2022-04-09",
+          "observedTo": "2022-07-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-04-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kurganoviene kristina 30163",
+          "doctorRaw": "KURGANOVIENĖ KRISTINA 30163",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-06-29",
+          "observedTo": "2021-10-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-06-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "laukaitis martynas 32856",
+          "doctorRaw": "LAUKAITIS MARTYNAS 32856",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-03-03",
+          "observedTo": "2021-10-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "liauba liudas 8505",
+          "doctorRaw": "LIAUBA LIUDAS 8505",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-01-17",
+          "observedTo": "2021-06-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "lukosiene agne 34542",
+          "doctorRaw": "LUKOŠIENĖ AGNĖ 34542",
+          "observedCaseCount": 3,
+          "observedFrom": "2022-10-13",
+          "observedTo": "2022-12-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-10-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "marcinkiene laura 32822",
+          "doctorRaw": "MARCINKIENĖ LAURA 32822",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-03-28",
+          "observedTo": "2024-02-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "martinaite ugne sl037363",
+          "doctorRaw": "MARTINAITĖ UGNĖ SL037363",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-02-14",
+          "observedTo": "2024-04-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-02-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "masteika mindaugas 23625",
+          "doctorRaw": "MASTEIKA MINDAUGAS 23625",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-01-10",
+          "observedTo": "2021-07-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mazonavicius dziugas 18661",
+          "doctorRaw": "MAŽONAVIČIUS DŽIUGAS 18661",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-06-16",
+          "observedTo": "2025-05-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-06-16",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "patalaviciute ryte 36574",
+          "doctorRaw": "PATALAVIČIŪTĖ RYTĖ 36574",
+          "observedCaseCount": 3,
+          "observedFrom": "2025-08-29",
+          "observedTo": "2025-12-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-08-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pranevicius robertas 33903",
+          "doctorRaw": "PRANEVIČIUS ROBERTAS 33903",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-01-02",
+          "observedTo": "2021-10-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "samuitiene dzordana sl035023",
+          "doctorRaw": "SAMUITIENĖ DŽORDANA SL035023",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-01-07",
+          "observedTo": "2025-10-04",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-01-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "saukliene renata 17648",
+          "doctorRaw": "ŠAUKLIENĖ RENATA 17648",
+          "observedCaseCount": 3,
+          "observedFrom": "2024-03-16",
+          "observedTo": "2025-10-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-03-16",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sliazaite deimante sl038048",
+          "doctorRaw": "ŠLIAŽAITĖ DEIMANTĖ SL038048",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-09-17",
+          "observedTo": "2025-09-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-09-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "staskute genovaite sl029826",
+          "doctorRaw": "STAŠKUTĖ GENOVAITĖ SL029826",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-02-20",
+          "observedTo": "2025-11-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-02-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "stukas deividas 31977",
+          "doctorRaw": "STUKAS DEIVIDAS 31977",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-07-13",
+          "observedTo": "2021-10-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sudziute kotryna 35084",
+          "doctorRaw": "SŪDŽIŪTĖ KOTRYNA 35084",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-04-25",
+          "observedTo": "2022-04-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "suklys vladas 12329",
+          "doctorRaw": "ŠUKLYS VLADAS 12329",
+          "observedCaseCount": 3,
+          "observedFrom": "2023-10-21",
+          "observedTo": "2024-11-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-10-21",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "taraseviciene akvile 34584",
+          "doctorRaw": "TARASEVIČIENĖ AKVILĖ 34584",
+          "observedCaseCount": 3,
+          "observedFrom": "2022-09-02",
+          "observedTo": "2022-12-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "urboniene jovita sl014375",
+          "doctorRaw": "URBONIENĖ JOVITA SL014375",
+          "observedCaseCount": 3,
+          "observedFrom": "2021-04-29",
+          "observedTo": "2025-11-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "usonyte indre 35564",
+          "doctorRaw": "USONYTĖ INDRĖ 35564",
+          "observedCaseCount": 3,
+          "observedFrom": "2022-02-06",
+          "observedTo": "2023-02-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-02-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaitenkova ksenija sl040818",
+          "doctorRaw": "VAITENKOVA KSENIJA SL040818",
+          "observedCaseCount": 3,
+          "observedFrom": "2024-09-12",
+          "observedTo": "2024-12-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-09-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "aleksiene kristina sl032199",
+          "doctorRaw": "ALEKSIENĖ KRISTINA SL032199",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-04-22",
+          "observedTo": "2022-10-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-22",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "andriuskaite akvile sl038062",
+          "doctorRaw": "ANDRIUŠKAITĖ AKVILĖ SL038062",
+          "observedCaseCount": 2,
+          "observedFrom": "2022-10-04",
+          "observedTo": "2023-05-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-10-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "balciune ana sl037315",
+          "doctorRaw": "BALČIŪNĖ ANA SL037315",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-01-20",
+          "observedTo": "2021-07-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "barkauskas gintaras 13123",
+          "doctorRaw": "BARKAUSKAS GINTARAS 13123",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-09-23",
+          "observedTo": "2025-09-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-09-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "beinoriene daiva sl018101",
+          "doctorRaw": "BEINORIENĖ DAIVA SL018101",
+          "observedCaseCount": 2,
+          "observedFrom": "2023-11-26",
+          "observedTo": "2023-12-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-11-26",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "cejauskiene giedre vn003320",
+          "doctorRaw": "ČEJAUSKIENĖ GIEDRĖ VN003320",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-02-24",
+          "observedTo": "2024-08-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-02-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "daugnoriene zita ak000604",
+          "doctorRaw": "DAUGNORIENĖ ZITA AK000604",
+          "observedCaseCount": 2,
+          "observedFrom": "2022-02-07",
+          "observedTo": "2022-04-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-02-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "dovidaitiene dovile 30846",
+          "doctorRaw": "DOVIDAITIENĖ DOVILĖ 30846",
+          "observedCaseCount": 2,
+          "observedFrom": "2022-06-14",
+          "observedTo": "2022-06-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-06-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "drasutiene agne 26262",
+          "doctorRaw": "DRĄSUTIENĖ AGNĖ 26262",
+          "observedCaseCount": 2,
+          "observedFrom": "2023-07-21",
+          "observedTo": "2024-11-25",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-07-21",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "drazdauske viktorija sl036274",
+          "doctorRaw": "DRAZDAUSKĖ VIKTORIJA SL036274",
+          "observedCaseCount": 2,
+          "observedFrom": "2022-02-17",
+          "observedTo": "2025-03-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-02-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "inciura donatas 20181",
+          "doctorRaw": "INČIŪRA DONATAS 20181",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-12-02",
+          "observedTo": "2022-11-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-12-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "janulyte deimante 33325",
+          "doctorRaw": "JANULYTĖ DEIMANTĖ 33325",
+          "observedCaseCount": 2,
+          "observedFrom": "2025-09-07",
+          "observedTo": "2025-11-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-09-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jarulaitis matas kt002481",
+          "doctorRaw": "JARULAITIS MATAS KT002481",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-03-12",
+          "observedTo": "2025-03-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-03-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jemeljanova gabriele sl037311",
+          "doctorRaw": "JEMELJANOVA GABRIELĖ SL037311",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-10-07",
+          "observedTo": "2024-10-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-10-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jurgaityte julija 33754",
+          "doctorRaw": "JURGAITYTĖ JULIJA 33754",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-10-16",
+          "observedTo": "2023-04-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-16",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "karcauskas raimundas 35173",
+          "doctorRaw": "KARČAUSKAS RAIMUNDAS 35173",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-03-04",
+          "observedTo": "2024-04-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-03-04",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "klemanskis edgaras 32469",
+          "doctorRaw": "KLEMANSKIS EDGARAS 32469",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-04-26",
+          "observedTo": "2021-12-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-26",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kovaliova zinaida 32147",
+          "doctorRaw": "KOVALIOVA ZINAIDA 32147",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-08-30",
+          "observedTo": "2022-12-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-08-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kundreckiene liuda sl010436",
+          "doctorRaw": "KUNDRECKIENĖ LIUDA SL010436",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-07-12",
+          "observedTo": "2021-07-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kuznecova agne sl034232",
+          "doctorRaw": "KUZNECOVA AGNĖ SL034232",
+          "observedCaseCount": 2,
+          "observedFrom": "2025-09-20",
+          "observedTo": "2025-10-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-09-20",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "linkiene karolina kt001700",
+          "doctorRaw": "LINKIENĖ KAROLINA KT001700",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-01-15",
+          "observedTo": "2023-02-20",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "macys gediminas 36553",
+          "doctorRaw": "MAČYS GEDIMINAS 36553",
+          "observedCaseCount": 2,
+          "observedFrom": "2023-05-29",
+          "observedTo": "2024-10-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-05-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "martisiene raimonda sl025964",
+          "doctorRaw": "MARTIŠIENĖ RAIMONDA SL025964",
+          "observedCaseCount": 2,
+          "observedFrom": "2023-03-06",
+          "observedTo": "2025-12-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-03-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "matulevicius arunas 34201",
+          "doctorRaw": "MATULEVIČIUS ARŪNAS 34201",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-07-19",
+          "observedTo": "2025-01-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-07-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mazutavicius robertas 15882",
+          "doctorRaw": "MAŽUTAVIČIUS ROBERTAS 15882",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-08-30",
+          "observedTo": "2025-10-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-08-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "misiunas jonas sl039448",
+          "doctorRaw": "MISIŪNAS JONAS SL039448",
+          "observedCaseCount": 2,
+          "observedFrom": "2023-11-23",
+          "observedTo": "2023-12-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-11-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "naudziunas stanislovas 17340",
+          "doctorRaw": "NAUDŽIŪNAS STANISLOVAS 17340",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-04-13",
+          "observedTo": "2021-12-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "naujokaitis tomas sl037681",
+          "doctorRaw": "NAUJOKAITIS TOMAS SL037681",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-02-27",
+          "observedTo": "2024-05-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-02-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rimkeviciene emilija sl039480",
+          "doctorRaw": "RIMKEVIČIENĖ EMILIJA SL039480",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-02-24",
+          "observedTo": "2024-03-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-02-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sakalauskas benas 33447",
+          "doctorRaw": "SAKALAUSKAS BENAS 33447",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-09-23",
+          "observedTo": "2025-04-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-09-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sliazaite odeta sl039468",
+          "doctorRaw": "ŠLIAŽAITĖ ODETA SL039468",
+          "observedCaseCount": 2,
+          "observedFrom": "2023-05-24",
+          "observedTo": "2024-06-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-05-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "stungys olegas 21609",
+          "doctorRaw": "STUNGYS OLEGAS 21609",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-05-29",
+          "observedTo": "2025-10-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-05-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "svaze viktorija sl036760",
+          "doctorRaw": "ŠVAŽĖ VIKTORIJA SL036760",
+          "observedCaseCount": 2,
+          "observedFrom": "2025-11-08",
+          "observedTo": "2025-11-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-11-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tallat kelpsiene alma 19702",
+          "doctorRaw": "TALLAT KELPŠIENĖ ALMA 19702",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-03-29",
+          "observedTo": "2023-10-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tamosaitis algirdas 10531",
+          "doctorRaw": "TAMOŠAITIS ALGIRDAS 10531",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-02-09",
+          "observedTo": "2021-02-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "trumpickaite migle 34507",
+          "doctorRaw": "TRUMPICKAITĖ MIGLĖ 34507",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2021-01-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tumsiene regina 10525",
+          "doctorRaw": "TUMŠIENĖ REGINA 10525",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-07-12",
+          "observedTo": "2021-09-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vasiliauskaite gabriele sl037456",
+          "doctorRaw": "VASILIAUSKAITĖ GABRIELĖ SL037456",
+          "observedCaseCount": 2,
+          "observedFrom": "2025-06-25",
+          "observedTo": "2025-08-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-06-25",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zamaliauskaite viktorija 36607",
+          "doctorRaw": "ZAMALIAUSKAITĖ VIKTORIJA 36607",
+          "observedCaseCount": 2,
+          "observedFrom": "2025-08-23",
+          "observedTo": "2025-10-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-08-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zaranka deividas 35327",
+          "doctorRaw": "ZARANKA DEIVIDAS 35327",
+          "observedCaseCount": 2,
+          "observedFrom": "2024-11-08",
+          "observedTo": "2025-07-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-11-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zizliauskas audrius 16061",
+          "doctorRaw": "ŽIŽLIAUSKAS AUDRIUS 16061",
+          "observedCaseCount": 2,
+          "observedFrom": "2021-11-08",
+          "observedTo": "2025-01-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "anuzis jonas 16048",
+          "doctorRaw": "ANUŽIS JONAS 16048",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-08-29",
+          "observedTo": "2025-08-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-08-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "atkociunaite migle 35033",
+          "doctorRaw": "ATKOČIŪNAITĖ MIGLĖ 35033",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-02-26",
+          "observedTo": "2021-02-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-26",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bajoriniene rasa 33005",
+          "doctorRaw": "BAJORINIENĖ RASA 33005",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-06-13",
+          "observedTo": "2025-06-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-06-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "balandziunas rimvydas 34226",
+          "doctorRaw": "BALANDŽIŪNAS RIMVYDAS 34226",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-06-02",
+          "observedTo": "2024-06-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-06-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baniene laima sl013386",
+          "doctorRaw": "BANIENĖ LAIMA SL013386",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-05-09",
+          "observedTo": "2021-05-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "baradinskiene giedre sl036520",
+          "doctorRaw": "BARADINSKIENĖ GIEDRĖ SL036520",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-06-11",
+          "observedTo": "2021-06-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-06-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bardauskas marius 34547",
+          "doctorRaw": "BARDAUSKAS MARIUS 34547",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-11-17",
+          "observedTo": "2025-11-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-11-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "berukstis andrius 30328",
+          "doctorRaw": "BERŪKŠTIS ANDRIUS 30328",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-07-19",
+          "observedTo": "2023-07-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-07-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "blozyte nijole 4423",
+          "doctorRaw": "BLOŽYTĖ NIJOLĖ 4423",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-04-08",
+          "observedTo": "2021-04-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "brasiene vykinta 35968",
+          "doctorRaw": "BRASIENĖ VYKINTA 35968",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-07-01",
+          "observedTo": "2023-07-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-07-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "brazlauskiene viktorija 35040",
+          "doctorRaw": "BRAZLAUSKIENĖ VIKTORIJA 35040",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-10-19",
+          "observedTo": "2025-10-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-10-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "bubliauskas andrius 31611",
+          "doctorRaw": "BUBLIAUSKAS ANDRIUS 31611",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-09-13",
+          "observedTo": "2021-09-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-09-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "burkauskas rolandas 10211",
+          "doctorRaw": "BURKAUSKAS ROLANDAS 10211",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-07-09",
+          "observedTo": "2025-07-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-07-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "celutkiene jelena 28048",
+          "doctorRaw": "ČELUTKIENĖ JELENA 28048",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-03-01",
+          "observedTo": "2023-03-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-03-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "doviltyte zina 35252",
+          "doctorRaw": "DOVILTYTĖ ZINA 35252",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-09-24",
+          "observedTo": "2023-09-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-09-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "filipauskiene judita 10859",
+          "doctorRaw": "FILIPAUSKIENĖ JUDITA 10859",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-05-30",
+          "observedTo": "2021-05-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "galkeviciute rugile sl036015",
+          "doctorRaw": "GALKEVIČIŪTĖ RUGILĖ SL036015",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-06-03",
+          "observedTo": "2024-06-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-06-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "galvele ausra sl040283",
+          "doctorRaw": "GALVELĖ AUŠRA SL040283",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-07-28",
+          "observedTo": "2025-07-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-07-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "gostautaite kornelija sl037338",
+          "doctorRaw": "GOŠTAUTAITĖ KORNELIJA SL037338",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-01-01",
+          "observedTo": "2021-01-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "greiciuviene jurate 4477",
+          "doctorRaw": "GREIČIUVIENĖ JŪRATĖ 4477",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-02-24",
+          "observedTo": "2021-02-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "griciuviene virginija 19884",
+          "doctorRaw": "GRICIUVIENĖ VIRGINIJA 19884",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-03-17",
+          "observedTo": "2021-03-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "grigaitiene jurgita 33591",
+          "doctorRaw": "GRIGAITIENĖ JURGITA 33591",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-11-08",
+          "observedTo": "2021-11-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ivanauskiene aldona sl032016",
+          "doctorRaw": "IVANAUSKIENĖ ALDONA SL032016",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-11-08",
+          "observedTo": "2021-11-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-11-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jankuniene daiva sl016118",
+          "doctorRaw": "JANKŪNIENĖ DAIVA SL016118",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-10-16",
+          "observedTo": "2024-10-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-10-16",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "januliene vita sl023791",
+          "doctorRaw": "JANULIENĖ VITA SL023791",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-08-30",
+          "observedTo": "2022-08-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-08-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "joksas augustinas 33829",
+          "doctorRaw": "JOKŠAS AUGUSTINAS 33829",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-05-05",
+          "observedTo": "2025-05-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-05-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "jucius zilvinas 35963",
+          "doctorRaw": "JUCIUS ŽILVINAS 35963",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-07-27",
+          "observedTo": "2025-07-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-07-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "juskevicius matas 33835",
+          "doctorRaw": "JUŠKEVIČIUS MATAS 33835",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-07-27",
+          "observedTo": "2023-07-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-07-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kalnikiene renata sl037306",
+          "doctorRaw": "KALNIKIENĖ RENATA SL037306",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-11-24",
+          "observedTo": "2025-11-24",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-11-24",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kazakeviciute rima 16003",
+          "doctorRaw": "KAZAKEVIČIŪTĖ RIMA 16003",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-01-06",
+          "observedTo": "2023-01-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-01-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "keriene toma kt000198",
+          "doctorRaw": "KERIENĖ TOMA KT000198",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-09-26",
+          "observedTo": "2024-09-26",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-09-26",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "keriene toma ms003997",
+          "doctorRaw": "KERIENĖ TOMA MS003997",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-06-27",
+          "observedTo": "2021-06-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-06-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kontrimiene egle 30853",
+          "doctorRaw": "KONTRIMIENĖ EGLĖ 30853",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-05-29",
+          "observedTo": "2021-05-29",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-29",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "krasauskas darijus 33359",
+          "doctorRaw": "KRASAUSKAS DARIJUS 33359",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-01-30",
+          "observedTo": "2022-01-30",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-01-30",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "krasauskiene jurgita 31582",
+          "doctorRaw": "KRASAUSKIENĖ JURGITA 31582",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-10-31",
+          "observedTo": "2025-10-31",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-10-31",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kravciukas stanislavas 34524",
+          "doctorRaw": "KRAVČIUKAS STANISLAVAS 34524",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-09-28",
+          "observedTo": "2023-09-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-09-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kristopaitiene jurgita sl038682",
+          "doctorRaw": "KRIŠTOPAITIENĖ JURGITA SL038682",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-07-06",
+          "observedTo": "2023-07-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-07-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kulyte armanda sl039455",
+          "doctorRaw": "KULYTĖ ARMANDA SL039455",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-06-01",
+          "observedTo": "2025-06-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-06-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kupstyte-kristapone nora 25288",
+          "doctorRaw": "KUPSTYTĖ-KRIŠTAPONĖ NORA 25288",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-09-05",
+          "observedTo": "2022-09-05",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-05",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kusleika gintaras 24212",
+          "doctorRaw": "KUŠLEIKA GINTARAS 24212",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-10-18",
+          "observedTo": "2024-10-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-10-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "kuznecov denis kt002389",
+          "doctorRaw": "KUZNECOV DENIS KT002389",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-07-01",
+          "observedTo": "2023-07-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-07-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "liutkeviciute inga sl023177",
+          "doctorRaw": "LIUTKEVIČIŪTĖ INGA SL023177",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-03-19",
+          "observedTo": "2024-03-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-03-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "liutkute jurate 31887",
+          "doctorRaw": "LIUTKUTĖ JŪRATĖ 31887",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-07-28",
+          "observedTo": "2025-07-28",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-07-28",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "maciekus arunas 15138",
+          "doctorRaw": "MAČIEKUS ARŪNAS 15138",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-07-14",
+          "observedTo": "2021-07-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-07-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "margelis romualdas ksaveras 4564",
+          "doctorRaw": "MARGELIS ROMUALDAS KSAVERAS 4564",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-01-13",
+          "observedTo": "2021-01-13",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-13",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mazviliene vanda 4558",
+          "doctorRaw": "MAŽVILIENĖ VANDA 4558",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-06-14",
+          "observedTo": "2022-06-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-06-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mileris robertas 14531",
+          "doctorRaw": "MILERIS ROBERTAS 14531",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-01-02",
+          "observedTo": "2025-01-02",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-01-02",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "mockeviciute-narbutiene gintare 34623",
+          "doctorRaw": "MOCKEVIČIŪTĖ-NARBUTIENĖ GINTARĖ 34623",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-11-03",
+          "observedTo": "2024-11-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-11-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ogenskas vilius 34282",
+          "doctorRaw": "OGENSKAS VILIUS 34282",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-02-23",
+          "observedTo": "2021-02-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pakutka vladas 31303",
+          "doctorRaw": "PAKUTKA VLADAS 31303",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-01-15",
+          "observedTo": "2021-01-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-01-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "paulekas erlandas 34280",
+          "doctorRaw": "PAULĖKAS ERLANDAS 34280",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-02-18",
+          "observedTo": "2023-02-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-02-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pluciute akvile 34258",
+          "doctorRaw": "PLUČIŪTĖ AKVILĖ 34258",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-04-18",
+          "observedTo": "2021-04-18",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-18",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "pluke indre mp000799",
+          "doctorRaw": "PLUKĖ INDRĖ MP000799",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-11-06",
+          "observedTo": "2022-11-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-11-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "prelgauskiene orinta sl040593",
+          "doctorRaw": "PRELGAUSKIENĖ ORINTA SL040593",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-11-27",
+          "observedTo": "2025-11-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-11-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rovas linas 16764",
+          "doctorRaw": "ROVAS LINAS 16764",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-11-21",
+          "observedTo": "2023-11-21",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-11-21",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "rudokaite gabriele 34522",
+          "doctorRaw": "RUDOKAITĖ GABRIELĖ 34522",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-09-17",
+          "observedTo": "2022-09-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-09-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "ruzelyte inga 35716",
+          "doctorRaw": "RUŽELYTĖ INGA 35716",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-09-11",
+          "observedTo": "2021-09-11",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-09-11",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sagatiene silvija 17654",
+          "doctorRaw": "SAGATIENĖ SILVIJA 17654",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-05-10",
+          "observedTo": "2021-05-10",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-05-10",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sakalauskiene ligita sl030987",
+          "doctorRaw": "SAKALAUSKIENĖ LIGITA SL030987",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-03-17",
+          "observedTo": "2021-03-17",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-17",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "savaikaitiene vilija 33928",
+          "doctorRaw": "SAVAIKAITIENĖ VILIJA 33928",
+          "observedCaseCount": 1,
+          "observedFrom": "2023-04-23",
+          "observedTo": "2023-04-23",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2023-04-23",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sirutaviciene ausra 15881",
+          "doctorRaw": "SIRUTAVIČIENĖ AUŠRA 15881",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-09-16",
+          "observedTo": "2021-09-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-09-16",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "skirmantiene inesa sl025436",
+          "doctorRaw": "SKIRMANTIENĖ INESA SL025436",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-06-03",
+          "observedTo": "2024-06-03",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-06-03",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "sliauzys albertas 34637",
+          "doctorRaw": "ŠLIAUŽYS ALBERTAS 34637",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-12-07",
+          "observedTo": "2025-12-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-12-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "stankeviciene indre 27956",
+          "doctorRaw": "STANKEVIČIENĖ INDRĖ 27956",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-03-12",
+          "observedTo": "2021-03-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-03-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "staseviciene daiva ak000600",
+          "doctorRaw": "STAŠEVIČIENĖ DAIVA AK000600",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-05-19",
+          "observedTo": "2024-05-19",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-05-19",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "striupaitiene dina 30478",
+          "doctorRaw": "STRIŪPAITIENĖ DINA 30478",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-12-14",
+          "observedTo": "2021-12-14",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-12-14",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tamkute toma sl036508",
+          "doctorRaw": "TAMKUTĖ TOMA SL036508",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-01-16",
+          "observedTo": "2024-01-16",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-01-16",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tamutiene irina sl017106",
+          "doctorRaw": "TAMUTIENĖ IRINA SL017106",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-12-06",
+          "observedTo": "2024-12-06",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-12-06",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "tvarusis tomas 30604",
+          "doctorRaw": "TVARUŠIS TOMAS 30604",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-06-08",
+          "observedTo": "2022-06-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-06-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaiciulis remigijus 30610",
+          "doctorRaw": "VAIČIULIS REMIGIJUS 30610",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-02-15",
+          "observedTo": "2021-02-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "vaitkute simona 37511",
+          "doctorRaw": "VAITKUTĖ SIMONA 37511",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-11-15",
+          "observedTo": "2025-11-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-11-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "valciukaite monika sl037224",
+          "doctorRaw": "VALČIUKAITĖ MONIKA SL037224",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-04-15",
+          "observedTo": "2021-04-15",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-04-15",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "valunas dalius 22305",
+          "doctorRaw": "VALŪNAS DALIUS 22305",
+          "observedCaseCount": 1,
+          "observedFrom": "2022-08-27",
+          "observedTo": "2022-08-27",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2022-08-27",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "virsinskaite ruta 33814",
+          "doctorRaw": "VIRŠINSKAITĖ RŪTA 33814",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-02-09",
+          "observedTo": "2021-02-09",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-02-09",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "visockyte enrika sl040710",
+          "doctorRaw": "VISOCKYTĖ ENRIKA SL040710",
+          "observedCaseCount": 1,
+          "observedFrom": "2024-10-07",
+          "observedTo": "2024-10-07",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2024-10-07",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zalimas jonas 35463",
+          "doctorRaw": "ŽALIMAS JONAS 35463",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-02-01",
+          "observedTo": "2025-02-01",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-02-01",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zaveckiene jurgita 21285",
+          "doctorRaw": "ZAVECKIENĖ JURGITA 21285",
+          "observedCaseCount": 1,
+          "observedFrom": "2021-10-12",
+          "observedTo": "2021-10-12",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2021-10-12",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        },
+        {
+          "doctorNorm": "zukauskiene rasa sl027551",
+          "doctorRaw": "ŽUKAUSKIENĖ RASA SL027551",
+          "observedCaseCount": 1,
+          "observedFrom": "2025-09-08",
+          "observedTo": "2025-09-08",
+          "missingArrivalCases": 0,
+          "periods": [
+            {
+              "from": "2025-09-08",
+              "to": null,
+              "specialtyId": "__SET_SPECIALTY_ID__"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "metrics": {
     "enabledMetricIds": null,
     "overrides": {}
