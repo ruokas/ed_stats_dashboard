@@ -4207,6 +4207,82 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   font-size: 0.82rem;
 }
 
+.gydytojai-onboarding {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+}
+
+.gydytojai-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-alt);
+  color: inherit;
+  font: inherit;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.gydytojai-section-toggle:hover,
+.gydytojai-section-toggle:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.gydytojai-section-toggle__title {
+  font-weight: 700;
+}
+
+.gydytojai-section-toggle__summary {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gydytojai-section-toggle__summary::after {
+  content: "▾";
+  transition: transform 160ms ease;
+}
+
+.gydytojai-section-toggle.is-expanded .gydytojai-section-toggle__summary::after {
+  transform: rotate(180deg);
+}
+
+.gydytojai-collapsible-section .section__header + [data-gydytojai-section-panel] {
+  margin-top: 8px;
+}
+
+.gydytojai-annual-subview {
+  margin: 8px 0 10px;
+}
+
+.gydytojai-annual-subsection {
+  margin-top: 0;
+}
+
+.gydytojai-annual-subsection > .section__header {
+  display: none;
+}
+
+.gydytojai-filters-advanced {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.gydytojai-filters-advanced-toggle-field {
+  align-self: end;
+}
+
 .gydytojai-chart-toggles {
   margin-bottom: 12px;
 }
@@ -4216,6 +4292,10 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.gydytojai-charts-more-actions {
+  margin-top: 10px;
 }
 
 .gydytojai-chart-chip.is-muted {

@@ -66,6 +66,16 @@ export function createDashboardState({
     doctorsSpecialtyAnnualCardsChartRefs: {},
     doctorsSpecialtyAnnualSelected: [],
     doctorsSpecialtyAnnualAvailable: [],
+    gydytojaiFiltersAdvancedExpanded: false,
+    gydytojaiSectionExpanded: {
+      results: true,
+      specialty: false,
+      annual: false,
+      charts: false,
+    },
+    gydytojaiAnnualSubview: 'doctor',
+    gydytojaiChartsExpandedExtras: false,
+    gydytojaiChartsDoctorTogglesExpanded: false,
     doctorsCoverage: { total: 0, withDoctor: 0, percent: 0 },
     doctorsSpecialtyValidation: {
       enabled: false,

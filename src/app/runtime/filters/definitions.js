@@ -97,6 +97,9 @@ export const FILTER_SCHEMAS = {
       specialtyAnnualMetric: { type: 'string', queryKey: 'sam' },
       specialtyAnnualSort: { type: 'string', queryKey: 'sas' },
       specialtyAnnualSelected: { type: 'csv', queryKey: 'sase' },
+      gydytojaiAnnualSubview: { type: 'string', queryKey: 'ga' },
+      gydytojaiFiltersAdvancedExpanded: { type: 'boolean', queryKey: 'gfa' },
+      gydytojaiSectionExpanded: { type: 'csv', queryKey: 'gse' },
     },
   },
 };

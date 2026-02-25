@@ -189,6 +189,8 @@ describe('page selector factories', () => {
       <p id="gydytojaiCoverage"></p>
       <div id="gydytojaiLoadingState"></div>
       <div id="gydytojaiFilterChips"></div>
+      <button id="gydytojaiFiltersAdvancedToggle"></button>
+      <div id="gydytojaiFiltersAdvancedPanel"></div>
       <div id="gydytojaiYearChips"></div>
       <button data-gydytojai-topn="15"></button>
       <button data-gydytojai-mincases="30"></button>
@@ -202,12 +204,17 @@ describe('page selector factories', () => {
       <button id="gydytojaiResetFilters"></button>
       <div id="gydytojaiActiveFilters"></div>
       <section id="gydytojaiSpecialtySection"></section>
+      <span id="gydytojaiSpecialtySectionSummary"></span>
       <table id="gydytojaiSpecialtyTable"></table>
       <tbody id="gydytojaiSpecialtyBody"></tbody>
       <p id="gydytojaiSpecialtyEmpty"></p>
       <table id="gydytojaiLeaderboardTable"></table>
       <tbody id="gydytojaiLeaderboardBody"></tbody>
       <section id="gydytojaiAnnualSection"></section>
+      <section id="gydytojaiAnnualCombinedSection"></section>
+      <div id="gydytojaiAnnualCombinedSectionPanel"></div>
+      <div id="gydytojaiAnnualSubview"></div>
+      <button data-gydytojai-annual-subview="doctor"></button>
       <select id="gydytojaiAnnualMetric"></select>
       <select id="gydytojaiAnnualSort"></select>
       <input id="gydytojaiAnnualDoctorInput" />
@@ -224,7 +231,13 @@ describe('page selector factories', () => {
       <canvas id="gydytojaiMixChart"></canvas>
       <canvas id="gydytojaiScatterChart"></canvas>
       <div id="gydytojaiChartDoctorToggles"></div>
+      <button id="gydytojaiChartDoctorTogglesToggle"></button>
+      <div id="gydytojaiChartDoctorTogglesPanel"></div>
       <button id="gydytojaiChartDoctorsReset"></button>
+      <button id="gydytojaiChartsMoreToggle"></button>
+      <div id="gydytojaiChartsMorePanel"></div>
+      <button data-gydytojai-section-toggle="results"></button>
+      <div data-gydytojai-section-panel="results"></div>
       <button data-report-export="copy"></button>
       <button data-table-download="any"></button>
     `);
@@ -232,12 +245,19 @@ describe('page selector factories', () => {
     const selectors = createGydytojaiPageSelectors();
     expect(selectors.gydytojaiHeading).not.toBeNull();
     expect(selectors.gydytojaiAnnualSection).not.toBeNull();
+    expect(selectors.gydytojaiAnnualCombinedSection).not.toBeNull();
+    expect(selectors.gydytojaiAnnualSubviewButtons).toHaveLength(1);
     expect(selectors.gydytojaiAnnualCards).not.toBeNull();
     expect(selectors.gydytojaiAnnualSuggestions).not.toBeNull();
     expect(selectors.gydytojaiActiveFilters).not.toBeNull();
     expect(selectors.gydytojaiSpecialtyChips).not.toBeNull();
     expect(selectors.gydytojaiSpecialtyTable).not.toBeNull();
+    expect(selectors.gydytojaiFiltersAdvancedToggle).not.toBeNull();
+    expect(selectors.gydytojaiChartsMoreToggle).not.toBeNull();
+    expect(selectors.gydytojaiChartDoctorTogglesToggle).not.toBeNull();
     expect(selectors.gydytojaiChartDoctorToggles).not.toBeNull();
+    expect(selectors.gydytojaiSectionToggleButtons).toHaveLength(1);
+    expect(selectors.gydytojaiSectionPanels).toHaveLength(1);
     expect(selectors.gydytojaiTopNButtons).toHaveLength(1);
     expect(selectors.gydytojaiMinCasesButtons).toHaveLength(1);
     expect(selectors.gydytojaiSortButtons).toHaveLength(1);
