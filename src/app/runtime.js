@@ -40,6 +40,10 @@ export async function startApp() {
     firstVisibleMeasured: false,
     secondaryMeasured: false,
   };
+  const summariesLifecycleMeasureState = {
+    firstVisibleMeasured: false,
+    secondaryMeasured: false,
+  };
   const mark = (name) => {
     if (!profilingEnabled || typeof performance?.mark !== 'function') {
       return;
@@ -80,6 +84,32 @@ export async function startApp() {
         chartsLifecycleMeasureState.secondaryMeasured = true;
         mark('app-charts-secondary-complete');
         measure('app:charts-secondary-complete', 'app-start-entered', 'app-charts-secondary-complete');
+      },
+      { once: true }
+    );
+  }
+  if (profilingEnabled && pageId === 'summaries' && typeof window?.addEventListener === 'function') {
+    window.addEventListener(
+      'app:summaries-primary-visible',
+      () => {
+        if (summariesLifecycleMeasureState.firstVisibleMeasured) {
+          return;
+        }
+        summariesLifecycleMeasureState.firstVisibleMeasured = true;
+        mark('app-summaries-primary-visible');
+        measure('app:summaries-first-visible', 'app-start-entered', 'app-summaries-primary-visible');
+      },
+      { once: true }
+    );
+    window.addEventListener(
+      'app:summaries-secondary-complete',
+      () => {
+        if (summariesLifecycleMeasureState.secondaryMeasured) {
+          return;
+        }
+        summariesLifecycleMeasureState.secondaryMeasured = true;
+        mark('app-summaries-secondary-complete');
+        measure('app:summaries-secondary-complete', 'app-start-entered', 'app-summaries-secondary-complete');
       },
       { once: true }
     );

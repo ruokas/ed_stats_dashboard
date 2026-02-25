@@ -18,18 +18,39 @@ export function createKpiFlow(env) {
     matchesSharedPatientFilters,
     describeError,
     showKpiSkeleton,
+    hideKpiSkeleton = null,
     renderKpis,
     renderLastShiftHourlyChartWithTheme,
     setChartCardMessage,
     getSettings,
     runKpiWorkerJob,
+    runKpiWorkerDetailJob = null,
     buildLastShiftSummary,
     toSentenceCase,
     onKpiStateChange = null,
   } = env;
 
   let kpiWorkerJobToken = 0;
+  let kpiHourlyWorkerJobToken = 0;
+  let kpiDateRecordsWorkerJobToken = 0;
   let lastKpiUiRenderSignature = null;
+
+  function ensureKpiSkeletonHidden() {
+    if (typeof hideKpiSkeleton === 'function') {
+      hideKpiSkeleton();
+    }
+  }
+
+  function shouldShowKpiLoadingSkeleton() {
+    const grid = selectors?.kpiGrid;
+    if (!(grid instanceof HTMLElement)) {
+      return true;
+    }
+    if (getDatasetValue(grid, 'skeleton') === 'true') {
+      return true;
+    }
+    return grid.children.length === 0;
+  }
 
   function notifyKpiStateChange() {
     if (typeof onKpiStateChange !== 'function') {
@@ -89,6 +110,171 @@ export function createKpiFlow(env) {
     };
   }
 
+  function setWorkerAvailableDateKeys(keys) {
+    const normalizedKeys = Array.isArray(keys)
+      ? keys.filter((value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
+      : [];
+    const deduped = [...new Set(normalizedKeys)].sort((a, b) => a.localeCompare(b));
+    dashboardState.kpi.workerSummaryModeAvailableDateKeys = deduped;
+    const indexMap = new Map();
+    for (let index = 0; index < deduped.length; index += 1) {
+      indexMap.set(deduped[index], index);
+    }
+    dashboardState.kpi.workerSummaryModeDateIndexMap = indexMap;
+  }
+
+  function clearWorkerAvailableDateKeys() {
+    dashboardState.kpi.workerSummaryModeAvailableDateKeys = [];
+    dashboardState.kpi.workerSummaryModeDateIndexMap = new Map();
+  }
+
+  function buildSummaryModeSelectedDateRecordsCacheKey(filters, selectedDate, settings) {
+    const normalizedDate = normalizeKpiDateValue(selectedDate);
+    if (!normalizedDate) {
+      return '';
+    }
+    const safeFilters = filters || {};
+    const shiftStartHour = resolveShiftStartHour(settings?.calculations || {});
+    return [
+      normalizedDate,
+      String(safeFilters.shift || ''),
+      String(safeFilters.arrival || ''),
+      String(safeFilters.disposition || ''),
+      String(safeFilters.cardType || ''),
+      Number.isFinite(Number(safeFilters.window)) ? Number(safeFilters.window) : '',
+      Number.isFinite(Number(shiftStartHour)) ? shiftStartHour : '',
+    ].join('|');
+  }
+
+  function clearSummaryModeSelectedDateRecordsCache() {
+    const kpiState = dashboardState.kpi || {};
+    kpiState.workerSummaryModeSelectedDateRecordsKey = '';
+    kpiState.workerSummaryModeSelectedDateRecordsRefPrimary = null;
+    kpiState.workerSummaryModeSelectedDateRecords = [];
+    kpiState.workerSummaryModeSelectedDateDailyStats = [];
+    kpiState.workerSummaryModeSelectedDateRecordsLoadingKey = '';
+    kpiState.workerSummaryModeSelectedDateRecordsLoadingRefPrimary = null;
+  }
+
+  function getSummaryModeSelectedDateRecordsCache(filters, selectedDate, settings) {
+    const kpiState = dashboardState.kpi || {};
+    const cacheKey = buildSummaryModeSelectedDateRecordsCacheKey(filters, selectedDate, settings);
+    if (!cacheKey) {
+      return null;
+    }
+    const primaryRecordsRef = Array.isArray(dashboardState.primaryRecords)
+      ? dashboardState.primaryRecords
+      : null;
+    if (
+      kpiState.workerSummaryModeSelectedDateRecordsKey !== cacheKey ||
+      kpiState.workerSummaryModeSelectedDateRecordsRefPrimary !== primaryRecordsRef
+    ) {
+      return null;
+    }
+    if (!Array.isArray(kpiState.workerSummaryModeSelectedDateRecords)) {
+      return null;
+    }
+    return {
+      key: cacheKey,
+      records: kpiState.workerSummaryModeSelectedDateRecords,
+      dailyStats: Array.isArray(kpiState.workerSummaryModeSelectedDateDailyStats)
+        ? kpiState.workerSummaryModeSelectedDateDailyStats
+        : [],
+    };
+  }
+
+  async function ensureSummaryModeSelectedDateRecordsCache(filters, selectedDate, settings) {
+    if (typeof runKpiWorkerDetailJob !== 'function') {
+      return false;
+    }
+    const normalizedDate = normalizeKpiDateValue(selectedDate);
+    if (!normalizedDate) {
+      clearSummaryModeSelectedDateRecordsCache();
+      return false;
+    }
+    const hasWorkerSummaryDates =
+      Array.isArray(dashboardState.kpi?.workerSummaryModeAvailableDateKeys) &&
+      dashboardState.kpi.workerSummaryModeAvailableDateKeys.length > 0;
+    if (!hasWorkerSummaryDates) {
+      return false;
+    }
+    const currentCache = getSummaryModeSelectedDateRecordsCache(filters, normalizedDate, settings);
+    if (currentCache) {
+      return true;
+    }
+
+    const kpiState = dashboardState.kpi || {};
+    const primaryRecordsRef = Array.isArray(dashboardState.primaryRecords)
+      ? dashboardState.primaryRecords
+      : null;
+    const cacheKey = buildSummaryModeSelectedDateRecordsCacheKey(filters, normalizedDate, settings);
+    if (!cacheKey) {
+      return false;
+    }
+    if (
+      kpiState.workerSummaryModeSelectedDateRecordsLoadingKey === cacheKey &&
+      kpiState.workerSummaryModeSelectedDateRecordsLoadingRefPrimary === primaryRecordsRef
+    ) {
+      return false;
+    }
+
+    const normalizedFilters = sanitizeKpiFilters(filters, {
+      getDefaultKpiFilters,
+      KPI_FILTER_LABELS,
+    });
+    dashboardState.kpi.filters = { ...normalizedFilters };
+    const defaultFilters = getDefaultKpiFilters();
+    const detailToken = ++kpiDateRecordsWorkerJobToken;
+    const workerTokenAtStart = kpiWorkerJobToken;
+    kpiState.workerSummaryModeSelectedDateRecordsLoadingKey = cacheKey;
+    kpiState.workerSummaryModeSelectedDateRecordsLoadingRefPrimary = primaryRecordsRef;
+    try {
+      const result = await runKpiWorkerDetailJob({
+        type: 'getKpiRecordsForDateByHandle',
+        filters: normalizedFilters,
+        defaultFilters,
+        windowDays: normalizedFilters.window,
+        selectedDate: normalizedDate,
+        records: Array.isArray(dashboardState.primaryRecords) ? dashboardState.primaryRecords : [],
+        dailyStats: Array.isArray(dashboardState.primaryDaily) ? dashboardState.primaryDaily : [],
+        calculations: settings?.calculations || {},
+        calculationDefaults: DEFAULT_SETTINGS.calculations,
+      });
+      if (detailToken !== kpiDateRecordsWorkerJobToken || workerTokenAtStart !== kpiWorkerJobToken) {
+        return false;
+      }
+      if (normalizeKpiDateValue(dashboardState.kpi?.selectedDate) !== normalizedDate) {
+        return false;
+      }
+      if (kpiState.workerSummaryModeSelectedDateRecordsLoadingKey !== cacheKey) {
+        return false;
+      }
+      const requiresFullRecords = result?.meta?.requiresFullRecords === true;
+      if (requiresFullRecords) {
+        return false;
+      }
+      kpiState.workerSummaryModeSelectedDateRecordsKey = cacheKey;
+      kpiState.workerSummaryModeSelectedDateRecordsRefPrimary = primaryRecordsRef;
+      kpiState.workerSummaryModeSelectedDateRecords = Array.isArray(result?.records) ? result.records : [];
+      kpiState.workerSummaryModeSelectedDateDailyStats = Array.isArray(result?.dailyStats)
+        ? result.dailyStats
+        : [];
+      return true;
+    } catch (error) {
+      const errorInfo = describeError(error, {
+        code: 'KPI_WORKER_DATE_RECORDS',
+        message: "Nepavyko gauti KPI pasirinktai datai įrašų worker'yje",
+      });
+      console.error(errorInfo.log, error);
+      return false;
+    } finally {
+      if (kpiState.workerSummaryModeSelectedDateRecordsLoadingKey === cacheKey) {
+        kpiState.workerSummaryModeSelectedDateRecordsLoadingKey = '';
+        kpiState.workerSummaryModeSelectedDateRecordsLoadingRefPrimary = null;
+      }
+    }
+  }
+
   function resolveShiftStartHour(calculationSettings) {
     const fallback = Number.isFinite(Number(DEFAULT_SETTINGS?.calculations?.nightEndHour))
       ? Number(DEFAULT_SETTINGS.calculations.nightEndHour)
@@ -142,6 +328,17 @@ export function createKpiFlow(env) {
 
   function collectAvailableShiftDateKeys(records) {
     const kpiState = dashboardState.kpi || {};
+    if (
+      (!Array.isArray(records) || records.length === 0) &&
+      Array.isArray(kpiState.workerSummaryModeAvailableDateKeys)
+    ) {
+      const keys = kpiState.workerSummaryModeAvailableDateKeys;
+      const indexMap =
+        kpiState.workerSummaryModeDateIndexMap instanceof Map
+          ? kpiState.workerSummaryModeDateIndexMap
+          : new Map(keys.map((key, index) => [key, index]));
+      return { keys, indexMap };
+    }
     if (
       kpiState.availableDateRecordsRef === records &&
       Array.isArray(kpiState.availableDateKeys) &&
@@ -286,7 +483,7 @@ export function createKpiFlow(env) {
     selectors.kpiSubtitle.textContent = TEXT.kpis.subtitle;
   }
 
-  function updateKpiSummary({ records, dailyStats, windowDays }) {
+  function updateKpiSummary({ records, dailyStats, windowDays, recordCountOverride = null }) {
     if (!selectors.kpiActiveInfo) {
       return;
     }
@@ -294,7 +491,11 @@ export function createKpiFlow(env) {
     const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
     const isDateFiltered = Boolean(selectedDate);
     const defaultFilters = getDefaultKpiFilters();
-    const totalRecords = Array.isArray(records) ? records.length : 0;
+    const totalRecords = Number.isFinite(Number(recordCountOverride))
+      ? Number(recordCountOverride)
+      : Array.isArray(records)
+        ? records.length
+        : 0;
     const hasAggregatedData = Array.isArray(dailyStats)
       ? dailyStats.some((entry) => Number.isFinite(entry?.count) && entry.count > 0)
       : false;
@@ -634,6 +835,20 @@ export function createKpiFlow(env) {
     });
   }
 
+  function renderLastShiftHourlySeriesInfo(seriesInfo) {
+    dashboardState.kpi.lastShiftHourly = seriesInfo;
+    renderLastShiftHourlyChartWithTheme(seriesInfo).catch((error) => {
+      const errorInfo = describeError(error, {
+        code: 'LAST_SHIFT_HOURLY',
+        message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
+      });
+      console.error(errorInfo.log, error);
+      if (setChartCardMessage) {
+        setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
+      }
+    });
+  }
+
   function fingerprintKpiRecords(records) {
     const list = Array.isArray(records) ? records : [];
     if (!list.length) {
@@ -678,6 +893,25 @@ export function createKpiFlow(env) {
     return [list.length, encodeDaily(first), encodeDaily(middle), encodeDaily(last)].join('|');
   }
 
+  function fingerprintHourlySeriesInfo(seriesInfo) {
+    if (!seriesInfo || typeof seriesInfo !== 'object') {
+      return '0';
+    }
+    const metric = String(seriesInfo.metric || '');
+    const dateKey = String(seriesInfo.dateKey || '');
+    const total = Array.isArray(seriesInfo.series?.total) ? seriesInfo.series.total : [];
+    const outflow = Array.isArray(seriesInfo.series?.outflow) ? seriesInfo.series.outflow : [];
+    const sample = (list) =>
+      [
+        list.length,
+        Number(list[0] || 0),
+        Number(list[7] || 0),
+        Number(list[15] || 0),
+        Number(list[23] || 0),
+      ].join(':');
+    return [metric, dateKey, sample(total), sample(outflow)].join('|');
+  }
+
   function buildKpiUiRenderSignature({
     filteredRecords,
     filteredDailyStats,
@@ -686,6 +920,8 @@ export function createKpiFlow(env) {
     selectedDate,
     effectiveWindow,
     settings,
+    filteredRecordsKeyOverride = null,
+    dateFilteredRecordsKeyOverride = null,
   }) {
     const filters = dashboardState.kpi?.filters || {};
     const windowDays = selectedDate ? null : effectiveWindow;
@@ -693,9 +929,15 @@ export function createKpiFlow(env) {
       settings?.calculations?.shiftStartHour ?? settings?.calculations?.nightEndHour ?? ''
     );
     return {
-      filteredRecordsKey: fingerprintKpiRecords(filteredRecords),
+      filteredRecordsKey:
+        typeof filteredRecordsKeyOverride === 'string'
+          ? filteredRecordsKeyOverride
+          : fingerprintKpiRecords(filteredRecords),
       filteredDailyKey: fingerprintKpiDailyStats(filteredDailyStats),
-      dateFilteredRecordsKey: fingerprintKpiRecords(dateFilteredRecords),
+      dateFilteredRecordsKey:
+        typeof dateFilteredRecordsKeyOverride === 'string'
+          ? dateFilteredRecordsKeyOverride
+          : fingerprintKpiRecords(dateFilteredRecords),
       dateFilteredDailyKey: fingerprintKpiDailyStats(dateFilteredDailyStats),
       selectedDate: selectedDate || '',
       windowDays: Number.isFinite(windowDays) ? Number(windowDays) : null,
@@ -729,6 +971,8 @@ export function createKpiFlow(env) {
   }
 
   function commitKpiFilterResult({ filteredRecords, filteredDailyStats, effectiveWindow, settings }) {
+    clearWorkerAvailableDateKeys();
+    clearSummaryModeSelectedDateRecordsCache();
     dashboardState.kpi.records = filteredRecords;
     dashboardState.kpi.daily = filteredDailyStats;
     ensureDefaultKpiDateSelection(filteredRecords);
@@ -747,6 +991,7 @@ export function createKpiFlow(env) {
       settings,
     });
     if (isSameKpiUiRenderSignature(lastKpiUiRenderSignature, nextUiSignature)) {
+      ensureKpiSkeletonHidden();
       return;
     }
     renderKpis(dateFilteredDailyStats, filteredDailyStats);
@@ -757,6 +1002,62 @@ export function createKpiFlow(env) {
       records: dateFilteredRecords,
       dailyStats: dateFilteredDailyStats,
       windowDays: selectedDate ? null : effectiveWindow,
+    });
+    updateKpiSubtitle();
+    lastKpiUiRenderSignature = nextUiSignature;
+  }
+
+  function commitKpiSummaryModeResult({ result, effectiveWindow, settings }) {
+    const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
+    const summary = result?.kpiSummary && typeof result.kpiSummary === 'object' ? result.kpiSummary : {};
+    const availableDateKeys = Array.isArray(summary.availableDateKeys) ? summary.availableDateKeys : [];
+    const selectedDateDailyStats = Array.isArray(summary.selectedDateDailyStats)
+      ? summary.selectedDateDailyStats
+      : filteredDailyStats;
+    const totalFilteredRecords = Number.isFinite(Number(summary.totalFilteredRecords))
+      ? Number(summary.totalFilteredRecords)
+      : 0;
+    const selectedDateRecordCount = Number.isFinite(Number(summary.selectedDateRecordCount))
+      ? Number(summary.selectedDateRecordCount)
+      : totalFilteredRecords;
+    let selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+    const lastShiftHourly = summary.lastShiftHourly || null;
+
+    setWorkerAvailableDateKeys(availableDateKeys);
+    dashboardState.kpi.records = [];
+    dashboardState.kpi.daily = filteredDailyStats;
+    ensureDefaultKpiDateSelection([]);
+    syncKpiDateNavigation([]);
+    selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+    if (selectedDate) {
+      void ensureSummaryModeSelectedDateRecordsCache(dashboardState.kpi.filters, selectedDate, settings);
+    } else {
+      clearSummaryModeSelectedDateRecordsCache();
+    }
+
+    const nextUiSignature = buildKpiUiRenderSignature({
+      filteredRecords: [],
+      filteredDailyStats,
+      dateFilteredRecords: [],
+      dateFilteredDailyStats: selectedDate ? selectedDateDailyStats : filteredDailyStats,
+      selectedDate,
+      effectiveWindow,
+      settings,
+      filteredRecordsKeyOverride: `summary:${totalFilteredRecords}`,
+      dateFilteredRecordsKeyOverride: `summary-hourly:${selectedDate ? selectedDateRecordCount : totalFilteredRecords}:${fingerprintHourlySeriesInfo(lastShiftHourly)}`,
+    });
+    if (isSameKpiUiRenderSignature(lastKpiUiRenderSignature, nextUiSignature)) {
+      ensureKpiSkeletonHidden();
+      return;
+    }
+
+    renderKpis(selectedDate ? selectedDateDailyStats : filteredDailyStats, filteredDailyStats);
+    renderLastShiftHourlySeriesInfo(lastShiftHourly);
+    updateKpiSummary({
+      records: [],
+      dailyStats: selectedDate ? selectedDateDailyStats : filteredDailyStats,
+      windowDays: selectedDate ? null : effectiveWindow,
+      recordCountOverride: selectedDate ? selectedDateRecordCount : totalFilteredRecords,
     });
     updateKpiSubtitle();
     lastKpiUiRenderSignature = nextUiSignature;
@@ -776,22 +1077,36 @@ export function createKpiFlow(env) {
       filters: normalizedFilters,
       defaultFilters,
       windowDays,
+      selectedDate: normalizeKpiDateValue(dashboardState.kpi?.selectedDate),
       records: Array.isArray(dashboardState.primaryRecords) ? dashboardState.primaryRecords : [],
       dailyStats: Array.isArray(dashboardState.primaryDaily) ? dashboardState.primaryDaily : [],
       calculations: settings?.calculations || {},
       calculationDefaults: DEFAULT_SETTINGS.calculations,
+      lastShiftHourlyMetric: normalizeLastShiftMetric(dashboardState.kpi?.lastShiftHourlyMetric),
+      resultMode: 'summary+hourly',
     };
     const jobToken = ++kpiWorkerJobToken;
 
-    showKpiSkeleton();
+    if (shouldShowKpiLoadingSkeleton()) {
+      showKpiSkeleton();
+    }
     try {
       const result = await runKpiWorkerJob(workerPayload);
       if (jobToken !== kpiWorkerJobToken) {
+        ensureKpiSkeletonHidden();
+        return;
+      }
+      const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
+      if (String(result?.resultMode || result?.meta?.resultMode || '') === 'summary+hourly') {
+        commitKpiSummaryModeResult({
+          result,
+          effectiveWindow,
+          settings,
+        });
         return;
       }
       const filteredRecords = Array.isArray(result?.records) ? result.records : [];
       const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
-      const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
       commitKpiFilterResult({
         filteredRecords,
         filteredDailyStats,
@@ -805,6 +1120,7 @@ export function createKpiFlow(env) {
       });
       console.error(errorInfo.log, error);
       if (jobToken !== kpiWorkerJobToken) {
+        ensureKpiSkeletonHidden();
         return;
       }
       const fallback = applyKpiFiltersLocally(normalizedFilters);
@@ -918,6 +1234,49 @@ export function createKpiFlow(env) {
     }
   }
 
+  async function recomputeLastShiftHourlyViaWorkerDetail() {
+    if (typeof runKpiWorkerDetailJob !== 'function') {
+      return false;
+    }
+    const normalizedFilters = sanitizeKpiFilters(dashboardState.kpi.filters, {
+      getDefaultKpiFilters,
+      KPI_FILTER_LABELS,
+    });
+    dashboardState.kpi.filters = { ...normalizedFilters };
+    const defaultFilters = getDefaultKpiFilters();
+    const settings = getSettings();
+    const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
+    const metric = normalizeLastShiftMetric(dashboardState.kpi?.lastShiftHourlyMetric);
+    const detailToken = ++kpiHourlyWorkerJobToken;
+    const workerTokenAtStart = kpiWorkerJobToken;
+    try {
+      const result = await runKpiWorkerDetailJob({
+        type: 'computeKpiLastShiftHourlyByHandle',
+        filters: normalizedFilters,
+        defaultFilters,
+        windowDays: normalizedFilters.window,
+        selectedDate,
+        lastShiftHourlyMetric: metric,
+        records: Array.isArray(dashboardState.primaryRecords) ? dashboardState.primaryRecords : [],
+        dailyStats: Array.isArray(dashboardState.primaryDaily) ? dashboardState.primaryDaily : [],
+        calculations: settings?.calculations || {},
+        calculationDefaults: DEFAULT_SETTINGS.calculations,
+      });
+      if (detailToken !== kpiHourlyWorkerJobToken || workerTokenAtStart !== kpiWorkerJobToken) {
+        return true;
+      }
+      renderLastShiftHourlySeriesInfo(result?.lastShiftHourly || null);
+      return true;
+    } catch (error) {
+      const errorInfo = describeError(error, {
+        code: 'KPI_WORKER_HOURLY',
+        message: "Nepavyko atnaujinti KPI paskutinės pamainos grafiko worker'yje",
+      });
+      console.error(errorInfo.log, error);
+      return false;
+    }
+  }
+
   function handleLastShiftMetricClick(event) {
     const button = event.currentTarget;
     if (!(button instanceof HTMLElement)) {
@@ -929,6 +1288,26 @@ export function createKpiFlow(env) {
     const selectedDate = normalizeKpiDateValue(dashboardState.kpi?.selectedDate);
     const baseRecords = Array.isArray(dashboardState.kpi?.records) ? dashboardState.kpi.records : [];
     const baseDaily = Array.isArray(dashboardState.kpi?.daily) ? dashboardState.kpi.daily : [];
+    const hasWorkerSummaryDates =
+      Array.isArray(dashboardState.kpi?.workerSummaryModeAvailableDateKeys) &&
+      dashboardState.kpi.workerSummaryModeAvailableDateKeys.length > 0;
+    if (!baseRecords.length && hasWorkerSummaryDates) {
+      const settings = getSettings();
+      const cachedSelectedDate = selectedDate
+        ? getSummaryModeSelectedDateRecordsCache(dashboardState.kpi?.filters, selectedDate, settings)
+        : null;
+      if (selectedDate && cachedSelectedDate) {
+        renderLastShiftHourlyChart(cachedSelectedDate.records, cachedSelectedDate.dailyStats);
+        return;
+      }
+      void (async () => {
+        const handled = await recomputeLastShiftHourlyViaWorkerDetail();
+        if (!handled) {
+          void applyKpiFiltersAndRender();
+        }
+      })();
+      return;
+    }
     if (selectedDate) {
       const settings = getSettings();
       const dateFiltered = resolveDateFilteredData(baseRecords, baseDaily, selectedDate, settings);

@@ -1,4 +1,4 @@
-const RUNTIME_VERSION = '2026-02-12-runtime-refresh-4';
+const RUNTIME_VERSION = '2026-02-25-runtime-refresh-5';
 
 export const PAGE_CONFIG = {
   kpi: { kpi: true },
@@ -20,7 +20,7 @@ export const RUNTIME_MODULE_BY_PAGE = {
   ed: `./runtime/pages/ed-page.js?v=${RUNTIME_VERSION}`,
 };
 
-const CHART_PRELOAD_PAGES = new Set(['charts', 'ed']);
+const CHART_PRELOAD_PAGES = new Set(['charts', 'ed', 'summaries', 'feedback', 'gydytojai']);
 
 export function shouldPreloadChartJs(pageId) {
   const normalized = typeof pageId === 'string' ? pageId.trim().toLowerCase() : '';

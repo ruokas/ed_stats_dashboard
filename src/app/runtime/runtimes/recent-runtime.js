@@ -332,6 +332,8 @@ export async function runRecentRuntime(core) {
     settings,
     DEFAULT_SETTINGS,
     dashboardState,
+    pageId: core?.pageId || 'recent',
+    perfMonitor: runtimeClient.perfMonitor,
     downloadCsv,
     describeError: (error, options = {}) =>
       describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
@@ -377,6 +379,7 @@ export async function runRecentRuntime(core) {
     },
     dataHooks: {
       fetchData,
+      fetchProfile: 'daily-lite',
       perfMonitor: runtimeClient.perfMonitor,
       describeCacheMeta,
       describeError: (error, options = {}) =>

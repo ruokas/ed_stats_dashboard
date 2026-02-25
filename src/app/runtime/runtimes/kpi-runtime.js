@@ -532,10 +532,12 @@ export async function runKpiRuntime(core) {
         : null;
   }
 
-  const { fetchData, runKpiWorkerJob } = createMainDataHandlers({
+  const { fetchData, runKpiWorkerJob, runKpiWorkerDetailJob } = createMainDataHandlers({
     settings,
     DEFAULT_SETTINGS,
     dashboardState,
+    pageId,
+    perfMonitor: runtimeClient.perfMonitor,
     downloadCsv,
     describeError: (error, options = {}) =>
       describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
@@ -602,11 +604,13 @@ export async function runKpiRuntime(core) {
     describeError: (error, options = {}) =>
       describeError(error, { ...options, fallbackMessage: TEXT.status.error }),
     showKpiSkeleton: () => showKpiSkeleton(selectors),
+    hideKpiSkeleton: () => hideKpiSkeleton(selectors),
     renderKpis: (dailyStats, referenceDailyStats) => kpiRenderer.renderKpis(dailyStats, referenceDailyStats),
     renderLastShiftHourlyChartWithTheme: renderLastShiftHourlyChartWithThemeBound,
     setChartCardMessage,
     getSettings: () => settings,
     runKpiWorkerJob,
+    runKpiWorkerDetailJob,
     buildLastShiftSummary,
     toSentenceCase,
     onKpiStateChange: persistKpiQuery,
@@ -641,6 +645,9 @@ export async function runKpiRuntime(core) {
     },
     dataHooks: {
       fetchData,
+      fetchProfile: 'daily-lite',
+      supportsDeferredFullRecordsHydration: true,
+      requiresFullRecordsForInteractions: true,
       perfMonitor: runtimeClient.perfMonitor,
       describeCacheMeta,
       describeError: (error, options = {}) =>

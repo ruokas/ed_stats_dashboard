@@ -1,6 +1,6 @@
 // Bump cache versions on release when app shell/static routing changes.
 // Rule of thumb: STATIC_CACHE for HTML/CSS/JS shell changes, API_CACHE for CSV/API strategy changes.
-const STATIC_CACHE = 'ed-static-v22';
+const STATIC_CACHE = 'ed-static-v23';
 const API_CACHE = 'ed-api-v2';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [
@@ -66,47 +66,82 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-function cacheFirst(request, { useOfflineFallback = false } = {}) {
+function isHtmlShellPath(pathname) {
+  return STATIC_ASSETS.includes(pathname) && (pathname === '/' || /\.html$/i.test(pathname));
+}
+
+function safeResponseError() {
+  return new Response('Laikinai nepasiekiama.', {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
+function resolveCacheMatch(target, options = {}) {
+  const ignoreSearch = options?.ignoreSearch === true;
+  if (typeof caches?.match !== 'function') {
+    return Promise.resolve(undefined);
+  }
+  return caches.match(target, ignoreSearch ? { ignoreSearch: true } : undefined);
+}
+
+function cacheFirst(
+  request,
+  { useOfflineFallback = false, fallbackPath = OFFLINE_FALLBACK, ignoreSearchForCache = false } = {}
+) {
   return caches
-    .match(request)
+    .match(request, ignoreSearchForCache ? { ignoreSearch: true } : undefined)
     .then((cached) => {
       if (cached) {
         return cached;
       }
       return fetch(request).then((response) => {
         const clone = response.clone();
-        caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+        caches
+          .open(STATIC_CACHE)
+          .then((cache) => cache.put(request, clone))
+          .catch(() => {});
         return response;
       });
     })
     .catch(() => {
       if (useOfflineFallback) {
-        return caches.match(OFFLINE_FALLBACK);
+        return resolveCacheMatch(fallbackPath || OFFLINE_FALLBACK, { ignoreSearch: true }).then(
+          (fallback) => fallback || safeResponseError()
+        );
       }
-      return Response.error();
+      return safeResponseError();
     });
 }
 
-async function networkFirst(request, { useOfflineFallback = false } = {}) {
+async function networkFirst(
+  request,
+  { useOfflineFallback = false, fallbackPath = OFFLINE_FALLBACK, ignoreSearchForCache = false } = {}
+) {
   const cache = await caches.open(STATIC_CACHE);
   try {
     const response = await fetch(request);
     if (response?.ok) {
-      await cache.put(request, response.clone());
+      try {
+        await cache.put(request, response.clone());
+      } catch (_cacheWriteError) {
+        // Never fail the request because CacheStorage refused the write.
+      }
     }
     return response;
   } catch (_error) {
-    const cached = await cache.match(request);
+    const cached = await cache.match(request, ignoreSearchForCache ? { ignoreSearch: true } : undefined);
     if (cached) {
       return cached;
     }
     if (useOfflineFallback) {
-      const fallback = await cache.match(OFFLINE_FALLBACK);
+      const fallback = await cache.match(fallbackPath || OFFLINE_FALLBACK, { ignoreSearch: true });
       if (fallback) {
         return fallback;
       }
     }
-    return Response.error();
+    return safeResponseError();
   }
 }
 
@@ -158,8 +193,32 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(request.url);
+  const accept = request.headers.get('accept') || '';
+  const isDocumentLikeRequest =
+    request.mode === 'navigate' ||
+    request.destination === 'document' ||
+    request.destination === 'iframe' ||
+    accept.includes('text/html');
+  const htmlShellRequest = isHtmlShellPath(url.pathname) && isDocumentLikeRequest;
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirst(request, { useOfflineFallback: true }));
+    event.respondWith(
+      networkFirst(request, {
+        useOfflineFallback: true,
+        fallbackPath: isHtmlShellPath(url.pathname) ? url.pathname : OFFLINE_FALLBACK,
+        ignoreSearchForCache: true,
+      })
+    );
+    return;
+  }
+
+  if (htmlShellRequest) {
+    event.respondWith(
+      cacheFirst(request, {
+        useOfflineFallback: true,
+        fallbackPath: url.pathname,
+        ignoreSearchForCache: true,
+      })
+    );
     return;
   }
 

@@ -381,6 +381,7 @@ export async function runFeedbackRuntime(core) {
     numberFormatter,
   });
 
+  void loadChartJs();
   dataFlow.scheduleInitialLoad();
   persistFeedbackQuery();
 }

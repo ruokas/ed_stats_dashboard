@@ -1684,6 +1684,7 @@ export async function runGydytojaiRuntime(core) {
   wireInteractions(selectors, dashboardState, rerender, handleReportExportClick);
 
   try {
+    void loadChartJs();
     setStatus(selectors, 'loading');
     setLoadingVisualState(selectors, true);
     const data = await fetchData({ skipHistorical: false });

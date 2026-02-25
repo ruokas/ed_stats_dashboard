@@ -533,6 +533,50 @@ export function getCachedSummariesReportViewModels(
   return value;
 }
 
+export async function getCachedSummariesReportViewModelsAsync(
+  { dashboardState, settings, historicalRecords, scopeMeta, reports },
+  deps = {}
+) {
+  const key = buildSummariesReportsDerivedCacheKey(dashboardState, settings, scopeMeta);
+  const cache = dashboardState?.summariesReportsDerivedCache || {};
+  if (cache.recordsRef === historicalRecords && cache.key === key && cache.value) {
+    return cache.value;
+  }
+
+  const useWorker = deps?.useWorker === true && typeof deps?.runSummariesWorkerJobFn === 'function';
+  if (useWorker) {
+    try {
+      const workerResult = await deps.runSummariesWorkerJobFn(
+        {
+          reports,
+          scopeRecords: Array.isArray(scopeMeta?.records) ? scopeMeta.records : [],
+          controls: {
+            summariesReportsTopN: dashboardState?.summariesReportsTopN,
+            summariesReportsMinGroupSize: dashboardState?.summariesReportsMinGroupSize,
+          },
+        },
+        {}
+      );
+      const value = workerResult?.viewModels;
+      if (value && typeof value === 'object' && Array.isArray(value.diagnosisPercentRows)) {
+        dashboardState.summariesReportsDerivedCache = {
+          recordsRef: historicalRecords,
+          key,
+          value,
+        };
+        return value;
+      }
+    } catch (error) {
+      console.warn('Summaries worker view-models fallback to main thread:', error);
+    }
+  }
+
+  return getCachedSummariesReportViewModels(
+    { dashboardState, settings, historicalRecords, scopeMeta, reports },
+    deps
+  );
+}
+
 function renderAgeDistributionStackedBySex(
   slot,
   dashboardState,
@@ -1572,14 +1616,25 @@ function renderPspcCorrelationChart(slot, dashboardState, chartLib, canvas, rows
   });
 }
 
-async function renderReports(selectors, dashboardState, settings, exportState, reason = 'data') {
+async function renderReports(
+  selectors,
+  dashboardState,
+  settings,
+  exportState,
+  reason = 'data',
+  options = {}
+) {
+  const stage = options?.stage === 'primary' || options?.stage === 'secondary' ? options.stage : 'all';
+  const renderPrimaryStage = stage !== 'secondary';
+  const renderSecondaryStage = stage !== 'primary';
+  const forceSecondary = options?.forceSecondary === true;
   let historicalRecords;
   let scopeMeta;
   let reports;
   let viewModels;
   const lastRenderContext = dashboardState.summariesReportsLastRenderContext || null;
-  const canReuseThemeRender =
-    reason === 'theme' &&
+  const canReuseCachedRender =
+    (reason === 'theme' || stage === 'secondary') &&
     lastRenderContext &&
     lastRenderContext.rawRecordsRef === dashboardState.rawRecords &&
     lastRenderContext.historicalRecords &&
@@ -1587,7 +1642,7 @@ async function renderReports(selectors, dashboardState, settings, exportState, r
     lastRenderContext.reports &&
     lastRenderContext.viewModels;
 
-  if (canReuseThemeRender) {
+  if (canReuseCachedRender) {
     historicalRecords = lastRenderContext.historicalRecords;
     scopeMeta = lastRenderContext.scopeMeta;
     reports = lastRenderContext.reports;
@@ -1626,7 +1681,13 @@ async function renderReports(selectors, dashboardState, settings, exportState, r
   const referralHospitalizedByPspcYearly = reports.referralHospitalizedByPspcYearly;
   viewModels =
     viewModels ||
-    getCachedSummariesReportViewModels({ dashboardState, settings, historicalRecords, scopeMeta, reports });
+    (await getCachedSummariesReportViewModelsAsync(
+      { dashboardState, settings, historicalRecords, scopeMeta, reports },
+      {
+        useWorker: options?.useWorkerViewModels === true,
+        runSummariesWorkerJobFn: options?.runSummariesWorkerJob,
+      }
+    ));
   const chartLib = dashboardState.chartLib || (await loadChartJs());
   if (chartLib && !dashboardState.chartLib) {
     dashboardState.chartLib = chartLib;
@@ -1684,21 +1745,65 @@ async function renderReports(selectors, dashboardState, settings, exportState, r
     referralPspc: getCssVar('--report-referral-pspc', '#2563eb'),
     pspc: getCssVar('--report-pspc', '#f59e0b'),
   };
-  const treemapRendered = await renderDiagnosisTreemap(
-    dashboardState,
-    chartLib,
-    selectors.diagnosisChart,
-    diagnosisPercentRows
-  );
-  if (!treemapRendered) {
-    renderBarChart(
-      'diagnosisFrequency',
+  if (renderPrimaryStage) {
+    const treemapRendered = await renderDiagnosisTreemap(
       dashboardState,
       chartLib,
       selectors.diagnosisChart,
-      diagnosisPercentRows,
-      colors.diagnosis
+      diagnosisPercentRows
     );
+    if (!treemapRendered) {
+      renderBarChart(
+        'diagnosisFrequency',
+        dashboardState,
+        chartLib,
+        selectors.diagnosisChart,
+        diagnosisPercentRows,
+        colors.diagnosis
+      );
+    }
+    renderPercentLineTrend(
+      'z769Trend',
+      dashboardState,
+      chartLib,
+      selectors.z769TrendChart,
+      z769Rows,
+      'Z76.9 dalis'
+    );
+    renderPercentLineTrend(
+      'referralTrend',
+      dashboardState,
+      chartLib,
+      selectors.referralTrendChart,
+      referralPercentRows,
+      'Pacientai su siuntimu',
+      colors.referral
+    );
+
+    exportState.diagnosis = {
+      title: getReportCardTitle('diagnosis', 'Diagnozės', settings),
+      headers: ['Diagnozė', 'Procentas (%)'],
+      rows: diagnosisPercentRows.map((row) => [row.label, oneDecimalFormatter.format(row.percent)]),
+      target: selectors.diagnosisChart,
+    };
+    exportState.z769Trend = {
+      title: getReportCardTitle('z769Trend', 'Pasišalinę pacientai (Z76.9)', settings),
+      headers: ['Metai', 'Procentas (%)'],
+      rows: z769Rows.map((row) => [row.year, oneDecimalFormatter.format(row.percent)]),
+      target: selectors.z769TrendChart,
+    };
+    exportState.referralTrend = {
+      title: getReportCardTitle('referralTrend', 'Pacientai su siuntimu', settings),
+      headers: ['Metai', 'Pacientai su siuntimu (%)'],
+      rows: referralPercentRows.map((row) => [row.year, oneDecimalFormatter.format(row.percent)]),
+      target: selectors.referralTrendChart,
+    };
+  }
+  const shouldRenderSecondaryNow =
+    renderSecondaryStage &&
+    (forceSecondary || stage === 'all' || dashboardState.summariesReportsSecondaryVisible === true);
+  if (!shouldRenderSecondaryNow) {
+    return;
   }
   await renderAgeDiagnosisHeatmapChart(
     'ageDiagnosisHeatmap',
@@ -1706,23 +1811,6 @@ async function renderReports(selectors, dashboardState, settings, exportState, r
     chartLib,
     selectors.ageDiagnosisHeatmapChart,
     ageDiagnosisHeatmap
-  );
-  renderPercentLineTrend(
-    'z769Trend',
-    dashboardState,
-    chartLib,
-    selectors.z769TrendChart,
-    z769Rows,
-    'Z76.9 dalis'
-  );
-  renderPercentLineTrend(
-    'referralTrend',
-    dashboardState,
-    chartLib,
-    selectors.referralTrendChart,
-    referralPercentRows,
-    'Pacientai su siuntimu',
-    colors.referral
   );
   renderReferralDispositionYearlyChart(
     'referralDispositionYearly',
@@ -2087,7 +2175,7 @@ export async function runSummariesRuntime(core) {
     formatExportFilename,
     escapeCsvCell,
   });
-  const { fetchData } = createMainDataHandlers({
+  const { fetchData, runSummariesWorkerJob } = createMainDataHandlers({
     settings,
     DEFAULT_SETTINGS,
     dashboardState,
@@ -2102,9 +2190,109 @@ export async function runSummariesRuntime(core) {
     selectors.summariesReportsSubtitle.textContent =
       TEXT.summariesReports?.subtitle || selectors.summariesReportsSubtitle.textContent;
   }
+  const clientConfig = runtimeClient.getClientConfig();
+  const enableSummariesWorkerReports = clientConfig?.experimentalSummariesWorkerReports === true;
   let rerenderReports = () => Promise.resolve();
   let reportsRenderFrameId = null;
   let scheduledReportsRenderReason = 'controls';
+  let reportsSecondaryScheduledForce = false;
+  let summariesPrimaryVisibleMeasured = false;
+  let summariesSecondaryCompleteMeasured = false;
+  const dispatchSummariesLifecycleEvent = (name, detail = {}) => {
+    if (typeof window?.dispatchEvent !== 'function' || typeof window?.CustomEvent !== 'function') {
+      return;
+    }
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  };
+  const markSummariesPerfPoint = (name) => {
+    if (typeof performance?.mark !== 'function') {
+      return;
+    }
+    try {
+      performance.mark(name);
+    } catch (_error) {
+      // ignore
+    }
+  };
+  const ensureSummariesSecondaryVisibilityObserver = () => {
+    if (dashboardState.summariesReportsSecondaryVisible) {
+      return;
+    }
+    if (dashboardState.summariesReportsSecondaryVisibilityObserver) {
+      return;
+    }
+    const sentinels = [
+      selectors.ageDiagnosisHeatmapChart,
+      selectors.referralMonthlyHeatmapChart,
+      selectors.pspcCorrelationChart,
+    ].filter((node) => node instanceof HTMLElement);
+    if (!sentinels.length) {
+      dashboardState.summariesReportsSecondaryVisible = true;
+      return;
+    }
+    if (typeof window.IntersectionObserver !== 'function') {
+      dashboardState.summariesReportsSecondaryVisible = true;
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0);
+        if (!visible) {
+          return;
+        }
+        dashboardState.summariesReportsSecondaryVisible = true;
+        if (dashboardState.summariesReportsSecondaryVisibilityObserver) {
+          dashboardState.summariesReportsSecondaryVisibilityObserver.disconnect();
+          dashboardState.summariesReportsSecondaryVisibilityObserver = null;
+        }
+        scheduleReportsSecondaryRender('visibility');
+      },
+      { root: null, rootMargin: '200px 0px', threshold: [0, 0.01] }
+    );
+    sentinels.forEach((node) => {
+      observer.observe(node);
+    });
+    dashboardState.summariesReportsSecondaryVisibilityObserver = observer;
+  };
+  const scheduleReportsSecondaryRender = (reason = 'controls', options = {}) => {
+    dashboardState.summariesReportsDeferredRenderToken =
+      Number(dashboardState.summariesReportsDeferredRenderToken || 0) + 1;
+    const token = dashboardState.summariesReportsDeferredRenderToken;
+    dashboardState.summariesReportsSecondaryRenderReason = reason;
+    reportsSecondaryScheduledForce = reportsSecondaryScheduledForce || options?.forceSecondary === true;
+    if (dashboardState.summariesReportsSecondaryRenderScheduled) {
+      return;
+    }
+    dashboardState.summariesReportsSecondaryRenderScheduled = true;
+    runAfterDomAndIdle(
+      async () => {
+        dashboardState.summariesReportsSecondaryRenderScheduled = false;
+        if (token !== dashboardState.summariesReportsDeferredRenderToken) {
+          scheduleReportsSecondaryRender(dashboardState.summariesReportsSecondaryRenderReason || reason, {
+            forceSecondary: reportsSecondaryScheduledForce,
+          });
+          return;
+        }
+        const forceSecondary = reportsSecondaryScheduledForce;
+        reportsSecondaryScheduledForce = false;
+        await renderReports(selectors, dashboardState, settings, exportState, reason, {
+          stage: 'secondary',
+          forceSecondary,
+          useWorkerViewModels: enableSummariesWorkerReports,
+          runSummariesWorkerJob,
+        });
+        if (dashboardState.summariesReportsSecondaryVisible || forceSecondary) {
+          dashboardState.summariesReportsSecondaryCompletedAt = Date.now();
+          if (!summariesSecondaryCompleteMeasured) {
+            summariesSecondaryCompleteMeasured = true;
+            markSummariesPerfPoint('app-summaries-secondary-complete');
+            dispatchSummariesLifecycleEvent('app:summaries-secondary-complete', { reason });
+          }
+        }
+      },
+      { timeout: 1400 }
+    );
+  };
   const scheduleReportsRender = (reason = 'controls') => {
     scheduledReportsRenderReason = reason;
     if (reportsRenderFrameId != null) {
@@ -2134,7 +2322,24 @@ export async function runSummariesRuntime(core) {
     },
   });
   rerenderReports = (reason = 'controls') =>
-    renderReports(selectors, dashboardState, settings, exportState, reason);
+    (async () => {
+      if (reason === 'controls') {
+        dashboardState.summariesReportsSecondaryVisible = true;
+      }
+      await renderReports(selectors, dashboardState, settings, exportState, reason, {
+        stage: 'primary',
+        useWorkerViewModels: enableSummariesWorkerReports,
+        runSummariesWorkerJob,
+      });
+      dashboardState.summariesReportsPrimaryRenderedAt = Date.now();
+      if (!summariesPrimaryVisibleMeasured) {
+        summariesPrimaryVisibleMeasured = true;
+        markSummariesPerfPoint('app-summaries-primary-visible');
+        dispatchSummariesLifecycleEvent('app:summaries-primary-visible', { reason });
+      }
+      ensureSummariesSecondaryVisibilityObserver();
+      scheduleReportsSecondaryRender(reason, { forceSecondary: reason === 'controls' });
+    })();
   wireSummariesInteractions({
     selectors,
     dashboardState,
@@ -2184,6 +2389,8 @@ export async function runSummariesRuntime(core) {
       },
     })
   );
+  void loadChartJs();
+  ensureSummariesSecondaryVisibilityObserver();
   void rerenderReports('data');
   updateSummariesFiltersSummary();
   persistSummariesQuery();

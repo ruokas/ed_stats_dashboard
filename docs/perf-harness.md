@@ -9,6 +9,8 @@ Collect repeatable before/after performance runs for every page and compute medi
 - `app:page-runner`
 - `app:charts-first-visible` (charts page)
 - `app:charts-secondary-complete` (charts page)
+- `app:summaries-first-visible` (summaries page)
+- `app:summaries-secondary-complete` (summaries page)
 
 ## Run Matrix
 - Pages: `index.html`, `charts.html`, `recent.html`, `summaries.html`, `feedback.html`, `ed.html`
@@ -77,6 +79,29 @@ performance.getEntriesByType('measure')
 // PerfMonitor writes console.table rows automatically when profiling is enabled.
 // Copy the relevant charts-* rows for before/after comparisons.
 ```
+
+## Summaries Startup Deep-Dive (Cold-Load)
+
+For `summaries.html` staged-report rendering work, also capture:
+
+- `app:summaries-first-visible`
+- `app:summaries-secondary-complete`
+
+## Transfer / Materialization Deep-Dive
+
+When profiling is enabled on data-heavy pages (`kpi`, `recent`, `charts`), also capture `PerfMonitor` rows for:
+
+- `data-worker-message-handle`
+- `data-worker-success-materialize`
+- `data-cache-read-memory`
+- `data-cache-read-persistent`
+- `data-cache-persistent-materialize`
+- `data-cache-write-persistent`
+
+These help distinguish:
+
+- worker compute time vs main-thread worker result handling/materialization
+- IndexedDB read latency vs payload deserialization/materialization cost
 
 ## Worker Benchmark Summary
 

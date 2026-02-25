@@ -45,9 +45,20 @@ function normalizeCreateDataFlowArgs(env = {}) {
     renderCharts: env.renderCharts ?? chartHooks.renderCharts ?? noopAsync,
     renderChartsHospitalTable: env.renderChartsHospitalTable ?? chartHooks.renderChartsHospitalTable ?? noop,
     getHeatmapData: env.getHeatmapData ?? chartHooks.getHeatmapData ?? (() => null),
-    onChartsPrimaryVisible: env.onChartsPrimaryVisible ?? chartHooks.onChartsPrimaryVisible ?? noop,
+    onPrimaryVisible: env.onPrimaryVisible ?? uiHooks.onPrimaryVisible ?? noop,
+    onSecondaryComplete: env.onSecondaryComplete ?? uiHooks.onSecondaryComplete ?? noop,
+    onChartsPrimaryVisible:
+      env.onChartsPrimaryVisible ??
+      chartHooks.onChartsPrimaryVisible ??
+      env.onPrimaryVisible ??
+      uiHooks.onPrimaryVisible ??
+      noop,
     scheduleChartsSecondaryRender:
-      env.scheduleChartsSecondaryRender ?? chartHooks.scheduleChartsSecondaryRender ?? null,
+      env.scheduleChartsSecondaryRender ??
+      chartHooks.scheduleChartsSecondaryRender ??
+      env.scheduleSecondaryRender ??
+      uiHooks.scheduleSecondaryRender ??
+      null,
     showKpiSkeleton: env.showKpiSkeleton ?? kpiHooks.showKpiSkeleton ?? noop,
     syncKpiFilterControls: env.syncKpiFilterControls ?? kpiHooks.syncKpiFilterControls ?? noop,
     applyKpiFiltersAndRender: env.applyKpiFiltersAndRender ?? kpiHooks.applyKpiFiltersAndRender ?? noopAsync,
@@ -92,6 +103,16 @@ function normalizeCreateDataFlowArgs(env = {}) {
     renderMonthlyTable: env.renderMonthlyTable ?? dataHooks.renderMonthlyTable ?? noop,
     computeYearlyStats: env.computeYearlyStats ?? dataHooks.computeYearlyStats ?? noopArray,
     renderYearlyTable: env.renderYearlyTable ?? dataHooks.renderYearlyTable ?? noop,
+    supportsDeferredHistoricalHydration:
+      env.supportsDeferredHistoricalHydration ?? dataHooks.supportsDeferredHistoricalHydration,
+    supportsPartialPrimaryRender: env.supportsPartialPrimaryRender ?? dataHooks.supportsPartialPrimaryRender,
+    requiresFullRecordsForPrimary:
+      env.requiresFullRecordsForPrimary ?? dataHooks.requiresFullRecordsForPrimary,
+    fetchProfile: env.fetchProfile ?? dataHooks.fetchProfile,
+    supportsDeferredFullRecordsHydration:
+      env.supportsDeferredFullRecordsHydration ?? dataHooks.supportsDeferredFullRecordsHydration,
+    requiresFullRecordsForInteractions:
+      env.requiresFullRecordsForInteractions ?? dataHooks.requiresFullRecordsForInteractions,
   };
 }
 
@@ -137,12 +158,20 @@ export function createDataFlow(env = {}) {
     renderCharts,
     renderChartsHospitalTable,
     getHeatmapData,
+    onPrimaryVisible,
+    onSecondaryComplete,
     scheduleChartsSecondaryRender,
     renderRecentTable,
     computeMonthlyStats,
     renderMonthlyTable,
     computeYearlyStats,
     renderYearlyTable,
+    supportsDeferredHistoricalHydration,
+    supportsPartialPrimaryRender,
+    requiresFullRecordsForPrimary,
+    fetchProfile,
+    supportsDeferredFullRecordsHydration,
+    requiresFullRecordsForInteractions,
     updateFeedbackFilterOptions,
     applyFeedbackFiltersAndRender,
     applyFeedbackStatusNote,
@@ -203,16 +232,29 @@ export function createDataFlow(env = {}) {
       !activeConfig.yearly &&
       !activeConfig.feedback
   );
-  const supportsDeferredMainHydration = Boolean(isKpiOnlyPage || isEdOnlyPage);
+  const supportsDeferredMainHydration =
+    typeof supportsDeferredHistoricalHydration === 'boolean'
+      ? supportsDeferredHistoricalHydration
+      : Boolean(isKpiOnlyPage || isEdOnlyPage);
   const disableHistoricalForPage = Boolean(isEdOnlyPage);
   const canUseDailyStatsCache = Boolean(canUseDailyStatsCacheOnly);
+  const mainDataFetchProfile =
+    typeof fetchProfile === 'string' && fetchProfile.trim().length ? fetchProfile.trim() : 'full';
+  const supportsDeferredFullRecordsMainHydration =
+    typeof supportsDeferredFullRecordsHydration === 'boolean' ? supportsDeferredFullRecordsHydration : false;
+  const pageRequiresFullRecordsForInteractions =
+    typeof requiresFullRecordsForInteractions === 'boolean' ? requiresFullRecordsForInteractions : false;
   let historicalHydrationInFlight = false;
   let historicalHydrated = false;
+  let fullRecordsHydrationInFlight = false;
+  let fullRecordsHydrated = false;
   let visibilityHandlersBound = false;
   let deferredHydrationQueued = false;
+  let deferredFullRecordsHydrationQueued = false;
   let lastIssuedLoadToken = 0;
   let activeLoadAbortController = null;
   let activeHydrationAbortController = null;
+  let activeFullRecordsHydrationAbortController = null;
 
   function isLoadTokenCurrent(token) {
     return Number.isFinite(token) && token === lastIssuedLoadToken;
@@ -292,6 +334,9 @@ export function createDataFlow(env = {}) {
       ensureChartsStartupState();
       dashboardState.chartsStartupPhases.primaryVisible = true;
       dashboardState.chartsFirstVisibleAt = Date.now();
+      if (typeof onPrimaryVisible === 'function') {
+        onPrimaryVisible({ scope: 'charts' });
+      }
     } finally {
       finishPerfStage(handle);
     }
@@ -336,6 +381,9 @@ export function createDataFlow(env = {}) {
             await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
           }
           dashboardState.chartsStartupPhases.secondaryComplete = true;
+          if (typeof onSecondaryComplete === 'function') {
+            onSecondaryComplete({ scope: 'charts', reason });
+          }
           markBrowserMetric('app-charts-secondary-complete');
           dispatchChartsLifecycleEvent('app:charts-secondary-complete', {
             loadCounter: dashboardState.loadCounter,
@@ -467,6 +515,153 @@ export function createDataFlow(env = {}) {
     setAutoRefreshTimerId(nextTimerId);
   }
 
+  async function applyHydratedMainDataset({ dataset, runNumber, settings, chartsReason = 'hydrate' }) {
+    if (!dataset || dashboardState.loading || runNumber !== dashboardState.loadCounter) {
+      return false;
+    }
+    const combinedRecords = Array.isArray(dataset.records) ? dataset.records : [];
+    const primaryRecords =
+      Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
+        ? dataset.primaryRecords
+        : combinedRecords;
+    const dailyStats =
+      Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
+        ? dataset.dailyStats
+        : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
+    const primaryDaily =
+      Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
+        ? dataset.primaryDaily
+        : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS);
+
+    dashboardState.rawRecords = combinedRecords;
+    dashboardState.dailyStats = dailyStats;
+    dashboardState.primaryRecords = primaryRecords.slice();
+    dashboardState.primaryDaily = primaryDaily.slice();
+    dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
+    dashboardState.dataMeta = dataset.meta || null;
+    if (dashboardState.mainData && typeof dashboardState.mainData === 'object') {
+      const recordsState = String(dataset?.meta?.recordsState || '');
+      dashboardState.mainData.recordsHydrationState =
+        recordsState === 'deferred' ? 'deferred' : combinedRecords.length > 0 ? 'full' : 'none';
+      dashboardState.mainData.deferredHydration = dataset?.deferredHydration || null;
+    }
+
+    if (activeConfig.charts) {
+      dashboardState.chartData.baseDaily = dailyStats;
+      dashboardState.chartData.baseRecords = combinedRecords;
+      dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, {
+        getDefaultChartFilters,
+        KPI_FILTER_LABELS,
+      });
+      syncChartFilterControls();
+      populateChartYearOptions(dailyStats);
+      if (typeof populateChartsHospitalTableYearOptions === 'function') {
+        populateChartsHospitalTableYearOptions(combinedRecords);
+      }
+      populateHourlyCompareYearOptions(dailyStats);
+      if (typeof populateHeatmapYearOptions === 'function') {
+        populateHeatmapYearOptions(dailyStats);
+        if (typeof syncHeatmapFilterControls === 'function') {
+          syncHeatmapFilterControls();
+        }
+      }
+      const prepareHandle = startPerfStage('charts-main-prepare', { etapas: chartsReason });
+      const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
+      finishPerfStage(prepareHandle);
+      await renderChartsPrimaryStage(scopedCharts);
+      scheduleChartsSecondaryAndHospitalRender({ reason: chartsReason });
+    }
+    if (activeConfig.kpi) {
+      await applyKpiFiltersAndRender();
+    }
+    if (activeConfig.recent) {
+      const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
+        ? Number(settings.calculations.windowDays)
+        : DEFAULT_SETTINGS.calculations.windowDays;
+      const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
+      const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
+        ? Number(settings.calculations.recentDays)
+        : DEFAULT_SETTINGS.calculations.recentDays;
+      const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
+      const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
+      renderRecentTable(recentDailyStats);
+    }
+    if (activeConfig.ed && dashboardState.ed) {
+      await renderEdDashboard(dashboardState.ed);
+    }
+    writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
+    return true;
+  }
+
+  async function hydrateDeferredFullRecords({ runNumber, settings, deferredHydration }) {
+    if (
+      !supportsDeferredFullRecordsMainHydration ||
+      !pageRequiresFullRecordsForInteractions ||
+      fullRecordsHydrationInFlight ||
+      fullRecordsHydrated ||
+      !deferredHydration ||
+      typeof deferredHydration.hydrate !== 'function'
+    ) {
+      return;
+    }
+    if (
+      activeFullRecordsHydrationAbortController &&
+      !activeFullRecordsHydrationAbortController.signal.aborted
+    ) {
+      activeFullRecordsHydrationAbortController.abort();
+    }
+    const hydrationController = new AbortController();
+    activeFullRecordsHydrationAbortController = hydrationController;
+    fullRecordsHydrationInFlight = true;
+    try {
+      const dataset = await deferredHydration.hydrate({
+        signal: hydrationController.signal,
+        skipHistorical: true,
+      });
+      const applied = await applyHydratedMainDataset({
+        dataset,
+        runNumber,
+        settings,
+        chartsReason: 'full-records-hydrate',
+      });
+      if (applied) {
+        fullRecordsHydrated = true;
+      }
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+      const errorInfo = describeError(error, { code: 'MAIN_FULL_RECORDS_HYDRATE' });
+      console.warn(errorInfo.log, error);
+    } finally {
+      fullRecordsHydrationInFlight = false;
+      if (activeFullRecordsHydrationAbortController === hydrationController) {
+        activeFullRecordsHydrationAbortController = null;
+      }
+    }
+  }
+
+  function scheduleDeferredFullRecordsHydration({ runNumber, settings, deferredHydration }) {
+    if (
+      deferredFullRecordsHydrationQueued ||
+      fullRecordsHydrationInFlight ||
+      fullRecordsHydrated ||
+      !deferredHydration ||
+      typeof deferredHydration.hydrate !== 'function'
+    ) {
+      return;
+    }
+    deferredFullRecordsHydrationQueued = true;
+    const execute = () => {
+      deferredFullRecordsHydrationQueued = false;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
+      void hydrateDeferredFullRecords({ runNumber, settings, deferredHydration });
+    };
+    runAfterDomAndIdle(execute, { timeout: 600 });
+  }
+
   async function hydrateWithHistoricalData({
     runNumber,
     settings,
@@ -493,61 +688,15 @@ export function createDataFlow(env = {}) {
         includeYearlyStats: !activeConfig.charts,
         signal: hydrationController.signal,
       });
-      if (!dataset || dashboardState.loading || runNumber !== dashboardState.loadCounter) {
-        return;
+      const applied = await applyHydratedMainDataset({
+        dataset,
+        runNumber,
+        settings,
+        chartsReason: 'hydrate',
+      });
+      if (applied) {
+        historicalHydrated = true;
       }
-      const combinedRecords = Array.isArray(dataset.records) ? dataset.records : [];
-      const primaryRecords =
-        Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
-          ? dataset.primaryRecords
-          : combinedRecords;
-      const dailyStats =
-        Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
-          ? dataset.dailyStats
-          : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
-      const primaryDaily =
-        Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
-          ? dataset.primaryDaily
-          : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS);
-      dashboardState.rawRecords = combinedRecords;
-      dashboardState.dailyStats = dailyStats;
-      dashboardState.primaryRecords = primaryRecords.slice();
-      dashboardState.primaryDaily = primaryDaily.slice();
-      dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
-      dashboardState.dataMeta = dataset.meta || null;
-      if (activeConfig.charts) {
-        dashboardState.chartData.baseDaily = dailyStats;
-        dashboardState.chartData.baseRecords = combinedRecords;
-        dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, {
-          getDefaultChartFilters,
-          KPI_FILTER_LABELS,
-        });
-        syncChartFilterControls();
-        populateChartYearOptions(dailyStats);
-        if (typeof populateChartsHospitalTableYearOptions === 'function') {
-          populateChartsHospitalTableYearOptions(combinedRecords);
-        }
-        populateHourlyCompareYearOptions(dailyStats);
-        if (typeof populateHeatmapYearOptions === 'function') {
-          populateHeatmapYearOptions(dailyStats);
-          if (typeof syncHeatmapFilterControls === 'function') {
-            syncHeatmapFilterControls();
-          }
-        }
-        const prepareHandle = startPerfStage('charts-main-prepare', { etapas: 'hydrate' });
-        const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-        finishPerfStage(prepareHandle);
-        await renderChartsPrimaryStage(scopedCharts);
-        scheduleChartsSecondaryAndHospitalRender({ reason: 'hydrate' });
-      }
-      if (activeConfig.kpi) {
-        await applyKpiFiltersAndRender();
-      }
-      if (activeConfig.ed && dashboardState.ed) {
-        await renderEdDashboard(dashboardState.ed);
-      }
-      writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
-      historicalHydrated = true;
     } catch (error) {
       if (isAbortError(error)) {
         return;
@@ -577,6 +726,16 @@ export function createDataFlow(env = {}) {
     const execute = () => {
       deferredHydrationQueued = false;
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
+      if (fullRecordsHydrationInFlight || deferredFullRecordsHydrationQueued) {
+        scheduleDeferredHydration({
+          runNumber,
+          settings,
+          workerProgressReporter,
+          primaryChunkReporter,
+          historicalChunkReporter,
+        });
         return;
       }
       hydrateWithHistoricalData({
@@ -611,6 +770,12 @@ export function createDataFlow(env = {}) {
     if (activeHydrationAbortController && !activeHydrationAbortController.signal.aborted) {
       activeHydrationAbortController.abort();
     }
+    if (
+      activeFullRecordsHydrationAbortController &&
+      !activeFullRecordsHydrationAbortController.signal.aborted
+    ) {
+      activeFullRecordsHydrationAbortController.abort();
+    }
     if (activeLoadAbortController && !activeLoadAbortController.signal.aborted) {
       activeLoadAbortController.abort();
     }
@@ -624,6 +789,7 @@ export function createDataFlow(env = {}) {
       : null;
     const fetchSummary = { pagrindinis: 'tinklas', istorinis: 'tinklas' };
     let fetchMeasured = false;
+    fullRecordsHydrated = false;
 
     dashboardState.loading = true;
     const shouldShowSkeletons = !dashboardState.hasLoadedOnce;
@@ -669,10 +835,19 @@ export function createDataFlow(env = {}) {
       const shouldSkipHistoricalOnMainFetch = Boolean(
         shouldDeferHistoricalOnThisLoad || disableHistoricalForPage
       );
+      const shouldDeferFullRecordsOnMainFetch = Boolean(
+        supportsDeferredFullRecordsMainHydration &&
+          pageRequiresFullRecordsForInteractions &&
+          mainDataFetchProfile !== 'full' &&
+          !cachedDailyStats
+      );
       const enableChartsPartialStartup = Boolean(
         activeConfig.charts &&
           !dashboardState.hasLoadedOnce &&
-          clientConfig?.experimentalChartsPartialStartup === true
+          (typeof supportsPartialPrimaryRender === 'boolean'
+            ? supportsPartialPrimaryRender
+            : clientConfig?.experimentalChartsPartialStartup === true) &&
+          requiresFullRecordsForPrimary !== true
       );
       const chartsPartialState = {
         renderedPrimary: false,
@@ -735,6 +910,8 @@ export function createDataFlow(env = {}) {
                 onWorkerProgress: workerProgressReporter,
                 skipHistorical: shouldSkipHistoricalOnMainFetch,
                 includeYearlyStats: !activeConfig.charts,
+                fetchProfile: mainDataFetchProfile,
+                deferFullRecords: shouldDeferFullRecordsOnMainFetch,
                 onPrimaryPartial: enableChartsPartialStartup
                   ? (payload) => {
                       void maybeRenderChartsPrimaryFromPartial(payload);
@@ -872,6 +1049,12 @@ export function createDataFlow(env = {}) {
         dashboardState.primaryDaily = primaryDaily.slice();
         dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
         dashboardState.dataMeta = dataset.meta || null;
+        if (dashboardState.mainData && typeof dashboardState.mainData === 'object') {
+          const recordsState = String(dataset?.meta?.recordsState || '');
+          dashboardState.mainData.recordsHydrationState =
+            recordsState === 'deferred' ? 'deferred' : combinedRecords.length > 0 ? 'full' : 'none';
+          dashboardState.mainData.deferredHydration = dataset?.deferredHydration || null;
+        }
         if (!cachedDailyStats && !shouldDeferHistoricalOnThisLoad) {
           writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
         }
@@ -973,6 +1156,18 @@ export function createDataFlow(env = {}) {
       }
 
       setStatus('success');
+      if (
+        shouldFetchMainData &&
+        !cachedDailyStats &&
+        dataset?.deferredHydration &&
+        typeof dataset.deferredHydration.hydrate === 'function'
+      ) {
+        scheduleDeferredFullRecordsHydration({
+          runNumber,
+          settings,
+          deferredHydration: dataset.deferredHydration,
+        });
+      }
       if ((shouldFetchMainData && shouldDeferHistoricalOnThisLoad) || shouldDeferAllMainDataOnThisLoad) {
         scheduleDeferredHydration({
           runNumber,

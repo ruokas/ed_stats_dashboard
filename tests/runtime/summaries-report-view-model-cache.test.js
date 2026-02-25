@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   computeSummariesReportViewModels,
   getCachedSummariesReportViewModels,
+  getCachedSummariesReportViewModelsAsync,
 } from '../../src/app/runtime/runtimes/summaries-runtime-impl.js';
 
 function createReportsFixture() {
@@ -162,5 +163,105 @@ describe('summaries report view-model caching', () => {
       z769Rows: expect.any(Array),
       referralPercentRows: expect.any(Array),
     });
+  });
+
+  it('uses worker-provided view models when enabled and caches the result', async () => {
+    const dashboardState = {
+      summariesReportsYear: 'all',
+      summariesReportsTopN: 15,
+      summariesReportsMinGroupSize: 100,
+      summariesReferralPspcSort: 'desc',
+      summariesReportsDerivedCache: { recordsRef: null, key: '', value: null },
+    };
+    const settings = { calculations: { shiftStartHour: 7 } };
+    const historicalRecords = [{ id: 1 }];
+    const scopeMeta = { records: [{ id: 'scope-1' }] };
+    const reports = createReportsFixture();
+    const workerViewModels = {
+      diagnosisPercentRows: [{ label: 'A00', count: 10, percent: 50 }],
+      ageDistributionBySex: { total: 0, sexOrder: [], rows: [] },
+      ageDistributionRows: [],
+      minGroupSize: 100,
+      topN: 15,
+      pspcCrossDetailed: { rows: [] },
+      referralHospitalizedPspcAllRows: [],
+      referralHospitalizedPspcYearlyRows: [],
+      referralHospitalizedPspcTrendCandidates: [],
+      referralHospitalizedPspcTrendOptions: [],
+      pspcCorrelationRows: [],
+      pspcPercentRows: [],
+      z769Rows: [],
+      referralPercentRows: [],
+    };
+    const runSummariesWorkerJobFn = vi.fn(async () => ({ viewModels: workerViewModels }));
+    const computeAgeDistributionBySexFn = vi.fn(() => ({ total: 0, sexOrder: [], rows: [] }));
+    const computeReferralHospitalizedShareByPspcDetailedFn = vi.fn(() => ({ rows: [] }));
+
+    const first = await getCachedSummariesReportViewModelsAsync(
+      { dashboardState, settings, historicalRecords, scopeMeta, reports },
+      {
+        useWorker: true,
+        runSummariesWorkerJobFn,
+        computeAgeDistributionBySexFn,
+        computeReferralHospitalizedShareByPspcDetailedFn,
+      }
+    );
+    const second = await getCachedSummariesReportViewModelsAsync(
+      { dashboardState, settings, historicalRecords, scopeMeta, reports },
+      {
+        useWorker: true,
+        runSummariesWorkerJobFn,
+        computeAgeDistributionBySexFn,
+        computeReferralHospitalizedShareByPspcDetailedFn,
+      }
+    );
+
+    expect(first).toBe(workerViewModels);
+    expect(second).toBe(first);
+    expect(runSummariesWorkerJobFn).toHaveBeenCalledTimes(1);
+    expect(computeAgeDistributionBySexFn).not.toHaveBeenCalled();
+    expect(computeReferralHospitalizedShareByPspcDetailedFn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to main-thread derived model computation when worker reports fail', async () => {
+    const dashboardState = {
+      summariesReportsYear: 'all',
+      summariesReportsTopN: 15,
+      summariesReportsMinGroupSize: 100,
+      summariesReferralPspcSort: 'desc',
+      summariesReportsDerivedCache: { recordsRef: null, key: '', value: null },
+    };
+    const settings = { calculations: { shiftStartHour: 7 } };
+    const historicalRecords = [{ id: 1 }];
+    const scopeMeta = { records: [{ id: 'scope-1' }] };
+    const reports = createReportsFixture();
+    const computeAgeDistributionBySexFn = vi.fn(() => ({ total: 0, sexOrder: [], rows: [] }));
+    const computeReferralHospitalizedShareByPspcDetailedFn = vi.fn(() => ({ rows: [] }));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      const result = await getCachedSummariesReportViewModelsAsync(
+        { dashboardState, settings, historicalRecords, scopeMeta, reports },
+        {
+          useWorker: true,
+          runSummariesWorkerJobFn: vi.fn(async () => {
+            throw new Error('worker unavailable');
+          }),
+          computeAgeDistributionBySexFn,
+          computeReferralHospitalizedShareByPspcDetailedFn,
+        }
+      );
+
+      expect(result).toMatchObject({
+        diagnosisPercentRows: expect.any(Array),
+        ageDistributionRows: expect.any(Array),
+        pspcPercentRows: expect.any(Array),
+      });
+      expect(computeAgeDistributionBySexFn).toHaveBeenCalledTimes(1);
+      expect(computeReferralHospitalizedShareByPspcDetailedFn).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });

@@ -4,7 +4,7 @@
  */
 
 /**
- * @typedef {'transformCsv' | 'transformEdCsv' | 'applyKpiFilters'} WorkerRequestType
+ * @typedef {'transformCsv' | 'transformEdCsv' | 'applyKpiFilters' | 'storeDataset' | 'releaseDataset' | 'applyKpiFiltersByHandle' | 'getKpiDateKeysByHandle' | 'getKpiRecordsForDateByHandle' | 'computeKpiLastShiftHourlyByHandle' | 'computeSummariesReports'} WorkerRequestType
  */
 
 /**
@@ -21,6 +21,11 @@
  *   dailyStats?: object[];
  *   calculations?: object;
  *   calculationDefaults?: object;
+ *   datasetHandle?: string;
+ *   datasetType?: string;
+ *   resultMode?: string;
+ *   selectedDate?: string | null;
+ *   lastShiftHourlyMetric?: string;
  * }} WorkerRequest
  */
 
@@ -30,6 +35,7 @@
  *   status: 'success' | 'error' | 'progress' | 'partial';
  *   phase?: string;
  *   payload?: unknown;
+ *   meta?: object;
  *   error?: { message: string; name?: string; stack?: string };
  * }} WorkerResponse
  */
@@ -74,9 +80,27 @@ function createPartialReporter(id) {
       status: 'partial',
       phase: String(phase),
       payload,
+      meta: buildPayloadMeta(payload),
     };
     self.postMessage(partialMessage);
   };
+}
+
+function buildPayloadMeta(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+  const meta = {};
+  if (Array.isArray(payload.records)) {
+    meta.recordsCount = payload.records.length;
+  }
+  if (Array.isArray(payload.dailyStats)) {
+    meta.dailyStatsCount = payload.dailyStats.length;
+  }
+  if (typeof payload.datasetHandle === 'string') {
+    meta.datasetHandle = payload.datasetHandle;
+  }
+  return Object.keys(meta).length ? meta : null;
 }
 
 /**
@@ -89,6 +113,7 @@ function handleWorkerMessage(event) {
   }
   try {
     let payload;
+    const computeStart = typeof performance?.now === 'function' ? performance.now() : Number(Date.now());
     if (type === 'transformCsv') {
       const { csvText, options, progressStep } = event.data;
       const reportProgress =
@@ -104,12 +129,50 @@ function handleWorkerMessage(event) {
       payload = transformEdCsvWithSummary(csvText, options || {});
     } else if (type === 'applyKpiFilters') {
       payload = applyKpiFiltersInWorker(event.data);
+    } else if (type === 'storeDataset') {
+      if (typeof storeKpiDatasetInWorker !== 'function') {
+        throw new Error('storeDataset job nepalaikomas šiame worker yje.');
+      }
+      payload = storeKpiDatasetInWorker(event.data);
+    } else if (type === 'releaseDataset') {
+      if (typeof releaseKpiDatasetInWorker !== 'function') {
+        throw new Error('releaseDataset job nepalaikomas šiame worker yje.');
+      }
+      payload = releaseKpiDatasetInWorker(event.data);
+    } else if (type === 'applyKpiFiltersByHandle') {
+      if (typeof applyKpiFiltersByHandleInWorker !== 'function') {
+        throw new Error('applyKpiFiltersByHandle job nepalaikomas šiame worker yje.');
+      }
+      payload = applyKpiFiltersByHandleInWorker(event.data);
+    } else if (type === 'getKpiDateKeysByHandle') {
+      if (typeof getKpiDateKeysByHandleInWorker !== 'function') {
+        throw new Error('getKpiDateKeysByHandle job nepalaikomas šiame worker yje.');
+      }
+      payload = getKpiDateKeysByHandleInWorker(event.data);
+    } else if (type === 'getKpiRecordsForDateByHandle') {
+      if (typeof getKpiRecordsForDateByHandleInWorker !== 'function') {
+        throw new Error('getKpiRecordsForDateByHandle job nepalaikomas šiame worker yje.');
+      }
+      payload = getKpiRecordsForDateByHandleInWorker(event.data);
+    } else if (type === 'computeKpiLastShiftHourlyByHandle') {
+      if (typeof computeKpiLastShiftHourlyByHandleInWorker !== 'function') {
+        throw new Error('computeKpiLastShiftHourlyByHandle job nepalaikomas šiame worker yje.');
+      }
+      payload = computeKpiLastShiftHourlyByHandleInWorker(event.data);
+    } else if (type === 'computeSummariesReports') {
+      if (typeof computeSummariesReportsInWorker !== 'function') {
+        throw new Error('computeSummariesReports job nepalaikomas šiame worker yje.');
+      }
+      payload = computeSummariesReportsInWorker(event.data);
     } else {
-      return;
+      throw new Error(`Nepalaikomas worker uzklausos tipas: ${String(type)}`);
     }
 
+    const computeEnd = typeof performance?.now === 'function' ? performance.now() : Number(Date.now());
+    const payloadMeta = buildPayloadMeta(payload) || {};
+    payloadMeta.computeDurationMs = Number((computeEnd - computeStart).toFixed(2));
     /** @type {WorkerResponse} */
-    const successMessage = { id, status: 'success', payload };
+    const successMessage = { id, status: 'success', payload, meta: payloadMeta };
     self.postMessage(successMessage);
   } catch (error) {
     /** @type {WorkerResponse} */
