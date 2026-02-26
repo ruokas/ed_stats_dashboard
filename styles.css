@@ -4064,6 +4064,11 @@ body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:focus-visible {
   overflow: visible;
 }
 
+.feedback-table-actions {
+  justify-content: flex-end;
+  margin: 10px 0 8px;
+}
+
 .table-wrapper--feedback table {
   table-layout: fixed;
 }
