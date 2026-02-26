@@ -1,0 +1,55 @@
+{
+  "dataSource": {
+    "url": "<PASTE_PRIMARY_CSV_URL>",
+    "feedback": {
+      "url": "<PASTE_FEEDBACK_CSV_URL>"
+    },
+    "ed": {
+      "url": "<PASTE_ED_CSV_URL>"
+    },
+    "historical": {
+      "enabled": false,
+      "label": "Papildomas istorinis rinkinys",
+      "url": ""
+    }
+  },
+  "csv": {
+    "arrival": "Atvykimo data",
+    "discharge": "Išrašymo data",
+    "dayNight": "Diena/naktis",
+    "gmp": "GMP",
+    "department": "Nukreiptas į padalinį",
+    "number": "Numeris",
+    "closingDoctor": "Uždaręs gydytojas",
+    "trueValues": "1,true,taip,t,yes,y,GMP,su GMP,GMP (su GMP)",
+    "hospitalizedValues": "",
+    "nightKeywords": "nakt,night",
+    "dayKeywords": "dien,ryt,vak,day"
+  },
+  "calculations": {
+    "windowDays": 365,
+    "recentDays": 7,
+    "nightStartHour": 20,
+    "nightEndHour": 7
+  },
+  "output": {
+    "pageTitle": "ED statistika",
+    "title": "ED statistika",
+    "subtitle": "Greita statistikos apžvalga.",
+    "kpiSubtitle": "Paskutinė pamaina vs vidurkis",
+    "chartsSubtitle": "Kasdieniai skaičiai, srautas pagal sprendimą ir atvykimų žemėlapis",
+    "recentSubtitle": "Kasdienė suvestinė pagal naujausius duomenis.",
+    "monthlySubtitle": "Kalendoriniai mėnesiai (paskutiniai 12 mėnesių).",
+    "yearlySubtitle": "Kalendoriniai metai.",
+    "feedbackSubtitle": "Apibendrinti apklausos rezultatai.",
+    "footerSource": "",
+    "tabOverviewLabel": "Bendras vaizdas",
+    "tabEdLabel": "ED skydelis",
+    "edTitle": "ED skydelis"
+  },
+  "doctors": {
+    "specialties": {
+      "enabled": false
+    }
+  }
+}

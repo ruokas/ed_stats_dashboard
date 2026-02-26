@@ -7,12 +7,12 @@ export const FEEDBACK_LEGACY_MAX = 10;
 export const AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
 export const DEFAULT_FOOTER_SOURCE = '';
 export const DEFAULT_KPI_WINDOW_DAYS = 365;
-export const DEFAULT_PAGE_TITLE = document.title || 'RŠL SMPS statistika';
+export const DEFAULT_PAGE_TITLE = document.title || 'ED statistika';
 export const THEME_STORAGE_KEY = 'edDashboardTheme';
 export const CLIENT_CONFIG_KEY = 'edDashboardClientConfig-v1';
 
 export const TEXT = {
-  title: 'RŠL SMPS statistika',
+  title: 'ED statistika',
   subtitle: 'Greita statistikos apžvalga.',
   theme: {
     toggle: 'Perjungti šviesią/tamsią temą',
@@ -24,7 +24,7 @@ export const TEXT = {
   scrollTop: 'Grįžti į pradžią',
   tabs: {
     overview: 'Bendras vaizdas',
-    ed: 'RŠL SMPS skydelis',
+    ed: 'ED skydelis',
   },
   edToggle: {
     open: (label) => `Atidaryti ${label}`,
@@ -43,7 +43,7 @@ export const TEXT = {
   footer: (timestamp) => `Atnaujinta ${timestamp}`,
   footerFallback: (timestamp) => `Rodomi talpyklos duomenys (atnaujinta ${timestamp})`,
   ed: {
-    title: 'RŠL SMPS skydelis',
+    title: 'ED skydelis',
     closeButton: 'Grįžti',
     status: {
       loading: 'Kraunama...',

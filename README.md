@@ -8,6 +8,7 @@ Projektas pritaikytas tiek kasdienei eksploatacijai ligoninėje, tiek nuosekliam
 - [Pagrindinės galimybės](#pagrindinės-galimybės)
 - [Greitas paleidimas (Quick Start)](#greitas-paleidimas-quick-start)
 - [Konfigūracija](#konfigūracija)
+- [Pritaikymas kitai ligoninei](#pritaikymas-kitai-ligoninei)
 - [Projekto struktūra ir architektūra](#projekto-struktūra-ir-architektūra)
 - [Kokybės vartai ir kasdienės komandos](#kokybės-vartai-ir-kasdienės-komandos)
 - [Testavimas ir priėmimo scenarijai](#testavimas-ir-priėmimo-scenarijai)
@@ -102,6 +103,22 @@ Pagrindinis konfigūracijos failas yra `config.json`.
 - Jei CSV neturi pamainos lauko (`Diena/naktis`), paros metas gali būti išvedamas iš atvykimo laiko.
 - GMP reikšmės turi būti nuoseklios (`GMP`, `su GMP` ar analogiškai suderintos reikšmės).
 - Tuščias hospitalizavimo laukas traktuojamas kaip išrašymas, jei taip aprašyta konfigūracijos taisyklėse.
+
+## Pritaikymas kitai ligoninei
+
+Greitam repo pritaikymui naudokite:
+
+- neutralų šabloną `docs/config-starter.json`,
+- konfigūracijos patikrą `npm run config:check`,
+- žingsninę instrukciją `docs/hospital-customization.md`.
+
+Trumpas srautas:
+
+1. Nukopijuokite `docs/config-starter.json` į `config.json`.
+2. Užpildykite `dataSource.*.url`.
+3. Suderinkite `csv.*` laukus pagal savo CSV.
+4. Pakeiskite `output.*` tekstus / branding.
+5. Paleiskite `npm run config:check`.
 
 ## Projekto struktūra ir architektūra
 
