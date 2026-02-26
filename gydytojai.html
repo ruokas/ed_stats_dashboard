@@ -159,7 +159,7 @@
         <p class="summaries-reports-coverage"><strong>Greita pradžia:</strong> 1) pasirinkite pagrindinius filtrus, 2) peržiūrėkite gydytojų lentelę, 3) jei reikia, išskleiskite specialybes, metinę dinamiką ar grafikus.</p>
       </div>
 
-      <section id="gydytojaiFiltersPanel" class="filter-panel gydytojai-filter-panel" aria-label="Gydytojų filtrų panelė" hidden>
+      <section id="gydytojaiFiltersPanel" class="filter-panel gydytojai-filter-panel" aria-label="Gydytojų filtrų panelė" data-loading="true">
         <header class="filter-panel__head gydytojai-filter-panel__head">
           <div class="filter-panel__title-row gydytojai-filter-panel__title-row">
             <h3 class="filter-panel__title gydytojai-filter-panel__title">Filtrai</h3>
@@ -322,7 +322,21 @@
               <th scope="col" data-gydytojai-specialty-sort="nightShare">Naktiniai (%)</th>
             </tr>
           </thead>
-          <tbody id="gydytojaiSpecialtyBody"></tbody>
+          <tbody id="gydytojaiSpecialtyBody">
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+          </tbody>
         </table>
       </div>
       <p id="gydytojaiSpecialtyEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Specialybių palyginimui nepakanka duomenų.</p>
@@ -342,7 +356,7 @@
           </div>
         </div>
       </div>
-      <div id="gydytojaiTablesSectionPanel" data-gydytojai-section-panel="results" hidden>
+      <div id="gydytojaiTablesSectionPanel" data-gydytojai-section-panel="results">
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiTablesHeading">
         <table id="gydytojaiLeaderboardTable">
           <caption class="sr-only">Gydytojų lyderių lentelė</caption>
@@ -361,7 +375,47 @@
               <th scope="col" data-gydytojai-sort="nightShare">Naktiniai (%)</th>
             </tr>
           </thead>
-          <tbody id="gydytojaiLeaderboardBody"></tbody>
+          <tbody id="gydytojaiLeaderboardBody">
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+          </tbody>
         </table>
       </div>
       </div>
@@ -542,7 +596,7 @@
         </div>
       </div>
       <div class="summaries-report-group__grid summaries-reports-grid">
-        <article class="report-card">
+        <article class="report-card" data-loading="true">
           <div class="report-card__head">
             <h4>Atvejų skaičius pagal gydytoją</h4>
             <div class="report-card__actions">
@@ -552,7 +606,7 @@
           </div>
           <canvas id="gydytojaiVolumeChart" height="220"></canvas>
         </article>
-        <article class="report-card">
+        <article class="report-card" data-loading="true">
           <div class="report-card__head">
             <h4>LOS intervalų pasiskirstymas pagal gydytoją</h4>
             <div class="report-card__actions">
@@ -565,7 +619,7 @@
       </div>
       <div id="gydytojaiChartsMorePanel" hidden>
       <div class="summaries-report-group__grid summaries-reports-grid">
-        <article class="report-card">
+        <article class="report-card" data-loading="true">
           <div class="report-card__head">
             <h4>Hospitalizacijų dalis pagal gydytoją</h4>
             <div class="report-card__actions">
@@ -575,7 +629,7 @@
           </div>
           <canvas id="gydytojaiHospitalChart" height="220"></canvas>
         </article>
-        <article class="report-card">
+        <article class="report-card" data-loading="true">
           <div class="report-card__head">
             <h4>Diena/Naktis pagal gydytoją</h4>
             <div class="report-card__actions">
@@ -585,7 +639,7 @@
           </div>
           <canvas id="gydytojaiMixChart" height="240"></canvas>
         </article>
-        <article class="report-card">
+        <article class="report-card" data-loading="true">
           <div class="report-card__head">
             <h4>Apimtis vs LOS</h4>
             <div class="report-card__actions">

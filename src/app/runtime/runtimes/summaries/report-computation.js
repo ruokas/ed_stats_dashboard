@@ -1,12 +1,8 @@
 import {
+  collapseSmallGroups,
   computeAgeDiagnosisHeatmap,
   computeDiagnosisCodeYearlyShare,
   computeDiagnosisFrequency,
-  computePspcDistribution,
-  computePspcReferralHospitalizationCorrelation,
-  computeReferralDispositionYearlyTrend,
-  computeReferralMonthlyHeatmap,
-  computeReferralYearlyTrend,
   scopeExtendedHistoricalRecords,
 } from '../../../../data/stats.js';
 import { DEFAULT_SETTINGS } from '../../../default-settings.js';
@@ -44,10 +40,255 @@ function buildReportsComputationKey(dashboardState, settings, scopeMeta) {
     String(dashboardState.summariesReportsYear ?? 'all'),
     Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
     Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10) || 100,
-    String(dashboardState.summariesReferralPspcSort || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc',
     Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
     Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
   ].join('|');
+}
+
+function normalizeCategoryValue(value) {
+  const text = value == null ? '' : String(value).trim();
+  return text || 'Nenurodyta';
+}
+
+function getShiftAdjustedDateKey(record, shiftStartHour = 7) {
+  const arrival =
+    record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+  const discharge =
+    record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime()) ? record.discharge : null;
+  const reference = arrival || discharge;
+  if (!reference) {
+    return '';
+  }
+  const anchor = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+  if (reference.getHours() < shiftStartHour) {
+    anchor.setDate(anchor.getDate() - 1);
+  }
+  const year = anchor.getFullYear();
+  const month = String(anchor.getMonth() + 1).padStart(2, '0');
+  const day = String(anchor.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function toSortedRows(map, total, topN) {
+  const rows = Array.from(map.entries())
+    .map(([label, count]) => ({
+      label,
+      count,
+      share: total > 0 ? count / total : 0,
+    }))
+    .sort((a, b) => {
+      if (b.count !== a.count) {
+        return b.count - a.count;
+      }
+      return String(a.label).localeCompare(String(b.label), 'lt');
+    });
+  if (!Number.isFinite(topN) || topN <= 0 || rows.length <= topN) {
+    return rows;
+  }
+  const head = rows.slice(0, topN);
+  const tail = rows.slice(topN);
+  const otherCount = tail.reduce((sum, row) => sum + Number(row?.count || 0), 0);
+  if (otherCount > 0) {
+    head.push({
+      label: 'Kita / maža imtis',
+      count: otherCount,
+      share: total > 0 ? otherCount / total : 0,
+    });
+  }
+  return head;
+}
+
+function computeSharedReferralAndPspcReports(scopeMeta, dashboardState) {
+  const records = Array.isArray(scopeMeta?.records) ? scopeMeta.records : [];
+  const shiftStartHour = Number.isFinite(Number(scopeMeta?.shiftStartHour))
+    ? Number(scopeMeta.shiftStartHour)
+    : 7;
+  const topNRaw = Number.parseInt(String(dashboardState?.summariesReportsTopN ?? 15), 10);
+  const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 15;
+  const minGroupSizeRaw = Number.parseInt(String(dashboardState?.summariesReportsMinGroupSize ?? 100), 10);
+  const minGroupSize = Number.isFinite(minGroupSizeRaw) && minGroupSizeRaw > 0 ? minGroupSizeRaw : 100;
+
+  const referralYearly = new Map();
+  const referralDispositionYearly = new Map();
+  const monthlyReferral = new Map();
+  const pspcCounts = new Map();
+  const pspcCorrelationBuckets = new Map();
+
+  for (let index = 0; index < records.length; index += 1) {
+    const record = records[index];
+    if (!record) {
+      continue;
+    }
+
+    const pspc = normalizeCategoryValue(record?.pspc);
+    pspcCounts.set(pspc, (pspcCounts.get(pspc) || 0) + 1);
+    if (!pspcCorrelationBuckets.has(pspc)) {
+      pspcCorrelationBuckets.set(pspc, { total: 0, referred: 0, hospitalized: 0 });
+    }
+    const pspcBucket = pspcCorrelationBuckets.get(pspc);
+    pspcBucket.total += 1;
+
+    const referralNormalized = normalizeCategoryValue(record?.referral);
+    const referralCategory =
+      referralNormalized === 'su siuntimu' || referralNormalized === 'be siuntimo'
+        ? referralNormalized
+        : 'Nenurodyta';
+    if (referralCategory === 'su siuntimu') {
+      pspcBucket.referred += 1;
+    }
+    if (record?.hospitalized === true) {
+      pspcBucket.hospitalized += 1;
+    }
+
+    const dateKey = getShiftAdjustedDateKey(record, shiftStartHour);
+    const yearText = dateKey.slice(0, 4);
+    if (!/^\d{4}$/.test(yearText)) {
+      continue;
+    }
+    const year = Number.parseInt(yearText, 10);
+    if (!Number.isFinite(year)) {
+      continue;
+    }
+
+    if (!referralYearly.has(year)) {
+      referralYearly.set(year, { year, total: 0, values: {} });
+    }
+    const yearlyBucket = referralYearly.get(year);
+    yearlyBucket.total += 1;
+    yearlyBucket.values[referralCategory] = (yearlyBucket.values[referralCategory] || 0) + 1;
+
+    const referral2 = referralCategory === 'su siuntimu' ? 'su siuntimu' : 'be siuntimo';
+    const disposition = record?.hospitalized === true ? 'hospitalizuoti' : 'isleisti';
+    if (!referralDispositionYearly.has(year)) {
+      referralDispositionYearly.set(year, {
+        year,
+        totals: { 'su siuntimu': 0, 'be siuntimo': 0 },
+        values: {
+          'su siuntimu': { hospitalizuoti: 0, isleisti: 0 },
+          'be siuntimo': { hospitalizuoti: 0, isleisti: 0 },
+        },
+      });
+    }
+    const dispositionBucket = referralDispositionYearly.get(year);
+    dispositionBucket.totals[referral2] += 1;
+    dispositionBucket.values[referral2][disposition] += 1;
+
+    const monthText = dateKey.slice(5, 7);
+    if (/^\d{2}$/.test(monthText)) {
+      const month = Number.parseInt(monthText, 10);
+      if (Number.isFinite(month)) {
+        const monthKey = `${year}-${monthText}`;
+        if (!monthlyReferral.has(monthKey)) {
+          monthlyReferral.set(monthKey, { year, month, total: 0, referred: 0 });
+        }
+        const monthBucket = monthlyReferral.get(monthKey);
+        monthBucket.total += 1;
+        if (referralCategory === 'su siuntimu') {
+          monthBucket.referred += 1;
+        }
+      }
+    }
+  }
+
+  const referralCategoriesSet = new Set();
+  referralYearly.forEach((entry) => {
+    Object.keys(entry.values || {}).forEach((key) => {
+      referralCategoriesSet.add(key);
+    });
+  });
+  const referralCategories = ['su siuntimu', 'be siuntimo', 'Nenurodyta'].filter(
+    (category) => referralCategoriesSet.has(category) || category === 'Nenurodyta'
+  );
+  const referralTrendRows = Array.from(referralYearly.values())
+    .sort((a, b) => a.year - b.year)
+    .map((entry) => ({
+      year: entry.year,
+      total: entry.total,
+      values: Object.fromEntries(
+        referralCategories.map((category) => [category, Number(entry.values?.[category] || 0)])
+      ),
+    }));
+
+  const referralDispositionYearlyRows = Array.from(referralDispositionYearly.values())
+    .sort((a, b) => a.year - b.year)
+    .map((entry) => ({
+      year: entry.year,
+      totals: entry.totals,
+      values: entry.values,
+    }));
+
+  const referralMonthlyRows = Array.from(monthlyReferral.values())
+    .sort((a, b) => a.year - b.year || a.month - b.month)
+    .map((entry) => ({
+      year: entry.year,
+      month: entry.month,
+      total: entry.total,
+      referred: entry.referred,
+      share: entry.total > 0 ? entry.referred / entry.total : 0,
+    }));
+  const monthlyYears = Array.from(new Set(referralMonthlyRows.map((row) => row.year))).sort((a, b) => a - b);
+
+  let pspcDistributionRows = toSortedRows(pspcCounts, records.length, topN);
+  pspcDistributionRows = collapseSmallGroups(pspcDistributionRows, minGroupSize, 'Kita / maža imtis');
+
+  const pspcCorrelationRows = Array.from(pspcCorrelationBuckets.entries())
+    .map(([label, bucket]) => {
+      const total = Number(bucket?.total || 0);
+      const referred = Number(bucket?.referred || 0);
+      const hospitalized = Number(bucket?.hospitalized || 0);
+      return {
+        label,
+        total,
+        referred,
+        hospitalized,
+        referralShare: total > 0 ? referred / total : 0,
+        hospitalizedShare: total > 0 ? hospitalized / total : 0,
+      };
+    })
+    .filter((row) => String(row?.label || '') !== 'Nenurodyta')
+    .filter((row) => Number(row.total || 0) >= minGroupSize)
+    .sort((a, b) => {
+      if (Number(b.total || 0) !== Number(a.total || 0)) {
+        return Number(b.total || 0) - Number(a.total || 0);
+      }
+      return String(a.label || '').localeCompare(String(b.label || ''), 'lt');
+    })
+    .slice(0, topN);
+
+  return {
+    referralTrend: {
+      categories: referralCategories,
+      rows: referralTrendRows,
+      yearOptions: scopeMeta?.yearOptions || [],
+      coverage: scopeMeta?.coverage || { total: 0, extended: 0, percent: 0 },
+    },
+    referralDispositionYearly: {
+      rows: referralDispositionYearlyRows,
+      referralCategories: ['su siuntimu', 'be siuntimo'],
+      dispositionCategories: ['hospitalizuoti', 'isleisti'],
+      yearOptions: scopeMeta?.yearOptions || [],
+      coverage: scopeMeta?.coverage || { total: 0, extended: 0, percent: 0 },
+    },
+    referralMonthlyHeatmap: {
+      rows: referralMonthlyRows,
+      years: monthlyYears,
+      months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      yearOptions: scopeMeta?.yearOptions || [],
+      coverage: scopeMeta?.coverage || { total: 0, extended: 0, percent: 0 },
+    },
+    pspcDistribution: {
+      total: records.length,
+      rows: pspcDistributionRows,
+      yearOptions: scopeMeta?.yearOptions || [],
+      coverage: scopeMeta?.coverage || { total: 0, extended: 0, percent: 0 },
+    },
+    pspcCorrelation: {
+      total: records.length,
+      rows: pspcCorrelationRows,
+      yearOptions: scopeMeta?.yearOptions || [],
+      coverage: scopeMeta?.coverage || { total: 0, extended: 0, percent: 0 },
+    },
+  };
 }
 
 export function getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta) {
@@ -72,6 +313,7 @@ export function getReportsComputation(dashboardState, settings, historicalRecord
     defaultSettings: DEFAULT_SETTINGS,
     scopedMeta,
   };
+  const sharedReferralAndPspc = computeSharedReferralAndPspcReports(scopeMeta, dashboardState);
   const value = {
     diagnosis: computeDiagnosisFrequency(historicalRecords, {
       ...baseOptions,
@@ -82,16 +324,16 @@ export function getReportsComputation(dashboardState, settings, historicalRecord
       excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
     }),
     z769Trend: computeDiagnosisCodeYearlyShare(historicalRecords, 'Z76.9', baseOptions),
-    referralTrend: computeReferralYearlyTrend(historicalRecords, baseOptions),
-    referralDispositionYearly: computeReferralDispositionYearlyTrend(historicalRecords, baseOptions),
-    referralMonthlyHeatmap: computeReferralMonthlyHeatmap(historicalRecords, baseOptions),
+    referralTrend: sharedReferralAndPspc.referralTrend,
+    referralDispositionYearly: sharedReferralAndPspc.referralDispositionYearly,
+    referralMonthlyHeatmap: sharedReferralAndPspc.referralMonthlyHeatmap,
     referralHospitalizedByPspcYearly: computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
       minGroupSize: dashboardState.summariesReportsMinGroupSize,
       yearOptions: scopeMeta.yearOptions,
       shiftStartHour: scopeMeta.shiftStartHour,
     }),
-    pspcCorrelation: computePspcReferralHospitalizationCorrelation(historicalRecords, baseOptions),
-    pspcDistribution: computePspcDistribution(historicalRecords, baseOptions),
+    pspcCorrelation: sharedReferralAndPspc.pspcCorrelation,
+    pspcDistribution: sharedReferralAndPspc.pspcDistribution,
   };
   dashboardState.summariesReportsComputationCache = {
     recordsRef: historicalRecords,

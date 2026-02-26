@@ -158,7 +158,7 @@
             <p>Diagnozių, amžiaus grupių ir išvykimo ypatumų apžvalga.</p>
           </header>
           <div class="summaries-report-group__grid summaries-reports-grid">
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Diagnozių pasiskirstymas pagal dažnį</h4>
                 <div class="report-card__actions">
@@ -196,7 +196,7 @@
               <canvas id="diagnosisChart" height="220"></canvas>
               <p id="diagnosisInfo" class="report-card__hint"></p>
             </article>
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Amžiaus ir diagnozių grupių ryšys</h4>
                 <div class="report-card__actions">
@@ -231,9 +231,9 @@
                   </button>
                 </div>
               </div>
-              <canvas id="ageDiagnosisHeatmapChart" height="260"></canvas>
+              <canvas id="ageDiagnosisHeatmapChart" height="360"></canvas>
             </article>
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Pacientų pasiskirstymas pagal amžių</h4>
                 <div class="report-card__actions">
@@ -270,7 +270,7 @@
               </div>
               <canvas id="ageDistributionChart" height="220"></canvas>
             </article>
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Pasišalinę pacientai (Z76.9)</h4>
                 <div class="report-card__actions">
@@ -315,7 +315,7 @@
             <p>Siuntimų dinamika, mėnesinis pjūvis ir baigčių palyginimas.</p>
           </header>
           <div class="summaries-report-group__grid summaries-reports-grid">
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Pacientai su siuntimu</h4>
                 <div class="report-card__actions">
@@ -352,7 +352,7 @@
               </div>
               <canvas id="referralTrendChart" height="220"></canvas>
             </article>
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Siuntimas × baigtis pagal metus</h4>
                 <div class="report-card__actions">
@@ -389,7 +389,7 @@
               </div>
               <canvas id="referralDispositionYearlyChart" height="220"></canvas>
             </article>
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Siuntimų % pagal mėnesį</h4>
                 <div class="report-card__actions">
@@ -424,7 +424,7 @@
                   </button>
                 </div>
               </div>
-              <canvas id="referralMonthlyHeatmapChart" height="260"></canvas>
+              <canvas id="referralMonthlyHeatmapChart" height="360"></canvas>
             </article>
           </div>
         </section>
@@ -434,7 +434,7 @@
             <p>Ryšiai tarp siuntimų, hospitalizacijų ir PSPC pasiskirstymo.</p>
           </header>
           <div class="summaries-report-group__grid summaries-reports-grid">
-            <article class="report-card report-card--full-width">
+            <article class="report-card report-card--full-width" data-loading="true">
               <div class="report-card__head">
                 <h4>Hospitalizacijų dalis tarp pacientų su siuntimu pagal PSPC</h4>
                 <div class="report-card__actions">
@@ -491,7 +491,7 @@
               </div>
               <canvas id="referralHospitalizedByPspcChart" height="220"></canvas>
             </article>
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>PSPC: siuntimų ir hospitalizacijų ryšys</h4>
                 <div class="report-card__actions">
@@ -528,7 +528,7 @@
               </div>
               <canvas id="pspcCorrelationChart" height="220"></canvas>
             </article>
-            <article class="report-card">
+            <article class="report-card" data-loading="true">
               <div class="report-card__head">
                 <h4>Pacientų kiekiai pagal PSPC įstaigas</h4>
                 <div class="report-card__actions">

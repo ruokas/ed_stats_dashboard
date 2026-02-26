@@ -25,6 +25,7 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
     return;
   }
   const entries = yearlyStats.slice();
+  const fragment = document.createDocumentFragment();
   const latestYear = entries.length ? entries[entries.length - 1].year : null;
   if (!Array.isArray(dashboardState.yearlyExpandedYears) || !dashboardState.yearlyExpandedYears.length) {
     dashboardState.yearlyExpandedYears = Number.isFinite(latestYear) ? [latestYear] : [];
@@ -34,6 +35,11 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
   const monthlyByKey = new Map(
     monthlyAll.filter((item) => item && typeof item.month === 'string').map((item) => [item.month, item])
   );
+  const monthlyPayloadByYear = new Map();
+  dashboardState.yearlyMonthlyRowsCache = {
+    monthlyRef: monthlyAll,
+    byYear: monthlyPayloadByYear,
+  };
   const totals = entries.map((item) => (Number.isFinite(item?.count) ? item.count : 0));
   const completeness = entries.map((entry) => isCompleteYearEntry(entry));
   entries.forEach((entry, index) => {
@@ -70,7 +76,8 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
     `;
     setDatasetValue(row, 'year', entry.year);
     setDatasetValue(row, 'expanded', isExpanded ? 'true' : 'false');
-    table.appendChild(row);
+    fragment.appendChild(row);
+    const monthPayloads = [];
     monthlyAll
       .filter((item) => item?.month?.startsWith(`${entry.year}-`))
       .forEach((monthEntry) => {
@@ -86,24 +93,63 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
         const monthDiff = canCompareMonth ? monthTotal - prevMonthTotal : Number.NaN;
         const monthPercent =
           canCompareMonth && prevMonthTotal !== 0 ? monthDiff / prevMonthTotal : Number.NaN;
-        const monthRow = document.createElement('tr');
-        monthRow.className = 'yearly-child-row';
-        monthRow.hidden = !isExpanded;
-        setDatasetValue(monthRow, 'parentYear', entry.year);
-        monthRow.innerHTML = `
-          <td><span class="yearly-month-label">${formatMonthLabel(monthEntry.month)}</span></td>
-          <td>${numberFormatter.format(monthTotal)}</td>
-          <td>${oneDecimalFormatter.format(monthAvg)}</td>
-          <td>${decimalFormatter.format(monthStay)}</td>
-          <td>${formatValueWithShare(monthEntry.night, monthTotal)}</td>
-          <td>${formatValueWithShare(monthEntry.ems, monthTotal)}</td>
-          <td>${formatValueWithShare(monthEntry.hospitalized, monthTotal)}</td>
-          <td>${formatValueWithShare(monthEntry.discharged, monthTotal)}</td>
-          <td>${formatChangeCell(monthDiff, monthPercent, canCompareMonth)}</td>
-        `;
-        table.appendChild(monthRow);
+        monthPayloads.push({
+          parentYear: entry.year,
+          month: monthEntry.month,
+          monthTotal,
+          monthAvg,
+          monthStay,
+          night: monthEntry.night,
+          ems: monthEntry.ems,
+          hospitalized: monthEntry.hospitalized,
+          discharged: monthEntry.discharged,
+          monthDiff,
+          monthPercent,
+          canCompareMonth,
+        });
       });
+    monthlyPayloadByYear.set(entry.year, monthPayloads);
+    if (isExpanded && monthPayloads.length) {
+      monthPayloads.forEach((payload) => {
+        fragment.appendChild(createYearlyChildRow(payload, true));
+      });
+    }
   });
+  table.appendChild(fragment);
+}
+
+function createYearlyChildRow(payload, expanded = false) {
+  const monthRow = document.createElement('tr');
+  monthRow.className = 'yearly-child-row';
+  monthRow.hidden = !expanded;
+  setDatasetValue(monthRow, 'parentYear', payload.parentYear);
+  monthRow.innerHTML = `
+    <td><span class="yearly-month-label">${formatMonthLabel(payload.month)}</span></td>
+    <td>${numberFormatter.format(payload.monthTotal)}</td>
+    <td>${oneDecimalFormatter.format(payload.monthAvg)}</td>
+    <td>${decimalFormatter.format(payload.monthStay)}</td>
+    <td>${formatValueWithShare(payload.night, payload.monthTotal)}</td>
+    <td>${formatValueWithShare(payload.ems, payload.monthTotal)}</td>
+    <td>${formatValueWithShare(payload.hospitalized, payload.monthTotal)}</td>
+    <td>${formatValueWithShare(payload.discharged, payload.monthTotal)}</td>
+    <td>${formatChangeCell(payload.monthDiff, payload.monthPercent, payload.canCompareMonth)}</td>
+  `;
+  return monthRow;
+}
+
+function appendYearlyChildRows(table, parentRow, yearValue, payloads = []) {
+  if (!(table instanceof HTMLElement) || !(parentRow instanceof HTMLElement) || !payloads.length) {
+    return;
+  }
+  const existing = table.querySelector(`tr[data-parent-year="${yearValue}"]`);
+  if (existing) {
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  payloads.forEach((payload) => {
+    fragment.appendChild(createYearlyChildRow(payload, parentRow.dataset?.expanded === 'true'));
+  });
+  parentRow.after(fragment);
 }
 
 export function handleYearlyToggle(selectors, dashboardState, event) {
@@ -125,6 +171,13 @@ export function handleYearlyToggle(selectors, dashboardState, event) {
   button.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
   if (row) {
     setDatasetValue(row, 'expanded', nextExpanded ? 'true' : 'false');
+  }
+  if (nextExpanded && row instanceof HTMLElement) {
+    const cache = dashboardState?.yearlyMonthlyRowsCache || {};
+    const payloads = cache.byYear instanceof Map ? cache.byYear.get(yearValue) : null;
+    if (Array.isArray(payloads) && payloads.length && selectors?.yearlyTable instanceof HTMLElement) {
+      appendYearlyChildRows(selectors.yearlyTable, row, yearValue, payloads);
+    }
   }
   const rows = selectors?.yearlyTable
     ? selectors.yearlyTable.querySelectorAll(`tr[data-parent-year="${yearValue}"]`)

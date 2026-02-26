@@ -36,7 +36,7 @@ function createDailyEntry(date, count) {
   };
 }
 
-function createChartFlowEnv() {
+function createChartFlowEnv(options = {}) {
   const baseRecords = [
     { id: 1, year: 2024, ems: true, hospitalized: false, cardType: 't' },
     { id: 2, year: 2024, ems: false, hospitalized: true, cardType: 'tr' },
@@ -70,14 +70,22 @@ function createChartFlowEnv() {
     },
     dailyStats: baseDaily,
     rawRecords: baseRecords,
+    chartsSectionRenderFlags: {
+      heatmapVisible: options.heatmapVisible ?? true,
+      hourlyVisible: options.hourlyVisible ?? false,
+    },
   };
 
   const computeDailyStats = vi.fn((records) => [createDailyEntry('2024-01-01', records.length)]);
   const computeArrivalHeatmap = vi.fn((records) => ({ cells: records.map((row) => row.id) }));
   const computeFunnelStats = vi.fn((daily) => ({ arrived: daily.reduce((sum, row) => sum + row.count, 0) }));
+  const filterDailyStatsByYear = vi.fn((daily, year) =>
+    Number.isFinite(year) ? daily.filter((row) => String(row.date).startsWith(`${year}-`)) : [...daily]
+  );
   const filterRecordsByYear = vi.fn((records, year) =>
     Number.isFinite(year) ? records.filter((row) => row.year === year) : [...records]
   );
+  const filterRecordsByWindow = vi.fn((records, days) => records.slice(-days));
   const filterRecordsByChartFilters = vi.fn((records, filters) =>
     filters.arrival === 'ems' ? records.filter((row) => row.ems) : [...records]
   );
@@ -98,10 +106,9 @@ function createChartFlowEnv() {
     describeError: () => ({ log: 'error' }),
     computeDailyStats,
     filterDailyStatsByWindow: (daily, days) => daily.slice(-days),
-    filterDailyStatsByYear: (daily, year) =>
-      Number.isFinite(year) ? daily.filter((row) => String(row.date).startsWith(`${year}-`)) : [...daily],
+    filterDailyStatsByYear,
     filterRecordsByYear,
-    filterRecordsByWindow: (records, days) => records.slice(-days),
+    filterRecordsByWindow,
     filterRecordsByChartFilters,
     computeArrivalHeatmap,
     computeFunnelStats,
@@ -122,7 +129,9 @@ function createChartFlowEnv() {
       computeDailyStats,
       computeArrivalHeatmap,
       computeFunnelStats,
+      filterDailyStatsByYear,
       filterRecordsByYear,
+      filterRecordsByWindow,
       filterRecordsByChartFilters,
       renderCharts,
     },
@@ -138,6 +147,7 @@ describe('chart flow derived cache', () => {
 
     expect(second).toEqual(first);
     expect(spies.computeDailyStats).toHaveBeenCalledTimes(1);
+    expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(1);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(1);
     expect(spies.computeFunnelStats).toHaveBeenCalledTimes(1);
     expect(spies.filterRecordsByYear).toHaveBeenCalledTimes(1);
@@ -152,8 +162,19 @@ describe('chart flow derived cache', () => {
 
     expect(spies.computeDailyStats).toHaveBeenCalledTimes(1);
     expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(1);
+    expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(1);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(2);
     expect(spies.computeFunnelStats).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips window record slicing when secondary record-based charts are not visible', () => {
+    const { chartFlow, spies } = createChartFlowEnv({ heatmapVisible: false, hourlyVisible: false });
+
+    chartFlow.prepareChartDataForPeriod(30);
+
+    expect(spies.filterRecordsByWindow).toHaveBeenCalledTimes(0);
+    expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(0);
+    expect(spies.computeFunnelStats).toHaveBeenCalledTimes(1);
   });
 
   it('recomputes filtered stage on year and filter changes', async () => {
@@ -162,12 +183,14 @@ describe('chart flow derived cache', () => {
     chartFlow.prepareChartDataForPeriod(30);
     chartFlow.updateChartYear(2024);
     expect(spies.computeDailyStats).toHaveBeenCalledTimes(2);
+    expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(2);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(2);
 
     dashboardState.chartFilters = { ...dashboardState.chartFilters, arrival: 'ems' };
     await chartFlow.applyChartFilters();
 
     expect(spies.computeDailyStats).toHaveBeenCalledTimes(3);
+    expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(2);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(3);
     expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(3);
   });

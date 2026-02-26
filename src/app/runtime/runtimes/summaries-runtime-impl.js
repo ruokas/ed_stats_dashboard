@@ -421,7 +421,6 @@ function buildSummariesReportsDerivedCacheKey(dashboardState, settings, scopeMet
     String(dashboardState?.summariesReportsYear ?? 'all'),
     Number.parseInt(String(dashboardState?.summariesReportsTopN ?? 15), 10) || 15,
     Number.parseInt(String(dashboardState?.summariesReportsMinGroupSize ?? 100), 10) || 100,
-    String(dashboardState?.summariesReferralPspcSort || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc',
     Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
     Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
   ].join('|');
@@ -1624,6 +1623,39 @@ async function renderReports(
   reason = 'data',
   options = {}
 ) {
+  const setReportCardLoading = (target, isLoading) => {
+    const node =
+      target instanceof HTMLElement
+        ? target
+        : typeof target === 'string' && typeof document !== 'undefined'
+          ? document.getElementById(target)
+          : null;
+    const card = node instanceof HTMLElement ? node.closest('.report-card') : null;
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+    if (isLoading) {
+      card.dataset.loading = 'true';
+      return;
+    }
+    delete card.dataset.loading;
+  };
+  const setAllReportCardsLoading = (isLoading) => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const cards = document.querySelectorAll('.summaries-report-groups .report-card');
+    cards.forEach((card) => {
+      if (!(card instanceof HTMLElement)) {
+        return;
+      }
+      if (isLoading) {
+        card.dataset.loading = 'true';
+      } else {
+        delete card.dataset.loading;
+      }
+    });
+  };
   const stage = options?.stage === 'primary' || options?.stage === 'secondary' ? options.stage : 'all';
   const renderPrimaryStage = stage !== 'secondary';
   const renderSecondaryStage = stage !== 'primary';
@@ -1632,9 +1664,23 @@ async function renderReports(
   let scopeMeta;
   let reports;
   let viewModels;
+  const currentReportsInputs = {
+    year: String(dashboardState.summariesReportsYear ?? 'all'),
+    topN: Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
+    minGroupSize: Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10) || 100,
+    shiftStartHour: Number.isFinite(settings?.calculations?.shiftStartHour)
+      ? settings.calculations.shiftStartHour
+      : '',
+  };
   const lastRenderContext = dashboardState.summariesReportsLastRenderContext || null;
+  const sameComputeInputs =
+    lastRenderContext?.reportsInputs &&
+    lastRenderContext.reportsInputs.year === currentReportsInputs.year &&
+    lastRenderContext.reportsInputs.topN === currentReportsInputs.topN &&
+    lastRenderContext.reportsInputs.minGroupSize === currentReportsInputs.minGroupSize &&
+    lastRenderContext.reportsInputs.shiftStartHour === currentReportsInputs.shiftStartHour;
   const canReuseCachedRender =
-    (reason === 'theme' || stage === 'secondary') &&
+    (reason === 'theme' || stage === 'secondary' || (reason === 'controls' && sameComputeInputs)) &&
     lastRenderContext &&
     lastRenderContext.rawRecordsRef === dashboardState.rawRecords &&
     lastRenderContext.historicalRecords &&
@@ -1661,8 +1707,10 @@ async function renderReports(
   ensureCoverage(selectors, dashboardState, scopeMeta.coverage);
   syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions);
   if (!scopeMeta.records.length) {
+    dashboardState.summariesReportsHasDataRender = false;
     dashboardState.summariesReportsLastRenderContext = {
       rawRecordsRef: dashboardState.rawRecords,
+      reportsInputs: currentReportsInputs,
       historicalRecords,
       scopeMeta,
       reports: null,
@@ -1672,8 +1720,10 @@ async function renderReports(
     if (selectors.diagnosisInfo) {
       selectors.diagnosisInfo.textContent = TEXT.summariesReports?.empty || 'Duomenų nepakanka.';
     }
+    setAllReportCardsLoading(false);
     return;
   }
+  dashboardState.summariesReportsHasDataRender = true;
   reports = reports || getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta);
   const ageDiagnosisHeatmap = reports.ageDiagnosisHeatmap;
   const referralDispositionYearly = reports.referralDispositionYearly;
@@ -1721,6 +1771,7 @@ async function renderReports(
   syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions, referralHospitalizedPspcTrendOptions);
   dashboardState.summariesReportsLastRenderContext = {
     rawRecordsRef: dashboardState.rawRecords,
+    reportsInputs: currentReportsInputs,
     historicalRecords,
     scopeMeta,
     reports,
@@ -1798,6 +1849,9 @@ async function renderReports(
       rows: referralPercentRows.map((row) => [row.year, oneDecimalFormatter.format(row.percent)]),
       target: selectors.referralTrendChart,
     };
+    setReportCardLoading(selectors.diagnosisChart, false);
+    setReportCardLoading(selectors.z769TrendChart, false);
+    setReportCardLoading(selectors.referralTrendChart, false);
   }
   const shouldRenderSecondaryNow =
     renderSecondaryStage &&
@@ -2082,6 +2136,7 @@ async function renderReports(
     rows: pspcPercentRows.map((row) => [row.label, oneDecimalFormatter.format(row.percent)]),
     target: selectors.pspcDistributionChart,
   };
+  setAllReportCardsLoading(false);
 }
 
 export async function runSummariesRuntime(core) {
@@ -2263,6 +2318,12 @@ export async function runSummariesRuntime(core) {
     if (dashboardState.summariesReportsSecondaryRenderScheduled) {
       return;
     }
+    const shortDelayReasons = new Set(['visibility', 'controls', 'jump-nav', 'interaction', 'data']);
+    const timeoutMs = shortDelayReasons.has(String(reason || '').toLowerCase())
+      ? 80
+      : reportsSecondaryScheduledForce
+        ? 80
+        : 1400;
     dashboardState.summariesReportsSecondaryRenderScheduled = true;
     runAfterDomAndIdle(
       async () => {
@@ -2290,7 +2351,7 @@ export async function runSummariesRuntime(core) {
           }
         }
       },
-      { timeout: 1400 }
+      { timeout: timeoutMs }
     );
   };
   const scheduleReportsRender = (reason = 'controls') => {
@@ -2331,6 +2392,9 @@ export async function runSummariesRuntime(core) {
         useWorkerViewModels: enableSummariesWorkerReports,
         runSummariesWorkerJob,
       });
+      if (dashboardState.summariesReportsHasDataRender !== true) {
+        return;
+      }
       dashboardState.summariesReportsPrimaryRenderedAt = Date.now();
       if (!summariesPrimaryVisibleMeasured) {
         summariesPrimaryVisibleMeasured = true;
@@ -2390,9 +2454,10 @@ export async function runSummariesRuntime(core) {
     })
   );
   void loadChartJs();
-  ensureSummariesSecondaryVisibilityObserver();
-  void rerenderReports('data');
+  dashboardState.summariesReportsHasDataRender = false;
   updateSummariesFiltersSummary();
-  persistSummariesQuery();
+  if (Object.keys(parsedSummaries).length === 0) {
+    persistSummariesQuery();
+  }
   dataFlow.scheduleInitialLoad();
 }

@@ -33,8 +33,12 @@ import { createChartRenderers } from '../../src/charts/index.js';
 function createEnv() {
   document.body.innerHTML = `
     <main>
+      <figure class="chart-card" data-loading="true"><div class="chart-card__skeleton"></div><canvas id="dailyChart"></canvas></figure>
+      <figure class="chart-card" data-loading="true"><div class="chart-card__skeleton"></div><canvas id="dowChart"></canvas></figure>
+      <figure class="chart-card" data-loading="true"><div class="chart-card__skeleton"></div><canvas id="dowStayChart"></canvas></figure>
+      <figure class="chart-card" data-loading="true"><div class="chart-card__skeleton"></div><canvas id="hourlyChart"></canvas></figure>
+      <figure class="chart-card" data-loading="true"><div class="chart-card__skeleton"></div><div id="heatmap"></div></figure>
       <canvas id="funnelChart"></canvas>
-      <div id="heatmap"></div>
     </main>
   `;
   const funnelCanvas = document.getElementById('funnelChart');
@@ -118,7 +122,7 @@ describe('chart renderers staged startup', () => {
     expect(mocks.renderHourlyChart).not.toHaveBeenCalled();
     expect(env.renderArrivalHeatmap).not.toHaveBeenCalled();
     expect(onChartsPrimaryVisible).toHaveBeenCalledTimes(1);
-    expect(env.hideChartSkeletons).toHaveBeenCalledTimes(1);
+    expect(env.hideChartSkeletons).not.toHaveBeenCalled();
   });
 
   it('renders secondary charts and supports deferred reuse short-circuit', async () => {
@@ -195,5 +199,35 @@ describe('chart renderers staged startup', () => {
       heatmapRendered: true,
       hourlyRendered: true,
     });
+  });
+
+  it('hides only primary skeletons after primary render and keeps secondary skeletons until rendered', async () => {
+    const { env } = createEnv();
+    const renderers = createChartRenderers(env);
+
+    await renderers.renderChartsPrimary([{ date: '2026-02-24', count: 10 }], { arrived: 10 });
+
+    const dailyCard = document.getElementById('dailyChart')?.closest('.chart-card');
+    const dowCard = document.getElementById('dowChart')?.closest('.chart-card');
+    const dowStayCard = document.getElementById('dowStayChart')?.closest('.chart-card');
+    const hourlyCard = document.getElementById('hourlyChart')?.closest('.chart-card');
+    const heatmapCard = document.getElementById('heatmap')?.closest('.chart-card');
+
+    expect(dailyCard?.dataset.loading).toBeUndefined();
+    expect(dowCard?.dataset.loading).toBeUndefined();
+    expect(dowStayCard?.dataset.loading).toBeUndefined();
+    expect(hourlyCard?.dataset.loading).toBe('true');
+    expect(heatmapCard?.dataset.loading).toBe('true');
+
+    await renderers.renderChartsSecondary({
+      heatmapData: { metrics: { arrivals: { matrix: [[1]], max: 1 } } },
+      hourlyRecords: [{ id: 1 }],
+      allowReuse: false,
+      renderHeatmap: true,
+      renderHourly: true,
+    });
+
+    expect(hourlyCard?.dataset.loading).toBeUndefined();
+    expect(heatmapCard?.dataset.loading).toBeUndefined();
   });
 });

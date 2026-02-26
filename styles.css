@@ -1744,6 +1744,7 @@ body[data-theme="dark"] .charts-subsection {
   display: grid;
   align-content: start;
   gap: 10px;
+  position: relative;
 }
 
 .report-card--full-width {
@@ -1800,6 +1801,30 @@ body[data-theme="dark"] .charts-subsection {
   min-height: 300px;
   max-height: 300px;
   display: block;
+}
+
+.report-card[data-loading="true"] canvas {
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      90deg,
+      var(--skeleton-base) 25%,
+      var(--skeleton-highlight) 37%,
+      var(--skeleton-base) 63%
+    );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+.report-card[data-loading="true"] canvas + .report-card__hint {
+  min-height: 1.2em;
+}
+
+#ageDiagnosisHeatmapChart,
+#referralMonthlyHeatmapChart {
+  min-height: 380px;
+  height: 380px;
+  max-height: 380px;
 }
 
 .table-wrapper--report {
@@ -4039,6 +4064,11 @@ body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:focus-visible {
   overflow: visible;
 }
 
+.feedback-table-actions {
+  justify-content: flex-end;
+  margin: 10px 0 8px;
+}
+
 .table-wrapper--feedback table {
   table-layout: fixed;
 }
@@ -4138,6 +4168,10 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+#gydytojaiCoverage {
+  min-height: 1.4rem;
+}
+
 .gydytojai-annual {
   margin-bottom: 18px;
 }
@@ -4194,6 +4228,32 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   border-radius: 16px;
   background: var(--color-surface-alt);
   box-shadow: var(--shadow-soft);
+}
+
+.gydytojai-filter-panel[data-loading="true"] {
+  position: relative;
+}
+
+.gydytojai-filter-panel[data-loading="true"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.06) 25%,
+      rgba(148, 163, 184, 0.14) 37%,
+      rgba(148, 163, 184, 0.06) 63%
+    );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.gydytojai-filter-panel[data-loading="true"] .gydytojai-filter-panel__primary,
+.gydytojai-filter-panel[data-loading="true"] .gydytojai-filter-panel__secondary {
+  opacity: 0.72;
 }
 
 .gydytojai-filter-panel[hidden] {

@@ -205,7 +205,7 @@ export function createDataFlow(env = {}) {
       !activeConfig.monthly &&
       !activeConfig.yearly
   );
-  const _isChartsOnlyPage = Boolean(
+  const isChartsOnlyPage = Boolean(
     activeConfig.charts &&
       !activeConfig.kpi &&
       !activeConfig.recent &&
@@ -220,6 +220,15 @@ export function createDataFlow(env = {}) {
       !activeConfig.recent &&
       !activeConfig.monthly &&
       !activeConfig.yearly &&
+      !activeConfig.feedback &&
+      !activeConfig.ed
+  );
+  const isYearlyOnlyPage = Boolean(
+    activeConfig.yearly &&
+      !activeConfig.kpi &&
+      !activeConfig.charts &&
+      !activeConfig.recent &&
+      !activeConfig.monthly &&
       !activeConfig.feedback &&
       !activeConfig.ed
   );
@@ -1256,11 +1265,24 @@ export function createDataFlow(env = {}) {
   }
 
   function scheduleInitialLoad() {
+    if (isKpiOnlyPage || isChartsOnlyPage || isYearlyOnlyPage) {
+      const runInitialKpiLoad = () => {
+        if (!dashboardState.loading) {
+          void loadDashboard();
+        }
+      };
+      if (typeof document !== 'undefined' && document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInitialKpiLoad, { once: true });
+      } else {
+        runInitialKpiLoad();
+      }
+      return;
+    }
     const initialTimeout = activeConfig.kpi || activeConfig.charts || activeConfig.ed ? 250 : 500;
     runAfterDomAndIdle(
       () => {
         if (!dashboardState.loading) {
-          loadDashboard();
+          void loadDashboard();
         }
       },
       { timeout: initialTimeout }

@@ -282,6 +282,10 @@ function syncDoctorPageQueryFromState(dashboardState) {
     gydytojaiFiltersAdvancedExpanded: dashboardState.gydytojaiFiltersAdvancedExpanded,
     gydytojaiSectionExpanded: getExpandedSectionList(dashboardState.gydytojaiSectionExpanded),
   });
+  if (dashboardState?.gydytojaiLastQueryString === query) {
+    return;
+  }
+  dashboardState.gydytojaiLastQueryString = query;
   replaceUrlQuery(query);
 }
 
@@ -437,10 +441,23 @@ function setCoverage(selectors, model) {
 
 function setLoadingVisualState(selectors, isLoading, options = {}) {
   const initialLoadPending = options?.initialLoadPending === true;
-  const showFullSkeleton = isLoading && initialLoadPending;
+  const showFullSkeleton = false;
   const showInline = isLoading && !initialLoadPending;
   if (selectors.gydytojaiFiltersPanel instanceof HTMLElement) {
-    selectors.gydytojaiFiltersPanel.hidden = showFullSkeleton;
+    selectors.gydytojaiFiltersPanel.hidden = false;
+    selectors.gydytojaiFiltersPanel.dataset.loading = showFullSkeleton ? 'true' : 'false';
+    selectors.gydytojaiFiltersPanel.setAttribute('aria-busy', showFullSkeleton ? 'true' : 'false');
+    const controls = selectors.gydytojaiFiltersPanel.querySelectorAll('button, input, select, textarea');
+    controls.forEach((control) => {
+      if (
+        control instanceof HTMLButtonElement ||
+        control instanceof HTMLInputElement ||
+        control instanceof HTMLSelectElement ||
+        control instanceof HTMLTextAreaElement
+      ) {
+        control.disabled = showFullSkeleton;
+      }
+    });
   }
   if (selectors.gydytojaiLoadingState instanceof HTMLElement) {
     selectors.gydytojaiLoadingState.hidden = !showFullSkeleton;
@@ -488,6 +505,7 @@ function renderLeaderboardTable(selectors, rows, tableSort) {
     return;
   }
   const sorted = sortLeaderboardRows(rows, tableSort);
+  const fragment = document.createDocumentFragment();
   sorted.forEach((entry) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -503,8 +521,9 @@ function renderLeaderboardTable(selectors, rows, tableSort) {
       <td>${oneDecimalFormatter.format(entry.losGt16Share * 100)}</td>
       <td>${oneDecimalFormatter.format(entry.nightShare * 100)}</td>
     `;
-    body.appendChild(tr);
+    fragment.appendChild(tr);
   });
+  body.appendChild(fragment);
 }
 
 function renderSpecialtyComparisonTable(selectors, model, dashboardState) {
@@ -535,6 +554,7 @@ function renderSpecialtyComparisonTable(selectors, model, dashboardState) {
   }
   empty.hidden = true;
   const sorted = sortLeaderboardRows(rows, dashboardState?.doctorsSpecialtyTableSort || 'count_desc');
+  const fragment = document.createDocumentFragment();
   sorted.forEach((entry) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -550,8 +570,9 @@ function renderSpecialtyComparisonTable(selectors, model, dashboardState) {
       <td>${oneDecimalFormatter.format(entry.losGt16Share * 100)}</td>
       <td>${oneDecimalFormatter.format(entry.nightShare * 100)}</td>
     `;
-    body.appendChild(tr);
+    fragment.appendChild(tr);
   });
+  body.appendChild(fragment);
   updateSpecialtySortHeaderState(selectors, dashboardState?.doctorsSpecialtyTableSort);
 }
 
@@ -570,6 +591,134 @@ function setGydytojaiSectionExpanded(dashboardState, key, expanded) {
   }
   const state = ensureGydytojaiSectionExpandedState(dashboardState);
   state[key] = expanded === true;
+}
+
+function isGydytojaiSectionExpanded(dashboardState, key) {
+  if (!GYDYTOJAI_SECTION_KEYS.includes(String(key || ''))) {
+    return false;
+  }
+  return dashboardState?.gydytojaiSectionExpanded?.[key] === true;
+}
+
+function buildDoctorSpecialtyConfigSignature(settings) {
+  const raw = settings?.doctors?.specialties;
+  if (!raw || typeof raw !== 'object') {
+    return 'disabled';
+  }
+  try {
+    return JSON.stringify({
+      enabled: raw.enabled !== false,
+      strict: raw.strict !== false,
+      excludeUnmappedFromStats: raw.excludeUnmappedFromStats === true,
+      effectiveDateField: raw.effectiveDateField || 'arrival',
+      groups: Array.isArray(raw.groups) ? raw.groups : [],
+      assignments: Array.isArray(raw.assignments) ? raw.assignments : [],
+    });
+  } catch (_error) {
+    return 'unserializable';
+  }
+}
+
+function getCachedDoctorSpecialtyModel(dashboardState, settings, records) {
+  const cache = dashboardState?.doctorsSpecialtyModelCache || {};
+  const configSignature = buildDoctorSpecialtyConfigSignature(settings);
+  if (cache.recordsRef === records && cache.configSignature === configSignature && cache.model) {
+    return cache.model;
+  }
+  const model = createDoctorSpecialtyResolver(settings, records);
+  dashboardState.doctorsSpecialtyModelCache = {
+    recordsRef: records,
+    configSignature,
+    model,
+  };
+  return model;
+}
+
+function buildDoctorAnnualModelCacheKey(dashboardState, sharedOptions) {
+  return JSON.stringify({
+    year: sharedOptions?.yearFilter ?? 'all',
+    topN: sharedOptions?.topN ?? 15,
+    minCases: sharedOptions?.minCases ?? 30,
+    sortBy: sharedOptions?.sortBy ?? 'volume_desc',
+    arrivalFilter: sharedOptions?.arrivalFilter ?? 'all',
+    dispositionFilter: sharedOptions?.dispositionFilter ?? 'all',
+    shiftFilter: sharedOptions?.shiftFilter ?? 'all',
+    specialtyFilter: sharedOptions?.specialtyFilter ?? 'all',
+    searchQuery: sharedOptions?.searchQuery ?? '',
+    annualMetric: dashboardState?.doctorsAnnualMetric ?? 'count',
+    annualMinYearCount: dashboardState?.doctorsAnnualMinYearCount ?? 2,
+    annualSelected: Array.isArray(dashboardState?.doctorsAnnualSelected)
+      ? dashboardState.doctorsAnnualSelected
+      : [],
+  });
+}
+
+function buildSpecialtyAnnualModelCacheKey(dashboardState, sharedOptions) {
+  return JSON.stringify({
+    year: sharedOptions?.yearFilter ?? 'all',
+    topN: sharedOptions?.topN ?? 15,
+    minCases: sharedOptions?.minCases ?? 30,
+    sortBy: sharedOptions?.sortBy ?? 'volume_desc',
+    arrivalFilter: sharedOptions?.arrivalFilter ?? 'all',
+    dispositionFilter: sharedOptions?.dispositionFilter ?? 'all',
+    shiftFilter: sharedOptions?.shiftFilter ?? 'all',
+    specialtyFilter: sharedOptions?.specialtyFilter ?? 'all',
+    searchQuery: sharedOptions?.searchQuery ?? '',
+    specialtyAnnualMetric: dashboardState?.doctorsSpecialtyAnnualMetric ?? 'count',
+    specialtyAnnualTopN: dashboardState?.doctorsSpecialtyAnnualTopN ?? 6,
+    specialtyAnnualMinYearCount: dashboardState?.doctorsSpecialtyAnnualMinYearCount ?? 2,
+    specialtyAnnualSelected: Array.isArray(dashboardState?.doctorsSpecialtyAnnualSelected)
+      ? dashboardState.doctorsSpecialtyAnnualSelected
+      : [],
+  });
+}
+
+function getCachedDoctorAnnualModel(dashboardState, records, sharedOptions, computeFn) {
+  const key = buildDoctorAnnualModelCacheKey(dashboardState, sharedOptions);
+  const cache = dashboardState?.doctorsAnnualModelCache || {};
+  if (cache.recordsRef === records && cache.key === key && cache.model) {
+    return cache.model;
+  }
+  const model = computeFn();
+  dashboardState.doctorsAnnualModelCache = { recordsRef: records, key, model };
+  return model;
+}
+
+function getCachedDoctorSpecialtyAnnualModel(dashboardState, records, sharedOptions, computeFn) {
+  const key = buildSpecialtyAnnualModelCacheKey(dashboardState, sharedOptions);
+  const cache = dashboardState?.doctorsSpecialtyAnnualModelCache || {};
+  if (cache.recordsRef === records && cache.key === key && cache.model) {
+    return cache.model;
+  }
+  const model = computeFn();
+  dashboardState.doctorsSpecialtyAnnualModelCache = { recordsRef: records, key, model };
+  return model;
+}
+
+function buildDoctorBaseModelsCacheKey(sharedOptions) {
+  return JSON.stringify({
+    year: sharedOptions?.yearFilter ?? 'all',
+    topN: sharedOptions?.topN ?? 15,
+    minCases: sharedOptions?.minCases ?? 30,
+    sortBy: sharedOptions?.sortBy ?? 'volume_desc',
+    arrivalFilter: sharedOptions?.arrivalFilter ?? 'all',
+    dispositionFilter: sharedOptions?.dispositionFilter ?? 'all',
+    shiftFilter: sharedOptions?.shiftFilter ?? 'all',
+    specialtyFilter: sharedOptions?.specialtyFilter ?? 'all',
+    requireMappedSpecialty: sharedOptions?.requireMappedSpecialty === true,
+    searchQuery: sharedOptions?.searchQuery ?? '',
+  });
+}
+
+function getCachedDoctorBaseModels(dashboardState, records, sharedOptions, computeFn) {
+  const key = buildDoctorBaseModelsCacheKey(sharedOptions);
+  const cache = dashboardState?.doctorsBaseModelsCache || {};
+  if (cache.recordsRef === records && cache.key === key && cache.models) {
+    return cache.models;
+  }
+  const models = computeFn();
+  dashboardState.doctorsBaseModelsCache = { recordsRef: records, key, models };
+  return models;
 }
 
 function getAdvancedFilterOverrideCount(dashboardState) {
@@ -932,6 +1081,7 @@ function renderDoctorChartToggles(selectors, dashboardState, rows) {
     (dashboardState.doctorsChartsHiddenAliases || []).map((alias) => normalizeDoctorAliasToken(alias))
   );
   host.replaceChildren();
+  const fragment = document.createDocumentFragment();
   aliases.forEach((alias) => {
     const hidden = hiddenSet.has(normalizeDoctorAliasToken(alias));
     const chip = document.createElement('button');
@@ -940,8 +1090,9 @@ function renderDoctorChartToggles(selectors, dashboardState, rows) {
     chip.setAttribute('data-chart-doctor-toggle', alias);
     chip.setAttribute('aria-pressed', hidden ? 'false' : 'true');
     chip.textContent = alias;
-    host.appendChild(chip);
+    fragment.appendChild(chip);
   });
+  host.appendChild(fragment);
 }
 
 function setDoctorExportState(exportState, selectors, dashboardState, models) {
@@ -1871,6 +2022,23 @@ function applyLosChartDynamicSort(chart, sourceRows) {
 }
 
 function renderCharts(dashboardState, chartLib, selectors, models) {
+  const setChartCardLoading = (target, isLoading) => {
+    const node =
+      target instanceof HTMLElement
+        ? target
+        : typeof target === 'string'
+          ? document.getElementById(target)
+          : null;
+    const card = node instanceof HTMLElement ? node.closest('.report-card') : null;
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+    if (isLoading) {
+      card.dataset.loading = 'true';
+    } else {
+      delete card.dataset.loading;
+    }
+  };
   const rows = models?.leaderboard?.rows || [];
   const labels = rows.map((row) => row.alias);
   const losSortedRows = [...rows].sort((a, b) => {
@@ -1893,6 +2061,7 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
   });
+  setChartCardLoading(selectors.gydytojaiVolumeChart, false);
 
   const losChart = upsertChart(dashboardState.doctorsCharts, 'los', chartLib, selectors.gydytojaiLosChart, {
     type: 'bar',
@@ -1948,6 +2117,12 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
     },
   });
   applyLosChartDynamicSort(losChart, rows);
+  setChartCardLoading(selectors.gydytojaiLosChart, false);
+
+  const renderExtraCharts = dashboardState?.gydytojaiChartsExpandedExtras === true;
+  if (!renderExtraCharts) {
+    return;
+  }
 
   upsertChart(dashboardState.doctorsCharts, 'hospital', chartLib, selectors.gydytojaiHospitalChart, {
     type: 'bar',
@@ -1963,6 +2138,7 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
   });
+  setChartCardLoading(selectors.gydytojaiHospitalChart, false);
 
   const mixRows = mixSortedRows;
   upsertChart(dashboardState.doctorsCharts, 'mix', chartLib, selectors.gydytojaiMixChart, {
@@ -1980,6 +2156,7 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
       scales: { x: { stacked: true }, y: { stacked: true } },
     },
   });
+  setChartCardLoading(selectors.gydytojaiMixChart, false);
 
   const scatter = models?.scatter?.rows || [];
   upsertChart(dashboardState.doctorsCharts, 'scatter', chartLib, selectors.gydytojaiScatterChart, {
@@ -2012,6 +2189,7 @@ function renderCharts(dashboardState, chartLib, selectors, models) {
       },
     },
   });
+  setChartCardLoading(selectors.gydytojaiScatterChart, false);
 }
 
 function wireInteractions(selectors, dashboardState, rerender, handleReportExportClick) {
@@ -2019,6 +2197,10 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsSearchDebounced = String(dashboardState.doctorsSearch || '').trim();
     rerender();
   }, 250);
+  const applyLayoutAndQuerySync = () => {
+    applyGydytojaiLayoutControls(selectors, dashboardState);
+    syncDoctorPageQueryFromState(dashboardState);
+  };
   const expandSectionAndRerender = (key) => {
     setGydytojaiSectionExpanded(dashboardState, key, true);
     rerender();
@@ -2036,16 +2218,25 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     applyActiveFiltersDisclosure(selectors, dashboardState);
   });
   selectors.gydytojaiChartsMoreToggle?.addEventListener('click', () => {
-    dashboardState.gydytojaiChartsExpandedExtras = !(dashboardState.gydytojaiChartsExpandedExtras === true);
+    const nextExpanded = !(dashboardState.gydytojaiChartsExpandedExtras === true);
+    dashboardState.gydytojaiChartsExpandedExtras = nextExpanded;
     setGydytojaiSectionExpanded(dashboardState, 'charts', true);
-    rerender();
+    if (nextExpanded) {
+      rerender();
+      return;
+    }
+    applyLayoutAndQuerySync();
   });
   selectors.gydytojaiChartDoctorTogglesToggle?.addEventListener('click', () => {
-    dashboardState.gydytojaiChartsDoctorTogglesExpanded = !(
-      dashboardState.gydytojaiChartsDoctorTogglesExpanded === true
-    );
+    const nextExpanded = !(dashboardState.gydytojaiChartsDoctorTogglesExpanded === true);
+    dashboardState.gydytojaiChartsDoctorTogglesExpanded = nextExpanded;
+    const chartsWasExpanded = isGydytojaiSectionExpanded(dashboardState, 'charts');
     setGydytojaiSectionExpanded(dashboardState, 'charts', true);
-    rerender();
+    if (!chartsWasExpanded && nextExpanded) {
+      rerender();
+      return;
+    }
+    applyLayoutAndQuerySync();
   });
   selectors.gydytojaiSectionToggleButtons?.forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -2058,8 +2249,15 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
         return;
       }
       const current = dashboardState?.gydytojaiSectionExpanded?.[key] === true;
-      setGydytojaiSectionExpanded(dashboardState, key, !current);
-      rerender();
+      const nextExpanded = !current;
+      setGydytojaiSectionExpanded(dashboardState, key, nextExpanded);
+      const requiresDataRender =
+        nextExpanded && (key === 'charts' || key === 'specialty' || key === 'annual');
+      if (requiresDataRender) {
+        rerender();
+        return;
+      }
+      applyLayoutAndQuerySync();
     });
   });
   selectors.jumpLinks?.forEach((link) => {
@@ -2081,8 +2279,13 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       };
       const key = map[sectionId];
       if (key) {
+        const alreadyExpanded = isGydytojaiSectionExpanded(dashboardState, key);
         setGydytojaiSectionExpanded(dashboardState, key, true);
-        rerender();
+        if (!alreadyExpanded && (key === 'charts' || key === 'specialty' || key === 'annual')) {
+          rerender();
+          return;
+        }
+        applyLayoutAndQuerySync();
       }
     });
   });
@@ -2674,6 +2877,27 @@ export async function runGydytojaiRuntime(core) {
   let initialLoadPending = true;
   let loadingStartedAt = 0;
   const minLoadingVisibleMs = 250;
+  let deferredVisualRenderToken = 0;
+  const scheduleDeferredVisualRender = (callback) => {
+    deferredVisualRenderToken += 1;
+    const token = deferredVisualRenderToken;
+    const scheduleFrame =
+      typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (fn) => window.setTimeout(fn, 0);
+    scheduleFrame(() => {
+      window.setTimeout(async () => {
+        if (token !== deferredVisualRenderToken) {
+          return;
+        }
+        try {
+          await callback();
+        } catch (error) {
+          console.error('Nepavyko atvaizduoti gydytojų papildomų blokų:', error);
+        }
+      }, 0);
+    });
+  };
   const render = async () => {
     if (
       initialLoadPending &&
@@ -2696,7 +2920,7 @@ export async function runGydytojaiRuntime(core) {
       specialtyFilter: dashboardState.doctorsSpecialtyFilter,
       searchQuery: dashboardState.doctorsSearchDebounced,
     };
-    const specialtyModel = createDoctorSpecialtyResolver(settings, records);
+    const specialtyModel = getCachedDoctorSpecialtyModel(dashboardState, settings, records);
     dashboardState.doctorsSpecialtyValidation = specialtyModel.validation;
     dashboardState.doctorsSpecialtyUiEnabled = Boolean(
       specialtyModel.validation?.enabled && specialtyModel.validation?.valid
@@ -2724,62 +2948,97 @@ export async function runGydytojaiRuntime(core) {
       doctorSpecialtyResolver: specialtyModel.resolver,
       computeContext: statsComputeContext,
     };
-    const specialtyLeaderboard = dashboardState.doctorsSpecialtyUiEnabled
+    const specialtySectionExpanded = isGydytojaiSectionExpanded(dashboardState, 'specialty');
+    const specialtyFilterForcesSection = String(dashboardState.doctorsSpecialtyFilter || 'all') !== 'all';
+    const shouldComputeSpecialtyLeaderboard =
+      dashboardState.doctorsSpecialtyUiEnabled && (specialtySectionExpanded || specialtyFilterForcesSection);
+    const specialtyLeaderboard = shouldComputeSpecialtyLeaderboard
       ? computeDoctorSpecialtyLeaderboard(records, {
           ...sharedOptions,
           specialtyFilter: 'all',
         })
       : null;
 
-    const leaderboard = computeDoctorLeaderboard(records, sharedOptions);
-    const mix = computeDoctorDayNightMix(records, sharedOptions);
-    const hospital = computeDoctorHospitalizationShare(records, sharedOptions);
-    const scatter = computeDoctorVolumeVsLosScatter(records, sharedOptions);
-    const annual = computeDoctorYearlySmallMultiples(records, {
-      ...sharedOptions,
-      yearScope: 'all_years',
-      yearFilter: 'all',
-      metric: dashboardState.doctorsAnnualMetric,
-      topN: Math.max(
-        1,
-        Array.isArray(dashboardState.doctorsAnnualSelected) ? dashboardState.doctorsAnnualSelected.length : 1
-      ),
-      minYearCount: dashboardState.doctorsAnnualMinYearCount,
-      selectedDoctors: dashboardState.doctorsAnnualSelected,
-    });
+    const baseModels = getCachedDoctorBaseModels(dashboardState, records, sharedOptions, () => ({
+      leaderboard: computeDoctorLeaderboard(records, sharedOptions),
+      mix: computeDoctorDayNightMix(records, sharedOptions),
+      hospital: computeDoctorHospitalizationShare(records, sharedOptions),
+      scatter: computeDoctorVolumeVsLosScatter(records, sharedOptions),
+    }));
+    const leaderboard = baseModels?.leaderboard || { rows: [], yearOptions: [], coverage: {} };
+    const mix = baseModels?.mix || { rows: [] };
+    const hospital = baseModels?.hospital || { rows: [] };
+    const scatter = baseModels?.scatter || { rows: [] };
+    const annualSectionExpanded = isGydytojaiSectionExpanded(dashboardState, 'annual');
+    const annualDoctorVisible =
+      annualSectionExpanded &&
+      normalizeGydytojaiAnnualSubview(dashboardState.gydytojaiAnnualSubview, 'doctor') === 'doctor';
+    let annual = null;
+    if (annualDoctorVisible) {
+      annual = getCachedDoctorAnnualModel(dashboardState, records, sharedOptions, () =>
+        computeDoctorYearlySmallMultiples(records, {
+          ...sharedOptions,
+          yearScope: 'all_years',
+          yearFilter: 'all',
+          metric: dashboardState.doctorsAnnualMetric,
+          topN: Math.max(
+            1,
+            Array.isArray(dashboardState.doctorsAnnualSelected)
+              ? dashboardState.doctorsAnnualSelected.length
+              : 1
+          ),
+          minYearCount: dashboardState.doctorsAnnualMinYearCount,
+          selectedDoctors: dashboardState.doctorsAnnualSelected,
+        })
+      );
+    } else {
+      annual =
+        dashboardState?.doctorsAnnualModelCache?.recordsRef === records
+          ? dashboardState.doctorsAnnualModelCache.model
+          : null;
+    }
     dashboardState.doctorsAnnualAvailable = Array.isArray(annual?.meta?.availableDoctors)
       ? annual.meta.availableDoctors
-      : [];
+      : Array.isArray(dashboardState.doctorsAnnualAvailable)
+        ? dashboardState.doctorsAnnualAvailable
+        : [];
     const specialtyAnnualMetric = normalizeSpecialtyAnnualMetric(
       dashboardState.doctorsSpecialtyAnnualMetric,
       'count'
     );
     dashboardState.doctorsSpecialtyAnnualMetric = specialtyAnnualMetric;
+    const annualSpecialtyVisible =
+      annualSectionExpanded &&
+      dashboardState.doctorsSpecialtyUiEnabled === true &&
+      normalizeGydytojaiAnnualSubview(dashboardState.gydytojaiAnnualSubview, 'doctor') === 'specialty';
     const specialtyAnnualModel =
       dashboardState.doctorsSpecialtyUiEnabled === true
-        ? specialtyAnnualMetric === 'losGroups'
-          ? computeDoctorSpecialtyYearlyComposition(records, {
-              ...sharedOptions,
-              yearScope: 'all_years',
-              yearFilter: 'all',
-              topN: dashboardState.doctorsSpecialtyAnnualTopN,
-              minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
-              selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
-            })
-          : computeDoctorSpecialtyYearlySmallMultiples(records, {
-              ...sharedOptions,
-              yearScope: 'all_years',
-              yearFilter: 'all',
-              metric: specialtyAnnualMetric,
-              topN: dashboardState.doctorsSpecialtyAnnualTopN,
-              minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
-              selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
-            })
+        ? annualSpecialtyVisible
+          ? getCachedDoctorSpecialtyAnnualModel(dashboardState, records, sharedOptions, () =>
+              specialtyAnnualMetric === 'losGroups'
+                ? computeDoctorSpecialtyYearlyComposition(records, {
+                    ...sharedOptions,
+                    yearScope: 'all_years',
+                    yearFilter: 'all',
+                    topN: dashboardState.doctorsSpecialtyAnnualTopN,
+                    minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
+                    selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
+                  })
+                : computeDoctorSpecialtyYearlySmallMultiples(records, {
+                    ...sharedOptions,
+                    yearScope: 'all_years',
+                    yearFilter: 'all',
+                    metric: specialtyAnnualMetric,
+                    topN: dashboardState.doctorsSpecialtyAnnualTopN,
+                    minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
+                    selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
+                  })
+            )
+          : dashboardState?.doctorsSpecialtyAnnualModelCache?.recordsRef === records
+            ? dashboardState.doctorsSpecialtyAnnualModelCache.model
+            : null
         : null;
-    if (
-      dashboardState.doctorsSpecialtyUiEnabled === true &&
-      String(dashboardState.doctorsSpecialtyFilter || 'all') !== 'all'
-    ) {
+    if (dashboardState.doctorsSpecialtyUiEnabled === true && specialtyFilterForcesSection) {
       setGydytojaiSectionExpanded(dashboardState, 'specialty', true);
     }
     syncSpecialtyAnnualSelection(
@@ -2798,64 +3057,92 @@ export async function runGydytojaiRuntime(core) {
     renderDoctorSpecialtyValidation(selectors, dashboardState);
     renderActiveDoctorFilters(selectors, dashboardState);
     renderActiveDoctorFiltersSummary(selectors, dashboardState);
-    renderSpecialtyComparisonTable(selectors, specialtyLeaderboard, dashboardState);
+    if (specialtySectionExpanded || specialtyFilterForcesSection) {
+      renderSpecialtyComparisonTable(selectors, specialtyLeaderboard, dashboardState);
+    }
     renderGydytojaiSectionSummaries(selectors, dashboardState, { specialtyLeaderboard });
-    renderSpecialtyAnnualControls(selectors, dashboardState, specialtyAnnualModel);
-    renderSpecialtyAnnualSummary(selectors, dashboardState, specialtyAnnualModel);
     applyGydytojaiLayoutControls(selectors, dashboardState);
-    renderDoctorChartToggles(selectors, dashboardState, leaderboard.rows);
-    const visibleLeaderboardRows = getVisibleDoctorRowsForCharts(
-      leaderboard.rows,
-      dashboardState.doctorsChartsHiddenAliases
-    );
-    const visibleAliases = new Set(
-      visibleLeaderboardRows.map((row) => normalizeDoctorAliasToken(row?.alias))
-    );
-    const chartModels = {
-      leaderboard: { ...leaderboard, rows: visibleLeaderboardRows },
-      mix: {
-        ...mix,
-        rows: (mix.rows || []).filter((row) => visibleAliases.has(normalizeDoctorAliasToken(row?.alias))),
-      },
-      hospital: {
-        ...hospital,
-        rows: (hospital.rows || []).filter((row) =>
-          visibleAliases.has(normalizeDoctorAliasToken(row?.alias))
-        ),
-      },
-      scatter: {
-        ...scatter,
-        rows: (scatter.rows || []).filter((row) => visibleAliases.has(normalizeDoctorAliasToken(row?.alias))),
-      },
-    };
     setCoverage(selectors, leaderboard);
     renderLeaderboardTable(selectors, leaderboard.rows, dashboardState.doctorsTableSort);
     updateSortHeaderState(selectors, dashboardState.doctorsTableSort);
-    setDoctorExportState(exportState, selectors, dashboardState, chartModels);
+    const chartsSectionExpanded = isGydytojaiSectionExpanded(dashboardState, 'charts');
+    const annualSectionStillExpanded = isGydytojaiSectionExpanded(dashboardState, 'annual');
+    const annualSubview = normalizeGydytojaiAnnualSubview(dashboardState.gydytojaiAnnualSubview, 'doctor');
+    const shouldRenderDeferredVisuals =
+      chartsSectionExpanded ||
+      annualSectionStillExpanded ||
+      (dashboardState.doctorsSpecialtyUiEnabled === true &&
+        annualSectionStillExpanded &&
+        annualSubview === 'specialty');
+    if (shouldRenderDeferredVisuals) {
+      scheduleDeferredVisualRender(async () => {
+        renderSpecialtyAnnualControls(selectors, dashboardState, specialtyAnnualModel);
+        renderSpecialtyAnnualSummary(selectors, dashboardState, specialtyAnnualModel);
 
-    chartLib = chartLib || (await loadChartJs());
-    if (!chartLib) {
-      return;
+        let chartModels = null;
+        if (chartsSectionExpanded) {
+          renderDoctorChartToggles(selectors, dashboardState, leaderboard.rows);
+          const visibleLeaderboardRows = getVisibleDoctorRowsForCharts(
+            leaderboard.rows,
+            dashboardState.doctorsChartsHiddenAliases
+          );
+          const visibleAliases = new Set(
+            visibleLeaderboardRows.map((row) => normalizeDoctorAliasToken(row?.alias))
+          );
+          chartModels = {
+            leaderboard: { ...leaderboard, rows: visibleLeaderboardRows },
+            mix: {
+              ...mix,
+              rows: (mix.rows || []).filter((row) =>
+                visibleAliases.has(normalizeDoctorAliasToken(row?.alias))
+              ),
+            },
+            hospital: {
+              ...hospital,
+              rows: (hospital.rows || []).filter((row) =>
+                visibleAliases.has(normalizeDoctorAliasToken(row?.alias))
+              ),
+            },
+            scatter: {
+              ...scatter,
+              rows: (scatter.rows || []).filter((row) =>
+                visibleAliases.has(normalizeDoctorAliasToken(row?.alias))
+              ),
+            },
+          };
+          setDoctorExportState(exportState, selectors, dashboardState, chartModels);
+          chartLib = chartLib || (await loadChartJs());
+          if (chartLib) {
+            renderCharts(dashboardState, chartLib, selectors, chartModels);
+          }
+        }
+
+        if (annualSectionStillExpanded) {
+          chartLib = chartLib || (await loadChartJs());
+          if (!chartLib) {
+            return;
+          }
+          renderAnnualSelectedChips(selectors, dashboardState, annual);
+          renderAnnualDoctorSuggestions(selectors, dashboardState);
+          renderDoctorAnnualSmallMultiples(
+            selectors,
+            dashboardState,
+            chartLib,
+            annual,
+            exportState,
+            handleReportExportClick
+          );
+          renderSpecialtyAnnualSmallMultiples(
+            selectors,
+            dashboardState,
+            chartLib,
+            specialtyAnnualModel,
+            exportState,
+            handleReportExportClick
+          );
+        }
+      });
     }
-    renderCharts(dashboardState, chartLib, selectors, chartModels);
-    renderAnnualSelectedChips(selectors, dashboardState, annual);
-    renderAnnualDoctorSuggestions(selectors, dashboardState);
-    renderDoctorAnnualSmallMultiples(
-      selectors,
-      dashboardState,
-      chartLib,
-      annual,
-      exportState,
-      handleReportExportClick
-    );
-    renderSpecialtyAnnualSmallMultiples(
-      selectors,
-      dashboardState,
-      chartLib,
-      specialtyAnnualModel,
-      exportState,
-      handleReportExportClick
-    );
   };
 
   let renderToken = 0;

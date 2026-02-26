@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   computeReferralMonthlyHeatmap: vi.fn(() => ({ rows: [] })),
   computePspcReferralHospitalizationCorrelation: vi.fn(() => ({ rows: [] })),
   computePspcDistribution: vi.fn(() => ({ rows: [] })),
+  collapseSmallGroups: vi.fn((rows) => rows),
   scopeExtendedHistoricalRecords: vi.fn(() => ({
     records: [{ id: 'scoped-record' }],
     yearOptions: ['2024'],
@@ -27,6 +28,7 @@ vi.mock('../../src/data/stats.js', () => ({
   computeReferralMonthlyHeatmap: mocks.computeReferralMonthlyHeatmap,
   computePspcReferralHospitalizationCorrelation: mocks.computePspcReferralHospitalizationCorrelation,
   computePspcDistribution: mocks.computePspcDistribution,
+  collapseSmallGroups: mocks.collapseSmallGroups,
   scopeExtendedHistoricalRecords: mocks.scopeExtendedHistoricalRecords,
 }));
 
@@ -96,11 +98,41 @@ describe('report computation caching helpers', () => {
     expect(mocks.computeDiagnosisFrequency).toHaveBeenCalledTimes(1);
     expect(mocks.computeAgeDiagnosisHeatmap).toHaveBeenCalledTimes(1);
     expect(mocks.computeDiagnosisCodeYearlyShare).toHaveBeenCalledTimes(1);
-    expect(mocks.computeReferralYearlyTrend).toHaveBeenCalledTimes(1);
-    expect(mocks.computeReferralDispositionYearlyTrend).toHaveBeenCalledTimes(1);
-    expect(mocks.computeReferralMonthlyHeatmap).toHaveBeenCalledTimes(1);
-    expect(mocks.computePspcReferralHospitalizationCorrelation).toHaveBeenCalledTimes(1);
-    expect(mocks.computePspcDistribution).toHaveBeenCalledTimes(1);
+    expect(mocks.computeReferralYearlyTrend).toHaveBeenCalledTimes(0);
+    expect(mocks.computeReferralDispositionYearlyTrend).toHaveBeenCalledTimes(0);
+    expect(mocks.computeReferralMonthlyHeatmap).toHaveBeenCalledTimes(0);
+    expect(mocks.computePspcReferralHospitalizationCorrelation).toHaveBeenCalledTimes(0);
+    expect(mocks.computePspcDistribution).toHaveBeenCalledTimes(0);
+  });
+
+  it('getReportsComputation does not invalidate cache on PSPC sort-only changes', () => {
+    const historicalRecords = [
+      { referral: 'su siuntimu', pspc: 'Vilniaus PSPC', hospitalized: true, arrival: new Date('2024-01-01') },
+    ];
+    const dashboardState = {
+      summariesReportsYear: 'all',
+      summariesReportsTopN: 15,
+      summariesReportsMinGroupSize: 100,
+      summariesReferralPspcSort: 'desc',
+      summariesReportsComputationCache: { recordsRef: null, key: '', value: null },
+    };
+    const settings = { calculations: { shiftStartHour: 7 } };
+    const scopeMeta = {
+      records: historicalRecords,
+      yearOptions: ['2024'],
+      yearFilter: 'all',
+      shiftStartHour: 7,
+      coverage: { total: 1, extended: 1 },
+    };
+
+    const first = getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta);
+    dashboardState.summariesReferralPspcSort = 'asc';
+    const second = getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta);
+
+    expect(second).toBe(first);
+    expect(mocks.computeDiagnosisFrequency).toHaveBeenCalledTimes(1);
+    expect(mocks.computeAgeDiagnosisHeatmap).toHaveBeenCalledTimes(1);
+    expect(mocks.computeDiagnosisCodeYearlyShare).toHaveBeenCalledTimes(1);
   });
 
   it('getScopedReportsMeta caches by year and invalidates on records reference change', () => {
