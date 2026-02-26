@@ -54,6 +54,8 @@ export const FILTER_SCHEMAS = {
       hospitalSort: { type: 'string', queryKey: 'hts' },
       hospitalSearch: { type: 'string', queryKey: 'htq' },
       hospitalDepartment: { type: 'string', queryKey: 'htd' },
+      chartsSectionsExpanded: { type: 'csv', queryKey: 'cse' },
+      chartsSubsectionsExpanded: { type: 'csv', queryKey: 'css' },
     },
   },
   feedback: {

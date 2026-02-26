@@ -1398,6 +1398,71 @@ body[data-theme="dark"] .charts-subsection {
   margin-top: 0;
 }
 
+.charts-section-toggle,
+.charts-subsection-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-alt);
+  color: inherit;
+  font: inherit;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.charts-section-toggle {
+  margin: 10px 0 8px;
+}
+
+.charts-subsection-toggle {
+  margin: 12px 0 8px;
+  background: color-mix(in srgb, var(--color-surface-alt) 70%, transparent);
+}
+
+.charts-section-toggle:hover,
+.charts-section-toggle:focus-visible,
+.charts-subsection-toggle:hover,
+.charts-subsection-toggle:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.charts-section-toggle__title,
+.charts-subsection-toggle__title {
+  font-weight: 700;
+}
+
+.charts-section-toggle__summary,
+.charts-subsection-toggle__summary {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.charts-section-toggle__summary::after,
+.charts-subsection-toggle__summary::after {
+  content: "▾";
+  transition: transform 160ms ease;
+}
+
+.charts-section-toggle.is-expanded .charts-section-toggle__summary::after,
+.charts-subsection-toggle.is-expanded .charts-subsection-toggle__summary::after {
+  transform: rotate(180deg);
+}
+
+[data-charts-section-panel][hidden],
+[data-charts-subsection-panel][hidden],
+#chartsMainFiltersPanel[hidden] {
+  display: none !important;
+}
+
 .charts-subsection__header {
   margin-bottom: 12px;
 }

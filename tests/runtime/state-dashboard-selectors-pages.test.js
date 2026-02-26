@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDashboardState } from '../../src/state/dashboardState.js';
+import { createChartsPageSelectors } from '../../src/state/selectors/pages/charts.js';
 import { createEdPageSelectors } from '../../src/state/selectors/pages/ed.js';
 import { createFeedbackPageSelectors } from '../../src/state/selectors/pages/feedback.js';
 import { createGydytojaiPageSelectors } from '../../src/state/selectors/pages/gydytojai.js';
@@ -130,6 +131,96 @@ describe('page selector factories', () => {
     expect(selectors.summariesJumpLinks).toHaveLength(1);
     expect(selectors.reportExportButtons).toHaveLength(1);
     expect(selectors.tableDownloadButtons).toHaveLength(1);
+  });
+
+  it('creates charts page selectors', () => {
+    renderShell(`
+      <nav class="charts-jump-nav"><a class="charts-jump-nav__link"></a></nav>
+      <button data-charts-section-toggle="main"></button>
+      <section data-charts-section-panel="main"></section>
+      <button data-charts-subsection-toggle="overview"></button>
+      <section data-charts-subsection-panel="overview"></section>
+      <div id="chartsMainFiltersPanel"></div>
+      <section data-section="chart">
+        <div id="chartPeriodGroup"><button data-chart-period="30"></button></div>
+        <div id="chartYearGroup"></div>
+        <form id="chartFiltersForm">
+          <button data-chart-arrival="all"></button>
+          <button data-chart-disposition="all"></button>
+          <button data-chart-card-type="all"></button>
+          <button data-chart-compare-gmp="off"></button>
+        </form>
+        <div class="hourly-compare-series"><button data-hourly-compare-series="all"></button></div>
+        <button data-hourly-metric="arrivals"></button>
+      </section>
+      <h2 id="chartHeading"></h2>
+      <p id="chartSubtitle"></p>
+      <span id="dailyChartLabel"></span>
+      <span id="dailyChartContext"></span>
+      <p id="dowChartTitle"></p>
+      <p id="dowStayChartTitle"></p>
+      <span id="dowChartContext"></span>
+      <span id="dowStayChartContext"></span>
+      <p id="hourlyChartTitle"></p>
+      <label id="hourlyMetricLabel"></label>
+      <label id="hourlyDepartmentLabel"></label>
+      <input id="hourlyDepartment" />
+      <div id="hourlyDepartmentSuggestions"></div>
+      <button id="hourlyDepartmentToggle"></button>
+      <input id="hourlyCompareToggle" type="checkbox" />
+      <select id="hourlyCompareYearA"></select>
+      <select id="hourlyCompareYearB"></select>
+      <label id="hourlyWeekdayLabel"></label>
+      <select id="hourlyWeekday"></select>
+      <label id="hourlyStayLabel"></label>
+      <select id="hourlyStayBucket"></select>
+      <button id="hourlyResetFilters"></button>
+      <p id="funnelChartTitle"></p>
+      <p id="arrivalHeatmapTitle"></p>
+      <div id="arrivalHeatmap"></div>
+      <select id="heatmapMetric"></select>
+      <label id="heatmapMetricLabel"></label>
+      <select id="heatmapArrival"></select>
+      <select id="heatmapDisposition"></select>
+      <select id="heatmapCardType"></select>
+      <select id="heatmapYear"></select>
+      <span id="chartYearLabel"></span>
+      <select id="chartYear"></select>
+      <p id="chartTimeScopeSummary"></p>
+      <button id="chartFiltersReset"></button>
+      <p id="chartFiltersSummary"></p>
+      <select id="chartArrival"></select>
+      <select id="chartDisposition"></select>
+      <select id="chartCardType"></select>
+      <input id="chartCompareGmp" type="checkbox" />
+      <h2 id="chartsHospitalTableHeading"></h2>
+      <p id="chartsHospitalTableSubtitle"></p>
+      <caption id="chartsHospitalTableCaption"></caption>
+      <label id="chartsHospitalTableYearLabel"></label>
+      <select id="chartsHospitalTableYear"></select>
+      <label id="chartsHospitalTableSearchLabel"></label>
+      <input id="chartsHospitalTableSearch" />
+      <p id="chartsHospitalTableHint"></p>
+      <table id="chartsHospitalTableRoot"><thead><tr><th data-charts-hospital-sort="name"></th></tr></thead><tbody id="chartsHospitalTableBody"></tbody></table>
+      <article id="chartsHospitalDeptTrendCard"></article>
+      <h3 id="chartsHospitalDeptTrendTitle"></h3>
+      <p id="chartsHospitalDeptTrendSubtitle"></p>
+      <canvas id="chartsHospitalDeptTrendCanvas"></canvas>
+      <p id="chartsHospitalDeptTrendEmpty"></p>
+      <div class="chart-grid"><div class="chart-card"></div></div>
+      <button data-chart-copy></button>
+      <button data-chart-download></button>
+      <button data-table-download="png"></button>
+    `);
+
+    const selectors = createChartsPageSelectors();
+    expect(selectors.chartsMainFiltersPanel).not.toBeNull();
+    expect(selectors.chartsSectionToggleButtons).toHaveLength(1);
+    expect(selectors.chartsSectionPanels).toHaveLength(1);
+    expect(selectors.chartsSubsectionToggleButtons).toHaveLength(1);
+    expect(selectors.chartsSubsectionPanels).toHaveLength(1);
+    expect(selectors.chartFiltersForm).not.toBeNull();
+    expect(selectors.chartsJumpLinks).toHaveLength(1);
   });
 
   it('creates feedback page selectors', () => {

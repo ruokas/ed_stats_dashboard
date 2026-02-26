@@ -124,6 +124,34 @@ const HOURLY_STAY_BUCKETS = [
   { key: '8to16', min: 8, max: 16 },
   { key: 'gt16', min: 16, max: Number.POSITIVE_INFINITY },
 ];
+const CHARTS_SECTION_KEYS = ['overview', 'hourly', 'heatmap', 'hospital'];
+const DEFAULT_CHARTS_SECTIONS_EXPANDED = {
+  overview: true,
+  hourly: false,
+  heatmap: false,
+  hospital: false,
+};
+
+function normalizeChartsSectionExpandedKeys(values) {
+  const allowed = new Set(CHARTS_SECTION_KEYS);
+  return (Array.isArray(values) ? values : [])
+    .map((value) => String(value || '').trim())
+    .filter((value, index, arr) => value && allowed.has(value) && arr.indexOf(value) === index);
+}
+
+function buildChartsExpandedMap(values, defaults) {
+  const keys = Object.keys(defaults || {});
+  const selected = new Set(Array.isArray(values) ? values : []);
+  const next = {};
+  keys.forEach((key) => {
+    next[key] = selected.has(key);
+  });
+  return next;
+}
+
+function getExpandedKeysFromMap(map, defaults) {
+  return Object.keys(defaults || {}).filter((key) => map?.[key] === true);
+}
 
 function matchesSharedPatientFilters(record, filters = {}) {
   if (filters.arrival === 'ems' && !record.ems) return false;
@@ -436,9 +464,11 @@ function setChartCardMessage(element, message) {
   messageEl.textContent = String(message);
 }
 
-function initChartsJumpNavigation(selectors) {
+function initChartsJumpNavigation(selectors, options = {}) {
   const nav = selectors?.chartsJumpNav;
   const links = Array.isArray(selectors?.chartsJumpLinks) ? selectors.chartsJumpLinks : [];
+  const onBeforeNavigate =
+    typeof options?.onBeforeNavigate === 'function' ? options.onBeforeNavigate : () => {};
   if (!nav || !links.length) {
     return;
   }
@@ -518,6 +548,7 @@ function initChartsJumpNavigation(selectors) {
   applyActiveLink(hashMatchedLink?.link || items[0].link);
   if (hashMatchedLink?.target) {
     window.setTimeout(() => {
+      onBeforeNavigate(hashMatchedLink.target, { source: 'hash-init' });
       scrollToSectionStart(hashMatchedLink.target, { smooth: false, updateHash: false });
     }, 0);
   }
@@ -525,6 +556,7 @@ function initChartsJumpNavigation(selectors) {
   items.forEach(({ link, target }) => {
     link.addEventListener('click', (event) => {
       event.preventDefault();
+      onBeforeNavigate(target, { source: 'jump-click' });
       applyActiveLink(link);
       scrollToSectionStart(target, { smooth: true, updateHash: true });
     });
@@ -537,6 +569,7 @@ function initChartsJumpNavigation(selectors) {
         applyActiveLink(hashLink.link);
       }
       if (hashLink?.target) {
+        onBeforeNavigate(hashLink.target, { source: 'hashchange' });
         scrollToSectionStart(hashLink.target, { smooth: false, updateHash: false });
       }
     });
@@ -612,6 +645,8 @@ export async function runChartsRuntime(core) {
     hourlyMetricArrivals: HOURLY_METRIC_ARRIVALS,
     hourlyCompareSeriesAll: HOURLY_COMPARE_SERIES_ALL,
   });
+  let initialLoadPending = true;
+  let chartsJumpBeforeNavigate = () => {};
   const getEnabledHeatmapMetricKeys = () => {
     const enabled = HEATMAP_METRIC_KEYS.filter((metricId) => isMetricEnabled(settings, metricId));
     return enabled.length ? enabled : HEATMAP_METRIC_KEYS;
@@ -644,7 +679,36 @@ export async function runChartsRuntime(core) {
     hospitalSort: 'total_desc',
     hospitalSearch: '',
     hospitalDepartment: '',
+    chartsSectionsExpanded: getExpandedKeysFromMap(
+      DEFAULT_CHARTS_SECTIONS_EXPANDED,
+      DEFAULT_CHARTS_SECTIONS_EXPANDED
+    ),
+    chartsSubsectionsExpanded: [],
   });
+  const ensureChartsDisclosureState = () => {
+    dashboardState.chartsSectionsExpanded = {
+      ...DEFAULT_CHARTS_SECTIONS_EXPANDED,
+      ...(dashboardState.chartsSectionsExpanded && typeof dashboardState.chartsSectionsExpanded === 'object'
+        ? dashboardState.chartsSectionsExpanded
+        : {}),
+    };
+  };
+  const setChartsSectionExpanded = (key, expanded) => {
+    if (!CHARTS_SECTION_KEYS.includes(String(key || ''))) {
+      return;
+    }
+    ensureChartsDisclosureState();
+    dashboardState.chartsSectionsExpanded = {
+      ...dashboardState.chartsSectionsExpanded,
+      [key]: expanded === true,
+    };
+  };
+  const applyChartsLoadingLayout = ({ isLoading, initialLoadPending }) => {
+    if (!(selectors?.chartsMainFiltersPanel instanceof HTMLElement)) {
+      return;
+    }
+    selectors.chartsMainFiltersPanel.hidden = Boolean(isLoading && initialLoadPending);
+  };
   const persistChartsQuery = () => {
     const state = {
       chartPeriod: dashboardState.chartPeriod,
@@ -670,6 +734,11 @@ export async function runChartsRuntime(core) {
       hospitalSort: dashboardState.chartsHospitalTableSort,
       hospitalSearch: dashboardState.chartsHospitalTableSearch,
       hospitalDepartment: dashboardState.chartsHospitalTableDepartment,
+      chartsSectionsExpanded: getExpandedKeysFromMap(
+        dashboardState.chartsSectionsExpanded,
+        DEFAULT_CHARTS_SECTIONS_EXPANDED
+      ),
+      chartsSubsectionsExpanded: [],
     };
     replaceUrlQuery(serializeToQuery('charts', state, getChartsDefaults()));
   };
@@ -735,7 +804,41 @@ export async function runChartsRuntime(core) {
         : parsedChartsQuery.hospitalSort;
     dashboardState.chartsHospitalTableSearch = parsedChartsQuery.hospitalSearch || '';
     dashboardState.chartsHospitalTableDepartment = parsedChartsQuery.hospitalDepartment || '';
+    const parsedSectionKeys = normalizeChartsSectionExpandedKeys(parsedChartsQuery.chartsSectionsExpanded);
+    const legacySubsectionKeys = (
+      Array.isArray(parsedChartsQuery.chartsSubsectionsExpanded)
+        ? parsedChartsQuery.chartsSubsectionsExpanded
+        : []
+    )
+      .map((value) => String(value || '').trim())
+      .filter((value) => ['overview', 'hourly', 'heatmap'].includes(value));
+    const expandedKeys = new Set(parsedSectionKeys);
+    if (
+      (Array.isArray(parsedChartsQuery.chartsSectionsExpanded)
+        ? parsedChartsQuery.chartsSectionsExpanded
+        : []
+      ).includes('main')
+    ) {
+      expandedKeys.add('overview');
+    }
+    legacySubsectionKeys.forEach((key) => {
+      expandedKeys.add(key);
+    });
+    if (
+      (Array.isArray(parsedChartsQuery.chartsSectionsExpanded)
+        ? parsedChartsQuery.chartsSectionsExpanded
+        : []
+      ).includes('hospital')
+    ) {
+      expandedKeys.add('hospital');
+    }
+    dashboardState.chartsSectionsExpanded = buildChartsExpandedMap(
+      Array.from(expandedKeys),
+      DEFAULT_CHARTS_SECTIONS_EXPANDED
+    );
+    dashboardState.chartsSubsectionsExpanded = [];
   }
+  ensureChartsDisclosureState();
   dashboardState.heatmapMetric = getEnabledHeatmapMetricKeys().includes(dashboardState.heatmapMetric)
     ? dashboardState.heatmapMetric
     : getDefaultHeatmapMetric();
@@ -759,7 +862,9 @@ export async function runChartsRuntime(core) {
     themeStorageKey: THEME_STORAGE_KEY,
     afterSectionNavigation: () => {
       initChartsJumpStickyOffset(selectors);
-      initChartsJumpNavigation(selectors);
+      initChartsJumpNavigation(selectors, {
+        onBeforeNavigate: (target) => chartsJumpBeforeNavigate(target),
+      });
     },
   });
 
@@ -998,6 +1103,62 @@ export async function runChartsRuntime(core) {
       scheduleChartsSecondaryRender({ reason });
     }
     return changed;
+  };
+
+  const applyChartsSectionDisclosure = ({ reason = 'state-sync', triggerRender = false } = {}) => {
+    ensureChartsDisclosureState();
+    const sectionExpanded = dashboardState.chartsSectionsExpanded || DEFAULT_CHARTS_SECTIONS_EXPANDED;
+
+    (Array.isArray(selectors?.chartsSectionPanels) ? selectors.chartsSectionPanels : []).forEach((panel) => {
+      if (!(panel instanceof HTMLElement)) {
+        return;
+      }
+      const key = String(panel.getAttribute('data-charts-section-panel') || '').trim();
+      if (!CHARTS_SECTION_KEYS.includes(key)) {
+        return;
+      }
+      panel.hidden = sectionExpanded[key] !== true;
+    });
+    (Array.isArray(selectors?.chartsSectionToggleButtons)
+      ? selectors.chartsSectionToggleButtons
+      : []
+    ).forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const key = String(button.getAttribute('data-charts-section-toggle') || '').trim();
+      if (!CHARTS_SECTION_KEYS.includes(key)) {
+        return;
+      }
+      const expanded = sectionExpanded[key] === true;
+      button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      button.classList.toggle('is-expanded', expanded);
+    });
+
+    if (!triggerRender) {
+      return;
+    }
+    if (sectionExpanded.hospital === true) {
+      dashboardState.chartsSectionRenderFlags = {
+        ...(dashboardState.chartsSectionRenderFlags || {}),
+        hospitalVisible: true,
+      };
+      if (Array.isArray(dashboardState.rawRecords) && dashboardState.rawRecords.length) {
+        renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
+      }
+    }
+    const shouldRenderHourly = sectionExpanded.hourly === true;
+    const shouldRenderHeatmap = sectionExpanded.heatmap === true;
+    let shouldScheduleSecondary = false;
+    if (shouldRenderHourly) {
+      shouldScheduleSecondary = markChartsSectionVisible('hourly') || shouldScheduleSecondary;
+    }
+    if (shouldRenderHeatmap) {
+      shouldScheduleSecondary = markChartsSectionVisible('heatmap') || shouldScheduleSecondary;
+    }
+    if (shouldScheduleSecondary) {
+      scheduleChartsSecondaryRender({ reason });
+    }
   };
 
   const applyHeatmapFiltersAndRender = () => {
@@ -2173,6 +2334,59 @@ export async function runChartsRuntime(core) {
     persistChartsQuery();
   };
 
+  const expandChartsForTarget = (target) => {
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const targetId = String(target.id || '').trim();
+    if (!targetId) {
+      return;
+    }
+    if (targetId === 'chartsHospitalTableHeading') {
+      setChartsSectionExpanded('hospital', true);
+    } else if (targetId === 'chartsHourlyHeading') {
+      setChartsSectionExpanded('hourly', true);
+    } else if (targetId === 'chartsHeatmapHeading') {
+      setChartsSectionExpanded('heatmap', true);
+    } else if (targetId === 'chartHeading') {
+      setChartsSectionExpanded('overview', true);
+    } else if (target.closest?.('[data-charts-section-panel="hourly"]')) {
+      setChartsSectionExpanded('hourly', true);
+    } else if (target.closest?.('[data-charts-section-panel="heatmap"]')) {
+      setChartsSectionExpanded('heatmap', true);
+    } else if (target.closest?.('[data-charts-section-panel="overview"]')) {
+      setChartsSectionExpanded('overview', true);
+    } else if (target.closest?.('[data-charts-section-panel="hospital"]')) {
+      setChartsSectionExpanded('hospital', true);
+    }
+    applyChartsSectionDisclosure({ reason: 'jump-nav', triggerRender: true });
+    persistChartsQuery();
+  };
+  chartsJumpBeforeNavigate = expandChartsForTarget;
+  if (String(window.location.hash || '').startsWith('#')) {
+    const target = document.getElementById(String(window.location.hash).slice(1));
+    if (target instanceof HTMLElement) {
+      expandChartsForTarget(target);
+    }
+  }
+
+  selectors.chartsSectionToggleButtons?.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const key = String(target.getAttribute('data-charts-section-toggle') || '').trim();
+      if (!CHARTS_SECTION_KEYS.includes(key)) {
+        return;
+      }
+      const current = dashboardState.chartsSectionsExpanded?.[key] === true;
+      setChartsSectionExpanded(key, !current);
+      applyChartsSectionDisclosure({ reason: 'section-toggle', triggerRender: true });
+      persistChartsQuery();
+    });
+  });
+
   wireChartsRuntimeInteractions({
     applyChartsText,
     initChartControls,
@@ -2205,8 +2419,21 @@ export async function runChartsRuntime(core) {
       autoRefreshIntervalMs: AUTO_REFRESH_INTERVAL_MS,
       runAfterDomAndIdle,
       setDatasetValue,
-      setStatus: (type, details) => setStatus(selectors, type, details),
-      showChartSkeletons: () => showChartSkeletons(selectors),
+      setStatus: (type, details) => {
+        setStatus(selectors, type, details);
+        if (type === 'loading') {
+          applyChartsLoadingLayout({ isLoading: true, initialLoadPending });
+          return;
+        }
+        if (initialLoadPending) {
+          initialLoadPending = false;
+        }
+        applyChartsLoadingLayout({ isLoading: false, initialLoadPending });
+      },
+      showChartSkeletons: () => {
+        applyChartsLoadingLayout({ isLoading: true, initialLoadPending });
+        showChartSkeletons(selectors);
+      },
       fetchData,
       perfMonitor: runtimeClient.perfMonitor,
       describeCacheMeta,
@@ -2248,6 +2475,8 @@ export async function runChartsRuntime(core) {
   );
 
   void loadChartJs();
+  applyChartsSectionDisclosure({ reason: 'init', triggerRender: false });
+  applyChartsLoadingLayout({ isLoading: false, initialLoadPending });
   ensureChartsSecondaryVisibilityObserver();
   ensureChartsHospitalVisibilityObserver();
   dataFlow.scheduleInitialLoad();

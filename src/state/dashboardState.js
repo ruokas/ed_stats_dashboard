@@ -221,6 +221,15 @@ export function createDashboardState({
       hourlyRendered: false,
       hospitalVisible: false,
     },
+    chartsSectionsExpanded: {
+      main: true,
+      hospital: false,
+    },
+    chartsSubsectionsExpanded: {
+      overview: true,
+      hourly: false,
+      heatmap: false,
+    },
     theme: 'light',
     fullscreen: false,
     activeTab: 'overview',

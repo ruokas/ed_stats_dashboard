@@ -13,6 +13,11 @@ export function createChartsPageSelectors() {
 
   return {
     ...createPageShellSelectors({ sectionNav }),
+    chartsMainFiltersPanel: byId('chartsMainFiltersPanel'),
+    chartsSectionToggleButtons: byQueryAllIn(main, '[data-charts-section-toggle]'),
+    chartsSectionPanels: byQueryAllIn(main, '[data-charts-section-panel]'),
+    chartsSubsectionToggleButtons: byQueryAllIn(main, '[data-charts-subsection-toggle]'),
+    chartsSubsectionPanels: byQueryAllIn(main, '[data-charts-subsection-panel]'),
     chartHeading: byId('chartHeading'),
     chartSubtitle: byId('chartSubtitle'),
     dailyCaption: byId('dailyChartLabel'),
