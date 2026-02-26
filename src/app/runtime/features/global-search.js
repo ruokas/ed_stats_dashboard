@@ -202,7 +202,7 @@ function updateTriggerText(trigger) {
     return;
   }
   const label = TEXT.globalSearch?.triggerLabel || 'Atidaryti paiešką';
-  const hint = TEXT.globalSearch?.triggerHint || 'Ctrl/Cmd+K';
+  const hint = TEXT.globalSearch?.triggerHint || 'Ctrl/Cmd+K / Alt+K';
   trigger.setAttribute('aria-label', label);
   trigger.setAttribute('title', `${label} (${hint})`);
 }
@@ -472,7 +472,7 @@ export function initGlobalSearch({ selectors }) {
     document.addEventListener(
       'click',
       (event) => {
-        const target = event.target instanceof HTMLElement ? event.target.closest('#globalSearchBtn') : null;
+        const target = event.target instanceof Element ? event.target.closest('#globalSearchBtn') : null;
         if (!(target instanceof HTMLElement)) {
           return;
         }
@@ -486,8 +486,17 @@ export function initGlobalSearch({ selectors }) {
       'keydown',
       (event) => {
         const key = String(event.key || '').toLowerCase();
-        const isShortcut = (event.ctrlKey || event.metaKey) && !event.altKey && key === 'k';
-        if (!isShortcut) {
+        const isPrimaryShortcut = (event.ctrlKey || event.metaKey) && !event.altKey && key === 'k';
+        const isAltShortcut = event.altKey && !event.ctrlKey && !event.metaKey && key === 'k';
+        const isSlashShortcut =
+          key === '/' &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.altKey &&
+          !event.shiftKey &&
+          !isEditableTarget(event.target) &&
+          !isOpen;
+        if (!isPrimaryShortcut && !isAltShortcut && !isSlashShortcut) {
           return;
         }
         event.preventDefault();
