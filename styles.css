@@ -4049,6 +4049,10 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   background: var(--color-surface-alt);
 }
 
+#gydytojaiSpecialtyWarning[hidden] {
+  display: none !important;
+}
+
 .gydytojai-loading__label {
   margin: 0 0 10px;
   font-size: 0.9rem;
@@ -4126,6 +4130,10 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   box-shadow: var(--shadow-soft);
 }
 
+.gydytojai-filter-panel[hidden] {
+  display: none !important;
+}
+
 .gydytojai-filter-panel__head {
   margin-bottom: 10px;
 }
@@ -4171,6 +4179,33 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 8px 10px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+}
+
+.gydytojai-filter-panel__primary .summaries-reports-controls__field > span:first-child {
+  display: block;
+  min-height: 1.1rem;
+  line-height: 1.1rem;
+}
+
+.gydytojai-filter-panel select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 6px 10px;
+  font: inherit;
+}
+
+.gydytojai-filter-panel select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .gydytojai-filter-panel__secondary {
@@ -4194,6 +4229,80 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.gydytojai-filters-main-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gydytojai-filters-actions-row {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.5fr) auto auto minmax(240px, 1.5fr);
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+
+.gydytojai-filters-search-field input {
+  width: 100%;
+  min-height: 34px;
+}
+
+.gydytojai-filters-advanced-toggle-field .chip-button,
+.gydytojai-filters-reset-field .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+#gydytojaiFiltersAdvancedToggle,
+#gydytojaiActiveFiltersToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#gydytojaiFiltersAdvancedToggle::after,
+#gydytojaiActiveFiltersToggle::after {
+  content: "▾";
+  font-size: 0.78em;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+#gydytojaiFiltersAdvancedToggle[aria-expanded="true"]::after,
+#gydytojaiActiveFiltersToggle[aria-expanded="true"]::after {
+  transform: rotate(180deg);
+}
+
+.gydytojai-filters-summary-field {
+  justify-content: flex-start;
+}
+
+.gydytojai-active-filters-summary {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  min-height: 1.2em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gydytojai-active-filters-panel {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface) 65%, transparent);
+}
+
+.gydytojai-active-filters-panel[hidden] {
+  display: none !important;
 }
 
 .gydytojai-filter-panel .chip-button[aria-pressed="true"] {
@@ -4273,14 +4382,75 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
 
 .gydytojai-filters-advanced {
   grid-column: 1 / -1;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  display: grid;
+  gap: 8px;
+}
+
+.gydytojai-filters-advanced[hidden] {
+  display: none !important;
+}
+
+.gydytojai-filters-advanced__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.gydytojai-filters-advanced__title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.gydytojai-filters-advanced__summary {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.gydytojai-filters-advanced__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 8px;
-  padding-top: 4px;
 }
 
 .gydytojai-filters-advanced-toggle-field {
-  align-self: end;
+  align-self: stretch;
+}
+
+@media (max-width: 1100px) {
+  .gydytojai-filters-main-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gydytojai-filters-actions-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gydytojai-filters-search-field,
+  .gydytojai-filters-summary-field {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .gydytojai-filters-main-row,
+  .gydytojai-filters-actions-row,
+  .gydytojai-filters-advanced__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gydytojai-filters-advanced__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 .gydytojai-chart-toggles {

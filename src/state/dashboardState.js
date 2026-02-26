@@ -67,6 +67,7 @@ export function createDashboardState({
     doctorsSpecialtyAnnualSelected: [],
     doctorsSpecialtyAnnualAvailable: [],
     gydytojaiFiltersAdvancedExpanded: false,
+    gydytojaiActiveFiltersExpanded: false,
     gydytojaiSectionExpanded: {
       results: true,
       specialty: false,

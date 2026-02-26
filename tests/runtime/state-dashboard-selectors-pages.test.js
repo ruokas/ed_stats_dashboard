@@ -188,9 +188,13 @@ describe('page selector factories', () => {
       <p id="gydytojaiSubtitle"></p>
       <p id="gydytojaiCoverage"></p>
       <div id="gydytojaiLoadingState"></div>
+      <section id="gydytojaiFiltersPanel"></section>
       <div id="gydytojaiFilterChips"></div>
+      <div id="gydytojaiFiltersMainRow"></div>
+      <div id="gydytojaiFiltersActionsRow"></div>
       <button id="gydytojaiFiltersAdvancedToggle"></button>
       <div id="gydytojaiFiltersAdvancedPanel"></div>
+      <p id="gydytojaiFiltersAdvancedSummary"></p>
       <div id="gydytojaiYearChips"></div>
       <button data-gydytojai-topn="15"></button>
       <button data-gydytojai-mincases="30"></button>
@@ -198,10 +202,14 @@ describe('page selector factories', () => {
       <button data-gydytojai-arrival="all"></button>
       <button data-gydytojai-disposition="all"></button>
       <button data-gydytojai-shift="all"></button>
-      <div id="gydytojaiSpecialtyChips"></div>
+      <div id="gydytojaiSpecialtyField"></div>
+      <select id="gydytojaiSpecialtySelect"></select>
       <div id="gydytojaiSpecialtyWarning"></div>
       <input id="gydytojaiSearch" />
       <button id="gydytojaiResetFilters"></button>
+      <div id="gydytojaiActiveFiltersSummary"></div>
+      <button id="gydytojaiActiveFiltersToggle"></button>
+      <div id="gydytojaiActiveFiltersPanel"></div>
       <div id="gydytojaiActiveFilters"></div>
       <section id="gydytojaiSpecialtySection"></section>
       <span id="gydytojaiSpecialtySectionSummary"></span>
@@ -250,9 +258,16 @@ describe('page selector factories', () => {
     expect(selectors.gydytojaiAnnualCards).not.toBeNull();
     expect(selectors.gydytojaiAnnualSuggestions).not.toBeNull();
     expect(selectors.gydytojaiActiveFilters).not.toBeNull();
-    expect(selectors.gydytojaiSpecialtyChips).not.toBeNull();
+    expect(selectors.gydytojaiActiveFiltersSummary).not.toBeNull();
+    expect(selectors.gydytojaiActiveFiltersToggle).not.toBeNull();
+    expect(selectors.gydytojaiActiveFiltersPanel).not.toBeNull();
+    expect(selectors.gydytojaiFiltersPanel).not.toBeNull();
+    expect(selectors.gydytojaiFiltersMainRow).not.toBeNull();
+    expect(selectors.gydytojaiFiltersActionsRow).not.toBeNull();
+    expect(selectors.gydytojaiSpecialtySelect).not.toBeNull();
     expect(selectors.gydytojaiSpecialtyTable).not.toBeNull();
     expect(selectors.gydytojaiFiltersAdvancedToggle).not.toBeNull();
+    expect(selectors.gydytojaiFiltersAdvancedSummary).not.toBeNull();
     expect(selectors.gydytojaiChartsMoreToggle).not.toBeNull();
     expect(selectors.gydytojaiChartDoctorTogglesToggle).not.toBeNull();
     expect(selectors.gydytojaiChartDoctorToggles).not.toBeNull();

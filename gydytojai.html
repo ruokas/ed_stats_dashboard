@@ -159,7 +159,7 @@
         <p class="summaries-reports-coverage"><strong>Greita pradžia:</strong> 1) pasirinkite pagrindinius filtrus, 2) peržiūrėkite gydytojų lentelę, 3) jei reikia, išskleiskite specialybes, metinę dinamiką ar grafikus.</p>
       </div>
 
-      <section class="filter-panel gydytojai-filter-panel" aria-label="Gydytojų filtrų panelė">
+      <section id="gydytojaiFiltersPanel" class="filter-panel gydytojai-filter-panel" aria-label="Gydytojų filtrų panelė" hidden>
         <header class="filter-panel__head gydytojai-filter-panel__head">
           <div class="filter-panel__title-row gydytojai-filter-panel__title-row">
             <h3 class="filter-panel__title gydytojai-filter-panel__title">Filtrai</h3>
@@ -167,83 +167,109 @@
           </div>
           <p class="filter-panel__subtitle gydytojai-filter-panel__subtitle">Pasirinkite analizės pjūvį, tada peržiūrėkite aktyvius filtrus žemiau.</p>
         </header>
-        <div id="gydytojaiFilterChips" class="summaries-reports-controls filter-panel__primary gydytojai-filter-panel__primary" role="group" aria-label="Gydytojų analizės filtrai">
-          <div class="summaries-reports-controls__field">
-            <span>Metai</span>
-            <div id="gydytojaiYearChips" class="gydytojai-filter-group" role="group" aria-label="Metų filtras"></div>
-          </div>
-          <div class="summaries-reports-controls__field">
-            <span>Atvykimas</span>
-            <div class="gydytojai-filter-group" role="group" aria-label="Atvykimo filtras">
-              <button type="button" class="chip-button" data-gydytojai-arrival="all" aria-pressed="true">Visi</button>
-              <button type="button" class="chip-button" data-gydytojai-arrival="ems" aria-pressed="false">Tik GMP</button>
-              <button type="button" class="chip-button" data-gydytojai-arrival="self" aria-pressed="false">Be GMP</button>
+        <div id="gydytojaiFilterChips" class="filter-panel__primary gydytojai-filter-panel__primary" role="group" aria-label="Gydytojų analizės filtrai">
+          <div id="gydytojaiFiltersMainRow" class="summaries-reports-controls gydytojai-filters-main-row">
+            <div class="summaries-reports-controls__field">
+              <span>Metai</span>
+              <div id="gydytojaiYearChips" class="gydytojai-filter-group" role="group" aria-label="Metų filtras"></div>
+            </div>
+            <div id="gydytojaiSpecialtyField" class="summaries-reports-controls__field">
+              <span>Specialybė</span>
+              <select id="gydytojaiSpecialtySelect" aria-label="Specialybės filtras">
+                <option value="all">Visos</option>
+              </select>
+            </div>
+            <div class="summaries-reports-controls__field">
+              <span>Atvykimas</span>
+              <div class="gydytojai-filter-group" role="group" aria-label="Atvykimo filtras">
+                <button type="button" class="chip-button" data-gydytojai-arrival="all" aria-pressed="true">Visi</button>
+                <button type="button" class="chip-button" data-gydytojai-arrival="ems" aria-pressed="false">Tik GMP</button>
+                <button type="button" class="chip-button" data-gydytojai-arrival="self" aria-pressed="false">Be GMP</button>
+              </div>
+            </div>
+            <div class="summaries-reports-controls__field">
+              <span>Baigtis</span>
+              <div class="gydytojai-filter-group" role="group" aria-label="Baigties filtras">
+                <button type="button" class="chip-button" data-gydytojai-disposition="all" aria-pressed="true">Visos</button>
+                <button type="button" class="chip-button" data-gydytojai-disposition="hospitalized" aria-pressed="false">Hospitalizuoti</button>
+                <button type="button" class="chip-button" data-gydytojai-disposition="discharged" aria-pressed="false">Išleisti</button>
+              </div>
+            </div>
+            <div class="summaries-reports-controls__field">
+              <span>Pamaina</span>
+              <div class="gydytojai-filter-group" role="group" aria-label="Pamainos filtras">
+                <button type="button" class="chip-button" data-gydytojai-shift="all" aria-pressed="true">Visos</button>
+                <button type="button" class="chip-button" data-gydytojai-shift="day" aria-pressed="false">Diena</button>
+                <button type="button" class="chip-button" data-gydytojai-shift="night" aria-pressed="false">Naktis</button>
+              </div>
             </div>
           </div>
-          <div class="summaries-reports-controls__field">
-            <span>Baigtis</span>
-            <div class="gydytojai-filter-group" role="group" aria-label="Baigties filtras">
-              <button type="button" class="chip-button" data-gydytojai-disposition="all" aria-pressed="true">Visos</button>
-              <button type="button" class="chip-button" data-gydytojai-disposition="hospitalized" aria-pressed="false">Hospitalizuoti</button>
-              <button type="button" class="chip-button" data-gydytojai-disposition="discharged" aria-pressed="false">Išleisti</button>
+
+          <div id="gydytojaiFiltersActionsRow" class="summaries-reports-controls gydytojai-filters-actions-row">
+            <label class="summaries-reports-controls__field gydytojai-filters-search-field" for="gydytojaiSearch">
+              <span>Paieška</span>
+              <input id="gydytojaiSearch" type="search" placeholder="Įveskite vardą">
+            </label>
+            <div class="summaries-reports-controls__field gydytojai-filters-advanced-toggle-field">
+              <span>&nbsp;</span>
+              <button id="gydytojaiFiltersAdvancedToggle" type="button" class="chip-button chip-button--ghost" aria-expanded="false" aria-controls="gydytojaiFiltersAdvancedPanel">Išplėstiniai filtrai</button>
+            </div>
+            <div class="summaries-reports-controls__field gydytojai-filters-reset-field">
+              <span>&nbsp;</span>
+              <button id="gydytojaiResetFilters" type="button" class="btn btn-secondary btn-small">Atkurti filtrus</button>
+            </div>
+            <div class="summaries-reports-controls__field gydytojai-filters-summary-field">
+              <span>Aktyvūs filtrai</span>
+              <div id="gydytojaiActiveFiltersSummary" class="gydytojai-active-filters-summary" aria-live="polite"></div>
+              <button id="gydytojaiActiveFiltersToggle" type="button" class="chip-button chip-button--ghost" aria-expanded="false" aria-controls="gydytojaiActiveFiltersPanel" hidden>Rodyti aktyvių filtrų detales</button>
             </div>
           </div>
-          <div class="summaries-reports-controls__field">
-            <span>Pamaina</span>
-            <div class="gydytojai-filter-group" role="group" aria-label="Pamainos filtras">
-              <button type="button" class="chip-button" data-gydytojai-shift="all" aria-pressed="true">Visos</button>
-              <button type="button" class="chip-button" data-gydytojai-shift="day" aria-pressed="false">Diena</button>
-              <button type="button" class="chip-button" data-gydytojai-shift="night" aria-pressed="false">Naktis</button>
-            </div>
-          </div>
-          <div class="summaries-reports-controls__field">
-            <span>Specialybė</span>
-            <div id="gydytojaiSpecialtyChips" class="gydytojai-filter-group" role="group" aria-label="Specialybės filtras"></div>
-          </div>
-          <label class="summaries-reports-controls__field" for="gydytojaiSearch">
-            <span>Gydytojo paieška</span>
-            <input id="gydytojaiSearch" type="search" placeholder="Įveskite vardą">
-          </label>
-          <div class="summaries-reports-controls__field gydytojai-filters-advanced-toggle-field">
-            <span>&nbsp;</span>
-            <button id="gydytojaiFiltersAdvancedToggle" type="button" class="chip-button chip-button--ghost" aria-expanded="false" aria-controls="gydytojaiFiltersAdvancedPanel">Išplėstiniai filtrai</button>
-          </div>
+
           <div id="gydytojaiFiltersAdvancedPanel" class="gydytojai-filters-advanced" hidden>
-            <div class="summaries-reports-controls__field">
-              <span>TOP N</span>
-              <div class="gydytojai-filter-group" role="group" aria-label="TOP N filtras">
-                <button type="button" class="chip-button" data-gydytojai-topn="5" aria-pressed="false">5</button>
-                <button type="button" class="chip-button" data-gydytojai-topn="10" aria-pressed="false">10</button>
-                <button type="button" class="chip-button" data-gydytojai-topn="15" aria-pressed="true">15</button>
-                <button type="button" class="chip-button" data-gydytojai-topn="20" aria-pressed="false">20</button>
+            <div class="gydytojai-filters-advanced__head">
+              <p class="gydytojai-filters-advanced__title">Išplėstiniai filtrai</p>
+              <p id="gydytojaiFiltersAdvancedSummary" class="gydytojai-filters-advanced__summary"></p>
+            </div>
+            <div class="gydytojai-filters-advanced__grid">
+              <div class="summaries-reports-controls__field">
+                <span>TOP N</span>
+                <div class="gydytojai-filter-group" role="group" aria-label="TOP N filtras">
+                  <button type="button" class="chip-button" data-gydytojai-topn="5" aria-pressed="false">5</button>
+                  <button type="button" class="chip-button" data-gydytojai-topn="10" aria-pressed="false">10</button>
+                  <button type="button" class="chip-button" data-gydytojai-topn="15" aria-pressed="true">15</button>
+                  <button type="button" class="chip-button" data-gydytojai-topn="20" aria-pressed="false">20</button>
+                </div>
+              </div>
+              <div class="summaries-reports-controls__field">
+                <span>Min. imtis</span>
+                <div class="gydytojai-filter-group" role="group" aria-label="Minimalios imties filtras">
+                  <button type="button" class="chip-button" data-gydytojai-mincases="10" aria-pressed="false">10</button>
+                  <button type="button" class="chip-button" data-gydytojai-mincases="20" aria-pressed="false">20</button>
+                  <button type="button" class="chip-button" data-gydytojai-mincases="30" aria-pressed="true">30</button>
+                  <button type="button" class="chip-button" data-gydytojai-mincases="50" aria-pressed="false">50</button>
+                  <button type="button" class="chip-button" data-gydytojai-mincases="100" aria-pressed="false">100</button>
+                </div>
+              </div>
+              <div class="summaries-reports-controls__field">
+                <span>Rikiuoti</span>
+                <div class="gydytojai-filter-group" role="group" aria-label="Rikiavimo filtras">
+                  <button type="button" class="chip-button" data-gydytojai-sortby="volume_desc" aria-pressed="true">Apkrova</button>
+                  <button type="button" class="chip-button" data-gydytojai-sortby="avgLos_asc" aria-pressed="false">Vid. trukmė ↑</button>
+                  <button type="button" class="chip-button" data-gydytojai-sortby="avgLos_desc" aria-pressed="false">Vid. trukmė ↓</button>
+                  <button type="button" class="chip-button" data-gydytojai-sortby="hospital_desc" aria-pressed="false">Hosp. % ↓</button>
+                </div>
               </div>
             </div>
-            <div class="summaries-reports-controls__field">
-              <span>Min. imtis</span>
-              <div class="gydytojai-filter-group" role="group" aria-label="Minimalios imties filtras">
-                <button type="button" class="chip-button" data-gydytojai-mincases="10" aria-pressed="false">10</button>
-                <button type="button" class="chip-button" data-gydytojai-mincases="20" aria-pressed="false">20</button>
-                <button type="button" class="chip-button" data-gydytojai-mincases="30" aria-pressed="true">30</button>
-                <button type="button" class="chip-button" data-gydytojai-mincases="50" aria-pressed="false">50</button>
-                <button type="button" class="chip-button" data-gydytojai-mincases="100" aria-pressed="false">100</button>
-              </div>
-            </div>
-            <div class="summaries-reports-controls__field">
-              <span>Rikiuoti</span>
-              <div class="gydytojai-filter-group" role="group" aria-label="Rikiavimo filtras">
-                <button type="button" class="chip-button" data-gydytojai-sortby="volume_desc" aria-pressed="true">Apkrova</button>
-                <button type="button" class="chip-button" data-gydytojai-sortby="avgLos_asc" aria-pressed="false">Vid. trukmė ↑</button>
-                <button type="button" class="chip-button" data-gydytojai-sortby="avgLos_desc" aria-pressed="false">Vid. trukmė ↓</button>
-                <button type="button" class="chip-button" data-gydytojai-sortby="hospital_desc" aria-pressed="false">Hosp. % ↓</button>
-              </div>
-            </div>
+          </div>
+
+          <div id="gydytojaiActiveFiltersPanel" class="gydytojai-active-filters-panel" hidden>
+            <div id="gydytojaiActiveFilters" class="gydytojai-active-filters filter-panel__summary-body" aria-live="polite"></div>
           </div>
         </div>
         <div class="filter-panel__summary gydytojai-filter-panel__secondary">
-          <p class="filter-panel__summary-title gydytojai-filter-panel__secondary-title">Aktyvūs filtrai</p>
-          <div id="gydytojaiActiveFilters" class="gydytojai-active-filters filter-panel__summary-body" aria-live="polite"></div>
+          <p class="filter-panel__summary-title gydytojai-filter-panel__secondary-title">Veiksmai</p>
           <div class="filter-panel__actions">
-            <button id="gydytojaiResetFilters" type="button" class="btn btn-secondary btn-small">Atkurti filtrus</button>
+            <p class="summaries-reports-coverage">Filtrai taikomi iškart pakeitus reikšmes.</p>
           </div>
         </div>
       </section>
@@ -317,7 +343,7 @@
           <p class="section__subtitle">Pradėkite nuo šios lentelės — čia matysite daugumą svarbiausių KPI.</p>
         </div>
       </div>
-      <div id="gydytojaiTablesSectionPanel" data-gydytojai-section-panel="results">
+      <div id="gydytojaiTablesSectionPanel" data-gydytojai-section-panel="results" hidden>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiTablesHeading">
         <table id="gydytojaiLeaderboardTable">
           <caption class="sr-only">Gydytojų lyderių lentelė</caption>

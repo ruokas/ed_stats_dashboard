@@ -379,17 +379,30 @@ function applyDoctorControls(selectors, dashboardState, yearOptions) {
 }
 
 function applyDoctorSpecialtyControls(selectors, dashboardState, specialtyValidation, specialtyOptions) {
-  const host = selectors?.gydytojaiSpecialtyChips;
-  if (!(host instanceof HTMLElement)) {
+  const select = selectors?.gydytojaiSpecialtySelect;
+  const field =
+    selectors?.gydytojaiSpecialtyField instanceof HTMLElement
+      ? selectors.gydytojaiSpecialtyField
+      : select instanceof HTMLElement
+        ? select.closest('.summaries-reports-controls__field')
+        : null;
+  if (!(select instanceof HTMLSelectElement)) {
     return;
   }
   const validation = specialtyValidation || {};
   const enabled = validation.enabled === true;
   const uiEnabled = dashboardState?.doctorsSpecialtyUiEnabled === true && enabled;
-  host.replaceChildren();
-  host.hidden = !enabled;
-  host.setAttribute('aria-disabled', uiEnabled ? 'false' : 'true');
+  if (field instanceof HTMLElement) {
+    field.hidden = !enabled;
+  }
+  select.disabled = !uiEnabled;
   if (!enabled) {
+    select.replaceChildren();
+    const option = document.createElement('option');
+    option.value = 'all';
+    option.textContent = 'Visos';
+    select.appendChild(option);
+    select.value = 'all';
     return;
   }
 
@@ -398,22 +411,16 @@ function applyDoctorSpecialtyControls(selectors, dashboardState, specialtyValida
   const current = String(dashboardState?.doctorsSpecialtyFilter || 'all');
   dashboardState.doctorsSpecialtyFilter = allowed.has(current) ? current : 'all';
 
-  const items = [{ id: 'all', label: 'Visos' }, ...groups];
-  items.forEach((item) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'chip-button';
-    button.setAttribute('data-gydytojai-specialty', String(item.id || 'all'));
-    button.setAttribute(
-      'aria-pressed',
-      String(dashboardState.doctorsSpecialtyFilter) === String(item.id) ? 'true' : 'false'
-    );
-    if (!uiEnabled) {
-      button.disabled = true;
-    }
-    button.textContent = String(item.label || item.id || '');
-    host.appendChild(button);
+  select.replaceChildren();
+  [{ id: 'all', label: 'Visos' }, ...groups].forEach((item) => {
+    const option = document.createElement('option');
+    option.value = String(item?.id || 'all');
+    option.textContent = String(item?.label || item?.id || '');
+    select.appendChild(option);
   });
+  select.value = allowed.has(String(dashboardState.doctorsSpecialtyFilter || 'all'))
+    ? String(dashboardState.doctorsSpecialtyFilter || 'all')
+    : 'all';
 }
 
 function setCoverage(selectors, model) {
@@ -428,12 +435,18 @@ function setCoverage(selectors, model) {
   selectors.gydytojaiCoverage.textContent = `Su uždariusiu gydytoju: ${withDoctor} iš ${total} (${oneDecimalFormatter.format(percent)}%). Po aktyvių filtrų: ${filtered}.`;
 }
 
-function setLoadingVisualState(selectors, isLoading) {
+function setLoadingVisualState(selectors, isLoading, options = {}) {
+  const initialLoadPending = options?.initialLoadPending === true;
+  const showFullSkeleton = isLoading && initialLoadPending;
+  const showInline = isLoading && !initialLoadPending;
+  if (selectors.gydytojaiFiltersPanel instanceof HTMLElement) {
+    selectors.gydytojaiFiltersPanel.hidden = showFullSkeleton;
+  }
   if (selectors.gydytojaiLoadingState instanceof HTMLElement) {
-    selectors.gydytojaiLoadingState.hidden = !isLoading;
+    selectors.gydytojaiLoadingState.hidden = !showFullSkeleton;
   }
   if (selectors.gydytojaiLoadingInline instanceof HTMLElement) {
-    selectors.gydytojaiLoadingInline.hidden = !isLoading;
+    selectors.gydytojaiLoadingInline.hidden = !showInline;
   }
   const main = document.querySelector('main.container');
   if (main instanceof HTMLElement) {
@@ -604,6 +617,8 @@ function applyGydytojaiLayoutControls(selectors, dashboardState) {
           : 'Išplėstiniai filtrai';
     }
   }
+  renderAdvancedFiltersSummary(selectors, dashboardState);
+  applyActiveFiltersDisclosure(selectors, dashboardState);
 
   (Array.isArray(selectors?.gydytojaiSectionPanels) ? selectors.gydytojaiSectionPanels : []).forEach(
     (panel) => {
@@ -830,6 +845,66 @@ function renderActiveDoctorFilters(selectors, dashboardState) {
     button.textContent = `${chip.label} ×`;
     host.appendChild(button);
   });
+}
+
+function renderActiveDoctorFiltersSummary(selectors, dashboardState) {
+  const host = selectors?.gydytojaiActiveFiltersSummary;
+  if (!(host instanceof HTMLElement)) {
+    return;
+  }
+  const chips = getActiveDoctorFilterChips(dashboardState);
+  if (!chips.length) {
+    host.textContent = 'Naudojami numatytieji filtrai.';
+    return;
+  }
+  const labels = chips.map((chip) => String(chip?.label || '')).filter(Boolean);
+  const preview = labels.slice(0, 3).join(', ');
+  if (labels.length <= 3) {
+    host.textContent = `Aktyvūs filtrai: ${labels.length} (${preview})`;
+    return;
+  }
+  host.textContent = `Aktyvūs filtrai: ${labels.length} (${preview}, + dar ${labels.length - 3})`;
+}
+
+function renderAdvancedFiltersSummary(selectors, dashboardState) {
+  const host = selectors?.gydytojaiFiltersAdvancedSummary;
+  if (!(host instanceof HTMLElement)) {
+    return;
+  }
+  const count = getAdvancedFilterOverrideCount(dashboardState);
+  if (dashboardState?.gydytojaiFiltersAdvancedExpanded === true) {
+    host.textContent = '';
+    return;
+  }
+  if (!count) {
+    host.textContent = 'Numatytieji nustatymai';
+    return;
+  }
+  const sortMap = {
+    volume_desc: 'Apkrova',
+    avgLos_asc: 'Vid. trukmė ↑',
+    avgLos_desc: 'Vid. trukmė ↓',
+    hospital_desc: 'Hospitalizacija ↓',
+  };
+  const sortLabel =
+    sortMap[String(dashboardState?.doctorsSort || 'volume_desc')] ||
+    String(dashboardState?.doctorsSort || 'volume_desc');
+  host.textContent = `TOP N: ${dashboardState?.doctorsTopN ?? 15} | Min. imtis: ${dashboardState?.doctorsMinCases ?? 30} | Rikiavimas: ${sortLabel}`;
+}
+
+function applyActiveFiltersDisclosure(selectors, dashboardState) {
+  const panel = selectors?.gydytojaiActiveFiltersPanel;
+  const toggle = selectors?.gydytojaiActiveFiltersToggle;
+  const hasActive = getActiveDoctorFilterChips(dashboardState).length > 0;
+  const expanded = hasActive && dashboardState?.gydytojaiActiveFiltersExpanded === true;
+  if (panel instanceof HTMLElement) {
+    panel.hidden = !expanded;
+  }
+  if (toggle instanceof HTMLElement) {
+    toggle.hidden = !hasActive;
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    toggle.textContent = expanded ? 'Slėpti aktyvių filtrų detales' : 'Rodyti aktyvių filtrų detales';
+  }
 }
 
 function getVisibleDoctorRowsForCharts(rows, hiddenAliases) {
@@ -1953,7 +2028,12 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.gydytojaiFiltersAdvancedExpanded = !(
       dashboardState.gydytojaiFiltersAdvancedExpanded === true
     );
-    rerender();
+    applyGydytojaiLayoutControls(selectors, dashboardState);
+    syncDoctorPageQueryFromState(dashboardState);
+  });
+  selectors.gydytojaiActiveFiltersToggle?.addEventListener('click', () => {
+    dashboardState.gydytojaiActiveFiltersExpanded = !(dashboardState.gydytojaiActiveFiltersExpanded === true);
+    applyActiveFiltersDisclosure(selectors, dashboardState);
   });
   selectors.gydytojaiChartsMoreToggle?.addEventListener('click', () => {
     dashboardState.gydytojaiChartsExpandedExtras = !(dashboardState.gydytojaiChartsExpandedExtras === true);
@@ -2071,6 +2151,14 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       }
       rerender();
     }
+  });
+  selectors.gydytojaiSpecialtySelect?.addEventListener('change', (event) => {
+    const nextValue = String(event.target?.value || 'all').trim() || 'all';
+    dashboardState.doctorsSpecialtyFilter = nextValue;
+    if (nextValue !== 'all') {
+      setGydytojaiSectionExpanded(dashboardState, 'specialty', true);
+    }
+    rerender();
   });
   selectors.gydytojaiSearch?.addEventListener('input', (event) => {
     dashboardState.doctorsSearch = String(event.target.value || '').trim();
@@ -2437,6 +2525,7 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsSpecialtyAnnualSelected = [];
     dashboardState.gydytojaiAnnualSubview = 'doctor';
     dashboardState.gydytojaiFiltersAdvancedExpanded = false;
+    dashboardState.gydytojaiActiveFiltersExpanded = false;
     dashboardState.gydytojaiSectionExpanded = { ...DEFAULT_GYDYTOJAI_SECTION_EXPANDED };
     dashboardState.gydytojaiChartsExpandedExtras = false;
     dashboardState.gydytojaiChartsDoctorTogglesExpanded = false;
@@ -2708,6 +2797,7 @@ export async function runGydytojaiRuntime(core) {
     );
     renderDoctorSpecialtyValidation(selectors, dashboardState);
     renderActiveDoctorFilters(selectors, dashboardState);
+    renderActiveDoctorFiltersSummary(selectors, dashboardState);
     renderSpecialtyComparisonTable(selectors, specialtyLeaderboard, dashboardState);
     renderGydytojaiSectionSummaries(selectors, dashboardState, { specialtyLeaderboard });
     renderSpecialtyAnnualControls(selectors, dashboardState, specialtyAnnualModel);
@@ -2773,7 +2863,7 @@ export async function runGydytojaiRuntime(core) {
     renderToken += 1;
     const token = renderToken;
     loadingStartedAt = Date.now();
-    setLoadingVisualState(selectors, true);
+    setLoadingVisualState(selectors, true, { initialLoadPending });
     const schedule =
       typeof window.requestAnimationFrame === 'function'
         ? window.requestAnimationFrame.bind(window)
@@ -2789,7 +2879,7 @@ export async function runGydytojaiRuntime(core) {
             const waitMs = Math.max(0, minLoadingVisibleMs - elapsed);
             window.setTimeout(() => {
               if (token === renderToken && !initialLoadPending) {
-                setLoadingVisualState(selectors, false);
+                setLoadingVisualState(selectors, false, { initialLoadPending });
               }
             }, waitMs);
           }
@@ -2802,18 +2892,18 @@ export async function runGydytojaiRuntime(core) {
   try {
     void loadChartJs();
     setStatus(selectors, 'loading');
-    setLoadingVisualState(selectors, true);
+    setLoadingVisualState(selectors, true, { initialLoadPending });
     const data = await fetchData({ skipHistorical: false });
     dashboardState.rawRecords = Array.isArray(data?.records) ? data.records : [];
     await render();
     initialLoadPending = false;
     dashboardState.hasLoadedOnce = true;
-    setLoadingVisualState(selectors, false);
+    setLoadingVisualState(selectors, false, { initialLoadPending });
     setStatus(selectors, 'ready');
   } catch (error) {
     console.error('Nepavyko įkelti gydytojų puslapio:', error);
     initialLoadPending = false;
-    setLoadingVisualState(selectors, false);
+    setLoadingVisualState(selectors, false, { initialLoadPending });
     setStatus(selectors, 'error', error?.message || TEXT.status.error);
   }
 }
