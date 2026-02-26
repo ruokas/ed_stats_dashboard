@@ -529,6 +529,7 @@ export async function runKpiRuntime(core) {
     replaceUrlQuery(query);
   };
   const parsedKpiQuery = parseFromQuery('kpi', window.location.search);
+  const hadParsedKpiQuery = Object.keys(parsedKpiQuery).length > 0;
   if (Object.keys(parsedKpiQuery).length) {
     const normalized = sanitizePageFilters(
       'kpi',
@@ -720,9 +721,12 @@ export async function runKpiRuntime(core) {
   });
 
   runtimeClient.updateClientConfig({ pageId });
+  void loadChartJs();
   dataFlow.scheduleInitialLoad();
-  persistKpiQuery({
-    ...(dashboardState.kpi?.filters || {}),
-    selectedDate: dashboardState.kpi?.selectedDate || null,
-  });
+  if (!hadParsedKpiQuery) {
+    persistKpiQuery({
+      ...(dashboardState.kpi?.filters || {}),
+      selectedDate: dashboardState.kpi?.selectedDate || null,
+    });
+  }
 }

@@ -62,7 +62,78 @@
           <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small kpi-controls__reset" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
         </form>
       </div>
-      <div id="kpiGrid" class="kpi-grid" role="list"></div>
+      <div id="kpiGrid" class="kpi-grid" role="list" aria-busy="true" data-skeleton="true">
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-card--skeleton" aria-hidden="true">
+          <header class="kpi-card__header">
+            <div class="skeleton skeleton--chip"></div>
+            <div class="skeleton skeleton--title"></div>
+          </header>
+          <p class="kpi-mainline">
+            <span class="skeleton skeleton--value"></span>
+          </p>
+          <div class="kpi-card__details">
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+            <span class="skeleton skeleton--detail"></span>
+          </div>
+        </article>
+      </div>
       <figure class="chart-card chart-card--compact chart-card--kpi-hourly kpi-hourly-chart" data-loading="true">
         <div class="chart-card__skeleton" aria-hidden="true">
           <span class="skeleton skeleton--title"></span>

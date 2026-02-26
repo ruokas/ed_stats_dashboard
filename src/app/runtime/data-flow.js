@@ -1256,11 +1256,24 @@ export function createDataFlow(env = {}) {
   }
 
   function scheduleInitialLoad() {
+    if (isKpiOnlyPage) {
+      const runInitialKpiLoad = () => {
+        if (!dashboardState.loading) {
+          void loadDashboard();
+        }
+      };
+      if (typeof document !== 'undefined' && document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInitialKpiLoad, { once: true });
+      } else {
+        runInitialKpiLoad();
+      }
+      return;
+    }
     const initialTimeout = activeConfig.kpi || activeConfig.charts || activeConfig.ed ? 250 : 500;
     runAfterDomAndIdle(
       () => {
         if (!dashboardState.loading) {
-          loadDashboard();
+          void loadDashboard();
         }
       },
       { timeout: initialTimeout }
