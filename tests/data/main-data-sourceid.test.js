@@ -658,6 +658,8 @@ describe('main-data sourceId tagging', () => {
       filters: { window: 30, shift: 'all', arrival: 'all', disposition: 'all', cardType: 'all' },
       defaultFilters: { window: 30, shift: 'all', arrival: 'all', disposition: 'all', cardType: 'all' },
       windowDays: 30,
+      selectedDate: '2026-02-10',
+      lastShiftHourlyMetric: 'balance',
       records,
       dailyStats,
       calculations: { shiftStartHour: 7 },
@@ -676,6 +678,8 @@ describe('main-data sourceId tagging', () => {
     expect(legacyMessages).toHaveLength(0);
     expect(handleMessages[0]).not.toHaveProperty('records');
     expect(handleMessages[0]).not.toHaveProperty('dailyStats');
+    expect(handleMessages[0].selectedDate).toBe('2026-02-10');
+    expect(handleMessages[0].lastShiftHourlyMetric).toBe('balance');
   });
 
   it('reuses a stored KPI dataset handle across KPI worker detail jobs', async () => {

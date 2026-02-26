@@ -22,7 +22,7 @@
             <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
           </div>
         </div>
-        <div class="section__actions chart-controls filter-panel">
+        <div id="chartsMainFiltersPanel" class="section__actions chart-controls filter-panel" hidden>
           <div class="time-scope-control">
             <p class="time-scope-control__title">Laiko pjūvis</p>
             <div id="chartPeriodGroup" class="chart-period" role="group" aria-label="Pasirinkite grafiko laikotarpį dienomis">
@@ -105,7 +105,11 @@
           </form>
         </div>
       </div>
-      <section class="charts-subsection" aria-labelledby="chartsOverviewHeading">
+      <button type="button" class="charts-section-toggle" data-charts-section-toggle="overview" aria-expanded="true" aria-controls="chartsOverviewPanel">
+        <span class="charts-section-toggle__title">Srautų apžvalga</span>
+        <span class="charts-section-toggle__summary">Dienos ir savaitės dinamika</span>
+      </button>
+      <section id="chartsOverviewPanel" class="charts-subsection" aria-labelledby="chartsOverviewHeading" data-charts-section-panel="overview">
         <header class="charts-subsection__header">
           <h3 id="chartsOverviewHeading" class="charts-subsection__title">Srautų apžvalga</h3>
           <p class="charts-subsection__subtitle">Pagrindinė dienos ir savaitės dinamikos apžvalga.</p>
@@ -248,7 +252,11 @@
         </figure>
         </div>
       </section>
-      <section class="charts-subsection" aria-labelledby="chartsHourlyHeading">
+      <button type="button" class="charts-section-toggle" data-charts-section-toggle="hourly" aria-expanded="false" aria-controls="chartsHourlyPanel">
+        <span class="charts-section-toggle__title">Valandinis profilis</span>
+        <span class="charts-section-toggle__summary">Detalūs valandiniai srautai</span>
+      </button>
+      <section id="chartsHourlyPanel" class="charts-subsection" aria-labelledby="chartsHourlyHeading" data-charts-section-panel="hourly" hidden>
         <header class="charts-subsection__header">
           <h3 id="chartsHourlyHeading" class="charts-subsection__title">Valandinis profilis</h3>
           <p class="charts-subsection__subtitle">Detali valandinių srautų analizė su lokaliais filtrais.</p>
@@ -376,7 +384,11 @@
         </figure>
         </div>
       </section>
-      <section class="charts-subsection" aria-labelledby="chartsHeatmapHeading">
+      <button type="button" class="charts-section-toggle" data-charts-section-toggle="heatmap" aria-expanded="false" aria-controls="chartsHeatmapPanel">
+        <span class="charts-section-toggle__title">Intensyvumo žemėlapis</span>
+        <span class="charts-section-toggle__summary">Atvykimų aktyvumas pagal laiką</span>
+      </button>
+      <section id="chartsHeatmapPanel" class="charts-subsection" aria-labelledby="chartsHeatmapHeading" data-charts-section-panel="heatmap" hidden>
         <header class="charts-subsection__header">
           <h3 id="chartsHeatmapHeading" class="charts-subsection__title">Intensyvumo žemėlapis</h3>
           <p class="charts-subsection__subtitle">Atvykimų aktyvumas pagal savaitės dieną ir valandą.</p>
@@ -462,7 +474,11 @@
         </div>
       </section>
     </section>
-    <section class="section section--compact" aria-labelledby="chartsHospitalTableHeading" data-section="charts-hospital-table">
+    <button type="button" class="charts-section-toggle" data-charts-section-toggle="hospital" aria-expanded="false" aria-controls="chartsHospitalSectionPanel">
+      <span class="charts-section-toggle__title">Hospitalizacijų analizė</span>
+      <span class="charts-section-toggle__summary">Lentelė ir skyriaus metinė dinamika</span>
+    </button>
+    <section id="chartsHospitalSectionPanel" class="section section--compact" aria-labelledby="chartsHospitalTableHeading" data-section="charts-hospital-table" data-charts-section-panel="hospital" hidden>
       <div class="section__header">
         <div class="section__heading">
           <div class="section__title-row">

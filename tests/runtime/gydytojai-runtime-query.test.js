@@ -7,7 +7,7 @@ import {
 describe('gydytojai runtime query helpers', () => {
   test('parses valid query values', () => {
     const state = getDoctorPageStateFromQuery(
-      '?y=2025&top=20&min=40&sort=avgLos_desc&arr=ems&disp=hospitalized&shift=night&sp=resident&q=jon&tsort=losGt16Share_asc&am=nightShare&as=yoy_up&ad=Jonas, Ona&sam=losGroups&sas=yoy_down&sase=emergency_doctor,surgery'
+      '?y=2025&top=20&min=40&sort=avgLos_desc&arr=ems&disp=hospitalized&shift=night&sp=resident&q=jon&tsort=losGt16Share_asc&am=nightShare&as=yoy_up&ad=Jonas, Ona&sam=losGroups&sas=yoy_down&sase=emergency_doctor,surgery&ga=specialty&gfa=1&gse=results,annual,charts'
     );
     expect(state.year).toBe('2025');
     expect(state.topN).toBe(20);
@@ -24,6 +24,9 @@ describe('gydytojai runtime query helpers', () => {
     expect(state.specialtyAnnualMetric).toBe('losGroups');
     expect(state.specialtyAnnualSort).toBe('yoy_down');
     expect(state.specialtyAnnualSelected).toEqual(['emergency_doctor', 'surgery']);
+    expect(state.gydytojaiAnnualSubview).toBe('specialty');
+    expect(state.gydytojaiFiltersAdvancedExpanded).toBe(true);
+    expect(state.gydytojaiSectionExpanded).toEqual(['results', 'annual', 'charts']);
   });
 
   test('builds compact query and falls back on invalid values', () => {
@@ -40,6 +43,9 @@ describe('gydytojai runtime query helpers', () => {
     expect(parsed.specialtyAnnualMetric).toBe('count');
     expect(parsed.specialtyAnnualSort).toBe('latest_desc');
     expect(parsed.specialtyAnnualSelected).toEqual([]);
+    expect(parsed.gydytojaiAnnualSubview).toBe('doctor');
+    expect(parsed.gydytojaiFiltersAdvancedExpanded).toBe(false);
+    expect(parsed.gydytojaiSectionExpanded).toEqual([]);
 
     const query = buildDoctorPageQuery({
       year: '2025',
@@ -58,6 +64,9 @@ describe('gydytojai runtime query helpers', () => {
       specialtyAnnualMetric: 'count',
       specialtyAnnualSort: 'latest_desc',
       specialtyAnnualSelected: [],
+      gydytojaiAnnualSubview: 'doctor',
+      gydytojaiFiltersAdvancedExpanded: false,
+      gydytojaiSectionExpanded: ['results'],
     });
     expect(query).toBe('?y=2025');
 
@@ -78,6 +87,9 @@ describe('gydytojai runtime query helpers', () => {
       specialtyAnnualMetric: 'losGroups',
       specialtyAnnualSort: 'yoy_down',
       specialtyAnnualSelected: ['emergency_doctor', 'surgery'],
+      gydytojaiAnnualSubview: 'specialty',
+      gydytojaiFiltersAdvancedExpanded: true,
+      gydytojaiSectionExpanded: ['results', 'annual', 'charts'],
     });
     expect(annualQuery).toContain('am=nightShare');
     expect(annualQuery).toContain('as=yoy_up');
@@ -86,5 +98,8 @@ describe('gydytojai runtime query helpers', () => {
     expect(annualQuery).toContain('sam=losGroups');
     expect(annualQuery).toContain('sas=yoy_down');
     expect(annualQuery).toContain('sase=emergency_doctor%2Csurgery');
+    expect(annualQuery).toContain('ga=specialty');
+    expect(annualQuery).toContain('gfa=1');
+    expect(annualQuery).toContain('gse=results%2Cannual%2Ccharts');
   });
 });

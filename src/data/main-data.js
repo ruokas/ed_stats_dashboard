@@ -649,6 +649,8 @@ export function createMainDataHandlers(context) {
         filters: payload?.filters || {},
         defaultFilters: payload?.defaultFilters || {},
         windowDays: payload?.windowDays,
+        selectedDate: payload?.selectedDate ?? null,
+        lastShiftHourlyMetric: payload?.lastShiftHourlyMetric,
         calculations: payload?.calculations || {},
         calculationDefaults: payload?.calculationDefaults || {},
         resultMode: payload?.resultMode || 'full',

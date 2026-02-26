@@ -66,6 +66,17 @@ export function createDashboardState({
     doctorsSpecialtyAnnualCardsChartRefs: {},
     doctorsSpecialtyAnnualSelected: [],
     doctorsSpecialtyAnnualAvailable: [],
+    gydytojaiFiltersAdvancedExpanded: false,
+    gydytojaiActiveFiltersExpanded: false,
+    gydytojaiSectionExpanded: {
+      results: true,
+      specialty: false,
+      annual: false,
+      charts: false,
+    },
+    gydytojaiAnnualSubview: 'doctor',
+    gydytojaiChartsExpandedExtras: false,
+    gydytojaiChartsDoctorTogglesExpanded: false,
     doctorsCoverage: { total: 0, withDoctor: 0, percent: 0 },
     doctorsSpecialtyValidation: {
       enabled: false,
@@ -209,6 +220,15 @@ export function createDashboardState({
       heatmapRendered: false,
       hourlyRendered: false,
       hospitalVisible: false,
+    },
+    chartsSectionsExpanded: {
+      main: true,
+      hospital: false,
+    },
+    chartsSubsectionsExpanded: {
+      overview: true,
+      hourly: false,
+      heatmap: false,
     },
     theme: 'light',
     fullscreen: false,

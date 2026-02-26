@@ -54,6 +54,8 @@ export const FILTER_SCHEMAS = {
       hospitalSort: { type: 'string', queryKey: 'hts' },
       hospitalSearch: { type: 'string', queryKey: 'htq' },
       hospitalDepartment: { type: 'string', queryKey: 'htd' },
+      chartsSectionsExpanded: { type: 'csv', queryKey: 'cse' },
+      chartsSubsectionsExpanded: { type: 'csv', queryKey: 'css' },
     },
   },
   feedback: {
@@ -97,6 +99,9 @@ export const FILTER_SCHEMAS = {
       specialtyAnnualMetric: { type: 'string', queryKey: 'sam' },
       specialtyAnnualSort: { type: 'string', queryKey: 'sas' },
       specialtyAnnualSelected: { type: 'csv', queryKey: 'sase' },
+      gydytojaiAnnualSubview: { type: 'string', queryKey: 'ga' },
+      gydytojaiFiltersAdvancedExpanded: { type: 'boolean', queryKey: 'gfa' },
+      gydytojaiSectionExpanded: { type: 'csv', queryKey: 'gse' },
     },
   },
 };

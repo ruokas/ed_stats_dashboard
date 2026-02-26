@@ -21,6 +21,8 @@ export function createKpiFlow(env) {
     hideKpiSkeleton = null,
     renderKpis,
     renderLastShiftHourlyChartWithTheme,
+    showLastShiftHourlyLoading = null,
+    hideLastShiftHourlyLoading = null,
     setChartCardMessage,
     getSettings,
     runKpiWorkerJob,
@@ -33,6 +35,7 @@ export function createKpiFlow(env) {
   let kpiWorkerJobToken = 0;
   let kpiHourlyWorkerJobToken = 0;
   let kpiDateRecordsWorkerJobToken = 0;
+  let lastShiftHourlyRenderToken = 0;
   let lastKpiUiRenderSignature = null;
 
   function ensureKpiSkeletonHidden() {
@@ -60,6 +63,36 @@ export function createKpiFlow(env) {
       ...(dashboardState.kpi?.filters || {}),
       selectedDate: dashboardState.kpi?.selectedDate || null,
     });
+  }
+
+  function beginLastShiftHourlyLoading() {
+    const token = ++lastShiftHourlyRenderToken;
+    if (typeof showLastShiftHourlyLoading === 'function') {
+      showLastShiftHourlyLoading();
+    }
+    if (setChartCardMessage) {
+      setChartCardMessage(selectors.lastShiftHourlyChart, '');
+    }
+    return token;
+  }
+
+  function endLastShiftHourlyLoading(token) {
+    if (token !== lastShiftHourlyRenderToken) {
+      return;
+    }
+    const hide = () => {
+      if (token !== lastShiftHourlyRenderToken) {
+        return;
+      }
+      if (typeof hideLastShiftHourlyLoading === 'function') {
+        hideLastShiftHourlyLoading();
+      }
+    };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(hide);
+      return;
+    }
+    hide();
   }
 
   function getSelectedDateDailyCache(recordsRef, selectedDate, shiftStartHour) {
@@ -820,33 +853,43 @@ export function createKpiFlow(env) {
   }
 
   function renderLastShiftHourlyChart(records, dailyStats) {
+    const renderToken = beginLastShiftHourlyLoading();
     const metricKey = dashboardState.kpi?.lastShiftHourlyMetric || 'arrivals';
     const seriesInfo = buildLastShiftHourlySeries(records, dailyStats, metricKey);
     dashboardState.kpi.lastShiftHourly = seriesInfo;
-    renderLastShiftHourlyChartWithTheme(seriesInfo).catch((error) => {
-      const errorInfo = describeError(error, {
-        code: 'LAST_SHIFT_HOURLY',
-        message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
+    renderLastShiftHourlyChartWithTheme(seriesInfo)
+      .catch((error) => {
+        const errorInfo = describeError(error, {
+          code: 'LAST_SHIFT_HOURLY',
+          message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
+        });
+        console.error(errorInfo.log, error);
+        if (setChartCardMessage) {
+          setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
+        }
+      })
+      .finally(() => {
+        endLastShiftHourlyLoading(renderToken);
       });
-      console.error(errorInfo.log, error);
-      if (setChartCardMessage) {
-        setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
-      }
-    });
   }
 
   function renderLastShiftHourlySeriesInfo(seriesInfo) {
     dashboardState.kpi.lastShiftHourly = seriesInfo;
-    renderLastShiftHourlyChartWithTheme(seriesInfo).catch((error) => {
-      const errorInfo = describeError(error, {
-        code: 'LAST_SHIFT_HOURLY',
-        message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
+    const renderToken = beginLastShiftHourlyLoading();
+    renderLastShiftHourlyChartWithTheme(seriesInfo)
+      .catch((error) => {
+        const errorInfo = describeError(error, {
+          code: 'LAST_SHIFT_HOURLY',
+          message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
+        });
+        console.error(errorInfo.log, error);
+        if (setChartCardMessage) {
+          setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
+        }
+      })
+      .finally(() => {
+        endLastShiftHourlyLoading(renderToken);
       });
-      console.error(errorInfo.log, error);
-      if (setChartCardMessage) {
-        setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
-      }
-    });
   }
 
   function fingerprintKpiRecords(records) {
@@ -1249,6 +1292,9 @@ export function createKpiFlow(env) {
     const metric = normalizeLastShiftMetric(dashboardState.kpi?.lastShiftHourlyMetric);
     const detailToken = ++kpiHourlyWorkerJobToken;
     const workerTokenAtStart = kpiWorkerJobToken;
+    if (typeof showLastShiftHourlyLoading === 'function') {
+      showLastShiftHourlyLoading();
+    }
     try {
       const result = await runKpiWorkerDetailJob({
         type: 'computeKpiLastShiftHourlyByHandle',
@@ -1273,6 +1319,9 @@ export function createKpiFlow(env) {
         message: "Nepavyko atnaujinti KPI paskutinės pamainos grafiko worker'yje",
       });
       console.error(errorInfo.log, error);
+      if (typeof hideLastShiftHourlyLoading === 'function') {
+        hideLastShiftHourlyLoading();
+      }
       return false;
     }
   }

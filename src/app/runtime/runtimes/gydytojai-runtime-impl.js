@@ -40,6 +40,13 @@ import { createStatusSetter } from '../utils/common.js';
 import { createReportExportClickHandler } from './summaries/report-export.js';
 
 const setStatus = createStatusSetter(TEXT.status, { showSuccessState: false });
+const GYDYTOJAI_SECTION_KEYS = ['results', 'specialty', 'annual', 'charts'];
+const DEFAULT_GYDYTOJAI_SECTION_EXPANDED = Object.freeze({
+  results: true,
+  specialty: false,
+  annual: false,
+  charts: false,
+});
 const DEFAULT_DOCTOR_PAGE_STATE = {
   year: 'all',
   topN: 15,
@@ -57,6 +64,9 @@ const DEFAULT_DOCTOR_PAGE_STATE = {
   specialtyAnnualMetric: 'count',
   specialtyAnnualSort: 'latest_desc',
   specialtyAnnualSelected: [],
+  gydytojaiAnnualSubview: 'doctor',
+  gydytojaiFiltersAdvancedExpanded: false,
+  gydytojaiSectionExpanded: ['results'],
 };
 
 function parsePositiveInt(value, fallback) {
@@ -93,6 +103,11 @@ function normalizeSpecialtyAnnualMetric(value, fallback = 'count') {
   return fallback;
 }
 
+function normalizeGydytojaiAnnualSubview(value, fallback = 'doctor') {
+  const token = String(value ?? '').trim();
+  return token === 'specialty' ? 'specialty' : fallback;
+}
+
 function parseDoctorSelectionParam(value) {
   return String(value || '')
     .split(',')
@@ -104,6 +119,32 @@ function parseDoctorSelectionParam(value) {
 function normalizeAllowed(value, allowed, fallback) {
   const token = String(value ?? '').trim();
   return allowed.has(token) ? token : fallback;
+}
+
+function parseSectionExpandedParam(value) {
+  const raw = Array.isArray(value) ? value : parseDoctorSelectionParam(value);
+  const normalized = raw
+    .map((entry) => {
+      const token = String(entry || '').trim();
+      if (token === 'annualDoctor' || token === 'annualSpecialty') {
+        return 'annual';
+      }
+      return token;
+    })
+    .filter((entry) => GYDYTOJAI_SECTION_KEYS.includes(entry));
+  return Array.from(new Set(normalized));
+}
+
+function buildSectionExpandedState(entries) {
+  const set = new Set(parseSectionExpandedParam(entries));
+  return {
+    ...DEFAULT_GYDYTOJAI_SECTION_EXPANDED,
+    ...Object.fromEntries(GYDYTOJAI_SECTION_KEYS.map((key) => [key, set.has(key)])),
+  };
+}
+
+function getExpandedSectionList(sectionState) {
+  return GYDYTOJAI_SECTION_KEYS.filter((key) => sectionState?.[key] === true);
 }
 
 export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PAGE_STATE) {
@@ -179,6 +220,15 @@ export function getDoctorPageStateFromQuery(search, defaults = DEFAULT_DOCTOR_PA
     specialtyAnnualSelected: Array.isArray(parsed.specialtyAnnualSelected)
       ? parsed.specialtyAnnualSelected.slice(0, 12)
       : parseDoctorSelectionParam(params.get('sase')),
+    gydytojaiAnnualSubview: normalizeGydytojaiAnnualSubview(
+      parsed.gydytojaiAnnualSubview ?? params.get('ga'),
+      defaults.gydytojaiAnnualSubview
+    ),
+    gydytojaiFiltersAdvancedExpanded:
+      typeof parsed.gydytojaiFiltersAdvancedExpanded === 'boolean'
+        ? parsed.gydytojaiFiltersAdvancedExpanded
+        : String(params.get('gfa') || '') === '1',
+    gydytojaiSectionExpanded: parseSectionExpandedParam(parsed.gydytojaiSectionExpanded ?? params.get('gse')),
   };
 }
 
@@ -202,6 +252,9 @@ export function buildDoctorPageQuery(state) {
       specialtyAnnualMetric: state.specialtyAnnualMetric,
       specialtyAnnualSort: state.specialtyAnnualSort,
       specialtyAnnualSelected: state.specialtyAnnualSelected,
+      gydytojaiAnnualSubview: state.gydytojaiAnnualSubview,
+      gydytojaiFiltersAdvancedExpanded: state.gydytojaiFiltersAdvancedExpanded,
+      gydytojaiSectionExpanded: state.gydytojaiSectionExpanded,
     },
     DEFAULT_DOCTOR_PAGE_STATE
   );
@@ -225,6 +278,9 @@ function syncDoctorPageQueryFromState(dashboardState) {
     specialtyAnnualMetric: dashboardState.doctorsSpecialtyAnnualMetric,
     specialtyAnnualSort: dashboardState.doctorsSpecialtyAnnualSort,
     specialtyAnnualSelected: dashboardState.doctorsSpecialtyAnnualSelected,
+    gydytojaiAnnualSubview: dashboardState.gydytojaiAnnualSubview,
+    gydytojaiFiltersAdvancedExpanded: dashboardState.gydytojaiFiltersAdvancedExpanded,
+    gydytojaiSectionExpanded: getExpandedSectionList(dashboardState.gydytojaiSectionExpanded),
   });
   replaceUrlQuery(query);
 }
@@ -317,20 +373,36 @@ function applyDoctorControls(selectors, dashboardState, yearOptions) {
     dashboardState.doctorsSpecialtyAnnualSort,
     (button) => button.getAttribute('data-gydytojai-specialty-annual-sort')
   );
+  setPressed(selectors.gydytojaiAnnualSubviewButtons, dashboardState.gydytojaiAnnualSubview, (button) =>
+    button.getAttribute('data-gydytojai-annual-subview')
+  );
 }
 
 function applyDoctorSpecialtyControls(selectors, dashboardState, specialtyValidation, specialtyOptions) {
-  const host = selectors?.gydytojaiSpecialtyChips;
-  if (!(host instanceof HTMLElement)) {
+  const select = selectors?.gydytojaiSpecialtySelect;
+  const field =
+    selectors?.gydytojaiSpecialtyField instanceof HTMLElement
+      ? selectors.gydytojaiSpecialtyField
+      : select instanceof HTMLElement
+        ? select.closest('.summaries-reports-controls__field')
+        : null;
+  if (!(select instanceof HTMLSelectElement)) {
     return;
   }
   const validation = specialtyValidation || {};
   const enabled = validation.enabled === true;
   const uiEnabled = dashboardState?.doctorsSpecialtyUiEnabled === true && enabled;
-  host.replaceChildren();
-  host.hidden = !enabled;
-  host.setAttribute('aria-disabled', uiEnabled ? 'false' : 'true');
+  if (field instanceof HTMLElement) {
+    field.hidden = !enabled;
+  }
+  select.disabled = !uiEnabled;
   if (!enabled) {
+    select.replaceChildren();
+    const option = document.createElement('option');
+    option.value = 'all';
+    option.textContent = 'Visos';
+    select.appendChild(option);
+    select.value = 'all';
     return;
   }
 
@@ -339,22 +411,16 @@ function applyDoctorSpecialtyControls(selectors, dashboardState, specialtyValida
   const current = String(dashboardState?.doctorsSpecialtyFilter || 'all');
   dashboardState.doctorsSpecialtyFilter = allowed.has(current) ? current : 'all';
 
-  const items = [{ id: 'all', label: 'Visos' }, ...groups];
-  items.forEach((item) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'chip-button';
-    button.setAttribute('data-gydytojai-specialty', String(item.id || 'all'));
-    button.setAttribute(
-      'aria-pressed',
-      String(dashboardState.doctorsSpecialtyFilter) === String(item.id) ? 'true' : 'false'
-    );
-    if (!uiEnabled) {
-      button.disabled = true;
-    }
-    button.textContent = String(item.label || item.id || '');
-    host.appendChild(button);
+  select.replaceChildren();
+  [{ id: 'all', label: 'Visos' }, ...groups].forEach((item) => {
+    const option = document.createElement('option');
+    option.value = String(item?.id || 'all');
+    option.textContent = String(item?.label || item?.id || '');
+    select.appendChild(option);
   });
+  select.value = allowed.has(String(dashboardState.doctorsSpecialtyFilter || 'all'))
+    ? String(dashboardState.doctorsSpecialtyFilter || 'all')
+    : 'all';
 }
 
 function setCoverage(selectors, model) {
@@ -369,12 +435,18 @@ function setCoverage(selectors, model) {
   selectors.gydytojaiCoverage.textContent = `Su uždariusiu gydytoju: ${withDoctor} iš ${total} (${oneDecimalFormatter.format(percent)}%). Po aktyvių filtrų: ${filtered}.`;
 }
 
-function setLoadingVisualState(selectors, isLoading) {
+function setLoadingVisualState(selectors, isLoading, options = {}) {
+  const initialLoadPending = options?.initialLoadPending === true;
+  const showFullSkeleton = isLoading && initialLoadPending;
+  const showInline = isLoading && !initialLoadPending;
+  if (selectors.gydytojaiFiltersPanel instanceof HTMLElement) {
+    selectors.gydytojaiFiltersPanel.hidden = showFullSkeleton;
+  }
   if (selectors.gydytojaiLoadingState instanceof HTMLElement) {
-    selectors.gydytojaiLoadingState.hidden = !isLoading;
+    selectors.gydytojaiLoadingState.hidden = !showFullSkeleton;
   }
   if (selectors.gydytojaiLoadingInline instanceof HTMLElement) {
-    selectors.gydytojaiLoadingInline.hidden = !isLoading;
+    selectors.gydytojaiLoadingInline.hidden = !showInline;
   }
   const main = document.querySelector('main.container');
   if (main instanceof HTMLElement) {
@@ -481,6 +553,154 @@ function renderSpecialtyComparisonTable(selectors, model, dashboardState) {
     body.appendChild(tr);
   });
   updateSpecialtySortHeaderState(selectors, dashboardState?.doctorsSpecialtyTableSort);
+}
+
+function ensureGydytojaiSectionExpandedState(dashboardState) {
+  const current = dashboardState?.gydytojaiSectionExpanded || {};
+  dashboardState.gydytojaiSectionExpanded = {
+    ...DEFAULT_GYDYTOJAI_SECTION_EXPANDED,
+    ...Object.fromEntries(GYDYTOJAI_SECTION_KEYS.map((key) => [key, current?.[key] === true])),
+  };
+  return dashboardState.gydytojaiSectionExpanded;
+}
+
+function setGydytojaiSectionExpanded(dashboardState, key, expanded) {
+  if (!GYDYTOJAI_SECTION_KEYS.includes(String(key || ''))) {
+    return;
+  }
+  const state = ensureGydytojaiSectionExpandedState(dashboardState);
+  state[key] = expanded === true;
+}
+
+function getAdvancedFilterOverrideCount(dashboardState) {
+  let count = 0;
+  if (Number(dashboardState?.doctorsTopN || 15) !== 15) {
+    count += 1;
+  }
+  if (Number(dashboardState?.doctorsMinCases || 30) !== 30) {
+    count += 1;
+  }
+  if (String(dashboardState?.doctorsSort || 'volume_desc') !== 'volume_desc') {
+    count += 1;
+  }
+  return count;
+}
+
+function renderGydytojaiSectionSummaries(selectors, dashboardState, models) {
+  if (selectors?.gydytojaiSpecialtySectionSummary instanceof HTMLElement) {
+    if (dashboardState?.doctorsSpecialtyUiEnabled !== true) {
+      selectors.gydytojaiSpecialtySectionSummary.textContent = 'Išjungta';
+    } else {
+      const rows = Array.isArray(models?.specialtyLeaderboard?.rows) ? models.specialtyLeaderboard.rows : [];
+      const totalCases = rows.reduce((sum, row) => sum + Number(row?.count || 0), 0);
+      if (!rows.length) {
+        selectors.gydytojaiSpecialtySectionSummary.textContent = 'Nepakanka duomenų';
+      } else {
+        selectors.gydytojaiSpecialtySectionSummary.textContent = `${rows.length} specialybės, n=${numberFormatter.format(totalCases)}`;
+      }
+    }
+  }
+}
+
+function applyGydytojaiLayoutControls(selectors, dashboardState) {
+  ensureGydytojaiSectionExpandedState(dashboardState);
+  if (selectors?.gydytojaiFiltersAdvancedPanel instanceof HTMLElement) {
+    const expanded = dashboardState?.gydytojaiFiltersAdvancedExpanded === true;
+    selectors.gydytojaiFiltersAdvancedPanel.hidden = !expanded;
+    selectors.gydytojaiFiltersAdvancedToggle?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    const count = getAdvancedFilterOverrideCount(dashboardState);
+    if (selectors?.gydytojaiFiltersAdvancedToggle instanceof HTMLElement) {
+      selectors.gydytojaiFiltersAdvancedToggle.textContent = expanded
+        ? 'Slėpti išplėstinius filtrus'
+        : count > 0
+          ? `Išplėstiniai filtrai (${count})`
+          : 'Išplėstiniai filtrai';
+    }
+  }
+  renderAdvancedFiltersSummary(selectors, dashboardState);
+  applyActiveFiltersDisclosure(selectors, dashboardState);
+
+  (Array.isArray(selectors?.gydytojaiSectionPanels) ? selectors.gydytojaiSectionPanels : []).forEach(
+    (panel) => {
+      if (!(panel instanceof HTMLElement)) {
+        return;
+      }
+      const key = String(panel.getAttribute('data-gydytojai-section-panel') || '').trim();
+      if (!GYDYTOJAI_SECTION_KEYS.includes(key)) {
+        return;
+      }
+      const expanded = dashboardState?.gydytojaiSectionExpanded?.[key] === true;
+      panel.hidden = !expanded;
+    }
+  );
+
+  (Array.isArray(selectors?.gydytojaiSectionToggleButtons)
+    ? selectors.gydytojaiSectionToggleButtons
+    : []
+  ).forEach((button) => {
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+    const key = String(button.getAttribute('data-gydytojai-section-toggle') || '').trim();
+    const expanded = dashboardState?.gydytojaiSectionExpanded?.[key] === true;
+    button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    button.classList.toggle('is-expanded', expanded);
+  });
+
+  const annualSubview = normalizeGydytojaiAnnualSubview(dashboardState?.gydytojaiAnnualSubview, 'doctor');
+  dashboardState.gydytojaiAnnualSubview = annualSubview;
+  if (selectors?.gydytojaiAnnualSection instanceof HTMLElement) {
+    selectors.gydytojaiAnnualSection.hidden = annualSubview !== 'doctor';
+  }
+  if (selectors?.gydytojaiSpecialtyAnnualSection instanceof HTMLElement) {
+    const canShowSpecialtySubview = dashboardState?.doctorsSpecialtyUiEnabled === true;
+    selectors.gydytojaiSpecialtyAnnualSection.hidden =
+      annualSubview !== 'specialty' || !canShowSpecialtySubview;
+    if (!canShowSpecialtySubview && annualSubview === 'specialty') {
+      dashboardState.gydytojaiAnnualSubview = 'doctor';
+      if (selectors?.gydytojaiAnnualSection instanceof HTMLElement) {
+        selectors.gydytojaiAnnualSection.hidden = false;
+      }
+    }
+  }
+  const annualDoctorPanel =
+    selectors?.gydytojaiAnnualSection instanceof HTMLElement
+      ? selectors.gydytojaiAnnualSection.querySelector('[data-gydytojai-section-panel="annualDoctor"]')
+      : null;
+  if (annualDoctorPanel instanceof HTMLElement) {
+    annualDoctorPanel.hidden = false;
+  }
+  const annualSpecialtyPanel =
+    selectors?.gydytojaiSpecialtyAnnualSection instanceof HTMLElement
+      ? selectors.gydytojaiSpecialtyAnnualSection.querySelector(
+          '[data-gydytojai-section-panel="annualSpecialty"]'
+        )
+      : null;
+  if (annualSpecialtyPanel instanceof HTMLElement) {
+    annualSpecialtyPanel.hidden = false;
+  }
+
+  if (selectors?.gydytojaiChartsMorePanel instanceof HTMLElement) {
+    const expanded = dashboardState?.gydytojaiChartsExpandedExtras === true;
+    selectors.gydytojaiChartsMorePanel.hidden = !expanded;
+    if (selectors?.gydytojaiChartsMoreToggle instanceof HTMLElement) {
+      selectors.gydytojaiChartsMoreToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      selectors.gydytojaiChartsMoreToggle.textContent = expanded
+        ? 'Slėpti papildomus grafikus'
+        : 'Rodyti daugiau grafikų';
+    }
+  }
+
+  if (selectors?.gydytojaiChartDoctorTogglesPanel instanceof HTMLElement) {
+    const expanded = dashboardState?.gydytojaiChartsDoctorTogglesExpanded === true;
+    selectors.gydytojaiChartDoctorTogglesPanel.hidden = !expanded;
+    if (selectors?.gydytojaiChartDoctorTogglesToggle instanceof HTMLElement) {
+      selectors.gydytojaiChartDoctorTogglesToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      selectors.gydytojaiChartDoctorTogglesToggle.textContent = expanded
+        ? 'Slėpti grafikuose pasirinktus gydytojus'
+        : 'Rodyti grafikuose pasirinktus gydytojus';
+    }
+  }
 }
 
 function buildDoctorFilterSummary(dashboardState) {
@@ -625,6 +845,66 @@ function renderActiveDoctorFilters(selectors, dashboardState) {
     button.textContent = `${chip.label} ×`;
     host.appendChild(button);
   });
+}
+
+function renderActiveDoctorFiltersSummary(selectors, dashboardState) {
+  const host = selectors?.gydytojaiActiveFiltersSummary;
+  if (!(host instanceof HTMLElement)) {
+    return;
+  }
+  const chips = getActiveDoctorFilterChips(dashboardState);
+  if (!chips.length) {
+    host.textContent = 'Naudojami numatytieji filtrai.';
+    return;
+  }
+  const labels = chips.map((chip) => String(chip?.label || '')).filter(Boolean);
+  const preview = labels.slice(0, 3).join(', ');
+  if (labels.length <= 3) {
+    host.textContent = `Aktyvūs filtrai: ${labels.length} (${preview})`;
+    return;
+  }
+  host.textContent = `Aktyvūs filtrai: ${labels.length} (${preview}, + dar ${labels.length - 3})`;
+}
+
+function renderAdvancedFiltersSummary(selectors, dashboardState) {
+  const host = selectors?.gydytojaiFiltersAdvancedSummary;
+  if (!(host instanceof HTMLElement)) {
+    return;
+  }
+  const count = getAdvancedFilterOverrideCount(dashboardState);
+  if (dashboardState?.gydytojaiFiltersAdvancedExpanded === true) {
+    host.textContent = '';
+    return;
+  }
+  if (!count) {
+    host.textContent = 'Numatytieji nustatymai';
+    return;
+  }
+  const sortMap = {
+    volume_desc: 'Apkrova',
+    avgLos_asc: 'Vid. trukmė ↑',
+    avgLos_desc: 'Vid. trukmė ↓',
+    hospital_desc: 'Hospitalizacija ↓',
+  };
+  const sortLabel =
+    sortMap[String(dashboardState?.doctorsSort || 'volume_desc')] ||
+    String(dashboardState?.doctorsSort || 'volume_desc');
+  host.textContent = `TOP N: ${dashboardState?.doctorsTopN ?? 15} | Min. imtis: ${dashboardState?.doctorsMinCases ?? 30} | Rikiavimas: ${sortLabel}`;
+}
+
+function applyActiveFiltersDisclosure(selectors, dashboardState) {
+  const panel = selectors?.gydytojaiActiveFiltersPanel;
+  const toggle = selectors?.gydytojaiActiveFiltersToggle;
+  const hasActive = getActiveDoctorFilterChips(dashboardState).length > 0;
+  const expanded = hasActive && dashboardState?.gydytojaiActiveFiltersExpanded === true;
+  if (panel instanceof HTMLElement) {
+    panel.hidden = !expanded;
+  }
+  if (toggle instanceof HTMLElement) {
+    toggle.hidden = !hasActive;
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    toggle.textContent = expanded ? 'Slėpti aktyvių filtrų detales' : 'Rodyti aktyvių filtrų detales';
+  }
 }
 
 function getVisibleDoctorRowsForCharts(rows, hiddenAliases) {
@@ -1739,6 +2019,73 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsSearchDebounced = String(dashboardState.doctorsSearch || '').trim();
     rerender();
   }, 250);
+  const expandSectionAndRerender = (key) => {
+    setGydytojaiSectionExpanded(dashboardState, key, true);
+    rerender();
+  };
+
+  selectors.gydytojaiFiltersAdvancedToggle?.addEventListener('click', () => {
+    dashboardState.gydytojaiFiltersAdvancedExpanded = !(
+      dashboardState.gydytojaiFiltersAdvancedExpanded === true
+    );
+    applyGydytojaiLayoutControls(selectors, dashboardState);
+    syncDoctorPageQueryFromState(dashboardState);
+  });
+  selectors.gydytojaiActiveFiltersToggle?.addEventListener('click', () => {
+    dashboardState.gydytojaiActiveFiltersExpanded = !(dashboardState.gydytojaiActiveFiltersExpanded === true);
+    applyActiveFiltersDisclosure(selectors, dashboardState);
+  });
+  selectors.gydytojaiChartsMoreToggle?.addEventListener('click', () => {
+    dashboardState.gydytojaiChartsExpandedExtras = !(dashboardState.gydytojaiChartsExpandedExtras === true);
+    setGydytojaiSectionExpanded(dashboardState, 'charts', true);
+    rerender();
+  });
+  selectors.gydytojaiChartDoctorTogglesToggle?.addEventListener('click', () => {
+    dashboardState.gydytojaiChartsDoctorTogglesExpanded = !(
+      dashboardState.gydytojaiChartsDoctorTogglesExpanded === true
+    );
+    setGydytojaiSectionExpanded(dashboardState, 'charts', true);
+    rerender();
+  });
+  selectors.gydytojaiSectionToggleButtons?.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const key = String(target.getAttribute('data-gydytojai-section-toggle') || '').trim();
+      if (!GYDYTOJAI_SECTION_KEYS.includes(key)) {
+        return;
+      }
+      const current = dashboardState?.gydytojaiSectionExpanded?.[key] === true;
+      setGydytojaiSectionExpanded(dashboardState, key, !current);
+      rerender();
+    });
+  });
+  selectors.jumpLinks?.forEach((link) => {
+    link.addEventListener('click', () => {
+      const href = link.getAttribute('href') || '';
+      if (!href.startsWith('#')) {
+        return;
+      }
+      const targetEl = document.querySelector(href);
+      const section = targetEl instanceof HTMLElement ? targetEl.closest('section[data-section]') : null;
+      const sectionId = String(section?.getAttribute('data-section') || '');
+      const map = {
+        'gydytojai-tables': 'results',
+        'gydytojai-specialty': 'specialty',
+        'gydytojai-annual': 'annual',
+        'gydytojai-specialty-annual': 'annual',
+        'gydytojai-annual-combined': 'annual',
+        'gydytojai-charts': 'charts',
+      };
+      const key = map[sectionId];
+      if (key) {
+        setGydytojaiSectionExpanded(dashboardState, key, true);
+        rerender();
+      }
+    });
+  });
 
   selectors.gydytojaiFilterChips?.addEventListener('click', (event) => {
     const target = event.target;
@@ -1799,8 +2146,19 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       dashboardState.doctorsSpecialtyFilter = String(
         specialtyChip.getAttribute('data-gydytojai-specialty') || 'all'
       );
+      if (String(dashboardState.doctorsSpecialtyFilter || 'all') !== 'all') {
+        setGydytojaiSectionExpanded(dashboardState, 'specialty', true);
+      }
       rerender();
     }
+  });
+  selectors.gydytojaiSpecialtySelect?.addEventListener('change', (event) => {
+    const nextValue = String(event.target?.value || 'all').trim() || 'all';
+    dashboardState.doctorsSpecialtyFilter = nextValue;
+    if (nextValue !== 'all') {
+      setGydytojaiSectionExpanded(dashboardState, 'specialty', true);
+    }
+    rerender();
   });
   selectors.gydytojaiSearch?.addEventListener('input', (event) => {
     dashboardState.doctorsSearch = String(event.target.value || '').trim();
@@ -1816,6 +2174,22 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsSearchDebounced = dashboardState.doctorsSearch;
     rerender();
   });
+  selectors.gydytojaiAnnualSubview?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const button = target.closest('[data-gydytojai-annual-subview]');
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+    const next = normalizeGydytojaiAnnualSubview(
+      button.getAttribute('data-gydytojai-annual-subview'),
+      'doctor'
+    );
+    dashboardState.gydytojaiAnnualSubview = next;
+    expandSectionAndRerender('annual');
+  });
   selectors.gydytojaiAnnualMetric?.addEventListener('click', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
@@ -1829,7 +2203,8 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       button.getAttribute('data-gydytojai-annual-metric'),
       'count'
     );
-    rerender();
+    dashboardState.gydytojaiAnnualSubview = 'doctor';
+    expandSectionAndRerender('annual');
   });
   selectors.gydytojaiAnnualSort?.addEventListener('click', (event) => {
     const target = event.target;
@@ -1844,7 +2219,8 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       button.getAttribute('data-gydytojai-annual-sort'),
       'latest_desc'
     );
-    rerender();
+    dashboardState.gydytojaiAnnualSubview = 'doctor';
+    expandSectionAndRerender('annual');
   });
   const refreshAnnualSuggestions = () => renderAnnualDoctorSuggestions(selectors, dashboardState);
   selectors.gydytojaiAnnualDoctorInput?.addEventListener('input', (event) => {
@@ -1903,13 +2279,14 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     }
     selected.push(alias);
     dashboardState.doctorsAnnualSelected = selected;
+    dashboardState.gydytojaiAnnualSubview = 'doctor';
     dashboardState.doctorsAnnualSearchInput = '';
     dashboardState.doctorsAnnualSuggestIndex = -1;
     if (selectors.gydytojaiAnnualDoctorInput) {
       selectors.gydytojaiAnnualDoctorInput.value = '';
     }
     refreshAnnualSuggestions();
-    rerender();
+    expandSectionAndRerender('annual');
   };
   selectors.gydytojaiAnnualAddDoctor?.addEventListener('click', () => addAnnualDoctor());
   selectors.gydytojaiAnnualDoctorInput?.addEventListener('keydown', (event) => {
@@ -1987,7 +2364,8 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsAnnualSelected = (dashboardState.doctorsAnnualSelected || []).filter(
       (entry) => normalizeDoctorAliasToken(entry) !== normalizeDoctorAliasToken(alias)
     );
-    rerender();
+    dashboardState.gydytojaiAnnualSubview = 'doctor';
+    expandSectionAndRerender('annual');
   });
   selectors.gydytojaiSpecialtyAnnualMetric?.addEventListener('click', (event) => {
     const target = event.target;
@@ -2002,7 +2380,8 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       button.getAttribute('data-gydytojai-specialty-annual-metric'),
       'count'
     );
-    rerender();
+    dashboardState.gydytojaiAnnualSubview = 'specialty';
+    expandSectionAndRerender('annual');
   });
   selectors.gydytojaiSpecialtyAnnualSort?.addEventListener('click', (event) => {
     const target = event.target;
@@ -2017,7 +2396,8 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       button.getAttribute('data-gydytojai-specialty-annual-sort'),
       'latest_desc'
     );
-    rerender();
+    dashboardState.gydytojaiAnnualSubview = 'specialty';
+    expandSectionAndRerender('annual');
   });
   selectors.gydytojaiSpecialtyAnnualSelected?.addEventListener('click', (event) => {
     const target = event.target;
@@ -2046,11 +2426,13 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       selected.push(specialtyId);
     }
     dashboardState.doctorsSpecialtyAnnualSelected = selected;
-    rerender();
+    dashboardState.gydytojaiAnnualSubview = 'specialty';
+    expandSectionAndRerender('annual');
   });
   selectors.gydytojaiSpecialtyAnnualClear?.addEventListener('click', () => {
     dashboardState.doctorsSpecialtyAnnualSelected = [];
-    rerender();
+    dashboardState.gydytojaiAnnualSubview = 'specialty';
+    expandSectionAndRerender('annual');
   });
   selectors.gydytojaiActiveFilters?.addEventListener('click', (event) => {
     const target = event.target;
@@ -2141,6 +2523,12 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsSpecialtyAnnualMetric = 'count';
     dashboardState.doctorsSpecialtyAnnualSort = 'latest_desc';
     dashboardState.doctorsSpecialtyAnnualSelected = [];
+    dashboardState.gydytojaiAnnualSubview = 'doctor';
+    dashboardState.gydytojaiFiltersAdvancedExpanded = false;
+    dashboardState.gydytojaiActiveFiltersExpanded = false;
+    dashboardState.gydytojaiSectionExpanded = { ...DEFAULT_GYDYTOJAI_SECTION_EXPANDED };
+    dashboardState.gydytojaiChartsExpandedExtras = false;
+    dashboardState.gydytojaiChartsDoctorTogglesExpanded = false;
     rerender();
   });
 
@@ -2235,6 +2623,12 @@ export async function runGydytojaiRuntime(core) {
   dashboardState.doctorsSpecialtyAnnualSelected = Array.isArray(fromQuery.specialtyAnnualSelected)
     ? fromQuery.specialtyAnnualSelected
     : [];
+  dashboardState.gydytojaiAnnualSubview = normalizeGydytojaiAnnualSubview(
+    fromQuery.gydytojaiAnnualSubview,
+    'doctor'
+  );
+  dashboardState.gydytojaiFiltersAdvancedExpanded = Boolean(fromQuery.gydytojaiFiltersAdvancedExpanded);
+  dashboardState.gydytojaiSectionExpanded = buildSectionExpandedState(fromQuery.gydytojaiSectionExpanded);
   const exportState = dashboardState.doctorsExportState || {};
   dashboardState.doctorsExportState = exportState;
   const handleReportExportClick = createReportExportClickHandler({
@@ -2382,6 +2776,12 @@ export async function runGydytojaiRuntime(core) {
               selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
             })
         : null;
+    if (
+      dashboardState.doctorsSpecialtyUiEnabled === true &&
+      String(dashboardState.doctorsSpecialtyFilter || 'all') !== 'all'
+    ) {
+      setGydytojaiSectionExpanded(dashboardState, 'specialty', true);
+    }
     syncSpecialtyAnnualSelection(
       dashboardState,
       Array.isArray(specialtyAnnualModel?.meta?.availableSpecialties)
@@ -2397,9 +2797,12 @@ export async function runGydytojaiRuntime(core) {
     );
     renderDoctorSpecialtyValidation(selectors, dashboardState);
     renderActiveDoctorFilters(selectors, dashboardState);
+    renderActiveDoctorFiltersSummary(selectors, dashboardState);
     renderSpecialtyComparisonTable(selectors, specialtyLeaderboard, dashboardState);
+    renderGydytojaiSectionSummaries(selectors, dashboardState, { specialtyLeaderboard });
     renderSpecialtyAnnualControls(selectors, dashboardState, specialtyAnnualModel);
     renderSpecialtyAnnualSummary(selectors, dashboardState, specialtyAnnualModel);
+    applyGydytojaiLayoutControls(selectors, dashboardState);
     renderDoctorChartToggles(selectors, dashboardState, leaderboard.rows);
     const visibleLeaderboardRows = getVisibleDoctorRowsForCharts(
       leaderboard.rows,
@@ -2460,7 +2863,7 @@ export async function runGydytojaiRuntime(core) {
     renderToken += 1;
     const token = renderToken;
     loadingStartedAt = Date.now();
-    setLoadingVisualState(selectors, true);
+    setLoadingVisualState(selectors, true, { initialLoadPending });
     const schedule =
       typeof window.requestAnimationFrame === 'function'
         ? window.requestAnimationFrame.bind(window)
@@ -2476,7 +2879,7 @@ export async function runGydytojaiRuntime(core) {
             const waitMs = Math.max(0, minLoadingVisibleMs - elapsed);
             window.setTimeout(() => {
               if (token === renderToken && !initialLoadPending) {
-                setLoadingVisualState(selectors, false);
+                setLoadingVisualState(selectors, false, { initialLoadPending });
               }
             }, waitMs);
           }
@@ -2489,18 +2892,18 @@ export async function runGydytojaiRuntime(core) {
   try {
     void loadChartJs();
     setStatus(selectors, 'loading');
-    setLoadingVisualState(selectors, true);
+    setLoadingVisualState(selectors, true, { initialLoadPending });
     const data = await fetchData({ skipHistorical: false });
     dashboardState.rawRecords = Array.isArray(data?.records) ? data.records : [];
     await render();
     initialLoadPending = false;
     dashboardState.hasLoadedOnce = true;
-    setLoadingVisualState(selectors, false);
+    setLoadingVisualState(selectors, false, { initialLoadPending });
     setStatus(selectors, 'ready');
   } catch (error) {
     console.error('Nepavyko įkelti gydytojų puslapio:', error);
     initialLoadPending = false;
-    setLoadingVisualState(selectors, false);
+    setLoadingVisualState(selectors, false, { initialLoadPending });
     setStatus(selectors, 'error', error?.message || TEXT.status.error);
   }
 }
