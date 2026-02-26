@@ -163,6 +163,18 @@ function createEnv(overrides = {}) {
 }
 
 describe('createDataFlow charts staged startup', () => {
+  it('starts charts-only initial load immediately without runAfterDomAndIdle startup delay', async () => {
+    const runAfterDomAndIdle = vi.fn();
+    const { flow, spies } = createEnv({ runAfterDomAndIdle });
+
+    flow.scheduleInitialLoad();
+    expect(spies.runAfterDomAndIdle).not.toHaveBeenCalled();
+    expect(spies.fetchData).toHaveBeenCalledTimes(1);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spies.renderChartsPrimary).toHaveBeenCalledTimes(1);
+  });
+
   it('awaits primary charts render and schedules secondary render without awaiting it', async () => {
     const scheduleChartsSecondaryRender = vi.fn(() => new Promise(() => {}));
     const { flow, spies } = createEnv({ scheduleChartsSecondaryRender });

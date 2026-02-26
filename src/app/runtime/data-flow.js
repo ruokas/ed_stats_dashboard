@@ -205,7 +205,7 @@ export function createDataFlow(env = {}) {
       !activeConfig.monthly &&
       !activeConfig.yearly
   );
-  const _isChartsOnlyPage = Boolean(
+  const isChartsOnlyPage = Boolean(
     activeConfig.charts &&
       !activeConfig.kpi &&
       !activeConfig.recent &&
@@ -1256,7 +1256,7 @@ export function createDataFlow(env = {}) {
   }
 
   function scheduleInitialLoad() {
-    if (isKpiOnlyPage) {
+    if (isKpiOnlyPage || isChartsOnlyPage) {
       const runInitialKpiLoad = () => {
         if (!dashboardState.loading) {
           void loadDashboard();

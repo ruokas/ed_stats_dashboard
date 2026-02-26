@@ -743,7 +743,8 @@ export async function runChartsRuntime(core) {
     replaceUrlQuery(serializeToQuery('charts', state, getChartsDefaults()));
   };
   const parsedChartsQuery = parseFromQuery('charts', window.location.search);
-  if (Object.keys(parsedChartsQuery).length) {
+  const hadParsedChartsQuery = Object.keys(parsedChartsQuery).length > 0;
+  if (hadParsedChartsQuery) {
     dashboardState.chartPeriod =
       Number.isFinite(parsedChartsQuery.chartPeriod) && parsedChartsQuery.chartPeriod >= 0
         ? parsedChartsQuery.chartPeriod
@@ -1494,11 +1495,18 @@ export async function runChartsRuntime(core) {
     if (!selectors.chartsHospitalDeptTrendCanvas || !selectors.chartsHospitalDeptTrendEmpty) {
       return;
     }
+    const hideTrendSkeleton = () => {
+      const skeleton = document.getElementById('chartsHospitalDeptTrendSkeleton');
+      if (skeleton instanceof HTMLElement) {
+        skeleton.hidden = true;
+      }
+    };
     const department = normalizeChartsHospitalTableDepartment(dashboardState.chartsHospitalTableDepartment);
     if (!department) {
       destroyChartsHospitalDeptTrendChart();
       selectors.chartsHospitalDeptTrendCanvas.hidden = true;
       selectors.chartsHospitalDeptTrendEmpty.hidden = false;
+      hideTrendSkeleton();
       if (selectors.chartsHospitalDeptTrendSubtitle) {
         selectors.chartsHospitalDeptTrendSubtitle.textContent =
           TEXT?.charts?.hospitalTable?.trendSubtitle ||
@@ -1511,6 +1519,7 @@ export async function runChartsRuntime(core) {
       destroyChartsHospitalDeptTrendChart();
       selectors.chartsHospitalDeptTrendCanvas.hidden = true;
       selectors.chartsHospitalDeptTrendEmpty.hidden = false;
+      hideTrendSkeleton();
       if (selectors.chartsHospitalDeptTrendSubtitle) {
         selectors.chartsHospitalDeptTrendSubtitle.textContent = `${department} • nepakanka metu palyginimui`;
       }
@@ -1521,6 +1530,7 @@ export async function runChartsRuntime(core) {
       destroyChartsHospitalDeptTrendChart();
       selectors.chartsHospitalDeptTrendCanvas.hidden = true;
       selectors.chartsHospitalDeptTrendEmpty.hidden = false;
+      hideTrendSkeleton();
       if (selectors.chartsHospitalDeptTrendSubtitle) {
         selectors.chartsHospitalDeptTrendSubtitle.textContent = `${department} • nepavyko ikelti grafiko bibliotekos`;
       }
@@ -1533,6 +1543,7 @@ export async function runChartsRuntime(core) {
     ) {
       selectors.chartsHospitalDeptTrendCanvas.hidden = false;
       selectors.chartsHospitalDeptTrendEmpty.hidden = true;
+      hideTrendSkeleton();
       return;
     }
     if (selectors.chartsHospitalDeptTrendSubtitle) {
@@ -1660,6 +1671,7 @@ export async function runChartsRuntime(core) {
     dashboardState.chartsHospitalDeptTrendKey = trendKey;
     selectors.chartsHospitalDeptTrendCanvas.hidden = false;
     selectors.chartsHospitalDeptTrendEmpty.hidden = true;
+    hideTrendSkeleton();
   };
 
   const populateChartsHospitalTableYearOptions = (records) => {
@@ -2210,6 +2222,13 @@ export async function runChartsRuntime(core) {
   };
 
   const scheduleChartsSecondaryRender = ({ reason = 'runtime' } = {}) => {
+    const interactiveReason =
+      reason === 'visibility' ||
+      reason === 'section-toggle' ||
+      reason === 'jump-nav' ||
+      reason === 'interaction';
+    const secondaryTimeout = interactiveReason ? 80 : 1200;
+    const hospitalTimeout = interactiveReason ? 120 : 2000;
     dashboardState.chartsDeferredRenderToken = Number(dashboardState.chartsDeferredRenderToken || 0) + 1;
     const token = dashboardState.chartsDeferredRenderToken;
     dashboardState.chartsDeferredRenderReason = reason;
@@ -2273,10 +2292,10 @@ export async function runChartsRuntime(core) {
               runtimeClient?.perfMonitor?.finish?.(hospitalPerfHandle, { priežastis: reason });
             }
           },
-          { timeout: 2000 }
+          { timeout: hospitalTimeout }
         );
       },
-      { timeout: 1200 }
+      { timeout: secondaryTimeout }
     );
   };
 
@@ -2528,9 +2547,11 @@ export async function runChartsRuntime(core) {
 
   void loadChartJs();
   applyChartsSectionDisclosure({ reason: 'init', triggerRender: false });
-  applyChartsLoadingLayout({ isLoading: false, initialLoadPending });
+  applyChartsLoadingLayout({ isLoading: true, initialLoadPending });
   ensureChartsSecondaryVisibilityObserver();
   ensureChartsHospitalVisibilityObserver();
   dataFlow.scheduleInitialLoad();
-  persistChartsQuery();
+  if (!hadParsedChartsQuery) {
+    persistChartsQuery();
+  }
 }

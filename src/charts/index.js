@@ -43,6 +43,29 @@ export function createChartRenderers(env) {
   const renderEdDispositionsChartBound = (dispositions, text, displayVariant) =>
     renderEdDispositionsChart(env, dispositions, text, displayVariant);
 
+  const setCardSkeletonLoading = (target, isLoading) => {
+    let element = target;
+    if (typeof target === 'string' && target) {
+      element = document.getElementById(target);
+    }
+    if (!(element instanceof Element)) {
+      return;
+    }
+    const card = element.closest('.chart-card');
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+    const skeleton = card.querySelector('.chart-card__skeleton');
+    if (skeleton instanceof HTMLElement) {
+      skeleton.hidden = !isLoading;
+    }
+    if (isLoading) {
+      card.dataset.loading = 'true';
+    } else {
+      delete card.dataset.loading;
+    }
+  };
+
   async function resolveChartRenderContext({ showSkeletons = false } = {}) {
     if (showSkeletons) {
       showChartSkeletons();
@@ -179,7 +202,9 @@ export function createChartRenderers(env) {
       }
 
       renderDowCharts(env, Chart, palette, scopedDaily);
-      hideChartSkeletons();
+      setCardSkeletonLoading('dailyChart', false);
+      setCardSkeletonLoading('dowChart', false);
+      setCardSkeletonLoading('dowStayChart', false);
       dashboardState.chartsStartupPhases = {
         ...(dashboardState.chartsStartupPhases || {}),
         primaryVisible: true,
@@ -241,10 +266,12 @@ export function createChartRenderers(env) {
         );
         dashboardState.charts.heatmap = selectors.heatmapContainer;
         dashboardState.chartsHeatmapRenderSignature = heatmapSignature;
+        setCardSkeletonLoading(selectors.heatmapContainer, false);
       }
       if (shouldRenderHourly) {
         renderHourlyChartWithEnv(resolvedHourlyRecords, Chart, palette);
         dashboardState.chartsHourlyRenderSignature = hourlySignature;
+        setCardSkeletonLoading('hourlyChart', false);
       }
       dashboardState.chartsSecondaryRenderSignature = [
         dashboardState.chartsHeatmapRenderSignature || '',

@@ -561,7 +561,11 @@
           </thead>
           <tbody id="chartsHospitalTableBody">
             <tr>
-              <td colspan="7">Lentelė bus parodyta užkrovus failą.</td>
+              <td colspan="7" aria-hidden="true">
+                <div class="skeleton skeleton--title" style="max-width: 220px;"></div>
+                <div class="skeleton skeleton--detail"></div>
+                <div class="skeleton skeleton--detail"></div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -570,6 +574,10 @@
         <div class="charts-hospital-trend__header">
           <h3 id="chartsHospitalDeptTrendTitle">Skyriaus dinamika per metus</h3>
           <p id="chartsHospitalDeptTrendSubtitle">Pasirinkite skyrių lentelėje, kad matytumėte jo SPS trukmės % dinamiką pagal metus.</p>
+        </div>
+        <div id="chartsHospitalDeptTrendSkeleton" aria-hidden="true">
+          <span class="skeleton skeleton--title"></span>
+          <span class="skeleton skeleton--chart-area"></span>
         </div>
         <p id="chartsHospitalDeptTrendEmpty" class="charts-hospital-trend__empty">Šiam skyriui nepakanka duomenų metinei dinamikai.</p>
         <canvas id="chartsHospitalDeptTrendCanvas" height="240" aria-label="Skyriaus metinės dinamikos grafikas" hidden></canvas>
