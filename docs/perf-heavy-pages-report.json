@@ -1,0 +1,446 @@
+{
+  "generatedAt": "2026-02-26T15:55:53.244Z",
+  "rubric": {
+    "measuredMedianWeight": 30,
+    "measuredP95Weight": 10,
+    "frequencyWeight": 20,
+    "visibleWeight": 20,
+    "sensitivityWeight": 10,
+    "leverageWeight": 10
+  },
+  "ranked": {
+    "charts": [
+      {
+        "id": "charts-data-prep-recompute",
+        "title": "Chart data preparation and cache invalidation recomputation",
+        "stages": [
+          "stage.prepareChartData.cold",
+          "stage.prepareChartData.filterChange",
+          "stage.prepareChartData.reset",
+          "data.computeDailyStats"
+        ],
+        "where": ["src/app/runtime/chart-flow.js:347", "src/data/stats.js:418"],
+        "why": "This path recomputes filtered records, daily aggregates, windows, funnel, and heatmap inputs whenever filters/year/period change.",
+        "fixes": [
+          "Split `prepareChartDataForPeriod()` outputs into independently invalidated caches (daily/funnel/heatmap) keyed by smaller inputs.",
+          "Avoid recomputing `computeDailyStats()` for filter combinations that can be derived from cached year-scoped aggregates.",
+          "Move heavier secondary prep (heatmap/hourly source data) off the primary visible stage when controls change rapidly."
+        ],
+        "frequency": 5,
+        "visible": 5,
+        "sensitivity": 5,
+        "leverage": 5,
+        "impact": "High",
+        "confidence": "High",
+        "score": 100,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "stage.prepareChartData.cold",
+            "scenario": "large",
+            "medianMs": 139.16,
+            "p95Ms": 145.97,
+            "runs": 3
+          },
+          {
+            "stage": "stage.prepareChartData.filterChange",
+            "scenario": "large",
+            "medianMs": 45.75,
+            "p95Ms": 66.26,
+            "runs": 3
+          },
+          {
+            "stage": "stage.prepareChartData.reset",
+            "scenario": "large",
+            "medianMs": 90.29,
+            "p95Ms": 188.34,
+            "runs": 3
+          },
+          {
+            "stage": "data.computeDailyStats",
+            "scenario": "large",
+            "medianMs": 137.39,
+            "p95Ms": 156.83,
+            "runs": 3
+          }
+        ]
+      },
+      {
+        "id": "charts-heatmap-cache-miss",
+        "title": "Heatmap filtered recomputation on cache miss (secondary charts)",
+        "stages": ["stage.heatmapFilterCache.cold", "stage.heatmapFilterCache.warm"],
+        "where": ["src/app/runtime/runtimes/charts-runtime-impl.js:193", "src/charts/index.js:198"],
+        "why": "Heatmap generation scans filtered records and builds 7x24 matrices; cache hits are cheap, but misses are expensive and user-visible when opening/changing secondary charts.",
+        "fixes": [
+          "Precompute per-year/per-filter buckets or incremental aggregates for heatmap metrics.",
+          "Warm likely heatmap variants after primary charts become visible using idle time.",
+          "Persist heatmap cache keys across equivalent filter toggles where only unrelated controls changed."
+        ],
+        "frequency": 4,
+        "visible": 4,
+        "sensitivity": 4,
+        "leverage": 3,
+        "impact": "Medium-High",
+        "confidence": "High",
+        "score": 53.2,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "stage.heatmapFilterCache.cold",
+            "scenario": "large",
+            "medianMs": 25.44,
+            "p95Ms": 32.24,
+            "runs": 3
+          },
+          {
+            "stage": "stage.heatmapFilterCache.warm",
+            "scenario": "large",
+            "medianMs": 0.02,
+            "p95Ms": 0.08,
+            "runs": 3
+          }
+        ]
+      },
+      {
+        "id": "charts-hospital-table-trends",
+        "title": "Hospital table and department trend computations (plus large DOM table render)",
+        "stages": ["stage.hospitalTable.computeStats", "stage.hospitalTable.departmentTrend"],
+        "where": [
+          "src/app/runtime/runtimes/charts-runtime-impl.js:1635",
+          "src/data/stats-hospital.js:62",
+          "src/data/stats-hospital.js:196"
+        ],
+        "why": "The hospital section computes per-department LOS buckets and yearly trend data over the full record set before rendering a large table.",
+        "fixes": [
+          "Memoize hospital-table stats by `recordsRef + yearFilter` and separate trend cache by `department + yearFilter`.",
+          "Render table rows in chunks or virtualize when department cardinality is high.",
+          "Compute trend only after explicit department selection (not on every hospital-table render)."
+        ],
+        "frequency": 3,
+        "visible": 3,
+        "sensitivity": 4,
+        "leverage": 3,
+        "impact": "Medium",
+        "confidence": "High",
+        "score": 48.3,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "stage.hospitalTable.computeStats",
+            "scenario": "large",
+            "medianMs": 36.38,
+            "p95Ms": 45.73,
+            "runs": 3
+          },
+          {
+            "stage": "stage.hospitalTable.departmentTrend",
+            "scenario": "large",
+            "medianMs": 5.93,
+            "p95Ms": 6.61,
+            "runs": 3
+          }
+        ]
+      }
+    ],
+    "summaries": [
+      {
+        "id": "summaries-report-computation-pipeline",
+        "title": "Summaries report computation pipeline over historical records",
+        "stages": [
+          "reports.computeAll.cold",
+          "reports.fn.computeAgeDiagnosisHeatmap",
+          "reports.fn.computeReferralMonthlyHeatmap",
+          "reports.fn.computeReferralDispositionYearlyTrend"
+        ],
+        "where": [
+          "src/app/runtime/runtimes/summaries/report-computation.js:53",
+          "src/data/stats.js:1059",
+          "src/data/stats.js:992",
+          "src/data/stats.js:948"
+        ],
+        "why": "Cold summaries renders execute multiple historical scans (diagnosis/age/referral/PSPC) before report cards can be populated.",
+        "fixes": [
+          "Cache shared scoped iterators/aggregates for historical records and derive multiple report outputs from one pass.",
+          "Offload `getReportsComputation()` to a worker for large datasets and keep main thread focused on first visible cards.",
+          "Split primary/secondary report computations more aggressively (defer heatmaps/matrix-heavy reports until visible)."
+        ],
+        "frequency": 5,
+        "visible": 5,
+        "sensitivity": 5,
+        "leverage": 5,
+        "impact": "High",
+        "confidence": "High",
+        "score": 94.2,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "reports.computeAll.cold",
+            "scenario": "large",
+            "medianMs": 134.76,
+            "p95Ms": 139.11,
+            "runs": 3
+          },
+          {
+            "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+            "scenario": "large",
+            "medianMs": 26.66,
+            "p95Ms": 30.55,
+            "runs": 3
+          },
+          {
+            "stage": "reports.fn.computeReferralMonthlyHeatmap",
+            "scenario": "large",
+            "medianMs": 33.4,
+            "p95Ms": 34.3,
+            "runs": 3
+          },
+          {
+            "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+            "scenario": "large",
+            "medianMs": 32.1,
+            "p95Ms": 34.47,
+            "runs": 3
+          }
+        ]
+      },
+      {
+        "id": "summaries-scope-and-viewmodels",
+        "title": "Historical scoping and derived view-model generation before chart rendering",
+        "stages": [
+          "reports.scopeMeta",
+          "reports.viewModels.mainThread.cold",
+          "reports.recompute.filterChange"
+        ],
+        "where": [
+          "src/app/runtime/runtimes/summaries/report-computation.js:298",
+          "src/app/runtime/runtimes/summaries-runtime-impl.js:430",
+          "src/app/runtime/runtimes/summaries-runtime-impl.js:536",
+          "src/app/runtime/runtimes/summaries-runtime-impl.js:1619"
+        ],
+        "why": "Scoping/filter changes invalidate derived report view models and trigger additional computation before staged chart rendering can reuse data.",
+        "fixes": [
+          "Key and reuse derived view-model cache across stage-only rerenders and theme changes more aggressively.",
+          "Precompute sortable PSPC/referral structures once and reuse for mode/sort toggles.",
+          "Move non-primary view-model derivations to the secondary stage with a visibility gate."
+        ],
+        "frequency": 4,
+        "visible": 4,
+        "sensitivity": 4,
+        "leverage": 4,
+        "impact": "Medium-High",
+        "confidence": "Medium-High",
+        "score": 88,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "reports.scopeMeta",
+            "scenario": "large",
+            "medianMs": 26.89,
+            "p95Ms": 35.83,
+            "runs": 3
+          },
+          {
+            "stage": "reports.viewModels.mainThread.cold",
+            "scenario": "large",
+            "medianMs": 14.17,
+            "p95Ms": 19.77,
+            "runs": 3
+          },
+          {
+            "stage": "reports.recompute.filterChange",
+            "scenario": "large",
+            "medianMs": 145.87,
+            "p95Ms": 214.91,
+            "runs": 3
+          }
+        ]
+      },
+      {
+        "id": "summaries-yearly-table-dom",
+        "title": "Yearly/monthly table DOM construction on load",
+        "stages": [
+          "yearly.renderTableDom",
+          "yearly.renderTableDom.expandFirstYear",
+          "yearly.computeDailyStats"
+        ],
+        "where": ["src/app/runtime/features/summaries-yearly-table.js:11", "src/data/stats.js:418"],
+        "why": "The yearly table renders parent + monthly child rows with rich cell formatting, which can dominate initial visible work even before secondary reports appear.",
+        "fixes": [
+          "Render only collapsed yearly rows initially; lazy-render monthly child rows on expand.",
+          "Batch DOM row insertion using `DocumentFragment` and avoid repeated string interpolation for hidden child rows.",
+          "Defer yearly table render until after first report cards if report cards are the primary user target."
+        ],
+        "frequency": 5,
+        "visible": 5,
+        "sensitivity": 3,
+        "leverage": 3,
+        "impact": "High",
+        "confidence": "High",
+        "score": 70.6,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "yearly.renderTableDom",
+            "scenario": "large",
+            "medianMs": 4.31,
+            "p95Ms": 5.09,
+            "runs": 3
+          },
+          {
+            "stage": "yearly.renderTableDom.expandFirstYear",
+            "scenario": "large",
+            "medianMs": 0.91,
+            "p95Ms": 1.05,
+            "runs": 3
+          },
+          {
+            "stage": "yearly.computeDailyStats",
+            "scenario": "large",
+            "medianMs": 72.73,
+            "p95Ms": 79.25,
+            "runs": 3
+          }
+        ]
+      }
+    ],
+    "gydytojai": [
+      {
+        "id": "gydytojai-repeated-doctor-aggregates",
+        "title": "Repeated doctor aggregate scans across multiple widgets (baseline path)",
+        "stages": [
+          "stage.totalPath.baseline",
+          "stage.totalPath.sharedComputeContext",
+          "stage.stats.leaderboard"
+        ],
+        "where": ["src/data/stats.js:1835", "src/app/runtime/runtimes/gydytojai-runtime-impl.js:2734"],
+        "why": "Doctor widgets reuse similar scoped doctor aggregates; without a shared compute context, the page recomputes overlapping scans many times during initial render.",
+        "fixes": [
+          "Ensure all doctor page computations share one `createStatsComputeContext()` instance during load and rerenders.",
+          "Compute a single doctor aggregate per filter state and fan out leaderboard/mix/scatter/hospitalization widgets from it.",
+          "Cache yearly small-multiples inputs separately from presentation sorting/selection state."
+        ],
+        "frequency": 5,
+        "visible": 5,
+        "sensitivity": 5,
+        "leverage": 5,
+        "impact": "High",
+        "confidence": "High",
+        "score": 100,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "stage.totalPath.baseline",
+            "scenario": "large",
+            "medianMs": 2286.46,
+            "p95Ms": 2321.24,
+            "runs": 3
+          },
+          {
+            "stage": "stage.totalPath.sharedComputeContext",
+            "scenario": "large",
+            "medianMs": 177.15,
+            "p95Ms": 189.95,
+            "runs": 3
+          },
+          {
+            "stage": "stage.stats.leaderboard",
+            "scenario": "large",
+            "medianMs": 371.33,
+            "p95Ms": 379.11,
+            "runs": 3
+          }
+        ]
+      },
+      {
+        "id": "gydytojai-specialty-pipeline",
+        "title": "Specialty resolver initialization and specialty analytics passes",
+        "stages": [
+          "stage.specialtyResolver.init",
+          "stage.specialty.leaderboard",
+          "stage.specialty.yearlySmallMultiples",
+          "stage.specialty.yearlyComposition"
+        ],
+        "where": [
+          "src/data/doctor-specialties.js:266",
+          "src/data/stats.js:1854",
+          "src/data/stats.js:1982",
+          "src/data/stats.js:2102",
+          "src/app/runtime/runtimes/gydytojai-runtime-impl.js:2699"
+        ],
+        "why": "Specialty features add resolver setup plus multiple specialty-specific aggregations over the same records during the first page render.",
+        "fixes": [
+          "Initialize specialty resolver once per settings+records version and reuse between page updates.",
+          "Share specialty year buckets between specialty leaderboard and both specialty annual visualizations.",
+          "Defer specialty annual charts until specialty section is expanded/visible."
+        ],
+        "frequency": 4,
+        "visible": 4,
+        "sensitivity": 4,
+        "leverage": 4,
+        "impact": "High",
+        "confidence": "High",
+        "score": 50.6,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "stage.specialtyResolver.init",
+            "scenario": "large",
+            "medianMs": 74.82,
+            "p95Ms": 76.07,
+            "runs": 3
+          },
+          {
+            "stage": "stage.specialty.leaderboard",
+            "scenario": "large",
+            "medianMs": 147.85,
+            "p95Ms": 152.24,
+            "runs": 3
+          },
+          {
+            "stage": "stage.specialty.yearlySmallMultiples",
+            "scenario": "large",
+            "medianMs": 70.72,
+            "p95Ms": 74.19,
+            "runs": 3
+          },
+          {
+            "stage": "stage.specialty.yearlyComposition",
+            "scenario": "large",
+            "medianMs": 0.06,
+            "p95Ms": 0.13,
+            "runs": 3
+          }
+        ]
+      },
+      {
+        "id": "gydytojai-annual-small-multiples",
+        "title": "Doctor annual small-multiples computations on initial load",
+        "stages": ["stage.stats.yearlySmallMultiples"],
+        "where": ["src/data/stats.js:2381", "src/app/runtime/runtimes/gydytojai-runtime-impl.js:2738"],
+        "why": "Annual series generation builds per-doctor yearly metrics and trend metadata, which scales with doctor count and historical depth.",
+        "fixes": [
+          "Gate annual small-multiples computation behind section visibility and render a skeleton/placeholder first.",
+          "Cache year buckets for annual views and recompute only metric selection transforms on toggle.",
+          "Reduce default selected doctor count/top-N for initial render, then expand on interaction."
+        ],
+        "frequency": 4,
+        "visible": 3,
+        "sensitivity": 5,
+        "leverage": 3,
+        "impact": "Medium-High",
+        "confidence": "High",
+        "score": 45.4,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "stage.stats.yearlySmallMultiples",
+            "scenario": "large",
+            "medianMs": 78.85,
+            "p95Ms": 79.06,
+            "runs": 3
+          }
+        ]
+      }
+    ]
+  }
+}

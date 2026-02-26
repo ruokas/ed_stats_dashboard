@@ -421,7 +421,6 @@ function buildSummariesReportsDerivedCacheKey(dashboardState, settings, scopeMet
     String(dashboardState?.summariesReportsYear ?? 'all'),
     Number.parseInt(String(dashboardState?.summariesReportsTopN ?? 15), 10) || 15,
     Number.parseInt(String(dashboardState?.summariesReportsMinGroupSize ?? 100), 10) || 100,
-    String(dashboardState?.summariesReferralPspcSort || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc',
     Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
     Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
   ].join('|');
@@ -1632,9 +1631,23 @@ async function renderReports(
   let scopeMeta;
   let reports;
   let viewModels;
+  const currentReportsInputs = {
+    year: String(dashboardState.summariesReportsYear ?? 'all'),
+    topN: Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
+    minGroupSize: Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10) || 100,
+    shiftStartHour: Number.isFinite(settings?.calculations?.shiftStartHour)
+      ? settings.calculations.shiftStartHour
+      : '',
+  };
   const lastRenderContext = dashboardState.summariesReportsLastRenderContext || null;
+  const sameComputeInputs =
+    lastRenderContext?.reportsInputs &&
+    lastRenderContext.reportsInputs.year === currentReportsInputs.year &&
+    lastRenderContext.reportsInputs.topN === currentReportsInputs.topN &&
+    lastRenderContext.reportsInputs.minGroupSize === currentReportsInputs.minGroupSize &&
+    lastRenderContext.reportsInputs.shiftStartHour === currentReportsInputs.shiftStartHour;
   const canReuseCachedRender =
-    (reason === 'theme' || stage === 'secondary') &&
+    (reason === 'theme' || stage === 'secondary' || (reason === 'controls' && sameComputeInputs)) &&
     lastRenderContext &&
     lastRenderContext.rawRecordsRef === dashboardState.rawRecords &&
     lastRenderContext.historicalRecords &&
@@ -1663,6 +1676,7 @@ async function renderReports(
   if (!scopeMeta.records.length) {
     dashboardState.summariesReportsLastRenderContext = {
       rawRecordsRef: dashboardState.rawRecords,
+      reportsInputs: currentReportsInputs,
       historicalRecords,
       scopeMeta,
       reports: null,
@@ -1721,6 +1735,7 @@ async function renderReports(
   syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions, referralHospitalizedPspcTrendOptions);
   dashboardState.summariesReportsLastRenderContext = {
     rawRecordsRef: dashboardState.rawRecords,
+    reportsInputs: currentReportsInputs,
     historicalRecords,
     scopeMeta,
     reports,

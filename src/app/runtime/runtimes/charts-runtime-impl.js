@@ -153,7 +153,7 @@ function getExpandedKeysFromMap(map, defaults) {
   return Object.keys(defaults || {}).filter((key) => map?.[key] === true);
 }
 
-function matchesSharedPatientFilters(record, filters = {}) {
+export function matchesSharedPatientFilters(record, filters = {}) {
   if (filters.arrival === 'ems' && !record.ems) return false;
   if (filters.arrival === 'self' && record.ems) return false;
   if (filters.disposition === 'hospitalized' && !record.hospitalized) return false;
@@ -164,7 +164,7 @@ function matchesSharedPatientFilters(record, filters = {}) {
   return true;
 }
 
-function filterRecordsByChartFilters(records, filters) {
+export function filterRecordsByChartFilters(records, filters) {
   const normalized = sanitizeChartFilters(filters, {
     getDefaultChartFilters: createDefaultChartFilters,
     KPI_FILTER_LABELS,
@@ -174,7 +174,7 @@ function filterRecordsByChartFilters(records, filters) {
   );
 }
 
-function sanitizeHeatmapFilters(filters) {
+export function sanitizeHeatmapFilters(filters) {
   const defaults = { arrival: 'all', disposition: 'all', cardType: 'all' };
   const normalized = { ...defaults, ...(filters || {}) };
   if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) normalized.arrival = defaults.arrival;
@@ -235,14 +235,14 @@ export function resolveCachedHeatmapFilterData({
   return data;
 }
 
-function filterRecordsByHeatmapFilters(records, filters) {
+export function filterRecordsByHeatmapFilters(records, filters) {
   const normalized = sanitizeHeatmapFilters(filters);
   return (Array.isArray(records) ? records : []).filter((record) =>
     matchesSharedPatientFilters(record, normalized)
   );
 }
 
-function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
+export function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
   const entries =
     Array.isArray(dailyStats) && dailyStats.length
       ? dailyStats
@@ -260,7 +260,7 @@ function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
   );
 }
 
-function computeArrivalHeatmap(records) {
+export function computeArrivalHeatmap(records) {
   const aggregates = Array.from({ length: 7 }, () =>
     Array.from({ length: 24 }, () => ({
       arrivals: 0,
@@ -1417,13 +1417,69 @@ export async function runChartsRuntime(core) {
       .sort((a, b) => a.year - b.year);
   };
 
-  const buildChartsHospitalStats = (records, yearFilter) =>
-    getChartsHospitalStatsFromWorkerAgg(yearFilter) ||
-    computeHospitalizedByDepartmentAndSpsStay(records, {
-      yearFilter: yearFilter == null ? 'all' : String(yearFilter),
+  const getChartsHospitalCalcSignature = () => {
+    try {
+      return JSON.stringify(settings?.calculations || DEFAULT_SETTINGS.calculations || {});
+    } catch (_error) {
+      return '';
+    }
+  };
+
+  const getCachedChartsHospitalStats = (records, yearFilter) => {
+    const workerAggStats = getChartsHospitalStatsFromWorkerAgg(yearFilter);
+    if (workerAggStats) {
+      return workerAggStats;
+    }
+    const normalizedYear = yearFilter == null ? 'all' : String(yearFilter);
+    const calcSignature = getChartsHospitalCalcSignature();
+    const cache = dashboardState.chartsHospitalStatsCache || {};
+    const key = `${normalizedYear}|${calcSignature}`;
+    if (cache.recordsRef === records && cache.key === key && cache.value) {
+      return cache.value;
+    }
+    const value = computeHospitalizedByDepartmentAndSpsStay(records, {
+      yearFilter: normalizedYear,
       calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
       defaultSettings: DEFAULT_SETTINGS,
     });
+    dashboardState.chartsHospitalStatsCache = {
+      recordsRef: records,
+      key,
+      value,
+    };
+    return value;
+  };
+
+  const getCachedChartsHospitalDepartmentTrendRows = (records, department) => {
+    const workerRows = getDepartmentTrendRowsFromWorkerAgg(department);
+    if (workerRows.length) {
+      return workerRows;
+    }
+    const normalizedDepartment = normalizeChartsHospitalTableDepartment(department);
+    if (!normalizedDepartment) {
+      return [];
+    }
+    const calcSignature = getChartsHospitalCalcSignature();
+    const cache = dashboardState.chartsHospitalDeptTrendRowsCache || {};
+    const key = `${normalizedDepartment}|${calcSignature}`;
+    if (cache.recordsRef === records && cache.key === key && Array.isArray(cache.rows)) {
+      return cache.rows;
+    }
+    const trend = computeHospitalizedDepartmentYearlyStayTrend(records, {
+      department: normalizedDepartment,
+      calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
+      defaultSettings: DEFAULT_SETTINGS,
+    });
+    const rows = Array.isArray(trend?.rows) ? trend.rows : [];
+    dashboardState.chartsHospitalDeptTrendRowsCache = {
+      recordsRef: records,
+      key,
+      rows,
+    };
+    return rows;
+  };
+
+  const buildChartsHospitalStats = (records, yearFilter) => getCachedChartsHospitalStats(records, yearFilter);
 
   const destroyChartsHospitalDeptTrendChart = () => {
     const existing = dashboardState.chartsHospitalDeptTrendChart;
@@ -1450,13 +1506,7 @@ export async function runChartsRuntime(core) {
       }
       return;
     }
-    const trend = computeHospitalizedDepartmentYearlyStayTrend(records, {
-      department,
-      calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
-      defaultSettings: DEFAULT_SETTINGS,
-    });
-    const workerRows = getDepartmentTrendRowsFromWorkerAgg(department);
-    const rows = workerRows.length ? workerRows : Array.isArray(trend?.rows) ? trend.rows : [];
+    const rows = getCachedChartsHospitalDepartmentTrendRows(records, department);
     if (rows.length < 2) {
       destroyChartsHospitalDeptTrendChart();
       selectors.chartsHospitalDeptTrendCanvas.hidden = true;
@@ -1679,6 +1729,7 @@ export async function runChartsRuntime(core) {
       return;
     }
 
+    const tableRowsFragment = document.createDocumentFragment();
     rows.forEach((entry) => {
       const row = document.createElement('tr');
       setDatasetValue(row, 'department', String(entry.department || ''));
@@ -1697,7 +1748,7 @@ export async function runChartsRuntime(core) {
         <td>${numberFormatter.format(Number(entry.count_unclassified || 0))} (${oneDecimalFormatter.format(Number(entry.pct_unclassified || 0))}%)</td>
         <td class="charts-hospital-total">${numberFormatter.format(Number(entry.total || 0))}</td>
       `;
-      selectors.chartsHospitalTableBody.appendChild(row);
+      tableRowsFragment.appendChild(row);
     });
 
     const totals = stats?.totals || {};
@@ -1712,6 +1763,7 @@ export async function runChartsRuntime(core) {
       <td>${numberFormatter.format(Number(totals.count_unclassified || 0))}</td>
       <td class="charts-hospital-total">${numberFormatter.format(Number(totals.total || 0))}</td>
     `;
+    selectors.chartsHospitalTableBody.appendChild(tableRowsFragment);
     selectors.chartsHospitalTableBody.appendChild(summaryRow);
     updateChartsHospitalTableHeaderSortIndicators();
     void renderChartsHospitalDepartmentTrend(records);

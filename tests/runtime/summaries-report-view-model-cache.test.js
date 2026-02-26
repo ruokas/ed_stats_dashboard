@@ -136,6 +136,36 @@ describe('summaries report view-model caching', () => {
     expect(computeReferralHospitalizedShareByPspcDetailedFn).toHaveBeenCalledTimes(2);
   });
 
+  it('reuses cached derived models on PSPC sort-only changes', () => {
+    const dashboardState = {
+      summariesReportsYear: 'all',
+      summariesReportsTopN: 15,
+      summariesReportsMinGroupSize: 100,
+      summariesReferralPspcSort: 'desc',
+      summariesReportsDerivedCache: { recordsRef: null, key: '', value: null },
+    };
+    const settings = { calculations: { shiftStartHour: 7 } };
+    const historicalRecords = [{ id: 1 }];
+    const scopeMeta = { records: [{ id: 'scope-1' }] };
+    const reports = createReportsFixture();
+    const computeAgeDistributionBySexFn = vi.fn(() => ({ total: 0, sexOrder: [], rows: [] }));
+    const computeReferralHospitalizedShareByPspcDetailedFn = vi.fn(() => ({ rows: [] }));
+
+    const first = getCachedSummariesReportViewModels(
+      { dashboardState, settings, historicalRecords, scopeMeta, reports },
+      { computeAgeDistributionBySexFn, computeReferralHospitalizedShareByPspcDetailedFn }
+    );
+    dashboardState.summariesReferralPspcSort = 'asc';
+    const second = getCachedSummariesReportViewModels(
+      { dashboardState, settings, historicalRecords, scopeMeta, reports },
+      { computeAgeDistributionBySexFn, computeReferralHospitalizedShareByPspcDetailedFn }
+    );
+
+    expect(second).toBe(first);
+    expect(computeAgeDistributionBySexFn).toHaveBeenCalledTimes(1);
+    expect(computeReferralHospitalizedShareByPspcDetailedFn).toHaveBeenCalledTimes(1);
+  });
+
   it('produces stable shape without cache helper', () => {
     const model = computeSummariesReportViewModels(
       {

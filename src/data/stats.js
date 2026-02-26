@@ -14,6 +14,8 @@ export function createStatsComputeContext() {
     scopedMetaByRecords: new WeakMap(),
     doctorScopedMetaByRecords: new WeakMap(),
     doctorAggregateByRecords: new WeakMap(),
+    doctorSpecialtyAggregateByRecords: new WeakMap(),
+    doctorSpecialtyYearBucketsByRecords: new WeakMap(),
   };
 }
 
@@ -56,6 +58,29 @@ function getDoctorScopedMetaCacheKey(options = {}) {
     specialtyFilter,
     requireMappedSpecialty,
     searchQuery,
+  ].join('|');
+}
+
+function getDoctorSpecialtyResolverCacheToken(options = {}) {
+  const resolver = options?.doctorSpecialtyResolver;
+  if (!resolver || typeof resolver !== 'object') {
+    return 'resolver:none';
+  }
+  const groupsCount = Array.isArray(resolver.groups) ? resolver.groups.length : 0;
+  const valid = resolver.valid === true ? 'valid' : 'invalid';
+  const enabled = resolver.enabled === true ? 'enabled' : 'disabled';
+  const strict = resolver.strict === true ? 'strict' : 'loose';
+  return `${enabled}|${valid}|${strict}|groups:${groupsCount}`;
+}
+
+function getDoctorSpecialtyAggregateCacheKey(options = {}) {
+  return [getDoctorScopedMetaCacheKey(options), getDoctorSpecialtyResolverCacheToken(options)].join('|');
+}
+
+function getDoctorSpecialtyYearBucketsCacheKey(options = {}) {
+  return [
+    getDoctorScopedMetaCacheKey({ ...options, yearFilter: 'all' }),
+    getDoctorSpecialtyResolverCacheToken(options),
   ].join('|');
 }
 
@@ -1800,6 +1825,22 @@ function buildDoctorSpecialtyAggregate(records, options = {}) {
   };
 }
 
+function getDoctorSpecialtyAggregate(records, options = {}) {
+  const specialtyAggregateCache = getComputeContextRecordCache(
+    options?.computeContext?.doctorSpecialtyAggregateByRecords,
+    records
+  );
+  const cacheKey = specialtyAggregateCache ? getDoctorSpecialtyAggregateCacheKey(options) : '';
+  if (specialtyAggregateCache?.has(cacheKey)) {
+    return specialtyAggregateCache.get(cacheKey);
+  }
+  const aggregate = buildDoctorSpecialtyAggregate(records, options);
+  if (specialtyAggregateCache) {
+    specialtyAggregateCache.set(cacheKey, aggregate);
+  }
+  return aggregate;
+}
+
 function getDoctorAggregate(records, options = {}) {
   const precomputedDoctorAggregate = options?.doctorAggregate;
   if (precomputedDoctorAggregate && Array.isArray(precomputedDoctorAggregate.rowsAll)) {
@@ -1852,7 +1893,7 @@ export function computeDoctorLeaderboard(records, options = {}) {
 }
 
 export function computeDoctorSpecialtyLeaderboard(records, options = {}) {
-  const aggregate = buildDoctorSpecialtyAggregate(records, options);
+  const aggregate = getDoctorSpecialtyAggregate(records, options);
   const rowsAll = Array.isArray(aggregate?.rowsAll) ? aggregate.rowsAll : [];
   const rows = sortDoctorRows(rowsAll, 'volume_desc');
   const meta = aggregate?.meta || {};
@@ -1965,6 +2006,22 @@ function buildSpecialtyYearBuckets(records, options = {}) {
   return { meta, years, bucketBySpecialtyYear, totalsBySpecialty, availableSpecialties };
 }
 
+function getSpecialtyYearBuckets(records, options = {}) {
+  const specialtyYearBucketsCache = getComputeContextRecordCache(
+    options?.computeContext?.doctorSpecialtyYearBucketsByRecords,
+    records
+  );
+  const cacheKey = specialtyYearBucketsCache ? getDoctorSpecialtyYearBucketsCacheKey(options) : '';
+  if (specialtyYearBucketsCache?.has(cacheKey)) {
+    return specialtyYearBucketsCache.get(cacheKey);
+  }
+  const base = buildSpecialtyYearBuckets(records, options);
+  if (specialtyYearBucketsCache) {
+    specialtyYearBucketsCache.set(cacheKey, base);
+  }
+  return base;
+}
+
 function resolveLosDominant(point) {
   const candidates = [
     ['losLt4Share', Number(point?.losLt4Share)],
@@ -1999,7 +2056,7 @@ export function computeDoctorSpecialtyYearlySmallMultiples(records, options = {}
     .filter(Boolean);
   const selectedSet = new Set(selectedSpecialties.map((value) => value.toLowerCase()));
 
-  const base = buildSpecialtyYearBuckets(records, options);
+  const base = getSpecialtyYearBuckets(records, options);
   if (!selectedSet.size) {
     return {
       years: base.years,
@@ -2111,7 +2168,7 @@ export function computeDoctorSpecialtyYearlyComposition(records, options = {}) {
     .filter(Boolean);
   const selectedSet = new Set(selectedSpecialties.map((value) => value.toLowerCase()));
 
-  const base = buildSpecialtyYearBuckets(records, options);
+  const base = getSpecialtyYearBuckets(records, options);
   if (!selectedSet.size) {
     return {
       years: base.years,

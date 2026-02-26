@@ -37,7 +37,9 @@ export function createChartFlow({
     if (!chartData.cache || typeof chartData.cache !== 'object') {
       chartData.cache = {
         yearScoped: null,
-        filtered: null,
+        yearDaily: null,
+        filteredRecords: null,
+        filteredDaily: null,
         windowed: null,
         funnel: null,
         heatmap: null,
@@ -72,7 +74,8 @@ export function createChartFlow({
       return;
     }
     if (reason === 'filters') {
-      cache.filtered = null;
+      cache.filteredRecords = null;
+      cache.filteredDaily = null;
       cache.windowed = null;
       cache.funnel = null;
       cache.heatmap = null;
@@ -80,14 +83,18 @@ export function createChartFlow({
     }
     if (reason === 'year') {
       cache.yearScoped = null;
-      cache.filtered = null;
+      cache.yearDaily = null;
+      cache.filteredRecords = null;
+      cache.filteredDaily = null;
       cache.windowed = null;
       cache.funnel = null;
       cache.heatmap = null;
       return;
     }
     cache.yearScoped = null;
-    cache.filtered = null;
+    cache.yearDaily = null;
+    cache.filteredRecords = null;
+    cache.filteredDaily = null;
     cache.windowed = null;
     cache.funnel = null;
     cache.heatmap = null;
@@ -387,32 +394,56 @@ export function createChartFlow({
       };
     }
 
-    const filteredStageKey = [yearKey, filtersKey, settingsKey].join('|');
-    let filteredRecords;
-    let filteredDailyFromRecords;
+    const yearDailyStageKey = yearKey;
     let fallbackDaily;
     if (
-      cache.filtered &&
-      cache.filtered.baseRecordsRef === baseRecords &&
-      cache.filtered.baseDailyRef === baseDaily &&
-      cache.filtered.yearScopedRef === yearScopedRecords &&
-      cache.filtered.key === filteredStageKey
+      cache.yearDaily &&
+      cache.yearDaily.baseDailyRef === baseDaily &&
+      cache.yearDaily.key === yearDailyStageKey
     ) {
-      filteredRecords = cache.filtered.filteredRecords;
-      filteredDailyFromRecords = cache.filtered.filteredDailyFromRecords;
-      fallbackDaily = cache.filtered.fallbackDaily;
+      fallbackDaily = cache.yearDaily.value;
+    } else {
+      fallbackDaily = filterDailyStatsByYear(baseDaily, selectedYear);
+      cache.yearDaily = {
+        baseDailyRef: baseDaily,
+        key: yearDailyStageKey,
+        value: fallbackDaily,
+      };
+    }
+
+    const filteredRecordsStageKey = [yearKey, filtersKey].join('|');
+    let filteredRecords;
+    if (
+      cache.filteredRecords &&
+      cache.filteredRecords.baseRecordsRef === baseRecords &&
+      cache.filteredRecords.yearScopedRef === yearScopedRecords &&
+      cache.filteredRecords.key === filteredRecordsStageKey
+    ) {
+      filteredRecords = cache.filteredRecords.value;
     } else {
       filteredRecords = filterRecordsByChartFilters(yearScopedRecords, effectiveFilters);
-      filteredDailyFromRecords = computeDailyStats(filteredRecords, settings?.calculations, DEFAULT_SETTINGS);
-      fallbackDaily = filterDailyStatsByYear(baseDaily, selectedYear);
-      cache.filtered = {
+      cache.filteredRecords = {
         baseRecordsRef: baseRecords,
-        baseDailyRef: baseDaily,
         yearScopedRef: yearScopedRecords,
-        key: filteredStageKey,
-        filteredRecords,
-        filteredDailyFromRecords,
-        fallbackDaily,
+        key: filteredRecordsStageKey,
+        value: filteredRecords,
+      };
+    }
+
+    const filteredDailyStageKey = [filteredRecordsStageKey, settingsKey].join('|');
+    let filteredDailyFromRecords;
+    if (
+      cache.filteredDaily &&
+      cache.filteredDaily.filteredRecordsRef === filteredRecords &&
+      cache.filteredDaily.key === filteredDailyStageKey
+    ) {
+      filteredDailyFromRecords = cache.filteredDaily.value;
+    } else {
+      filteredDailyFromRecords = computeDailyStats(filteredRecords, settings?.calculations, DEFAULT_SETTINGS);
+      cache.filteredDaily = {
+        filteredRecordsRef: filteredRecords,
+        key: filteredDailyStageKey,
+        value: filteredDailyFromRecords,
       };
     }
 
@@ -421,6 +452,10 @@ export function createChartFlow({
       sanitizedFilters.arrival !== 'all' ||
       sanitizedFilters.disposition !== 'all' ||
       sanitizedFilters.cardType !== 'all';
+    const needsWindowScopedRecords =
+      sanitizedFilters.compareGmp === true ||
+      dashboardState?.chartsSectionRenderFlags?.heatmapVisible === true ||
+      dashboardState?.chartsSectionRenderFlags?.hourlyVisible === true;
     const filteredDaily = isYearMode
       ? hasActivePatientFilters
         ? filteredDailyFromRecords
@@ -430,7 +465,12 @@ export function createChartFlow({
       : filteredDailyFromRecords.length || hasActivePatientFilters
         ? filteredDailyFromRecords
         : fallbackDaily;
-    const windowedStageKey = [filteredStageKey, String(normalized), isYearMode ? 'year' : 'window'].join('|');
+    const windowedStageKey = [
+      filteredRecordsStageKey,
+      settingsKey,
+      String(normalized),
+      isYearMode ? 'year' : 'window',
+    ].join('|');
     let scopedDaily;
     let scopedRecords;
     if (
@@ -440,10 +480,20 @@ export function createChartFlow({
       cache.windowed.key === windowedStageKey
     ) {
       scopedDaily = cache.windowed.scopedDaily;
-      scopedRecords = cache.windowed.scopedRecords;
+      scopedRecords =
+        Array.isArray(cache.windowed.scopedRecords) || cache.windowed.scopedRecords === null
+          ? cache.windowed.scopedRecords
+          : null;
+      if (needsWindowScopedRecords && !Array.isArray(scopedRecords)) {
+        scopedRecords =
+          normalized > 0 && !isYearMode
+            ? filterRecordsByWindow(filteredRecords, normalized)
+            : filteredRecords.slice();
+        cache.windowed.scopedRecords = scopedRecords;
+      }
     } else {
       scopedDaily = filteredDaily.slice();
-      scopedRecords = filteredRecords.slice();
+      scopedRecords = null;
       if (normalized > 0 && !isYearMode) {
         const windowKeys = buildDailyWindowKeys(filteredDaily, normalized);
         scopedDaily = windowKeys.length
@@ -452,7 +502,11 @@ export function createChartFlow({
         if (!scopedDaily.length && Array.isArray(filteredDaily) && filteredDaily.length) {
           scopedDaily = filteredDaily.slice(-normalized);
         }
-        scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
+        if (needsWindowScopedRecords) {
+          scopedRecords = filterRecordsByWindow(filteredRecords, normalized);
+        }
+      } else if (needsWindowScopedRecords) {
+        scopedRecords = filteredRecords.slice();
       }
       cache.windowed = {
         filteredRecordsRef: filteredRecords,
@@ -482,20 +536,28 @@ export function createChartFlow({
       };
     }
 
-    let heatmapData;
-    if (cache.heatmap && cache.heatmap.scopedRecordsRef === scopedRecords) {
-      heatmapData = cache.heatmap.value;
-    } else {
-      heatmapData = computeArrivalHeatmap(scopedRecords);
-      cache.heatmap = {
-        scopedRecordsRef: scopedRecords,
-        value: heatmapData,
-      };
+    const shouldComputeHeatmap =
+      dashboardState?.chartsSectionRenderFlags?.heatmapVisible === true ||
+      (cache.heatmap && cache.heatmap.scopedRecordsRef === scopedRecords);
+    let heatmapData = null;
+    if (shouldComputeHeatmap) {
+      if (cache.heatmap && cache.heatmap.scopedRecordsRef === scopedRecords) {
+        heatmapData = cache.heatmap.value;
+      } else {
+        heatmapData = computeArrivalHeatmap(scopedRecords);
+        cache.heatmap = {
+          scopedRecordsRef: scopedRecords,
+          value: heatmapData,
+        };
+      }
     }
 
     dashboardState.chartData.filteredRecords = filteredRecords;
     dashboardState.chartData.filteredDaily = filteredDaily;
     dashboardState.chartData.filteredWindowRecords = scopedRecords;
+    if (!Array.isArray(dashboardState.chartData.filteredWindowRecords)) {
+      dashboardState.chartData.filteredWindowRecords = [];
+    }
     dashboardState.chartData.dailyWindow = scopedDaily;
     dashboardState.chartData.funnel = funnelData;
     dashboardState.chartData.heatmap = heatmapData;

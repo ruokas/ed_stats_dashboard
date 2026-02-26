@@ -572,6 +572,108 @@ function setGydytojaiSectionExpanded(dashboardState, key, expanded) {
   state[key] = expanded === true;
 }
 
+function isGydytojaiSectionExpanded(dashboardState, key) {
+  if (!GYDYTOJAI_SECTION_KEYS.includes(String(key || ''))) {
+    return false;
+  }
+  return dashboardState?.gydytojaiSectionExpanded?.[key] === true;
+}
+
+function buildDoctorSpecialtyConfigSignature(settings) {
+  const raw = settings?.doctors?.specialties;
+  if (!raw || typeof raw !== 'object') {
+    return 'disabled';
+  }
+  try {
+    return JSON.stringify({
+      enabled: raw.enabled !== false,
+      strict: raw.strict !== false,
+      excludeUnmappedFromStats: raw.excludeUnmappedFromStats === true,
+      effectiveDateField: raw.effectiveDateField || 'arrival',
+      groups: Array.isArray(raw.groups) ? raw.groups : [],
+      assignments: Array.isArray(raw.assignments) ? raw.assignments : [],
+    });
+  } catch (_error) {
+    return 'unserializable';
+  }
+}
+
+function getCachedDoctorSpecialtyModel(dashboardState, settings, records) {
+  const cache = dashboardState?.doctorsSpecialtyModelCache || {};
+  const configSignature = buildDoctorSpecialtyConfigSignature(settings);
+  if (cache.recordsRef === records && cache.configSignature === configSignature && cache.model) {
+    return cache.model;
+  }
+  const model = createDoctorSpecialtyResolver(settings, records);
+  dashboardState.doctorsSpecialtyModelCache = {
+    recordsRef: records,
+    configSignature,
+    model,
+  };
+  return model;
+}
+
+function buildDoctorAnnualModelCacheKey(dashboardState, sharedOptions) {
+  return JSON.stringify({
+    year: sharedOptions?.yearFilter ?? 'all',
+    topN: sharedOptions?.topN ?? 15,
+    minCases: sharedOptions?.minCases ?? 30,
+    sortBy: sharedOptions?.sortBy ?? 'volume_desc',
+    arrivalFilter: sharedOptions?.arrivalFilter ?? 'all',
+    dispositionFilter: sharedOptions?.dispositionFilter ?? 'all',
+    shiftFilter: sharedOptions?.shiftFilter ?? 'all',
+    specialtyFilter: sharedOptions?.specialtyFilter ?? 'all',
+    searchQuery: sharedOptions?.searchQuery ?? '',
+    annualMetric: dashboardState?.doctorsAnnualMetric ?? 'count',
+    annualMinYearCount: dashboardState?.doctorsAnnualMinYearCount ?? 2,
+    annualSelected: Array.isArray(dashboardState?.doctorsAnnualSelected)
+      ? dashboardState.doctorsAnnualSelected
+      : [],
+  });
+}
+
+function buildSpecialtyAnnualModelCacheKey(dashboardState, sharedOptions) {
+  return JSON.stringify({
+    year: sharedOptions?.yearFilter ?? 'all',
+    topN: sharedOptions?.topN ?? 15,
+    minCases: sharedOptions?.minCases ?? 30,
+    sortBy: sharedOptions?.sortBy ?? 'volume_desc',
+    arrivalFilter: sharedOptions?.arrivalFilter ?? 'all',
+    dispositionFilter: sharedOptions?.dispositionFilter ?? 'all',
+    shiftFilter: sharedOptions?.shiftFilter ?? 'all',
+    specialtyFilter: sharedOptions?.specialtyFilter ?? 'all',
+    searchQuery: sharedOptions?.searchQuery ?? '',
+    specialtyAnnualMetric: dashboardState?.doctorsSpecialtyAnnualMetric ?? 'count',
+    specialtyAnnualTopN: dashboardState?.doctorsSpecialtyAnnualTopN ?? 6,
+    specialtyAnnualMinYearCount: dashboardState?.doctorsSpecialtyAnnualMinYearCount ?? 2,
+    specialtyAnnualSelected: Array.isArray(dashboardState?.doctorsSpecialtyAnnualSelected)
+      ? dashboardState.doctorsSpecialtyAnnualSelected
+      : [],
+  });
+}
+
+function getCachedDoctorAnnualModel(dashboardState, records, sharedOptions, computeFn) {
+  const key = buildDoctorAnnualModelCacheKey(dashboardState, sharedOptions);
+  const cache = dashboardState?.doctorsAnnualModelCache || {};
+  if (cache.recordsRef === records && cache.key === key && cache.model) {
+    return cache.model;
+  }
+  const model = computeFn();
+  dashboardState.doctorsAnnualModelCache = { recordsRef: records, key, model };
+  return model;
+}
+
+function getCachedDoctorSpecialtyAnnualModel(dashboardState, records, sharedOptions, computeFn) {
+  const key = buildSpecialtyAnnualModelCacheKey(dashboardState, sharedOptions);
+  const cache = dashboardState?.doctorsSpecialtyAnnualModelCache || {};
+  if (cache.recordsRef === records && cache.key === key && cache.model) {
+    return cache.model;
+  }
+  const model = computeFn();
+  dashboardState.doctorsSpecialtyAnnualModelCache = { recordsRef: records, key, model };
+  return model;
+}
+
 function getAdvancedFilterOverrideCount(dashboardState) {
   let count = 0;
   if (Number(dashboardState?.doctorsTopN || 15) !== 15) {
@@ -2696,7 +2798,7 @@ export async function runGydytojaiRuntime(core) {
       specialtyFilter: dashboardState.doctorsSpecialtyFilter,
       searchQuery: dashboardState.doctorsSearchDebounced,
     };
-    const specialtyModel = createDoctorSpecialtyResolver(settings, records);
+    const specialtyModel = getCachedDoctorSpecialtyModel(dashboardState, settings, records);
     dashboardState.doctorsSpecialtyValidation = specialtyModel.validation;
     dashboardState.doctorsSpecialtyUiEnabled = Boolean(
       specialtyModel.validation?.enabled && specialtyModel.validation?.valid
@@ -2735,46 +2837,74 @@ export async function runGydytojaiRuntime(core) {
     const mix = computeDoctorDayNightMix(records, sharedOptions);
     const hospital = computeDoctorHospitalizationShare(records, sharedOptions);
     const scatter = computeDoctorVolumeVsLosScatter(records, sharedOptions);
-    const annual = computeDoctorYearlySmallMultiples(records, {
-      ...sharedOptions,
-      yearScope: 'all_years',
-      yearFilter: 'all',
-      metric: dashboardState.doctorsAnnualMetric,
-      topN: Math.max(
-        1,
-        Array.isArray(dashboardState.doctorsAnnualSelected) ? dashboardState.doctorsAnnualSelected.length : 1
-      ),
-      minYearCount: dashboardState.doctorsAnnualMinYearCount,
-      selectedDoctors: dashboardState.doctorsAnnualSelected,
-    });
+    const annualSectionExpanded = isGydytojaiSectionExpanded(dashboardState, 'annual');
+    const annualDoctorVisible =
+      annualSectionExpanded &&
+      normalizeGydytojaiAnnualSubview(dashboardState.gydytojaiAnnualSubview, 'doctor') === 'doctor';
+    let annual = null;
+    if (annualDoctorVisible) {
+      annual = getCachedDoctorAnnualModel(dashboardState, records, sharedOptions, () =>
+        computeDoctorYearlySmallMultiples(records, {
+          ...sharedOptions,
+          yearScope: 'all_years',
+          yearFilter: 'all',
+          metric: dashboardState.doctorsAnnualMetric,
+          topN: Math.max(
+            1,
+            Array.isArray(dashboardState.doctorsAnnualSelected)
+              ? dashboardState.doctorsAnnualSelected.length
+              : 1
+          ),
+          minYearCount: dashboardState.doctorsAnnualMinYearCount,
+          selectedDoctors: dashboardState.doctorsAnnualSelected,
+        })
+      );
+    } else {
+      annual =
+        dashboardState?.doctorsAnnualModelCache?.recordsRef === records
+          ? dashboardState.doctorsAnnualModelCache.model
+          : null;
+    }
     dashboardState.doctorsAnnualAvailable = Array.isArray(annual?.meta?.availableDoctors)
       ? annual.meta.availableDoctors
-      : [];
+      : Array.isArray(dashboardState.doctorsAnnualAvailable)
+        ? dashboardState.doctorsAnnualAvailable
+        : [];
     const specialtyAnnualMetric = normalizeSpecialtyAnnualMetric(
       dashboardState.doctorsSpecialtyAnnualMetric,
       'count'
     );
     dashboardState.doctorsSpecialtyAnnualMetric = specialtyAnnualMetric;
+    const annualSpecialtyVisible =
+      annualSectionExpanded &&
+      dashboardState.doctorsSpecialtyUiEnabled === true &&
+      normalizeGydytojaiAnnualSubview(dashboardState.gydytojaiAnnualSubview, 'doctor') === 'specialty';
     const specialtyAnnualModel =
       dashboardState.doctorsSpecialtyUiEnabled === true
-        ? specialtyAnnualMetric === 'losGroups'
-          ? computeDoctorSpecialtyYearlyComposition(records, {
-              ...sharedOptions,
-              yearScope: 'all_years',
-              yearFilter: 'all',
-              topN: dashboardState.doctorsSpecialtyAnnualTopN,
-              minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
-              selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
-            })
-          : computeDoctorSpecialtyYearlySmallMultiples(records, {
-              ...sharedOptions,
-              yearScope: 'all_years',
-              yearFilter: 'all',
-              metric: specialtyAnnualMetric,
-              topN: dashboardState.doctorsSpecialtyAnnualTopN,
-              minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
-              selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
-            })
+        ? annualSpecialtyVisible
+          ? getCachedDoctorSpecialtyAnnualModel(dashboardState, records, sharedOptions, () =>
+              specialtyAnnualMetric === 'losGroups'
+                ? computeDoctorSpecialtyYearlyComposition(records, {
+                    ...sharedOptions,
+                    yearScope: 'all_years',
+                    yearFilter: 'all',
+                    topN: dashboardState.doctorsSpecialtyAnnualTopN,
+                    minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
+                    selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
+                  })
+                : computeDoctorSpecialtyYearlySmallMultiples(records, {
+                    ...sharedOptions,
+                    yearScope: 'all_years',
+                    yearFilter: 'all',
+                    metric: specialtyAnnualMetric,
+                    topN: dashboardState.doctorsSpecialtyAnnualTopN,
+                    minYearCount: dashboardState.doctorsSpecialtyAnnualMinYearCount,
+                    selectedSpecialties: dashboardState.doctorsSpecialtyAnnualSelected,
+                  })
+            )
+          : dashboardState?.doctorsSpecialtyAnnualModelCache?.recordsRef === records
+            ? dashboardState.doctorsSpecialtyAnnualModelCache.model
+            : null
         : null;
     if (
       dashboardState.doctorsSpecialtyUiEnabled === true &&

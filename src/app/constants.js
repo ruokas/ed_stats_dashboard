@@ -7,7 +7,7 @@ export const FEEDBACK_LEGACY_MAX = 10;
 export const AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
 export const DEFAULT_FOOTER_SOURCE = '';
 export const DEFAULT_KPI_WINDOW_DAYS = 365;
-export const DEFAULT_PAGE_TITLE = document.title || 'ED statistika';
+export const DEFAULT_PAGE_TITLE = (typeof document !== 'undefined' && document?.title) || 'ED statistika';
 export const THEME_STORAGE_KEY = 'edDashboardTheme';
 export const CLIENT_CONFIG_KEY = 'edDashboardClientConfig-v1';
 
