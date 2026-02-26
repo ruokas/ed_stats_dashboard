@@ -2197,6 +2197,10 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     dashboardState.doctorsSearchDebounced = String(dashboardState.doctorsSearch || '').trim();
     rerender();
   }, 250);
+  const applyLayoutAndQuerySync = () => {
+    applyGydytojaiLayoutControls(selectors, dashboardState);
+    syncDoctorPageQueryFromState(dashboardState);
+  };
   const expandSectionAndRerender = (key) => {
     setGydytojaiSectionExpanded(dashboardState, key, true);
     rerender();
@@ -2214,16 +2218,25 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
     applyActiveFiltersDisclosure(selectors, dashboardState);
   });
   selectors.gydytojaiChartsMoreToggle?.addEventListener('click', () => {
-    dashboardState.gydytojaiChartsExpandedExtras = !(dashboardState.gydytojaiChartsExpandedExtras === true);
+    const nextExpanded = !(dashboardState.gydytojaiChartsExpandedExtras === true);
+    dashboardState.gydytojaiChartsExpandedExtras = nextExpanded;
     setGydytojaiSectionExpanded(dashboardState, 'charts', true);
-    rerender();
+    if (nextExpanded) {
+      rerender();
+      return;
+    }
+    applyLayoutAndQuerySync();
   });
   selectors.gydytojaiChartDoctorTogglesToggle?.addEventListener('click', () => {
-    dashboardState.gydytojaiChartsDoctorTogglesExpanded = !(
-      dashboardState.gydytojaiChartsDoctorTogglesExpanded === true
-    );
+    const nextExpanded = !(dashboardState.gydytojaiChartsDoctorTogglesExpanded === true);
+    dashboardState.gydytojaiChartsDoctorTogglesExpanded = nextExpanded;
+    const chartsWasExpanded = isGydytojaiSectionExpanded(dashboardState, 'charts');
     setGydytojaiSectionExpanded(dashboardState, 'charts', true);
-    rerender();
+    if (!chartsWasExpanded && nextExpanded) {
+      rerender();
+      return;
+    }
+    applyLayoutAndQuerySync();
   });
   selectors.gydytojaiSectionToggleButtons?.forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -2236,8 +2249,15 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
         return;
       }
       const current = dashboardState?.gydytojaiSectionExpanded?.[key] === true;
-      setGydytojaiSectionExpanded(dashboardState, key, !current);
-      rerender();
+      const nextExpanded = !current;
+      setGydytojaiSectionExpanded(dashboardState, key, nextExpanded);
+      const requiresDataRender =
+        nextExpanded && (key === 'charts' || key === 'specialty' || key === 'annual');
+      if (requiresDataRender) {
+        rerender();
+        return;
+      }
+      applyLayoutAndQuerySync();
     });
   });
   selectors.jumpLinks?.forEach((link) => {
@@ -2259,8 +2279,13 @@ function wireInteractions(selectors, dashboardState, rerender, handleReportExpor
       };
       const key = map[sectionId];
       if (key) {
+        const alreadyExpanded = isGydytojaiSectionExpanded(dashboardState, key);
         setGydytojaiSectionExpanded(dashboardState, key, true);
-        rerender();
+        if (!alreadyExpanded && (key === 'charts' || key === 'specialty' || key === 'annual')) {
+          rerender();
+          return;
+        }
+        applyLayoutAndQuerySync();
       }
     });
   });
