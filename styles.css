@@ -1744,6 +1744,7 @@ body[data-theme="dark"] .charts-subsection {
   display: grid;
   align-content: start;
   gap: 10px;
+  position: relative;
 }
 
 .report-card--full-width {
@@ -1800,6 +1801,30 @@ body[data-theme="dark"] .charts-subsection {
   min-height: 300px;
   max-height: 300px;
   display: block;
+}
+
+.report-card[data-loading="true"] canvas {
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      90deg,
+      var(--skeleton-base) 25%,
+      var(--skeleton-highlight) 37%,
+      var(--skeleton-base) 63%
+    );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+.report-card[data-loading="true"] canvas + .report-card__hint {
+  min-height: 1.2em;
+}
+
+#ageDiagnosisHeatmapChart,
+#referralMonthlyHeatmapChart {
+  min-height: 380px;
+  height: 380px;
+  max-height: 380px;
 }
 
 .table-wrapper--report {

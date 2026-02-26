@@ -223,6 +223,15 @@ export function createDataFlow(env = {}) {
       !activeConfig.feedback &&
       !activeConfig.ed
   );
+  const isYearlyOnlyPage = Boolean(
+    activeConfig.yearly &&
+      !activeConfig.kpi &&
+      !activeConfig.charts &&
+      !activeConfig.recent &&
+      !activeConfig.monthly &&
+      !activeConfig.feedback &&
+      !activeConfig.ed
+  );
   const isEdOnlyPage = Boolean(
     activeConfig.ed &&
       !activeConfig.kpi &&
@@ -1256,7 +1265,7 @@ export function createDataFlow(env = {}) {
   }
 
   function scheduleInitialLoad() {
-    if (isKpiOnlyPage || isChartsOnlyPage) {
+    if (isKpiOnlyPage || isChartsOnlyPage || isYearlyOnlyPage) {
       const runInitialKpiLoad = () => {
         if (!dashboardState.loading) {
           void loadDashboard();
