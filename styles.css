@@ -1400,7 +1400,8 @@ body[data-theme="dark"] .charts-subsection {
 
 .charts-section-toggle,
 .charts-subsection-toggle {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
