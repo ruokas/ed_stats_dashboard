@@ -439,6 +439,38 @@ function hideKpiSkeleton(selectors) {
   setDatasetValue(grid, 'skeleton', null);
 }
 
+function showKpiHourlyChartSkeleton(selectors) {
+  const chart = selectors.lastShiftHourlyChart;
+  if (!chart) {
+    return;
+  }
+  const card = chart.closest('.chart-card');
+  if (!card) {
+    return;
+  }
+  const skeleton = card.querySelector('.chart-card__skeleton');
+  if (skeleton) {
+    skeleton.hidden = false;
+  }
+  setDatasetValue(card, 'loading', 'true');
+}
+
+function hideKpiHourlyChartSkeleton(selectors) {
+  const chart = selectors.lastShiftHourlyChart;
+  if (!chart) {
+    return;
+  }
+  const card = chart.closest('.chart-card');
+  if (!card) {
+    return;
+  }
+  const skeleton = card.querySelector('.chart-card__skeleton');
+  if (skeleton) {
+    skeleton.hidden = true;
+  }
+  setDatasetValue(card, 'loading', null);
+}
+
 function setChartCardMessage(element, message) {
   if (!element) {
     return;
@@ -607,6 +639,8 @@ export async function runKpiRuntime(core) {
     hideKpiSkeleton: () => hideKpiSkeleton(selectors),
     renderKpis: (dailyStats, referenceDailyStats) => kpiRenderer.renderKpis(dailyStats, referenceDailyStats),
     renderLastShiftHourlyChartWithTheme: renderLastShiftHourlyChartWithThemeBound,
+    showLastShiftHourlyLoading: () => showKpiHourlyChartSkeleton(selectors),
+    hideLastShiftHourlyLoading: () => hideKpiHourlyChartSkeleton(selectors),
     setChartCardMessage,
     getSettings: () => settings,
     runKpiWorkerJob,
