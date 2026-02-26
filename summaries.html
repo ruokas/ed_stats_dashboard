@@ -17,7 +17,7 @@
       rel="stylesheet">
   <link rel="stylesheet" href="theme-init.css">
   <script src="theme-init.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2026-02-26-global-search-fix-1">
 </head>
 <body data-page="summaries">
 <header class="hero" role="banner">
@@ -112,6 +112,12 @@
           <p id="status" class="status status--loading" role="status" aria-live="polite" aria-label="Kraunama..."></p>
         </div>
         <div class="hero__buttons">
+          <button id="globalSearchBtn" type="button" class="icon-button global-search-trigger" aria-label="Atidaryti globalią paiešką" title="Atidaryti paiešką (Ctrl/Cmd+K)">
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </button>
           
           <button id="themeToggleBtn" type="button" class="icon-button theme-toggle" aria-pressed="false" aria-label="Perjungti šviesią/tamsią temą" title="Perjungti šviesią/tamsią temą (Ctrl+Shift+L)" data-theme="light">
             <!-- Saulės ir mėnulio ikonų keitimas pagal aktyvią temą -->
@@ -717,7 +723,7 @@
     </div>
   </footer>
 
-  <script type="module" src="main.js?v=2026-02-08-entry-refresh-1"></script>
+  <script type="module" src="main.js?v=2026-02-26-global-search-fix-1"></script>
 
 </body>
 </html>

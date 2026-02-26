@@ -22,6 +22,29 @@ export const TEXT = {
       'Dėmesio: pasirinkta tema gali turėti nepakankamą KPI kortelių kontrastą. Apsvarstykite kitą temą.',
   },
   scrollTop: 'Grįžti į pradžią',
+  globalSearch: {
+    triggerLabel: 'Atidaryti paiešką',
+    triggerHint: 'Ctrl/Cmd+K',
+    dialogLabel: 'Globali paieška',
+    inputLabel: 'Ieškoti puslapių, sekcijų ir rodiklių',
+    inputPlaceholder: 'Pvz.: grafikai, hospitalizacijos, PSPC...',
+    noResults: 'Rezultatų nerasta.',
+    groups: {
+      pages: 'Puslapiai',
+      sections: 'Sekcijos',
+      metrics: 'Rodikliai',
+      actions: 'Veiksmai',
+    },
+    actions: {
+      chartsHospitalSearch: 'Fokusuoti skyriaus paiešką (grafikai)',
+      doctorsSearch: 'Fokusuoti gydytojų paiešką',
+      edSearch: 'Fokusuoti ED paiešką',
+    },
+    hints: {
+      navigate: 'Enter atidaro',
+      close: 'Esc uždaro',
+    },
+  },
   tabs: {
     overview: 'Bendras vaizdas',
     ed: 'ED skydelis',

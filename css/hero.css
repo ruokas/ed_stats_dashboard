@@ -217,7 +217,27 @@ button.settings-btn:active {
   color: #fff;
 }
 
+.global-search-trigger {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.global-search-trigger:hover,
+.global-search-trigger:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 body[data-theme="light"] .theme-toggle {
+  background: rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.24);
+  color: #1e293b;
+  box-shadow: 0 8px 20px -18px rgba(15, 23, 42, 0.55);
+}
+
+body[data-theme="light"] .global-search-trigger {
   background: rgba(15, 23, 42, 0.08);
   border: 1px solid rgba(15, 23, 42, 0.24);
   color: #1e293b;
@@ -231,9 +251,22 @@ body[data-theme="light"] .theme-toggle:focus-visible {
   color: #12387f;
 }
 
+body[data-theme="light"] .global-search-trigger:hover,
+body[data-theme="light"] .global-search-trigger:focus-visible {
+  background: rgba(47, 91, 234, 0.14);
+  border-color: rgba(47, 91, 234, 0.38);
+  color: #12387f;
+}
+
 body[data-theme="dark"] .theme-toggle {
   background: rgba(15, 23, 42, 0.7);
   border-color: rgba(148, 163, 184, 0.5);
+}
+
+body[data-theme="dark"] .global-search-trigger {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.5);
+  color: #e2e8f0;
 }
 
 .theme-toggle .theme-icon {

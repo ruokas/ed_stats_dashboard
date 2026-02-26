@@ -4899,6 +4899,174 @@ dialog::backdrop {
   backdrop-filter: blur(4px);
 }
 
+dialog.global-search {
+  width: min(760px, 94vw);
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.08), transparent 54%),
+    var(--color-surface);
+  box-shadow: 0 36px 78px -30px rgba(15, 23, 42, 0.62);
+}
+
+dialog.global-search[open] {
+  display: block;
+  position: fixed;
+  top: 8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  z-index: 1000;
+}
+
+.global-search__shell {
+  display: grid;
+  gap: 10px;
+  max-height: min(78vh, 720px);
+}
+
+.global-search__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 14px 14px 0;
+}
+
+.global-search__input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  padding: 12px 14px;
+  font: inherit;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.global-search__input:hover,
+.global-search__input:focus-visible {
+  background: var(--color-input-bg-hover);
+}
+
+.global-search__input:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.global-search__close {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  border-radius: 12px;
+  padding: 0 12px;
+  min-width: 56px;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.global-search__close:hover,
+.global-search__close:focus-visible {
+  outline: none;
+  background: var(--state-accent-bg-08);
+  color: var(--color-accent);
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.global-search__help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  padding: 0 16px;
+}
+
+.global-search__empty {
+  margin: 6px 14px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: 14px;
+  padding: 16px;
+  color: var(--color-text-muted);
+  text-align: center;
+  background: var(--color-surface-alt);
+}
+
+.global-search__results {
+  overflow: auto;
+  padding: 0 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.global-search__group {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-surface-alt) 78%, transparent);
+  overflow: clip;
+}
+
+.global-search__group-title {
+  margin: 0;
+  padding: 10px 12px 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+}
+
+.global-search__group-list {
+  display: grid;
+}
+
+.global-search__option {
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  background: transparent;
+  color: inherit;
+  padding: 10px 12px;
+  display: grid;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.global-search__group-list .global-search__option:first-child {
+  border-top: none;
+}
+
+.global-search__option:hover,
+.global-search__option:focus-visible,
+.global-search__option.is-active {
+  outline: none;
+  background: color-mix(in srgb, var(--state-accent-bg-08) 65%, transparent);
+}
+
+.global-search__option.is-active {
+  box-shadow: inset 3px 0 0 0 var(--color-accent);
+}
+
+.global-search__option-title {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.global-search__option-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
 .settings-form {
   display: flex;
   flex-direction: column;
@@ -5154,6 +5322,20 @@ body[data-theme="dark"] .btn-secondary[aria-pressed="true"] {
   dialog {
     width: 96vw;
     border-radius: 18px;
+  }
+
+  dialog.global-search {
+    width: 96vw;
+    border-radius: 16px;
+  }
+
+  .global-search__header {
+    grid-template-columns: 1fr;
+  }
+
+  .global-search__close {
+    justify-self: end;
+    min-height: 36px;
   }
 
   .settings-header,

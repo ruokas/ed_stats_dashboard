@@ -35,6 +35,7 @@ export function createPageShellSelectors({ sectionNav = byQuery('.section-nav') 
     title: byId('pageTitle'),
     status: byId('status'),
     footerSource: byId('footerSource'),
+    globalSearchBtn: byId('globalSearchBtn'),
     themeToggleBtn: byId('themeToggleBtn'),
     scrollTopBtn: byId('scrollTopBtn'),
     sectionNav,

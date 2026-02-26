@@ -1,6 +1,7 @@
 import { initScrollTopButton } from '../../events/scroll.js';
 import { initSectionNavigation } from '../../events/section-nav.js';
 import { initThemeToggle } from '../../events/theme.js';
+import { initGlobalSearch } from './features/global-search.js';
 import { createLayoutTools } from './layout.js';
 
 export function applyCommonPageShellText({ selectors, settings, text, defaultFooterSource }) {
@@ -50,4 +51,5 @@ export function setupSharedPageUi({
     scheduleScrollTopUpdate: layoutTools.scheduleScrollTopUpdate,
   });
   initThemeToggle({ selectors, toggleTheme });
+  initGlobalSearch({ selectors });
 }
