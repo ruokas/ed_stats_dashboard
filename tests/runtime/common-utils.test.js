@@ -33,6 +33,7 @@ describe('createStatusSetter', () => {
     setStatus(selectors, 'loading');
     expect(selectors.status.classList.contains('status--loading')).toBe(true);
     expect(selectors.status.getAttribute('aria-label')).toBe('Kraunama');
+    expect(selectors.status.textContent).toBe('');
 
     setStatus(selectors, 'error', 'Nepavyko');
     expect(selectors.status.classList.contains('status--error')).toBe(true);
@@ -57,6 +58,7 @@ describe('createStatusSetter', () => {
 
     setStatus(selectors, 'loading');
     expect(selectors.status.getAttribute('aria-label')).toBe('Kraunama');
+    expect(selectors.status.textContent).toBe('');
 
     setStatus(selectors, 'success');
     expect(selectors.status.classList.contains('status--success')).toBe(false);

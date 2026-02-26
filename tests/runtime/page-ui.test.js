@@ -30,4 +30,26 @@ describe('applyCommonPageShellText', () => {
     expect(selectors.scrollTopBtn.textContent).toBe('Į viršų');
     expect(document.title).toBe('Dokumento title');
   });
+
+  it('falls back to provided defaults when output overrides are missing', () => {
+    document.body.innerHTML =
+      '<h1 id="title"></h1><span id="footer"></span><button id="scrollTopBtn"></button>';
+    document.title = '';
+    const selectors = {
+      title: document.getElementById('title'),
+      footerSource: document.getElementById('footer'),
+      scrollTopBtn: document.getElementById('scrollTopBtn'),
+    };
+
+    applyCommonPageShellText({
+      selectors,
+      settings: { output: {} },
+      text: { title: 'Neutralus title', scrollTop: 'Į pradžią' },
+      defaultFooterSource: 'Numatytas šaltinis',
+    });
+
+    expect(selectors.title.textContent).toBe('Neutralus title');
+    expect(selectors.footerSource.textContent).toBe('Numatytas šaltinis');
+    expect(selectors.scrollTopBtn.textContent).toBe('Į pradžią');
+  });
 });

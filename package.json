@@ -20,6 +20,7 @@
     "css:budget": "node scripts/css-metrics.mjs --max-bytes=145000",
     "pages:generate": "node scripts/generate-pages.mjs",
     "pages:check": "node scripts/check-pages.mjs",
+    "config:check": "node scripts/check-hospital-config.mjs",
     "metrics:check": "node scripts/check-metrics-catalog.mjs",
     "benchmark:worker": "node scripts/benchmark-worker.mjs",
     "benchmark:doctor": "node scripts/benchmark-doctor-stats.mjs",

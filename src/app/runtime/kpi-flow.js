@@ -89,7 +89,13 @@ export function createKpiFlow(env) {
       }
     };
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-      window.requestAnimationFrame(hide);
+      // Delay skeleton removal by two frames so the canvas/chart paint is visible first.
+      window.requestAnimationFrame(() => {
+        if (token !== lastShiftHourlyRenderToken) {
+          return;
+        }
+        window.requestAnimationFrame(hide);
+      });
       return;
     }
     hide();
