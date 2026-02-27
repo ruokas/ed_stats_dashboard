@@ -1,6 +1,6 @@
 // Bump cache versions on release when app shell/static routing changes.
 // Rule of thumb: STATIC_CACHE for HTML/CSS/JS shell changes, API_CACHE for CSV/API strategy changes.
-const STATIC_CACHE = 'ed-static-v24';
+const STATIC_CACHE = 'ed-static-v25';
 const API_CACHE = 'ed-api-v2';
 const OFFLINE_FALLBACK = new URL('./index.html', self.location).pathname;
 const STATIC_ASSETS = [

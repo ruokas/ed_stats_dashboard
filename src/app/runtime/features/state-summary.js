@@ -65,6 +65,7 @@ const FILTER_LABELS = {
     location: 'Šaltinis',
     trendWindow: 'Langas',
     trendCompareMode: 'Palyginimas',
+    trendMultiMode: 'Keli rodikliai',
     trendMetrics: 'Metrikos',
   },
 };
@@ -112,6 +113,10 @@ const VALUE_MAP_BY_KEY = {
     aidesAverage: 'Padėjėjų darbas',
     waitingAverage: 'Laukimo vertinimas',
     responses: 'Atsakymų skaičius',
+  },
+  trendMultiMode: {
+    true: 'Įjungta',
+    false: 'Išjungta',
   },
   hourlyMetric: {
     arrivals: 'Atvykimai',
@@ -231,6 +236,14 @@ function formatValue(value, key) {
 
 export function buildStateSummaryItems(pageId, search = window.location.search) {
   const parsed = parseFromQuery(pageId, search);
+  if (
+    pageId === 'feedback' &&
+    Array.isArray(parsed.trendMetrics) &&
+    parsed.trendMetrics.length > 1 &&
+    parsed.trendMultiMode !== true
+  ) {
+    parsed.trendMetrics = [parsed.trendMetrics[0]];
+  }
   const labels = FILTER_LABELS[pageId] || {};
   const entries = Object.entries(parsed);
   return entries

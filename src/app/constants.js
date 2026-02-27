@@ -625,10 +625,9 @@ export const TEXT = {
     trend: {
       title: 'Bendro vertinimo dinamika',
       subtitle: (months, metricCount, compareLabel = '') => {
-        const metricSuffix =
-          Number.isFinite(metricCount) && metricCount > 0
-            ? ` • ${Math.max(1, Math.round(metricCount))} rodikliai`
-            : '';
+        const normalizedMetricCount = Number.isFinite(metricCount) ? Math.max(1, Math.round(metricCount)) : 1;
+        const metricLabel = normalizedMetricCount === 1 ? '1 rodiklis' : `${normalizedMetricCount} rodikliai`;
+        const metricSuffix = Number.isFinite(metricCount) && metricCount > 0 ? ` • ${metricLabel}` : '';
         const compareSuffix = compareLabel ? ` • ${compareLabel}` : '';
         if (!Number.isFinite(months) || months <= 0) {
           return `Visų prieinamų mėnesių dinamika${metricSuffix}${compareSuffix}`;
@@ -641,11 +640,15 @@ export const TEXT = {
       },
       controlsLabel: 'Laikotarpis',
       metricControlsLabel: 'Rodikliai',
-      compareControlsLabel: 'Palyginti pagal',
+      multiModeLabel: 'Palyginti rodiklius',
+      multiModeHintSingle: 'Rodomas vienas rodiklis',
+      multiModeHintMulti: 'Galite pasirinkti kelis rodiklius',
+      compareControlsLabel: 'Palyginti grupes',
       periods: [
         { months: 3, label: '3 mėn.' },
         { months: 6, label: '6 mėn.' },
         { months: 12, label: '12 mėn.' },
+        { months: null, label: 'Visi' },
       ],
       compareModes: [
         { key: 'none', label: 'Nelyginti' },

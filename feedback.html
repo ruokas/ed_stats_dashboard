@@ -17,7 +17,7 @@
       rel="stylesheet">
   <link rel="stylesheet" href="theme-init.css">
   <script src="theme-init.js"></script>
-  <link rel="stylesheet" href="styles.css?v=2026-02-26-global-search-fix-1">
+  <link rel="stylesheet" href="styles.css?v=2026-02-27-feedback-trend-mode-fix-1">
 </head>
 <body data-page="feedback">
 <header class="hero" role="banner">
@@ -204,10 +204,7 @@
               aria-label="Kopijuoti grafiką"
               title="Kopijuoti grafiką"
             >
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="11" height="11" rx="2"></rect>
-                <rect x="4" y="4" width="11" height="11" rx="2"></rect>
-              </svg>
+              Kopijuoti PNG
             </button>
             <button
               type="button"
@@ -218,11 +215,7 @@
               aria-label="Parsisiųsti grafiką PNG formatu"
               title="Parsisiųsti PNG"
             >
-              <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3v12"></path>
-                <path d="M8 11l4 4 4-4"></path>
-                <path d="M4 21h16"></path>
-              </svg>
+              Parsisiųsti PNG
             </button>
           </div>
           <div class="feedback-trend-card__filters">
@@ -232,26 +225,45 @@
                 <button type="button" class="feedback-trend-card__button" data-trend-months="3" aria-pressed="false">3 mėn.</button>
                 <button type="button" class="feedback-trend-card__button" data-trend-months="6" aria-pressed="false">6 mėn.</button>
                 <button type="button" class="feedback-trend-card__button" data-trend-months="12" aria-pressed="false">12 mėn.</button>
+                <button type="button" class="feedback-trend-card__button" data-trend-months="all" aria-pressed="false">Visi</button>
               </div>
             </div>
             <div class="feedback-trend-card__filter-field feedback-trend-card__filter-field--metrics">
-              <span id="feedbackTrendMetricsLabel" class="feedback-trend-card__controls-label">Rodikliai</span>
-              <div id="feedbackTrendMetrics" class="feedback-trend-card__buttons feedback-trend-card__buttons--metrics" role="group" aria-labelledby="feedbackTrendMetricsLabel">
-                <button type="button" class="feedback-trend-card__button" data-trend-metric="overallAverage" aria-pressed="true">Bendra patirtis</button>
-                <button type="button" class="feedback-trend-card__button" data-trend-metric="doctorsAverage" aria-pressed="false">Gydytojų darbas</button>
-                <button type="button" class="feedback-trend-card__button" data-trend-metric="nursesAverage" aria-pressed="false">Slaugytojų darbas</button>
-                <button type="button" class="feedback-trend-card__button" data-trend-metric="aidesAverage" aria-pressed="false">Padėjėjų darbas</button>
-                <button type="button" class="feedback-trend-card__button" data-trend-metric="waitingAverage" aria-pressed="false">Laukimo vertinimas</button>
-                <button type="button" class="feedback-trend-card__button" data-trend-metric="responses" aria-pressed="false">Atsakymų skaičius</button>
+              <span id="feedbackTrendMetricsLabel" class="sr-only">Rodikliai</span>
+              <div class="feedback-trend-card__metrics-row">
+                <details id="feedbackTrendMetricsDropdown" class="feedback-trend-card__metrics-dropdown">
+                  <summary class="feedback-trend-card__metrics-trigger" aria-controls="feedbackTrendMetrics">
+                    <span id="feedbackTrendMetricsTriggerLabel">Rodikliai (1)</span>
+                  </summary>
+                  <div id="feedbackTrendMetrics" class="feedback-trend-card__metrics-menu" role="group" aria-labelledby="feedbackTrendMetricsLabel">
+                    <button type="button" class="feedback-trend-card__metrics-item" data-trend-metric="overallAverage" aria-pressed="true">Bendra patirtis</button>
+                    <button type="button" class="feedback-trend-card__metrics-item" data-trend-metric="doctorsAverage" aria-pressed="false">Gydytojų darbas</button>
+                    <button type="button" class="feedback-trend-card__metrics-item" data-trend-metric="nursesAverage" aria-pressed="false">Slaugytojų darbas</button>
+                    <button type="button" class="feedback-trend-card__metrics-item" data-trend-metric="aidesAverage" aria-pressed="false">Padėjėjų darbas</button>
+                    <button type="button" class="feedback-trend-card__metrics-item" data-trend-metric="waitingAverage" aria-pressed="false">Laukimo vertinimas</button>
+                    <button type="button" class="feedback-trend-card__metrics-item" data-trend-metric="responses" aria-pressed="false">Atsakymų skaičius</button>
+                  </div>
+                </details>
+                <button
+                  type="button"
+                  id="feedbackTrendMultiToggle"
+                  class="feedback-trend-card__mode-toggle"
+                  aria-pressed="false"
+                  aria-controls="feedbackTrendMetrics"
+                  aria-label="Palyginti rodiklius"
+                >
+                  <span class="feedback-trend-card__mode-label">Palyginti</span>
+                </button>
               </div>
+              <p id="feedbackTrendMetricsHint" class="feedback-trend-card__hint" aria-live="polite">Rodomas vienas rodiklis</p>
             </div>
             <div class="feedback-trend-card__filter-field feedback-trend-card__filter-field--compare">
-              <span id="feedbackTrendCompareLabel" class="feedback-trend-card__controls-label">Palyginti pagal</span>
-              <select id="feedbackTrendCompareSelect" class="feedback-trend-card__select" aria-labelledby="feedbackTrendCompareLabel">
-                <option value="none">Nelyginti</option>
-                <option value="respondent">Pacientas vs artimasis</option>
-                <option value="location">Ambulatorija vs salė</option>
-              </select>
+              <span id="feedbackTrendCompareLabel" class="feedback-trend-card__controls-label">Palyginti grupes</span>
+              <div id="feedbackTrendCompareControls" class="feedback-trend-card__buttons" role="group" aria-labelledby="feedbackTrendCompareLabel">
+                <button type="button" class="feedback-trend-card__button" data-trend-compare="none" aria-pressed="true">Nelyginti</button>
+                <button type="button" class="feedback-trend-card__button" data-trend-compare="respondent" aria-pressed="false">Pacientas vs artimasis</button>
+                <button type="button" class="feedback-trend-card__button" data-trend-compare="location" aria-pressed="false">Ambulatorija vs salė</button>
+              </div>
             </div>
           </div>
         </div>
@@ -297,6 +309,7 @@
           </svg>
         </button>
       </div>
+      <p id="feedbackTableMeta" class="feedback-table-meta" aria-live="polite"></p>
       <div class="table-wrapper table-wrapper--feedback" role="region" aria-live="polite" aria-labelledby="feedbackHeading">
         <table id="feedbackTableRoot" aria-describedby="feedbackSubtitle feedbackDescription">
           <caption id="feedbackCaption" class="sr-only">Mėnesio atsiliepimų suvestinė pagal apklausos vertinimus.</caption>
@@ -366,7 +379,7 @@
     </div>
   </footer>
 
-  <script type="module" src="main.js?v=2026-02-26-global-search-fix-1"></script>
+  <script type="module" src="main.js?v=2026-02-27-feedback-trend-mode-fix-1"></script>
 
 </body>
 </html>

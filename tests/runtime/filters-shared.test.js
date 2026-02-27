@@ -35,6 +35,11 @@ describe('shared filter utils', () => {
   });
 
   it('parses and serializes query state round-trip', () => {
+    const parsedFeedback = parseFromQuery('feedback', '?ftm=overallAverage%2Cresponses&ftx=1&ftc=location');
+    expect(parsedFeedback.trendMetrics).toEqual(['overallAverage', 'responses']);
+    expect(parsedFeedback.trendMultiMode).toBe(true);
+    expect(parsedFeedback.trendCompareMode).toBe('location');
+
     const parsed = parseFromQuery('summaries', '?sry=2025&srt=20&srm=150&srpm=trend');
     expect(parsed.year).toBe('2025');
     expect(parsed.topN).toBe(20);
@@ -48,6 +53,7 @@ describe('shared filter utils', () => {
         location: 'hall',
         trendWindow: 12,
         trendMetrics: ['overallAverage', 'responses'],
+        trendMultiMode: true,
         trendCompareMode: 'location',
       },
       {
@@ -55,12 +61,14 @@ describe('shared filter utils', () => {
         location: 'all',
         trendWindow: 6,
         trendMetrics: ['overallAverage'],
+        trendMultiMode: false,
         trendCompareMode: 'none',
       }
     );
     expect(query).toContain('fr=patient');
     expect(query).toContain('ftw=12');
     expect(query).toContain('ftm=overallAverage%2Cresponses');
+    expect(query).toContain('ftx=1');
   });
 
   it('builds summary and resets to defaults', () => {

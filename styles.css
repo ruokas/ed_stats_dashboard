@@ -4069,6 +4069,12 @@ body[data-theme="dark"] .chart-card--hourly #hourlyDepartment:focus-visible {
   margin: 10px 0 8px;
 }
 
+.feedback-table-meta {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
 .table-wrapper--feedback table {
   table-layout: fixed;
 }
@@ -5922,7 +5928,178 @@ body[data-theme="dark"] .btn-secondary[aria-pressed="true"] {
   flex-shrink: 0;
 }
 
+.feedback-trend-card__mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  border: 1px solid var(--filter-border);
+  background: var(--filter-bg);
+  border-radius: var(--filter-radius);
+  min-height: 34px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.feedback-trend-card__mode-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--filter-focus-ring);
+}
+
+.feedback-trend-card__mode-label {
+  white-space: nowrap;
+}
+
+.feedback-trend-card__mode-toggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--filter-bg));
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--filter-border));
+  color: var(--color-text);
+}
+
+.feedback-trend-card__metrics-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feedback-trend-card__metrics-dropdown {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.feedback-trend-card__metrics-trigger {
+  list-style: none;
+  border: 1px solid var(--filter-border);
+  background: var(--filter-bg);
+  border-radius: var(--filter-radius);
+  min-height: 34px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  cursor: pointer;
+  width: 100%;
+}
+
+.feedback-trend-card__metrics-trigger::after {
+  content: "▾";
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+}
+
+.feedback-trend-card__metrics-dropdown[open] .feedback-trend-card__metrics-trigger::after {
+  content: "▴";
+}
+
+.feedback-trend-card__metrics-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.feedback-trend-card__metrics-menu {
+  margin-top: 6px;
+  border: 1px solid var(--filter-border);
+  border-radius: var(--filter-radius);
+  background: var(--color-surface);
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+}
+
+.feedback-trend-card__metrics-item {
+  min-height: 32px;
+  border: 1px solid var(--filter-border);
+  border-radius: calc(var(--filter-radius) - 2px);
+  background: var(--filter-bg);
+  color: var(--color-text);
+  text-align: left;
+  padding: 0 10px;
+  font-size: 0.82rem;
+}
+
+.feedback-trend-card__metrics-item[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--filter-border));
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--filter-bg));
+}
+
+.feedback-trend-card__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, #9cb0c3);
+}
+
+.feedback-trend-card__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px 12px;
+}
+
+.feedback-trend-card__titles {
+  min-width: 0;
+}
+
+.feedback-trend-card__actions {
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.feedback-trend-card__filters {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.feedback-trend-card__filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.feedback-trend-card__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.feedback-trend-card__button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.84rem;
+}
+
+.feedback-trend-card__select {
+  min-height: 34px;
+  height: 34px;
+}
+
 @media (max-width: 900px) {
+  .feedback-trend-card__header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .feedback-trend-card__actions {
+    justify-content: flex-start;
+  }
+
+  .feedback-trend-card__filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .feedback-trend-card__button {
+    flex: 1 1 calc(50% - 6px);
+  }
+
   .page-state-strip__inner {
     align-items: stretch;
   }

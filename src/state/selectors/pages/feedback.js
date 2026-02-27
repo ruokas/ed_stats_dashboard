@@ -6,6 +6,9 @@ export function createFeedbackPageSelectors() {
   const feedbackFilters = byId('feedbackFilters');
   const feedbackTrendControls = byId('feedbackTrendControls');
   const feedbackTrendMetrics = byId('feedbackTrendMetrics');
+  const feedbackTrendMetricsDropdown = byId('feedbackTrendMetricsDropdown');
+  const feedbackTrendMultiToggle = byId('feedbackTrendMultiToggle');
+  const feedbackTrendCompareControls = byId('feedbackTrendCompareControls');
   const feedbackTrendCompareSelect = byId('feedbackTrendCompareSelect');
 
   return {
@@ -30,8 +33,14 @@ export function createFeedbackPageSelectors() {
     feedbackTrendControlsLabel: byId('feedbackTrendControlsLabel'),
     feedbackTrendButtons: byQueryAllIn(feedbackTrendControls, '[data-trend-months]'),
     feedbackTrendMetrics,
+    feedbackTrendMetricsDropdown,
+    feedbackTrendMetricsTriggerLabel: byId('feedbackTrendMetricsTriggerLabel'),
     feedbackTrendMetricsLabel: byId('feedbackTrendMetricsLabel'),
     feedbackTrendMetricButtons: byQueryAllIn(feedbackTrendMetrics, '[data-trend-metric]'),
+    feedbackTrendMultiToggle,
+    feedbackTrendMetricsHint: byId('feedbackTrendMetricsHint'),
+    feedbackTrendCompareControls,
+    feedbackTrendCompareButtons: byQueryAllIn(feedbackTrendCompareControls, '[data-trend-compare]'),
     feedbackTrendCompareSelect,
     feedbackTrendCompareLabel: byId('feedbackTrendCompareLabel'),
     feedbackTrendSummary: byId('feedbackTrendSummary'),

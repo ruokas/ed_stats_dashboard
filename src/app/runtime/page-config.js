@@ -1,4 +1,4 @@
-const RUNTIME_VERSION = '2026-02-26-global-search-fix-1';
+const RUNTIME_VERSION = '2026-02-27-feedback-trend-mode-fix-1';
 
 export const PAGE_CONFIG = {
   kpi: { kpi: true },

@@ -64,6 +64,7 @@ export const FILTER_SCHEMAS = {
       location: { type: 'string', queryKey: 'fl' },
       trendWindow: { type: 'numberOrNull', queryKey: 'ftw', min: 1, max: 60 },
       trendMetrics: { type: 'csv', queryKey: 'ftm' },
+      trendMultiMode: { type: 'boolean', queryKey: 'ftx', default: boolDefault },
       trendCompareMode: { type: 'string', queryKey: 'ftc' },
     },
   },
