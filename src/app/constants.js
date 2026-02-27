@@ -47,7 +47,7 @@ export const TEXT = {
   },
   tabs: {
     overview: 'Bendras vaizdas',
-    ed: 'ED skydelis',
+    ed: 'Gyvi duomenys',
   },
   edToggle: {
     open: (label) => `Atidaryti ${label}`,
@@ -66,7 +66,7 @@ export const TEXT = {
   footer: (timestamp) => `Atnaujinta ${timestamp}`,
   footerFallback: (timestamp) => `Rodomi talpyklos duomenys (atnaujinta ${timestamp})`,
   ed: {
-    title: 'ED skydelis',
+    title: 'Gyvi duomenys',
     closeButton: 'Grįžti',
     status: {
       loading: 'Kraunama...',

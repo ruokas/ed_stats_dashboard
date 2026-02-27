@@ -93,16 +93,16 @@ function createRecentCompareFeature({ selectors, dashboardState, settings }) {
       return;
     }
     if (!dashboardState.compare.active) {
-      selectors.compareSummary.textContent = TEXT.compare.prompt;
+      selectors.compareSummary.textContent = `Pasirinkta: 0/2. ${TEXT.compare.prompt}`;
       return;
     }
     const selections = dashboardState.compare.selections || [];
     if (!selections.length) {
-      selectors.compareSummary.textContent = TEXT.compare.prompt;
+      selectors.compareSummary.textContent = `Pasirinkta: 0/2. ${TEXT.compare.prompt}`;
       return;
     }
     if (selections.length === 1) {
-      selectors.compareSummary.textContent = TEXT.compare.insufficient;
+      selectors.compareSummary.textContent = `Pasirinkta: 1/2. ${TEXT.compare.insufficient}`;
       return;
     }
     const sorted = [...selections].sort((a, b) => (a.sortKey > b.sortKey ? 1 : -1));
@@ -125,6 +125,7 @@ function createRecentCompareFeature({ selectors, dashboardState, settings }) {
     const emsShareLabel = getRecentCompareMetricLabel('emsShare', compareLabels, settings);
     const hospShareLabel = getRecentCompareMetricLabel('hospShare', compareLabels, settings);
     selectors.compareSummary.innerHTML = `
+      <strong>Pasirinkta: 2/2</strong><br>
       <strong>${summaryTitle}</strong>
       <ul>
         <li><strong>${totalLabel}:</strong> ${numberFormatter.format(newer.total)} vs ${numberFormatter.format(older.total)} (Δ ${diffToText(totalDiff, (val) => numberFormatter.format(Math.round(val)))})</li>
@@ -151,6 +152,7 @@ function createRecentCompareFeature({ selectors, dashboardState, settings }) {
       row.classList.add('table-row--selectable');
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
+      row.setAttribute('title', 'Paspauskite, kad pažymėtumėte palyginimui');
       const metrics = extractCompareMetricsFromRow(row);
       const isSelected = metrics && dashboardState.compare.selections.some((item) => item.id === metrics.id);
       row.classList.toggle('table-row--selected', Boolean(isSelected));

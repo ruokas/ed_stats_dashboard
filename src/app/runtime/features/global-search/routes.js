@@ -68,7 +68,7 @@ export const SECTION_ROUTE_REGISTRY = [
     label: 'Gydytojų grafikai',
   },
   { id: 'feedback-main', pageId: 'feedback', anchorId: 'feedbackHeading', label: 'Pacientų atsiliepimai' },
-  { id: 'ed-main', pageId: 'ed', anchorId: 'edHeading', label: 'ED skydelis' },
+  { id: 'ed-main', pageId: 'ed', anchorId: 'edHeading', label: 'Gyvi duomenys' },
 ];
 
 export const SURFACE_ROUTE_MAP = {

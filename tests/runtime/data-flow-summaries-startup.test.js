@@ -103,8 +103,14 @@ describe('createDataFlow summaries startup scheduling', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(setStatus).toHaveBeenCalledWith('loading');
-    expect(setStatus).toHaveBeenCalledWith('success');
+    expect(setStatus).toHaveBeenCalledWith(
+      'loading',
+      expect.objectContaining({ message: expect.any(String) })
+    );
+    expect(setStatus).toHaveBeenCalledWith(
+      'success',
+      expect.objectContaining({ updatedAt: expect.any(Date) })
+    );
     expect(renderYearlyTable).toHaveBeenCalledTimes(1);
   });
 });

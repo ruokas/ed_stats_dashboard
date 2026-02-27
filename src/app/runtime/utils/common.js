@@ -23,6 +23,36 @@ function resolveStatusMessage(value, ...args) {
   return value || '';
 }
 
+function normalizeStatusDetails(details) {
+  if (details && typeof details === 'object' && !Array.isArray(details)) {
+    return details;
+  }
+  if (typeof details === 'string') {
+    return { message: details };
+  }
+  return {};
+}
+
+function buildRichStatusText(type, statusText, details) {
+  const payload = normalizeStatusDetails(details);
+  if (type === 'loading') {
+    return payload.message || resolveStatusMessage(statusText.loading) || '';
+  }
+  if (type === 'error') {
+    if (payload.message) {
+      return payload.message;
+    }
+    return resolveStatusMessage(statusText.error) || '';
+  }
+  if (type === 'warning') {
+    if (payload.message) {
+      return payload.message;
+    }
+    return resolveStatusMessage(statusText.success) || '';
+  }
+  return payload.message || resolveStatusMessage(statusText.success) || '';
+}
+
 export function createStatusSetter(statusText = {}, { showSuccessState = true } = {}) {
   return function setStatus(selectors, type, details = '') {
     const statusEl = selectors.status;
@@ -33,7 +63,7 @@ export function createStatusSetter(statusText = {}, { showSuccessState = true } 
     statusEl.classList.remove('status--loading', 'status--error', 'status--success', 'status--warning');
     if (type === 'loading') {
       statusEl.classList.add('status--loading');
-      const loadingText = resolveStatusMessage(statusText.loading);
+      const loadingText = buildRichStatusText('loading', statusText, details);
       if (loadingText) {
         statusEl.setAttribute('aria-label', loadingText);
       }
@@ -42,21 +72,22 @@ export function createStatusSetter(statusText = {}, { showSuccessState = true } 
     statusEl.removeAttribute('aria-label');
     if (type === 'error') {
       statusEl.classList.add('status--error');
+      const payload = normalizeStatusDetails(details);
       statusEl.textContent =
-        details && typeof statusText.errorDetails === 'function'
-          ? statusText.errorDetails(details)
-          : resolveStatusMessage(statusText.error) || details || '';
+        payload.message && typeof statusText.errorDetails === 'function'
+          ? statusText.errorDetails(payload.message)
+          : buildRichStatusText('error', statusText, payload);
       return;
     }
     if (type === 'warning') {
       statusEl.classList.add('status--warning');
-      statusEl.textContent = details || resolveStatusMessage(statusText.success);
+      statusEl.textContent = buildRichStatusText('warning', statusText, details);
       return;
     }
     if (!showSuccessState) {
       return;
     }
     statusEl.classList.add('status--success');
-    statusEl.textContent = resolveStatusMessage(statusText.success);
+    statusEl.textContent = buildRichStatusText('success', statusText, details);
   };
 }

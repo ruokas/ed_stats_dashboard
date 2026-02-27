@@ -826,7 +826,9 @@ export function createDataFlow(env = {}) {
     }
 
     try {
-      setStatus('loading');
+      setStatus('loading', {
+        message: typeof TEXT.status.loading === 'string' ? TEXT.status.loading : 'Kraunama...',
+      });
       if (selectors.edStatus) {
         selectors.edStatus.textContent = '';
         setDatasetValue(selectors.edStatus, 'tone', 'info');
@@ -1164,7 +1166,18 @@ export function createDataFlow(env = {}) {
         return;
       }
 
-      setStatus('success');
+      const latestDataDate =
+        Array.isArray(dailyStats) && dailyStats.length
+          ? String(dailyStats[dailyStats.length - 1]?.date || '')
+          : '';
+      const usingCache = Boolean(
+        dataset?.meta?.primary?.fromCache || dataset?.meta?.historical?.fromCache || cachedDailyStats
+      );
+      setStatus('success', {
+        updatedAt: new Date(),
+        latestDataDate: latestDataDate || undefined,
+        usingCache,
+      });
       if (
         shouldFetchMainData &&
         !cachedDailyStats &&
@@ -1216,7 +1229,7 @@ export function createDataFlow(env = {}) {
       dashboardState.usingFallback = false;
       dashboardState.lastErrorMessage = errorInfo.userMessage;
       dashboardState.chartsHospitalTableWorkerAgg = null;
-      setStatus('error', errorInfo.userMessage);
+      setStatus('error', { message: errorInfo.userMessage, retryable: true });
       if (activeConfig.charts) {
         if (typeof populateChartsHospitalTableYearOptions === 'function') {
           populateChartsHospitalTableYearOptions([]);
