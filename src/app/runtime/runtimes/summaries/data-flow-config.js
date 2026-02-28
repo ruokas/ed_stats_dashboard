@@ -13,9 +13,11 @@ export function createSummariesDataFlowConfig({
   describeCacheMeta,
   describeError,
   computeDailyStats,
+  filterDailyStatsByWindow,
   getDefaultChartFilters,
   computeMonthlyStats,
   computeYearlyStats,
+  renderRecentTable,
   renderYearlyTable,
   numberFormatter,
   getSettings,
@@ -23,6 +25,12 @@ export function createSummariesDataFlowConfig({
   getAutoRefreshTimerId,
   setAutoRefreshTimerId,
 }) {
+  const safeFilterDailyStatsByWindow =
+    typeof filterDailyStatsByWindow === 'function'
+      ? filterDailyStatsByWindow
+      : (dailyStats) => (Array.isArray(dailyStats) ? dailyStats : []);
+  const safeRenderRecentTable = typeof renderRecentTable === 'function' ? renderRecentTable : () => {};
+
   return {
     pageConfig,
     selectors,
@@ -48,7 +56,8 @@ export function createSummariesDataFlowConfig({
       describeCacheMeta,
       describeError,
       computeDailyStats,
-      filterDailyStatsByWindow: (daily) => (Array.isArray(daily) ? daily : []),
+      filterDailyStatsByWindow: safeFilterDailyStatsByWindow,
+      renderRecentTable: safeRenderRecentTable,
       computeMonthlyStats,
       computeYearlyStats,
       renderYearlyTable,

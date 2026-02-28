@@ -7,6 +7,10 @@ export function createSummariesPageSelectors() {
 
   return {
     ...createPageShellSelectors({ sectionNav }),
+    recentHeading: byId('recentHeading'),
+    recentSubtitle: byId('recentSubtitle'),
+    recentCaption: byId('recentCaption'),
+    recentTable: byId('recentTable'),
     yearlyTable: byId('yearlyTable'),
     summariesReportsHeading: byId('summariesReportsHeading'),
     summariesReportsSubtitle: byId('summariesReportsSubtitle'),
