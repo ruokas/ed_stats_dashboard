@@ -1,11 +1,112 @@
 <main class="container" role="main">
 <div class="section-band section-band--time-scale">
     <nav class="summaries-jump-nav" aria-label="Suvestinės sekcijos">
+      <a class="summaries-jump-nav__link" href="#recentHeading">Savaitės vaizdas</a>
       <a class="summaries-jump-nav__link" href="#yearlyHeading">Metinė suvestinė</a>
       <a class="summaries-jump-nav__link" href="#summariesGroupClinicalHeading">Klinikinė apžvalga</a>
       <a class="summaries-jump-nav__link" href="#summariesGroupReferralHeading">Siuntimai ir baigtys</a>
       <a class="summaries-jump-nav__link" href="#summariesGroupPspcHeading">PSPC analizė</a>
     </nav>
+<section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="recentHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="4" width="17" height="17" rx="2" />
+                  <path d="M8 2.5v3" />
+                  <path d="M16 2.5v3" />
+                  <path d="M3.5 9h17" />
+                  <path d="M12 13v4" />
+                  <path d="M12 13h3" />
+                </svg>
+              </span>
+              <span class="section-title__text">Savaitės vaizdas</span>
+            </h2>
+            <p id="recentSubtitle" class="section__subtitle">Paskutinių 7 dienų kasdienė suvestinė pagal naujausius duomenis</p>
+          </div>
+        </div>
+        <div class="section__actions">
+          <button
+            type="button"
+            class="chart-copy-btn"
+            data-table-download="copy"
+            data-table-target="#recentTableRoot"
+            data-table-title="Savaitės vaizdas"
+            aria-label="Nukopijuoti savaitės vaizdo lentelę PNG formatu"
+            title="Nukopijuoti PNG"
+            data-tooltip="Kopijuoti (PNG)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+              <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="chart-download-btn"
+            data-table-download="png"
+            data-table-target="#recentTableRoot"
+            data-table-title="Savaitės vaizdas"
+            aria-label="Parsisiųsti savaitės vaizdo lentelę PNG formatu"
+            title="Parsisiųsti PNG"
+            data-tooltip="Parsisiųsti PNG"
+          >
+            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v12"></path>
+              <path d="M8 11l4 4 4-4"></path>
+              <path d="M4 21h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
+        <table id="recentTableRoot" aria-describedby="recentSubtitle">
+          <caption id="recentCaption" class="sr-only">Paskutinių 7 kalendorinių dienų pacientų ir trukmės suvestinė</caption>
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Pacientai</th>
+              <th scope="col">Vid. laikas (val.)</th>
+              <th scope="col">Naktiniai pacientai</th>
+              <th scope="col">GMP</th>
+              <th scope="col">Hospitalizuoti</th>
+              <th scope="col">Išleisti</th>
+            </tr>
+          </thead>
+          <tbody id="recentTable">
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 <section class="section section--compact" aria-labelledby="yearlyHeading" data-section="yearly">
       <div class="section__header">
         <div class="section__heading">

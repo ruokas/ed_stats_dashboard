@@ -26,7 +26,7 @@ export const SECTION_ROUTE_REGISTRY = [
     label: 'Hospitalizacijų analizė',
     aliases: ['stacionarizacijos', 'skyriu lentele'],
   },
-  { id: 'recent-main', pageId: 'recent', anchorId: 'recentHeading', label: 'Paskutinės dienos' },
+  { id: 'recent-main', pageId: 'summaries', anchorId: 'recentHeading', label: 'Savaitės vaizdas' },
   { id: 'summaries-yearly', pageId: 'summaries', anchorId: 'yearlyHeading', label: 'Metinė suvestinė' },
   {
     id: 'summaries-reports',
@@ -74,7 +74,7 @@ export const SECTION_ROUTE_REGISTRY = [
 export const SURFACE_ROUTE_MAP = {
   'kpi-card': { pageId: 'kpi', anchorId: 'kpiHeading' },
   heatmap: { pageId: 'charts', anchorId: 'chartsHeatmapHeading' },
-  'recent-compare': { pageId: 'recent', anchorId: 'recentHeading' },
+  'recent-compare': { pageId: 'summaries', anchorId: 'recentHeading' },
   'summaries-report-card': { pageId: 'summaries', anchorId: 'summariesReportsHeading' },
 };
 

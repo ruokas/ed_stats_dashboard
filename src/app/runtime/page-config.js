@@ -1,10 +1,10 @@
-const RUNTIME_VERSION = '2026-02-27-feedback-trend-mode-fix-1';
+const RUNTIME_VERSION = '2026-02-28-summaries-recent-restore-1';
 
 export const PAGE_CONFIG = {
   kpi: { kpi: true },
   charts: { charts: true, heatmap: true, hourly: true },
   recent: { recent: true },
-  summaries: { monthly: false, yearly: true },
+  summaries: { recent: true, monthly: false, yearly: true },
   gydytojai: { doctors: true },
   feedback: { feedback: true },
   ed: { ed: true, tv: false },
