@@ -112,5 +112,16 @@ export function replaceUrlQuery(nextQuery) {
   const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash || ''}`;
   if (nextUrl !== currentUrl) {
     window.history.replaceState(null, '', nextUrl);
+    if (typeof window.dispatchEvent === 'function' && typeof window.CustomEvent === 'function') {
+      window.dispatchEvent(
+        new CustomEvent('app:query-updated', {
+          detail: {
+            pathname: window.location.pathname,
+            search: window.location.search,
+            hash: window.location.hash || '',
+          },
+        })
+      );
+    }
   }
 }

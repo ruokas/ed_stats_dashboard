@@ -615,6 +615,18 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
           },
         ];
 
+  const waitForChartFirstPaint = async () => {
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+      await new Promise((resolve) => setTimeout(resolve, 16));
+      return;
+    }
+    await new Promise((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(resolve);
+      });
+    });
+  };
+
   const chartConfig = {
     type: 'line',
     data: {
@@ -693,11 +705,13 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     existingLastShiftChart.data.datasets = chartConfig.data.datasets;
     existingLastShiftChart.options = chartConfig.options;
     existingLastShiftChart.update();
+    await waitForChartFirstPaint();
   } else {
     if (existingLastShiftChart && typeof existingLastShiftChart.destroy === 'function') {
       existingLastShiftChart.destroy();
     }
     dashboardState.charts.lastShiftHourly = lastShiftChart;
+    await waitForChartFirstPaint();
   }
   if (canReuseLastShiftChart) {
     dashboardState.charts.lastShiftHourly = existingLastShiftChart;

@@ -1,7 +1,11 @@
 import { initScrollTopButton } from '../../events/scroll.js';
 import { initSectionNavigation } from '../../events/section-nav.js';
 import { initThemeToggle } from '../../events/theme.js';
+import { initExportMenus } from './features/export-menu.js';
 import { initGlobalSearch } from './features/global-search.js';
+import { initPageHelperCard } from './features/page-helper-cards.js';
+import { initSearchClearButtons } from './features/search-clear-buttons.js';
+import { initStateStrip } from './features/state-strip.js';
 import { createLayoutTools } from './layout.js';
 
 export function applyCommonPageShellText({ selectors, settings, text, defaultFooterSource }) {
@@ -52,4 +56,8 @@ export function setupSharedPageUi({
   });
   initThemeToggle({ selectors, toggleTheme });
   initGlobalSearch({ selectors });
+  initSearchClearButtons();
+  initPageHelperCard();
+  initExportMenus();
+  initStateStrip();
 }

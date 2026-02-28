@@ -29,7 +29,13 @@ export function initFeedbackFilters(env) {
 }
 
 export function initFeedbackTrendControls(env) {
-  const { selectors, setFeedbackTrendWindow, setFeedbackTrendMetric, setFeedbackTrendCompareMode } = env;
+  const {
+    selectors,
+    setFeedbackTrendWindow,
+    setFeedbackTrendMetric,
+    setFeedbackTrendCompareMode,
+    setFeedbackTrendMultiMode,
+  } = env;
 
   const controls = selectors.feedbackTrendControls;
   if (!controls) {
@@ -72,7 +78,44 @@ export function initFeedbackTrendControls(env) {
     });
   }
 
+  const multiToggle = selectors.feedbackTrendMultiToggle;
+  if (multiToggle && typeof setFeedbackTrendMultiMode === 'function') {
+    const resolveToggleValue = () => {
+      if (multiToggle instanceof HTMLInputElement) {
+        return Boolean(multiToggle.checked);
+      }
+      if (multiToggle instanceof HTMLButtonElement) {
+        const next = multiToggle.getAttribute('aria-pressed') !== 'true';
+        multiToggle.setAttribute('aria-pressed', String(next));
+        return next;
+      }
+      return false;
+    };
+    const eventName = multiToggle instanceof HTMLInputElement ? 'change' : 'click';
+    multiToggle.addEventListener(eventName, () => {
+      setFeedbackTrendMultiMode(resolveToggleValue());
+    });
+  }
+
   const compareSelect = selectors.feedbackTrendCompareSelect;
+  const compareControls = selectors.feedbackTrendCompareControls;
+  if (compareControls && typeof setFeedbackTrendCompareMode === 'function') {
+    compareControls.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const button = target.closest('button[data-trend-compare]');
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+      const mode = getDatasetValue(button, 'trendCompare', '').trim();
+      if (!mode) {
+        return;
+      }
+      setFeedbackTrendCompareMode(mode);
+    });
+  }
   if (compareSelect && typeof setFeedbackTrendCompareMode === 'function') {
     compareSelect.addEventListener('change', () => {
       const mode = String(compareSelect.value || '').trim();

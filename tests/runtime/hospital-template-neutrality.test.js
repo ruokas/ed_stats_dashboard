@@ -5,8 +5,8 @@ import { DEFAULT_PAGE_TITLE, TEXT } from '../../src/app/constants.js';
 describe('neutral fallback branding', () => {
   it('uses neutral runtime defaults instead of hospital-specific branding', () => {
     expect(TEXT.title).toBe('ED statistika');
-    expect(TEXT.ed.title).toBe('ED skydelis');
-    expect(TEXT.tabs.ed).toBe('ED skydelis');
+    expect(TEXT.ed.title).toBe('Gyvi duomenys');
+    expect(TEXT.tabs.ed).toBe('Gyvi duomenys');
     expect(DEFAULT_PAGE_TITLE).not.toContain('RŠL');
     expect(DEFAULT_PAGE_TITLE).not.toContain('SMPS');
   });

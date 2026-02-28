@@ -263,6 +263,7 @@ export function createDashboardState({
       lastErrorMessage: '',
       trendWindow: 6,
       trendMetrics: ['overallAverage'],
+      trendMultiMode: false,
       trendCompareMode: 'none',
       records: [],
       filteredRecords: [],

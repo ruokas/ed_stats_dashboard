@@ -186,7 +186,12 @@ describe('createDataFlow charts staged startup', () => {
     expect(spies.scheduleChartsSecondaryRender).toHaveBeenCalledTimes(1);
     expect(spies.renderChartsSecondary).toHaveBeenCalledTimes(0);
     expect(spies.renderChartsHospitalTable).toHaveBeenCalledTimes(0);
-    expect(spies.setStatus).toHaveBeenCalledWith('success');
+    expect(spies.setStatus).toHaveBeenCalledWith(
+      'success',
+      expect.objectContaining({
+        updatedAt: expect.any(Date),
+      })
+    );
   });
 
   it('keeps primary charts successful when deferred secondary render throws', async () => {
@@ -205,7 +210,12 @@ describe('createDataFlow charts staged startup', () => {
     await flow.loadDashboard();
 
     expect(spies.renderChartsPrimary).toHaveBeenCalledTimes(1);
-    expect(spies.setStatus).toHaveBeenCalledWith('success');
+    expect(spies.setStatus).toHaveBeenCalledWith(
+      'success',
+      expect.objectContaining({
+        updatedAt: expect.any(Date),
+      })
+    );
     expect(spies.renderChartsHospitalTable).toHaveBeenCalledTimes(0);
     expect(idleQueue.length).toBeGreaterThan(0);
 

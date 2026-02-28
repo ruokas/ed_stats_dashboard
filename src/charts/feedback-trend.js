@@ -188,6 +188,12 @@ export async function renderFeedbackTrendChart(env, monthlyStats, feedbackRecord
     return;
   }
 
+  const domMultiModeEnabled =
+    selectors?.feedbackTrendMultiToggle instanceof HTMLInputElement
+      ? selectors.feedbackTrendMultiToggle.checked === true
+      : selectors?.feedbackTrendMultiToggle instanceof HTMLButtonElement
+        ? selectors.feedbackTrendMultiToggle.getAttribute('aria-pressed') === 'true'
+        : dashboardState?.feedback?.trendMultiMode === true;
   const compareMode =
     typeof getActiveFeedbackTrendCompareMode === 'function' ? getActiveFeedbackTrendCompareMode() : 'none';
   const compareConfig =
@@ -312,7 +318,10 @@ export async function renderFeedbackTrendChart(env, monthlyStats, feedbackRecord
   const selectedMetricKeys = Array.isArray(getActiveFeedbackTrendMetrics?.())
     ? getActiveFeedbackTrendMetrics()
     : ['overallAverage'];
-  const selectedMetrics = selectedMetricKeys
+  const normalizedSelectedMetricKeys = domMultiModeEnabled
+    ? selectedMetricKeys
+    : selectedMetricKeys.slice(0, 1);
+  const selectedMetrics = normalizedSelectedMetricKeys
     .map((key) => metricConfig.find((item) => item.key === key))
     .filter(Boolean);
   if (!selectedMetrics.length) {

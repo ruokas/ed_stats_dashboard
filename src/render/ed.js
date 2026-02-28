@@ -350,7 +350,7 @@ function upsertSection(
     sectionLabelId = `edSectionTitle-${String(section.key || sectionIndex).replace(/[^a-z0-9_-]/gi, '') || sectionIndex}`;
     titleEl.id = sectionLabelId;
     titleEl.textContent =
-      section.title || sectionDefinitions?.default?.title || TEXT.ed.title || 'ED skydelis';
+      section.title || sectionDefinitions?.default?.title || TEXT.ed.title || 'Gyvi duomenys';
     let descriptionEl = textWrapper.querySelector('.ed-dashboard__section-description');
     if (section.description || sectionDefinitions?.default?.description) {
       if (!descriptionEl) {

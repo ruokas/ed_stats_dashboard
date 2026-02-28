@@ -166,6 +166,7 @@ export async function runFeedbackRuntime(core) {
     location: FEEDBACK_FILTER_ALL,
     trendWindow: 6,
     trendMetrics: ['overallAverage'],
+    trendMultiMode: false,
     trendCompareMode: 'none',
   };
   const persistFeedbackQuery = () => {
@@ -177,6 +178,7 @@ export async function runFeedbackRuntime(core) {
           location: dashboardState.feedback.filters?.location,
           trendWindow: dashboardState.feedback.trendWindow,
           trendMetrics: dashboardState.feedback.trendMetrics,
+          trendMultiMode: dashboardState.feedback.trendMultiMode,
           trendCompareMode: dashboardState.feedback.trendCompareMode,
         },
         feedbackDefaults
@@ -184,6 +186,8 @@ export async function runFeedbackRuntime(core) {
     );
   };
   const parsedFeedbackQuery = parseFromQuery('feedback', window.location.search);
+  const feedbackQueryParams = new URLSearchParams(window.location.search || '');
+  const hasTrendMultiModeParam = feedbackQueryParams.has('ftx');
   if (Object.keys(parsedFeedbackQuery).length) {
     dashboardState.feedback.filters = {
       ...dashboardState.feedback.filters,
@@ -194,10 +198,17 @@ export async function runFeedbackRuntime(core) {
       dashboardState.feedback.trendWindow = parsedFeedbackQuery.trendWindow;
     }
     if (Array.isArray(parsedFeedbackQuery.trendMetrics) && parsedFeedbackQuery.trendMetrics.length) {
-      dashboardState.feedback.trendMetrics = parsedFeedbackQuery.trendMetrics;
+      dashboardState.feedback.trendMetrics = parsedFeedbackQuery.trendMetrics.slice();
+    }
+    if (typeof parsedFeedbackQuery.trendMultiMode === 'boolean') {
+      dashboardState.feedback.trendMultiMode = parsedFeedbackQuery.trendMultiMode;
     }
     if (typeof parsedFeedbackQuery.trendCompareMode === 'string' && parsedFeedbackQuery.trendCompareMode) {
       dashboardState.feedback.trendCompareMode = parsedFeedbackQuery.trendCompareMode;
+    }
+    if (!hasTrendMultiModeParam && dashboardState.feedback.trendMetrics.length > 1) {
+      dashboardState.feedback.trendMultiMode = false;
+      dashboardState.feedback.trendMetrics = [dashboardState.feedback.trendMetrics[0]];
     }
   }
 
@@ -316,6 +327,7 @@ export async function runFeedbackRuntime(core) {
     selectors,
     setFeedbackTrendWindow: feedbackRenderFeature.setFeedbackTrendWindow,
     setFeedbackTrendMetric: feedbackRenderFeature.setFeedbackTrendMetric,
+    setFeedbackTrendMultiMode: feedbackRenderFeature.setFeedbackTrendMultiMode,
     setFeedbackTrendCompareMode: feedbackRenderFeature.setFeedbackTrendCompareMode,
   });
   initFeedbackTableScrollAffordance({ selectors });
@@ -325,6 +337,7 @@ export async function runFeedbackRuntime(core) {
       feedbackPanelFeature.applyFeedbackFiltersAndRender();
       dashboardState.feedback.trendWindow = feedbackDefaults.trendWindow;
       dashboardState.feedback.trendMetrics = feedbackDefaults.trendMetrics.slice();
+      dashboardState.feedback.trendMultiMode = feedbackDefaults.trendMultiMode;
       dashboardState.feedback.trendCompareMode = feedbackDefaults.trendCompareMode;
       feedbackRenderFeature.syncFeedbackTrendControls();
       feedbackRenderFeature.updateFeedbackTrendSubtitle();
