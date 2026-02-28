@@ -842,9 +842,13 @@ export function createDataFlow(env = {}) {
       const historicalChunkReporter = needsMainData ? createChunkReporter('Istorinis CSV') : null;
       const workerProgressReporter = shouldFetchMainData ? createChunkReporter('Apdorojama CSV') : null;
       const edChunkReporter = needsEdData ? createChunkReporter('ED CSV') : null;
-      const shouldDeferHistoricalOnThisLoad = Boolean(isKpiOnlyPage);
+      // KPI puslapyje istorinius duomenis krauname iškart, kad pirmas renderis
+      // nebūtų preliminarus ir vėliau "nepašoktų" reikšmės.
+      const shouldDeferHistoricalOnThisLoad = false;
       const shouldSkipHistoricalOnMainFetch = Boolean(
-        shouldDeferHistoricalOnThisLoad || disableHistoricalForPage
+        // KPI puslapiui nenaudojame istorinio CSV:
+        // vidurkiai ir suvestinės turi remtis tik einamaisiais duomenimis.
+        isKpiOnlyPage || shouldDeferHistoricalOnThisLoad || disableHistoricalForPage
       );
       const shouldDeferFullRecordsOnMainFetch = Boolean(
         supportsDeferredFullRecordsMainHydration &&

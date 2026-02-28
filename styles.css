@@ -36,8 +36,10 @@ body[data-theme="light"] {
   --color-weekend: #c7802c;
   --color-weekend-soft: rgba(199, 128, 44, 0.2);
   --chart-grid: rgba(16, 20, 32, 0.14);
-  --skeleton-base: rgba(54, 63, 86, 0.2);
-  --skeleton-highlight: rgba(54, 63, 86, 0.32);
+  --skeleton-surface: color-mix(in srgb, var(--color-surface) 88%, var(--color-surface-alt) 12%);
+  --skeleton-border: color-mix(in srgb, var(--color-border) 88%, transparent);
+  --skeleton-base: color-mix(in srgb, var(--color-text-muted) 16%, transparent);
+  --skeleton-highlight: color-mix(in srgb, var(--color-text-muted) 28%, transparent);
   --shadow-elevated: 0 26px 52px -28px rgba(10, 16, 28, 0.55);
   --nav-glass-bg: linear-gradient(145deg, rgba(248, 250, 255, 0.92), rgba(232, 238, 250, 0.84));
   --nav-glass-border: rgba(31, 48, 94, 0.16);
@@ -140,8 +142,10 @@ body[data-theme="dark"] {
   --color-weekend: #f0a255;
   --color-weekend-soft: rgba(240, 162, 85, 0.24);
   --chart-grid: rgba(156, 168, 192, 0.26);
-  --skeleton-base: rgba(109, 141, 255, 0.16);
-  --skeleton-highlight: rgba(109, 141, 255, 0.3);
+  --skeleton-surface: color-mix(in srgb, var(--color-surface) 82%, var(--color-surface-alt) 18%);
+  --skeleton-border: color-mix(in srgb, var(--color-border) 95%, transparent);
+  --skeleton-base: color-mix(in srgb, var(--color-text-muted) 22%, transparent);
+  --skeleton-highlight: color-mix(in srgb, var(--color-text-muted) 38%, transparent);
   --shadow-elevated: 0 22px 44px -28px rgba(0, 0, 0, 0.7);
   --nav-glass-bg: linear-gradient(148deg, rgba(16, 24, 45, 0.88), rgba(12, 18, 34, 0.76));
   --nav-glass-border: rgba(123, 149, 207, 0.34);
@@ -256,6 +260,7 @@ body[data-theme="dark"] select optgroup {
   position: relative;
   overflow: hidden;
   display: block;
+  box-shadow: inset 0 0 0 1px var(--skeleton-border);
   background: linear-gradient(
     90deg,
     var(--skeleton-base) 25%,
@@ -763,8 +768,8 @@ body[data-theme="dark"] .ed-panel-close-btn:focus-visible {
 .ed-dashboard__card--skeleton {
   gap: 10px;
   box-shadow: none;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border: 1px solid var(--skeleton-border);
+  background: var(--skeleton-surface);
   opacity: 0.9;
 }
 
@@ -782,11 +787,6 @@ body[data-theme="dark"] .ed-panel-close-btn:focus-visible {
 
 .ed-dashboard__card--skeleton .skeleton--detail:nth-of-type(4) {
   max-width: 70%;
-}
-
-body[data-theme="dark"] .ed-dashboard__card--skeleton {
-  border-color: rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.82);
 }
 
 .ed-dashboard__card::after {
@@ -2120,14 +2120,9 @@ body[data-theme="dark"] .charts-subsection {
 
 .kpi-card--skeleton {
   box-shadow: none;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  background: var(--color-surface);
+  border: 1px solid var(--skeleton-border);
+  background: var(--skeleton-surface);
   opacity: 0.9;
-}
-
-body[data-theme="dark"] .kpi-card--skeleton {
-  border-color: rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.85);
 }
 
 .kpi-card--skeleton::before {
@@ -2606,7 +2601,9 @@ body[data-theme="dark"] .kpi-card--skeleton {
   flex-direction: column;
   gap: 12px;
   padding: 16px 18px;
-  background: var(--color-surface);
+  border: 1px solid var(--skeleton-border);
+  border-radius: inherit;
+  background: var(--skeleton-surface);
   z-index: 2;
   pointer-events: none;
 }
@@ -2614,10 +2611,6 @@ body[data-theme="dark"] .kpi-card--skeleton {
 .chart-card__skeleton .skeleton--chart-area,
 .chart-card__skeleton .skeleton--chart-area--heatmap {
   width: 100%;
-}
-
-body[data-theme="dark"] .chart-card__skeleton {
-  background: rgba(15, 23, 42, 0.82);
 }
 
 .chart-card__skeleton[hidden] {

@@ -858,44 +858,44 @@ export function createKpiFlow(env) {
     };
   }
 
-  function renderLastShiftHourlyChart(records, dailyStats) {
+  async function renderLastShiftHourlyChart(records, dailyStats) {
     const renderToken = beginLastShiftHourlyLoading();
     const metricKey = dashboardState.kpi?.lastShiftHourlyMetric || 'arrivals';
     const seriesInfo = buildLastShiftHourlySeries(records, dailyStats, metricKey);
     dashboardState.kpi.lastShiftHourly = seriesInfo;
-    renderLastShiftHourlyChartWithTheme(seriesInfo)
-      .catch((error) => {
-        const errorInfo = describeError(error, {
-          code: 'LAST_SHIFT_HOURLY',
-          message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
-        });
-        console.error(errorInfo.log, error);
-        if (setChartCardMessage) {
-          setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
-        }
-      })
-      .finally(() => {
-        endLastShiftHourlyLoading(renderToken);
+    try {
+      await renderLastShiftHourlyChartWithTheme(seriesInfo);
+    } catch (error) {
+      const errorInfo = describeError(error, {
+        code: 'LAST_SHIFT_HOURLY',
+        message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
       });
+      console.error(errorInfo.log, error);
+      if (setChartCardMessage) {
+        setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
+      }
+    } finally {
+      endLastShiftHourlyLoading(renderToken);
+    }
   }
 
-  function renderLastShiftHourlySeriesInfo(seriesInfo) {
+  async function renderLastShiftHourlySeriesInfo(seriesInfo) {
     dashboardState.kpi.lastShiftHourly = seriesInfo;
     const renderToken = beginLastShiftHourlyLoading();
-    renderLastShiftHourlyChartWithTheme(seriesInfo)
-      .catch((error) => {
-        const errorInfo = describeError(error, {
-          code: 'LAST_SHIFT_HOURLY',
-          message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
-        });
-        console.error(errorInfo.log, error);
-        if (setChartCardMessage) {
-          setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
-        }
-      })
-      .finally(() => {
-        endLastShiftHourlyLoading(renderToken);
+    try {
+      await renderLastShiftHourlyChartWithTheme(seriesInfo);
+    } catch (error) {
+      const errorInfo = describeError(error, {
+        code: 'LAST_SHIFT_HOURLY',
+        message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
       });
+      console.error(errorInfo.log, error);
+      if (setChartCardMessage) {
+        setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
+      }
+    } finally {
+      endLastShiftHourlyLoading(renderToken);
+    }
   }
 
   function fingerprintKpiRecords(records) {
@@ -1019,7 +1019,7 @@ export function createKpiFlow(env) {
     );
   }
 
-  function commitKpiFilterResult({ filteredRecords, filteredDailyStats, effectiveWindow, settings }) {
+  async function commitKpiFilterResult({ filteredRecords, filteredDailyStats, effectiveWindow, settings }) {
     clearWorkerAvailableDateKeys();
     clearSummaryModeSelectedDateRecordsCache();
     dashboardState.kpi.records = filteredRecords;
@@ -1043,10 +1043,10 @@ export function createKpiFlow(env) {
       ensureKpiSkeletonHidden();
       return;
     }
-    renderKpis(dateFilteredDailyStats, filteredDailyStats);
     const lastShiftRecords = selectedDate ? dateFilteredRecords : filteredRecords;
     const lastShiftDaily = selectedDate ? dateFilteredDailyStats : filteredDailyStats;
-    renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
+    await renderLastShiftHourlyChart(lastShiftRecords, lastShiftDaily);
+    renderKpis(dateFilteredDailyStats, filteredDailyStats);
     updateKpiSummary({
       records: dateFilteredRecords,
       dailyStats: dateFilteredDailyStats,
@@ -1056,7 +1056,7 @@ export function createKpiFlow(env) {
     lastKpiUiRenderSignature = nextUiSignature;
   }
 
-  function commitKpiSummaryModeResult({ result, effectiveWindow, settings }) {
+  async function commitKpiSummaryModeResult({ result, effectiveWindow, settings }) {
     const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
     const summary = result?.kpiSummary && typeof result.kpiSummary === 'object' ? result.kpiSummary : {};
     const availableDateKeys = Array.isArray(summary.availableDateKeys) ? summary.availableDateKeys : [];
@@ -1100,8 +1100,8 @@ export function createKpiFlow(env) {
       return;
     }
 
+    await renderLastShiftHourlySeriesInfo(lastShiftHourly);
     renderKpis(selectedDate ? selectedDateDailyStats : filteredDailyStats, filteredDailyStats);
-    renderLastShiftHourlySeriesInfo(lastShiftHourly);
     updateKpiSummary({
       records: [],
       dailyStats: selectedDate ? selectedDateDailyStats : filteredDailyStats,
@@ -1147,7 +1147,7 @@ export function createKpiFlow(env) {
       }
       const effectiveWindow = Number.isFinite(result?.windowDays) ? result.windowDays : windowDays;
       if (String(result?.resultMode || result?.meta?.resultMode || '') === 'summary+hourly') {
-        commitKpiSummaryModeResult({
+        await commitKpiSummaryModeResult({
           result,
           effectiveWindow,
           settings,
@@ -1156,7 +1156,7 @@ export function createKpiFlow(env) {
       }
       const filteredRecords = Array.isArray(result?.records) ? result.records : [];
       const filteredDailyStats = Array.isArray(result?.dailyStats) ? result.dailyStats : [];
-      commitKpiFilterResult({
+      await commitKpiFilterResult({
         filteredRecords,
         filteredDailyStats,
         effectiveWindow,
@@ -1173,7 +1173,7 @@ export function createKpiFlow(env) {
         return;
       }
       const fallback = applyKpiFiltersLocally(normalizedFilters);
-      commitKpiFilterResult({
+      await commitKpiFilterResult({
         filteredRecords: fallback.records,
         filteredDailyStats: fallback.dailyStats,
         effectiveWindow: fallback.windowDays,
@@ -1317,7 +1317,7 @@ export function createKpiFlow(env) {
       if (detailToken !== kpiHourlyWorkerJobToken || workerTokenAtStart !== kpiWorkerJobToken) {
         return true;
       }
-      renderLastShiftHourlySeriesInfo(result?.lastShiftHourly || null);
+      await renderLastShiftHourlySeriesInfo(result?.lastShiftHourly || null);
       return true;
     } catch (error) {
       const errorInfo = describeError(error, {
@@ -1352,7 +1352,7 @@ export function createKpiFlow(env) {
         ? getSummaryModeSelectedDateRecordsCache(dashboardState.kpi?.filters, selectedDate, settings)
         : null;
       if (selectedDate && cachedSelectedDate) {
-        renderLastShiftHourlyChart(cachedSelectedDate.records, cachedSelectedDate.dailyStats);
+        void renderLastShiftHourlyChart(cachedSelectedDate.records, cachedSelectedDate.dailyStats);
         return;
       }
       void (async () => {
@@ -1366,10 +1366,10 @@ export function createKpiFlow(env) {
     if (selectedDate) {
       const settings = getSettings();
       const dateFiltered = resolveDateFilteredData(baseRecords, baseDaily, selectedDate, settings);
-      renderLastShiftHourlyChart(dateFiltered.records, dateFiltered.dailyStats);
+      void renderLastShiftHourlyChart(dateFiltered.records, dateFiltered.dailyStats);
       return;
     }
-    renderLastShiftHourlyChart(baseRecords, baseDaily);
+    void renderLastShiftHourlyChart(baseRecords, baseDaily);
   }
 
   function syncLastShiftHourlyMetricButtons() {
