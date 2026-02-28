@@ -2958,7 +2958,8 @@ body[data-theme="dark"] .chart-period__more-menu {
   }
 }
 
-.chip-button {
+.chip-button,
+.feedback-trend-card__button {
   border: none;
   background: transparent;
   color: var(--color-text-muted);
@@ -2974,24 +2975,30 @@ body[data-theme="dark"] .chart-period__more-menu {
 }
 
 .chip-button:hover,
-.chip-button:focus-visible {
+.chip-button:focus-visible,
+.feedback-trend-card__button:hover,
+.feedback-trend-card__button:focus-visible {
   background: var(--state-accent-bg-12);
   color: var(--color-accent);
   outline: none;
 }
 
-.chip-button[aria-pressed="true"] {
+.chip-button[aria-pressed="true"],
+.feedback-trend-card__button[aria-pressed="true"] {
   background: var(--color-accent);
   color: #fff;
   transform: translateY(-1px);
 }
 
 body[data-theme="dark"] .chip-button:hover,
-body[data-theme="dark"] .chip-button:focus-visible {
+body[data-theme="dark"] .chip-button:focus-visible,
+body[data-theme="dark"] .feedback-trend-card__button:hover,
+body[data-theme="dark"] .feedback-trend-card__button:focus-visible {
   background: rgba(96, 165, 250, 0.18);
 }
 
-body[data-theme="dark"] .chip-button[aria-pressed="true"] {
+body[data-theme="dark"] .chip-button[aria-pressed="true"],
+body[data-theme="dark"] .feedback-trend-card__button[aria-pressed="true"] {
   background: rgba(96, 165, 250, 0.9);
   color: #0f172a;
 }
@@ -3657,6 +3664,7 @@ body[data-theme="dark"] .segmented-control__button[aria-pressed="true"] {
 
 .segmented-control,
 .chip-button,
+.feedback-trend-card__button,
 .heatmap-toolbar__field,
 .chart-filter--toggle .chart-toggle,
 .hourly-compare-toggle {
@@ -3670,7 +3678,8 @@ body[data-theme="dark"] .segmented-control__button[aria-pressed="true"] {
 }
 
 .segmented-control__button,
-.chip-button {
+.chip-button,
+.feedback-trend-card__button {
   min-height: var(--filter-height);
   display: inline-flex;
   align-items: center;
@@ -6070,6 +6079,14 @@ body[data-theme="dark"] .btn-secondary[aria-pressed="true"] {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+#feedbackTrendControls,
+#feedbackTrendCompareControls {
+  padding: 6px;
+  border: 1px solid var(--filter-border);
+  border-radius: var(--filter-radius);
+  background: var(--color-surface-alt);
 }
 
 .feedback-trend-card__button {
