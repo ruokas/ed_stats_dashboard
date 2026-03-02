@@ -329,6 +329,47 @@ export function createDataFlow(env = {}) {
     return `${primarySignature}|${historicalSignature}`;
   }
 
+  function computeEdRenderKey(edData) {
+    if (!edData || typeof edData !== 'object') {
+      return '';
+    }
+    const signature = String(edData?.meta?.signature || '').trim();
+    const records = Array.isArray(edData.records) ? edData.records : [];
+    const daily = Array.isArray(edData.daily) ? edData.daily : [];
+    const summary = edData.summary && typeof edData.summary === 'object' ? edData.summary : {};
+    const latestDailyKey = String(
+      daily.length ? daily[daily.length - 1]?.dateKey || daily[daily.length - 1]?.date || '' : ''
+    ).trim();
+    const latestSnapshot = String(summary.latestSnapshotLabel || '').trim();
+    const entryCount = Number.isFinite(Number(summary.entryCount))
+      ? Number(summary.entryCount)
+      : records.length;
+    const patients = Number.isFinite(Number(summary.currentPatients))
+      ? Number(summary.currentPatients).toFixed(2)
+      : '';
+    return [
+      signature,
+      records.length,
+      daily.length,
+      latestDailyKey,
+      latestSnapshot,
+      entryCount,
+      patients,
+    ].join('|');
+  }
+
+  function logRefreshDecision(clientConfig, scope, decision, meta = {}) {
+    const shouldLog = clientConfig?.debugRefresh === true || clientConfig?.profilingEnabled === true;
+    if (!shouldLog) {
+      return;
+    }
+    try {
+      console.debug(`[refresh:${scope}] ${decision}`, meta);
+    } catch (_error) {
+      // ignore debug logger errors
+    }
+  }
+
   function readDailyStatsFromSessionCache() {
     if (!canUseDailyStatsCache) {
       return null;
@@ -900,6 +941,7 @@ export function createDataFlow(env = {}) {
       const currentMainSignature =
         needsMainData && hasMainDataPayload ? computeMainDataSignature(dataset, cachedDailyStats) : '';
       const currentEdSignature = needsEdData ? dashboardState.ed?.meta?.signature || '' : '';
+      const currentEdRenderKey = needsEdData ? computeEdRenderKey(dashboardState.ed) : '';
       const skipMainRender = Boolean(
         shouldAutoRefresh &&
           dashboardState.hasLoadedOnce &&
@@ -909,9 +951,17 @@ export function createDataFlow(env = {}) {
       const skipEdRender = Boolean(
         shouldAutoRefresh &&
           dashboardState.hasLoadedOnce &&
-          currentEdSignature &&
-          dashboardState.lastEdDataSignature === currentEdSignature
+          currentEdRenderKey &&
+          dashboardState.lastEdRenderKey === currentEdRenderKey
       );
+      if (needsEdData) {
+        logRefreshDecision(clientConfig, 'ed', skipEdRender ? 'skipped (same-render-key)' : 'rendered', {
+          hasLoadedOnce: dashboardState.hasLoadedOnce,
+          signature: currentEdSignature || 'none',
+          currentKey: currentEdRenderKey || 'none',
+          previousKey: String(dashboardState.lastEdRenderKey || ''),
+        });
+      }
       if (needsFeedbackData && feedbackResult.status === 'rejected') {
         const errorInfo = describeError(feedbackResult.reason, {
           code: 'FEEDBACK_DATA',
@@ -1104,6 +1154,9 @@ export function createDataFlow(env = {}) {
       }
       if (currentEdSignature) {
         dashboardState.lastEdDataSignature = currentEdSignature;
+      }
+      if (currentEdRenderKey) {
+        dashboardState.lastEdRenderKey = currentEdRenderKey;
       }
       if (!isLoadTokenCurrent(loadToken)) {
         return;

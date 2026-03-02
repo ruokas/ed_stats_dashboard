@@ -87,9 +87,18 @@ export function createTextSignature(text) {
   if (typeof text !== 'string') {
     return '';
   }
-  const length = text.length;
-  const head = text.slice(0, 128);
-  return `${length}:${head}`;
+  // Hash all content to avoid collisions when only the CSV tail changes.
+  let fnv = 0x811c9dc5;
+  let djb = 5381;
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    fnv ^= code;
+    fnv = Math.imul(fnv, 0x01000193);
+    djb = Math.imul(djb, 33) ^ code;
+  }
+  const fnvHex = (fnv >>> 0).toString(16).padStart(8, '0');
+  const djbHex = (djb >>> 0).toString(16).padStart(8, '0');
+  return `v2:${text.length}:${fnvHex}${djbHex}`;
 }
 
 export async function downloadCsv(url, { cacheInfo = null, onChunk, signal } = {}) {
