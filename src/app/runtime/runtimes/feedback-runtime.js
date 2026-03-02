@@ -39,7 +39,6 @@ import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } fro
 import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
 import { describeCacheMeta, describeError, downloadCsv } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -48,11 +47,13 @@ import {
   FEEDBACK_FILTER_ALL,
   FEEDBACK_FILTER_MISSING,
 } from '../state.js';
-import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
+import { matchesWildcard, parseCandidateList } from '../utils/common.js';
+import { createRuntimeLifecycle } from './runtime-lifecycle.js';
 
-const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
-let autoRefreshTimerId = null;
-const setStatus = createStatusSetter(TEXT.status);
+const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId } = createRuntimeLifecycle({
+  clientConfigKey: CLIENT_CONFIG_KEY,
+  statusText: TEXT.status,
+});
 
 function formatLocalDateKey(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -372,10 +373,8 @@ export async function runFeedbackRuntime(core) {
       setStatus: (type, details) => setStatus(selectors, type, details),
       getSettings: () => settings,
       getClientConfig: runtimeClient.getClientConfig,
-      getAutoRefreshTimerId: () => autoRefreshTimerId,
-      setAutoRefreshTimerId: (id) => {
-        autoRefreshTimerId = id;
-      },
+      getAutoRefreshTimerId,
+      setAutoRefreshTimerId,
     },
     chartHooks: {
       getDefaultChartFilters: createDefaultChartFilters,

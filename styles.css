@@ -1805,13 +1805,12 @@ body[data-theme="dark"] .charts-subsection {
 
 .report-card[data-loading="true"] canvas {
   border-radius: 10px;
-  background:
-    linear-gradient(
-      90deg,
-      var(--skeleton-base) 25%,
-      var(--skeleton-highlight) 37%,
-      var(--skeleton-base) 63%
-    );
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-highlight) 37%,
+    var(--skeleton-base) 63%
+  );
   background-size: 200% 100%;
   animation: skeletonShimmer 1.6s ease-in-out infinite;
 }
@@ -4243,17 +4242,16 @@ th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
 }
 
 .gydytojai-filter-panel[data-loading="true"]::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(148, 163, 184, 0.06) 25%,
-      rgba(148, 163, 184, 0.14) 37%,
-      rgba(148, 163, 184, 0.06) 63%
-    );
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.06) 25%,
+    rgba(148, 163, 184, 0.14) 37%,
+    rgba(148, 163, 184, 0.06) 63%
+  );
   background-size: 200% 100%;
   animation: skeletonShimmer 1.6s ease-in-out infinite;
   pointer-events: none;
@@ -4912,8 +4910,7 @@ dialog.global-search {
   border-radius: 20px;
   border: 1px solid var(--color-border);
   background:
-    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.08), transparent 54%),
-    var(--color-surface);
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.08), transparent 54%), var(--color-surface);
   box-shadow: 0 36px 78px -30px rgba(15, 23, 42, 0.62);
 }
 

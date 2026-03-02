@@ -65,7 +65,6 @@ import {
   formatUrlForDiagnostics,
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -74,13 +73,14 @@ import {
   KPI_FILTER_LABELS,
 } from '../state.js';
 import { parseColorToRgb, relativeLuminance, rgbToRgba } from '../utils/color.js';
-import { createStatusSetter } from '../utils/common.js';
 import { createChartsDataFlowConfig } from './charts/data-flow-config.js';
 import { wireChartsRuntimeInteractions } from './charts/runtime-interactions.js';
+import { createRuntimeLifecycle } from './runtime-lifecycle.js';
 
-const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
-let autoRefreshTimerId = null;
-const setStatus = createStatusSetter(TEXT.status);
+const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId } = createRuntimeLifecycle({
+  clientConfigKey: CLIENT_CONFIG_KEY,
+  statusText: TEXT.status,
+});
 
 const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
 const HEATMAP_WEEKDAY_FULL = [
@@ -2538,10 +2538,8 @@ export async function runChartsRuntime(core) {
       numberFormatter,
       getSettings: () => settings,
       getClientConfig: runtimeClient.getClientConfig,
-      getAutoRefreshTimerId: () => autoRefreshTimerId,
-      setAutoRefreshTimerId: (id) => {
-        autoRefreshTimerId = id;
-      },
+      getAutoRefreshTimerId,
+      setAutoRefreshTimerId,
     })
   );
 

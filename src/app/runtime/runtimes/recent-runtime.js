@@ -34,7 +34,6 @@ import {
   formatUrlForDiagnostics,
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -42,11 +41,12 @@ import {
   createDefaultKpiFilters,
 } from '../state.js';
 import { createTableDownloadHandler } from '../table-export.js';
-import { createStatusSetter } from '../utils/common.js';
+import { createRuntimeLifecycle } from './runtime-lifecycle.js';
 
-const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
-let autoRefreshTimerId = null;
-const setStatus = createStatusSetter(TEXT.status);
+const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId } = createRuntimeLifecycle({
+  clientConfigKey: CLIENT_CONFIG_KEY,
+  statusText: TEXT.status,
+});
 
 function formatValueWithShare(value, total) {
   const safeValue = Number.isFinite(value) ? value : 0;
@@ -374,10 +374,8 @@ export async function runRecentRuntime(core) {
       setStatus: (type, details) => setStatus(selectors, type, details),
       getSettings: () => settings,
       getClientConfig: runtimeClient.getClientConfig,
-      getAutoRefreshTimerId: () => autoRefreshTimerId,
-      setAutoRefreshTimerId: (id) => {
-        autoRefreshTimerId = id;
-      },
+      getAutoRefreshTimerId,
+      setAutoRefreshTimerId,
     },
     dataHooks: {
       fetchData,
