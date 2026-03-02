@@ -1,5 +1,5 @@
 import { renderLastShiftHourlyChartWithTheme } from '../../../charts/hourly.js';
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
+import { createMainDataHandlers } from '../../../data/main-data.js';
 import { computeDailyStats } from '../../../data/stats.js';
 import { initKpiFilters } from '../../../events/kpi.js';
 import { createKpiRenderer } from '../../../render/kpi.js';

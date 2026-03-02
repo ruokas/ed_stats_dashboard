@@ -1,5 +1,5 @@
 import { createChartRenderers } from '../../../charts/index.js';
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
+import { createMainDataHandlers } from '../../../data/main-data.js';
 import {
   computeDailyStats,
   computeHospitalizedByDepartmentAndSpsStay,

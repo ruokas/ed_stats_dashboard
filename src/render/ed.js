@@ -1,8 +1,5 @@
 import { setDatasetValue } from '../utils/dom.js';
-import {
-  buildEdDashboardModel,
-  buildEdSectionsModel,
-} from './ed-model.js?v=2026-02-10-feedback-location-split-1';
+import { buildEdDashboardModel, buildEdSectionsModel } from './ed-model.js';
 
 function formatCardDisplayValue(config, summary, formatEdCardValue) {
   const primaryRaw = summary?.[config.key];

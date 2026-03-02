@@ -7,7 +7,7 @@ import {
   pickTopHours,
 } from '../../../data/ed-utils.js';
 import { createFeedbackHandlers } from '../../../data/feedback.js';
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
+import { createMainDataHandlers } from '../../../data/main-data.js';
 import { computeDailyStats } from '../../../data/stats.js';
 import { createEdRenderer } from '../../../render/ed.js';
 import { createDashboardState } from '../../../state/dashboardState.js';

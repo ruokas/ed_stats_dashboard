@@ -1,9 +1,5 @@
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
-import {
-  computeDailyStats,
-  computeMonthlyStats,
-  computeYearlyStats,
-} from '../../../data/stats.js?v=2026-02-07-monthly-heatmap-1';
+import { createMainDataHandlers } from '../../../data/main-data.js';
+import { computeDailyStats, computeMonthlyStats, computeYearlyStats } from '../../../data/stats.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
 import { initYearlyExpand } from '../../../events/yearly.js';
 import { getSummariesReportTitle } from '../../../metrics/summaries-report.js';
