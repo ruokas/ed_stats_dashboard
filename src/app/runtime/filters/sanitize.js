@@ -35,7 +35,7 @@ function sanitizeBySchema(value, config, fallback) {
   return String(value ?? '').trim();
 }
 
-export function sanitizeWithSchema(pageId, rawState, defaults = {}) {
+function sanitizeWithSchema(pageId, rawState, defaults = {}) {
   const schema = getFilterSchema(pageId);
   if (!schema) {
     return { ...(rawState || {}) };

@@ -1,4 +1,4 @@
-export const PAGE_FILE_BY_ID = {
+const PAGE_FILE_BY_ID = {
   kpi: 'index.html',
   charts: 'charts.html',
   recent: 'recent.html',

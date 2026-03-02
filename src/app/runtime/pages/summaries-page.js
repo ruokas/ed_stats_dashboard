@@ -1,4 +1,4 @@
-import { runSummariesRuntime } from '../runtimes/summaries-runtime.js';
+import { runSummariesRuntime } from '../runtimes/summaries-runtime-impl.js';
 
 export function runSummariesPage(core) {
   return runSummariesRuntime(core);

@@ -8,7 +8,3 @@ export function createPageBootstrapContext({ pageId }) {
     startedAt: Date.now(),
   };
 }
-
-export function createRuntimeCore(options) {
-  return createPageBootstrapContext(options || {});
-}
