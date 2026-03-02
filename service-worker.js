@@ -15,6 +15,7 @@ const STATIC_ASSETS = [
   new URL('./styles.css', self.location).pathname,
   new URL('./theme-init.css', self.location).pathname,
   new URL('./theme-init.js', self.location).pathname,
+  new URL('./clarity-init.js', self.location).pathname,
   new URL('./data-worker.js', self.location).pathname,
   new URL('./app.js', self.location).pathname,
   new URL('./main.js', self.location).pathname,

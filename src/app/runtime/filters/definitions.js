@@ -2,7 +2,7 @@ function boolDefault(value) {
   return value === true;
 }
 
-export const FILTER_SCHEMAS = {
+const FILTER_SCHEMAS = {
   kpi: {
     filters: {
       window: { type: 'number', queryKey: 'kw', min: 0, max: 366 },

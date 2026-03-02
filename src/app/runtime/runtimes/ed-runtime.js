@@ -7,7 +7,7 @@ import {
   pickTopHours,
 } from '../../../data/ed-utils.js';
 import { createFeedbackHandlers } from '../../../data/feedback.js';
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
+import { createMainDataHandlers } from '../../../data/main-data.js';
 import { computeDailyStats } from '../../../data/stats.js';
 import { createEdRenderer } from '../../../render/ed.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
@@ -49,19 +49,20 @@ import {
   formatUrlForDiagnostics,
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
   createDefaultFeedbackFilters,
   createDefaultKpiFilters,
 } from '../state.js';
-import { createStatusSetter, matchesWildcard, parseCandidateList } from '../utils/common.js';
+import { matchesWildcard, parseCandidateList } from '../utils/common.js';
+import { createRuntimeLifecycle } from './runtime-lifecycle.js';
 
-const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
-let autoRefreshTimerId = null;
 const MIN_ED_SKELETON_VISIBLE_MS = 450;
-const setStatus = createStatusSetter(TEXT.status);
+const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId } = createRuntimeLifecycle({
+  clientConfigKey: CLIENT_CONFIG_KEY,
+  statusText: TEXT.status,
+});
 
 function normalizeHeaderToken(value) {
   return String(value ?? '')
@@ -762,10 +763,8 @@ export async function runEdRuntime(core) {
       setStatus: (type, details) => setStatus(selectors, type, details),
       getSettings: () => settings,
       getClientConfig: runtimeClient.getClientConfig,
-      getAutoRefreshTimerId: () => autoRefreshTimerId,
-      setAutoRefreshTimerId: (id) => {
-        autoRefreshTimerId = id;
-      },
+      getAutoRefreshTimerId,
+      setAutoRefreshTimerId,
     },
     feedbackHooks: {
       applyFeedbackFiltersAndRender: () => {

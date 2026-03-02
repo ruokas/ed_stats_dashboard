@@ -73,9 +73,15 @@ describe('describeError', () => {
 });
 
 describe('createTextSignature', () => {
-  it('returns signature for text and empty for non-text', () => {
-    expect(createTextSignature('abc')).toBe('3:abc');
+  it('returns stable hash signature for text and empty for non-text', () => {
+    expect(createTextSignature('abc')).toBe('v2:3:1a47e90b0b873285');
     expect(createTextSignature(null)).toBe('');
+  });
+
+  it('changes when tail content changes', () => {
+    const base = 'A'.repeat(400);
+    const changed = `${'A'.repeat(399)}B`;
+    expect(createTextSignature(base)).not.toBe(createTextSignature(changed));
   });
 });
 

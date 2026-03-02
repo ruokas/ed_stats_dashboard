@@ -1,9 +1,10 @@
-import { createClientStore, PerfMonitor } from '../../../app.js';
+import { createClientStore } from './client-store.js';
+import { PerfMonitor } from './perf-monitor.js';
 
 export function createRuntimeClientContext(clientConfigKey) {
   const clientStore = createClientStore(clientConfigKey);
   const perfMonitor = new PerfMonitor();
-  let clientConfig = { profilingEnabled: true, ...clientStore.load() };
+  let clientConfig = { profilingEnabled: false, ...clientStore.load() };
 
   function getClientConfig() {
     return clientConfig;

@@ -1,9 +1,5 @@
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
-import {
-  computeDailyStats,
-  computeMonthlyStats,
-  computeYearlyStats,
-} from '../../../data/stats.js?v=2026-02-07-monthly-heatmap-1';
+import { createMainDataHandlers } from '../../../data/main-data.js';
+import { computeDailyStats, computeMonthlyStats, computeYearlyStats } from '../../../data/stats.js';
 import { initTableDownloadButtons } from '../../../events/charts.js';
 import { initYearlyExpand } from '../../../events/yearly.js';
 import { getSummariesReportTitle } from '../../../metrics/summaries-report.js';
@@ -55,7 +51,6 @@ import {
   formatUrlForDiagnostics,
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -63,7 +58,8 @@ import {
   createDefaultKpiFilters,
 } from '../state.js';
 import { createTableDownloadHandler, escapeCsvCell } from '../table-export.js';
-import { createStatusSetter } from '../utils/common.js';
+import { createRuntimeLifecycle } from './runtime-lifecycle.js';
+
 import { createSummariesDataFlowConfig } from './summaries/data-flow-config.js';
 import { loadPluginScript } from './summaries/plugin-loader.js';
 import {
@@ -78,12 +74,14 @@ import { createReportExportClickHandler } from './summaries/report-export.js';
 import { parsePositiveIntOrDefault } from './summaries/report-filters.js';
 import { wireSummariesInteractions } from './summaries/runtime-interactions.js';
 
-const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
-let autoRefreshTimerId = null;
+const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId } = createRuntimeLifecycle({
+  clientConfigKey: CLIENT_CONFIG_KEY,
+  statusText: TEXT.status,
+  statusOptions: { showSuccessState: false },
+});
 let treemapPluginPromise = null;
 let matrixPluginPromise = null;
 const PLUGIN_SCRIPT_TIMEOUT_MS = 8000;
-const setStatus = createStatusSetter(TEXT.status, { showSuccessState: false });
 
 const handleTableDownloadClick = createTableDownloadHandler({
   getDatasetValue,
@@ -2555,10 +2553,8 @@ export async function runSummariesRuntime(core) {
       numberFormatter,
       getSettings: () => settings,
       getClientConfig: runtimeClient.getClientConfig,
-      getAutoRefreshTimerId: () => autoRefreshTimerId,
-      setAutoRefreshTimerId: (id) => {
-        autoRefreshTimerId = id;
-      },
+      getAutoRefreshTimerId,
+      setAutoRefreshTimerId,
     })
   );
   void loadChartJs();

@@ -19,7 +19,7 @@ function shuffle(rng, values) {
   return list;
 }
 
-export const PERF_PROFILES = Object.freeze({
+const PERF_PROFILES = Object.freeze({
   small: { records: 10000, seed: 2026022601 },
   medium: { records: 50000, seed: 2026022602 },
   large: { records: 100000, seed: 2026022603 },
@@ -27,7 +27,7 @@ export const PERF_PROFILES = Object.freeze({
   historicalHeavy: { records: 60000, seed: 2026022605, historicalRatio: 0.85 },
 });
 
-export function resolvePerfProfile(name) {
+function resolvePerfProfile(name) {
   const key = String(name || '').trim();
   return PERF_PROFILES[key] || PERF_PROFILES.medium;
 }
@@ -137,7 +137,7 @@ function buildSpecialtySettings(doctorNorms = []) {
   };
 }
 
-export function createSyntheticRecords({
+function createSyntheticRecords({
   count = 50000,
   seed = 20260226,
   departmentCount = 18,
@@ -242,6 +242,6 @@ export function listPerfProfileNames() {
   return Object.keys(PERF_PROFILES);
 }
 
-export function shuffleWithSeed(values, seed = 20260226) {
+function shuffleWithSeed(values, seed = 20260226) {
   return shuffle(createRng(seed), values);
 }

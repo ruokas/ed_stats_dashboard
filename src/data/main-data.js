@@ -7,10 +7,7 @@ export function createMainDataHandlers(context) {
   const perfMonitor = context?.perfMonitor || null;
   const pageId = typeof context?.pageId === 'string' ? context.pageId : '';
 
-  const DATA_WORKER_URL = new URL(
-    'data-worker.js?v=2026-02-25-transfer-worker-2',
-    window.location.href
-  ).toString();
+  const DATA_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
   const DATA_CACHE_PREFIX = 'edDashboard:dataCache:';
   const DATA_CACHE_SCHEMA_VERSION = 2;
   const DATA_CACHE_ARTIFACT_KINDS = new Set(['full', 'daily-lite', 'daily-plus-agg']);

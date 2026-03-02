@@ -26,11 +26,15 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
   }
   const entries = yearlyStats.slice();
   const fragment = document.createDocumentFragment();
-  const latestYear = entries.length ? entries[entries.length - 1].year : null;
+  const latestYear = entries.length ? String(entries[entries.length - 1].year || '').trim() : '';
   if (!Array.isArray(dashboardState.yearlyExpandedYears) || !dashboardState.yearlyExpandedYears.length) {
-    dashboardState.yearlyExpandedYears = Number.isFinite(latestYear) ? [latestYear] : [];
+    dashboardState.yearlyExpandedYears = latestYear ? [latestYear] : [];
   }
-  const expandedYears = new Set(dashboardState.yearlyExpandedYears);
+  const expandedYears = new Set(
+    (Array.isArray(dashboardState.yearlyExpandedYears) ? dashboardState.yearlyExpandedYears : [])
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
+  );
   const monthlyAll = Array.isArray(dashboardState.monthly?.all) ? dashboardState.monthly.all : [];
   const monthlyByKey = new Map(
     monthlyAll.filter((item) => item && typeof item.month === 'string').map((item) => [item.month, item])
@@ -51,7 +55,8 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
       index > 0 && completeness[index] && completeness[index - 1] && Number.isFinite(previousTotal);
     const diff = canCompare ? total - previousTotal : Number.NaN;
     const percentChange = canCompare && previousTotal !== 0 ? diff / previousTotal : Number.NaN;
-    const isExpanded = expandedYears.has(entry.year);
+    const yearKey = String(entry.year || '').trim();
+    const isExpanded = expandedYears.has(yearKey);
     const yearLabel = formatYearLabel(entry.year);
     const yearDisplay = completeness[index]
       ? yearLabel
@@ -108,7 +113,7 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
           canCompareMonth,
         });
       });
-    monthlyPayloadByYear.set(entry.year, monthPayloads);
+    monthlyPayloadByYear.set(yearKey, monthPayloads);
     if (isExpanded && monthPayloads.length) {
       monthPayloads.forEach((payload) => {
         fragment.appendChild(createYearlyChildRow(payload, true));
@@ -161,8 +166,8 @@ export function handleYearlyToggle(selectors, dashboardState, event) {
   if (!button) {
     return;
   }
-  const yearValue = Number.parseInt(button.getAttribute('data-year-toggle') || '', 10);
-  if (!Number.isFinite(yearValue)) {
+  const yearValue = String(button.getAttribute('data-year-toggle') || '').trim();
+  if (!yearValue) {
     return;
   }
   const row = button.closest('tr');
@@ -186,7 +191,9 @@ export function handleYearlyToggle(selectors, dashboardState, event) {
     child.hidden = !nextExpanded;
   });
   const expandedSet = new Set(
-    Array.isArray(dashboardState.yearlyExpandedYears) ? dashboardState.yearlyExpandedYears : []
+    (Array.isArray(dashboardState.yearlyExpandedYears) ? dashboardState.yearlyExpandedYears : [])
+      .map((value) => String(value || '').trim())
+      .filter(Boolean)
   );
   if (nextExpanded) {
     expandedSet.add(yearValue);

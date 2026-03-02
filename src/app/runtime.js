@@ -1,4 +1,5 @@
 import { initializeLazyLoading, initializeServiceWorker, preloadChartJs } from './bootstrap.js';
+import { CLIENT_CONFIG_KEY } from './constants.js';
 import { createPageBootstrapContext } from './runtime/core-context.js';
 import { RUNTIME_MODULE_BY_PAGE, resolvePageId, shouldPreloadChartJs } from './runtime/page-config.js';
 
@@ -23,7 +24,7 @@ function getRunnerExportName(pageId) {
 
 function isProfilingEnabled() {
   try {
-    const raw = window.localStorage.getItem('edDashboardClientConfig-v1');
+    const raw = window.localStorage.getItem(CLIENT_CONFIG_KEY);
     if (!raw) {
       return false;
     }

@@ -679,6 +679,83 @@ export function createCopyExportFeature(deps) {
       .join('\n');
   }
 
+  function escapeCsvValue(value) {
+    const text = String(value ?? '');
+    if (/[",\n]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  }
+
+  function resolveChartJsInstance(canvas) {
+    if (!(canvas instanceof HTMLCanvasElement)) {
+      return null;
+    }
+    const chartFromGlobal = window?.Chart?.getChart?.(canvas);
+    if (chartFromGlobal) {
+      return chartFromGlobal;
+    }
+    const chartKey = Object.keys(canvas).find((key) => key.startsWith('$chartjs'));
+    if (chartKey && canvas[chartKey]) {
+      return canvas[chartKey];
+    }
+    return null;
+  }
+
+  function buildCsvFromChartJs(chart) {
+    const data = chart?.data;
+    const labels = Array.isArray(data?.labels) ? data.labels : [];
+    const datasets = Array.isArray(data?.datasets) ? data.datasets : [];
+    if (!datasets.length) {
+      return '';
+    }
+    const rows = [];
+    const header = ['Label', ...datasets.map((dataset, index) => dataset?.label || `Serie ${index + 1}`)];
+    rows.push(header.map(escapeCsvValue).join(','));
+    const maxLength = Math.max(
+      labels.length,
+      ...datasets.map((dataset) => (Array.isArray(dataset?.data) ? dataset.data.length : 0))
+    );
+    for (let idx = 0; idx < maxLength; idx += 1) {
+      const label = labels[idx] ?? '';
+      const values = datasets.map((dataset) => {
+        const rawValue = Array.isArray(dataset?.data) ? dataset.data[idx] : '';
+        if (rawValue && typeof rawValue === 'object') {
+          if (Number.isFinite(rawValue.y)) return rawValue.y;
+          if (Number.isFinite(rawValue.x)) return rawValue.x;
+        }
+        return rawValue ?? '';
+      });
+      rows.push([label, ...values].map(escapeCsvValue).join(','));
+    }
+    return rows.join('\n');
+  }
+
+  function buildCsvFromHeatmap(container) {
+    if (!(container instanceof HTMLElement)) {
+      return '';
+    }
+    const table = container.querySelector('.heatmap-table');
+    return table ? buildCsvFromTable(table) : '';
+  }
+
+  async function downloadChartAsCsv(source, titleInfo) {
+    let csvText = '';
+    if (source?.type === 'heatmap') {
+      csvText = buildCsvFromHeatmap(source.node);
+    } else if (source?.type === 'canvas') {
+      const chart = resolveChartJsInstance(source.node);
+      csvText = buildCsvFromChartJs(chart);
+    }
+    if (!csvText) {
+      return { ok: false, reason: 'missing' };
+    }
+    const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+    const filename = formatExportFilenameWithExt(titleInfo, 'csv');
+    const ok = triggerDownloadFromBlob(blob, filename);
+    return { ok, format: 'csv' };
+  }
+
   function isTransparentColor(color) {
     if (!color) {
       return true;
@@ -948,11 +1025,22 @@ export function createCopyExportFeature(deps) {
       }
       const titleInfo = resolveCopyTitleInfo(source.node);
       const backgroundColor = resolveCopyBackgroundColor(source.node);
-      const result = await downloadChartAsPng(source, titleInfo, backgroundColor);
+      const format = String(getDatasetValue(button, 'chartDownload', 'png') || 'png')
+        .trim()
+        .toLowerCase();
+      const result =
+        format === 'csv'
+          ? await downloadChartAsCsv(source, titleInfo)
+          : await downloadChartAsPng(source, titleInfo, backgroundColor);
       if (result.ok) {
-        setCopyButtonFeedback(button, 'Grafikas parsisiųstas');
+        setCopyButtonFeedback(button, format === 'csv' ? 'CSV parsisiųstas' : 'Grafikas parsisiųstas');
       } else {
-        const message = result.reason === 'missing' ? 'Grafikas dar neparuoštas' : 'Klaida parsisiunčiant';
+        const message =
+          result.reason === 'missing'
+            ? format === 'csv'
+              ? 'CSV dar nepasiekiamas'
+              : 'Grafikas dar neparuoštas'
+            : 'Klaida parsisiunčiant';
         setCopyButtonFeedback(button, message, 'error');
       }
     } catch (error) {

@@ -1,5 +1,5 @@
 import { renderLastShiftHourlyChartWithTheme } from '../../../charts/hourly.js';
-import { createMainDataHandlers } from '../../../data/main-data.js?v=2026-02-08-merge-agg-fix';
+import { createMainDataHandlers } from '../../../data/main-data.js';
 import { computeDailyStats } from '../../../data/stats.js';
 import { initKpiFilters } from '../../../events/kpi.js';
 import { createKpiRenderer } from '../../../render/kpi.js';
@@ -41,7 +41,6 @@ import {
   formatUrlForDiagnostics,
 } from '../network.js';
 import { applyCommonPageShellText, setupSharedPageUi } from '../page-ui.js';
-import { createRuntimeClientContext } from '../runtime-client.js';
 import { loadSettingsFromConfig } from '../settings.js';
 import {
   createDefaultChartFilters,
@@ -50,11 +49,17 @@ import {
   KPI_FILTER_LABELS,
   KPI_WINDOW_OPTION_BASE,
 } from '../state.js';
-import { createStatusSetter } from '../utils/common.js';
+import { createRuntimeLifecycle } from './runtime-lifecycle.js';
 
-const runtimeClient = createRuntimeClientContext(CLIENT_CONFIG_KEY);
-let autoRefreshTimerId = null;
-const baseSetStatus = createStatusSetter(TEXT.status);
+const {
+  runtimeClient,
+  setStatus: baseSetStatus,
+  getAutoRefreshTimerId,
+  setAutoRefreshTimerId,
+} = createRuntimeLifecycle({
+  clientConfigKey: CLIENT_CONFIG_KEY,
+  statusText: TEXT.status,
+});
 
 function toSentenceCase(label) {
   if (typeof label !== 'string' || !label.length) {
@@ -664,10 +669,8 @@ export async function runKpiRuntime(core) {
       setStatus: (type, details) => setStatus(selectors, dashboardState, type, details),
       getSettings: () => settings,
       getClientConfig: runtimeClient.getClientConfig,
-      getAutoRefreshTimerId: () => autoRefreshTimerId,
-      setAutoRefreshTimerId: (id) => {
-        autoRefreshTimerId = id;
-      },
+      getAutoRefreshTimerId,
+      setAutoRefreshTimerId,
     },
     kpiHooks: {
       showKpiSkeleton: () => showKpiSkeleton(selectors),

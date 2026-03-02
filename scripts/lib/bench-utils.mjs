@@ -10,7 +10,7 @@ export function parseIntArg(name, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-export function parseStringArg(name, fallback = '') {
+function parseStringArg(name, fallback = '') {
   const prefix = `--${name}=`;
   const arg = process.argv.find((entry) => entry.startsWith(prefix));
   if (!arg) return fallback;
@@ -25,7 +25,7 @@ export function parseListArg(name) {
     .filter(Boolean);
 }
 
-export function median(values) {
+function median(values) {
   const list = (Array.isArray(values) ? values : [])
     .map((value) => Number(value))
     .filter((value) => Number.isFinite(value))
@@ -38,7 +38,7 @@ export function median(values) {
   return Number(list[middle].toFixed(2));
 }
 
-export function p95(values) {
+function p95(values) {
   const list = (Array.isArray(values) ? values : [])
     .map((value) => Number(value))
     .filter((value) => Number.isFinite(value))

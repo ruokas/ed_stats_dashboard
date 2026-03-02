@@ -15,7 +15,7 @@ import {
 
 export function createEdHandlers(context) {
   const { settings, DEFAULT_SETTINGS, TEXT, downloadCsv, describeError, resolveColumnIndex } = context;
-  const ED_WORKER_URL = new URL('data-worker.js?v=2026-02-08-ed-worker-2', window.location.href).toString();
+  const ED_WORKER_URL = new URL('data-worker.js', window.location.href).toString();
   const edDataCache = new Map();
   const edSignatureCache = new Map();
   let edWorkerCounter = 0;

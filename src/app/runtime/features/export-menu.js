@@ -52,6 +52,19 @@ function buildGroupKey(button) {
   return `button:${button.id || ''}:${button.className}`;
 }
 
+function getGroupType(buttons = []) {
+  if (buttons.some((button) => button.hasAttribute('data-table-target'))) {
+    return 'table';
+  }
+  if (buttons.some((button) => button.hasAttribute('data-chart-target'))) {
+    return 'chart';
+  }
+  if (buttons.some((button) => button.hasAttribute('data-report-key'))) {
+    return 'report';
+  }
+  return 'button';
+}
+
 function closeAllMenus(except = null) {
   document.querySelectorAll('.export-menu[data-open="true"]').forEach((menu) => {
     if (except && menu === except) {
@@ -85,7 +98,9 @@ function createMenuForGroup(buttons) {
   menu.id = menuId;
   menu.setAttribute('role', 'menu');
 
-  const isTableGroup = buttons.some((button) => button.hasAttribute('data-table-target'));
+  const groupType = getGroupType(buttons);
+  const isTableGroup = groupType === 'table';
+  const isChartGroup = groupType === 'chart';
   let hasCsv = false;
 
   buttons.forEach((sourceButton, index) => {
@@ -114,24 +129,28 @@ function createMenuForGroup(buttons) {
     menu.appendChild(item);
   });
 
-  if (isTableGroup && !hasCsv && buttons.length) {
+  if ((isTableGroup || isChartGroup) && !hasCsv && buttons.length) {
+    const sourceButton = isTableGroup
+      ? buttons[0]
+      : buttons.find((button) => button.classList.contains('chart-download-btn')) || buttons[0];
+    if (!(sourceButton instanceof HTMLButtonElement)) {
+      wrapper.append(trigger, menu);
+      return wrapper;
+    }
     const csvItem = document.createElement('button');
     csvItem.type = 'button';
     csvItem.className = 'export-menu__item';
     csvItem.setAttribute('role', 'menuitem');
     csvItem.textContent = 'Parsisiųsti CSV';
     csvItem.addEventListener('click', () => {
-      const sourceButton = buttons[0];
-      if (!(sourceButton instanceof HTMLElement)) {
-        return;
-      }
-      const previous = sourceButton.getAttribute('data-table-download');
-      sourceButton.setAttribute('data-table-download', 'csv');
+      const attrName = isTableGroup ? 'data-table-download' : 'data-chart-download';
+      const previous = sourceButton.getAttribute(attrName);
+      sourceButton.setAttribute(attrName, 'csv');
       sourceButton.click();
       if (previous == null) {
-        sourceButton.removeAttribute('data-table-download');
+        sourceButton.removeAttribute(attrName);
       } else {
-        sourceButton.setAttribute('data-table-download', previous);
+        sourceButton.setAttribute(attrName, previous);
       }
       wrapper.dataset.open = 'false';
       trigger.setAttribute('aria-expanded', 'false');
@@ -218,13 +237,11 @@ function transformContainer(container) {
 }
 
 function scanAndTransform(root = document) {
-  root
-    .querySelectorAll(
-      '.section__actions, .chart-card__actions, .report-card__actions, .feedback-trend-card__actions, .table-actions, .feedback-table-actions'
-    )
-    .forEach((container) => {
-      transformContainer(container);
-    });
+  const actionContainersSelector =
+    '.section__actions, .chart-card__actions, .chart-card__toolbar, .hourly-toolbar__actions-inline, .report-card__actions, .feedback-trend-card__actions, .table-actions, .feedback-table-actions';
+  root.querySelectorAll(actionContainersSelector).forEach((container) => {
+    transformContainer(container);
+  });
 }
 
 export function initExportMenus() {
@@ -242,7 +259,7 @@ export function initExportMenus() {
         }
         if (
           node.matches(
-            '.section__actions, .chart-card__actions, .report-card__actions, .feedback-trend-card__actions'
+            '.section__actions, .chart-card__actions, .chart-card__toolbar, .hourly-toolbar__actions-inline, .report-card__actions, .feedback-trend-card__actions'
           )
         ) {
           transformContainer(node);
