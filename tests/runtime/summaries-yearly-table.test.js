@@ -133,4 +133,54 @@ describe('summaries yearly table', () => {
     expect(cells).toHaveLength(9);
     expect(cells[8].textContent).toContain('+10');
   });
+
+  it('expands months when yearly key is string and expanded state is numeric', () => {
+    document.body.innerHTML = '<table><tbody id="yearlyTable"></tbody></table>';
+    const selectors = { yearlyTable: document.getElementById('yearlyTable') };
+    const dashboardState = {
+      yearlyExpandedYears: [2024],
+      monthly: {
+        all: [
+          {
+            month: '2025-01',
+            count: 31,
+            dayCount: 31,
+            durations: 31,
+            totalTime: 124,
+            night: 5,
+            ems: 4,
+            hospitalized: 6,
+            discharged: 25,
+          },
+        ],
+      },
+    };
+    const yearlyStats = [
+      {
+        year: '2025',
+        count: 320,
+        dayCount: 365,
+        durations: 320,
+        totalTime: 1440,
+        monthCount: 12,
+        night: 32,
+        ems: 28,
+        hospitalized: 52,
+        discharged: 268,
+      },
+    ];
+
+    renderYearlyTable(selectors, dashboardState, yearlyStats, { yearlyEmptyText: 'Tuscia' });
+
+    const toggle = selectors.yearlyTable.querySelector('button[data-year-toggle="2025"]');
+    expect(toggle).not.toBeNull();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    handleYearlyToggle(selectors, dashboardState, { target: toggle });
+
+    const monthRow = selectors.yearlyTable.querySelector('tr[data-parent-year="2025"]');
+    expect(monthRow).not.toBeNull();
+    expect(monthRow.hidden).toBe(false);
+    expect(dashboardState.yearlyExpandedYears).toContain('2025');
+  });
 });
