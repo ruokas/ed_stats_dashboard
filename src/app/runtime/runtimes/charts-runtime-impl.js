@@ -51,7 +51,6 @@ import { createDataFlow } from '../data-flow.js';
 import { setupCopyExportControls } from '../export-controls.js';
 import { createFunnelCanvasFeature } from '../features/funnel-canvas.js';
 import { createHourlyControlsFeature } from '../features/hourly-controls.js';
-import { initJumpStickyOffset } from '../features/jump-sticky-offset.js';
 import { applyChartsText } from '../features/text-charts.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
 import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
@@ -73,7 +72,33 @@ import {
   KPI_FILTER_LABELS,
 } from '../state.js';
 import { parseColorToRgb, relativeLuminance, rgbToRgba } from '../utils/color.js';
+import {
+  clearChartError,
+  hideChartSkeletons,
+  setChartCardMessage,
+  showChartError,
+  showChartSkeletons,
+} from './charts/chart-cards.js';
 import { createChartsDataFlowConfig } from './charts/data-flow-config.js';
+import {
+  buildChartsExpandedMap,
+  CHARTS_SECTION_KEYS,
+  DEFAULT_CHARTS_SECTIONS_EXPANDED,
+  getExpandedKeysFromMap,
+  normalizeChartsSectionExpandedKeys,
+} from './charts/disclosure.js';
+import {
+  computeArrivalHeatmap,
+  computeFunnelStats,
+  filterRecordsByChartFilters,
+  filterRecordsByHeatmapFilters,
+  HEATMAP_HOURS,
+  HEATMAP_WEEKDAY_FULL,
+  HEATMAP_WEEKDAY_SHORT,
+  resolveCachedHeatmapFilterData,
+  sanitizeHeatmapFilters,
+} from './charts/heatmap.js';
+import { initChartsJumpNavigation, initChartsJumpStickyOffset } from './charts/jump-nav.js';
 import { wireChartsRuntimeInteractions } from './charts/runtime-interactions.js';
 import { createRuntimeLifecycle } from './runtime-lifecycle.js';
 
@@ -82,17 +107,6 @@ const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId }
   statusText: TEXT.status,
 });
 
-const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
-const HEATMAP_WEEKDAY_FULL = [
-  'Pirmadienis',
-  'Antradienis',
-  'Treciadienis',
-  'Ketvirtadienis',
-  'Penktadienis',
-  'Sestadienis',
-  'Sekmadienis',
-];
-const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Trec', 'Ketv', 'Penkt', 'Sest', 'Sekm'];
 const HEATMAP_METRICS = getMetricsBySurface('heatmap');
 const HEATMAP_METRIC_KEYS = HEATMAP_METRICS.map((metric) => metric.id);
 const DEFAULT_HEATMAP_METRIC = HEATMAP_METRIC_KEYS.includes('arrivals')
@@ -124,513 +138,17 @@ const HOURLY_STAY_BUCKETS = [
   { key: '8to16', min: 8, max: 16 },
   { key: 'gt16', min: 16, max: Number.POSITIVE_INFINITY },
 ];
-const CHARTS_SECTION_KEYS = ['overview', 'hourly', 'heatmap', 'hospital'];
-const DEFAULT_CHARTS_SECTIONS_EXPANDED = {
-  overview: true,
-  hourly: false,
-  heatmap: false,
-  hospital: false,
-};
 
-function normalizeChartsSectionExpandedKeys(values) {
-  const allowed = new Set(CHARTS_SECTION_KEYS);
-  return (Array.isArray(values) ? values : [])
-    .map((value) => String(value || '').trim())
-    .filter((value, index, arr) => value && allowed.has(value) && arr.indexOf(value) === index);
-}
-
-function buildChartsExpandedMap(values, defaults) {
-  const keys = Object.keys(defaults || {});
-  const selected = new Set(Array.isArray(values) ? values : []);
-  const next = {};
-  keys.forEach((key) => {
-    next[key] = selected.has(key);
-  });
-  return next;
-}
-
-function getExpandedKeysFromMap(map, defaults) {
-  return Object.keys(defaults || {}).filter((key) => map?.[key] === true);
-}
-
-export function matchesSharedPatientFilters(record, filters = {}) {
-  if (filters.arrival === 'ems' && !record.ems) return false;
-  if (filters.arrival === 'self' && record.ems) return false;
-  if (filters.disposition === 'hospitalized' && !record.hospitalized) return false;
-  if (filters.disposition === 'discharged' && record.hospitalized) return false;
-  if (filters.cardType === 't' && record.cardType !== 't') return false;
-  if (filters.cardType === 'tr' && record.cardType !== 'tr') return false;
-  if (filters.cardType === 'ch' && record.cardType !== 'ch') return false;
-  return true;
-}
-
-export function filterRecordsByChartFilters(records, filters) {
-  const normalized = sanitizeChartFilters(filters, {
-    getDefaultChartFilters: createDefaultChartFilters,
-    KPI_FILTER_LABELS,
-  });
-  return (Array.isArray(records) ? records : []).filter((record) =>
-    matchesSharedPatientFilters(record, normalized)
-  );
-}
-
-export function sanitizeHeatmapFilters(filters) {
-  const defaults = { arrival: 'all', disposition: 'all', cardType: 'all' };
-  const normalized = { ...defaults, ...(filters || {}) };
-  if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) normalized.arrival = defaults.arrival;
-  if (!(normalized.disposition in KPI_FILTER_LABELS.disposition))
-    normalized.disposition = defaults.disposition;
-  if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) normalized.cardType = defaults.cardType;
-  return normalized;
-}
-
-export function buildHeatmapFilterCacheKey(year, filters = {}) {
-  const normalized = sanitizeHeatmapFilters(filters);
-  const yearKey = Number.isFinite(year) ? String(Math.trunc(year)) : 'all';
-  return [yearKey, normalized.arrival, normalized.disposition, normalized.cardType].join('|');
-}
-
-export function resolveCachedHeatmapFilterData({
-  chartData,
-  rawRecords,
-  filterRecordsByYearFn = filterRecordsByYear,
-  filterRecordsByHeatmapFiltersFn = filterRecordsByHeatmapFilters,
-  computeArrivalHeatmapFn = computeArrivalHeatmap,
-  heatmapYear = null,
-  heatmapFilters = {},
-}) {
-  const safeChartData = chartData && typeof chartData === 'object' ? chartData : {};
-  const baseRecords =
-    Array.isArray(safeChartData.baseRecords) && safeChartData.baseRecords.length
-      ? safeChartData.baseRecords
-      : Array.isArray(rawRecords)
-        ? rawRecords
-        : [];
-  const selectedYear = Number.isFinite(heatmapYear) ? Number(heatmapYear) : null;
-  const normalizedFilters = sanitizeHeatmapFilters(heatmapFilters);
-  const key = buildHeatmapFilterCacheKey(selectedYear, normalizedFilters);
-  const cache =
-    safeChartData.heatmapFilterCache &&
-    typeof safeChartData.heatmapFilterCache === 'object' &&
-    safeChartData.heatmapFilterCache.byKey instanceof Map
-      ? safeChartData.heatmapFilterCache
-      : null;
-  if (!cache || cache.recordsRef !== baseRecords) {
-    safeChartData.heatmapFilterCache = {
-      recordsRef: baseRecords,
-      byKey: new Map(),
-    };
-  }
-  const activeCache = safeChartData.heatmapFilterCache;
-  if (activeCache.byKey.has(key)) {
-    const cached = activeCache.byKey.get(key);
-    safeChartData.heatmap = cached;
-    return cached;
-  }
-  const yearScoped = filterRecordsByYearFn(baseRecords, selectedYear);
-  const filtered = filterRecordsByHeatmapFiltersFn(yearScoped, normalizedFilters);
-  const data = computeArrivalHeatmapFn(filtered);
-  activeCache.byKey.set(key, data);
-  safeChartData.heatmap = data;
-  return data;
-}
-
-export function filterRecordsByHeatmapFilters(records, filters) {
-  const normalized = sanitizeHeatmapFilters(filters);
-  return (Array.isArray(records) ? records : []).filter((record) =>
-    matchesSharedPatientFilters(record, normalized)
-  );
-}
-
-export function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {
-  const entries =
-    Array.isArray(dailyStats) && dailyStats.length
-      ? dailyStats
-      : Array.isArray(fallbackDailyStats)
-        ? fallbackDailyStats
-        : [];
-  return entries.reduce(
-    (acc, entry) => ({
-      arrived: acc.arrived + (Number.isFinite(entry?.count) ? entry.count : 0),
-      hospitalized: acc.hospitalized + (Number.isFinite(entry?.hospitalized) ? entry.hospitalized : 0),
-      discharged: acc.discharged + (Number.isFinite(entry?.discharged) ? entry.discharged : 0),
-      year: Number.isFinite(targetYear) ? targetYear : null,
-    }),
-    { arrived: 0, hospitalized: 0, discharged: 0, year: Number.isFinite(targetYear) ? targetYear : null }
-  );
-}
-
-export function computeArrivalHeatmap(records) {
-  const aggregates = Array.from({ length: 7 }, () =>
-    Array.from({ length: 24 }, () => ({
-      arrivals: 0,
-      discharges: 0,
-      hospitalized: 0,
-      durationSum: 0,
-      durationCount: 0,
-    }))
-  );
-  const weekdayDays = {
-    arrivals: Array.from({ length: 7 }, () => new Set()),
-    discharges: Array.from({ length: 7 }, () => new Set()),
-    hospitalized: Array.from({ length: 7 }, () => new Set()),
-    avgDuration: Array.from({ length: 7 }, () => new Set()),
-  };
-  const formatLocalDateKey = (date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-  (Array.isArray(records) ? records : []).forEach((entry) => {
-    const arrival =
-      entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
-    const discharge =
-      entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
-    const arrivalHasTime =
-      entry?.arrivalHasTime === true ||
-      (entry?.arrivalHasTime == null &&
-        arrival &&
-        (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
-    const dischargeHasTime =
-      entry?.dischargeHasTime === true ||
-      (entry?.dischargeHasTime == null &&
-        discharge &&
-        (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
-
-    if (arrival && arrivalHasTime) {
-      const dayIndex = (arrival.getDay() + 6) % 7;
-      const hour = arrival.getHours();
-      if (hour >= 0 && hour <= 23) {
-        const cell = aggregates[dayIndex][hour];
-        cell.arrivals += 1;
-        const dateKey = formatLocalDateKey(arrival);
-        if (dateKey) {
-          weekdayDays.arrivals[dayIndex].add(dateKey);
-          weekdayDays.avgDuration[dayIndex].add(dateKey);
-        }
-        if (discharge) {
-          const duration = (discharge.getTime() - arrival.getTime()) / 3600000;
-          if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
-            cell.durationSum += duration;
-            cell.durationCount += 1;
-          }
-        }
-      }
-    }
-
-    if (discharge && dischargeHasTime) {
-      const dayIndex = (discharge.getDay() + 6) % 7;
-      const hour = discharge.getHours();
-      if (hour >= 0 && hour <= 23) {
-        const cell = aggregates[dayIndex][hour];
-        const dateKey = formatLocalDateKey(discharge);
-        if (entry.hospitalized) {
-          cell.hospitalized += 1;
-          if (dateKey) {
-            weekdayDays.hospitalized[dayIndex].add(dateKey);
-          }
-        } else {
-          cell.discharges += 1;
-          if (dateKey) {
-            weekdayDays.discharges[dayIndex].add(dateKey);
-          }
-        }
-      }
-    }
-  });
-
-  const createMatrix = () => Array.from({ length: 7 }, () => Array(24).fill(0));
-  const metrics = {
-    arrivals: { matrix: createMatrix(), max: 0, hasData: false },
-    discharges: { matrix: createMatrix(), max: 0, hasData: false },
-    hospitalized: { matrix: createMatrix(), max: 0, hasData: false },
-    avgDuration: { matrix: createMatrix(), counts: createMatrix(), max: 0, hasData: false, samples: 0 },
-  };
-
-  aggregates.forEach((row, dayIndex) => {
-    const arrivalsDiv = weekdayDays.arrivals[dayIndex].size || 1;
-    const dischargesDiv = weekdayDays.discharges[dayIndex].size || 1;
-    const hospitalizedDiv = weekdayDays.hospitalized[dayIndex].size || 1;
-
-    row.forEach((cell, hourIndex) => {
-      if (cell.arrivals > 0) metrics.arrivals.hasData = true;
-      if (cell.discharges > 0) metrics.discharges.hasData = true;
-      if (cell.hospitalized > 0) metrics.hospitalized.hasData = true;
-      if (cell.durationCount > 0) {
-        metrics.avgDuration.hasData = true;
-        metrics.avgDuration.samples += cell.durationCount;
-      }
-
-      const arrivalsAvg = arrivalsDiv ? cell.arrivals / arrivalsDiv : 0;
-      const dischargesAvg = dischargesDiv ? cell.discharges / dischargesDiv : 0;
-      const hospitalizedAvg = hospitalizedDiv ? cell.hospitalized / hospitalizedDiv : 0;
-      const averageDuration = cell.durationCount > 0 ? cell.durationSum / cell.durationCount : 0;
-
-      metrics.arrivals.matrix[dayIndex][hourIndex] = arrivalsAvg;
-      metrics.discharges.matrix[dayIndex][hourIndex] = dischargesAvg;
-      metrics.hospitalized.matrix[dayIndex][hourIndex] = hospitalizedAvg;
-      metrics.avgDuration.matrix[dayIndex][hourIndex] = averageDuration;
-      metrics.avgDuration.counts[dayIndex][hourIndex] = cell.durationCount;
-
-      if (arrivalsAvg > metrics.arrivals.max) metrics.arrivals.max = arrivalsAvg;
-      if (dischargesAvg > metrics.discharges.max) metrics.discharges.max = dischargesAvg;
-      if (hospitalizedAvg > metrics.hospitalized.max) metrics.hospitalized.max = hospitalizedAvg;
-      if (averageDuration > metrics.avgDuration.max) metrics.avgDuration.max = averageDuration;
-    });
-  });
-
-  return { metrics };
-}
-
-function clearChartError(selectors) {
-  (selectors.chartCards || []).forEach((card) => {
-    if (!card) {
-      return;
-    }
-    card.removeAttribute('data-error');
-    const message = card.querySelector('.chart-card__message');
-    if (message) {
-      message.remove();
-    }
-  });
-}
-
-function showChartSkeletons(selectors) {
-  clearChartError(selectors);
-  (selectors.chartCards || []).forEach((card) => {
-    if (!card) {
-      return;
-    }
-    const skeleton = card.querySelector('.chart-card__skeleton');
-    if (skeleton) {
-      skeleton.hidden = false;
-    }
-    setDatasetValue(card, 'loading', 'true');
-  });
-}
-
-function hideChartSkeletons(selectors) {
-  (selectors.chartCards || []).forEach((card) => {
-    if (!card) {
-      return;
-    }
-    const skeleton = card.querySelector('.chart-card__skeleton');
-    if (skeleton) {
-      skeleton.hidden = true;
-    }
-    setDatasetValue(card, 'loading', null);
-  });
-}
-
-function showChartError(selectors, message) {
-  hideChartSkeletons(selectors);
-  (selectors.chartCards || []).forEach((card) => {
-    if (!card) {
-      return;
-    }
-    setDatasetValue(card, 'error', 'true');
-    let messageEl = card.querySelector('.chart-card__message');
-    if (!messageEl) {
-      messageEl = document.createElement('div');
-      messageEl.className = 'chart-card__message';
-      messageEl.setAttribute('role', 'status');
-      messageEl.setAttribute('aria-live', 'polite');
-      card.appendChild(messageEl);
-    }
-    messageEl.textContent = message || TEXT.charts?.errorLoading || TEXT.status.error;
-  });
-}
-
-function setChartCardMessage(element, message) {
-  if (!element) {
-    return;
-  }
-  const card = element.closest('.chart-card');
-  if (!card) {
-    return;
-  }
-  let messageEl = card.querySelector('.chart-card__message');
-  if (!message || !String(message).trim()) {
-    if (messageEl) {
-      messageEl.remove();
-    }
-    return;
-  }
-  if (!messageEl) {
-    messageEl = document.createElement('div');
-    messageEl.className = 'chart-card__message';
-    messageEl.setAttribute('role', 'status');
-    messageEl.setAttribute('aria-live', 'polite');
-    card.appendChild(messageEl);
-  }
-  messageEl.textContent = String(message);
-}
-
-function initChartsJumpNavigation(selectors, options = {}) {
-  const nav = selectors?.chartsJumpNav;
-  const links = Array.isArray(selectors?.chartsJumpLinks) ? selectors.chartsJumpLinks : [];
-  const onBeforeNavigate =
-    typeof options?.onBeforeNavigate === 'function' ? options.onBeforeNavigate : () => {};
-  if (!nav || !links.length) {
-    return;
-  }
-
-  const items = links
-    .map((link) => {
-      const href = typeof link?.getAttribute === 'function' ? String(link.getAttribute('href') || '') : '';
-      if (!href.startsWith('#')) {
-        return null;
-      }
-      const target = document.getElementById(href.slice(1));
-      if (!target) {
-        return null;
-      }
-      return { link, target };
-    })
-    .filter(Boolean);
-
-  if (!items.length) {
-    return;
-  }
-
-  const applyActiveLink = (activeLink) => {
-    items.forEach(({ link }) => {
-      const isActive = link === activeLink;
-      link.classList.toggle('is-active', isActive);
-      if (isActive) {
-        link.setAttribute('aria-current', 'true');
-      } else {
-        link.removeAttribute('aria-current');
-      }
-    });
-  };
-
-  const getStickyOffset = () => {
-    const jumpNavHeight = nav instanceof HTMLElement ? nav.getBoundingClientRect().height : 0;
-    const jumpNavTop = nav instanceof HTMLElement ? Number.parseFloat(getComputedStyle(nav).top) || 0 : 0;
-    const safeGap = 10;
-    const total = Math.ceil(
-      (Number.isFinite(jumpNavTop) ? jumpNavTop : 0) +
-        (Number.isFinite(jumpNavHeight) ? jumpNavHeight : 0) +
-        safeGap
-    );
-    return total > 0 ? total : 160;
-  };
-
-  const scrollToSectionStart = (target, { smooth = true, updateHash = true } = {}) => {
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    const offset = getStickyOffset();
-    const targetTop = window.scrollY + target.getBoundingClientRect().top - offset;
-    const nextTop = Math.max(0, Math.round(targetTop));
-    window.scrollTo({ top: nextTop, behavior: smooth ? 'smooth' : 'auto' });
-    if (!updateHash || !target.id) {
-      return;
-    }
-    const hash = `#${target.id}`;
-    if (window.location.hash === hash) {
-      return;
-    }
-    if (window.history && typeof window.history.pushState === 'function') {
-      window.history.pushState(null, '', hash);
-    } else {
-      window.location.hash = hash;
-    }
-  };
-
-  const findLinkByHash = (hash) => {
-    if (!hash || hash === '#') {
-      return null;
-    }
-    return items.find(({ link }) => link.getAttribute('href') === hash) || null;
-  };
-
-  const hashMatchedLink = findLinkByHash(window.location.hash);
-  applyActiveLink(hashMatchedLink?.link || items[0].link);
-  if (hashMatchedLink?.target) {
-    window.setTimeout(() => {
-      onBeforeNavigate(hashMatchedLink.target, { source: 'hash-init' });
-      scrollToSectionStart(hashMatchedLink.target, { smooth: false, updateHash: false });
-    }, 0);
-  }
-
-  items.forEach(({ link, target }) => {
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
-      onBeforeNavigate(target, { source: 'jump-click' });
-      applyActiveLink(link);
-      scrollToSectionStart(target, { smooth: true, updateHash: true });
-    });
-  });
-
-  if (typeof IntersectionObserver !== 'function') {
-    window.addEventListener('hashchange', () => {
-      const hashLink = findLinkByHash(window.location.hash);
-      if (hashLink?.link) {
-        applyActiveLink(hashLink.link);
-      }
-      if (hashLink?.target) {
-        onBeforeNavigate(hashLink.target, { source: 'hashchange' });
-        scrollToSectionStart(hashLink.target, { smooth: false, updateHash: false });
-      }
-    });
-    return;
-  }
-
-  const visibility = new Map(
-    items.map(({ target }) => [target, { ratio: 0, top: Number.POSITIVE_INFINITY }])
-  );
-  const updateActiveFromVisibility = () => {
-    let bestItem = null;
-    let bestRatio = -1;
-    let bestTop = Number.POSITIVE_INFINITY;
-    items.forEach((item) => {
-      const state = visibility.get(item.target);
-      if (!state) {
-        return;
-      }
-      const ratio = Number(state.ratio) || 0;
-      const top = Number(state.top);
-      if (ratio > bestRatio || (ratio === bestRatio && top < bestTop)) {
-        bestRatio = ratio;
-        bestTop = top;
-        bestItem = item;
-      }
-    });
-    if (bestItem && bestRatio > 0) {
-      applyActiveLink(bestItem.link);
-    }
-  };
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        visibility.set(entry.target, {
-          ratio: entry.isIntersecting ? entry.intersectionRatio : 0,
-          top: Number(entry.boundingClientRect?.top) || Number.POSITIVE_INFINITY,
-        });
-      });
-      updateActiveFromVisibility();
-    },
-    {
-      root: null,
-      rootMargin: '-24% 0px -54% 0px',
-      threshold: [0, 0.12, 0.3, 0.55, 0.8],
-    }
-  );
-
-  items.forEach(({ target }) => {
-    observer.observe(target);
-  });
-}
-
-function initChartsJumpStickyOffset(selectors) {
-  initJumpStickyOffset({
-    jumpNav: selectors?.chartsJumpNav,
-    hero: selectors?.hero,
-    jumpNavStickyTopVar: '--charts-jump-sticky-top',
-    documentJumpNavHeightVar: '--charts-jump-nav-height',
-  });
-}
+export {
+  buildHeatmapFilterCacheKey,
+  computeArrivalHeatmap,
+  computeFunnelStats,
+  filterRecordsByChartFilters,
+  filterRecordsByHeatmapFilters,
+  matchesSharedPatientFilters,
+  resolveCachedHeatmapFilterData,
+  sanitizeHeatmapFilters,
+} from './charts/heatmap.js';
 
 export async function runChartsRuntime(core) {
   const pageConfig = core?.pageConfig || { charts: true, heatmap: true, hourly: true };
