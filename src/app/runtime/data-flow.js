@@ -1,4 +1,28 @@
 import { normalizeCreateDataFlowArgs } from './data-flow/bootstrap.js';
+import {
+  computeEdRenderKey as computeEdRenderKeyHelper,
+  computeMainDataSignature as computeMainDataSignatureHelper,
+  dispatchChartsLifecycleEvent as dispatchChartsLifecycleEventHelper,
+  ensureChartsStartupState as ensureChartsStartupStateHelper,
+  finishPerfStage as finishPerfStageHelper,
+  isAbortError as isAbortErrorHelper,
+  logRefreshDecision as logRefreshDecisionHelper,
+  markBrowserMetric as markBrowserMetricHelper,
+  readDailyStatsFromSessionCache as readDailyStatsFromSessionCacheHelper,
+  startPerfStage as startPerfStageHelper,
+  writeDailyStatsToSessionCache as writeDailyStatsToSessionCacheHelper,
+} from './data-flow/helpers.js';
+import { performDashboardLoadAttempt as performDashboardLoadAttemptHelper } from './data-flow/load-cycle.js';
+import {
+  applyHydratedMainDataset as applyHydratedMainDatasetHelper,
+  hydrateDeferredFullRecords as hydrateDeferredFullRecordsHelper,
+  hydrateWithHistoricalData as hydrateWithHistoricalDataHelper,
+  renderChartsPrimaryStage as renderChartsPrimaryStageHelper,
+  scheduleChartsSecondaryAndHospitalRender as scheduleChartsSecondaryAndHospitalRenderHelper,
+  scheduleDeferredFullRecordsHydration as scheduleDeferredFullRecordsHydrationHelper,
+  scheduleDeferredHydration as scheduleDeferredHydrationHelper,
+  scheduleInitialLoad as scheduleInitialLoadHelper,
+} from './data-flow/orchestration.js';
 
 export function createDataFlow(env = {}) {
   const {
@@ -137,281 +161,83 @@ export function createDataFlow(env = {}) {
     typeof supportsDeferredFullRecordsHydration === 'boolean' ? supportsDeferredFullRecordsHydration : false;
   const pageRequiresFullRecordsForInteractions =
     typeof requiresFullRecordsForInteractions === 'boolean' ? requiresFullRecordsForInteractions : false;
-  let historicalHydrationInFlight = false;
-  let historicalHydrated = false;
-  let fullRecordsHydrationInFlight = false;
-  let fullRecordsHydrated = false;
+  const hydrationState = {
+    historicalHydrationInFlight: false,
+    historicalHydrated: false,
+    fullRecordsHydrationInFlight: false,
+    fullRecordsHydrated: false,
+    deferredHydrationQueued: false,
+    deferredFullRecordsHydrationQueued: false,
+    activeHydrationAbortController: null,
+    activeFullRecordsHydrationAbortController: null,
+  };
   let visibilityHandlersBound = false;
-  let deferredHydrationQueued = false;
-  let deferredFullRecordsHydrationQueued = false;
   let lastIssuedLoadToken = 0;
   let activeLoadAbortController = null;
-  let activeHydrationAbortController = null;
-  let activeFullRecordsHydrationAbortController = null;
 
   function isLoadTokenCurrent(token) {
     return Number.isFinite(token) && token === lastIssuedLoadToken;
   }
 
-  function isAbortError(error) {
-    return Boolean(error && typeof error === 'object' && error.name === 'AbortError');
-  }
-
-  function startPerfStage(label, meta = {}) {
-    try {
-      return perfMonitor?.start?.(label, meta) ?? null;
-    } catch (_error) {
-      return null;
-    }
-  }
-
-  function finishPerfStage(handle, meta = {}) {
-    if (!handle) {
-      return;
-    }
-    try {
-      perfMonitor?.finish?.(handle, meta);
-    } catch (_error) {
-      // ignore perf instrumentation failures
-    }
-  }
-
-  function markBrowserMetric(name) {
-    if (typeof performance?.mark !== 'function') {
-      return;
-    }
-    try {
-      performance.mark(name);
-    } catch (_error) {
-      // ignore perf mark failures
-    }
-  }
-
-  function dispatchChartsLifecycleEvent(name, detail = {}) {
-    if (typeof window?.dispatchEvent !== 'function' || typeof window?.CustomEvent !== 'function') {
-      return;
-    }
-    window.dispatchEvent(new CustomEvent(name, { detail }));
-  }
-
-  function ensureChartsStartupState() {
-    if (!dashboardState.chartsStartupPhases || typeof dashboardState.chartsStartupPhases !== 'object') {
-      dashboardState.chartsStartupPhases = {
-        primaryVisible: false,
-        secondaryComplete: false,
-        hospitalRendered: false,
-      };
-    }
-    if (
-      !dashboardState.chartsSectionRenderFlags ||
-      typeof dashboardState.chartsSectionRenderFlags !== 'object'
-    ) {
-      dashboardState.chartsSectionRenderFlags = {
-        heatmapVisible: false,
-        hourlyVisible: false,
-        heatmapRendered: false,
-        hourlyRendered: false,
-        hospitalVisible: false,
-      };
-    }
-  }
+  const isAbortError = (error) => isAbortErrorHelper(error);
+  const startPerfStage = (label, meta = {}) => startPerfStageHelper(perfMonitor, label, meta);
+  const finishPerfStage = (handle, meta = {}) => finishPerfStageHelper(perfMonitor, handle, meta);
+  const markBrowserMetric = (name) => markBrowserMetricHelper(name);
+  const dispatchChartsLifecycleEvent = (name, detail = {}) =>
+    dispatchChartsLifecycleEventHelper(name, detail);
+  const ensureChartsStartupState = () => ensureChartsStartupStateHelper(dashboardState);
 
   async function renderChartsPrimaryStage(scopedCharts) {
-    const primaryRenderer =
-      typeof renderChartsPrimary === 'function'
-        ? renderChartsPrimary
-        : async (daily, funnel) => renderCharts(daily, funnel, null);
-    const handle = startPerfStage('charts-primary-render');
-    try {
-      await primaryRenderer(scopedCharts?.daily, scopedCharts?.funnel);
-      ensureChartsStartupState();
-      dashboardState.chartsStartupPhases.primaryVisible = true;
-      dashboardState.chartsFirstVisibleAt = Date.now();
-      if (typeof onPrimaryVisible === 'function') {
-        onPrimaryVisible({ scope: 'charts' });
-      }
-    } finally {
-      finishPerfStage(handle);
-    }
-  }
-
-  function scheduleChartsSecondaryAndHospitalRender({ reason = 'load' } = {}) {
-    if (!activeConfig.charts) {
-      return;
-    }
-    if (typeof scheduleChartsSecondaryRender === 'function') {
-      scheduleChartsSecondaryRender({ reason });
-      return;
-    }
-    ensureChartsStartupState();
-    dashboardState.chartsDeferredRenderToken = Number(dashboardState.chartsDeferredRenderToken || 0) + 1;
-    const token = dashboardState.chartsDeferredRenderToken;
-    dashboardState.chartsDeferredRenderReason = reason;
-    if (dashboardState.chartsSecondaryRenderScheduled) {
-      return;
-    }
-    dashboardState.chartsSecondaryRenderScheduled = true;
-    runAfterDomAndIdle(
-      async () => {
-        dashboardState.chartsSecondaryRenderScheduled = false;
-        if (token !== dashboardState.chartsDeferredRenderToken) {
-          scheduleChartsSecondaryAndHospitalRender({
-            reason: dashboardState.chartsDeferredRenderReason || reason,
-          });
-          return;
-        }
-        const secondaryHandle = startPerfStage('charts-secondary-render', { priežastis: reason });
-        try {
-          if (typeof renderChartsSecondary === 'function') {
-            await renderChartsSecondary({
-              heatmapData: typeof getHeatmapData === 'function' ? getHeatmapData() : null,
-              allowReuse: true,
-            });
-          } else {
-            const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-            const heatmapData =
-              typeof getHeatmapData === 'function' ? getHeatmapData() : scopedCharts.heatmap;
-            await renderCharts(scopedCharts.daily, scopedCharts.funnel, heatmapData);
-          }
-          dashboardState.chartsStartupPhases.secondaryComplete = true;
-          if (typeof onSecondaryComplete === 'function') {
-            onSecondaryComplete({ scope: 'charts', reason });
-          }
-          markBrowserMetric('app-charts-secondary-complete');
-          dispatchChartsLifecycleEvent('app:charts-secondary-complete', {
-            loadCounter: dashboardState.loadCounter,
-          });
-        } catch (_error) {
-          // section-level renderer errors are already handled downstream
-        } finally {
-          finishPerfStage(secondaryHandle);
-        }
-
-        if (dashboardState.chartsHospitalRenderScheduled) {
-          return;
-        }
-        dashboardState.chartsHospitalRenderScheduled = true;
-        runAfterDomAndIdle(
-          () => {
-            dashboardState.chartsHospitalRenderScheduled = false;
-            if (token !== dashboardState.chartsDeferredRenderToken) {
-              return;
-            }
-            const hospitalHandle = startPerfStage('charts-hospital-table-render', { priežastis: reason });
-            try {
-              renderChartsHospitalTable(dashboardState.rawRecords);
-              dashboardState.chartsStartupPhases.hospitalRendered = true;
-            } finally {
-              finishPerfStage(hospitalHandle);
-            }
-          },
-          { timeout: 1800 }
-        );
+    return renderChartsPrimaryStageHelper(
+      {
+        renderChartsPrimary,
+        renderCharts,
+        startPerfStage,
+        finishPerfStage,
+        ensureChartsStartupState,
+        dashboardState,
+        onPrimaryVisible,
       },
-      { timeout: 1200 }
+      scopedCharts
     );
   }
 
-  function computeMainDataSignature(dataset, cachedDailyStats) {
-    if (cachedDailyStats) {
-      return `session:${Array.isArray(cachedDailyStats) ? cachedDailyStats.length : 0}`;
-    }
-    const primarySignature =
-      dataset?.meta?.primary?.signature ||
-      dataset?.meta?.primary?.etag ||
-      dataset?.meta?.primary?.lastModified ||
-      '';
-    const historicalSignature =
-      dataset?.meta?.historical?.signature ||
-      dataset?.meta?.historical?.etag ||
-      dataset?.meta?.historical?.lastModified ||
-      '';
-    return `${primarySignature}|${historicalSignature}`;
+  function scheduleChartsSecondaryAndHospitalRender({ reason = 'load' } = {}) {
+    scheduleChartsSecondaryAndHospitalRenderHelper(
+      {
+        activeConfig,
+        scheduleChartsSecondaryRender,
+        ensureChartsStartupState,
+        dashboardState,
+        runAfterDomAndIdle,
+        startPerfStage,
+        finishPerfStage,
+        renderChartsSecondary,
+        getHeatmapData,
+        prepareChartDataForPeriod,
+        renderCharts,
+        onSecondaryComplete,
+        markBrowserMetric,
+        dispatchChartsLifecycleEvent,
+        renderChartsHospitalTable,
+      },
+      { reason }
+    );
   }
 
-  function computeEdRenderKey(edData) {
-    if (!edData || typeof edData !== 'object') {
-      return '';
-    }
-    const signature = String(edData?.meta?.signature || '').trim();
-    const records = Array.isArray(edData.records) ? edData.records : [];
-    const daily = Array.isArray(edData.daily) ? edData.daily : [];
-    const summary = edData.summary && typeof edData.summary === 'object' ? edData.summary : {};
-    const latestDailyKey = String(
-      daily.length ? daily[daily.length - 1]?.dateKey || daily[daily.length - 1]?.date || '' : ''
-    ).trim();
-    const latestSnapshot = String(summary.latestSnapshotLabel || '').trim();
-    const entryCount = Number.isFinite(Number(summary.entryCount))
-      ? Number(summary.entryCount)
-      : records.length;
-    const patients = Number.isFinite(Number(summary.currentPatients))
-      ? Number(summary.currentPatients).toFixed(2)
-      : '';
-    return [
-      signature,
-      records.length,
-      daily.length,
-      latestDailyKey,
-      latestSnapshot,
-      entryCount,
-      patients,
-    ].join('|');
-  }
-
-  function logRefreshDecision(clientConfig, scope, decision, meta = {}) {
-    const shouldLog = clientConfig?.debugRefresh === true || clientConfig?.profilingEnabled === true;
-    if (!shouldLog) {
-      return;
-    }
-    try {
-      console.debug(`[refresh:${scope}] ${decision}`, meta);
-    } catch (_error) {
-      // ignore debug logger errors
-    }
-  }
-
-  function readDailyStatsFromSessionCache() {
-    if (!canUseDailyStatsCache) {
-      return null;
-    }
-    try {
-      const raw = window.sessionStorage.getItem(DAILY_STATS_SESSION_KEY);
-      if (!raw) {
-        return null;
-      }
-      const parsed = JSON.parse(raw);
-      if (!parsed || !Array.isArray(parsed.dailyStats) || !Number.isFinite(parsed.savedAt)) {
-        return null;
-      }
-      if (parsed.scope !== 'full') {
-        return null;
-      }
-      if (Date.now() - parsed.savedAt > DAILY_STATS_CACHE_TTL_MS) {
-        return null;
-      }
-      return parsed.dailyStats;
-    } catch (_error) {
-      return null;
-    }
-  }
-
-  function writeDailyStatsToSessionCache(dailyStats, { scope = 'full' } = {}) {
-    if (!Array.isArray(dailyStats) || !dailyStats.length) {
-      return;
-    }
-    try {
-      window.sessionStorage.setItem(
-        DAILY_STATS_SESSION_KEY,
-        JSON.stringify({
-          savedAt: Date.now(),
-          scope,
-          dailyStats,
-        })
-      );
-    } catch (_error) {
-      // Ignore storage quota and serialization errors.
-    }
-  }
+  const computeMainDataSignature = (dataset, cachedDailyStats) =>
+    computeMainDataSignatureHelper(dataset, cachedDailyStats);
+  const computeEdRenderKey = (edData) => computeEdRenderKeyHelper(edData);
+  const logRefreshDecision = (clientConfig, scope, decision, meta = {}) =>
+    logRefreshDecisionHelper(clientConfig, scope, decision, meta);
+  const readDailyStatsFromSessionCache = () =>
+    readDailyStatsFromSessionCacheHelper({
+      canUseDailyStatsCache,
+      key: DAILY_STATS_SESSION_KEY,
+      ttlMs: DAILY_STATS_CACHE_TTL_MS,
+    });
+  const writeDailyStatsToSessionCache = (dailyStats, { scope = 'full' } = {}) =>
+    writeDailyStatsToSessionCacheHelper(dailyStats, { key: DAILY_STATS_SESSION_KEY, scope });
 
   function restartAutoRefreshTimer() {
     const currentTimerId = getAutoRefreshTimerId();
@@ -450,151 +276,60 @@ export function createDataFlow(env = {}) {
   }
 
   async function applyHydratedMainDataset({ dataset, runNumber, settings, chartsReason = 'hydrate' }) {
-    if (!dataset || dashboardState.loading || runNumber !== dashboardState.loadCounter) {
-      return false;
-    }
-    const combinedRecords = Array.isArray(dataset.records) ? dataset.records : [];
-    const primaryRecords =
-      Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
-        ? dataset.primaryRecords
-        : combinedRecords;
-    const dailyStats =
-      Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
-        ? dataset.dailyStats
-        : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
-    const primaryDaily =
-      Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
-        ? dataset.primaryDaily
-        : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS);
-
-    dashboardState.rawRecords = combinedRecords;
-    dashboardState.dailyStats = dailyStats;
-    dashboardState.primaryRecords = primaryRecords.slice();
-    dashboardState.primaryDaily = primaryDaily.slice();
-    dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
-    dashboardState.dataMeta = dataset.meta || null;
-    if (dashboardState.mainData && typeof dashboardState.mainData === 'object') {
-      const recordsState = String(dataset?.meta?.recordsState || '');
-      dashboardState.mainData.recordsHydrationState =
-        recordsState === 'deferred' ? 'deferred' : combinedRecords.length > 0 ? 'full' : 'none';
-      dashboardState.mainData.deferredHydration = dataset?.deferredHydration || null;
-    }
-
-    if (activeConfig.charts) {
-      dashboardState.chartData.baseDaily = dailyStats;
-      dashboardState.chartData.baseRecords = combinedRecords;
-      dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, {
+    return applyHydratedMainDatasetHelper(
+      {
+        dashboardState,
+        computeDailyStats,
+        defaultSettings: DEFAULT_SETTINGS,
+        activeConfig,
+        sanitizeChartFilters,
         getDefaultChartFilters,
         KPI_FILTER_LABELS,
-      });
-      syncChartFilterControls();
-      populateChartYearOptions(dailyStats);
-      if (typeof populateChartsHospitalTableYearOptions === 'function') {
-        populateChartsHospitalTableYearOptions(combinedRecords);
-      }
-      populateHourlyCompareYearOptions(dailyStats);
-      if (typeof populateHeatmapYearOptions === 'function') {
-        populateHeatmapYearOptions(dailyStats);
-        if (typeof syncHeatmapFilterControls === 'function') {
-          syncHeatmapFilterControls();
-        }
-      }
-      const prepareHandle = startPerfStage('charts-main-prepare', { etapas: chartsReason });
-      const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-      finishPerfStage(prepareHandle);
-      await renderChartsPrimaryStage(scopedCharts);
-      scheduleChartsSecondaryAndHospitalRender({ reason: chartsReason });
-    }
-    if (activeConfig.kpi) {
-      await applyKpiFiltersAndRender();
-    }
-    if (activeConfig.recent) {
-      const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
-        ? Number(settings.calculations.windowDays)
-        : DEFAULT_SETTINGS.calculations.windowDays;
-      const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
-      const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
-        ? Number(settings.calculations.recentDays)
-        : DEFAULT_SETTINGS.calculations.recentDays;
-      const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
-      const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
-      renderRecentTable(recentDailyStats);
-    }
-    if (activeConfig.ed && dashboardState.ed) {
-      await renderEdDashboard(dashboardState.ed);
-    }
-    writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
-    return true;
+        syncChartFilterControls,
+        populateChartYearOptions,
+        populateChartsHospitalTableYearOptions,
+        populateHourlyCompareYearOptions,
+        populateHeatmapYearOptions,
+        syncHeatmapFilterControls,
+        startPerfStage,
+        finishPerfStage,
+        prepareChartDataForPeriod,
+        renderChartsPrimaryStage,
+        scheduleChartsSecondaryAndHospitalRender,
+        applyKpiFiltersAndRender,
+        filterDailyStatsByWindow,
+        renderRecentTable,
+        renderEdDashboard,
+        writeDailyStatsToSessionCache,
+      },
+      { dataset, runNumber, settings, chartsReason }
+    );
   }
 
   async function hydrateDeferredFullRecords({ runNumber, settings, deferredHydration }) {
-    if (
-      !supportsDeferredFullRecordsMainHydration ||
-      !pageRequiresFullRecordsForInteractions ||
-      fullRecordsHydrationInFlight ||
-      fullRecordsHydrated ||
-      !deferredHydration ||
-      typeof deferredHydration.hydrate !== 'function'
-    ) {
-      return;
-    }
-    if (
-      activeFullRecordsHydrationAbortController &&
-      !activeFullRecordsHydrationAbortController.signal.aborted
-    ) {
-      activeFullRecordsHydrationAbortController.abort();
-    }
-    const hydrationController = new AbortController();
-    activeFullRecordsHydrationAbortController = hydrationController;
-    fullRecordsHydrationInFlight = true;
-    try {
-      const dataset = await deferredHydration.hydrate({
-        signal: hydrationController.signal,
-        skipHistorical: true,
-      });
-      const applied = await applyHydratedMainDataset({
-        dataset,
-        runNumber,
-        settings,
-        chartsReason: 'full-records-hydrate',
-      });
-      if (applied) {
-        fullRecordsHydrated = true;
-      }
-    } catch (error) {
-      if (isAbortError(error)) {
-        return;
-      }
-      const errorInfo = describeError(error, { code: 'MAIN_FULL_RECORDS_HYDRATE' });
-      console.warn(errorInfo.log, error);
-    } finally {
-      fullRecordsHydrationInFlight = false;
-      if (activeFullRecordsHydrationAbortController === hydrationController) {
-        activeFullRecordsHydrationAbortController = null;
-      }
-    }
+    return hydrateDeferredFullRecordsHelper(
+      {
+        supportsDeferredFullRecordsMainHydration,
+        pageRequiresFullRecordsForInteractions,
+        hydrationState,
+        applyHydratedMainDataset,
+        isAbortError,
+        describeError,
+      },
+      { runNumber, settings, deferredHydration }
+    );
   }
 
   function scheduleDeferredFullRecordsHydration({ runNumber, settings, deferredHydration }) {
-    if (
-      deferredFullRecordsHydrationQueued ||
-      fullRecordsHydrationInFlight ||
-      fullRecordsHydrated ||
-      !deferredHydration ||
-      typeof deferredHydration.hydrate !== 'function'
-    ) {
-      return;
-    }
-    deferredFullRecordsHydrationQueued = true;
-    const execute = () => {
-      deferredFullRecordsHydrationQueued = false;
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return;
-      }
-      void hydrateDeferredFullRecords({ runNumber, settings, deferredHydration });
-    };
-    const hydrationTimeout = isKpiOnlyPage ? 150 : 600;
-    runAfterDomAndIdle(execute, { timeout: hydrationTimeout });
+    scheduleDeferredFullRecordsHydrationHelper(
+      {
+        hydrationState,
+        isKpiOnlyPage,
+        runAfterDomAndIdle,
+        hydrateDeferredFullRecords: (args) => hydrateDeferredFullRecords(args),
+      },
+      { runNumber, settings, deferredHydration }
+    );
   }
 
   async function hydrateWithHistoricalData({
@@ -604,46 +339,19 @@ export function createDataFlow(env = {}) {
     primaryChunkReporter,
     historicalChunkReporter,
   }) {
-    if (!supportsDeferredMainHydration || historicalHydrationInFlight || historicalHydrated) {
-      return;
-    }
-    if (activeHydrationAbortController && !activeHydrationAbortController.signal.aborted) {
-      activeHydrationAbortController.abort();
-    }
-    const hydrationController = new AbortController();
-    activeHydrationAbortController = hydrationController;
-    historicalHydrationInFlight = true;
-    try {
-      const skipHistoricalForHydration = Boolean(isEdOnlyPage);
-      const dataset = await fetchData({
-        onPrimaryChunk: primaryChunkReporter,
-        onHistoricalChunk: historicalChunkReporter,
-        onWorkerProgress: workerProgressReporter,
-        skipHistorical: skipHistoricalForHydration,
-        includeYearlyStats: !activeConfig.charts,
-        signal: hydrationController.signal,
-      });
-      const applied = await applyHydratedMainDataset({
-        dataset,
-        runNumber,
-        settings,
-        chartsReason: 'hydrate',
-      });
-      if (applied) {
-        historicalHydrated = true;
-      }
-    } catch (error) {
-      if (isAbortError(error)) {
-        return;
-      }
-      const errorInfo = describeError(error, { code: 'CHART_HISTORICAL_HYDRATE' });
-      console.warn(errorInfo.log, error);
-    } finally {
-      historicalHydrationInFlight = false;
-      if (activeHydrationAbortController === hydrationController) {
-        activeHydrationAbortController = null;
-      }
-    }
+    return hydrateWithHistoricalDataHelper(
+      {
+        supportsDeferredMainHydration,
+        hydrationState,
+        isEdOnlyPage,
+        fetchData,
+        activeConfig,
+        applyHydratedMainDataset,
+        isAbortError,
+        describeError,
+      },
+      { runNumber, settings, workerProgressReporter, primaryChunkReporter, historicalChunkReporter }
+    );
   }
 
   function scheduleDeferredHydration({
@@ -653,36 +361,14 @@ export function createDataFlow(env = {}) {
     primaryChunkReporter,
     historicalChunkReporter,
   }) {
-    if (deferredHydrationQueued || historicalHydrationInFlight || historicalHydrated) {
-      return;
-    }
-    deferredHydrationQueued = true;
-
-    const execute = () => {
-      deferredHydrationQueued = false;
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return;
-      }
-      if (fullRecordsHydrationInFlight || deferredFullRecordsHydrationQueued) {
-        scheduleDeferredHydration({
-          runNumber,
-          settings,
-          workerProgressReporter,
-          primaryChunkReporter,
-          historicalChunkReporter,
-        });
-        return;
-      }
-      hydrateWithHistoricalData({
-        runNumber,
-        settings,
-        workerProgressReporter,
-        primaryChunkReporter,
-        historicalChunkReporter,
-      });
-    };
-
-    runAfterDomAndIdle(execute, { timeout: 1800 });
+    scheduleDeferredHydrationHelper(
+      {
+        hydrationState,
+        runAfterDomAndIdle,
+        hydrateWithHistoricalData: (args) => hydrateWithHistoricalData(args),
+      },
+      { runNumber, settings, workerProgressReporter, primaryChunkReporter, historicalChunkReporter }
+    );
   }
 
   async function loadDashboard() {
@@ -702,14 +388,17 @@ export function createDataFlow(env = {}) {
     lastIssuedLoadToken += 1;
     const loadToken = lastIssuedLoadToken;
     dashboardState.activeLoadToken = loadToken;
-    if (activeHydrationAbortController && !activeHydrationAbortController.signal.aborted) {
-      activeHydrationAbortController.abort();
+    if (
+      hydrationState.activeHydrationAbortController &&
+      !hydrationState.activeHydrationAbortController.signal.aborted
+    ) {
+      hydrationState.activeHydrationAbortController.abort();
     }
     if (
-      activeFullRecordsHydrationAbortController &&
-      !activeFullRecordsHydrationAbortController.signal.aborted
+      hydrationState.activeFullRecordsHydrationAbortController &&
+      !hydrationState.activeFullRecordsHydrationAbortController.signal.aborted
     ) {
-      activeFullRecordsHydrationAbortController.abort();
+      hydrationState.activeFullRecordsHydrationAbortController.abort();
     }
     if (activeLoadAbortController && !activeLoadAbortController.signal.aborted) {
       activeLoadAbortController.abort();
@@ -724,7 +413,7 @@ export function createDataFlow(env = {}) {
       : null;
     const fetchSummary = { pagrindinis: 'tinklas', istorinis: 'tinklas' };
     let fetchMeasured = false;
-    fullRecordsHydrated = false;
+    hydrationState.fullRecordsHydrated = false;
 
     dashboardState.loading = true;
     const shouldShowSkeletons = !dashboardState.hasLoadedOnce;
@@ -752,414 +441,83 @@ export function createDataFlow(env = {}) {
     }
 
     try {
-      setStatus('loading', {
-        message: typeof TEXT.status.loading === 'string' ? TEXT.status.loading : 'Kraunama...',
+      const loadOutcome = await performDashboardLoadAttemptHelper({
+        setStatus,
+        TEXT,
+        selectors,
+        setDatasetValue,
+        readDailyStatsFromSessionCache,
+        isEdOnlyPage,
+        hydrationState,
+        needsMainData,
+        createChunkReporter,
+        needsEdData,
+        isKpiOnlyPage,
+        disableHistoricalForPage,
+        supportsDeferredFullRecordsMainHydration,
+        pageRequiresFullRecordsForInteractions,
+        mainDataFetchProfile,
+        activeConfig,
+        dashboardState,
+        supportsPartialPrimaryRender,
+        clientConfig,
+        requiresFullRecordsForPrimary,
+        isLoadTokenCurrent,
+        loadToken,
+        loadAbortController,
+        mergeDailyStatsSeries,
+        populateChartYearOptions,
+        populateHeatmapYearOptions,
+        syncHeatmapFilterControls,
+        syncChartFilterControls,
+        startPerfStage,
+        prepareChartDataForPeriod,
+        finishPerfStage,
+        renderChartsPrimaryStage,
+        fetchData,
+        needsFeedbackData,
+        fetchFeedbackData,
+        fetchEdData,
+        describeCacheMeta,
+        perfMonitor,
+        fetchHandle,
+        fetchSummary,
+        computeMainDataSignature,
+        computeEdRenderKey,
+        shouldAutoRefresh,
+        logRefreshDecision,
+        describeError,
+        createEmptyEdSummary,
+        computeDailyStats,
+        defaultSettings: DEFAULT_SETTINGS,
+        writeDailyStatsToSessionCache,
+        populateChartsHospitalTableYearOptions,
+        populateHourlyCompareYearOptions,
+        filterDailyStatsByWindow,
+        initializeKpiDefaultWindow,
+        syncKpiFilterControlsSafe,
+        sanitizeChartFilters,
+        getDefaultChartFilters,
+        KPI_FILTER_LABELS,
+        scheduleChartsSecondaryAndHospitalRender,
+        applyKpiFiltersAndRender,
+        renderRecentTable,
+        computeMonthlyStats,
+        renderMonthlyTable,
+        computeYearlyStats,
+        renderYearlyTable,
+        updateFeedbackFilterOptions,
+        applyFeedbackFiltersAndRender,
+        applyFeedbackStatusNote,
+        scheduleDeferredFullRecordsHydration,
+        scheduleDeferredHydration,
+        supportsDeferredMainHydration,
+        runNumber,
+        settings,
+        renderEdDashboard,
       });
-      if (selectors.edStatus) {
-        selectors.edStatus.textContent = '';
-        setDatasetValue(selectors.edStatus, 'tone', 'info');
-      }
-      const cachedDailyStats = readDailyStatsFromSessionCache();
-      const shouldDeferAllMainDataOnThisLoad = Boolean(isEdOnlyPage && !historicalHydrated);
-      const shouldFetchMainData = Boolean(
-        needsMainData && !cachedDailyStats && !shouldDeferAllMainDataOnThisLoad
-      );
-      const primaryChunkReporter = shouldFetchMainData ? createChunkReporter('Pagrindinis CSV') : null;
-      const historicalChunkReporter = needsMainData ? createChunkReporter('Istorinis CSV') : null;
-      const workerProgressReporter = shouldFetchMainData ? createChunkReporter('Apdorojama CSV') : null;
-      const edChunkReporter = needsEdData ? createChunkReporter('ED CSV') : null;
-      // KPI puslapyje istorinius duomenis krauname iškart, kad pirmas renderis
-      // nebūtų preliminarus ir vėliau "nepašoktų" reikšmės.
-      const shouldDeferHistoricalOnThisLoad = false;
-      const shouldSkipHistoricalOnMainFetch = Boolean(
-        // KPI puslapiui nenaudojame istorinio CSV:
-        // vidurkiai ir suvestinės turi remtis tik einamaisiais duomenimis.
-        isKpiOnlyPage || shouldDeferHistoricalOnThisLoad || disableHistoricalForPage
-      );
-      const shouldDeferFullRecordsOnMainFetch = Boolean(
-        supportsDeferredFullRecordsMainHydration &&
-          pageRequiresFullRecordsForInteractions &&
-          mainDataFetchProfile !== 'full' &&
-          !cachedDailyStats
-      );
-      const enableChartsPartialStartup = Boolean(
-        activeConfig.charts &&
-          !dashboardState.hasLoadedOnce &&
-          (typeof supportsPartialPrimaryRender === 'boolean'
-            ? supportsPartialPrimaryRender
-            : clientConfig?.experimentalChartsPartialStartup === true) &&
-          requiresFullRecordsForPrimary !== true
-      );
-      const chartsPartialState = {
-        renderedPrimary: false,
-        dailyBySource: { primary: null, historical: null },
-      };
-      const maybeRenderChartsPrimaryFromPartial = async (sourcePartial) => {
-        if (!enableChartsPartialStartup || !sourcePartial || chartsPartialState.renderedPrimary) {
-          return;
-        }
-        if (!isLoadTokenCurrent(loadToken) || loadAbortController.signal.aborted) {
-          return;
-        }
-        const sourceId = String(sourcePartial.sourceId || '');
-        const phase = String(sourcePartial.phase || '');
-        if (phase !== 'dailyStatsReady') {
-          return;
-        }
-        const partialDaily = Array.isArray(sourcePartial?.payload?.dailyStats)
-          ? sourcePartial.payload.dailyStats
-          : [];
-        if (!partialDaily.length) {
-          return;
-        }
-        if (sourceId === 'primary' || sourceId === 'historical') {
-          chartsPartialState.dailyBySource[sourceId] = partialDaily;
-        }
-        const mergedPartialDaily = mergeDailyStatsSeries([
-          chartsPartialState.dailyBySource.primary || [],
-          chartsPartialState.dailyBySource.historical || [],
-        ]);
-        if (!mergedPartialDaily.length) {
-          return;
-        }
-        dashboardState.dailyStats = mergedPartialDaily;
-        dashboardState.chartData.baseDaily = mergedPartialDaily;
-        dashboardState.chartData.baseRecords = Array.isArray(dashboardState.chartData.baseRecords)
-          ? dashboardState.chartData.baseRecords
-          : [];
-        populateChartYearOptions(mergedPartialDaily);
-        if (typeof populateHeatmapYearOptions === 'function') {
-          populateHeatmapYearOptions(mergedPartialDaily);
-          if (typeof syncHeatmapFilterControls === 'function') {
-            syncHeatmapFilterControls();
-          }
-        }
-        syncChartFilterControls();
-        const prepareHandle = startPerfStage('charts-main-prepare', { etapas: 'partial' });
-        const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-        finishPerfStage(prepareHandle);
-        await renderChartsPrimaryStage(scopedCharts);
-        chartsPartialState.renderedPrimary = true;
-      };
-      const [dataResult, feedbackResult, edResult] = await Promise.allSettled([
-        shouldFetchMainData
-          ? (() => {
-              const chartsFetchHandle = activeConfig.charts ? startPerfStage('charts-data-fetch') : null;
-              return fetchData({
-                onPrimaryChunk: primaryChunkReporter,
-                onHistoricalChunk: historicalChunkReporter,
-                onWorkerProgress: workerProgressReporter,
-                skipHistorical: shouldSkipHistoricalOnMainFetch,
-                includeYearlyStats: !activeConfig.charts,
-                fetchProfile: mainDataFetchProfile,
-                deferFullRecords: shouldDeferFullRecordsOnMainFetch,
-                onPrimaryPartial: enableChartsPartialStartup
-                  ? (payload) => {
-                      void maybeRenderChartsPrimaryFromPartial(payload);
-                    }
-                  : null,
-                onHistoricalPartial: enableChartsPartialStartup
-                  ? (payload) => {
-                      void maybeRenderChartsPrimaryFromPartial(payload);
-                    }
-                  : null,
-                signal: loadAbortController.signal,
-              }).finally(() => {
-                finishPerfStage(chartsFetchHandle);
-              });
-            })()
-          : Promise.resolve(null),
-        needsFeedbackData ? fetchFeedbackData({ signal: loadAbortController.signal }) : Promise.resolve([]),
-        needsEdData
-          ? fetchEdData({ onChunk: edChunkReporter, signal: loadAbortController.signal })
-          : Promise.resolve(null),
-      ]);
-      if (!isLoadTokenCurrent(loadToken)) {
-        return;
-      }
-      if (loadAbortController.signal.aborted) {
-        return;
-      }
-
-      if (clientConfig.profilingEnabled && fetchHandle) {
-        const primaryCache = cachedDailyStats
-          ? 'session-cache'
-          : needsMainData && dataResult.status === 'fulfilled'
-            ? describeCacheMeta(dataResult.value?.meta?.primary)
-            : 'klaida';
-        const historicalCache = cachedDailyStats
-          ? 'session-cache'
-          : needsMainData && dataResult.status === 'fulfilled'
-            ? describeCacheMeta(dataResult.value?.meta?.historical)
-            : 'klaida';
-        fetchSummary.pagrindinis = primaryCache;
-        fetchSummary.istorinis = historicalCache;
-        perfMonitor.finish(fetchHandle, {
-          pagrindinis: primaryCache,
-          istorinis: historicalCache,
-          fallbackas: dashboardState.usingFallback,
-          šaltiniai: cachedDailyStats
-            ? 0
-            : needsMainData && dataResult.status === 'fulfilled'
-              ? dataResult.value?.meta?.sources?.length || 0
-              : 0,
-        });
-        fetchMeasured = true;
-      }
-
-      if (needsEdData) {
-        if (edResult.status === 'fulfilled') {
-          dashboardState.ed = edResult.value;
-        } else {
-          const fallbackMessage = TEXT.ed.status.error(TEXT.status.error);
-          const errorInfo = edResult.reason
-            ? describeError(edResult.reason, { code: 'ED_DATA_LOAD', message: fallbackMessage })
-            : { userMessage: fallbackMessage, log: `[ED_DATA_LOAD] ${fallbackMessage}` };
-          console.error(errorInfo.log, edResult.reason);
-          const fallbackSummary = createEmptyEdSummary();
-          dashboardState.ed = {
-            records: [],
-            summary: fallbackSummary,
-            dispositions: [],
-            daily: [],
-            usingFallback: false,
-            lastErrorMessage: errorInfo.userMessage,
-            error: errorInfo.userMessage,
-            updatedAt: new Date(),
-          };
-        }
-      }
-      if (shouldFetchMainData && dataResult.status !== 'fulfilled') {
-        throw dataResult.reason;
-      }
-
-      const hasMainDataPayload = Boolean(
-        cachedDailyStats || (shouldFetchMainData && dataResult.status === 'fulfilled')
-      );
-      const dataset = hasMainDataPayload && !cachedDailyStats ? dataResult.value || {} : {};
-      const feedbackRecords =
-        needsFeedbackData && feedbackResult.status === 'fulfilled' ? feedbackResult.value : [];
-      const currentMainSignature =
-        needsMainData && hasMainDataPayload ? computeMainDataSignature(dataset, cachedDailyStats) : '';
-      const currentEdSignature = needsEdData ? dashboardState.ed?.meta?.signature || '' : '';
-      const currentEdRenderKey = needsEdData ? computeEdRenderKey(dashboardState.ed) : '';
-      const skipMainRender = Boolean(
-        shouldAutoRefresh &&
-          dashboardState.hasLoadedOnce &&
-          currentMainSignature &&
-          dashboardState.lastMainDataSignature === currentMainSignature
-      );
-      const skipEdRender = Boolean(
-        shouldAutoRefresh &&
-          dashboardState.hasLoadedOnce &&
-          currentEdRenderKey &&
-          dashboardState.lastEdRenderKey === currentEdRenderKey
-      );
-      if (needsEdData) {
-        logRefreshDecision(clientConfig, 'ed', skipEdRender ? 'skipped (same-render-key)' : 'rendered', {
-          hasLoadedOnce: dashboardState.hasLoadedOnce,
-          signature: currentEdSignature || 'none',
-          currentKey: currentEdRenderKey || 'none',
-          previousKey: String(dashboardState.lastEdRenderKey || ''),
-        });
-      }
-      if (needsFeedbackData && feedbackResult.status === 'rejected') {
-        const errorInfo = describeError(feedbackResult.reason, {
-          code: 'FEEDBACK_DATA',
-          message: TEXT.status.error,
-        });
-        console.error(errorInfo.log, feedbackResult.reason);
-        if (!dashboardState.feedback.lastErrorMessage) {
-          dashboardState.feedback.lastErrorMessage = errorInfo.userMessage;
-        }
-        dashboardState.feedback.usingFallback = false;
-      }
-
-      let dailyStats = [];
-      if (needsMainData && hasMainDataPayload) {
-        const combinedRecords = cachedDailyStats ? [] : Array.isArray(dataset.records) ? dataset.records : [];
-        const primaryRecords = cachedDailyStats
-          ? []
-          : Array.isArray(dataset.primaryRecords) && dataset.primaryRecords.length
-            ? dataset.primaryRecords
-            : combinedRecords;
-        dailyStats =
-          cachedDailyStats ||
-          (Array.isArray(dataset.dailyStats) && dataset.dailyStats.length
-            ? dataset.dailyStats
-            : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS));
-        const primaryDaily = cachedDailyStats
-          ? dailyStats.slice()
-          : Array.isArray(dataset.primaryDaily) && dataset.primaryDaily.length
-            ? dataset.primaryDaily
-            : computeDailyStats(primaryRecords, settings?.calculations, DEFAULT_SETTINGS);
-        dashboardState.rawRecords = combinedRecords;
-        dashboardState.dailyStats = dailyStats;
-        dashboardState.primaryRecords = primaryRecords.slice();
-        dashboardState.primaryDaily = primaryDaily.slice();
-        dashboardState.chartsHospitalTableWorkerAgg = dataset.hospitalByDeptStayAgg || null;
-        dashboardState.dataMeta = dataset.meta || null;
-        if (dashboardState.mainData && typeof dashboardState.mainData === 'object') {
-          const recordsState = String(dataset?.meta?.recordsState || '');
-          dashboardState.mainData.recordsHydrationState =
-            recordsState === 'deferred' ? 'deferred' : combinedRecords.length > 0 ? 'full' : 'none';
-          dashboardState.mainData.deferredHydration = dataset?.deferredHydration || null;
-        }
-        if (!cachedDailyStats && !shouldDeferHistoricalOnThisLoad) {
-          writeDailyStatsToSessionCache(dailyStats, { scope: 'full' });
-        }
-
-        if (activeConfig.charts && !skipMainRender) {
-          populateChartYearOptions(dailyStats);
-          if (typeof populateChartsHospitalTableYearOptions === 'function') {
-            populateChartsHospitalTableYearOptions(combinedRecords);
-          }
-          populateHourlyCompareYearOptions(dailyStats);
-          if (typeof populateHeatmapYearOptions === 'function') {
-            populateHeatmapYearOptions(dailyStats);
-            if (typeof syncHeatmapFilterControls === 'function') {
-              syncHeatmapFilterControls();
-            }
-          }
-        }
-
-        const windowDays = Number.isFinite(Number(settings.calculations.windowDays))
-          ? Number(settings.calculations.windowDays)
-          : DEFAULT_SETTINGS.calculations.windowDays;
-        if (
-          activeConfig.kpi &&
-          (!Number.isFinite(dashboardState.kpi.filters.window) || dashboardState.kpi.filters.window <= 0)
-        ) {
-          if (typeof initializeKpiDefaultWindow === 'function') {
-            initializeKpiDefaultWindow(windowDays);
-          } else {
-            dashboardState.kpi.filters.window = windowDays;
-            syncKpiFilterControlsSafe();
-          }
-        }
-        const lastWindowDailyStats = filterDailyStatsByWindow(dailyStats, windowDays);
-        const recentWindowDays = Number.isFinite(Number(settings.calculations.recentDays))
-          ? Number(settings.calculations.recentDays)
-          : DEFAULT_SETTINGS.calculations.recentDays;
-        const effectiveRecentDays = Math.max(1, Math.min(windowDays, recentWindowDays));
-        const recentDailyStats = filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
-
-        if (activeConfig.charts) {
-          dashboardState.chartData.baseDaily = dailyStats;
-          dashboardState.chartData.baseRecords = combinedRecords;
-          dashboardState.chartFilters = sanitizeChartFilters(dashboardState.chartFilters, {
-            getDefaultChartFilters,
-            KPI_FILTER_LABELS,
-          });
-          syncChartFilterControls();
-          const prepareHandle = startPerfStage('charts-main-prepare', { etapas: 'load' });
-          const scopedCharts = prepareChartDataForPeriod(dashboardState.chartPeriod);
-          finishPerfStage(prepareHandle);
-          await renderChartsPrimaryStage(scopedCharts);
-          scheduleChartsSecondaryAndHospitalRender({ reason: 'load' });
-        }
-        if (!isLoadTokenCurrent(loadToken)) {
-          return;
-        }
-
-        if (activeConfig.kpi && !skipMainRender) {
-          await applyKpiFiltersAndRender();
-        }
-        if (!isLoadTokenCurrent(loadToken)) {
-          return;
-        }
-
-        if (activeConfig.recent && !skipMainRender) {
-          renderRecentTable(recentDailyStats);
-        }
-
-        if ((activeConfig.monthly || activeConfig.yearly) && !skipMainRender) {
-          // Naudojame jau paruoštus pilnus dailyStats iš workerio,
-          // kad išvengtume perteklinio perskaičiavimo kiekvieno atnaujinimo metu.
-          const summaryDailyStats =
-            Array.isArray(dailyStats) && dailyStats.length ? dailyStats : dashboardState.dailyStats;
-          const monthlyStats = computeMonthlyStats(summaryDailyStats);
-          dashboardState.monthly.all = monthlyStats;
-          // Rodyti paskutinius 12 kalendorinių mėnesių, nepriklausomai nuo KPI lango filtro.
-          const monthsLimit = 12;
-          const limitedMonthlyStats =
-            Number.isFinite(monthsLimit) && monthsLimit > 0 ? monthlyStats.slice(-monthsLimit) : monthlyStats;
-          if (activeConfig.monthly) {
-            renderMonthlyTable(limitedMonthlyStats);
-          }
-          dashboardState.monthly.window = limitedMonthlyStats;
-          const yearlyStats = computeYearlyStats(monthlyStats);
-          if (activeConfig.yearly) {
-            renderYearlyTable(yearlyStats);
-          }
-        }
-      }
-
-      if (needsFeedbackData) {
-        dashboardState.feedback.records = Array.isArray(feedbackRecords) ? feedbackRecords : [];
-        updateFeedbackFilterOptions(dashboardState.feedback.records);
-        applyFeedbackFiltersAndRender();
-        applyFeedbackStatusNote();
-      }
-      if (!isLoadTokenCurrent(loadToken)) {
-        return;
-      }
-
-      const latestDataDate =
-        Array.isArray(dailyStats) && dailyStats.length
-          ? String(dailyStats[dailyStats.length - 1]?.date || '')
-          : '';
-      const usingCache = Boolean(
-        dataset?.meta?.primary?.fromCache || dataset?.meta?.historical?.fromCache || cachedDailyStats
-      );
-      setStatus('success', {
-        updatedAt: new Date(),
-        latestDataDate: latestDataDate || undefined,
-        usingCache,
-      });
-      if (
-        shouldFetchMainData &&
-        !cachedDailyStats &&
-        dataset?.deferredHydration &&
-        typeof dataset.deferredHydration.hydrate === 'function'
-      ) {
-        scheduleDeferredFullRecordsHydration({
-          runNumber,
-          settings,
-          deferredHydration: dataset.deferredHydration,
-        });
-      }
-      if ((shouldFetchMainData && shouldDeferHistoricalOnThisLoad) || shouldDeferAllMainDataOnThisLoad) {
-        scheduleDeferredHydration({
-          runNumber,
-          settings,
-          workerProgressReporter,
-          primaryChunkReporter: null,
-          historicalChunkReporter: null,
-        });
-      }
-      if (cachedDailyStats && supportsDeferredMainHydration) {
-        scheduleDeferredHydration({
-          runNumber,
-          settings,
-          workerProgressReporter: null,
-          primaryChunkReporter: null,
-          historicalChunkReporter: null,
-        });
-      }
-      if (needsEdData && !skipEdRender) {
-        await renderEdDashboard(dashboardState.ed);
-      }
-      if (currentMainSignature) {
-        dashboardState.lastMainDataSignature = currentMainSignature;
-      }
-      if (currentEdSignature) {
-        dashboardState.lastEdDataSignature = currentEdSignature;
-      }
-      if (currentEdRenderKey) {
-        dashboardState.lastEdRenderKey = currentEdRenderKey;
-      }
-      if (!isLoadTokenCurrent(loadToken)) {
+      fetchMeasured = loadOutcome.fetchMeasured === true;
+      if (loadOutcome.shouldStop) {
         return;
       }
     } catch (error) {
@@ -1220,28 +578,15 @@ export function createDataFlow(env = {}) {
   }
 
   function scheduleInitialLoad() {
-    if (isKpiOnlyPage || isChartsOnlyPage || isYearlyOnlyPage) {
-      const runInitialKpiLoad = () => {
-        if (!dashboardState.loading) {
-          void loadDashboard();
-        }
-      };
-      if (typeof document !== 'undefined' && document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', runInitialKpiLoad, { once: true });
-      } else {
-        runInitialKpiLoad();
-      }
-      return;
-    }
-    const initialTimeout = activeConfig.kpi || activeConfig.charts || activeConfig.ed ? 250 : 500;
-    runAfterDomAndIdle(
-      () => {
-        if (!dashboardState.loading) {
-          void loadDashboard();
-        }
-      },
-      { timeout: initialTimeout }
-    );
+    scheduleInitialLoadHelper({
+      isKpiOnlyPage,
+      isChartsOnlyPage,
+      isYearlyOnlyPage,
+      dashboardState,
+      loadDashboard,
+      activeConfig,
+      runAfterDomAndIdle,
+    });
   }
 
   return { loadDashboard, scheduleInitialLoad };
