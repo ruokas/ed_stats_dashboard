@@ -113,6 +113,7 @@ function createMenuForGroup(buttons) {
     sourceButton.setAttribute('tabindex', '-1');
     sourceButton.setAttribute('aria-hidden', 'true');
     sourceButton.dataset.exportMenuSource = 'true';
+    sourceButton.style.setProperty('display', 'none', 'important');
 
     const item = document.createElement('button');
     item.type = 'button';
