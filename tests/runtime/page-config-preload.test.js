@@ -11,8 +11,8 @@ describe('page-config chart preload policy', () => {
     expect(shouldPreloadChartJs('gydytojai')).toBe(true);
   });
 
-  it('does not preload Chart.js for non-chart pages', () => {
-    expect(shouldPreloadChartJs('kpi')).toBe(false);
+  it('does not preload Chart.js for pages without chart usage', () => {
+    expect(shouldPreloadChartJs('kpi')).toBe(true);
     expect(shouldPreloadChartJs('recent')).toBe(false);
     expect(shouldPreloadChartJs('unknown')).toBe(false);
   });

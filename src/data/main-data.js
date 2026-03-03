@@ -730,6 +730,7 @@ export function createMainDataHandlers(context) {
     } = {}
   ) {
     const normalizedFetchProfile = normalizeFetchProfile(fetchProfile);
+    const cacheArtifactKind = getCacheArtifactKindFromFetchProfile(normalizedFetchProfile);
     const trimmedUrl = (config?.url ?? '').trim();
     const missingMessage = config?.missingMessage || 'Nenurodytas duomenų URL.';
     const result = {
@@ -815,7 +816,12 @@ export function createMainDataHandlers(context) {
         download = await downloadCsv(trimmedUrl, { onChunk, signal });
       }
 
-      const dataset = await runDataWorker(download.text, workerOptions, {
+      const workerTransformOptions = {
+        ...workerOptions,
+        includeRecords: cacheArtifactKind === 'full',
+        includeHospitalByDeptStayAgg: cacheArtifactKind === 'full' || cacheArtifactKind === 'daily-plus-agg',
+      };
+      const dataset = await runDataWorker(download.text, workerTransformOptions, {
         onProgress: onWorkerProgress,
         onPartialResult:
           typeof onPartialResult === 'function'
@@ -850,7 +856,6 @@ export function createMainDataHandlers(context) {
           workerMeta: dataset?.__workerMeta || null,
         }
       );
-      const cacheArtifactKind = getCacheArtifactKindFromFetchProfile(normalizedFetchProfile);
       const cachePayload =
         cacheArtifactKind === 'daily-lite'
           ? {

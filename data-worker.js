@@ -3,7 +3,7 @@
  * Keep this file orchestration-only and move transformations into helper scripts.
  */
 
-const WORKER_HELPERS_VERSION = '2026-02-25-kpi-detail-jobs-1';
+const WORKER_HELPERS_VERSION = '2026-03-02-kpi-startup-perf-1';
 
 importScripts(
   `./data-worker-csv-parse.js?v=${WORKER_HELPERS_VERSION}`,

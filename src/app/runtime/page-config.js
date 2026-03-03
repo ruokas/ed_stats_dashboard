@@ -18,7 +18,7 @@ export const RUNTIME_MODULE_BY_PAGE = {
   ed: './runtime/pages/ed-page.js',
 };
 
-const CHART_PRELOAD_PAGES = new Set(['charts', 'ed', 'summaries', 'feedback', 'gydytojai']);
+const CHART_PRELOAD_PAGES = new Set(['kpi', 'charts', 'ed', 'summaries', 'feedback', 'gydytojai']);
 
 export function shouldPreloadChartJs(pageId) {
   const normalized = typeof pageId === 'string' ? pageId.trim().toLowerCase() : '';

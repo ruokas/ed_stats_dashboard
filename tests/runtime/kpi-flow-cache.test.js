@@ -9,6 +9,8 @@ function createEnv({
   renderLastShiftHourlyChartWithTheme,
   showKpiSkeleton,
   hideKpiSkeleton,
+  showLastShiftHourlyLoading,
+  hideLastShiftHourlyLoading,
   dashboardStateOverrides,
   filterDailyStatsByWindow,
   matchesSharedPatientFilters,
@@ -67,6 +69,8 @@ function createEnv({
     describeError: () => ({ log: 'err' }),
     showKpiSkeleton: showKpiSkeleton || (() => {}),
     hideKpiSkeleton: hideKpiSkeleton || (() => {}),
+    showLastShiftHourlyLoading: showLastShiftHourlyLoading || (() => {}),
+    hideLastShiftHourlyLoading: hideLastShiftHourlyLoading || (() => {}),
     renderKpis: renderKpis || (() => {}),
     renderLastShiftHourlyChartWithTheme: renderLastShiftHourlyChartWithTheme || (async () => {}),
     setChartCardMessage: () => {},
@@ -142,6 +146,54 @@ describe('kpi-flow selectedDate daily cache', () => {
 
     expect(renderKpis).toHaveBeenCalledTimes(1);
     expect(renderLastShiftHourlyChartWithTheme).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses blocking hourly loading only for the first chart paint', async () => {
+    const workerRecords = [
+      {
+        arrival: new Date('2026-02-10T08:30:00'),
+        discharge: new Date('2026-02-10T09:30:00'),
+        arrivalHasTime: true,
+        dischargeHasTime: true,
+        cardType: 't',
+        hospitalized: false,
+      },
+    ];
+    let callCounter = 0;
+    const runKpiWorkerJob = vi.fn(async () => {
+      callCounter += 1;
+      return {
+        records: workerRecords,
+        dailyStats: [{ date: '2026-02-10', count: callCounter }],
+        windowDays: 30,
+      };
+    });
+    const renderLastShiftHourlyChartWithTheme = vi.fn(async () => {});
+    const showLastShiftHourlyLoading = vi.fn();
+    const hideLastShiftHourlyLoading = vi.fn();
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        callback(0);
+        return 1;
+      });
+
+    const flow = createKpiFlow(
+      createEnv({
+        runKpiWorkerJob,
+        computeDailyStats: () => [{ date: '2026-02-10', count: 1 }],
+        renderLastShiftHourlyChartWithTheme,
+        showLastShiftHourlyLoading,
+        hideLastShiftHourlyLoading,
+      })
+    );
+    await flow.applyKpiFiltersAndRender();
+    await flow.applyKpiFiltersAndRender();
+
+    expect(renderLastShiftHourlyChartWithTheme).toHaveBeenCalledTimes(2);
+    expect(showLastShiftHourlyLoading).toHaveBeenCalledTimes(1);
+    expect(hideLastShiftHourlyLoading).toHaveBeenCalledTimes(1);
+    requestAnimationFrameSpy.mockRestore();
   });
 
   it('hides KPI skeleton even when worker result is unchanged and UI short-circuits', async () => {

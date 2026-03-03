@@ -411,10 +411,6 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     selectors.lastShiftHourlyContext.textContent = contextParts.join(' • ');
   }
 
-  if (selectors.lastShiftHourlyLegend) {
-    selectors.lastShiftHourlyLegend.replaceChildren();
-  }
-
   const toPeakIndex = (values = []) => {
     let max = -Infinity;
     let index = -1;
@@ -718,6 +714,36 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
   }
 
   if (selectors.lastShiftHourlyLegend) {
+    const legendRoot = selectors.lastShiftHourlyLegend;
+    const existingItems = Array.from(legendRoot.children);
+    const canReuseLegendItems =
+      canReuseLastShiftChart &&
+      existingItems.length === datasets.length &&
+      existingItems.every((item, index) => {
+        if (!(item instanceof HTMLElement)) {
+          return false;
+        }
+        const labelNode = item.querySelector('span:last-child');
+        return String(labelNode?.textContent || '') === String(datasets[index]?.label || '');
+      });
+
+    if (canReuseLegendItems) {
+      existingItems.forEach((item, index) => {
+        if (!(item instanceof HTMLElement)) {
+          return;
+        }
+        const dot = item.querySelector('.chart-legend__dot');
+        if (dot instanceof HTMLElement) {
+          dot.style.color = String(datasets[index]?.borderColor || '');
+        }
+        const isVisible = lastShiftChart.isDatasetVisible(index);
+        item.classList.toggle('is-hidden', !isVisible);
+        item.setAttribute('aria-pressed', String(isVisible));
+      });
+      return;
+    }
+
+    legendRoot.replaceChildren();
     datasets.forEach((dataset, index) => {
       const item = document.createElement('button');
       item.type = 'button';
@@ -742,7 +768,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
         item.setAttribute('aria-pressed', String(!isVisible));
       });
 
-      selectors.lastShiftHourlyLegend.appendChild(item);
+      legendRoot.appendChild(item);
     });
   }
 }
