@@ -369,6 +369,13 @@ describe('main-data sourceId tagging', () => {
     });
 
     const lite = await handlers.fetchData({ fetchProfile: 'daily-lite', deferFullRecords: true });
+    const liteTransformRequest = (FakeWorker.postedMessages || []).find(
+      (message) => message?.type === 'transformCsv' && message?.csvText === 'PRIMARY'
+    );
+    expect(liteTransformRequest?.options).toMatchObject({
+      includeRecords: false,
+      includeHospitalByDeptStayAgg: false,
+    });
     expect(lite.records).toEqual([]);
     expect(lite.meta.recordsState).toBe('deferred');
     expect(lite.meta.fetchProfile).toBe('daily-lite');
@@ -379,6 +386,13 @@ describe('main-data sourceId tagging', () => {
     expect(typeof lite.deferredHydration.hydrate).toBe('function');
 
     const full = await lite.deferredHydration.hydrate();
+    const fullTransformRequest = (FakeWorker.postedMessages || [])
+      .filter((message) => message?.type === 'transformCsv' && message?.csvText === 'PRIMARY')
+      .at(-1);
+    expect(fullTransformRequest?.options).toMatchObject({
+      includeRecords: true,
+      includeHospitalByDeptStayAgg: true,
+    });
     expect(full.records).toHaveLength(1);
     expect(full.meta.recordsState).toBe('full');
     expect(full.meta.fetchProfile).toBe('full');

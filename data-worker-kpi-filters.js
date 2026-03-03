@@ -249,6 +249,28 @@ function buildAvailableDateKeysFromRecords(records, shiftStartHour) {
   return Array.from(keys).sort((a, b) => a.localeCompare(b));
 }
 
+function countRecordsForShiftDate(records, shiftStartHour, selectedDate) {
+  const normalizedDate = normalizeKpiDateValue(selectedDate);
+  if (!normalizedDate) {
+    return 0;
+  }
+  const list = Array.isArray(records) ? records : [];
+  let count = 0;
+  for (let index = 0; index < list.length; index += 1) {
+    const record = list[index];
+    const hasArrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
+    const hasDischarge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
+    const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
+    if (!reference) {
+      continue;
+    }
+    if (computeShiftDateKey(reference, shiftStartHour) === normalizedDate) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 function buildKpiLastShiftHourlySeriesInWorker(
   records,
   dailyStats,
@@ -332,29 +354,26 @@ function buildKpiLastShiftHourlySeriesInWorker(
     } else if (rawType === 'ch') {
       series.ch[hour] += 1;
     }
-  }
-  if (metric === 'balance' || metric === 'census') {
-    for (let index = 0; index < list.length; index += 1) {
-      const record = list[index];
+
+    if (metric === 'balance' || metric === 'census') {
       const discharge = record?.discharge;
       const dischargeHasTime =
         record?.dischargeHasTime === true ||
         (record?.dischargeHasTime == null &&
           discharge instanceof Date &&
           (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
-      if (!dischargeHasTime || !(discharge instanceof Date) || Number.isNaN(discharge.getTime())) {
-        continue;
+      if (dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime())) {
+        const dischargeDateKey = computeShiftDateKey(discharge, shiftStartHour);
+        if (dischargeDateKey === targetDateKey) {
+          const dischargeHour = discharge.getHours();
+          if (Number.isFinite(dischargeHour) && dischargeHour >= 0 && dischargeHour <= 23) {
+            series.outflow[dischargeHour] += 1;
+          }
+        }
       }
-      const dateKey = computeShiftDateKey(discharge, shiftStartHour);
-      if (dateKey !== targetDateKey) {
-        continue;
-      }
-      const hour = discharge.getHours();
-      if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
-        continue;
-      }
-      series.outflow[hour] += 1;
     }
+  }
+  if (metric === 'balance' || metric === 'census') {
     if (metric === 'balance') {
       series.net = series.total.map((value, index) => value - (series.outflow[index] || 0));
     } else {
@@ -492,13 +511,7 @@ function applyKpiFiltersInWorker(data = {}) {
     const totalFilteredRecords = hasRawRecords ? filteredRecords.length : sumDailyCounts(filteredDailyStats);
     const selectedDateRecordCount = hasRawRecords
       ? selectedDate
-        ? filteredRecords.filter((record) => {
-            const hasArrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
-            const hasDischarge =
-              record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
-            const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
-            return reference ? computeShiftDateKey(reference, shiftStartHour) === selectedDate : false;
-          }).length
+        ? countRecordsForShiftDate(filteredRecords, shiftStartHour, selectedDate)
         : filteredRecords.length
       : sumDailyCounts(selectedDate ? selectedDateDailyStats : filteredDailyStats);
     const lastShiftHourly = hasRawRecords

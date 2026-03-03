@@ -65,19 +65,35 @@ export function createKpiFlow(env) {
     });
   }
 
-  function beginLastShiftHourlyLoading() {
+  function shouldUseBlockingLastShiftLoading(options = {}) {
+    if (options?.forceBlocking === true) {
+      return true;
+    }
+    if (options?.forceNonBlocking === true) {
+      return false;
+    }
+    return dashboardState.kpi?.lastShiftHourlyHasRenderedOnce !== true;
+  }
+
+  function beginLastShiftHourlyLoading(options = {}) {
     const token = ++lastShiftHourlyRenderToken;
-    if (typeof showLastShiftHourlyLoading === 'function') {
+    const blocking = shouldUseBlockingLastShiftLoading(options);
+    if (blocking && typeof showLastShiftHourlyLoading === 'function') {
       showLastShiftHourlyLoading();
     }
     if (setChartCardMessage) {
       setChartCardMessage(selectors.lastShiftHourlyChart, '');
     }
-    return token;
+    return { token, blocking };
   }
 
-  function endLastShiftHourlyLoading(token) {
-    if (token !== lastShiftHourlyRenderToken) {
+  function endLastShiftHourlyLoading(renderState) {
+    const token = Number(renderState?.token);
+    const blocking = renderState?.blocking === true;
+    if (!Number.isFinite(token) || token !== lastShiftHourlyRenderToken) {
+      return;
+    }
+    if (!blocking) {
       return;
     }
     const hide = () => {
@@ -858,13 +874,14 @@ export function createKpiFlow(env) {
     };
   }
 
-  async function renderLastShiftHourlyChart(records, dailyStats) {
-    const renderToken = beginLastShiftHourlyLoading();
+  async function renderLastShiftHourlyChart(records, dailyStats, options = {}) {
+    const renderState = beginLastShiftHourlyLoading(options);
     const metricKey = dashboardState.kpi?.lastShiftHourlyMetric || 'arrivals';
     const seriesInfo = buildLastShiftHourlySeries(records, dailyStats, metricKey);
     dashboardState.kpi.lastShiftHourly = seriesInfo;
     try {
       await renderLastShiftHourlyChartWithTheme(seriesInfo);
+      dashboardState.kpi.lastShiftHourlyHasRenderedOnce = true;
     } catch (error) {
       const errorInfo = describeError(error, {
         code: 'LAST_SHIFT_HOURLY',
@@ -875,15 +892,16 @@ export function createKpiFlow(env) {
         setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
       }
     } finally {
-      endLastShiftHourlyLoading(renderToken);
+      endLastShiftHourlyLoading(renderState);
     }
   }
 
-  async function renderLastShiftHourlySeriesInfo(seriesInfo) {
+  async function renderLastShiftHourlySeriesInfo(seriesInfo, options = {}) {
     dashboardState.kpi.lastShiftHourly = seriesInfo;
-    const renderToken = beginLastShiftHourlyLoading();
+    const renderState = beginLastShiftHourlyLoading(options);
     try {
       await renderLastShiftHourlyChartWithTheme(seriesInfo);
+      dashboardState.kpi.lastShiftHourlyHasRenderedOnce = true;
     } catch (error) {
       const errorInfo = describeError(error, {
         code: 'LAST_SHIFT_HOURLY',
@@ -894,7 +912,7 @@ export function createKpiFlow(env) {
         setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
       }
     } finally {
-      endLastShiftHourlyLoading(renderToken);
+      endLastShiftHourlyLoading(renderState);
     }
   }
 
@@ -1298,9 +1316,6 @@ export function createKpiFlow(env) {
     const metric = normalizeLastShiftMetric(dashboardState.kpi?.lastShiftHourlyMetric);
     const detailToken = ++kpiHourlyWorkerJobToken;
     const workerTokenAtStart = kpiWorkerJobToken;
-    if (typeof showLastShiftHourlyLoading === 'function') {
-      showLastShiftHourlyLoading();
-    }
     try {
       const result = await runKpiWorkerDetailJob({
         type: 'computeKpiLastShiftHourlyByHandle',
@@ -1317,7 +1332,9 @@ export function createKpiFlow(env) {
       if (detailToken !== kpiHourlyWorkerJobToken || workerTokenAtStart !== kpiWorkerJobToken) {
         return true;
       }
-      await renderLastShiftHourlySeriesInfo(result?.lastShiftHourly || null);
+      await renderLastShiftHourlySeriesInfo(result?.lastShiftHourly || null, {
+        forceNonBlocking: true,
+      });
       return true;
     } catch (error) {
       const errorInfo = describeError(error, {
@@ -1325,9 +1342,6 @@ export function createKpiFlow(env) {
         message: "Nepavyko atnaujinti KPI paskutinės pamainos grafiko worker'yje",
       });
       console.error(errorInfo.log, error);
-      if (typeof hideLastShiftHourlyLoading === 'function') {
-        hideLastShiftHourlyLoading();
-      }
       return false;
     }
   }

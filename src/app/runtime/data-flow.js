@@ -593,7 +593,8 @@ export function createDataFlow(env = {}) {
       }
       void hydrateDeferredFullRecords({ runNumber, settings, deferredHydration });
     };
-    runAfterDomAndIdle(execute, { timeout: 600 });
+    const hydrationTimeout = isKpiOnlyPage ? 150 : 600;
+    runAfterDomAndIdle(execute, { timeout: hydrationTimeout });
   }
 
   async function hydrateWithHistoricalData({

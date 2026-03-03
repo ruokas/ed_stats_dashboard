@@ -63,6 +63,8 @@ describe('renderLastShiftHourlyChartWithTheme', () => {
     };
 
     await renderLastShiftHourlyChartWithTheme(env, seriesInfo);
+    const legendRoot = env.selectors.lastShiftHourlyLegend;
+    const firstLegendNode = legendRoot.firstElementChild;
 
     expect(existingChart.update).toHaveBeenCalledTimes(1);
     expect(existingChart.update).toHaveBeenCalledWith();
@@ -72,5 +74,16 @@ describe('renderLastShiftHourlyChartWithTheme', () => {
     expect(tDataset?.borderDash).toEqual([6, 4]);
     expect(trDataset?.borderDash).toEqual([6, 4]);
     expect(chDataset?.borderDash).toEqual([6, 4]);
+
+    await renderLastShiftHourlyChartWithTheme(env, {
+      ...seriesInfo,
+      series: {
+        ...seriesInfo.series,
+        total: [2, 3],
+      },
+    });
+
+    expect(existingChart.update).toHaveBeenCalledTimes(2);
+    expect(legendRoot.firstElementChild).toBe(firstLegendNode);
   });
 });

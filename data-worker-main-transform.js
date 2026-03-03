@@ -7,6 +7,8 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
     throw new Error('CSV turinys tuščias.');
   }
   const { csvSettings = {}, csvDefaults = {}, calculations = {}, calculationDefaults = {} } = options;
+  const includeRecords = options?.includeRecords !== false;
+  const includeHospitalByDeptStayAgg = options?.includeHospitalByDeptStayAgg !== false;
   const progressStep =
     Number.isInteger(progressOptions.progressStep) && progressOptions.progressStep > 0
       ? progressOptions.progressStep
@@ -75,9 +77,9 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   const dataRows = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
   const totalRows = dataRows.length;
   const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
-  const hospitalByDeptStayAgg = createHospitalizedDeptStayAgg();
+  const hospitalByDeptStayAgg = includeHospitalByDeptStayAgg ? createHospitalizedDeptStayAgg() : null;
   const dailyMap = new Map();
-  const records = [];
+  const records = includeRecords ? [] : null;
   for (let index = 0; index < dataRows.length; index += 1) {
     const cols = dataRows[index];
     const record = mapRow(
@@ -89,9 +91,13 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
       calculations,
       calculationDefaults
     );
-    records.push(record);
+    if (includeRecords) {
+      records.push(record);
+    }
     accumulateDailyStatsMap(dailyMap, record, shiftStartHour);
-    accumulateHospitalizedDeptStayAgg(hospitalByDeptStayAgg, record, shiftStartHour);
+    if (includeHospitalByDeptStayAgg && hospitalByDeptStayAgg) {
+      accumulateHospitalizedDeptStayAgg(hospitalByDeptStayAgg, record, shiftStartHour);
+    }
     if (reportProgress && ((index + 1) % progressStep === 0 || index + 1 === totalRows)) {
       reportProgress(index + 1, totalRows);
     }
@@ -100,7 +106,11 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   if (reportPartial) {
     reportPartial('dailyStatsReady', { dailyStats });
   }
-  return { records, dailyStats, hospitalByDeptStayAgg };
+  return {
+    records: includeRecords ? records : [],
+    dailyStats,
+    hospitalByDeptStayAgg: includeHospitalByDeptStayAgg ? hospitalByDeptStayAgg : null,
+  };
 }
 
 function parseCandidateList(value, fallback = '') {

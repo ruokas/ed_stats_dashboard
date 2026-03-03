@@ -244,6 +244,7 @@ export function createDashboardState({
       records: [],
       daily: [],
       lastShiftHourly: null,
+      lastShiftHourlyHasRenderedOnce: false,
       lastShiftHourlyMetric: 'arrivals',
       selectedDate: null,
       workerDatasetHandle: null,
