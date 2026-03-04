@@ -10,7 +10,29 @@
     "historical": {
       "enabled": true,
       "label": "Papildomas istorinis (5 metai)",
-      "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?output=csv"
+      "url": "",
+      "sources": [
+        {
+          "label": "2021",
+          "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRpfCwv4WgdRbBkwYTJVcfxupkTFOsn6kLQjWOctyuagIFznO7uaoCfd056lmtFgftbA2SEQDV-vXy7/pub?gid=0&single=true&output=csv"
+        },
+        {
+          "label": "2022",
+          "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSPkr8xxCQk2lO5nZG1ohp5yibWpKUV07JzVuNFtkdzHcly_E3lc7SHiIRfSyGV_rtrH8M9Rx4VqUy9/pub?gid=0&single=true&output=csv"
+        },
+        {
+          "label": "2023",
+          "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQaOJnVCtJbgWwHlLFHeKnD9Qj9xbcQXWAC7lbyQ5vHjK4jr8ez0d1RdEiFtB1Fu82JI93Fnj5GtCRQ/pub?gid=0&single=true&output=csv"
+        },
+        {
+          "label": "2024",
+          "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSI3aD1EYfqN-6RHlzJv-XR8tWD2Dm_XyI4g57TQYqJ0q_39fBWe7twSeiWADPKz-PKkF1YzQt_KI9v/pub?gid=0&single=true&output=csv"
+        },
+        {
+          "label": "2025",
+          "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOtG7CuPVq_nYNTuhTnNiGnyzg93HK2JcPjYcuJ442EiMPz9HYXsBi1niQNj5Yzg/pub?gid=8931977&single=true&output=csv"
+        }
+      ]
     }
   },
   "csv": {

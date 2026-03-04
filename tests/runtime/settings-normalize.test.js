@@ -10,7 +10,15 @@ describe('normalizeSettings', () => {
           url: ' https://example.org/main.csv ',
           feedback: { url: ' https://example.org/feedback.csv ' },
           ed: { url: ' https://example.org/ed.csv ' },
-          historical: { enabled: false, url: ' https://example.org/hist.csv ' },
+          historical: {
+            enabled: false,
+            url: ' https://example.org/hist.csv ',
+            sources: [
+              { label: ' 2021 ', url: ' https://example.org/hist-2021.csv ' },
+              ' https://example.org/hist-2022.csv ',
+              { label: 'broken', url: '   ' },
+            ],
+          },
         },
         calculations: {
           windowDays: 999,
@@ -24,6 +32,10 @@ describe('normalizeSettings', () => {
     expect(settings.dataSource.feedback.url).toBe('https://example.org/feedback.csv');
     expect(settings.dataSource.ed.url).toBe('https://example.org/ed.csv');
     expect(settings.dataSource.historical.url).toBe('https://example.org/hist.csv');
+    expect(settings.dataSource.historical.sources).toEqual([
+      { label: '2021', url: 'https://example.org/hist-2021.csv' },
+      { url: 'https://example.org/hist-2022.csv' },
+    ]);
     expect(settings.dataSource.historical.enabled).toBe(false);
     expect(settings.calculations.windowDays).toBe(365);
     expect(settings.calculations.recentDays).toBe(1);

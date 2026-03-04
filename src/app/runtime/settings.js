@@ -46,6 +46,31 @@ export function normalizeSettings(rawSettings = {}, DEFAULT_SETTINGS) {
   merged.dataSource.url = String(merged.dataSource.url || '').trim();
   merged.dataSource.feedback.url = String(merged.dataSource.feedback.url || '').trim();
   merged.dataSource.historical.url = String(merged.dataSource.historical.url || '').trim();
+  const historicalSources = Array.isArray(merged.dataSource.historical.sources)
+    ? merged.dataSource.historical.sources
+    : [];
+  merged.dataSource.historical.sources = historicalSources
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        const url = entry.trim();
+        return url ? { url } : null;
+      }
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+      const normalized = {
+        ...entry,
+        url: String(entry.url || '').trim(),
+      };
+      if (normalized.label != null) {
+        normalized.label = String(normalized.label).trim();
+      }
+      if (normalized.id != null) {
+        normalized.id = String(normalized.id).trim();
+      }
+      return normalized.url ? normalized : null;
+    })
+    .filter(Boolean);
   merged.dataSource.ed.url = String(merged.dataSource.ed.url || '').trim();
   merged.dataSource.historical.enabled = merged.dataSource.historical.enabled !== false;
   merged.calculations = merged.calculations || {};

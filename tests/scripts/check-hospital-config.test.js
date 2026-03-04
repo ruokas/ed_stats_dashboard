@@ -58,4 +58,20 @@ describe('check-hospital-config validator', () => {
     expect(result.errors.some((item) => item.includes('calculations.windowDays'))).toBe(true);
     expect(result.errors.some((item) => item.includes('rasta laikina reikšmė'))).toBe(true);
   });
+
+  it('accepts historical sources[] when historical.url is empty', () => {
+    const config = buildValidConfig();
+    config.dataSource.historical = {
+      enabled: true,
+      label: 'Istorinis',
+      url: '',
+      sources: [
+        { label: '2021', url: 'https://example.org/historical-2021.csv' },
+        { label: '2022', url: 'https://example.org/historical-2022.csv' },
+      ],
+    };
+    const result = validateHospitalConfig(config);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
 });

@@ -85,10 +85,18 @@ export function validateHospitalConfig(config, { sourcePath = 'config.json' } = 
   const placeholders = collectPlaceholders(config);
   placeholders.forEach((item) => {
     const pathLower = item.path.toLowerCase();
+    const historicalSources = Array.isArray(config?.dataSource?.historical?.sources)
+      ? config.dataSource.historical.sources
+      : [];
+    const hasHistoricalSourcesUrl = historicalSources.some((source) =>
+      isValidUrl(source && typeof source === 'object' ? source.url : '')
+    );
     const isOptionalHistoricalPath =
-      pathLower === 'datasource.historical.url' &&
+      (pathLower === 'datasource.historical.url' ||
+        /^datasource\.historical\.sources\[\d+\]\.url$/.test(pathLower)) &&
       config?.dataSource?.historical?.enabled === false &&
-      !String(config?.dataSource?.historical?.url || '').trim();
+      !String(config?.dataSource?.historical?.url || '').trim() &&
+      !hasHistoricalSourcesUrl;
     if (!isOptionalHistoricalPath) {
       addError(errors, item.path, `rasta laikina reikšmė (${item.value}).`);
     }
@@ -117,11 +125,21 @@ export function validateHospitalConfig(config, { sourcePath = 'config.json' } = 
       addError(errors, 'dataSource.historical', 'turi būti objektas, jei nurodytas.');
     } else if (isPlainObject(config.dataSource.historical)) {
       const historicalEnabled = config.dataSource.historical.enabled !== false;
-      if (historicalEnabled && !isValidUrl(config.dataSource.historical.url)) {
+      const historicalSources = Array.isArray(config.dataSource.historical.sources)
+        ? config.dataSource.historical.sources
+        : [];
+      const validHistoricalSourceUrls = historicalSources
+        .map((source) => (source && typeof source === 'object' ? source.url : ''))
+        .filter((url) => isValidUrl(url));
+      if (
+        historicalEnabled &&
+        !isValidUrl(config.dataSource.historical.url) &&
+        !validHistoricalSourceUrls.length
+      ) {
         addError(
           errors,
           'dataSource.historical.url',
-          'kai historical.enabled=true, būtinas galiojantis http(s) CSV URL.'
+          'kai historical.enabled=true, būtinas galiojantis http(s) CSV URL (url arba sources[].url).'
         );
       }
       if (
@@ -129,6 +147,32 @@ export function validateHospitalConfig(config, { sourcePath = 'config.json' } = 
         typeof config.dataSource.historical.label !== 'string'
       ) {
         addError(errors, 'dataSource.historical.label', 'turi būti tekstas.');
+      }
+      if (
+        config.dataSource.historical.sources != null &&
+        !Array.isArray(config.dataSource.historical.sources)
+      ) {
+        addError(errors, 'dataSource.historical.sources', 'turi būti masyvas, jei nurodytas.');
+      } else if (Array.isArray(config.dataSource.historical.sources)) {
+        config.dataSource.historical.sources.forEach((source, index) => {
+          if (!isPlainObject(source)) {
+            addError(errors, `dataSource.historical.sources[${index}]`, 'turi būti objektas.');
+            return;
+          }
+          if (!isValidUrl(source.url)) {
+            addError(
+              errors,
+              `dataSource.historical.sources[${index}].url`,
+              'privalomas galiojantis http(s) CSV URL.'
+            );
+          }
+          if (source.label != null && typeof source.label !== 'string') {
+            addError(errors, `dataSource.historical.sources[${index}].label`, 'turi būti tekstas.');
+          }
+          if (source.id != null && typeof source.id !== 'string') {
+            addError(errors, `dataSource.historical.sources[${index}].id`, 'turi būti tekstas.');
+          }
+        });
       }
     }
   }

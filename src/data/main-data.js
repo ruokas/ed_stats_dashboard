@@ -988,21 +988,31 @@ export function createMainDataHandlers(context) {
     const historicalEnabled = !skipHistorical && Boolean(historicalConfig?.enabled);
     const historicalLabel = historicalConfig?.label || 'Istorinis CSV';
     let historicalMeta = null;
-    const normalizedHistoricalConfig =
-      historicalEnabled && historicalConfig?.url
-        ? {
-            url: historicalConfig.url,
-            missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
-            onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
-            onWorkerProgress:
-              typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
-            onPartialResult:
-              typeof options?.onHistoricalPartial === 'function' ? options.onHistoricalPartial : null,
-            signal,
-          }
-        : null;
-    const historicalShouldAttempt =
-      Boolean(normalizedHistoricalConfig) && (normalizedHistoricalConfig.url ?? '').trim().length > 0;
+    const historicalSourcesRaw = Array.isArray(historicalConfig?.sources) ? historicalConfig.sources : [];
+    const historicalSources = historicalSourcesRaw
+      .map((source, index) => {
+        const sourceObject = source && typeof source === 'object' ? source : null;
+        const sourceUrl = String(sourceObject?.url || '').trim();
+        if (!sourceUrl) {
+          return null;
+        }
+        const sourceLabel = String(sourceObject?.label || '').trim() || `${historicalLabel} #${index + 1}`;
+        return {
+          id: `historical-${index + 1}`,
+          label: sourceLabel,
+          url: sourceUrl,
+        };
+      })
+      .filter(Boolean);
+    const historicalLegacyUrl = String(historicalConfig?.url || '').trim();
+    if (historicalEnabled && historicalSources.length === 0 && historicalLegacyUrl) {
+      historicalSources.push({
+        id: 'historical-1',
+        label: historicalLabel,
+        url: historicalLegacyUrl,
+      });
+    }
+    const historicalShouldAttempt = historicalEnabled && historicalSources.length > 0;
 
     const primaryPromise = loadCsvSource(mainConfig, workerOptions, {
       required: true,
@@ -1012,19 +1022,40 @@ export function createMainDataHandlers(context) {
       allowPersistentCache,
       fetchProfile,
     });
-    const historicalPromise =
-      historicalEnabled && historicalShouldAttempt
-        ? loadCsvSource(normalizedHistoricalConfig, workerOptions, {
-            required: false,
-            sourceId: 'historical',
-            label: historicalLabel,
-            cachePolicy,
-            allowPersistentCache,
-            fetchProfile,
-          })
-        : Promise.resolve(null);
+    const historicalPromises = historicalShouldAttempt
+      ? historicalSources.map((source) =>
+          loadCsvSource(
+            {
+              url: source.url,
+              missingMessage: 'Nenurodytas papildomo istorinio šaltinio URL.',
+              onChunk: typeof options?.onHistoricalChunk === 'function' ? options.onHistoricalChunk : null,
+              onWorkerProgress:
+                typeof options?.onWorkerProgress === 'function' ? options.onWorkerProgress : null,
+              onPartialResult:
+                typeof options?.onHistoricalPartial === 'function'
+                  ? (partial) => {
+                      options.onHistoricalPartial({
+                        ...(partial || {}),
+                        sourceLabel: source.label,
+                      });
+                    }
+                  : null,
+              signal,
+            },
+            workerOptions,
+            {
+              required: false,
+              sourceId: source.id,
+              label: source.label,
+              cachePolicy,
+              allowPersistentCache,
+              fetchProfile,
+            }
+          )
+        )
+      : [];
 
-    const [primaryResult, historicalResult] = await Promise.all([primaryPromise, historicalPromise]);
+    const [primaryResult, ...historicalResults] = await Promise.all([primaryPromise, ...historicalPromises]);
 
     const baseRecordsRaw = Array.isArray(primaryResult.records) ? primaryResult.records : [];
     const baseRecords = needsFullRecords ? attachSourceId(baseRecordsRaw, 'primary') : [];
@@ -1064,61 +1095,116 @@ export function createMainDataHandlers(context) {
     }
 
     if (historicalEnabled) {
-      if (historicalShouldAttempt && historicalResult) {
-        historicalMeta = historicalResult.meta || null;
-        const historicalRecordsRaw = Array.isArray(historicalResult.records) ? historicalResult.records : [];
-        const historicalRecords = needsFullRecords ? attachSourceId(historicalRecordsRaw, 'historical') : [];
-        if (needsFullRecords && historicalRecords.length) {
-          if (combinedRecords.length === 0) {
-            combinedRecords = historicalRecords.slice();
-          } else {
-            const merged = new Array(combinedRecords.length + historicalRecords.length);
-            for (let index = 0; index < combinedRecords.length; index += 1) {
-              merged[index] = combinedRecords[index];
+      if (historicalShouldAttempt && historicalResults.length > 0) {
+        const historicalUrls = [];
+        let historicalRecordsTotal = 0;
+        let historicalDailyTotal = 0;
+        let historicalWorkerComputeMs = 0;
+        let hasHistoricalWorkerComputeMs = false;
+        let historicalHasAnyError = false;
+        const historicalErrors = [];
+        let historicalHasFallback = false;
+        let historicalFromCache = true;
+        let historicalUsed = false;
+        for (let resultIndex = 0; resultIndex < historicalResults.length; resultIndex += 1) {
+          const historicalResult = historicalResults[resultIndex];
+          const historicalSource = historicalSources[resultIndex];
+          if (!historicalResult) {
+            continue;
+          }
+          const historicalRecordsRaw = Array.isArray(historicalResult.records)
+            ? historicalResult.records
+            : [];
+          const historicalRecords = needsFullRecords
+            ? attachSourceId(historicalRecordsRaw, 'historical')
+            : [];
+          if (needsFullRecords && historicalRecords.length) {
+            if (combinedRecords.length === 0) {
+              combinedRecords = historicalRecords.slice();
+            } else {
+              const merged = new Array(combinedRecords.length + historicalRecords.length);
+              for (let index = 0; index < combinedRecords.length; index += 1) {
+                merged[index] = combinedRecords[index];
+              }
+              for (let index = 0; index < historicalRecords.length; index += 1) {
+                merged[combinedRecords.length + index] = historicalRecords[index];
+              }
+              combinedRecords = merged;
             }
-            for (let index = 0; index < historicalRecords.length; index += 1) {
-              merged[combinedRecords.length + index] = historicalRecords[index];
-            }
-            combinedRecords = merged;
+          }
+          if (needsFullRecords || fetchProfile === 'daily-plus-agg') {
+            combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(
+              combinedHospitalByDeptStayAgg,
+              historicalResult.hospitalByDeptStayAgg
+            );
+          }
+          const resultLabel = historicalSource?.label || historicalResult.meta?.label || historicalLabel;
+          if (historicalResult.error) {
+            const historicalError = `${resultLabel}: ${historicalResult.error}`;
+            warnings.push(historicalError);
+            historicalErrors.push(historicalError);
+            historicalHasAnyError = true;
+          }
+          if (historicalResult.meta?.url) {
+            historicalUrls.push(historicalResult.meta.url);
+          } else if (historicalSource?.url) {
+            historicalUrls.push(historicalSource.url);
+          }
+          const workerComputeMs = Number(historicalResult.meta?.workerMeta?.computeDurationMs);
+          if (Number.isFinite(workerComputeMs)) {
+            historicalWorkerComputeMs += workerComputeMs;
+            hasHistoricalWorkerComputeMs = true;
+          }
+          historicalRecordsTotal += Number(
+            historicalResult.meta?.recordsCount || historicalRecords.length || 0
+          );
+          historicalDailyTotal += Number(
+            historicalResult.meta?.dailyStatsCount || historicalResult.dailyStats?.length || 0
+          );
+          historicalHasFallback ||= Boolean(historicalResult.meta?.fromFallback);
+          historicalFromCache &&= Boolean(historicalResult.meta?.fromCache);
+          historicalUsed ||= needsFullRecords
+            ? historicalRecords.length > 0
+            : Array.isArray(historicalResult.dailyStats) && historicalResult.dailyStats.length > 0;
+          if (!historicalMeta && historicalResult.meta) {
+            historicalMeta = historicalResult.meta;
           }
         }
-        if (needsFullRecords || fetchProfile === 'daily-plus-agg') {
-          combinedHospitalByDeptStayAgg = mergeHospitalByDeptStayAgg(
-            combinedHospitalByDeptStayAgg,
-            historicalResult.hospitalByDeptStayAgg
-          );
-        }
-        if (historicalResult.error) {
-          warnings.push(`${historicalLabel}: ${historicalResult.error}`);
+        if (historicalMeta) {
+          historicalMeta = {
+            ...historicalMeta,
+            url: historicalUrls.join(', '),
+            sourceCount: historicalResults.length,
+            recordsCount: historicalRecordsTotal,
+            dailyStatsCount: historicalDailyTotal,
+          };
         }
         sources.push({
           id: 'historical',
           label: historicalLabel,
-          url: historicalResult.meta?.url || (historicalConfig.url ?? ''),
-          fromCache: Boolean(historicalResult.meta?.fromCache),
-          cacheTier: historicalResult.meta?.cacheTier || 'network',
-          schemaVersion: historicalResult.meta?.schemaVersion || DATA_CACHE_SCHEMA_VERSION,
-          fromFallback: Boolean(historicalResult.meta?.fromFallback),
+          url:
+            historicalSources.map((source) => source.url).join(', ') ||
+            historicalLegacyUrl ||
+            historicalConfig.url ||
+            '',
+          fromCache: historicalFromCache,
+          cacheTier: historicalMeta?.cacheTier || 'network',
+          schemaVersion: historicalMeta?.schemaVersion || DATA_CACHE_SCHEMA_VERSION,
+          fromFallback: historicalHasFallback,
           usingFallback: false,
-          lastErrorMessage: historicalResult.lastErrorMessage || '',
-          error: historicalResult.error || '',
-          recordsCount: Number(historicalResult.meta?.recordsCount || historicalRecords.length || 0),
-          dailyStatsCount: Number(
-            historicalResult.meta?.dailyStatsCount || historicalResult.dailyStats?.length || 0
-          ),
-          workerComputeMs: Number.isFinite(Number(historicalResult.meta?.workerMeta?.computeDurationMs))
-            ? Number(historicalResult.meta.workerMeta.computeDurationMs)
-            : null,
-          used: needsFullRecords
-            ? historicalRecords.length > 0
-            : Array.isArray(historicalResult.dailyStats) && historicalResult.dailyStats.length > 0,
+          lastErrorMessage: historicalHasAnyError ? historicalErrors.join(' | ') : '',
+          error: historicalHasAnyError ? 'Kai kurie istoriniai šaltiniai nepasiekiami.' : '',
+          recordsCount: historicalRecordsTotal,
+          dailyStatsCount: historicalDailyTotal,
+          workerComputeMs: hasHistoricalWorkerComputeMs ? historicalWorkerComputeMs : null,
+          used: historicalUsed,
           enabled: true,
         });
       } else {
         sources.push({
           id: 'historical',
           label: historicalLabel,
-          url: historicalConfig.url || '',
+          url: historicalLegacyUrl || '',
           fromCache: false,
           cacheTier: 'network',
           schemaVersion: DATA_CACHE_SCHEMA_VERSION,
@@ -1135,7 +1221,7 @@ export function createMainDataHandlers(context) {
       sources.push({
         id: 'historical',
         label: historicalLabel,
-        url: historicalConfig.url || '',
+        url: historicalSources.map((source) => source.url).join(', ') || historicalLegacyUrl || '',
         fromCache: false,
         cacheTier: 'network',
         schemaVersion: DATA_CACHE_SCHEMA_VERSION,
