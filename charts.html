@@ -133,8 +133,8 @@
 <nav class="charts-jump-nav" aria-label="Grafikų sekcijos">
   <a class="charts-jump-nav__link" href="#chartHeading">Srautų apžvalga</a>
   <a class="charts-jump-nav__link" href="#chartsHourlyHeading">Valandinis profilis</a>
-  <a class="charts-jump-nav__link" href="#chartsHeatmapHeading">Intensyvumo žemėlapis</a>
-  <a class="charts-jump-nav__link" href="#chartsHospitalTableHeading">Hospitalizacijų analizė</a>
+  <a class="charts-jump-nav__link" href="#chartsHeatmapHeading">Srautai pagal valandą (lentelė)</a>
+  <a class="charts-jump-nav__link" href="#chartsHospitalTableHeading">Hospitalizacijos pagal skyrių</a>
 </nav>
 <section class="section" aria-labelledby="chartHeading" data-section="chart">
       <div class="section__header">
@@ -147,9 +147,9 @@
                   <path d="M4 19h16" />
                 </svg>
               </span>
-              <span class="section-title__text">Pacientų srautai</span>
+              <span class="section-title__text">Srautų dinamika</span>
             </h2>
-            <p id="chartSubtitle" class="section__subtitle">Kasdieniai skaičiai ir savaitės dienos vidurkiai</p>
+            <p id="chartSubtitle" class="section__subtitle">Dienos srautai ir savaitės dienų vidurkiai</p>
           </div>
         </div>
         <div id="chartsMainFiltersPanel" class="section__actions chart-controls filter-panel" hidden>
@@ -236,12 +236,12 @@
         </div>
       </div>
       <button type="button" class="charts-section-toggle" data-charts-section-toggle="overview" aria-expanded="true" aria-controls="chartsOverviewPanel">
-        <span class="charts-section-toggle__title">Srautų apžvalga</span>
+        <span class="charts-section-toggle__title">Dienos ir savaitės dinamika</span>
         <span class="charts-section-toggle__summary">Dienos ir savaitės dinamika</span>
       </button>
       <section id="chartsOverviewPanel" class="charts-subsection" aria-labelledby="chartsOverviewHeading" data-charts-section-panel="overview">
         <header class="charts-subsection__header">
-          <h3 id="chartsOverviewHeading" class="charts-subsection__title">Srautų apžvalga</h3>
+          <h3 id="chartsOverviewHeading" class="charts-subsection__title">Dienos ir savaitės dinamika</h3>
           <p class="charts-subsection__subtitle">Pagrindinė dienos ir savaitės dinamikos apžvalga.</p>
         </header>
         <div class="chart-grid">
@@ -383,12 +383,12 @@
         </div>
       </section>
       <button type="button" class="charts-section-toggle" data-charts-section-toggle="hourly" aria-expanded="false" aria-controls="chartsHourlyPanel">
-        <span class="charts-section-toggle__title">Valandinis profilis</span>
-        <span class="charts-section-toggle__summary">Detalūs valandiniai srautai</span>
+        <span class="charts-section-toggle__title">Srautai pagal valandą</span>
+        <span class="charts-section-toggle__summary">Grafikas</span>
       </button>
       <section id="chartsHourlyPanel" class="charts-subsection" aria-labelledby="chartsHourlyHeading" data-charts-section-panel="hourly" hidden>
         <header class="charts-subsection__header">
-          <h3 id="chartsHourlyHeading" class="charts-subsection__title">Valandinis profilis</h3>
+          <h3 id="chartsHourlyHeading" class="charts-subsection__title">Srautai pagal valandą</h3>
           <p class="charts-subsection__subtitle">Detali valandinių srautų analizė su lokaliais filtrais.</p>
         </header>
         <div class="chart-grid">
@@ -515,12 +515,12 @@
         </div>
       </section>
       <button type="button" class="charts-section-toggle" data-charts-section-toggle="heatmap" aria-expanded="false" aria-controls="chartsHeatmapPanel">
-        <span class="charts-section-toggle__title">Intensyvumo žemėlapis</span>
-        <span class="charts-section-toggle__summary">Atvykimų aktyvumas pagal laiką</span>
+        <span class="charts-section-toggle__title">Srautai pagal valandą (lentelė)</span>
+        <span class="charts-section-toggle__summary">Atvykimai pagal valandą ir sav. dieną</span>
       </button>
       <section id="chartsHeatmapPanel" class="charts-subsection" aria-labelledby="chartsHeatmapHeading" data-charts-section-panel="heatmap" hidden>
         <header class="charts-subsection__header">
-          <h3 id="chartsHeatmapHeading" class="charts-subsection__title">Intensyvumo žemėlapis</h3>
+          <h3 id="chartsHeatmapHeading" class="charts-subsection__title">Srautai pagal valandą (lentelė)</h3>
           <p class="charts-subsection__subtitle">Atvykimų aktyvumas pagal savaitės dieną ir valandą.</p>
         </header>
         <div class="chart-grid">
@@ -605,7 +605,7 @@
       </section>
     </section>
     <button type="button" class="charts-section-toggle" data-charts-section-toggle="hospital" aria-expanded="false" aria-controls="chartsHospitalSectionPanel">
-      <span class="charts-section-toggle__title">Hospitalizacijų analizė</span>
+      <span class="charts-section-toggle__title">Hospitalizacijos pagal skyrių</span>
       <span class="charts-section-toggle__summary">Lentelė ir skyriaus metinė dinamika</span>
     </button>
     <section id="chartsHospitalSectionPanel" class="section section--compact" aria-labelledby="chartsHospitalTableHeading" data-section="charts-hospital-table" data-charts-section-panel="hospital" hidden>
@@ -620,7 +620,7 @@
                   <path d="M4 19h16" />
                 </svg>
               </span>
-              <span class="section-title__text">Stacionarizuoti pacientai pagal skyrių ir SPS trukmę</span>
+              <span class="section-title__text">Hospitalizacijos pagal skyrių ir SPS trukmę</span>
             </h2>
             <p id="chartsHospitalTableSubtitle" class="section__subtitle">Pasiskirstymas pagal skyrių ir buvimo SPS intervalus</p>
           </div>
@@ -702,7 +702,7 @@
       </div>
       <article id="chartsHospitalDeptTrendCard" class="charts-hospital-trend" aria-live="polite">
         <div class="charts-hospital-trend__header">
-          <h3 id="chartsHospitalDeptTrendTitle">Skyriaus dinamika per metus</h3>
+          <h3 id="chartsHospitalDeptTrendTitle">Hospitalizacijų dinamika pagal metus</h3>
           <p id="chartsHospitalDeptTrendSubtitle">Pasirinkite skyrių lentelėje, kad matytumėte jo SPS trukmės % dinamiką pagal metus.</p>
         </div>
         <div id="chartsHospitalDeptTrendSkeleton" aria-hidden="true">
