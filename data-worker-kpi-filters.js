@@ -211,6 +211,8 @@ function sumDailyCounts(dailyStats) {
 
 function getLastShiftMetricLabel(metric) {
   switch (metric) {
+    case 'referral_arrivals':
+      return 'Atvykimai su siuntimu';
     case 'discharges':
       return 'Išleidimai';
     case 'hospitalized':
@@ -226,8 +228,67 @@ function getLastShiftMetricLabel(metric) {
 
 function normalizeLastShiftMetric(value) {
   const raw = typeof value === 'string' ? value : String(value ?? '');
-  const allowed = ['arrivals', 'discharges', 'hospitalized', 'balance', 'census'];
+  const allowed = ['arrivals', 'referral_arrivals', 'discharges', 'hospitalized', 'balance', 'census'];
   return allowed.includes(raw) ? raw : 'arrivals';
+}
+
+function isReferredRecord(record) {
+  if (!record || typeof record !== 'object') {
+    return false;
+  }
+  if (record.referred === true) {
+    return true;
+  }
+  return (
+    String(record.referral || '')
+      .trim()
+      .toLowerCase() === 'su siuntimu'
+  );
+}
+
+const HOURS_IN_DAY = 24;
+const UNKNOWN_TIME_HOURLY_SHARE = 1 / HOURS_IN_DAY;
+
+function isValidDate(value) {
+  return value instanceof Date && !Number.isNaN(value.getTime());
+}
+
+function isPlaceholderDischargeDate(date) {
+  return isValidDate(date) && date.getFullYear() === 1900 && date.getMonth() === 0 && date.getDate() === 1;
+}
+
+function resolveUnknownDischargeDateKey(record, shiftStartHour) {
+  const discharge = isValidDate(record?.discharge) ? record.discharge : null;
+  if (!discharge) {
+    return '';
+  }
+  if (!isPlaceholderDischargeDate(discharge)) {
+    return formatLocalDateKey(new Date(discharge.getFullYear(), discharge.getMonth(), discharge.getDate()));
+  }
+  const arrival = isValidDate(record?.arrival) ? record.arrival : null;
+  if (!arrival) {
+    return '';
+  }
+  return computeShiftDateKey(arrival, shiftStartHour);
+}
+
+function addUnknownTimeDistribution(series, type = '') {
+  for (let hour = 0; hour < HOURS_IN_DAY; hour += 1) {
+    series.total[hour] += UNKNOWN_TIME_HOURLY_SHARE;
+    if (type === 't') {
+      series.t[hour] += UNKNOWN_TIME_HOURLY_SHARE;
+    } else if (type === 'tr') {
+      series.tr[hour] += UNKNOWN_TIME_HOURLY_SHARE;
+    } else if (type === 'ch') {
+      series.ch[hour] += UNKNOWN_TIME_HOURLY_SHARE;
+    }
+  }
+}
+
+function addUnknownOutflowDistribution(series) {
+  for (let hour = 0; hour < HOURS_IN_DAY; hour += 1) {
+    series.outflow[hour] += UNKNOWN_TIME_HOURLY_SHARE;
+  }
 }
 
 function buildAvailableDateKeysFromRecords(records, shiftStartHour) {
@@ -303,6 +364,7 @@ function buildKpiLastShiftHourlySeriesInWorker(
     const record = list[index];
     const arrival = record?.arrival;
     const discharge = record?.discharge;
+    const dischargeDate = isValidDate(discharge) ? discharge : null;
     const arrivalHasTime =
       record?.arrivalHasTime === true ||
       (record?.arrivalHasTime == null &&
@@ -314,22 +376,40 @@ function buildKpiLastShiftHourlySeriesInWorker(
         discharge instanceof Date &&
         (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
     let reference = null;
-    if (metric === 'arrivals') {
+    if (metric === 'arrivals' || metric === 'referral_arrivals') {
+      if (metric === 'referral_arrivals' && !isReferredRecord(record)) {
+        continue;
+      }
       reference =
         arrivalHasTime && arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
     } else if (metric === 'discharges') {
-      reference =
-        dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime())
-          ? discharge
-          : null;
+      const hasReliableDischargeHour =
+        dischargeHasTime && dischargeDate && !isPlaceholderDischargeDate(dischargeDate);
+      if (hasReliableDischargeHour) {
+        reference = dischargeDate;
+      } else if (dischargeDate) {
+        const unknownDischargeDateKey = resolveUnknownDischargeDateKey(record, shiftStartHour);
+        if (unknownDischargeDateKey === targetDateKey) {
+          const rawType = typeof record?.cardType === 'string' ? record.cardType.trim().toLowerCase() : '';
+          addUnknownTimeDistribution(series, rawType);
+        }
+        continue;
+      }
     } else if (metric === 'hospitalized') {
-      reference =
-        record?.hospitalized &&
-        dischargeHasTime &&
-        discharge instanceof Date &&
-        !Number.isNaN(discharge.getTime())
-          ? discharge
-          : null;
+      if (record?.hospitalized) {
+        const hasReliableDischargeHour =
+          dischargeHasTime && dischargeDate && !isPlaceholderDischargeDate(dischargeDate);
+        if (hasReliableDischargeHour) {
+          reference = dischargeDate;
+        } else if (dischargeDate) {
+          const unknownDischargeDateKey = resolveUnknownDischargeDateKey(record, shiftStartHour);
+          if (unknownDischargeDateKey === targetDateKey) {
+            const rawType = typeof record?.cardType === 'string' ? record.cardType.trim().toLowerCase() : '';
+            addUnknownTimeDistribution(series, rawType);
+          }
+          continue;
+        }
+      }
     } else {
       reference =
         arrivalHasTime && arrival instanceof Date && !Number.isNaN(arrival.getTime()) ? arrival : null;
@@ -357,18 +437,26 @@ function buildKpiLastShiftHourlySeriesInWorker(
 
     if (metric === 'balance' || metric === 'census') {
       const discharge = record?.discharge;
+      const dischargeDate = isValidDate(discharge) ? discharge : null;
       const dischargeHasTime =
         record?.dischargeHasTime === true ||
         (record?.dischargeHasTime == null &&
           discharge instanceof Date &&
           (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
-      if (dischargeHasTime && discharge instanceof Date && !Number.isNaN(discharge.getTime())) {
-        const dischargeDateKey = computeShiftDateKey(discharge, shiftStartHour);
+      const hasReliableDischargeHour =
+        dischargeHasTime && dischargeDate && !isPlaceholderDischargeDate(dischargeDate);
+      if (hasReliableDischargeHour) {
+        const dischargeDateKey = computeShiftDateKey(dischargeDate, shiftStartHour);
         if (dischargeDateKey === targetDateKey) {
-          const dischargeHour = discharge.getHours();
+          const dischargeHour = dischargeDate.getHours();
           if (Number.isFinite(dischargeHour) && dischargeHour >= 0 && dischargeHour <= 23) {
             series.outflow[dischargeHour] += 1;
           }
+        }
+      } else if (dischargeDate) {
+        const unknownDischargeDateKey = resolveUnknownDischargeDateKey(record, shiftStartHour);
+        if (unknownDischargeDateKey === targetDateKey) {
+          addUnknownOutflowDistribution(series);
         }
       }
     }
@@ -398,7 +486,10 @@ function buildKpiLastShiftHourlySeriesInWorker(
     metricLabel: getLastShiftMetricLabel(metric),
     series,
     hasData:
-      metric === 'arrivals' || metric === 'discharges' || metric === 'hospitalized'
+      metric === 'arrivals' ||
+      metric === 'referral_arrivals' ||
+      metric === 'discharges' ||
+      metric === 'hospitalized'
         ? series.total.some((value) => value > 0)
         : hasAnyFlow,
   };

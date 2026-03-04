@@ -350,6 +350,8 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
   if (titleMainEl) {
     if (metric === 'balance') {
       titleMainEl.textContent = 'Paskutinės pamainos srautų balansas per valandą';
+    } else if (metric === 'referral_arrivals') {
+      titleMainEl.textContent = 'Paskutinės pamainos atvykimai su siuntimu per valandą';
     } else if (metric === 'discharges') {
       titleMainEl.textContent = 'Paskutinės pamainos išleidimai per valandą';
     } else if (metric === 'hospitalized') {
@@ -442,6 +444,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
 
   const isBalance = metric === 'balance';
   const isCensus = metric === 'census';
+  const isReferralArrivals = metric === 'referral_arrivals';
   const rotatedOutflow = rotateSeries(seriesInfo.series?.outflow);
   const rotatedNet = rotateSeries(seriesInfo.series?.net);
   const rotatedCensus = rotateSeries(seriesInfo.series?.census);
@@ -549,67 +552,84 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
             pointBorderColor: palette.accent,
           },
         ]
-      : [
-          {
-            label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
-            data: rotatedSeries.total || [],
-            borderColor: palette.textColor,
-            backgroundColor: palette.textColor,
-            tension: 0.35,
-            fill: false,
-            pointRadius(context) {
-              return context.dataIndex === peakIndices.total ? 5 : 2;
+      : isReferralArrivals
+        ? [
+            {
+              label: 'Atvykimai su siuntimu',
+              data: rotatedSeries.total || [],
+              borderColor: palette.accent,
+              backgroundColor: palette.accent,
+              tension: 0.35,
+              fill: false,
+              pointRadius(context) {
+                return context.dataIndex === peakIndices.total ? 5 : 2;
+              },
+              pointHoverRadius: 4,
+              pointBackgroundColor: palette.accent,
+              pointBorderColor: palette.accent,
             },
-            pointHoverRadius: 4,
-            pointBackgroundColor: palette.textColor,
-            pointBorderColor: palette.textColor,
-          },
-          {
-            label: 'T',
-            data: rotatedSeries.t || [],
-            borderColor: '#f2c94c',
-            backgroundColor: '#f2c94c',
-            borderDash: [6, 4],
-            tension: 0.35,
-            fill: false,
-            pointRadius(context) {
-              return context.dataIndex === peakIndices.t ? 5 : 2;
+          ]
+        : [
+            {
+              label: TEXT.charts?.hourlyDatasetTotalLabel || 'Iš viso',
+              data: rotatedSeries.total || [],
+              borderColor: palette.textColor,
+              backgroundColor: palette.textColor,
+              tension: 0.35,
+              fill: false,
+              pointRadius(context) {
+                return context.dataIndex === peakIndices.total ? 5 : 2;
+              },
+              pointHoverRadius: 4,
+              pointBackgroundColor: palette.textColor,
+              pointBorderColor: palette.textColor,
             },
-            pointHoverRadius: 4,
-            pointBackgroundColor: '#f2c94c',
-            pointBorderColor: '#f2c94c',
-          },
-          {
-            label: 'TR',
-            data: rotatedSeries.tr || [],
-            borderColor: '#27ae60',
-            backgroundColor: '#27ae60',
-            borderDash: [6, 4],
-            tension: 0.35,
-            fill: false,
-            pointRadius(context) {
-              return context.dataIndex === peakIndices.tr ? 5 : 2;
+            {
+              label: 'T',
+              data: rotatedSeries.t || [],
+              borderColor: '#f2c94c',
+              backgroundColor: '#f2c94c',
+              borderDash: [6, 4],
+              tension: 0.35,
+              fill: false,
+              pointRadius(context) {
+                return context.dataIndex === peakIndices.t ? 5 : 2;
+              },
+              pointHoverRadius: 4,
+              pointBackgroundColor: '#f2c94c',
+              pointBorderColor: '#f2c94c',
             },
-            pointHoverRadius: 4,
-            pointBackgroundColor: '#27ae60',
-            pointBorderColor: '#27ae60',
-          },
-          {
-            label: 'CH',
-            data: rotatedSeries.ch || [],
-            borderColor: '#2f80ed',
-            backgroundColor: '#2f80ed',
-            borderDash: [6, 4],
-            tension: 0.35,
-            fill: false,
-            pointRadius(context) {
-              return context.dataIndex === peakIndices.ch ? 5 : 2;
+            {
+              label: 'TR',
+              data: rotatedSeries.tr || [],
+              borderColor: '#27ae60',
+              backgroundColor: '#27ae60',
+              borderDash: [6, 4],
+              tension: 0.35,
+              fill: false,
+              pointRadius(context) {
+                return context.dataIndex === peakIndices.tr ? 5 : 2;
+              },
+              pointHoverRadius: 4,
+              pointBackgroundColor: '#27ae60',
+              pointBorderColor: '#27ae60',
             },
-            pointHoverRadius: 4,
-            pointBackgroundColor: '#2f80ed',
-            pointBorderColor: '#2f80ed',
-          },
-        ];
+            {
+              label: 'CH',
+              data: rotatedSeries.ch || [],
+              borderColor: '#2f80ed',
+              backgroundColor: '#2f80ed',
+              borderDash: [6, 4],
+              tension: 0.35,
+              fill: false,
+              pointRadius(context) {
+                return context.dataIndex === peakIndices.ch ? 5 : 2;
+              },
+              pointHoverRadius: 4,
+              pointBackgroundColor: '#2f80ed',
+              pointBorderColor: '#2f80ed',
+            },
+          ];
 
   const waitForChartFirstPaint = async () => {
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {

@@ -645,4 +645,92 @@ describe('kpi-flow selectedDate daily cache', () => {
       hasData: true,
     });
   });
+
+  it('sends referral_arrivals metric to worker detail job on metric toggle', async () => {
+    const filteredDaily = [{ date: '2026-02-10', count: 2 }];
+    const initialHourly = {
+      dateKey: '2026-02-10',
+      dateLabel: '2026-02-10',
+      shiftStartHour: 7,
+      metric: 'arrivals',
+      metricLabel: 'Atvykimai',
+      hasData: true,
+      series: {
+        total: Array.from({ length: 24 }, (_, index) => (index === 8 ? 2 : 0)),
+        t: Array(24).fill(0),
+        tr: Array(24).fill(0),
+        ch: Array(24).fill(0),
+        outflow: Array(24).fill(0),
+        net: Array(24).fill(0),
+        census: Array(24).fill(0),
+      },
+    };
+    const referralHourly = {
+      ...initialHourly,
+      metric: 'referral_arrivals',
+      metricLabel: 'Atvykimai su siuntimu',
+    };
+    const runKpiWorkerJob = vi.fn(async () => ({
+      resultMode: 'summary+hourly',
+      windowDays: 30,
+      records: [],
+      dailyStats: filteredDaily,
+      kpiSummary: {
+        totalFilteredRecords: 2,
+        selectedDate: '2026-02-10',
+        selectedDateRecordCount: 2,
+        selectedDateDailyStats: filteredDaily,
+        availableDateKeys: ['2026-02-10'],
+        lastShiftHourly: initialHourly,
+      },
+      meta: { resultMode: 'summary+hourly' },
+    }));
+    const runKpiWorkerDetailJob = vi.fn(async (payload) => {
+      if (payload?.type === 'getKpiRecordsForDateByHandle') {
+        return {
+          resultMode: 'records-for-date',
+          selectedDate: '2026-02-10',
+          records: [],
+          dailyStats: filteredDaily,
+          meta: { requiresFullRecords: true, resultMode: 'records-for-date' },
+        };
+      }
+      return {
+        resultMode: 'hourly-only',
+        selectedDate: '2026-02-10',
+        lastShiftHourly: referralHourly,
+        meta: { resultMode: 'hourly-only', hasRawRecords: true },
+      };
+    });
+    const renderLastShiftHourlyChartWithTheme = vi.fn(async () => {});
+    const flow = createKpiFlow(
+      createEnv({
+        runKpiWorkerJob,
+        runKpiWorkerDetailJob,
+        computeDailyStats: vi.fn(() => filteredDaily),
+        renderLastShiftHourlyChartWithTheme,
+        dashboardStateOverrides: {
+          primaryRecords: [{ arrival: new Date('2026-02-10T08:00:00') }],
+          primaryDaily: filteredDaily,
+        },
+      })
+    );
+
+    await flow.applyKpiFiltersAndRender();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const btn = document.createElement('button');
+    btn.dataset.lastShiftMetric = 'referral_arrivals';
+    flow.handleLastShiftMetricClick({ currentTarget: btn });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(runKpiWorkerDetailJob).toHaveBeenCalledTimes(2);
+    expect(runKpiWorkerDetailJob.mock.calls[1][0]).toMatchObject({
+      type: 'computeKpiLastShiftHourlyByHandle',
+      selectedDate: '2026-02-10',
+      lastShiftHourlyMetric: 'referral_arrivals',
+    });
+  });
 });
