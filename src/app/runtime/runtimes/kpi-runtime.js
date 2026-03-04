@@ -498,6 +498,8 @@ function setChartCardMessage(element, message) {
     messageEl.setAttribute('aria-live', 'polite');
     card.appendChild(messageEl);
   }
+  messageEl.hidden = false;
+  messageEl.style.display = 'flex';
   messageEl.textContent = String(message);
 }
 

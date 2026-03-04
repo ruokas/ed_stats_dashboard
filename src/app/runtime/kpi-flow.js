@@ -414,15 +414,35 @@ export function createKpiFlow(env) {
       { buildLastShiftSummary, getSettings, defaultSettings: DEFAULT_SETTINGS, formatLocalDateKey }
     );
 
+  function isDeferredRecordsHydrationActive() {
+    return String(dashboardState.mainData?.recordsHydrationState || '') === 'deferred';
+  }
+
+  function shouldKeepBlockingHourlyLoading(seriesInfo) {
+    return isDeferredRecordsHydrationActive() && !seriesInfo?.hasData;
+  }
+
+  function shouldMarkHourlyChartAsRendered(seriesInfo) {
+    if (seriesInfo?.hasData) {
+      return true;
+    }
+    return !isDeferredRecordsHydrationActive();
+  }
+
   async function renderLastShiftHourlyChart(records, dailyStats, options = {}) {
     const renderState = beginLastShiftHourlyLoading(options);
     const metricKey = dashboardState.kpi?.lastShiftHourlyMetric || 'arrivals';
     const seriesInfo = buildLastShiftHourlySeries(records, dailyStats, metricKey);
+    const keepBlockingLoading = shouldKeepBlockingHourlyLoading(seriesInfo);
+    let renderFailed = false;
     dashboardState.kpi.lastShiftHourly = seriesInfo;
     try {
       await renderLastShiftHourlyChartWithTheme(seriesInfo);
-      dashboardState.kpi.lastShiftHourlyHasRenderedOnce = true;
+      if (shouldMarkHourlyChartAsRendered(seriesInfo)) {
+        dashboardState.kpi.lastShiftHourlyHasRenderedOnce = true;
+      }
     } catch (error) {
+      renderFailed = true;
       const errorInfo = describeError(error, {
         code: 'LAST_SHIFT_HOURLY',
         message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
@@ -432,17 +452,24 @@ export function createKpiFlow(env) {
         setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
       }
     } finally {
-      endLastShiftHourlyLoading(renderState);
+      if (!keepBlockingLoading || renderFailed) {
+        endLastShiftHourlyLoading(renderState);
+      }
     }
   }
 
   async function renderLastShiftHourlySeriesInfo(seriesInfo, options = {}) {
     dashboardState.kpi.lastShiftHourly = seriesInfo;
     const renderState = beginLastShiftHourlyLoading(options);
+    const keepBlockingLoading = shouldKeepBlockingHourlyLoading(seriesInfo);
+    let renderFailed = false;
     try {
       await renderLastShiftHourlyChartWithTheme(seriesInfo);
-      dashboardState.kpi.lastShiftHourlyHasRenderedOnce = true;
+      if (shouldMarkHourlyChartAsRendered(seriesInfo)) {
+        dashboardState.kpi.lastShiftHourlyHasRenderedOnce = true;
+      }
     } catch (error) {
+      renderFailed = true;
       const errorInfo = describeError(error, {
         code: 'LAST_SHIFT_HOURLY',
         message: 'Nepavyko atnaujinti paskutinės pamainos grafiko',
@@ -452,7 +479,9 @@ export function createKpiFlow(env) {
         setChartCardMessage(selectors.lastShiftHourlyChart, TEXT.charts?.errorLoading);
       }
     } finally {
-      endLastShiftHourlyLoading(renderState);
+      if (!keepBlockingLoading || renderFailed) {
+        endLastShiftHourlyLoading(renderState);
+      }
     }
   }
 

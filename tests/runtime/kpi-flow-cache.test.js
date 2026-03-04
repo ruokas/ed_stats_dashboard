@@ -196,6 +196,80 @@ describe('kpi-flow selectedDate daily cache', () => {
     requestAnimationFrameSpy.mockRestore();
   });
 
+  it('keeps hourly skeleton visible while full records hydration is deferred', async () => {
+    const workerDaily = [{ date: '2026-02-10', count: 2 }];
+    const hydratedHourly = {
+      dateKey: '2026-02-10',
+      dateLabel: '2026-02-10',
+      shiftStartHour: 7,
+      metric: 'arrivals',
+      metricLabel: 'Atvykimai',
+      hasData: true,
+      series: {
+        total: Array.from({ length: 24 }, (_, index) => (index === 8 ? 2 : 0)),
+        t: Array(24).fill(0),
+        tr: Array(24).fill(0),
+        ch: Array(24).fill(0),
+        outflow: Array(24).fill(0),
+        net: Array(24).fill(0),
+        census: Array(24).fill(0),
+      },
+    };
+    let runCounter = 0;
+    const runKpiWorkerJob = vi.fn(async () => {
+      runCounter += 1;
+      return {
+        resultMode: 'summary+hourly',
+        windowDays: 30,
+        records: [],
+        dailyStats: workerDaily,
+        kpiSummary: {
+          totalFilteredRecords: 2,
+          selectedDate: '2026-02-10',
+          selectedDateRecordCount: 2,
+          selectedDateDailyStats: workerDaily,
+          availableDateKeys: ['2026-02-10'],
+          lastShiftHourly: runCounter === 1 ? null : hydratedHourly,
+        },
+        meta: { resultMode: 'summary+hourly' },
+      };
+    });
+    const showLastShiftHourlyLoading = vi.fn();
+    const hideLastShiftHourlyLoading = vi.fn();
+    const renderLastShiftHourlyChartWithTheme = vi.fn(async () => {});
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        callback(0);
+        return 1;
+      });
+
+    const env = createEnv({
+      runKpiWorkerJob,
+      computeDailyStats: () => workerDaily,
+      renderLastShiftHourlyChartWithTheme,
+      showLastShiftHourlyLoading,
+      hideLastShiftHourlyLoading,
+      dashboardStateOverrides: {
+        mainData: { recordsHydrationState: 'deferred' },
+        kpi: { lastShiftHourlyHasRenderedOnce: false },
+      },
+    });
+    const flow = createKpiFlow(env);
+
+    await flow.applyKpiFiltersAndRender();
+    expect(showLastShiftHourlyLoading).toHaveBeenCalledTimes(1);
+    expect(hideLastShiftHourlyLoading).toHaveBeenCalledTimes(0);
+    expect(env.dashboardState.kpi.lastShiftHourlyHasRenderedOnce).toBe(false);
+
+    env.dashboardState.mainData.recordsHydrationState = 'full';
+    await flow.applyKpiFiltersAndRender();
+    expect(showLastShiftHourlyLoading).toHaveBeenCalledTimes(2);
+    expect(hideLastShiftHourlyLoading).toHaveBeenCalledTimes(1);
+    expect(env.dashboardState.kpi.lastShiftHourlyHasRenderedOnce).toBe(true);
+    requestAnimationFrameSpy.mockRestore();
+  });
+
   it('hides KPI skeleton even when worker result is unchanged and UI short-circuits', async () => {
     const workerDaily = [{ date: '2026-02-10', count: 1 }];
     const runKpiWorkerJob = vi.fn(async () => ({
