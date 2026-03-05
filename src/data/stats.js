@@ -1421,6 +1421,9 @@ export const computeDoctorHospitalizationShare = (records, options = {}) =>
 export const computeDoctorVolumeVsLosScatter = (records, options = {}) =>
   doctorStats.computeDoctorVolumeVsLosScatter(records, options);
 
+export const computeDoctorDashboardModels = (records, options = {}) =>
+  doctorStats.computeDoctorDashboardModels(records, options);
+
 export const computeDoctorYearlySmallMultiples = (records, options = {}) =>
   doctorStats.computeDoctorYearlySmallMultiples(records, options);
 

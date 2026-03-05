@@ -146,12 +146,12 @@ describe('chart flow derived cache', () => {
     const second = chartFlow.prepareChartDataForPeriod(30);
 
     expect(second).toEqual(first);
-    expect(spies.computeDailyStats).toHaveBeenCalledTimes(1);
+    expect(spies.computeDailyStats).toHaveBeenCalledTimes(0);
     expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(1);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(1);
     expect(spies.computeFunnelStats).toHaveBeenCalledTimes(1);
     expect(spies.filterRecordsByYear).toHaveBeenCalledTimes(1);
-    expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(1);
+    expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(0);
   });
 
   it('reuses filtered stage on period change but recomputes window/funnel/heatmap', () => {
@@ -160,8 +160,8 @@ describe('chart flow derived cache', () => {
     chartFlow.prepareChartDataForPeriod(30);
     chartFlow.updateChartPeriod(1);
 
-    expect(spies.computeDailyStats).toHaveBeenCalledTimes(1);
-    expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(1);
+    expect(spies.computeDailyStats).toHaveBeenCalledTimes(0);
+    expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(0);
     expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(1);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(2);
     expect(spies.computeFunnelStats).toHaveBeenCalledTimes(2);
@@ -182,16 +182,16 @@ describe('chart flow derived cache', () => {
 
     chartFlow.prepareChartDataForPeriod(30);
     chartFlow.updateChartYear(2024);
-    expect(spies.computeDailyStats).toHaveBeenCalledTimes(2);
+    expect(spies.computeDailyStats).toHaveBeenCalledTimes(0);
     expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(2);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(2);
 
     dashboardState.chartFilters = { ...dashboardState.chartFilters, arrival: 'ems' };
     await chartFlow.applyChartFilters();
 
-    expect(spies.computeDailyStats).toHaveBeenCalledTimes(3);
+    expect(spies.computeDailyStats).toHaveBeenCalledTimes(1);
     expect(spies.filterDailyStatsByYear).toHaveBeenCalledTimes(2);
     expect(spies.computeArrivalHeatmap).toHaveBeenCalledTimes(3);
-    expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(3);
+    expect(spies.filterRecordsByChartFilters).toHaveBeenCalledTimes(1);
   });
 });

@@ -134,6 +134,36 @@ describe('report computation caching helpers', () => {
     expect(mocks.computeAgeDiagnosisHeatmap).toHaveBeenCalledTimes(1);
   });
 
+  it('getReportsComputation primary stage skips secondary-heavy calculations', () => {
+    const historicalRecords = [
+      { referral: 'su siuntimu', pspc: 'Vilniaus PSPC', hospitalized: true, arrival: new Date('2024-01-01') },
+    ];
+    const dashboardState = {
+      summariesReportsYear: 'all',
+      summariesReportsTopN: 15,
+      summariesReportsMinGroupSize: 100,
+      summariesReferralPspcSort: 'desc',
+      summariesReportsComputationCache: { recordsRef: null, key: '', value: null },
+    };
+    const settings = { calculations: { shiftStartHour: 7 } };
+    const scopeMeta = {
+      records: historicalRecords,
+      yearOptions: ['2024'],
+      yearFilter: 'all',
+      shiftStartHour: 7,
+      coverage: { total: 1, extended: 1 },
+    };
+
+    const primary = getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, {
+      stage: 'primary',
+    });
+
+    expect(mocks.computeAgeDiagnosisHeatmap).toHaveBeenCalledTimes(0);
+    expect(primary.ageDiagnosisHeatmap.rows).toEqual([]);
+    expect(primary.referralDispositionYearly.rows).toEqual([]);
+    expect(primary.referralMonthlyHeatmap.rows).toEqual([]);
+  });
+
   it('getScopedReportsMeta caches by year and invalidates on records reference change', () => {
     const settings = { calculations: { shiftStartHour: 7 } };
     const historicalRecords = [{ id: 1 }];

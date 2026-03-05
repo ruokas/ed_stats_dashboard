@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-05T18:12:44.656Z",
+  "generatedAt": "2026-03-05T18:30:43.708Z",
   "rubric": {
     "measuredMedianWeight": 30,
     "measuredP95Weight": 10,
@@ -38,29 +38,29 @@
           {
             "stage": "stage.prepareChartData.cold",
             "scenario": "large",
-            "medianMs": 99.1,
-            "p95Ms": 103.07,
+            "medianMs": 1.07,
+            "p95Ms": 2.04,
             "runs": 6
           },
           {
             "stage": "stage.prepareChartData.filterChange",
             "scenario": "large",
-            "medianMs": 38.38,
-            "p95Ms": 47.21,
+            "medianMs": 29.41,
+            "p95Ms": 31.2,
             "runs": 6
           },
           {
             "stage": "stage.prepareChartData.reset",
             "scenario": "large",
-            "medianMs": 95.47,
-            "p95Ms": 102.09,
+            "medianMs": 1.02,
+            "p95Ms": 1.6,
             "runs": 6
           },
           {
             "stage": "data.computeDailyStats",
             "scenario": "large",
-            "medianMs": 105.55,
-            "p95Ms": 155.13,
+            "medianMs": 71.5,
+            "p95Ms": 81.39,
             "runs": 6
           }
         ]
@@ -82,21 +82,21 @@
         "leverage": 3,
         "impact": "Medium-High",
         "confidence": "High",
-        "score": 53.7,
+        "score": 55.7,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "stage.heatmapFilterCache.cold",
             "scenario": "large",
-            "medianMs": 21.72,
-            "p95Ms": 24.41,
+            "medianMs": 16.47,
+            "p95Ms": 22.37,
             "runs": 6
           },
           {
             "stage": "stage.heatmapFilterCache.warm",
             "scenario": "large",
             "medianMs": 0.02,
-            "p95Ms": 0.05,
+            "p95Ms": 0.03,
             "runs": 6
           }
         ]
@@ -122,21 +122,21 @@
         "leverage": 3,
         "impact": "Medium",
         "confidence": "High",
-        "score": 51.5,
+        "score": 53.4,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "stage.hospitalTable.computeStats",
             "scenario": "large",
-            "medianMs": 35.63,
-            "p95Ms": 51.74,
+            "medianMs": 27.33,
+            "p95Ms": 32.25,
             "runs": 6
           },
           {
             "stage": "stage.hospitalTable.departmentTrend",
             "scenario": "large",
-            "medianMs": 7.49,
-            "p95Ms": 9.79,
+            "medianMs": 5.41,
+            "p95Ms": 6.25,
             "runs": 6
           }
         ]
@@ -170,35 +170,35 @@
         "leverage": 5,
         "impact": "High",
         "confidence": "High",
-        "score": 98.3,
+        "score": 99.2,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "reports.computeAll.cold",
             "scenario": "large",
-            "medianMs": 143.78,
-            "p95Ms": 157.83,
+            "medianMs": 153.05,
+            "p95Ms": 162.46,
             "runs": 5
           },
           {
             "stage": "reports.fn.computeAgeDiagnosisHeatmap",
             "scenario": "large",
-            "medianMs": 28.8,
-            "p95Ms": 31.45,
+            "medianMs": 33.79,
+            "p95Ms": 42.69,
             "runs": 5
           },
           {
             "stage": "reports.fn.computeReferralMonthlyHeatmap",
             "scenario": "large",
-            "medianMs": 32.95,
-            "p95Ms": 37.28,
+            "medianMs": 37.65,
+            "p95Ms": 47.79,
             "runs": 5
           },
           {
             "stage": "reports.fn.computeReferralDispositionYearlyTrend",
             "scenario": "large",
-            "medianMs": 35.07,
-            "p95Ms": 40.2,
+            "medianMs": 44,
+            "p95Ms": 58.36,
             "runs": 5
           }
         ]
@@ -229,28 +229,28 @@
         "leverage": 4,
         "impact": "Medium-High",
         "confidence": "Medium-High",
-        "score": 88,
+        "score": 86,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "reports.scopeMeta",
             "scenario": "large",
-            "medianMs": 25.83,
-            "p95Ms": 48.17,
+            "medianMs": 45.06,
+            "p95Ms": 52.4,
             "runs": 5
           },
           {
             "stage": "reports.viewModels.mainThread.cold",
             "scenario": "large",
-            "medianMs": 9.16,
-            "p95Ms": 10.79,
+            "medianMs": 10.82,
+            "p95Ms": 11.98,
             "runs": 5
           },
           {
             "stage": "reports.recompute.filterChange",
             "scenario": "large",
-            "medianMs": 151.55,
-            "p95Ms": 160.73,
+            "medianMs": 142.81,
+            "p95Ms": 176.15,
             "runs": 5
           }
         ]
@@ -276,28 +276,28 @@
         "leverage": 3,
         "impact": "High",
         "confidence": "High",
-        "score": 72,
+        "score": 78.5,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "yearly.renderTableDom",
             "scenario": "large",
-            "medianMs": 4.25,
-            "p95Ms": 5.77,
+            "medianMs": 5.83,
+            "p95Ms": 6.96,
             "runs": 5
           },
           {
             "stage": "yearly.renderTableDom.expandFirstYear",
             "scenario": "large",
-            "medianMs": 1.9,
-            "p95Ms": 3.04,
+            "medianMs": 3.05,
+            "p95Ms": 16.51,
             "runs": 5
           },
           {
             "stage": "yearly.computeDailyStats",
             "scenario": "large",
-            "medianMs": 72.71,
-            "p95Ms": 90.56,
+            "medianMs": 99.45,
+            "p95Ms": 123.03,
             "runs": 5
           }
         ]
@@ -331,22 +331,22 @@
           {
             "stage": "stage.totalPath.baseline",
             "scenario": "large",
-            "medianMs": 2545.42,
-            "p95Ms": 2946.27,
+            "medianMs": 1902.68,
+            "p95Ms": 1966.43,
             "runs": 6
           },
           {
             "stage": "stage.totalPath.sharedComputeContext",
             "scenario": "large",
-            "medianMs": 182.69,
-            "p95Ms": 276.91,
+            "medianMs": 142.33,
+            "p95Ms": 169.68,
             "runs": 6
           },
           {
             "stage": "stage.stats.leaderboard",
             "scenario": "large",
-            "medianMs": 403.64,
-            "p95Ms": 446.43,
+            "medianMs": 289.01,
+            "p95Ms": 351.52,
             "runs": 6
           }
         ]
@@ -379,35 +379,35 @@
         "leverage": 4,
         "impact": "High",
         "confidence": "High",
-        "score": 50.6,
+        "score": 50.5,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "stage.specialtyResolver.init",
             "scenario": "large",
-            "medianMs": 67.2,
-            "p95Ms": 87.95,
+            "medianMs": 50.98,
+            "p95Ms": 66.53,
             "runs": 6
           },
           {
             "stage": "stage.specialty.leaderboard",
             "scenario": "large",
-            "medianMs": 162.31,
-            "p95Ms": 194.2,
+            "medianMs": 116.82,
+            "p95Ms": 122.38,
             "runs": 6
           },
           {
             "stage": "stage.specialty.yearlySmallMultiples",
             "scenario": "large",
-            "medianMs": 80.67,
-            "p95Ms": 98.81,
+            "medianMs": 57.96,
+            "p95Ms": 70.21,
             "runs": 6
           },
           {
             "stage": "stage.specialty.yearlyComposition",
             "scenario": "large",
-            "medianMs": 0.09,
-            "p95Ms": 0.16,
+            "medianMs": 0.05,
+            "p95Ms": 0.1,
             "runs": 6
           }
         ]
@@ -429,14 +429,14 @@
         "leverage": 3,
         "impact": "Medium-High",
         "confidence": "High",
-        "score": 45.6,
+        "score": 45.4,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "stage.stats.yearlySmallMultiples",
             "scenario": "large",
-            "medianMs": 96.67,
-            "p95Ms": 123.18,
+            "medianMs": 65.66,
+            "p95Ms": 70.69,
             "runs": 6
           }
         ]

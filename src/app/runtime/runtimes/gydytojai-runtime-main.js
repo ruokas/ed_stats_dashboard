@@ -1,12 +1,9 @@
 import { createMainDataHandlers } from '../../../data/main-data.js';
 import {
-  computeDoctorDayNightMix,
-  computeDoctorHospitalizationShare,
-  computeDoctorLeaderboard,
+  computeDoctorDashboardModels,
   computeDoctorSpecialtyLeaderboard,
   computeDoctorSpecialtyYearlyComposition,
   computeDoctorSpecialtyYearlySmallMultiples,
-  computeDoctorVolumeVsLosScatter,
   computeDoctorYearlySmallMultiples,
 } from '../../../data/stats.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
@@ -495,10 +492,7 @@ export async function runGydytojaiRuntime(core) {
       : null;
 
     const baseModels = getCachedDoctorBaseModels(dashboardState, records, sharedOptions, () => ({
-      leaderboard: computeDoctorLeaderboard(records, sharedOptions),
-      mix: computeDoctorDayNightMix(records, sharedOptions),
-      hospital: computeDoctorHospitalizationShare(records, sharedOptions),
-      scatter: computeDoctorVolumeVsLosScatter(records, sharedOptions),
+      ...computeDoctorDashboardModels(records, sharedOptions),
     }));
     const leaderboard = baseModels?.leaderboard || { rows: [], yearOptions: [], coverage: {} };
     const mix = baseModels?.mix || { rows: [] };

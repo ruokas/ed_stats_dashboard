@@ -33,13 +33,18 @@ export function extractHistoricalRecords(dashboardState) {
   return records;
 }
 
-function buildReportsComputationKey(dashboardState, settings, scopeMeta) {
+function normalizeReportsComputationStage(value) {
+  return String(value || '').toLowerCase() === 'primary' ? 'primary' : 'all';
+}
+
+function buildReportsComputationKey(dashboardState, settings, scopeMeta, stage = 'all') {
   return [
     String(dashboardState.summariesReportsYear ?? 'all'),
     Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
     Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10) || 100,
     Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
     Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
+    normalizeReportsComputationStage(stage),
   ].join('|');
 }
 
@@ -362,8 +367,9 @@ function computeSharedReferralAndPspcReports(scopeMeta, dashboardState) {
   };
 }
 
-export function getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta) {
-  const key = buildReportsComputationKey(dashboardState, settings, scopeMeta);
+export function getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, options = {}) {
+  const stage = normalizeReportsComputationStage(options?.stage);
+  const key = buildReportsComputationKey(dashboardState, settings, scopeMeta, stage);
   const cache = dashboardState.summariesReportsComputationCache || {};
   if (cache.recordsRef === historicalRecords && cache.key === key && cache.value) {
     return cache.value;
@@ -385,24 +391,35 @@ export function getReportsComputation(dashboardState, settings, historicalRecord
     scopedMeta,
   };
   const sharedReferralAndPspc = computeSharedReferralAndPspcReports(scopeMeta, dashboardState);
+  const includeSecondary = stage !== 'primary';
   const value = {
     diagnosis: sharedReferralAndPspc.diagnosis,
-    ageDiagnosisHeatmap: computeAgeDiagnosisHeatmap(historicalRecords, {
-      ...baseOptions,
-      excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
-    }),
     z769Trend: sharedReferralAndPspc.z769Trend,
     referralTrend: sharedReferralAndPspc.referralTrend,
-    referralDispositionYearly: sharedReferralAndPspc.referralDispositionYearly,
-    referralMonthlyHeatmap: sharedReferralAndPspc.referralMonthlyHeatmap,
-    referralHospitalizedByPspcYearly: computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
-      minGroupSize: dashboardState.summariesReportsMinGroupSize,
-      yearOptions: scopeMeta.yearOptions,
-      shiftStartHour: scopeMeta.shiftStartHour,
-    }),
-    pspcCrossDetailed: computeReferralHospitalizedShareByPspcDetailed(scopeMeta.records),
-    pspcCorrelation: sharedReferralAndPspc.pspcCorrelation,
-    pspcDistribution: sharedReferralAndPspc.pspcDistribution,
+    ageDiagnosisHeatmap: includeSecondary
+      ? computeAgeDiagnosisHeatmap(historicalRecords, {
+          ...baseOptions,
+          excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
+        })
+      : { total: 0, ageBands: [], diagnosisGroups: [], rows: [] },
+    referralDispositionYearly: includeSecondary
+      ? sharedReferralAndPspc.referralDispositionYearly
+      : { rows: [], referralCategories: ['su siuntimu', 'be siuntimo'], dispositionCategories: [] },
+    referralMonthlyHeatmap: includeSecondary
+      ? sharedReferralAndPspc.referralMonthlyHeatmap
+      : { rows: [], years: [], months: [] },
+    referralHospitalizedByPspcYearly: includeSecondary
+      ? computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
+          minGroupSize: dashboardState.summariesReportsMinGroupSize,
+          yearOptions: scopeMeta.yearOptions,
+          shiftStartHour: scopeMeta.shiftStartHour,
+        })
+      : { years: [], rows: [] },
+    pspcCrossDetailed: includeSecondary
+      ? computeReferralHospitalizedShareByPspcDetailed(scopeMeta.records)
+      : { rows: [], totalReferred: 0 },
+    pspcCorrelation: includeSecondary ? sharedReferralAndPspc.pspcCorrelation : { total: 0, rows: [] },
+    pspcDistribution: includeSecondary ? sharedReferralAndPspc.pspcDistribution : { total: 0, rows: [] },
   };
   dashboardState.summariesReportsComputationCache = {
     recordsRef: historicalRecords,
