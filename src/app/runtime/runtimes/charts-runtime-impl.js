@@ -53,7 +53,6 @@ import { createFunnelCanvasFeature } from '../features/funnel-canvas.js';
 import { createHourlyControlsFeature } from '../features/hourly-controls.js';
 import { applyChartsText } from '../features/text-charts.js';
 import { applyTheme, getThemePalette, getThemeStyleTarget, initializeTheme } from '../features/theme.js';
-import { parseFromQuery, replaceUrlQuery, serializeToQuery } from '../filters/query-codec.js';
 import { sanitizeChartFilters } from '../filters.js';
 import {
   createTextSignature,
@@ -79,13 +78,7 @@ import {
   showChartSkeletons,
 } from './charts/chart-cards.js';
 import { createChartsDataFlowConfig } from './charts/data-flow-config.js';
-import {
-  buildChartsExpandedMap,
-  CHARTS_SECTION_KEYS,
-  DEFAULT_CHARTS_SECTIONS_EXPANDED,
-  getExpandedKeysFromMap,
-  normalizeChartsSectionExpandedKeys,
-} from './charts/disclosure.js';
+import { CHARTS_SECTION_KEYS, DEFAULT_CHARTS_SECTIONS_EXPANDED } from './charts/disclosure.js';
 import {
   computeArrivalHeatmap,
   computeFunnelStats,
@@ -99,9 +92,28 @@ import {
 } from './charts/heatmap.js';
 import { createChartsHeatmapFeature } from './charts/heatmap-feature.js';
 import { createChartsHospitalTableFeature } from './charts/hospital-table.js';
+import {
+  HOURLY_COMPARE_SERIES,
+  HOURLY_COMPARE_SERIES_ALL,
+  HOURLY_COMPARE_SERIES_EMS,
+  HOURLY_COMPARE_SERIES_SELF,
+  HOURLY_METRIC_ARRIVALS,
+  HOURLY_METRIC_BALANCE,
+  HOURLY_METRIC_DISCHARGES,
+  HOURLY_METRIC_HOSPITALIZED,
+  HOURLY_METRICS,
+  HOURLY_STAY_BUCKET_ALL,
+  HOURLY_STAY_BUCKETS,
+  HOURLY_WEEKDAY_ALL,
+} from './charts/hourly-constants.js';
 import { initChartsJumpNavigation, initChartsJumpStickyOffset } from './charts/jump-nav.js';
 import { createChartsLifecycleFeature } from './charts/lifecycle.js';
+import { syncDailyPeriodSummary } from './charts/runtime-caption.js';
+import { createChartsRuntimeHelpers } from './charts/runtime-helpers.js';
 import { wireChartsRuntimeInteractions } from './charts/runtime-interactions.js';
+import { initializeChartsStateFromQuery } from './charts/runtime-query.js';
+import { createChartsRuntimeUiControls } from './charts/runtime-ui-controls.js';
+import { createChartsSectionDisclosureFeature } from './charts/section-disclosure-feature.js';
 import { createRuntimeLifecycle } from './runtime-lifecycle.js';
 
 const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId } = createRuntimeLifecycle({
@@ -114,32 +126,6 @@ const HEATMAP_METRIC_KEYS = HEATMAP_METRICS.map((metric) => metric.id);
 const DEFAULT_HEATMAP_METRIC = HEATMAP_METRIC_KEYS.includes('arrivals')
   ? 'arrivals'
   : HEATMAP_METRIC_KEYS[0] || 'arrivals';
-const HOURLY_WEEKDAY_ALL = 'all';
-const HOURLY_STAY_BUCKET_ALL = 'all';
-const HOURLY_METRIC_ARRIVALS = 'arrivals';
-const HOURLY_METRIC_DISCHARGES = 'discharges';
-const HOURLY_METRIC_BALANCE = 'balance';
-const HOURLY_METRIC_HOSPITALIZED = 'hospitalized';
-const HOURLY_METRICS = [
-  HOURLY_METRIC_ARRIVALS,
-  HOURLY_METRIC_DISCHARGES,
-  HOURLY_METRIC_BALANCE,
-  HOURLY_METRIC_HOSPITALIZED,
-];
-const HOURLY_COMPARE_SERIES_ALL = 'all';
-const HOURLY_COMPARE_SERIES_EMS = 'ems';
-const HOURLY_COMPARE_SERIES_SELF = 'self';
-const HOURLY_COMPARE_SERIES = [
-  HOURLY_COMPARE_SERIES_ALL,
-  HOURLY_COMPARE_SERIES_EMS,
-  HOURLY_COMPARE_SERIES_SELF,
-];
-const HOURLY_STAY_BUCKETS = [
-  { key: 'lt4', min: 0, max: 4 },
-  { key: '4to8', min: 4, max: 8 },
-  { key: '8to16', min: 8, max: 16 },
-  { key: 'gt16', min: 16, max: Number.POSITIVE_INFINITY },
-];
 
 export {
   buildHeatmapFilterCacheKey,
@@ -167,199 +153,41 @@ export async function runChartsRuntime(core) {
   });
   let initialLoadPending = true;
   let chartsJumpBeforeNavigate = () => {};
-  const getEnabledHeatmapMetricKeys = () => {
-    const enabled = HEATMAP_METRIC_KEYS.filter((metricId) => isMetricEnabled(settings, metricId));
-    return enabled.length ? enabled : HEATMAP_METRIC_KEYS;
-  };
-  const getDefaultHeatmapMetric = () => {
-    const enabled = getEnabledHeatmapMetricKeys();
-    return enabled.includes('arrivals') ? 'arrivals' : enabled[0] || DEFAULT_HEATMAP_METRIC;
-  };
-  const getChartsDefaults = () => ({
-    chartPeriod: 30,
-    chartYear: null,
-    arrival: 'all',
-    disposition: 'all',
-    cardType: 'all',
-    compareGmp: false,
-    heatmapMetric: getDefaultHeatmapMetric(),
-    heatmapArrival: 'all',
-    heatmapDisposition: 'all',
-    heatmapCardType: 'all',
-    heatmapYear: null,
-    hourlyWeekday: HOURLY_WEEKDAY_ALL,
-    hourlyStayBucket: HOURLY_STAY_BUCKET_ALL,
-    hourlyMetric: HOURLY_METRIC_ARRIVALS,
-    hourlyDepartment: 'all',
-    hourlyCompareEnabled: false,
-    hourlyCompareYearA: null,
-    hourlyCompareYearB: null,
-    hourlyCompareSeries: HOURLY_COMPARE_SERIES_ALL,
-    hospitalYear: 'all',
-    hospitalSort: 'total_desc',
-    hospitalSearch: '',
-    hospitalDepartment: '',
-    chartsSectionsExpanded: getExpandedKeysFromMap(
-      DEFAULT_CHARTS_SECTIONS_EXPANDED,
-      DEFAULT_CHARTS_SECTIONS_EXPANDED
-    ),
-    chartsSubsectionsExpanded: [],
+  const {
+    getEnabledHeatmapMetricKeys,
+    getDefaultHeatmapMetric,
+    getChartsDefaults,
+    ensureChartsDisclosure,
+    setChartsSectionExpanded,
+    persistChartsQuery,
+    applyChartsLoadingLayout,
+    formatDailyCaption,
+  } = createChartsRuntimeHelpers({
+    settings,
+    selectors,
+    dashboardState,
+    isMetricEnabled,
+    heatmapMetricKeys: HEATMAP_METRIC_KEYS,
+    defaultHeatmapMetric: DEFAULT_HEATMAP_METRIC,
+    hourlyWeekdayAll: HOURLY_WEEKDAY_ALL,
+    hourlyStayBucketAll: HOURLY_STAY_BUCKET_ALL,
+    hourlyMetricArrivals: HOURLY_METRIC_ARRIVALS,
+    hourlyCompareSeriesAll: HOURLY_COMPARE_SERIES_ALL,
+    defaultChartsSectionsExpanded: DEFAULT_CHARTS_SECTIONS_EXPANDED,
+    chartsSectionKeys: CHARTS_SECTION_KEYS,
+    text: TEXT,
+    numberFormatter,
   });
-  const ensureChartsDisclosureState = () => {
-    dashboardState.chartsSectionsExpanded = {
-      ...DEFAULT_CHARTS_SECTIONS_EXPANDED,
-      ...(dashboardState.chartsSectionsExpanded && typeof dashboardState.chartsSectionsExpanded === 'object'
-        ? dashboardState.chartsSectionsExpanded
-        : {}),
-    };
-  };
-  const setChartsSectionExpanded = (key, expanded) => {
-    if (!CHARTS_SECTION_KEYS.includes(String(key || ''))) {
-      return;
-    }
-    ensureChartsDisclosureState();
-    dashboardState.chartsSectionsExpanded = {
-      ...dashboardState.chartsSectionsExpanded,
-      [key]: expanded === true,
-    };
-  };
-  const applyChartsLoadingLayout = ({ isLoading, initialLoadPending }) => {
-    if (!(selectors?.chartsMainFiltersPanel instanceof HTMLElement)) {
-      return;
-    }
-    selectors.chartsMainFiltersPanel.hidden = Boolean(isLoading && initialLoadPending);
-  };
-  const persistChartsQuery = () => {
-    const state = {
-      chartPeriod: dashboardState.chartPeriod,
-      chartYear: dashboardState.chartYear,
-      arrival: dashboardState.chartFilters?.arrival,
-      disposition: dashboardState.chartFilters?.disposition,
-      cardType: dashboardState.chartFilters?.cardType,
-      compareGmp: dashboardState.chartFilters?.compareGmp,
-      heatmapMetric: dashboardState.heatmapMetric,
-      heatmapArrival: dashboardState.heatmapFilters?.arrival,
-      heatmapDisposition: dashboardState.heatmapFilters?.disposition,
-      heatmapCardType: dashboardState.heatmapFilters?.cardType,
-      heatmapYear: dashboardState.heatmapYear,
-      hourlyWeekday: dashboardState.hourlyWeekday,
-      hourlyStayBucket: dashboardState.hourlyStayBucket,
-      hourlyMetric: dashboardState.hourlyMetric,
-      hourlyDepartment: dashboardState.hourlyDepartment,
-      hourlyCompareEnabled: dashboardState.hourlyCompareEnabled,
-      hourlyCompareYearA: dashboardState.hourlyCompareYears?.[0] ?? null,
-      hourlyCompareYearB: dashboardState.hourlyCompareYears?.[1] ?? null,
-      hourlyCompareSeries: dashboardState.hourlyCompareSeries,
-      hospitalYear: dashboardState.chartsHospitalTableYear,
-      hospitalSort: dashboardState.chartsHospitalTableSort,
-      hospitalSearch: dashboardState.chartsHospitalTableSearch,
-      hospitalDepartment: dashboardState.chartsHospitalTableDepartment,
-      chartsSectionsExpanded: getExpandedKeysFromMap(
-        dashboardState.chartsSectionsExpanded,
-        DEFAULT_CHARTS_SECTIONS_EXPANDED
-      ),
-      chartsSubsectionsExpanded: [],
-    };
-    replaceUrlQuery(serializeToQuery('charts', state, getChartsDefaults()));
-  };
-  const parsedChartsQuery = parseFromQuery('charts', window.location.search);
-  const hadParsedChartsQuery = Object.keys(parsedChartsQuery).length > 0;
-  if (hadParsedChartsQuery) {
-    dashboardState.chartPeriod =
-      Number.isFinite(parsedChartsQuery.chartPeriod) && parsedChartsQuery.chartPeriod >= 0
-        ? parsedChartsQuery.chartPeriod
-        : dashboardState.chartPeriod;
-    dashboardState.chartYear = Number.isFinite(parsedChartsQuery.chartYear)
-      ? parsedChartsQuery.chartYear
-      : null;
-    dashboardState.chartFilters = sanitizeChartFilters(
-      {
-        ...dashboardState.chartFilters,
-        arrival: parsedChartsQuery.arrival ?? dashboardState.chartFilters.arrival,
-        disposition: parsedChartsQuery.disposition ?? dashboardState.chartFilters.disposition,
-        cardType: parsedChartsQuery.cardType ?? dashboardState.chartFilters.cardType,
-        compareGmp:
-          parsedChartsQuery.compareGmp != null
-            ? parsedChartsQuery.compareGmp
-            : dashboardState.chartFilters.compareGmp,
-      },
-      { getDefaultChartFilters: createDefaultChartFilters, KPI_FILTER_LABELS }
-    );
-    dashboardState.heatmapMetric = parsedChartsQuery.heatmapMetric || dashboardState.heatmapMetric;
-    dashboardState.heatmapFilters = sanitizeHeatmapFilters({
-      arrival: parsedChartsQuery.heatmapArrival ?? dashboardState.heatmapFilters.arrival,
-      disposition: parsedChartsQuery.heatmapDisposition ?? dashboardState.heatmapFilters.disposition,
-      cardType: parsedChartsQuery.heatmapCardType ?? dashboardState.heatmapFilters.cardType,
-    });
-    dashboardState.heatmapYear = Number.isFinite(parsedChartsQuery.heatmapYear)
-      ? parsedChartsQuery.heatmapYear
-      : null;
-    dashboardState.hourlyWeekday =
-      parsedChartsQuery.hourlyWeekday == null
-        ? dashboardState.hourlyWeekday
-        : parsedChartsQuery.hourlyWeekday;
-    dashboardState.hourlyStayBucket =
-      parsedChartsQuery.hourlyStayBucket == null
-        ? dashboardState.hourlyStayBucket
-        : parsedChartsQuery.hourlyStayBucket;
-    dashboardState.hourlyMetric =
-      parsedChartsQuery.hourlyMetric == null ? dashboardState.hourlyMetric : parsedChartsQuery.hourlyMetric;
-    dashboardState.hourlyDepartment =
-      parsedChartsQuery.hourlyDepartment == null
-        ? dashboardState.hourlyDepartment
-        : parsedChartsQuery.hourlyDepartment;
-    dashboardState.hourlyCompareEnabled = Boolean(parsedChartsQuery.hourlyCompareEnabled);
-    dashboardState.hourlyCompareYears = [
-      parsedChartsQuery.hourlyCompareYearA,
-      parsedChartsQuery.hourlyCompareYearB,
-    ].filter((year) => Number.isFinite(year));
-    dashboardState.hourlyCompareSeries =
-      parsedChartsQuery.hourlyCompareSeries == null
-        ? dashboardState.hourlyCompareSeries
-        : parsedChartsQuery.hourlyCompareSeries;
-    dashboardState.chartsHospitalTableYear =
-      parsedChartsQuery.hospitalYear == null ? 'all' : parsedChartsQuery.hospitalYear;
-    dashboardState.chartsHospitalTableSort =
-      parsedChartsQuery.hospitalSort == null
-        ? dashboardState.chartsHospitalTableSort
-        : parsedChartsQuery.hospitalSort;
-    dashboardState.chartsHospitalTableSearch = parsedChartsQuery.hospitalSearch || '';
-    dashboardState.chartsHospitalTableDepartment = parsedChartsQuery.hospitalDepartment || '';
-    const parsedSectionKeys = normalizeChartsSectionExpandedKeys(parsedChartsQuery.chartsSectionsExpanded);
-    const legacySubsectionKeys = (
-      Array.isArray(parsedChartsQuery.chartsSubsectionsExpanded)
-        ? parsedChartsQuery.chartsSubsectionsExpanded
-        : []
-    )
-      .map((value) => String(value || '').trim())
-      .filter((value) => ['overview', 'hourly', 'heatmap'].includes(value));
-    const expandedKeys = new Set(parsedSectionKeys);
-    if (
-      (Array.isArray(parsedChartsQuery.chartsSectionsExpanded)
-        ? parsedChartsQuery.chartsSectionsExpanded
-        : []
-      ).includes('main')
-    ) {
-      expandedKeys.add('overview');
-    }
-    legacySubsectionKeys.forEach((key) => {
-      expandedKeys.add(key);
-    });
-    if (
-      (Array.isArray(parsedChartsQuery.chartsSectionsExpanded)
-        ? parsedChartsQuery.chartsSectionsExpanded
-        : []
-      ).includes('hospital')
-    ) {
-      expandedKeys.add('hospital');
-    }
-    dashboardState.chartsSectionsExpanded = buildChartsExpandedMap(
-      Array.from(expandedKeys),
-      DEFAULT_CHARTS_SECTIONS_EXPANDED
-    );
-    dashboardState.chartsSubsectionsExpanded = [];
-  }
-  ensureChartsDisclosureState();
+  const hadParsedChartsQuery = initializeChartsStateFromQuery({
+    dashboardState,
+    search: window.location.search,
+    defaultChartsSectionsExpanded: DEFAULT_CHARTS_SECTIONS_EXPANDED,
+    sanitizeChartFilters,
+    createDefaultChartFilters,
+    kpiFilterLabels: KPI_FILTER_LABELS,
+    sanitizeHeatmapFilters,
+  });
+  ensureChartsDisclosure();
   dashboardState.heatmapMetric = getEnabledHeatmapMetricKeys().includes(dashboardState.heatmapMetric)
     ? dashboardState.heatmapMetric
     : getDefaultHeatmapMetric();
@@ -396,51 +224,18 @@ export async function runChartsRuntime(core) {
     describeError,
   });
 
-  const formatDailyCaption = (period) => {
-    const base = String(TEXT.charts.dailyCaption || 'Kasdieniai pacientu srautai')
-      .replace(/\s*\([^)]*\)\s*$/u, '')
-      .trim();
-    const normalized = Number.isFinite(period) ? Math.round(period) : null;
-    if (normalized === 365) return `${base} (menesine dinamika)`;
-    if (normalized === 0) return `${base} (visas laikotarpis)`;
-    if (!Number.isFinite(period) || period < 0) return base;
-    return `${base} (paskutines ${numberFormatter.format(normalized)} dienos)`;
-  };
-
-  const markChartsSectionVisible = (section, { scheduleSecondary = false, reason = 'interaction' } = {}) => {
-    const key =
-      section === 'heatmap'
-        ? 'heatmapVisible'
-        : section === 'hourly'
-          ? 'hourlyVisible'
-          : section === 'hospital'
-            ? 'hospitalVisible'
-            : null;
-    if (!key) {
-      return false;
-    }
-    const previousFlags = dashboardState.chartsSectionRenderFlags || {};
-    const changed = !previousFlags[key];
-    if (changed) {
-      dashboardState.chartsSectionRenderFlags = {
-        ...previousFlags,
-        [key]: true,
-      };
-    }
-    if (
-      (section === 'heatmap' || section === 'hourly') &&
-      dashboardState.chartsSecondaryVisibilityObserver &&
-      dashboardState.chartsSectionRenderFlags?.heatmapVisible &&
-      dashboardState.chartsSectionRenderFlags?.hourlyVisible
-    ) {
-      dashboardState.chartsSecondaryVisibilityObserver.disconnect();
-      dashboardState.chartsSecondaryVisibilityObserver = null;
-    }
-    if (scheduleSecondary) {
-      scheduleChartsSecondaryRender({ reason });
-    }
-    return changed;
-  };
+  const {
+    markChartsSectionVisible,
+    applyChartsSectionDisclosure,
+    setRenderChartsHospitalTable,
+    setScheduleChartsSecondaryRender,
+  } = createChartsSectionDisclosureFeature({
+    selectors,
+    dashboardState,
+    chartsSectionKeys: CHARTS_SECTION_KEYS,
+    defaultChartsSectionsExpanded: DEFAULT_CHARTS_SECTIONS_EXPANDED,
+    ensureChartsDisclosure,
+  });
 
   const {
     updateHeatmapCaption,
@@ -480,62 +275,6 @@ export async function runChartsRuntime(core) {
     markChartsSectionVisible,
   });
 
-  const applyChartsSectionDisclosure = ({ reason = 'state-sync', triggerRender = false } = {}) => {
-    ensureChartsDisclosureState();
-    const sectionExpanded = dashboardState.chartsSectionsExpanded || DEFAULT_CHARTS_SECTIONS_EXPANDED;
-
-    (Array.isArray(selectors?.chartsSectionPanels) ? selectors.chartsSectionPanels : []).forEach((panel) => {
-      if (!(panel instanceof HTMLElement)) {
-        return;
-      }
-      const key = String(panel.getAttribute('data-charts-section-panel') || '').trim();
-      if (!CHARTS_SECTION_KEYS.includes(key)) {
-        return;
-      }
-      panel.hidden = sectionExpanded[key] !== true;
-    });
-    (Array.isArray(selectors?.chartsSectionToggleButtons)
-      ? selectors.chartsSectionToggleButtons
-      : []
-    ).forEach((button) => {
-      if (!(button instanceof HTMLElement)) {
-        return;
-      }
-      const key = String(button.getAttribute('data-charts-section-toggle') || '').trim();
-      if (!CHARTS_SECTION_KEYS.includes(key)) {
-        return;
-      }
-      const expanded = sectionExpanded[key] === true;
-      button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-      button.classList.toggle('is-expanded', expanded);
-    });
-
-    if (!triggerRender) {
-      return;
-    }
-    if (sectionExpanded.hospital === true) {
-      dashboardState.chartsSectionRenderFlags = {
-        ...(dashboardState.chartsSectionRenderFlags || {}),
-        hospitalVisible: true,
-      };
-      if (Array.isArray(dashboardState.rawRecords) && dashboardState.rawRecords.length) {
-        renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
-      }
-    }
-    const shouldRenderHourly = sectionExpanded.hourly === true;
-    const shouldRenderHeatmap = sectionExpanded.heatmap === true;
-    let shouldScheduleSecondary = false;
-    if (shouldRenderHourly) {
-      shouldScheduleSecondary = markChartsSectionVisible('hourly') || shouldScheduleSecondary;
-    }
-    if (shouldRenderHeatmap) {
-      shouldScheduleSecondary = markChartsSectionVisible('heatmap') || shouldScheduleSecondary;
-    }
-    if (shouldScheduleSecondary) {
-      scheduleChartsSecondaryRender({ reason });
-    }
-  };
-
   const {
     updateChartsHospitalTableHeaderSortIndicators,
     populateChartsHospitalTableYearOptions,
@@ -561,32 +300,15 @@ export async function runChartsRuntime(core) {
     getThemePalette,
     persistChartsQuery,
   });
+  setRenderChartsHospitalTable(renderChartsHospitalTable);
 
-  const updateDailyPeriodSummary = (dailyStats) => {
-    if (!selectors.dailyCaptionContext) {
-      return;
-    }
-    const entries = Array.isArray(dailyStats)
-      ? dailyStats.filter((entry) => entry && typeof entry.date === 'string')
-      : [];
-    if (!entries.length) {
-      selectors.dailyCaptionContext.textContent = '';
-      return;
-    }
-    const dates = entries
-      .map((entry) => dateKeyToDate(entry.date))
-      .filter((date) => date instanceof Date && !Number.isNaN(date.getTime()));
-    if (!dates.length) {
-      selectors.dailyCaptionContext.textContent = '';
-      return;
-    }
-    const startDate = new Date(Math.min(...dates.map((date) => date.getTime())));
-    const endDate = new Date(Math.max(...dates.map((date) => date.getTime())));
-    const startLabel = shortDateFormatter.format(startDate);
-    const endLabel = shortDateFormatter.format(endDate);
-    selectors.dailyCaptionContext.textContent =
-      startLabel === endLabel ? startLabel : `${startLabel} – ${endLabel}`;
-  };
+  const updateDailyPeriodSummary = (dailyStats) =>
+    syncDailyPeriodSummary({
+      selectors,
+      dateKeyToDate,
+      shortDateFormatter,
+      dailyStats,
+    });
 
   const chartFlow = createChartFlow({
     selectors,
@@ -740,151 +462,37 @@ export async function runChartsRuntime(core) {
     renderChartsHospitalTable,
     markChartsSectionVisible,
   });
-  const persistAfter =
-    (handler, { section = null } = {}) =>
-    (...args) => {
-      if (section) {
-        markChartsSectionVisible(section);
-      }
-      const result = handler(...args);
-      persistChartsQuery();
-      return result;
-    };
-
-  const hourlyControlsWithPersistence = {
-    ...hourlyControlsFeature,
-    handleHourlyMetricClick: persistAfter(hourlyControlsFeature.handleHourlyMetricClick, {
-      section: 'hourly',
-    }),
-    handleHourlyDepartmentInput: persistAfter(hourlyControlsFeature.handleHourlyDepartmentInput, {
-      section: 'hourly',
-    }),
-    handleHourlyFilterChange: persistAfter(hourlyControlsFeature.handleHourlyFilterChange, {
-      section: 'hourly',
-    }),
-    handleHourlyCompareToggle: persistAfter(hourlyControlsFeature.handleHourlyCompareToggle, {
-      section: 'hourly',
-    }),
-    handleHourlyCompareYearsChange: persistAfter(hourlyControlsFeature.handleHourlyCompareYearsChange, {
-      section: 'hourly',
-    }),
-    handleHourlyCompareSeriesClick: persistAfter(hourlyControlsFeature.handleHourlyCompareSeriesClick, {
-      section: 'hourly',
-    }),
-    handleHourlyResetFilters: persistAfter(hourlyControlsFeature.handleHourlyResetFilters, {
-      section: 'hourly',
-    }),
-    applyHourlyDepartmentSelection: persistAfter(hourlyControlsFeature.applyHourlyDepartmentSelection, {
-      section: 'hourly',
-    }),
-  };
-
-  const handleChartFiltersReset = () => {
-    const defaults = getChartsDefaults();
-    dashboardState.chartPeriod = defaults.chartPeriod;
-    dashboardState.chartYear = defaults.chartYear;
-    dashboardState.chartFilters = createDefaultChartFilters();
-    dashboardState.heatmapMetric = defaults.heatmapMetric;
-    dashboardState.heatmapFilters = sanitizeHeatmapFilters({
-      arrival: defaults.heatmapArrival,
-      disposition: defaults.heatmapDisposition,
-      cardType: defaults.heatmapCardType,
-    });
-    dashboardState.heatmapYear = defaults.heatmapYear;
-    dashboardState.hourlyWeekday = defaults.hourlyWeekday;
-    dashboardState.hourlyStayBucket = defaults.hourlyStayBucket;
-    dashboardState.hourlyMetric = defaults.hourlyMetric;
-    dashboardState.hourlyDepartment = defaults.hourlyDepartment;
-    dashboardState.hourlyCompareEnabled = defaults.hourlyCompareEnabled;
-    dashboardState.hourlyCompareYears = [];
-    dashboardState.hourlyCompareSeries = defaults.hourlyCompareSeries;
-    dashboardState.chartsHospitalTableYear = defaults.hospitalYear;
-    dashboardState.chartsHospitalTableSort = defaults.hospitalSort;
-    dashboardState.chartsHospitalTableSearch = defaults.hospitalSearch;
-    dashboardState.chartsHospitalTableDepartment = defaults.hospitalDepartment;
-    if (selectors.chartsHospitalTableSearch instanceof HTMLInputElement) {
-      selectors.chartsHospitalTableSearch.value = '';
-    }
-    chartFlow.syncChartFilterControls();
-    syncChartPeriodButtons({ selectors, period: dashboardState.chartPeriod });
-    syncChartYearControl({ selectors, dashboardState });
-    populateHeatmapMetricOptions();
-    updateHeatmapCaption(dashboardState.heatmapMetric);
-    syncHeatmapFilterControls();
-    hourlyControlsFeature.syncHourlyMetricButtons();
-    hourlyControlsFeature.syncHourlyCompareControls();
-    hourlyControlsFeature.syncHourlyDepartmentVisibility(dashboardState.hourlyMetric);
-    hourlyControlsFeature.updateHourlyCaption(
-      dashboardState.hourlyWeekday,
-      dashboardState.hourlyStayBucket,
-      dashboardState.hourlyMetric,
-      dashboardState.hourlyDepartment
-    );
-    chartFlow.applyChartFilters();
-    markChartsSectionVisible('heatmap');
-    applyHeatmapFiltersAndRender();
-    markChartsSectionVisible('hourly');
-    hourlyControlsFeature.handleHourlyFilterChange();
-    dashboardState.chartsSectionRenderFlags = {
-      ...(dashboardState.chartsSectionRenderFlags || {}),
-      hospitalVisible: true,
-    };
-    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
-    persistChartsQuery();
-  };
-
-  const expandChartsForTarget = (target) => {
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-    const targetId = String(target.id || '').trim();
-    if (!targetId) {
-      return;
-    }
-    if (targetId === 'chartsHospitalTableHeading') {
-      setChartsSectionExpanded('hospital', true);
-    } else if (targetId === 'chartsHourlyHeading') {
-      setChartsSectionExpanded('hourly', true);
-    } else if (targetId === 'chartsHeatmapHeading') {
-      setChartsSectionExpanded('heatmap', true);
-    } else if (targetId === 'chartHeading') {
-      setChartsSectionExpanded('overview', true);
-    } else if (target.closest?.('[data-charts-section-panel="hourly"]')) {
-      setChartsSectionExpanded('hourly', true);
-    } else if (target.closest?.('[data-charts-section-panel="heatmap"]')) {
-      setChartsSectionExpanded('heatmap', true);
-    } else if (target.closest?.('[data-charts-section-panel="overview"]')) {
-      setChartsSectionExpanded('overview', true);
-    } else if (target.closest?.('[data-charts-section-panel="hospital"]')) {
-      setChartsSectionExpanded('hospital', true);
-    }
-    applyChartsSectionDisclosure({ reason: 'jump-nav', triggerRender: true });
-    persistChartsQuery();
-  };
-  chartsJumpBeforeNavigate = expandChartsForTarget;
-  if (String(window.location.hash || '').startsWith('#')) {
-    const target = document.getElementById(String(window.location.hash).slice(1));
-    if (target instanceof HTMLElement) {
-      expandChartsForTarget(target);
-    }
-  }
-
-  selectors.chartsSectionToggleButtons?.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      const target = event.currentTarget;
-      if (!(target instanceof HTMLElement)) {
-        return;
-      }
-      const key = String(target.getAttribute('data-charts-section-toggle') || '').trim();
-      if (!CHARTS_SECTION_KEYS.includes(key)) {
-        return;
-      }
-      const current = dashboardState.chartsSectionsExpanded?.[key] === true;
-      setChartsSectionExpanded(key, !current);
-      applyChartsSectionDisclosure({ reason: 'section-toggle', triggerRender: true });
-      persistChartsQuery();
-    });
+  setScheduleChartsSecondaryRender(scheduleChartsSecondaryRender);
+  const {
+    hourlyControlsWithPersistence,
+    handleChartFiltersReset,
+    expandChartsForTarget,
+    applyInitialHashExpansion,
+    bindChartsSectionToggleButtons,
+  } = createChartsRuntimeUiControls({
+    selectors,
+    dashboardState,
+    chartsSectionKeys: CHARTS_SECTION_KEYS,
+    getChartsDefaults,
+    createDefaultChartFilters,
+    sanitizeHeatmapFilters,
+    chartFlow,
+    syncChartPeriodButtons,
+    syncChartYearControl,
+    populateHeatmapMetricOptions,
+    updateHeatmapCaption,
+    syncHeatmapFilterControls,
+    hourlyControlsFeature,
+    markChartsSectionVisible,
+    applyHeatmapFiltersAndRender,
+    renderChartsHospitalTable,
+    persistChartsQuery,
+    setChartsSectionExpanded,
+    applyChartsSectionDisclosure,
   });
+  chartsJumpBeforeNavigate = expandChartsForTarget;
+  applyInitialHashExpansion();
+  bindChartsSectionToggleButtons();
 
   wireChartsRuntimeInteractions({
     applyChartsText,
