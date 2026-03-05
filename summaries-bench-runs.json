@@ -3,7 +3,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 10.041,
+    "durationMs": 21.351,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -18,7 +18,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.307,
+    "durationMs": 0.481,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -33,7 +33,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.026,
+    "durationMs": 0.053,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -48,7 +48,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "yearly.renderTableDom",
-    "durationMs": 8.213,
+    "durationMs": 28.409,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -63,7 +63,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.636,
+    "durationMs": 10.678,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -78,7 +78,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.extractHistorical",
-    "durationMs": 1.202,
+    "durationMs": 1.173,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -93,7 +93,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.scopeMeta",
-    "durationMs": 3.087,
+    "durationMs": 4.639,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -108,7 +108,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 1.351,
+    "durationMs": 2.368,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -123,7 +123,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 5.904,
+    "durationMs": 6.914,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -138,7 +138,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 3.526,
+    "durationMs": 5.726,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -153,7 +153,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 3.63,
+    "durationMs": 6.778,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -168,7 +168,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 0.67,
+    "durationMs": 1.964,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -183,7 +183,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 0.574,
+    "durationMs": 1.573,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -198,7 +198,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 0.534,
+    "durationMs": 2.434,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -213,7 +213,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.computeAll.cold",
-    "durationMs": 13.396,
+    "durationMs": 36.762,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -228,411 +228,6 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.computeAll.warm",
-    "durationMs": 0.009,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 1.398,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.011,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.viewModels.workerStub",
-    "durationMs": 0.823,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.recompute.filterChange",
-    "durationMs": 14.261,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.computeDailyStats",
-    "durationMs": 9.629,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.108,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.034,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.renderTableDom",
-    "durationMs": 7.421,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.322,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.extractHistorical",
-    "durationMs": 0.572,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.scopeMeta",
-    "durationMs": 2.882,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 1.164,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 3.096,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 3.849,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 3.546,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 0.403,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 0.3,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 0.366,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.computeAll.cold",
-    "durationMs": 13.722,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.computeAll.warm",
-    "durationMs": 0.011,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 1.292,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.02,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.viewModels.workerStub",
-    "durationMs": 1.211,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.recompute.filterChange",
-    "durationMs": 17.539,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.computeDailyStats",
-    "durationMs": 9.913,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.255,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.computeYearlyStats",
     "durationMs": 0.019,
     "recordsIn": 10000,
     "metadata": {
@@ -647,203 +242,8 @@
   {
     "page": "summaries",
     "scenario": "small",
-    "stage": "yearly.renderTableDom",
-    "durationMs": 4.646,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.027,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.extractHistorical",
-    "durationMs": 0.359,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.scopeMeta",
-    "durationMs": 2.859,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 2.647,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 4.58,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 2.963,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 3.819,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 0.804,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 0.657,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 0.577,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.computeAll.cold",
-    "durationMs": 18.629,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
-    "stage": "reports.computeAll.warm",
-    "durationMs": 0.008,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "small",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 2.484,
+    "durationMs": 2.098,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -858,7 +258,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.04,
+    "durationMs": 0.027,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -873,7 +273,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 1.318,
+    "durationMs": 2.559,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -888,7 +288,7 @@
     "page": "summaries",
     "scenario": "small",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 15.746,
+    "durationMs": 32.132,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -901,12 +301,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 32.963,
-    "recordsIn": 50000,
+    "durationMs": 19.014,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -916,12 +316,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.258,
-    "recordsIn": 50000,
+    "durationMs": 0.156,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -931,12 +331,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.019,
-    "recordsIn": 50000,
+    "durationMs": 0.041,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -946,12 +346,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "yearly.renderTableDom",
-    "durationMs": 5.356,
-    "recordsIn": 50000,
+    "durationMs": 13.335,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -961,12 +361,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.123,
-    "recordsIn": 50000,
+    "durationMs": 4.7,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -976,12 +376,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.extractHistorical",
-    "durationMs": 1.852,
-    "recordsIn": 50000,
+    "durationMs": 0.863,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -991,12 +391,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.scopeMeta",
-    "durationMs": 12.615,
-    "recordsIn": 50000,
+    "durationMs": 5.1,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1006,12 +406,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 3.852,
-    "recordsIn": 50000,
+    "durationMs": 1.421,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1021,12 +421,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 19.66,
-    "recordsIn": 50000,
+    "durationMs": 3.951,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1036,12 +436,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 13.378,
-    "recordsIn": 50000,
+    "durationMs": 5.717,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1051,12 +451,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 16.016,
-    "recordsIn": 50000,
+    "durationMs": 5.436,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1066,12 +466,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 2.988,
-    "recordsIn": 50000,
+    "durationMs": 0.68,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1081,12 +481,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 2.696,
-    "recordsIn": 50000,
+    "durationMs": 0.626,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1096,12 +496,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 1.994,
-    "recordsIn": 50000,
+    "durationMs": 0.513,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1111,12 +511,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.computeAll.cold",
-    "durationMs": 65.185,
-    "recordsIn": 50000,
+    "durationMs": 27.509,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1126,12 +526,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.computeAll.warm",
-    "durationMs": 0.008,
-    "recordsIn": 50000,
+    "durationMs": 0.021,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1141,12 +541,12 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 5.046,
-    "recordsIn": 50000,
+    "durationMs": 2.475,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1156,12 +556,282 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.039,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 1.809,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 32.8,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 12.202,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.145,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.032,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 14.109,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 6.461,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.extractHistorical",
+    "durationMs": 0.554,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.scopeMeta",
+    "durationMs": 6.113,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 2.463,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 4.737,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 7.742,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 5.682,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 0.668,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 0.698,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 0.922,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 24.604,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.computeAll.warm",
     "durationMs": 0.012,
-    "recordsIn": 50000,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1171,12 +841,42 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 1.903,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.019,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 5.034,
-    "recordsIn": 50000,
+    "durationMs": 1.342,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1186,12 +886,612 @@
   },
   {
     "page": "summaries",
-    "scenario": "medium",
+    "scenario": "small",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 67.278,
-    "recordsIn": 50000,
+    "durationMs": 31.829,
+    "recordsIn": 10000,
     "metadata": {
-      "count": 50000,
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 9.874,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.229,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.041,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 18.661,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 3.677,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.extractHistorical",
+    "durationMs": 0.354,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.scopeMeta",
+    "durationMs": 3.855,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 1.194,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 2.764,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 3.784,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 4.024,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 0.617,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 0.845,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 1.073,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 26.719,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.019,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 1.727,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.021,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 1.19,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 22.786,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 13.764,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.14,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.03,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 10.197,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 4.863,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.extractHistorical",
+    "durationMs": 0.518,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.scopeMeta",
+    "durationMs": 3.205,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 1.104,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 2.587,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 5.163,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 6.823,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 0.845,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 0.887,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 0.7,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 20.1,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.01,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 1.494,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.031,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 1.482,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "small",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 26.019,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1203,7 +1503,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 36.196,
+    "durationMs": 52.098,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1218,7 +1518,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.258,
+    "durationMs": 0.39,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1233,7 +1533,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.018,
+    "durationMs": 0.027,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1248,7 +1548,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.renderTableDom",
-    "durationMs": 13.968,
+    "durationMs": 9.515,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1263,7 +1563,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.01,
+    "durationMs": 3.593,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1278,7 +1578,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.extractHistorical",
-    "durationMs": 1.464,
+    "durationMs": 2.865,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1293,7 +1593,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.scopeMeta",
-    "durationMs": 12.744,
+    "durationMs": 33.14,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1308,7 +1608,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 3.872,
+    "durationMs": 8.121,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1323,7 +1623,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 10.175,
+    "durationMs": 19.569,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1338,7 +1638,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 14.211,
+    "durationMs": 22.641,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1353,7 +1653,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 15.168,
+    "durationMs": 23.958,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1368,7 +1668,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 2.631,
+    "durationMs": 2.905,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1383,7 +1683,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 2.24,
+    "durationMs": 3.003,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1398,7 +1698,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 1.864,
+    "durationMs": 2.516,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1413,7 +1713,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.computeAll.cold",
-    "durationMs": 66.245,
+    "durationMs": 99.186,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1443,7 +1743,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 7.12,
+    "durationMs": 5.887,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1458,7 +1758,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.016,
+    "durationMs": 0.027,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1473,7 +1773,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 5.252,
+    "durationMs": 7.641,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1488,7 +1788,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 66.848,
+    "durationMs": 120.329,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1503,7 +1803,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 31.423,
+    "durationMs": 64.33,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1518,7 +1818,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.261,
+    "durationMs": 0.775,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1533,7 +1833,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.019,
+    "durationMs": 0.06,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1548,7 +1848,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.renderTableDom",
-    "durationMs": 4.048,
+    "durationMs": 14.543,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1563,7 +1863,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.023,
+    "durationMs": 6.777,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1578,7 +1878,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.extractHistorical",
-    "durationMs": 1.774,
+    "durationMs": 2.983,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1593,7 +1893,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.scopeMeta",
-    "durationMs": 12.364,
+    "durationMs": 17.359,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1608,7 +1908,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 3.789,
+    "durationMs": 6.088,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1623,7 +1923,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 9.837,
+    "durationMs": 15.419,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1638,7 +1938,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 20.278,
+    "durationMs": 35.444,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1653,7 +1953,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 16.164,
+    "durationMs": 21.003,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1668,7 +1968,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 2.769,
+    "durationMs": 3.681,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1683,7 +1983,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 3.375,
+    "durationMs": 4.212,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1698,7 +1998,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 2.748,
+    "durationMs": 3.451,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1713,7 +2013,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.computeAll.cold",
-    "durationMs": 58.608,
+    "durationMs": 96.26,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1728,7 +2028,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.computeAll.warm",
-    "durationMs": 0.007,
+    "durationMs": 0.029,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1743,7 +2043,7 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 5.789,
+    "durationMs": 4.529,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1758,6 +2058,276 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.018,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 3.961,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 115.91,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 50.925,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.395,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.031,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 6.024,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 2.829,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.extractHistorical",
+    "durationMs": 1.887,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.scopeMeta",
+    "durationMs": 17.272,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 7.935,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 25.373,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 18.588,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 26.517,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 5.406,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 6.018,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 3.369,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 104.262,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.computeAll.warm",
     "durationMs": 0.011,
     "recordsIn": 50000,
     "metadata": {
@@ -1772,8 +2342,38 @@
   {
     "page": "summaries",
     "scenario": "medium",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 5.246,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.036,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 4.28,
+    "durationMs": 7.133,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1788,7 +2388,607 @@
     "page": "summaries",
     "scenario": "medium",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 64.67,
+    "durationMs": 98.396,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 52.871,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.597,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.08,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 7.731,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 2.334,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.extractHistorical",
+    "durationMs": 1.962,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.scopeMeta",
+    "durationMs": 18.763,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 9.492,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 19.642,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 18.163,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 22.259,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 2.918,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 4.015,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 3.083,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 110.641,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.019,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 7.248,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.022,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 4.349,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 114.205,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 53.454,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.5,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.041,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 8.262,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 5.615,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.extractHistorical",
+    "durationMs": 3.449,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.scopeMeta",
+    "durationMs": 23.237,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 8.18,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 16.038,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 32.272,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 24.395,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 3.227,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 3.813,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 2.882,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 103.788,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.009,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 4.496,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.019,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 6.44,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "medium",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 112.797,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1803,7 +3003,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 69.599,
+    "durationMs": 128.972,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1818,7 +3018,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.341,
+    "durationMs": 0.413,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1833,7 +3033,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.021,
+    "durationMs": 0.04,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1848,7 +3048,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.renderTableDom",
-    "durationMs": 4.311,
+    "durationMs": 7.224,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1863,7 +3063,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 0.911,
+    "durationMs": 2.371,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1878,7 +3078,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.extractHistorical",
-    "durationMs": 3.369,
+    "durationMs": 4.067,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1893,7 +3093,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.scopeMeta",
-    "durationMs": 35.832,
+    "durationMs": 57.992,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1908,7 +3108,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 12.351,
+    "durationMs": 18.163,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1923,7 +3123,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 30.553,
+    "durationMs": 41.677,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1938,7 +3138,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 33.396,
+    "durationMs": 54.28,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1953,7 +3153,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 32.101,
+    "durationMs": 53.898,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1968,7 +3168,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 5.459,
+    "durationMs": 6.646,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1983,7 +3183,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 5.929,
+    "durationMs": 8.076,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -1998,7 +3198,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 4.824,
+    "durationMs": 6.53,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2013,7 +3213,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.computeAll.cold",
-    "durationMs": 127.301,
+    "durationMs": 217.998,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2028,7 +3228,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.computeAll.warm",
-    "durationMs": 0.026,
+    "durationMs": 0.01,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2043,7 +3243,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 11.731,
+    "durationMs": 12.247,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2058,7 +3258,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.02,
+    "durationMs": 0.015,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2073,7 +3273,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 10.395,
+    "durationMs": 9.569,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2088,7 +3288,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 132.274,
+    "durationMs": 201.563,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2103,7 +3303,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 79.246,
+    "durationMs": 127.923,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2118,7 +3318,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.406,
+    "durationMs": 0.391,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2133,7 +3333,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.021,
+    "durationMs": 0.011,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2148,7 +3348,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.renderTableDom",
-    "durationMs": 5.093,
+    "durationMs": 5.628,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2163,7 +3363,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 0.753,
+    "durationMs": 2.766,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2178,7 +3378,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.extractHistorical",
-    "durationMs": 3.358,
+    "durationMs": 5.64,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2193,7 +3393,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.scopeMeta",
-    "durationMs": 23.947,
+    "durationMs": 36.958,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2208,7 +3408,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 9.116,
+    "durationMs": 13.042,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2223,7 +3423,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 26.659,
+    "durationMs": 40.043,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2238,7 +3438,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 28.544,
+    "durationMs": 44.729,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2253,7 +3453,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 32.105,
+    "durationMs": 52.161,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2268,7 +3468,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 4.377,
+    "durationMs": 5.608,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2283,7 +3483,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 5.485,
+    "durationMs": 7.72,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2298,7 +3498,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 3.838,
+    "durationMs": 6.921,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2313,7 +3513,307 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.computeAll.cold",
-    "durationMs": 134.756,
+    "durationMs": 193.39,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.013,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 9.625,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.011,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 10.232,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 212.517,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 109.593,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.383,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.012,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 5.947,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 4.993,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.extractHistorical",
+    "durationMs": 4.582,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.scopeMeta",
+    "durationMs": 54.846,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 12.076,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 33.939,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 50.056,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 55.217,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 8.318,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 8.5,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 6.072,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 187.154,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2343,7 +3843,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 14.172,
+    "durationMs": 9.985,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2358,7 +3858,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.018,
+    "durationMs": 0.012,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2373,7 +3873,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 11.613,
+    "durationMs": 10.997,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2388,7 +3888,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 145.865,
+    "durationMs": 217.3,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2403,7 +3903,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 72.726,
+    "durationMs": 112.579,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2418,7 +3918,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.107,
+    "durationMs": 0.777,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2433,7 +3933,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.021,
+    "durationMs": 0.019,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2448,7 +3948,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.renderTableDom",
-    "durationMs": 3.72,
+    "durationMs": 5.803,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2463,7 +3963,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.049,
+    "durationMs": 4.247,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2478,7 +3978,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.extractHistorical",
-    "durationMs": 15.604,
+    "durationMs": 4.451,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2493,7 +3993,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.scopeMeta",
-    "durationMs": 26.893,
+    "durationMs": 55.209,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2508,7 +4008,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 8.825,
+    "durationMs": 28.429,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2523,7 +4023,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 22.07,
+    "durationMs": 43.167,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2538,7 +4038,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 34.297,
+    "durationMs": 40.935,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2553,7 +4053,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 34.469,
+    "durationMs": 60.928,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2568,7 +4068,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 4.912,
+    "durationMs": 5.653,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2583,7 +4083,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 5.287,
+    "durationMs": 5.755,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2598,7 +4098,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 4.338,
+    "durationMs": 7.323,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2613,7 +4113,307 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.computeAll.cold",
-    "durationMs": 139.109,
+    "durationMs": 225.675,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.009,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 15.237,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.013,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 10.894,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 219.795,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 155.089,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.475,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.03,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 11.112,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 4.602,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.extractHistorical",
+    "durationMs": 5.607,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.scopeMeta",
+    "durationMs": 51.096,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 25.954,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 52.339,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 51.375,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 64.34,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 11.221,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 11.652,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 8.998,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "large",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 275.01,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2643,7 +4443,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 19.773,
+    "durationMs": 14.811,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2658,7 +4458,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.023,
+    "durationMs": 0.018,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2673,7 +4473,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 23.385,
+    "durationMs": 12.111,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2688,7 +4488,7 @@
     "page": "summaries",
     "scenario": "large",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 214.913,
+    "durationMs": 284.699,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2703,7 +4503,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 46.546,
+    "durationMs": 73.956,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2718,7 +4518,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.196,
+    "durationMs": 0.459,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2733,201 +4533,6 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.069,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "yearly.renderTableDom",
-    "durationMs": 6.783,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 0.767,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.extractHistorical",
-    "durationMs": 2.75,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.scopeMeta",
-    "durationMs": 28.781,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 4.143,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 12.461,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 15.506,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 18.567,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 2.488,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 3.041,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 2.146,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.computeAll.cold",
-    "durationMs": 107.593,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.computeAll.warm",
     "durationMs": 0.027,
     "recordsIn": 50000,
     "metadata": {
@@ -2942,113 +4547,8 @@
   {
     "page": "summaries",
     "scenario": "wide-cardinality",
-    "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 8.346,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.014,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.viewModels.workerStub",
-    "durationMs": 6.495,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "reports.recompute.filterChange",
-    "durationMs": 89.093,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "yearly.computeDailyStats",
-    "durationMs": 53.182,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.286,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
-    "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.02,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "wide-cardinality",
     "stage": "yearly.renderTableDom",
-    "durationMs": 4.193,
+    "durationMs": 23.026,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3063,7 +4563,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 1.371,
+    "durationMs": 2.77,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3078,7 +4578,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.extractHistorical",
-    "durationMs": 2.367,
+    "durationMs": 1.879,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3093,7 +4593,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.scopeMeta",
-    "durationMs": 17.221,
+    "durationMs": 16.775,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3108,7 +4608,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 4.947,
+    "durationMs": 5.418,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3123,7 +4623,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 11.058,
+    "durationMs": 15.568,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3138,7 +4638,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 15.645,
+    "durationMs": 22.763,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3153,7 +4653,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 28.426,
+    "durationMs": 26.971,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3168,7 +4668,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 3.597,
+    "durationMs": 3.483,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3183,7 +4683,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 3.182,
+    "durationMs": 4.961,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3198,7 +4698,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 2.143,
+    "durationMs": 4.1,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3213,7 +4713,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.computeAll.cold",
-    "durationMs": 63.574,
+    "durationMs": 118.927,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3228,7 +4728,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.computeAll.warm",
-    "durationMs": 0.009,
+    "durationMs": 0.02,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3243,7 +4743,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 5.876,
+    "durationMs": 4.699,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3258,7 +4758,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.008,
+    "durationMs": 0.011,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3273,7 +4773,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 4.332,
+    "durationMs": 5.098,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3288,7 +4788,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 74.622,
+    "durationMs": 116.198,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3303,7 +4803,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 34.565,
+    "durationMs": 66.136,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3333,7 +4833,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.018,
+    "durationMs": 0.049,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3348,7 +4848,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.renderTableDom",
-    "durationMs": 3.145,
+    "durationMs": 9.886,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3363,7 +4863,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 0.577,
+    "durationMs": 3.795,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3378,7 +4878,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.extractHistorical",
-    "durationMs": 1.386,
+    "durationMs": 3.789,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3393,7 +4893,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.scopeMeta",
-    "durationMs": 11.892,
+    "durationMs": 26.641,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3408,7 +4908,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 5.237,
+    "durationMs": 7.523,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3423,7 +4923,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 17.906,
+    "durationMs": 16.328,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3438,7 +4938,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 14.769,
+    "durationMs": 28.696,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3453,7 +4953,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 18.022,
+    "durationMs": 26.621,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3468,7 +4968,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 2.392,
+    "durationMs": 4.556,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3483,7 +4983,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 2.545,
+    "durationMs": 4.351,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3498,7 +4998,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 1.952,
+    "durationMs": 4.146,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3513,7 +5013,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.computeAll.cold",
-    "durationMs": 71.285,
+    "durationMs": 119.305,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3528,7 +5028,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.computeAll.warm",
-    "durationMs": 0.027,
+    "durationMs": 0.011,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3543,7 +5043,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 7.083,
+    "durationMs": 4.5,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3558,7 +5058,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.01,
+    "durationMs": 0.011,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3573,7 +5073,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 4.857,
+    "durationMs": 4.742,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3588,7 +5088,7 @@
     "page": "summaries",
     "scenario": "wide-cardinality",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 74.608,
+    "durationMs": 112.206,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3601,609 +5101,909 @@
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 53.131,
-    "recordsIn": 60000,
+    "durationMs": 54.45,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.304,
-    "recordsIn": 60000,
+    "durationMs": 0.236,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.033,
-    "recordsIn": 60000,
+    "durationMs": 0.073,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.renderTableDom",
-    "durationMs": 3.053,
-    "recordsIn": 60000,
+    "durationMs": 6.038,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 0.773,
-    "recordsIn": 60000,
+    "durationMs": 2.162,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.extractHistorical",
-    "durationMs": 2.203,
-    "recordsIn": 60000,
+    "durationMs": 2.859,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.scopeMeta",
-    "durationMs": 34.068,
-    "recordsIn": 60000,
+    "durationMs": 16.817,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 9.233,
-    "recordsIn": 60000,
+    "durationMs": 16.41,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 33.917,
-    "recordsIn": 60000,
+    "durationMs": 18.841,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 38.276,
-    "recordsIn": 60000,
+    "durationMs": 24.842,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 52.081,
-    "recordsIn": 60000,
+    "durationMs": 22.685,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 4.847,
-    "recordsIn": 60000,
+    "durationMs": 3.519,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 7.471,
-    "recordsIn": 60000,
+    "durationMs": 3.211,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 3.892,
-    "recordsIn": 60000,
+    "durationMs": 3.386,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.computeAll.cold",
-    "durationMs": 175.647,
-    "recordsIn": 60000,
+    "durationMs": 127.151,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.computeAll.warm",
-    "durationMs": 0.012,
-    "recordsIn": 60000,
+    "durationMs": 0.011,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 13.231,
-    "recordsIn": 60000,
+    "durationMs": 4.798,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.009,
-    "recordsIn": 60000,
+    "durationMs": 0.013,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 12.886,
-    "recordsIn": 60000,
+    "durationMs": 4.228,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 173.638,
-    "recordsIn": 60000,
+    "durationMs": 111.917,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 49.903,
-    "recordsIn": 60000,
+    "durationMs": 81.329,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.291,
-    "recordsIn": 60000,
+    "durationMs": 0.281,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.054,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 10.247,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 4.01,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.extractHistorical",
+    "durationMs": 3.026,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.scopeMeta",
+    "durationMs": 28.035,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 8.173,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 23.155,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 32.127,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 39.121,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 4.773,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 3.705,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 3.381,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 155.784,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.035,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 7.44,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.011,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 4.523,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 148.413,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 53.132,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.171,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.029,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 8.926,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 3.231,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.extractHistorical",
+    "durationMs": 1.859,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.scopeMeta",
+    "durationMs": 17.78,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 7.632,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 20.376,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 65.345,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 34.054,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 4.331,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 4.691,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 5.509,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 202.895,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.013,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 9.271,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "wide-cardinality",
+    "stage": "reports.viewModels.mainThread.warm",
     "durationMs": 0.019,
-    "recordsIn": 60000,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "yearly.renderTableDom",
-    "durationMs": 2.615,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 0.545,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.extractHistorical",
-    "durationMs": 2.479,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.scopeMeta",
-    "durationMs": 33.036,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 9.876,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 31.079,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 35.208,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 44.332,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 4.153,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 6.277,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 4.119,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.computeAll.cold",
-    "durationMs": 166.539,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.computeAll.warm",
-    "durationMs": 0.009,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 13.539,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
-    "stage": "reports.viewModels.mainThread.warm",
-    "durationMs": 0.009,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 12.965,
-    "recordsIn": 60000,
+    "durationMs": 5.22,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
-    "scenario": "historical-heavy",
+    "scenario": "wide-cardinality",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 183.052,
-    "recordsIn": 60000,
+    "durationMs": 145.406,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
     }
   },
   {
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "yearly.computeDailyStats",
-    "durationMs": 42.512,
+    "durationMs": 65.933,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4218,7 +6018,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "yearly.computeMonthlyStats",
-    "durationMs": 0.361,
+    "durationMs": 0.355,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4233,7 +6033,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "yearly.computeYearlyStats",
-    "durationMs": 0.021,
+    "durationMs": 0.025,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4248,7 +6048,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "yearly.renderTableDom",
-    "durationMs": 3.409,
+    "durationMs": 4.525,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4263,7 +6063,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "yearly.renderTableDom.expandFirstYear",
-    "durationMs": 0.921,
+    "durationMs": 2.098,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4278,7 +6078,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.extractHistorical",
-    "durationMs": 2.713,
+    "durationMs": 3.734,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4293,7 +6093,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.scopeMeta",
-    "durationMs": 32.214,
+    "durationMs": 46.57,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4308,7 +6108,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.fn.computeDiagnosisFrequency",
-    "durationMs": 8.867,
+    "durationMs": 14.007,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4323,7 +6123,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.fn.computeAgeDiagnosisHeatmap",
-    "durationMs": 31.714,
+    "durationMs": 42.264,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4338,7 +6138,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.fn.computeReferralMonthlyHeatmap",
-    "durationMs": 35.289,
+    "durationMs": 46.578,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4353,7 +6153,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.fn.computeReferralDispositionYearlyTrend",
-    "durationMs": 46.865,
+    "durationMs": 63.415,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4368,7 +6168,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.fn.computePspcCorrelation",
-    "durationMs": 3.904,
+    "durationMs": 6.177,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4383,7 +6183,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.fn.computePspcDistribution",
-    "durationMs": 7.477,
+    "durationMs": 5.855,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4398,7 +6198,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.fn.computeReferralPspcDetailed",
-    "durationMs": 3.707,
+    "durationMs": 4.483,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4413,7 +6213,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.computeAll.cold",
-    "durationMs": 198.85,
+    "durationMs": 214.68,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4443,7 +6243,607 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.viewModels.mainThread.cold",
-    "durationMs": 14.351,
+    "durationMs": 10.723,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.011,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 11.001,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 226.146,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 65.261,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.363,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.03,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 4.691,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 1.912,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.extractHistorical",
+    "durationMs": 2.447,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.scopeMeta",
+    "durationMs": 39.833,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 12.132,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 43.849,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 47.586,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 57.315,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 6.218,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 5.891,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 4.435,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 229.056,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.009,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 11.635,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.011,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 9.958,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 228.703,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 68.805,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.354,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.026,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 5.456,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 2.237,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.extractHistorical",
+    "durationMs": 2.426,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.scopeMeta",
+    "durationMs": 40.851,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 13.628,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 46.489,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 45.944,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 55.228,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 5.044,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 7.382,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 7.184,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 227.391,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.012,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 10.711,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4473,7 +6873,7 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.viewModels.workerStub",
-    "durationMs": 12.878,
+    "durationMs": 11.182,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4488,7 +6888,607 @@
     "page": "summaries",
     "scenario": "historical-heavy",
     "stage": "reports.recompute.filterChange",
-    "durationMs": 175.487,
+    "durationMs": 230.692,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 57.301,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.417,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.036,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 6.377,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 2.038,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.extractHistorical",
+    "durationMs": 2.741,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.scopeMeta",
+    "durationMs": 41.271,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 17.614,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 81.894,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 52.342,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 69.988,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 6.013,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 8.636,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 5.641,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 235.728,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.008,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 16.246,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.016,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 11.437,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 231.407,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeDailyStats",
+    "durationMs": 72.987,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeMonthlyStats",
+    "durationMs": 0.393,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.computeYearlyStats",
+    "durationMs": 0.025,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom",
+    "durationMs": 5.031,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "yearly.renderTableDom.expandFirstYear",
+    "durationMs": 1.929,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.extractHistorical",
+    "durationMs": 2.611,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.scopeMeta",
+    "durationMs": 42.916,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeDiagnosisFrequency",
+    "durationMs": 13.561,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeAgeDiagnosisHeatmap",
+    "durationMs": 41.372,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralMonthlyHeatmap",
+    "durationMs": 46.982,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralDispositionYearlyTrend",
+    "durationMs": 56.401,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcCorrelation",
+    "durationMs": 6.099,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computePspcDistribution",
+    "durationMs": 6.052,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.fn.computeReferralPspcDetailed",
+    "durationMs": 4.646,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.cold",
+    "durationMs": 228.89,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.computeAll.warm",
+    "durationMs": 0.01,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.cold",
+    "durationMs": 11.987,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.mainThread.warm",
+    "durationMs": 0.011,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.viewModels.workerStub",
+    "durationMs": 10.714,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "summaries",
+    "scenario": "historical-heavy",
+    "stage": "reports.recompute.filterChange",
+    "durationMs": 233.268,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,

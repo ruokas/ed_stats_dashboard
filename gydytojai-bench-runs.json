@@ -3,7 +3,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 5.683,
+    "durationMs": 6.919,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -18,7 +18,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 40.473,
+    "durationMs": 42.081,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -33,6 +33,201 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.048,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.043,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.023,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 13.848,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 13.545,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 10.474,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.115,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.132,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 258.62,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 20.824,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 10.401,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 45.112,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.105,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.hospitalizationShare",
     "durationMs": 0.045,
     "recordsIn": 10000,
     "metadata": {
@@ -47,23 +242,8 @@
   {
     "page": "gydytojai",
     "scenario": "small",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.053,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.021,
+    "durationMs": 0.051,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -78,7 +258,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 12.796,
+    "durationMs": 9.953,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -93,7 +273,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 11.414,
+    "durationMs": 12.637,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -108,7 +288,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 11.141,
+    "durationMs": 7.167,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -123,7 +303,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.11,
+    "durationMs": 0.13,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -138,7 +318,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.145,
+    "durationMs": 0.23,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -153,7 +333,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 216.369,
+    "durationMs": 289.878,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -168,7 +348,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 14.933,
+    "durationMs": 19.659,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -183,7 +363,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 6.762,
+    "durationMs": 14.322,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -198,7 +378,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 36.631,
+    "durationMs": 51.196,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -213,7 +393,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.05,
+    "durationMs": 0.095,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -228,7 +408,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.019,
+    "durationMs": 0.04,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -243,7 +423,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.019,
+    "durationMs": 0.045,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -258,7 +438,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 7.364,
+    "durationMs": 17.095,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -273,7 +453,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 10.971,
+    "durationMs": 13.083,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -288,7 +468,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 6.567,
+    "durationMs": 10.05,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -303,7 +483,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.11,
+    "durationMs": 0.09,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -318,7 +498,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.146,
+    "durationMs": 0.154,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -333,7 +513,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 205.609,
+    "durationMs": 306.105,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -348,7 +528,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 14.048,
+    "durationMs": 24.626,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -363,7 +543,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 5.887,
+    "durationMs": 6.008,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -378,7 +558,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 31.227,
+    "durationMs": 38.222,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -393,7 +573,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.043,
+    "durationMs": 0.119,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -423,7 +603,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.022,
+    "durationMs": 0.02,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -438,7 +618,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 10.268,
+    "durationMs": 15.114,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -453,7 +633,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 10.063,
+    "durationMs": 14.536,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -468,7 +648,367 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 6.288,
+    "durationMs": 7.953,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.071,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.13,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 238.357,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 16.097,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 5.396,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 38.703,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.047,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.013,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.013,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 8.727,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 13.88,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 7.326,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.068,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.095,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 236.403,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 14.731,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 10.015,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 38.8,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.057,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.014,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.014,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 10.29,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 13.616,
+    "recordsIn": 10000,
+    "metadata": {
+      "count": 10000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "small",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 7.61,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -498,7 +1038,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.138,
+    "durationMs": 0.112,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -513,7 +1053,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 240.241,
+    "durationMs": 233.797,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -528,7 +1068,7 @@
     "page": "gydytojai",
     "scenario": "small",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 14.815,
+    "durationMs": 16.111,
     "recordsIn": 10000,
     "metadata": {
       "count": 10000,
@@ -541,12 +1081,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 6.332,
-    "recordsIn": 10000,
+    "durationMs": 35.613,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -556,12 +1096,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 34.56,
-    "recordsIn": 10000,
+    "durationMs": 203.173,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -571,12 +1111,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.055,
-    "recordsIn": 10000,
+    "durationMs": 0.121,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -586,12 +1126,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.02,
-    "recordsIn": 10000,
+    "durationMs": 0.032,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -601,12 +1141,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.019,
-    "recordsIn": 10000,
+    "durationMs": 0.133,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -616,12 +1156,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 11.815,
-    "recordsIn": 10000,
+    "durationMs": 53.357,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -631,12 +1171,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 11.638,
-    "recordsIn": 10000,
+    "durationMs": 73.088,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -646,12 +1186,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 7.564,
-    "recordsIn": 10000,
+    "durationMs": 32.385,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -661,12 +1201,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.066,
-    "recordsIn": 10000,
+    "durationMs": 0.07,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -676,12 +1216,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.188,
-    "recordsIn": 10000,
+    "durationMs": 0.122,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -691,12 +1231,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 221.441,
-    "recordsIn": 10000,
+    "durationMs": 1294.383,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -706,12 +1246,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 13.938,
-    "recordsIn": 10000,
+    "durationMs": 89.088,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -721,12 +1261,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 5.405,
-    "recordsIn": 10000,
+    "durationMs": 25.84,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -736,12 +1276,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 31.538,
-    "recordsIn": 10000,
+    "durationMs": 165.623,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -751,12 +1291,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.041,
-    "recordsIn": 10000,
+    "durationMs": 0.063,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -766,12 +1306,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.015,
-    "recordsIn": 10000,
+    "durationMs": 0.014,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -781,12 +1321,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.012,
-    "recordsIn": 10000,
+    "durationMs": 0.013,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -796,12 +1336,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 8.237,
-    "recordsIn": 10000,
+    "durationMs": 43.603,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -811,12 +1351,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 16.265,
-    "recordsIn": 10000,
+    "durationMs": 69.417,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -826,12 +1366,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 6.548,
-    "recordsIn": 10000,
+    "durationMs": 32.365,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -841,12 +1381,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.061,
-    "recordsIn": 10000,
+    "durationMs": 0.075,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -856,12 +1396,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.09,
-    "recordsIn": 10000,
+    "durationMs": 0.112,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -871,12 +1411,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 203.734,
-    "recordsIn": 10000,
+    "durationMs": 1228.707,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -886,192 +1426,12 @@
   },
   {
     "page": "gydytojai",
-    "scenario": "small",
+    "scenario": "medium",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 13.287,
-    "recordsIn": 10000,
+    "durationMs": 96.132,
+    "recordsIn": 50000,
     "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 5.927,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 34.196,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.031,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.012,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.012,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 9.942,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 15.948,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 6.122,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.054,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.097,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 201.166,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "small",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 14.631,
-    "recordsIn": 10000,
-    "metadata": {
-      "count": 10000,
+      "count": 50000,
       "departmentCount": 18,
       "pspcCount": 40,
       "doctorCount": 36,
@@ -1083,7 +1443,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 38.854,
+    "durationMs": 28.927,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1098,7 +1458,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 149.694,
+    "durationMs": 190.064,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1113,7 +1473,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.061,
+    "durationMs": 0.074,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1128,7 +1488,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.023,
+    "durationMs": 0.013,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1143,7 +1503,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.02,
+    "durationMs": 0.013,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1158,7 +1518,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 36.785,
+    "durationMs": 47.098,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1173,7 +1533,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 57.37,
+    "durationMs": 66.574,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1188,7 +1548,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 29.935,
+    "durationMs": 32.498,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1218,712 +1578,172 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.query.parseBuild",
+    "durationMs": 0.085,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1211.033,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 80.968,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 30.472,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 199.646,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.067,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.015,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.015,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 47.036,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 103.973,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 45.234,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialty.yearlyComposition",
     "durationMs": 0.115,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 994.077,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 74.53,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 25.015,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 160.53,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.059,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.013,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.012,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 41.565,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 59.46,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 30.981,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.08,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.113,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 999.643,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 71.206,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 27.025,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 162.497,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.058,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.012,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.012,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 34.687,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 58.55,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 31.257,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.056,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.078,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 993.102,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 72.085,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 30.654,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 150.938,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.062,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.013,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.013,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 41.956,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 58.078,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 29.059,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.056,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.066,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1039.557,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 83.19,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 27.266,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 166.43,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.064,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.018,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.017,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 40.301,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 56.318,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 30.233,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.069,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1953,7 +1773,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 1037.288,
+    "durationMs": 1183.146,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1968,7 +1788,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 80.404,
+    "durationMs": 83.561,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1983,7 +1803,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 27.901,
+    "durationMs": 30.512,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -1998,7 +1818,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 164.947,
+    "durationMs": 197.693,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2013,7 +1833,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.066,
+    "durationMs": 0.067,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2028,7 +1848,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.013,
+    "durationMs": 0.02,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2043,7 +1863,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.013,
+    "durationMs": 0.019,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2058,7 +1878,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 36.14,
+    "durationMs": 44.759,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2073,7 +1893,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 64.289,
+    "durationMs": 79.361,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2088,7 +1908,7 @@
     "page": "gydytojai",
     "scenario": "medium",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 30.435,
+    "durationMs": 53.678,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -2102,188 +1922,908 @@
   {
     "page": "gydytojai",
     "scenario": "medium",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.11,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.128,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1218.458,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 86.028,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 30.152,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 179.381,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.076,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.015,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.022,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 50.169,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 67.907,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 33.353,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.059,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.067,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1398.463,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "medium",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 113.678,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 74.376,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 431.093,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.053,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.019,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.02,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 123.179,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 166.409,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 80.657,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.163,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.253,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 2946.269,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 233.95,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 87.952,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 426.911,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.057,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.019,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.019,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 99.675,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 194.202,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 98.813,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.112,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.129,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 2876.488,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 180.915,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 60.024,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 446.426,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.064,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.025,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.065,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 105.68,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 158.22,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 94.564,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.131,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.129,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 2612.552,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 177.256,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 58.696,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 380.366,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.045,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.014,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.011,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 82.674,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 157.754,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 68.368,
+    "recordsIn": 100000,
+    "metadata": {
+      "count": 100000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.35,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "large",
     "stage": "stage.specialty.yearlyComposition",
     "durationMs": 0.062,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.073,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1008.937,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "medium",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 72.821,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 53.448,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 333.25,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.077,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.018,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.016,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 73.094,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 130.319,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 59.177,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.065,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2298,7 +2838,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.085,
+    "durationMs": 0.069,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2313,7 +2853,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 2039.922,
+    "durationMs": 2478.292,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2328,7 +2868,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 153.047,
+    "durationMs": 184.475,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2343,7 +2883,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 50.407,
+    "durationMs": 58.878,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2358,7 +2898,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 300.859,
+    "durationMs": 363.494,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2373,7 +2913,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.065,
+    "durationMs": 0.056,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2388,7 +2928,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.016,
+    "durationMs": 0.013,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2403,7 +2943,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.016,
+    "durationMs": 0.012,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2418,7 +2958,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 71.506,
+    "durationMs": 93.662,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2433,7 +2973,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 116.703,
+    "durationMs": 134.02,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2448,7 +2988,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 61.353,
+    "durationMs": 64.73,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2493,7 +3033,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 2044.983,
+    "durationMs": 2353.925,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2508,7 +3048,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 151.392,
+    "durationMs": 276.914,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2523,7 +3063,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 50.288,
+    "durationMs": 74.523,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2538,7 +3078,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 354.831,
+    "durationMs": 371.128,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2568,7 +3108,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.016,
+    "durationMs": 0.018,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2583,7 +3123,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.057,
+    "durationMs": 0.018,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2598,7 +3138,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 86.835,
+    "durationMs": 90.991,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2613,7 +3153,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 149.381,
+    "durationMs": 168.73,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2628,7 +3168,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 74.589,
+    "durationMs": 80.691,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2643,7 +3183,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.118,
+    "durationMs": 0.073,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2658,7 +3198,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.099,
+    "durationMs": 0.105,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2673,7 +3213,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 2312.546,
+    "durationMs": 2453.656,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -2688,547 +3228,7 @@
     "page": "gydytojai",
     "scenario": "large",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 153.366,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 50.548,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 331.237,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.065,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.013,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.012,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 77.981,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 132.382,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 66.189,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.06,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.065,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 2109.108,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 159.36,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 66.635,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 299.343,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.05,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.011,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.011,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 72.591,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 131.313,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 60.923,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.056,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.064,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 2112.353,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 156.473,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 52.995,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 316.492,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.041,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.015,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.015,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 70.258,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 124.93,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 60.759,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.066,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.087,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 2158.176,
-    "recordsIn": 100000,
-    "metadata": {
-      "count": 100000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.35,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "large",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 174.436,
+    "durationMs": 180.164,
     "recordsIn": 100000,
     "metadata": {
       "count": 100000,
@@ -3243,7 +3243,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 28.009,
+    "durationMs": 35.247,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3258,7 +3258,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 165.468,
+    "durationMs": 216.935,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3273,7 +3273,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.075,
+    "durationMs": 0.059,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3288,6 +3288,21 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.023,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.scatter",
     "durationMs": 0.02,
     "recordsIn": 50000,
     "metadata": {
@@ -3302,23 +3317,8 @@
   {
     "page": "gydytojai",
     "scenario": "wide-cardinality",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.019,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 42.885,
+    "durationMs": 57.273,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3333,7 +3333,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 57.065,
+    "durationMs": 86.523,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3348,7 +3348,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 30.839,
+    "durationMs": 36.051,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3363,7 +3363,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.054,
+    "durationMs": 0.062,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3378,7 +3378,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.064,
+    "durationMs": 0.071,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3393,7 +3393,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 1013.257,
+    "durationMs": 1223.033,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3408,7 +3408,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 73.778,
+    "durationMs": 90.838,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3423,7 +3423,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 29.693,
+    "durationMs": 50.902,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3438,7 +3438,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 164.284,
+    "durationMs": 177.003,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3453,7 +3453,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.054,
+    "durationMs": 0.077,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3468,7 +3468,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.065,
+    "durationMs": 0.068,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3483,7 +3483,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.019,
+    "durationMs": 0.022,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3498,7 +3498,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 38.271,
+    "durationMs": 46.909,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3513,7 +3513,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 56.792,
+    "durationMs": 70.758,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3528,7 +3528,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 32.618,
+    "durationMs": 36.349,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3543,7 +3543,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.06,
+    "durationMs": 0.061,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3558,7 +3558,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.066,
+    "durationMs": 0.073,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3573,7 +3573,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 1019.31,
+    "durationMs": 1218.248,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3588,7 +3588,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 78.776,
+    "durationMs": 89.265,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3603,7 +3603,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 28.684,
+    "durationMs": 30.623,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3618,7 +3618,547 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 161.709,
+    "durationMs": 187.463,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.078,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.024,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.02,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 47.457,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 67.921,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 42.838,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.061,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.067,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1283.894,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 88.775,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 42.426,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 208.616,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.056,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.022,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.022,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 50.617,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 74.134,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 38.832,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.074,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.094,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1275.503,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 94.427,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 37.086,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 199.363,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.067,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.022,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.022,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 43.147,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 73.535,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 35.478,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.061,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.071,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1217.189,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 87.873,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 38.244,
+    "recordsIn": 50000,
+    "metadata": {
+      "count": 50000,
+      "departmentCount": 40,
+      "pspcCount": 140,
+      "doctorCount": 64,
+      "historicalRatio": 0.35,
+      "wideCardinality": true
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "wide-cardinality",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 184.319,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3648,187 +4188,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.032,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.043,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 38.097,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 58.336,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 30.169,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.051,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.08,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1067.635,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 74.145,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 28.014,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 157.23,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.071,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.02,
+    "durationMs": 0.022,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3858,7 +4218,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 39.536,
+    "durationMs": 45.405,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3873,7 +4233,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 60.745,
+    "durationMs": 73.528,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3888,7 +4248,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 31.352,
+    "durationMs": 35.709,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -3903,367 +4263,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.067,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.087,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1036.891,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 79.735,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 27.669,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 157.009,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.072,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.02,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.019,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 43.273,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 56.718,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 31.576,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.054,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.059,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1025.758,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 74.048,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 28.171,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 169.742,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.071,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.02,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.02,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 37.255,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 63.184,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 30.697,
-    "recordsIn": 50000,
-    "metadata": {
-      "count": 50000,
-      "departmentCount": 40,
-      "pspcCount": 140,
-      "doctorCount": 64,
-      "historicalRatio": 0.35,
-      "wideCardinality": true
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "wide-cardinality",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.067,
+    "durationMs": 0.06,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -4293,7 +4293,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 1060.341,
+    "durationMs": 1220.143,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -4308,7 +4308,7 @@
     "page": "gydytojai",
     "scenario": "wide-cardinality",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 74.898,
+    "durationMs": 94.484,
     "recordsIn": 50000,
     "metadata": {
       "count": 50000,
@@ -4323,7 +4323,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 31.421,
+    "durationMs": 36.014,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4338,367 +4338,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 195.276,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.053,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.012,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.011,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 46.74,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 74.731,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 37.678,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.064,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.087,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1269.649,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 97.422,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 41.488,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 186.312,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.067,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.011,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.012,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 44.889,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 71.161,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 39.471,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.064,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.072,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1255.384,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 90.277,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 33.995,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 193.927,
+    "durationMs": 237.752,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4728,7 +4368,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.011,
+    "durationMs": 0.023,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4743,7 +4383,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.011,
+    "durationMs": 0.021,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4758,7 +4398,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 43.614,
+    "durationMs": 56.081,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4773,7 +4413,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 71.353,
+    "durationMs": 83.979,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4788,7 +4428,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 36.879,
+    "durationMs": 50.155,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4803,7 +4443,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.096,
+    "durationMs": 0.075,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4818,7 +4458,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.103,
+    "durationMs": 0.097,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4833,7 +4473,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 1267.688,
+    "durationMs": 1572.332,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4848,7 +4488,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 101.233,
+    "durationMs": 123.378,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4863,7 +4503,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 32.556,
+    "durationMs": 46.603,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4878,7 +4518,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 236.549,
+    "durationMs": 302.672,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4893,7 +4533,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.048,
+    "durationMs": 0.053,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4908,7 +4548,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.012,
+    "durationMs": 0.014,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4923,7 +4563,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.scatter",
-    "durationMs": 0.012,
+    "durationMs": 0.013,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4938,7 +4578,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 69.97,
+    "durationMs": 63.659,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4953,7 +4593,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 78.577,
+    "durationMs": 116.783,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4968,7 +4608,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 43.846,
+    "durationMs": 50.746,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -4983,187 +4623,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.109,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.query.parseBuild",
-    "durationMs": 0.088,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.totalPath.baseline",
-    "durationMs": 1269.655,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 89.749,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialtyResolver.init",
-    "durationMs": 32.78,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.leaderboard",
-    "durationMs": 202.15,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.046,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.012,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.scatter",
-    "durationMs": 0.011,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 46.36,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.leaderboard",
-    "durationMs": 72.917,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 37.353,
-    "recordsIn": 60000,
-    "metadata": {
-      "count": 60000,
-      "departmentCount": 18,
-      "pspcCount": 40,
-      "doctorCount": 36,
-      "historicalRatio": 0.85,
-      "wideCardinality": false
-    }
-  },
-  {
-    "page": "gydytojai",
-    "scenario": "historical-heavy",
-    "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.066,
+    "durationMs": 0.063,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5193,7 +4653,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 1306.26,
+    "durationMs": 1625.934,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5208,7 +4668,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 100.223,
+    "durationMs": 119.489,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5223,7 +4683,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialtyResolver.init",
-    "durationMs": 33.09,
+    "durationMs": 35.035,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5238,7 +4698,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.leaderboard",
-    "durationMs": 209.245,
+    "durationMs": 244.138,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5253,7 +4713,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.dayNightMix",
-    "durationMs": 0.049,
+    "durationMs": 0.063,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5268,7 +4728,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.hospitalizationShare",
-    "durationMs": 0.012,
+    "durationMs": 0.013,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5298,7 +4758,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.stats.yearlySmallMultiples",
-    "durationMs": 50.92,
+    "durationMs": 54.455,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5313,7 +4773,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.leaderboard",
-    "durationMs": 85.457,
+    "durationMs": 106.53,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5328,7 +4788,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.yearlySmallMultiples",
-    "durationMs": 40.935,
+    "durationMs": 45.626,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5343,7 +4803,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.specialty.yearlyComposition",
-    "durationMs": 0.055,
+    "durationMs": 0.099,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5358,7 +4818,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.query.parseBuild",
-    "durationMs": 0.074,
+    "durationMs": 0.118,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5373,7 +4833,7 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.totalPath.baseline",
-    "durationMs": 1550.264,
+    "durationMs": 1625.88,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,
@@ -5388,7 +4848,547 @@
     "page": "gydytojai",
     "scenario": "historical-heavy",
     "stage": "stage.totalPath.sharedComputeContext",
-    "durationMs": 107.267,
+    "durationMs": 112.336,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 34.613,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 233.219,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.06,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.013,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.012,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 56.675,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 91.102,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 53.321,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.114,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.092,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1484.714,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 114.56,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 37.08,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 233.746,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.06,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.013,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.012,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 50.927,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 87.087,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 41.392,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.058,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.067,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1440.572,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 118.799,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialtyResolver.init",
+    "durationMs": 37.572,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.leaderboard",
+    "durationMs": 232.005,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.dayNightMix",
+    "durationMs": 0.051,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.hospitalizationShare",
+    "durationMs": 0.013,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.scatter",
+    "durationMs": 0.012,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.stats.yearlySmallMultiples",
+    "durationMs": 52,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.leaderboard",
+    "durationMs": 83.833,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.yearlySmallMultiples",
+    "durationMs": 45.06,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.specialty.yearlyComposition",
+    "durationMs": 0.086,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.query.parseBuild",
+    "durationMs": 0.085,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.totalPath.baseline",
+    "durationMs": 1539.24,
+    "recordsIn": 60000,
+    "metadata": {
+      "count": 60000,
+      "departmentCount": 18,
+      "pspcCount": 40,
+      "doctorCount": 36,
+      "historicalRatio": 0.85,
+      "wideCardinality": false
+    }
+  },
+  {
+    "page": "gydytojai",
+    "scenario": "historical-heavy",
+    "stage": "stage.totalPath.sharedComputeContext",
+    "durationMs": 114.42,
     "recordsIn": 60000,
     "metadata": {
       "count": 60000,

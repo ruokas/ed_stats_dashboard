@@ -1,3 +1,5 @@
+import { writeTextToClipboard as writeTextToClipboardShared } from './clipboard.js';
+
 export function escapeCsvCell(value) {
   const text = String(value ?? '');
   if (/[",\n]/.test(text)) {
@@ -27,6 +29,7 @@ export function createTableDownloadHandler({
   setCopyButtonFeedback,
   defaultTitle = 'Lentelė',
   formatFilename,
+  writeTextToClipboard,
 }) {
   const resolveFilename = (title, ext) =>
     typeof formatFilename === 'function' ? formatFilename(title, ext) : `${title}.${ext}`;
@@ -52,6 +55,18 @@ export function createTableDownloadHandler({
       .join('\n');
     const title = getDatasetValue(button, 'tableTitle', defaultTitle);
     const format = getDatasetValue(button, 'tableDownload', 'csv');
+    const writeTableText =
+      typeof writeTextToClipboard === 'function' ? writeTextToClipboard : writeTextToClipboardShared;
+
+    if (format === 'copy') {
+      const ok = await writeTableText(rows);
+      setCopyButtonFeedback(
+        button,
+        ok ? 'Lentelė nukopijuota' : 'Nepavyko nukopijuoti lentelės',
+        ok ? 'success' : 'error'
+      );
+      return;
+    }
 
     if (format === 'csv') {
       const ok = triggerDownloadFromBlob(

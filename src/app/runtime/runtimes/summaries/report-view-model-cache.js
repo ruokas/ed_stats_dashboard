@@ -100,7 +100,11 @@ export function computeSummariesReportViewModels(
 
   const minGroupSize = parsePositiveIntOrDefault(dashboardState?.summariesReportsMinGroupSize, 100);
   const topN = parsePositiveIntOrDefault(dashboardState?.summariesReportsTopN, 15);
-  const pspcCrossDetailed = computeReferralHospitalizedShareByPspcDetailedFn(scopeMeta?.records || []);
+  const precomputedPspcCrossDetailed = reports?.pspcCrossDetailed;
+  const pspcCrossDetailed =
+    precomputedPspcCrossDetailed && Array.isArray(precomputedPspcCrossDetailed.rows)
+      ? precomputedPspcCrossDetailed
+      : computeReferralHospitalizedShareByPspcDetailedFn(scopeMeta?.records || []);
   const referralHospitalizedPspcAllRows = Array.isArray(pspcCrossDetailed?.rows)
     ? pspcCrossDetailed.rows
     : [];

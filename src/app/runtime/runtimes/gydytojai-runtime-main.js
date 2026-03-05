@@ -8,7 +8,6 @@ import {
   computeDoctorSpecialtyYearlySmallMultiples,
   computeDoctorVolumeVsLosScatter,
   computeDoctorYearlySmallMultiples,
-  createStatsComputeContext,
 } from '../../../data/stats.js';
 import { createDashboardState } from '../../../state/dashboardState.js';
 import { createSelectorsForPage } from '../../../state/selectors.js';
@@ -50,7 +49,6 @@ import {
 } from './gydytojai/annual-render.js';
 import { renderCharts } from './gydytojai/chart-render.js';
 import { setDoctorExportState } from './gydytojai/export-state.js';
-import { wireDoctorInteractions } from './gydytojai/interactions.js';
 import {
   applyActiveFiltersDisclosure,
   applyGydytojaiLayoutControls,
@@ -64,11 +62,15 @@ import {
   renderGydytojaiSectionSummaries,
   setGydytojaiSectionExpanded,
 } from './gydytojai/filter-layout.js';
+import { wireDoctorInteractions } from './gydytojai/interactions.js';
 import {
+  buildDoctorSpecialtyConfigSignature,
   getCachedDoctorAnnualModel,
   getCachedDoctorBaseModels,
   getCachedDoctorSpecialtyAnnualModel,
+  getCachedDoctorSpecialtyLeaderboardModel,
   getCachedDoctorSpecialtyModel,
+  getCachedDoctorStatsComputeContext,
 } from './gydytojai/model-cache.js';
 import {
   buildDoctorPageQuery,
@@ -461,7 +463,10 @@ export async function runGydytojaiRuntime(core) {
     const excludeUnmappedFromStats =
       dashboardState.doctorsSpecialtyUiEnabled &&
       specialtyModel.validation?.excludeUnmappedFromStats === true;
-    const statsComputeContext = createStatsComputeContext();
+    const specialtyConfigSignature = buildDoctorSpecialtyConfigSignature(settings);
+    const statsComputeContext = getCachedDoctorStatsComputeContext(dashboardState, records, {
+      specialtyConfigSignature,
+    });
     const sharedOptions = {
       ...options,
       specialtyFilter: specialtyFilterApplied,
@@ -474,10 +479,19 @@ export async function runGydytojaiRuntime(core) {
     const shouldComputeSpecialtyLeaderboard =
       dashboardState.doctorsSpecialtyUiEnabled && (specialtySectionExpanded || specialtyFilterForcesSection);
     const specialtyLeaderboard = shouldComputeSpecialtyLeaderboard
-      ? computeDoctorSpecialtyLeaderboard(records, {
-          ...sharedOptions,
-          specialtyFilter: 'all',
-        })
+      ? getCachedDoctorSpecialtyLeaderboardModel(
+          dashboardState,
+          records,
+          {
+            ...sharedOptions,
+            specialtyFilter: 'all',
+          },
+          () =>
+            computeDoctorSpecialtyLeaderboard(records, {
+              ...sharedOptions,
+              specialtyFilter: 'all',
+            })
+        )
       : null;
 
     const baseModels = getCachedDoctorBaseModels(dashboardState, records, sharedOptions, () => ({
@@ -639,13 +653,7 @@ export async function runGydytojaiRuntime(core) {
               ),
             },
           };
-          setDoctorExportState(
-            exportState,
-            selectors,
-            dashboardState,
-            chartModels,
-            buildDoctorFilterSummary
-          );
+          setDoctorExportState(exportState, selectors, dashboardState, chartModels, buildDoctorFilterSummary);
           chartLib = chartLib || (await loadChartJs());
           if (chartLib) {
             renderCharts(dashboardState, chartLib, selectors, chartModels);

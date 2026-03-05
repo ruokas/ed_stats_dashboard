@@ -1,3 +1,5 @@
+import { writeBlobToClipboard as writeBlobToClipboardShared } from '../../clipboard.js';
+
 export function createRowsCsv(headers, rows, escapeCsvCell) {
   const lines = [headers.map((cell) => escapeCsvCell(cell)).join(',')];
   (rows || []).forEach((row) => {
@@ -99,11 +101,22 @@ function buildCanvasWithTitle(sourceCanvas, titleText, backgroundColor = '#fffff
   return canvas;
 }
 
+function canvasToPngBlob(canvas) {
+  return new Promise((resolve) => {
+    if (!(canvas instanceof HTMLCanvasElement) || typeof canvas.toBlob !== 'function') {
+      resolve(null);
+      return;
+    }
+    canvas.toBlob((blob) => resolve(blob), 'image/png');
+  });
+}
+
 export function createReportExportClickHandler({
   exportState,
   getDatasetValue,
   setCopyButtonFeedback,
   writeTextToClipboard,
+  writeBlobToClipboard,
   formatExportFilename,
   escapeCsvCell,
 }) {
@@ -117,6 +130,24 @@ export function createReportExportClickHandler({
     const model = exportState[key];
     if (!model) {
       setCopyButtonFeedback(button, 'Nėra duomenų eksportui', 'error');
+      return;
+    }
+    if (format === 'copy' && model.target instanceof HTMLCanvasElement) {
+      const exportTitle = resolveReportTitle(button, model);
+      const exportBackground = resolveReportExportBackgroundColor(button);
+      const exportCanvas = buildCanvasWithTitle(model.target, exportTitle, exportBackground);
+      const blob = await canvasToPngBlob(exportCanvas);
+      let copied = false;
+      const writePngBlob =
+        typeof writeBlobToClipboard === 'function' ? writeBlobToClipboard : writeBlobToClipboardShared;
+      if (blob && typeof writePngBlob === 'function') {
+        copied = await writePngBlob(blob, 'image/png');
+      }
+      setCopyButtonFeedback(
+        button,
+        copied ? 'PNG nukopijuotas' : 'Nepavyko nukopijuoti PNG',
+        copied ? 'success' : 'error'
+      );
       return;
     }
     if (format === 'copy' || format === 'csv') {
