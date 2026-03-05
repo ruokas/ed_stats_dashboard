@@ -1,4 +1,5 @@
 import { createDoctorSpecialtyResolver } from '../../../../data/doctor-specialties.js';
+import { createStatsComputeContext } from '../../../../data/stats.js';
 
 export function buildDoctorSpecialtyConfigSignature(settings) {
   const raw = settings?.doctors?.specialties;
@@ -32,6 +33,28 @@ export function getCachedDoctorSpecialtyModel(dashboardState, settings, records)
     model,
   };
   return model;
+}
+
+export function getCachedDoctorStatsComputeContext(
+  dashboardState,
+  records,
+  { specialtyConfigSignature = 'disabled' } = {}
+) {
+  const cache = dashboardState?.doctorsStatsComputeContextCache || {};
+  if (
+    cache.recordsRef === records &&
+    cache.specialtyConfigSignature === specialtyConfigSignature &&
+    cache.context
+  ) {
+    return cache.context;
+  }
+  const context = createStatsComputeContext();
+  dashboardState.doctorsStatsComputeContextCache = {
+    recordsRef: records,
+    specialtyConfigSignature,
+    context,
+  };
+  return context;
 }
 
 export function buildDoctorAnnualModelCacheKey(dashboardState, sharedOptions) {
@@ -119,4 +142,28 @@ export function getCachedDoctorBaseModels(dashboardState, records, sharedOptions
   const models = computeFn();
   dashboardState.doctorsBaseModelsCache = { recordsRef: records, key, models };
   return models;
+}
+
+export function buildDoctorSpecialtyLeaderboardCacheKey(sharedOptions) {
+  return JSON.stringify({
+    year: sharedOptions?.yearFilter ?? 'all',
+    topN: sharedOptions?.topN ?? 15,
+    minCases: sharedOptions?.minCases ?? 30,
+    arrivalFilter: sharedOptions?.arrivalFilter ?? 'all',
+    dispositionFilter: sharedOptions?.dispositionFilter ?? 'all',
+    shiftFilter: sharedOptions?.shiftFilter ?? 'all',
+    requireMappedSpecialty: sharedOptions?.requireMappedSpecialty === true,
+    searchQuery: sharedOptions?.searchQuery ?? '',
+  });
+}
+
+export function getCachedDoctorSpecialtyLeaderboardModel(dashboardState, records, sharedOptions, computeFn) {
+  const key = buildDoctorSpecialtyLeaderboardCacheKey(sharedOptions);
+  const cache = dashboardState?.doctorsSpecialtyLeaderboardCache || {};
+  if (cache.recordsRef === records && cache.key === key && cache.model) {
+    return cache.model;
+  }
+  const model = computeFn();
+  dashboardState.doctorsSpecialtyLeaderboardCache = { recordsRef: records, key, model };
+  return model;
 }

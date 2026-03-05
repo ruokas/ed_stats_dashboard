@@ -332,6 +332,7 @@ export function getReportsComputation(dashboardState, settings, historicalRecord
       yearOptions: scopeMeta.yearOptions,
       shiftStartHour: scopeMeta.shiftStartHour,
     }),
+    pspcCrossDetailed: computeReferralHospitalizedShareByPspcDetailed(scopeMeta.records),
     pspcCorrelation: sharedReferralAndPspc.pspcCorrelation,
     pspcDistribution: sharedReferralAndPspc.pspcDistribution,
   };

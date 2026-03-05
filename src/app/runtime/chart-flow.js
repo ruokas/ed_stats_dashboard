@@ -29,6 +29,19 @@ export function createChartFlow({
   getSettings,
   onFiltersStateChange = null,
 }) {
+  const MAX_STAGE_CACHE_ENTRIES = 10;
+
+  function setBoundedCacheEntry(map, key, value) {
+    if (!(map instanceof Map)) {
+      return;
+    }
+    map.set(key, value);
+    while (map.size > MAX_STAGE_CACHE_ENTRIES) {
+      const oldestKey = map.keys().next().value;
+      map.delete(oldestKey);
+    }
+  }
+
   function ensureChartDerivedCache() {
     if (!dashboardState.chartData || typeof dashboardState.chartData !== 'object') {
       dashboardState.chartData = {};
@@ -43,7 +56,20 @@ export function createChartFlow({
         windowed: null,
         funnel: null,
         heatmap: null,
+        windowedByKey: new Map(),
+        funnelByKey: new Map(),
+        heatmapByKey: new Map(),
+        heatmapPrewarmKey: '',
       };
+    }
+    if (!(chartData.cache.windowedByKey instanceof Map)) {
+      chartData.cache.windowedByKey = new Map();
+    }
+    if (!(chartData.cache.funnelByKey instanceof Map)) {
+      chartData.cache.funnelByKey = new Map();
+    }
+    if (!(chartData.cache.heatmapByKey instanceof Map)) {
+      chartData.cache.heatmapByKey = new Map();
     }
     return chartData.cache;
   }
@@ -68,17 +94,11 @@ export function createChartFlow({
   function invalidateChartDerivedCache(reason = 'all') {
     const cache = ensureChartDerivedCache();
     if (reason === 'period') {
-      cache.windowed = null;
-      cache.funnel = null;
-      cache.heatmap = null;
       return;
     }
     if (reason === 'filters') {
       cache.filteredRecords = null;
       cache.filteredDaily = null;
-      cache.windowed = null;
-      cache.funnel = null;
-      cache.heatmap = null;
       return;
     }
     if (reason === 'year') {
@@ -86,9 +106,6 @@ export function createChartFlow({
       cache.yearDaily = null;
       cache.filteredRecords = null;
       cache.filteredDaily = null;
-      cache.windowed = null;
-      cache.funnel = null;
-      cache.heatmap = null;
       return;
     }
     cache.yearScoped = null;
@@ -98,6 +115,10 @@ export function createChartFlow({
     cache.windowed = null;
     cache.funnel = null;
     cache.heatmap = null;
+    cache.windowedByKey.clear();
+    cache.funnelByKey.clear();
+    cache.heatmapByKey.clear();
+    cache.heatmapPrewarmKey = '';
   }
 
   function notifyFiltersStateChange() {
@@ -473,23 +494,23 @@ export function createChartFlow({
     ].join('|');
     let scopedDaily;
     let scopedRecords;
+    const cachedWindowed = cache.windowedByKey.get(windowedStageKey);
     if (
-      cache.windowed &&
-      cache.windowed.filteredRecordsRef === filteredRecords &&
-      cache.windowed.filteredDailyRef === filteredDaily &&
-      cache.windowed.key === windowedStageKey
+      cachedWindowed &&
+      cachedWindowed.filteredRecordsRef === filteredRecords &&
+      cachedWindowed.filteredDailyRef === filteredDaily
     ) {
-      scopedDaily = cache.windowed.scopedDaily;
+      scopedDaily = cachedWindowed.scopedDaily;
       scopedRecords =
-        Array.isArray(cache.windowed.scopedRecords) || cache.windowed.scopedRecords === null
-          ? cache.windowed.scopedRecords
+        Array.isArray(cachedWindowed.scopedRecords) || cachedWindowed.scopedRecords === null
+          ? cachedWindowed.scopedRecords
           : null;
       if (needsWindowScopedRecords && !Array.isArray(scopedRecords)) {
         scopedRecords =
           normalized > 0 && !isYearMode
             ? filterRecordsByWindow(filteredRecords, normalized)
             : filteredRecords.slice();
-        cache.windowed.scopedRecords = scopedRecords;
+        cachedWindowed.scopedRecords = scopedRecords;
       }
     } else {
       scopedDaily = filteredDaily.slice();
@@ -508,47 +529,91 @@ export function createChartFlow({
       } else if (needsWindowScopedRecords) {
         scopedRecords = filteredRecords.slice();
       }
-      cache.windowed = {
+      const windowedEntry = {
         filteredRecordsRef: filteredRecords,
         filteredDailyRef: filteredDaily,
         key: windowedStageKey,
         scopedDaily,
         scopedRecords,
       };
+      cache.windowed = windowedEntry;
+      setBoundedCacheEntry(cache.windowedByKey, windowedStageKey, windowedEntry);
     }
 
     const funnelStageKey = [windowedStageKey, yearKey].join('|');
     let funnelData;
+    const cachedFunnel = cache.funnelByKey.get(funnelStageKey);
     if (
-      cache.funnel &&
-      cache.funnel.scopedDailyRef === scopedDaily &&
-      cache.funnel.fallbackDailyRef === fallbackDaily &&
-      cache.funnel.key === funnelStageKey
+      cachedFunnel &&
+      cachedFunnel.scopedDailyRef === scopedDaily &&
+      cachedFunnel.fallbackDailyRef === fallbackDaily
     ) {
-      funnelData = cache.funnel.value;
+      funnelData = cachedFunnel.value;
     } else {
       funnelData = computeFunnelStats(scopedDaily, selectedYear, fallbackDaily);
-      cache.funnel = {
+      const funnelEntry = {
         scopedDailyRef: scopedDaily,
         fallbackDailyRef: fallbackDaily,
         key: funnelStageKey,
         value: funnelData,
       };
+      cache.funnel = funnelEntry;
+      setBoundedCacheEntry(cache.funnelByKey, funnelStageKey, funnelEntry);
     }
 
+    const heatmapStageKey = `${windowedStageKey}|heatmap`;
     const shouldComputeHeatmap =
       dashboardState?.chartsSectionRenderFlags?.heatmapVisible === true ||
-      (cache.heatmap && cache.heatmap.scopedRecordsRef === scopedRecords);
+      cache.heatmapByKey.has(heatmapStageKey);
     let heatmapData = null;
     if (shouldComputeHeatmap) {
-      if (cache.heatmap && cache.heatmap.scopedRecordsRef === scopedRecords) {
-        heatmapData = cache.heatmap.value;
+      const cachedHeatmap = cache.heatmapByKey.get(heatmapStageKey);
+      if (cachedHeatmap && cachedHeatmap.scopedRecordsRef === scopedRecords) {
+        heatmapData = cachedHeatmap.value;
       } else {
         heatmapData = computeArrivalHeatmap(scopedRecords);
-        cache.heatmap = {
+        const heatmapEntry = {
+          key: heatmapStageKey,
           scopedRecordsRef: scopedRecords,
           value: heatmapData,
         };
+        cache.heatmap = heatmapEntry;
+        setBoundedCacheEntry(cache.heatmapByKey, heatmapStageKey, heatmapEntry);
+      }
+    }
+
+    if (dashboardState?.chartsSectionRenderFlags?.heatmapVisible === true) {
+      const prewarmKey = [yearKey, filtersKey, settingsKey, isYearMode ? 'year' : 'window'].join('|');
+      if (cache.heatmapPrewarmKey !== prewarmKey) {
+        cache.heatmapPrewarmKey = prewarmKey;
+        const scheduleIdle =
+          typeof window.requestIdleCallback === 'function'
+            ? window.requestIdleCallback.bind(window)
+            : (callback) => window.setTimeout(callback, 0);
+        scheduleIdle(() => {
+          [0, 30].forEach((prewarmPeriod) => {
+            const prewarmWindowedStageKey = [
+              filteredRecordsStageKey,
+              settingsKey,
+              String(prewarmPeriod),
+              isYearMode ? 'year' : 'window',
+            ].join('|');
+            const prewarmHeatmapStageKey = `${prewarmWindowedStageKey}|heatmap`;
+            if (cache.heatmapByKey.has(prewarmHeatmapStageKey)) {
+              return;
+            }
+            const prewarmRecords =
+              prewarmPeriod > 0 && !isYearMode
+                ? filterRecordsByWindow(filteredRecords, prewarmPeriod)
+                : filteredRecords.slice();
+            const prewarmed = computeArrivalHeatmap(prewarmRecords);
+            setBoundedCacheEntry(cache.heatmapByKey, prewarmHeatmapStageKey, {
+              key: prewarmHeatmapStageKey,
+              scopedRecordsRef: prewarmRecords,
+              value: prewarmed,
+            });
+          });
+        });
       }
     }
 
