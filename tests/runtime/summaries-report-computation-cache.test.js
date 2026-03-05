@@ -95,9 +95,9 @@ describe('report computation caching helpers', () => {
     const second = getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta);
 
     expect(first).toBe(second);
-    expect(mocks.computeDiagnosisFrequency).toHaveBeenCalledTimes(1);
+    expect(first.diagnosis.rows).toEqual([{ label: 'Nenurodyta', count: 1, share: 1 }]);
+    expect(first.z769Trend.rows).toEqual([{ year: 2023, total: 1, matched: 0, share: 0 }]);
     expect(mocks.computeAgeDiagnosisHeatmap).toHaveBeenCalledTimes(1);
-    expect(mocks.computeDiagnosisCodeYearlyShare).toHaveBeenCalledTimes(1);
     expect(mocks.computeReferralYearlyTrend).toHaveBeenCalledTimes(0);
     expect(mocks.computeReferralDispositionYearlyTrend).toHaveBeenCalledTimes(0);
     expect(mocks.computeReferralMonthlyHeatmap).toHaveBeenCalledTimes(0);
@@ -130,9 +130,8 @@ describe('report computation caching helpers', () => {
     const second = getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta);
 
     expect(second).toBe(first);
-    expect(mocks.computeDiagnosisFrequency).toHaveBeenCalledTimes(1);
+    expect(first.diagnosis.rows).toEqual([{ label: 'Nenurodyta', count: 1, share: 1 }]);
     expect(mocks.computeAgeDiagnosisHeatmap).toHaveBeenCalledTimes(1);
-    expect(mocks.computeDiagnosisCodeYearlyShare).toHaveBeenCalledTimes(1);
   });
 
   it('getScopedReportsMeta caches by year and invalidates on records reference change', () => {
