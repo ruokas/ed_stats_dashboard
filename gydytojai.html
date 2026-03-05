@@ -125,7 +125,8 @@
   <div class="section-band section-band--time-scale">
     <nav class="gydytojai-jump-nav summaries-jump-nav" aria-label="Gydytojų sekcijos">
       <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiHeading">Apžvalga</a>
-      <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiTablesHeading">Lentelės</a>
+      <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiTablesHeading">Gydytojų lentelė</a>
+      <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiSpecialtyHeading">Specialybių palyginimas</a>
       <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiAnnualCombinedHeading">Metinė dinamika</a>
       <a class="gydytojai-jump-nav__link summaries-jump-nav__link" href="#gydytojaiChartsHeading">Grafikai</a>
     </nav>
@@ -280,59 +281,6 @@
 
     </section>
 
-    <section id="gydytojaiSpecialtySection" class="section section--compact gydytojai-collapsible-section" aria-labelledby="gydytojaiSpecialtyHeading" data-section="gydytojai-specialty" hidden>
-      <div class="section__header">
-        <div class="section__heading">
-          <div class="section__title-row">
-            <h2 id="gydytojaiSpecialtyHeading" class="section__title">
-              <button type="button" class="gydytojai-section-toggle" id="gydytojaiSpecialtySectionToggle" data-gydytojai-section-toggle="specialty" aria-expanded="false" aria-controls="gydytojaiSpecialtySectionPanel">
-                <span class="gydytojai-section-toggle__title">Specialybių palyginimas</span>
-                <span id="gydytojaiSpecialtySectionSummary" class="gydytojai-section-toggle__summary">Išplėsti</span>
-              </button>
-            </h2>
-          </div>
-        </div>
-      </div>
-      <div id="gydytojaiSpecialtySectionPanel" data-gydytojai-section-panel="specialty" hidden>
-      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiSpecialtyHeading">
-        <table id="gydytojaiSpecialtyTable">
-          <caption class="sr-only">Specialybių palyginimo lentelė</caption>
-          <thead>
-            <tr>
-              <th scope="col" data-gydytojai-specialty-sort="alias">Specialybė</th>
-              <th scope="col" data-gydytojai-specialty-sort="count">Atvejai</th>
-              <th scope="col" data-gydytojai-specialty-sort="share">Dalis (%)</th>
-              <th scope="col" data-gydytojai-specialty-sort="avgLosHours">Vid. LOS (val.)</th>
-              <th scope="col" data-gydytojai-specialty-sort="medianLosHours">Mediana LOS (val.)</th>
-              <th scope="col" data-gydytojai-specialty-sort="hospitalizedShare">Hospitalizacija (%)</th>
-              <th scope="col" data-gydytojai-specialty-sort="losLt4Share">LOS &lt;4 (%)</th>
-              <th scope="col" data-gydytojai-specialty-sort="los4to8Share">LOS 4-8 (%)</th>
-              <th scope="col" data-gydytojai-specialty-sort="los8to16Share">LOS 8-16 (%)</th>
-              <th scope="col" data-gydytojai-specialty-sort="losGt16Share">LOS &gt;16 (%)</th>
-              <th scope="col" data-gydytojai-specialty-sort="nightShare">Naktiniai (%)</th>
-            </tr>
-          </thead>
-          <tbody id="gydytojaiSpecialtyBody">
-            <tr aria-hidden="true">
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p id="gydytojaiSpecialtyEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Specialybių palyginimui nepakanka duomenų.</p>
-      </div>
-    </section>
-
     <section class="section section--compact gydytojai-collapsible-section" aria-labelledby="gydytojaiTablesHeading" data-section="gydytojai-tables">
       <div class="section__header">
         <div class="section__heading">
@@ -408,6 +356,59 @@
           </tbody>
         </table>
       </div>
+      </div>
+    </section>
+
+    <section id="gydytojaiSpecialtySection" class="section section--compact gydytojai-collapsible-section" aria-labelledby="gydytojaiSpecialtyHeading" data-section="gydytojai-specialty">
+      <div class="section__header">
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="gydytojaiSpecialtyHeading" class="section__title">
+              <button type="button" class="gydytojai-section-toggle" id="gydytojaiSpecialtySectionToggle" data-gydytojai-section-toggle="specialty" aria-expanded="false" aria-controls="gydytojaiSpecialtySectionPanel">
+                <span class="gydytojai-section-toggle__title">Specialybių palyginimas</span>
+                <span id="gydytojaiSpecialtySectionSummary" class="gydytojai-section-toggle__summary">Išplėsti</span>
+              </button>
+            </h2>
+          </div>
+        </div>
+      </div>
+      <div id="gydytojaiSpecialtySectionPanel" data-gydytojai-section-panel="specialty" hidden>
+      <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="gydytojaiSpecialtyHeading">
+        <table id="gydytojaiSpecialtyTable">
+          <caption class="sr-only">Specialybių palyginimo lentelė</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-gydytojai-specialty-sort="alias">Specialybė</th>
+              <th scope="col" data-gydytojai-specialty-sort="count">Atvejai</th>
+              <th scope="col" data-gydytojai-specialty-sort="share">Dalis (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="avgLosHours">Vid. LOS (val.)</th>
+              <th scope="col" data-gydytojai-specialty-sort="medianLosHours">Mediana LOS (val.)</th>
+              <th scope="col" data-gydytojai-specialty-sort="hospitalizedShare">Hospitalizacija (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="losLt4Share">LOS &lt;4 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="los4to8Share">LOS 4-8 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="los8to16Share">LOS 8-16 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="losGt16Share">LOS &gt;16 (%)</th>
+              <th scope="col" data-gydytojai-specialty-sort="nightShare">Naktiniai (%)</th>
+            </tr>
+          </thead>
+          <tbody id="gydytojaiSpecialtyBody">
+            <tr aria-hidden="true">
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+              <td><span class="skeleton skeleton--detail skeleton--table-cell"></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="gydytojaiSpecialtyEmpty" class="summaries-reports-coverage" aria-live="polite" hidden>Specialybių palyginimui nepakanka duomenų.</p>
       </div>
     </section>
 
