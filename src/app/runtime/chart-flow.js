@@ -1,3 +1,15 @@
+import {
+  buildFilteredDailyStageKey,
+  buildFilteredRecordsStageKey,
+  buildFunnelStageKey,
+  buildHeatmapPrewarmKey,
+  buildHeatmapStageKey,
+  buildWindowedStageKey,
+  buildYearScopedStageKey,
+  invalidateChartDerivedCacheByReason,
+  setBoundedCacheEntry,
+} from './charts/chart-derived-cache-policy.js';
+
 export function createChartFlow({
   selectors,
   dashboardState,
@@ -29,19 +41,6 @@ export function createChartFlow({
   getSettings,
   onFiltersStateChange = null,
 }) {
-  const MAX_STAGE_CACHE_ENTRIES = 10;
-
-  function setBoundedCacheEntry(map, key, value) {
-    if (!(map instanceof Map)) {
-      return;
-    }
-    map.set(key, value);
-    while (map.size > MAX_STAGE_CACHE_ENTRIES) {
-      const oldestKey = map.keys().next().value;
-      map.delete(oldestKey);
-    }
-  }
-
   function ensureChartDerivedCache() {
     if (!dashboardState.chartData || typeof dashboardState.chartData !== 'object') {
       dashboardState.chartData = {};
@@ -93,32 +92,7 @@ export function createChartFlow({
 
   function invalidateChartDerivedCache(reason = 'all') {
     const cache = ensureChartDerivedCache();
-    if (reason === 'period') {
-      return;
-    }
-    if (reason === 'filters') {
-      cache.filteredRecords = null;
-      cache.filteredDaily = null;
-      return;
-    }
-    if (reason === 'year') {
-      cache.yearScoped = null;
-      cache.yearDaily = null;
-      cache.filteredRecords = null;
-      cache.filteredDaily = null;
-      return;
-    }
-    cache.yearScoped = null;
-    cache.yearDaily = null;
-    cache.filteredRecords = null;
-    cache.filteredDaily = null;
-    cache.windowed = null;
-    cache.funnel = null;
-    cache.heatmap = null;
-    cache.windowedByKey.clear();
-    cache.funnelByKey.clear();
-    cache.heatmapByKey.clear();
-    cache.heatmapPrewarmKey = '';
+    invalidateChartDerivedCacheByReason(cache, reason);
   }
 
   function notifyFiltersStateChange() {
@@ -398,7 +372,7 @@ export function createChartFlow({
     const filtersKey = buildChartFilterCacheKey(effectiveFilters);
     const settingsKey = buildChartSettingsCacheKey(settings);
 
-    const yearScopedStageKey = `${yearKey}`;
+    const yearScopedStageKey = buildYearScopedStageKey(yearKey);
     let yearScopedRecords;
     if (
       cache.yearScoped &&
@@ -432,7 +406,7 @@ export function createChartFlow({
       };
     }
 
-    const filteredRecordsStageKey = [yearKey, filtersKey].join('|');
+    const filteredRecordsStageKey = buildFilteredRecordsStageKey(yearKey, filtersKey);
     let filteredRecords;
     if (
       cache.filteredRecords &&
@@ -451,7 +425,7 @@ export function createChartFlow({
       };
     }
 
-    const filteredDailyStageKey = [filteredRecordsStageKey, settingsKey].join('|');
+    const filteredDailyStageKey = buildFilteredDailyStageKey(filteredRecordsStageKey, settingsKey);
     let filteredDailyFromRecords;
     if (
       cache.filteredDaily &&
@@ -486,12 +460,12 @@ export function createChartFlow({
       : filteredDailyFromRecords.length || hasActivePatientFilters
         ? filteredDailyFromRecords
         : fallbackDaily;
-    const windowedStageKey = [
+    const windowedStageKey = buildWindowedStageKey(
       filteredRecordsStageKey,
       settingsKey,
-      String(normalized),
-      isYearMode ? 'year' : 'window',
-    ].join('|');
+      normalized,
+      isYearMode ? 'year' : 'window'
+    );
     let scopedDaily;
     let scopedRecords;
     const cachedWindowed = cache.windowedByKey.get(windowedStageKey);
@@ -540,7 +514,7 @@ export function createChartFlow({
       setBoundedCacheEntry(cache.windowedByKey, windowedStageKey, windowedEntry);
     }
 
-    const funnelStageKey = [windowedStageKey, yearKey].join('|');
+    const funnelStageKey = buildFunnelStageKey(windowedStageKey, yearKey);
     let funnelData;
     const cachedFunnel = cache.funnelByKey.get(funnelStageKey);
     if (
@@ -561,7 +535,7 @@ export function createChartFlow({
       setBoundedCacheEntry(cache.funnelByKey, funnelStageKey, funnelEntry);
     }
 
-    const heatmapStageKey = `${windowedStageKey}|heatmap`;
+    const heatmapStageKey = buildHeatmapStageKey(windowedStageKey);
     const shouldComputeHeatmap =
       dashboardState?.chartsSectionRenderFlags?.heatmapVisible === true ||
       cache.heatmapByKey.has(heatmapStageKey);
@@ -583,7 +557,12 @@ export function createChartFlow({
     }
 
     if (dashboardState?.chartsSectionRenderFlags?.heatmapVisible === true) {
-      const prewarmKey = [yearKey, filtersKey, settingsKey, isYearMode ? 'year' : 'window'].join('|');
+      const prewarmKey = buildHeatmapPrewarmKey(
+        yearKey,
+        filtersKey,
+        settingsKey,
+        isYearMode ? 'year' : 'window'
+      );
       if (cache.heatmapPrewarmKey !== prewarmKey) {
         cache.heatmapPrewarmKey = prewarmKey;
         const scheduleIdle =
@@ -592,13 +571,13 @@ export function createChartFlow({
             : (callback) => window.setTimeout(callback, 0);
         scheduleIdle(() => {
           [0, 30].forEach((prewarmPeriod) => {
-            const prewarmWindowedStageKey = [
+            const prewarmWindowedStageKey = buildWindowedStageKey(
               filteredRecordsStageKey,
               settingsKey,
-              String(prewarmPeriod),
-              isYearMode ? 'year' : 'window',
-            ].join('|');
-            const prewarmHeatmapStageKey = `${prewarmWindowedStageKey}|heatmap`;
+              prewarmPeriod,
+              isYearMode ? 'year' : 'window'
+            );
+            const prewarmHeatmapStageKey = buildHeatmapStageKey(prewarmWindowedStageKey);
             if (cache.heatmapByKey.has(prewarmHeatmapStageKey)) {
               return;
             }
