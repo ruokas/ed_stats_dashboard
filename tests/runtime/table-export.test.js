@@ -10,6 +10,36 @@ describe('escapeCsvCell', () => {
 });
 
 describe('createTableDownloadHandler', () => {
+  it('copies table rows to clipboard when copy mode is requested', async () => {
+    document.body.innerHTML = `
+      <table id="tbl">
+        <tr><th>Col</th></tr>
+        <tr><td>Value</td></tr>
+      </table>
+      <button id="btn" data-table-target="#tbl" data-table-title="Test" data-table-download="copy"></button>
+    `;
+
+    const button = document.getElementById('btn');
+    const feedbackSpy = vi.fn();
+    const writeTextToClipboard = vi.fn().mockResolvedValue(true);
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    const handler = createTableDownloadHandler({
+      getDatasetValue,
+      setCopyButtonFeedback: feedbackSpy,
+      defaultTitle: 'Lentelė',
+      writeTextToClipboard,
+    });
+
+    await handler({ currentTarget: button });
+
+    expect(writeTextToClipboard).toHaveBeenCalledWith('Col\nValue');
+    expect(clickSpy).not.toHaveBeenCalled();
+    expect(feedbackSpy).toHaveBeenCalledWith(button, 'Lentelė nukopijuota', 'success');
+
+    clickSpy.mockRestore();
+  });
+
   it('exports table and reports success', async () => {
     document.body.innerHTML = `
       <table id="tbl">

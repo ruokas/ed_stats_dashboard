@@ -28,7 +28,7 @@ describe('summaries report export helpers', () => {
     expect(setCopyButtonFeedback).toHaveBeenCalledWith(button, 'Nėra duomenų eksportui', 'error');
   });
 
-  test('handler copies CSV content to clipboard for copy format', async () => {
+  test('handler copies CSV content to clipboard for copy format when canvas is missing', async () => {
     const button = document.createElement('button');
     const setCopyButtonFeedback = vi.fn();
     const writeTextToClipboard = vi.fn().mockResolvedValue(true);
@@ -52,6 +52,7 @@ describe('summaries report export helpers', () => {
       },
       setCopyButtonFeedback,
       writeTextToClipboard,
+      writeBlobToClipboard: vi.fn(),
       formatExportFilename: (title, ext) => `${title}.${ext}`,
       escapeCsvCell: (value) => String(value),
     });
@@ -85,6 +86,7 @@ describe('summaries report export helpers', () => {
       },
       setCopyButtonFeedback: vi.fn(),
       writeTextToClipboard,
+      writeBlobToClipboard: vi.fn(),
       formatExportFilename: (title, ext) => `${title}.${ext}`,
       escapeCsvCell: (value) => String(value),
     });
@@ -116,6 +118,7 @@ describe('summaries report export helpers', () => {
       },
       setCopyButtonFeedback,
       writeTextToClipboard,
+      writeBlobToClipboard: vi.fn(),
       formatExportFilename: (title, ext) => `${title}.${ext}`,
       escapeCsvCell: (value) => String(value),
     });
@@ -123,6 +126,74 @@ describe('summaries report export helpers', () => {
     await handler({ currentTarget: button });
     expect(writeTextToClipboard).toHaveBeenCalledWith('Diagnozė\nA00');
     expect(setCopyButtonFeedback).toHaveBeenCalledWith(button, 'Nepavyko nukopijuoti', 'error');
+  });
+
+  test('handler copies PNG to clipboard for copy mode when canvas export is available', async () => {
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+    const anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+      measureText: (value) => ({ width: String(value).length * 5 }),
+      fillRect: vi.fn(),
+      drawImage: vi.fn(),
+      fillText: vi.fn(),
+      set fillStyle(_value) {},
+      set font(_value) {},
+      set textAlign(_value) {},
+      set textBaseline(_value) {},
+    }));
+    HTMLCanvasElement.prototype.toBlob = vi.fn((callback) =>
+      callback(new Blob(['abc'], { type: 'image/png' }))
+    );
+
+    const reportCard = document.createElement('article');
+    reportCard.className = 'report-card';
+    reportCard.style.backgroundColor = 'rgb(250, 250, 250)';
+    reportCard.innerHTML = '<div class="report-card__head"><h4>Diagnozių kortelė</h4></div>';
+    const button = document.createElement('button');
+    reportCard.appendChild(button);
+    document.body.appendChild(reportCard);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 180;
+    reportCard.appendChild(canvas);
+
+    const setCopyButtonFeedback = vi.fn();
+    const writeBlobToClipboard = vi.fn().mockResolvedValue(true);
+    const handler = createReportExportClickHandler({
+      exportState: {
+        diagnosis: {
+          title: 'Diagnozės',
+          headers: ['Diagnozė'],
+          rows: [['A00']],
+          target: canvas,
+        },
+      },
+      getDatasetValue: (_element, key, fallback) => {
+        if (key === 'reportKey') {
+          return 'diagnosis';
+        }
+        if (key === 'reportExport') {
+          return 'copy';
+        }
+        return fallback;
+      },
+      setCopyButtonFeedback,
+      writeBlobToClipboard,
+      writeTextToClipboard: vi.fn(),
+      formatExportFilename: (title, ext) => `${title}.${ext}`,
+      escapeCsvCell: (value) => String(value),
+    });
+
+    await handler({ currentTarget: button });
+    expect(writeBlobToClipboard).toHaveBeenCalled();
+    expect(anchorClickSpy).not.toHaveBeenCalled();
+    expect(setCopyButtonFeedback).toHaveBeenCalledWith(button, 'PNG nukopijuotas', 'success');
+
+    anchorClickSpy.mockRestore();
+    HTMLCanvasElement.prototype.getContext = originalGetContext;
+    HTMLCanvasElement.prototype.toBlob = originalToBlob;
   });
 
   test('handler downloads png for canvas export mode', async () => {
@@ -175,6 +246,7 @@ describe('summaries report export helpers', () => {
       },
       setCopyButtonFeedback,
       writeTextToClipboard: vi.fn(),
+      writeBlobToClipboard: vi.fn(),
       formatExportFilename: (title, ext) => `${title}.${ext}`,
       escapeCsvCell: (value) => String(value),
     });
