@@ -1,0 +1,680 @@
+th[data-gydytojai-sort],
+th[data-gydytojai-specialty-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+th[data-gydytojai-sort].is-sort-active,
+th[data-gydytojai-specialty-sort].is-sort-active {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+th[data-gydytojai-sort][aria-sort],
+th[data-gydytojai-specialty-sort][aria-sort] {
+  white-space: nowrap;
+}
+
+th[data-gydytojai-sort][aria-sort]::after,
+th[data-gydytojai-specialty-sort][aria-sort]::after {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.8em;
+  color: var(--color-text);
+}
+
+th[data-gydytojai-sort][aria-sort="ascending"]::after,
+th[data-gydytojai-specialty-sort][aria-sort="ascending"]::after {
+  content: "↑";
+}
+
+th[data-gydytojai-sort][aria-sort="descending"]::after,
+th[data-gydytojai-specialty-sort][aria-sort="descending"]::after {
+  content: "↓";
+}
+
+.gydytojai-loading {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-alt);
+}
+
+#gydytojaiSpecialtyWarning[hidden] {
+  display: none !important;
+}
+
+.gydytojai-loading__label {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.gydytojai-loading__grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 10px;
+}
+
+.gydytojai-loading__charts {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#gydytojaiCoverage {
+  min-height: 1.4rem;
+}
+
+.gydytojai-annual {
+  margin-bottom: 18px;
+}
+
+.gydytojai-annual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.gydytojai-annual-card__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.gydytojai-annual-card__meta strong {
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.gydytojai-annual-card__chart {
+  width: 100%;
+}
+
+.gydytojai-annual-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.gydytojai-annual-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gydytojai-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 6px;
+}
+
+.gydytojai-filter-panel {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-soft);
+}
+
+.gydytojai-filter-panel[data-loading="true"] {
+  position: relative;
+}
+
+.gydytojai-filter-panel[data-loading="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.06) 25%,
+    rgba(148, 163, 184, 0.14) 37%,
+    rgba(148, 163, 184, 0.06) 63%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.gydytojai-filter-panel[data-loading="true"] .gydytojai-filter-panel__primary,
+.gydytojai-filter-panel[data-loading="true"] .gydytojai-filter-panel__secondary {
+  opacity: 0.72;
+}
+
+.gydytojai-filter-panel[hidden] {
+  display: none !important;
+}
+
+.gydytojai-filter-panel__head {
+  margin-bottom: 10px;
+}
+
+.gydytojai-filter-panel__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gydytojai-filter-panel__title {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.gydytojai-loading-inline {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.gydytojai-loading-inline[hidden] {
+  display: none;
+}
+
+.gydytojai-filter-panel__subtitle {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.gydytojai-filter-panel__primary .summaries-reports-controls__field {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+}
+
+.gydytojai-filter-panel__primary .summaries-reports-controls__field > span:first-child {
+  display: block;
+  min-height: 1.1rem;
+  line-height: 1.1rem;
+}
+
+.gydytojai-filter-panel select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 6px 10px;
+  font: inherit;
+}
+
+.gydytojai-filter-panel select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.gydytojai-filter-panel__secondary {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--color-border) 65%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.gydytojai-filter-panel__secondary-title {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  min-width: 110px;
+}
+
+.gydytojai-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gydytojai-filters-main-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gydytojai-filters-actions-row {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.5fr) auto auto minmax(240px, 1.5fr);
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+
+.gydytojai-filters-search-field input {
+  width: 100%;
+  min-height: 34px;
+}
+
+.gydytojai-filters-advanced-toggle-field .chip-button,
+.gydytojai-filters-reset-field .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+#gydytojaiFiltersAdvancedToggle,
+#gydytojaiActiveFiltersToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#gydytojaiFiltersAdvancedToggle::after,
+#gydytojaiActiveFiltersToggle::after {
+  content: "▾";
+  font-size: 0.78em;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+#gydytojaiFiltersAdvancedToggle[aria-expanded="true"]::after,
+#gydytojaiActiveFiltersToggle[aria-expanded="true"]::after {
+  transform: rotate(180deg);
+}
+
+.gydytojai-filters-summary-field {
+  justify-content: flex-start;
+}
+
+.gydytojai-active-filters-summary {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  min-height: 1.2em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gydytojai-active-filters-panel {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface) 65%, transparent);
+}
+
+.gydytojai-active-filters-panel[hidden] {
+  display: none !important;
+}
+
+.gydytojai-jump-nav {
+  position: sticky;
+  top: var(--summaries-jump-sticky-top, 56px);
+  z-index: 6;
+}
+
+#gydytojaiHeading,
+#gydytojaiSpecialtyHeading,
+#gydytojaiTablesHeading,
+#gydytojaiAnnualCombinedHeading,
+#gydytojaiChartsHeading {
+  scroll-margin-top: calc(
+    var(--summaries-jump-sticky-top, 56px) + var(--summaries-jump-nav-height, 48px) + 12px
+  );
+}
+
+.gydytojai-filter-panel .chip-button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.gydytojai-filter-chip {
+  font-size: 0.82rem;
+}
+
+.gydytojai-onboarding {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+}
+
+.gydytojai-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-alt);
+  color: inherit;
+  font: inherit;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.gydytojai-section-toggle:hover,
+.gydytojai-section-toggle:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.gydytojai-section-toggle__title {
+  font-weight: 700;
+}
+
+.gydytojai-section-toggle__summary {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gydytojai-section-toggle__summary::after {
+  content: "▾";
+  transition: transform 160ms ease;
+}
+
+.gydytojai-section-toggle.is-expanded .gydytojai-section-toggle__summary::after {
+  transform: rotate(180deg);
+}
+
+.gydytojai-collapsible-section .section__header + [data-gydytojai-section-panel] {
+  margin-top: 8px;
+}
+
+.gydytojai-annual-subview {
+  margin: 8px 0 10px;
+}
+
+.gydytojai-annual-subsection {
+  margin-top: 0;
+}
+
+.gydytojai-annual-subsection > .section__header {
+  display: none;
+}
+
+.gydytojai-filters-advanced {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  display: grid;
+  gap: 8px;
+}
+
+.gydytojai-filters-advanced[hidden] {
+  display: none !important;
+}
+
+.gydytojai-filters-advanced__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.gydytojai-filters-advanced__title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.gydytojai-filters-advanced__summary {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.gydytojai-filters-advanced__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.gydytojai-filters-advanced-toggle-field {
+  align-self: stretch;
+}
+
+@media (max-width: 1100px) {
+  .gydytojai-filters-main-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gydytojai-filters-actions-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gydytojai-filters-search-field,
+  .gydytojai-filters-summary-field {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .gydytojai-filters-main-row,
+  .gydytojai-filters-actions-row,
+  .gydytojai-filters-advanced__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gydytojai-filters-advanced__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.gydytojai-chart-toggles {
+  margin-bottom: 12px;
+}
+
+.gydytojai-chart-toggles__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gydytojai-charts-more-actions {
+  margin-top: 10px;
+}
+
+.gydytojai-chart-chip.is-muted {
+  opacity: 0.5;
+}
+
+.gydytojai-annual-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.gydytojai-annual-suggestion {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.gydytojai-annual-suggestion:hover,
+.gydytojai-annual-suggestion:focus-visible,
+.gydytojai-annual-suggestion.is-active {
+  border-color: var(--color-accent-soft);
+  background: var(--color-accent-soft);
+  outline: none;
+}
+
+.table-percent {
+  margin-left: 6px;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.table-flag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  margin-left: 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.table-flag--weekend {
+  background: var(--color-weekend);
+  color: #fff;
+}
+
+.table-row--summary td {
+  background: var(--color-surface-alt);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table-row--weekend td:first-child {
+  color: var(--color-weekend);
+  font-weight: 600;
+}
+
+.table-cell--heat {
+  background-clip: padding-box;
+  border-radius: 10px;
+}
+.table-cell--max {
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 1px rgba(47, 91, 234, 0.35);
+}
+.table-cell--min {
+  background: rgba(148, 163, 184, 0.12);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(37, 99, 235, 0.03);
+}
+
+tbody tr:hover {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+body[data-theme="dark"] tbody tr:nth-child(even) {
+  background: rgba(96, 165, 250, 0.08);
+}
+
+body[data-theme="dark"] tbody tr:hover {
+  background: rgba(96, 165, 250, 0.16);
+}
+
+.yearly-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.yearly-toggle__icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  color: var(--color-text-muted);
+}
+
+.yearly-toggle[aria-expanded="true"] .yearly-toggle__icon {
+  transform: rotate(90deg);
+  color: var(--color-accent);
+}
+
+.yearly-child-row td {
+  background: rgba(37, 99, 235, 0.04);
+  font-size: 0.92rem;
+}
+
+.yearly-child-row td:first-child {
+  padding-left: 36px;
+  color: var(--color-text-muted);
+}
+
+.yearly-month-label {
+  display: inline-block;
+  font-weight: 600;
+}
+
+body[data-theme="dark"] .yearly-child-row td {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.yearly-incomplete {
+  margin-left: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--color-warning);
+  text-transform: none;
+}
+
+.table-row--selectable {
+  cursor: pointer;
+  outline: none;
+}
+
+.table-row--selectable:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.table-row--selected {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+  background: rgba(37, 99, 235, 0.14);
+}
+
+body[data-theme="dark"] .table-row--selected {
+  background: rgba(96, 165, 250, 0.2);
+}

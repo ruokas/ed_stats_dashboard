@@ -92,15 +92,12 @@ export function createKpiFlow(env) {
   let lastShiftHourlyRenderToken = 0;
   let lastKpiUiRenderSignature = null;
 
-  function ensureKpiSkeletonHidden() {
+  const ensureKpiSkeletonHidden = () => {
     if (typeof hideKpiSkeleton === 'function') hideKpiSkeleton();
-  }
-  function shouldShowKpiLoadingSkeleton() {
-    return shouldShowKpiLoadingSkeletonHelper({ selectors, getDatasetValue });
-  }
-  function notifyKpiStateChange() {
-    notifyKpiStateChangeHelper({ dashboardState, onKpiStateChange });
-  }
+  };
+  const shouldShowKpiLoadingSkeleton = () =>
+    shouldShowKpiLoadingSkeletonHelper({ selectors, getDatasetValue });
+  const notifyKpiStateChange = () => notifyKpiStateChangeHelper({ dashboardState, onKpiStateChange });
 
   function beginLastShiftHourlyLoading(options = {}) {
     return beginLastShiftHourlyLoadingHelper(
@@ -628,54 +625,38 @@ export function createKpiFlow(env) {
     }
   }
 
-  function createUiHandlerDeps() {
-    return {
-      selectors,
-      dashboardState,
-      KPI_FILTER_LABELS,
-      getDatasetValue,
-      getSettings,
-      getDefaultKpiFilters,
-      normalizeKpiDateValue,
-      normalizeLastShiftMetric,
-      collectAvailableShiftDateKeys,
-      getSummaryModeSelectedDateRecordsCache,
-      resolveDateFilteredData,
-      recomputeLastShiftHourlyViaWorkerDetail,
-      renderLastShiftHourlyChart,
-      notifyKpiStateChange,
-      updateKpiSubtitle,
-      refreshKpiWindowOptions,
-      syncKpiSegmentedButtons,
-      syncKpiFilterControls,
-      syncKpiDateNavigation,
-      syncLastShiftHourlyMetricButtons,
-      applyKpiFiltersAndRender,
-    };
-  }
+  const createUiHandlerDeps = () => ({
+    selectors,
+    dashboardState,
+    KPI_FILTER_LABELS,
+    getDatasetValue,
+    getSettings,
+    getDefaultKpiFilters,
+    normalizeKpiDateValue,
+    normalizeLastShiftMetric,
+    collectAvailableShiftDateKeys,
+    getSummaryModeSelectedDateRecordsCache,
+    resolveDateFilteredData,
+    recomputeLastShiftHourlyViaWorkerDetail,
+    renderLastShiftHourlyChart,
+    notifyKpiStateChange,
+    updateKpiSubtitle,
+    refreshKpiWindowOptions,
+    syncKpiSegmentedButtons,
+    syncKpiFilterControls,
+    syncKpiDateNavigation,
+    syncLastShiftHourlyMetricButtons,
+    applyKpiFiltersAndRender,
+  });
 
-  function handleKpiFilterInput(event) {
-    handleKpiFilterInputUi(createUiHandlerDeps(), event);
-  }
+  const handleKpiFilterInput = (event) => handleKpiFilterInputUi(createUiHandlerDeps(), event);
+  const handleKpiDateInput = (event) => handleKpiDateInputUi(createUiHandlerDeps(), event);
+  const handleKpiDateClear = () => handleKpiDateClearUi(createUiHandlerDeps());
+  const handleKpiDateStep = (step) => handleKpiDateStepUi(createUiHandlerDeps(), step);
+  const handleKpiSegmentedClick = (event) => handleKpiSegmentedClickUi(createUiHandlerDeps(), event);
 
-  function handleKpiDateInput(event) {
-    handleKpiDateInputUi(createUiHandlerDeps(), event);
-  }
-
-  function handleKpiDateClear() {
-    handleKpiDateClearUi(createUiHandlerDeps());
-  }
-
-  function handleKpiDateStep(step) {
-    handleKpiDateStepUi(createUiHandlerDeps(), step);
-  }
-
-  function handleKpiSegmentedClick(event) {
-    handleKpiSegmentedClickUi(createUiHandlerDeps(), event);
-  }
-
-  async function recomputeLastShiftHourlyViaWorkerDetail() {
-    return recomputeLastShiftHourlyViaWorkerDetailHelper({
+  const recomputeLastShiftHourlyViaWorkerDetail = async () =>
+    recomputeLastShiftHourlyViaWorkerDetailHelper({
       runKpiWorkerDetailJob,
       sanitizeKpiFilters,
       dashboardState,
@@ -694,19 +675,10 @@ export function createKpiFlow(env) {
       renderLastShiftHourlySeriesInfo,
       describeError,
     });
-  }
-
-  function handleLastShiftMetricClick(event) {
-    handleLastShiftMetricClickUi(createUiHandlerDeps(), event);
-  }
-
-  function syncLastShiftHourlyMetricButtons() {
-    syncLastShiftHourlyMetricButtonsUi(createUiHandlerDeps());
-  }
-
-  function resetKpiFilters({ fromKeyboard } = {}) {
+  const handleLastShiftMetricClick = (event) => handleLastShiftMetricClickUi(createUiHandlerDeps(), event);
+  const syncLastShiftHourlyMetricButtons = () => syncLastShiftHourlyMetricButtonsUi(createUiHandlerDeps());
+  const resetKpiFilters = ({ fromKeyboard } = {}) =>
     resetKpiFiltersUi(createUiHandlerDeps(), { fromKeyboard });
-  }
 
   return {
     refreshKpiWindowOptions,

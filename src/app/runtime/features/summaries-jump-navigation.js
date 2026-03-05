@@ -6,6 +6,11 @@ export function initSummariesJumpNavigation(selectors) {
   if (!(nav instanceof HTMLElement) || !links.length) {
     return;
   }
+  // Keep jump nav sticky even when page-specific CSS loads out of order.
+  if (getComputedStyle(nav).position !== 'sticky') {
+    nav.style.position = 'sticky';
+    nav.style.top = 'var(--summaries-jump-sticky-top, 56px)';
+  }
 
   const items = links
     .map((link) => {
@@ -68,6 +73,17 @@ export function initSummariesJumpNavigation(selectors) {
     }
   };
 
+  const settleScrollAfterLayout = (target) => {
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    [180, 420].forEach((delayMs) => {
+      window.setTimeout(() => {
+        scrollToSectionStart(target, { smooth: false, updateHash: false });
+      }, delayMs);
+    });
+  };
+
   const findLinkByHash = (hash) => {
     if (!hash || hash === '#') {
       return null;
@@ -88,6 +104,7 @@ export function initSummariesJumpNavigation(selectors) {
       event.preventDefault();
       applyActiveLink(link);
       scrollToSectionStart(target, { smooth: true, updateHash: true });
+      settleScrollAfterLayout(target);
     });
   });
 
