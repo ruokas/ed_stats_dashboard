@@ -53,6 +53,162 @@ export function buildHeatmapFilterCacheKey(year, filters = {}) {
   return [yearKey, normalized.arrival, normalized.disposition, normalized.cardType].join('|');
 }
 
+function createEmptyHeatmapAggregate() {
+  return {
+    aggregates: Array.from({ length: 7 }, () =>
+      Array.from({ length: 24 }, () => ({
+        arrivals: 0,
+        discharges: 0,
+        hospitalized: 0,
+        durationSum: 0,
+        durationCount: 0,
+      }))
+    ),
+    weekdayDays: {
+      arrivals: Array.from({ length: 7 }, () => new Set()),
+      discharges: Array.from({ length: 7 }, () => new Set()),
+      hospitalized: Array.from({ length: 7 }, () => new Set()),
+    },
+  };
+}
+
+function getHeatmapCompatibleFilterKeys(record) {
+  const arrivalKeys = ['all', record?.ems ? 'ems' : 'self'];
+  const dispositionKeys = ['all', record?.hospitalized ? 'hospitalized' : 'discharged'];
+  const cardTypeValue = String(record?.cardType || '').trim();
+  const cardTypeKeys = ['all'];
+  if (cardTypeValue === 't' || cardTypeValue === 'tr' || cardTypeValue === 'ch') {
+    cardTypeKeys.push(cardTypeValue);
+  }
+  const keys = [];
+  for (let arrivalIndex = 0; arrivalIndex < arrivalKeys.length; arrivalIndex += 1) {
+    for (let dispositionIndex = 0; dispositionIndex < dispositionKeys.length; dispositionIndex += 1) {
+      for (let cardIndex = 0; cardIndex < cardTypeKeys.length; cardIndex += 1) {
+        keys.push(
+          buildHeatmapFilterCacheKey(null, {
+            arrival: arrivalKeys[arrivalIndex],
+            disposition: dispositionKeys[dispositionIndex],
+            cardType: cardTypeKeys[cardIndex],
+          }).replace(/^all\|/, '')
+        );
+      }
+    }
+  }
+  return keys;
+}
+
+function formatLocalDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+}
+
+function buildHeatmapAggregateByFilter(records) {
+  const filterAggs = new Map();
+  const getAgg = (filterKey) => {
+    if (!filterAggs.has(filterKey)) {
+      filterAggs.set(filterKey, createEmptyHeatmapAggregate());
+    }
+    return filterAggs.get(filterKey);
+  };
+  const list = Array.isArray(records) ? records : [];
+  for (let index = 0; index < list.length; index += 1) {
+    const entry = list[index];
+    const compatibleKeys = getHeatmapCompatibleFilterKeys(entry);
+    const arrival =
+      entry?.arrival instanceof Date && !Number.isNaN(entry.arrival.getTime()) ? entry.arrival : null;
+    const discharge =
+      entry?.discharge instanceof Date && !Number.isNaN(entry.discharge.getTime()) ? entry.discharge : null;
+    const arrivalHasTime =
+      entry?.arrivalHasTime === true ||
+      (entry?.arrivalHasTime == null &&
+        arrival &&
+        (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+    const dischargeHasTime =
+      entry?.dischargeHasTime === true ||
+      (entry?.dischargeHasTime == null &&
+        discharge &&
+        (discharge.getHours() || discharge.getMinutes() || discharge.getSeconds()));
+
+    for (let keyIndex = 0; keyIndex < compatibleKeys.length; keyIndex += 1) {
+      const target = getAgg(compatibleKeys[keyIndex]);
+      if (arrival && arrivalHasTime) {
+        const dayIndex = (arrival.getDay() + 6) % 7;
+        const hour = arrival.getHours();
+        if (hour >= 0 && hour <= 23) {
+          const cell = target.aggregates[dayIndex][hour];
+          cell.arrivals += 1;
+          target.weekdayDays.arrivals[dayIndex].add(formatLocalDateKey(arrival));
+          if (discharge) {
+            const duration = (discharge.getTime() - arrival.getTime()) / 3600000;
+            if (Number.isFinite(duration) && duration >= 0 && duration <= 24) {
+              cell.durationSum += duration;
+              cell.durationCount += 1;
+            }
+          }
+        }
+      }
+      if (discharge && dischargeHasTime) {
+        const dayIndex = (discharge.getDay() + 6) % 7;
+        const hour = discharge.getHours();
+        if (hour >= 0 && hour <= 23) {
+          const cell = target.aggregates[dayIndex][hour];
+          const dateKey = formatLocalDateKey(discharge);
+          if (entry?.hospitalized) {
+            cell.hospitalized += 1;
+            target.weekdayDays.hospitalized[dayIndex].add(dateKey);
+          } else {
+            cell.discharges += 1;
+            target.weekdayDays.discharges[dayIndex].add(dateKey);
+          }
+        }
+      }
+    }
+  }
+  return filterAggs;
+}
+
+function materializeHeatmapMetricsFromAggregate(aggregate) {
+  const createMatrix = () => Array.from({ length: 7 }, () => Array(24).fill(0));
+  const metrics = {
+    arrivals: { matrix: createMatrix(), max: 0, hasData: false },
+    discharges: { matrix: createMatrix(), max: 0, hasData: false },
+    hospitalized: { matrix: createMatrix(), max: 0, hasData: false },
+    avgDuration: { matrix: createMatrix(), counts: createMatrix(), max: 0, hasData: false, samples: 0 },
+  };
+  if (!aggregate) {
+    return { metrics };
+  }
+  aggregate.aggregates.forEach((row, dayIndex) => {
+    const arrivalsDiv = aggregate.weekdayDays.arrivals[dayIndex].size || 1;
+    const dischargesDiv = aggregate.weekdayDays.discharges[dayIndex].size || 1;
+    const hospitalizedDiv = aggregate.weekdayDays.hospitalized[dayIndex].size || 1;
+    row.forEach((cell, hourIndex) => {
+      if (cell.arrivals > 0) metrics.arrivals.hasData = true;
+      if (cell.discharges > 0) metrics.discharges.hasData = true;
+      if (cell.hospitalized > 0) metrics.hospitalized.hasData = true;
+      if (cell.durationCount > 0) {
+        metrics.avgDuration.hasData = true;
+        metrics.avgDuration.samples += cell.durationCount;
+      }
+      const arrivalsAvg = arrivalsDiv ? cell.arrivals / arrivalsDiv : 0;
+      const dischargesAvg = dischargesDiv ? cell.discharges / dischargesDiv : 0;
+      const hospitalizedAvg = hospitalizedDiv ? cell.hospitalized / hospitalizedDiv : 0;
+      const averageDuration = cell.durationCount > 0 ? cell.durationSum / cell.durationCount : 0;
+      metrics.arrivals.matrix[dayIndex][hourIndex] = arrivalsAvg;
+      metrics.discharges.matrix[dayIndex][hourIndex] = dischargesAvg;
+      metrics.hospitalized.matrix[dayIndex][hourIndex] = hospitalizedAvg;
+      metrics.avgDuration.matrix[dayIndex][hourIndex] = averageDuration;
+      metrics.avgDuration.counts[dayIndex][hourIndex] = cell.durationCount;
+      if (arrivalsAvg > metrics.arrivals.max) metrics.arrivals.max = arrivalsAvg;
+      if (dischargesAvg > metrics.discharges.max) metrics.discharges.max = dischargesAvg;
+      if (hospitalizedAvg > metrics.hospitalized.max) metrics.hospitalized.max = hospitalizedAvg;
+      if (averageDuration > metrics.avgDuration.max) metrics.avgDuration.max = averageDuration;
+    });
+  });
+  return { metrics };
+}
+
 export function resolveCachedHeatmapFilterData({
   chartData,
   rawRecords,
@@ -90,9 +246,30 @@ export function resolveCachedHeatmapFilterData({
     safeChartData.heatmap = cached;
     return cached;
   }
-  const yearScoped = filterRecordsByYearFn(baseRecords, selectedYear);
-  const filtered = filterRecordsByHeatmapFiltersFn(yearScoped, normalizedFilters);
-  const data = computeArrivalHeatmapFn(filtered);
+  if (
+    !safeChartData.heatmapAggregateCache ||
+    typeof safeChartData.heatmapAggregateCache !== 'object' ||
+    safeChartData.heatmapAggregateCache.recordsRef !== baseRecords
+  ) {
+    safeChartData.heatmapAggregateCache = {
+      recordsRef: baseRecords,
+      byYearKey: new Map(),
+    };
+  }
+  const yearKey = Number.isFinite(selectedYear) ? String(selectedYear) : 'all';
+  let filterAggs = safeChartData.heatmapAggregateCache.byYearKey.get(yearKey);
+  if (!(filterAggs instanceof Map)) {
+    const yearScoped = filterRecordsByYearFn(baseRecords, selectedYear);
+    filterAggs = buildHeatmapAggregateByFilter(yearScoped);
+    safeChartData.heatmapAggregateCache.byYearKey.set(yearKey, filterAggs);
+  }
+  const normalizedFilterKey = buildHeatmapFilterCacheKey(null, normalizedFilters).replace(/^all\|/, '');
+  let data = materializeHeatmapMetricsFromAggregate(filterAggs.get(normalizedFilterKey) || null);
+  if (!(data && typeof data === 'object' && data.metrics)) {
+    const yearScoped = filterRecordsByYearFn(baseRecords, selectedYear);
+    const filtered = filterRecordsByHeatmapFiltersFn(yearScoped, normalizedFilters);
+    data = computeArrivalHeatmapFn(filtered);
+  }
   activeCache.byKey.set(key, data);
   safeChartData.heatmap = data;
   return data;

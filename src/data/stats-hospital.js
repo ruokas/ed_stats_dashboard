@@ -59,19 +59,8 @@ function normalizeCategoryValue(value) {
   return text || 'Nenurodyta';
 }
 
-export function computeHospitalizedByDepartmentAndSpsStay(records, options = {}) {
-  const list = Array.isArray(records) ? records : [];
-  const calculations = options?.calculations || {};
-  const defaultSettings = options?.defaultSettings || {};
-  const shiftStartHour = resolveShiftStartHour(calculations, defaultSettings);
-  const yearFilter = options?.yearFilter == null ? 'all' : options.yearFilter;
-  const bucketMap = new Map();
-  const yearSet = new Set();
-  let totalHospitalized = 0;
-  let unclassifiedCount = 0;
-
-  const bucketOrder = ['lt4', '4to8', '8to16', 'gt16', 'unclassified'];
-  const createBucket = (department) => ({
+function createDepartmentBucket(department) {
+  return {
     department,
     count_lt4: 0,
     count_4_8: 0,
@@ -79,22 +68,50 @@ export function computeHospitalizedByDepartmentAndSpsStay(records, options = {})
     count_gt16: 0,
     count_unclassified: 0,
     total: 0,
-  });
-  const resolveBucket = (durationHours) => {
-    if (!Number.isFinite(durationHours) || durationHours < 0 || durationHours > 24) {
-      return 'unclassified';
-    }
-    if (durationHours < 4) {
-      return 'lt4';
-    }
-    if (durationHours < 8) {
-      return '4to8';
-    }
-    if (durationHours < 16) {
-      return '8to16';
-    }
-    return 'gt16';
   };
+}
+
+function resolveStayBucket(durationHours) {
+  if (!Number.isFinite(durationHours) || durationHours < 0 || durationHours > 24) {
+    return 'unclassified';
+  }
+  if (durationHours < 4) {
+    return 'lt4';
+  }
+  if (durationHours < 8) {
+    return '4to8';
+  }
+  if (durationHours < 16) {
+    return '8to16';
+  }
+  return 'gt16';
+}
+
+function applyBucketIncrement(target, durationBucket) {
+  if (durationBucket === 'lt4') {
+    target.count_lt4 += 1;
+  } else if (durationBucket === '4to8') {
+    target.count_4_8 += 1;
+  } else if (durationBucket === '8to16') {
+    target.count_8_16 += 1;
+  } else if (durationBucket === 'gt16') {
+    target.count_gt16 += 1;
+  } else {
+    target.count_unclassified += 1;
+  }
+  target.total += 1;
+}
+
+const bucketOrder = ['lt4', '4to8', '8to16', 'gt16', 'unclassified'];
+
+export function buildHospitalByDepartmentStayAggregate(records, options = {}) {
+  const list = Array.isArray(records) ? records : [];
+  const calculations = options?.calculations || {};
+  const defaultSettings = options?.defaultSettings || {};
+  const shiftStartHour = resolveShiftStartHour(calculations, defaultSettings);
+  const byYear = Object.create(null);
+  let totalHospitalized = 0;
+  let unclassifiedCount = 0;
 
   list.forEach((record) => {
     if (record?.hospitalized !== true) {
@@ -105,41 +122,63 @@ export function computeHospitalizedByDepartmentAndSpsStay(records, options = {})
       return;
     }
     const year = dateKey.slice(0, 4);
-    if (year) {
-      yearSet.add(year);
-    }
-    if (yearFilter !== 'all' && String(yearFilter) !== year) {
+    if (!/^\d{4}$/.test(year)) {
       return;
     }
     const department = normalizeCategoryValue(record?.department);
-    if (!bucketMap.has(department)) {
-      bucketMap.set(department, createBucket(department));
+    if (!byYear[year]) {
+      byYear[year] = Object.create(null);
     }
-    const bucket = bucketMap.get(department);
+    if (!byYear[year][department]) {
+      byYear[year][department] = createDepartmentBucket(department);
+    }
+    const bucket = byYear[year][department];
     const hasArrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
     const hasDischarge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
     const durationHours =
       hasArrival && hasDischarge
         ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
         : Number.NaN;
-    const durationBucket = resolveBucket(durationHours);
-
-    if (durationBucket === 'lt4') {
-      bucket.count_lt4 += 1;
-    } else if (durationBucket === '4to8') {
-      bucket.count_4_8 += 1;
-    } else if (durationBucket === '8to16') {
-      bucket.count_8_16 += 1;
-    } else if (durationBucket === 'gt16') {
-      bucket.count_gt16 += 1;
-    } else {
-      bucket.count_unclassified += 1;
+    const durationBucket = resolveStayBucket(durationHours);
+    applyBucketIncrement(bucket, durationBucket);
+    if (durationBucket === 'unclassified') {
       unclassifiedCount += 1;
     }
-
-    bucket.total += 1;
     totalHospitalized += 1;
   });
+
+  return {
+    byYear,
+    meta: {
+      totalHospitalized,
+      unclassifiedCount,
+    },
+  };
+}
+
+function deriveHospitalizedByDepartmentRows(aggregate, yearFilter = 'all') {
+  const byYear = aggregate?.byYear && typeof aggregate.byYear === 'object' ? aggregate.byYear : {};
+  const yearKeys = Object.keys(byYear).filter((year) => /^\d{4}$/.test(year));
+  const selectedYear = yearFilter == null ? 'all' : String(yearFilter);
+  const targetYears =
+    selectedYear === 'all' ? yearKeys : yearKeys.includes(selectedYear) ? [selectedYear] : [];
+  const bucketMap = new Map();
+  for (let yearIndex = 0; yearIndex < targetYears.length; yearIndex += 1) {
+    const yearData = byYear[targetYears[yearIndex]] || {};
+    Object.keys(yearData).forEach((department) => {
+      if (!bucketMap.has(department)) {
+        bucketMap.set(department, createDepartmentBucket(department));
+      }
+      const target = bucketMap.get(department);
+      const source = yearData[department] || {};
+      target.count_lt4 += Number(source.count_lt4 || 0);
+      target.count_4_8 += Number(source.count_4_8 || 0);
+      target.count_8_16 += Number(source.count_8_16 || 0);
+      target.count_gt16 += Number(source.count_gt16 || 0);
+      target.count_unclassified += Number(source.count_unclassified || 0);
+      target.total += Number(source.total || 0);
+    });
+  }
 
   const rows = Array.from(bucketMap.values())
     .map((row) => {
@@ -175,7 +214,7 @@ export function computeHospitalizedByDepartmentAndSpsStay(records, options = {})
     }
   );
 
-  const yearOptions = Array.from(yearSet)
+  const yearOptions = Array.from(yearKeys)
     .filter((year) => /^\d{4}$/.test(year))
     .map((year) => Number.parseInt(year, 10))
     .filter((year) => Number.isFinite(year))
@@ -185,88 +224,55 @@ export function computeHospitalizedByDepartmentAndSpsStay(records, options = {})
     rows,
     totals,
     yearOptions,
+  };
+}
+
+export function computeHospitalizedByDepartmentAndSpsStay(records, options = {}) {
+  const yearFilter = options?.yearFilter == null ? 'all' : options.yearFilter;
+  const aggregate =
+    options?.hospitalByDeptStayAgg && typeof options.hospitalByDeptStayAgg === 'object'
+      ? options.hospitalByDeptStayAgg
+      : buildHospitalByDepartmentStayAggregate(records, options);
+  const derived = deriveHospitalizedByDepartmentRows(aggregate, yearFilter);
+
+  return {
+    rows: derived.rows,
+    totals: derived.totals,
+    yearOptions: derived.yearOptions,
     bucketOrder,
+    aggregate,
     meta: {
-      totalHospitalized,
-      unclassifiedCount,
+      totalHospitalized: Number(aggregate?.meta?.totalHospitalized || 0),
+      unclassifiedCount: Number(aggregate?.meta?.unclassifiedCount || 0),
     },
   };
 }
 
 export function computeHospitalizedDepartmentYearlyStayTrend(records, options = {}) {
-  const list = Array.isArray(records) ? records : [];
-  const calculations = options?.calculations || {};
-  const defaultSettings = options?.defaultSettings || {};
-  const shiftStartHour = resolveShiftStartHour(calculations, defaultSettings);
+  const aggregate =
+    options?.hospitalByDeptStayAgg && typeof options.hospitalByDeptStayAgg === 'object'
+      ? options.hospitalByDeptStayAgg
+      : buildHospitalByDepartmentStayAggregate(records, options);
   const departmentTarget = normalizeCategoryValue(options?.department);
-  const yearly = new Map();
-
-  const resolveBucket = (durationHours) => {
-    if (!Number.isFinite(durationHours) || durationHours < 0 || durationHours > 24) {
-      return 'unclassified';
-    }
-    if (durationHours < 4) {
-      return 'lt4';
-    }
-    if (durationHours < 8) {
-      return '4to8';
-    }
-    if (durationHours < 16) {
-      return '8to16';
-    }
-    return 'gt16';
-  };
-
-  list.forEach((record) => {
-    if (record?.hospitalized !== true) {
-      return;
-    }
-    const department = normalizeCategoryValue(record?.department);
-    if (department !== departmentTarget) {
-      return;
-    }
-    const dateKey = getRecordShiftDateKey(record, shiftStartHour);
-    if (!dateKey) {
-      return;
-    }
-    const year = Number.parseInt(dateKey.slice(0, 4), 10);
-    if (!Number.isFinite(year)) {
-      return;
-    }
-    if (!yearly.has(year)) {
-      yearly.set(year, {
-        year,
-        count_lt4: 0,
-        count_4_8: 0,
-        count_8_16: 0,
-        count_gt16: 0,
-        count_unclassified: 0,
-        total: 0,
-      });
-    }
-    const bucket = yearly.get(year);
-    const hasArrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
-    const hasDischarge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
-    const durationHours =
-      hasArrival && hasDischarge
-        ? (record.discharge.getTime() - record.arrival.getTime()) / 3600000
-        : Number.NaN;
-    const durationBucket = resolveBucket(durationHours);
-    if (durationBucket === 'lt4') {
-      bucket.count_lt4 += 1;
-    } else if (durationBucket === '4to8') {
-      bucket.count_4_8 += 1;
-    } else if (durationBucket === '8to16') {
-      bucket.count_8_16 += 1;
-    } else if (durationBucket === 'gt16') {
-      bucket.count_gt16 += 1;
-    } else {
-      bucket.count_unclassified += 1;
-    }
-    bucket.total += 1;
-  });
-
-  const rows = Array.from(yearly.values())
+  const byYear = aggregate?.byYear && typeof aggregate.byYear === 'object' ? aggregate.byYear : {};
+  const rows = Object.keys(byYear)
+    .filter((yearKey) => /^\d{4}$/.test(String(yearKey)))
+    .map((yearKey) => {
+      const source = byYear[yearKey]?.[departmentTarget] || null;
+      if (!source) {
+        return null;
+      }
+      return {
+        year: Number.parseInt(yearKey, 10),
+        count_lt4: Number(source.count_lt4 || 0),
+        count_4_8: Number(source.count_4_8 || 0),
+        count_8_16: Number(source.count_8_16 || 0),
+        count_gt16: Number(source.count_gt16 || 0),
+        count_unclassified: Number(source.count_unclassified || 0),
+        total: Number(source.total || 0),
+      };
+    })
+    .filter(Boolean)
     .sort((a, b) => a.year - b.year)
     .map((entry) => {
       const total = Number(entry.total || 0);

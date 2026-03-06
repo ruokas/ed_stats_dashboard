@@ -70,6 +70,7 @@ export async function performDashboardLoadAttempt(deps) {
     scheduleDeferredFullRecordsHydration,
     scheduleDeferredHydration,
     supportsDeferredMainHydration,
+    shouldAutoScheduleDeferredMainHydration,
     runNumber,
     settings,
     renderEdDashboard,
@@ -445,6 +446,21 @@ export async function performDashboardLoadAttempt(deps) {
       runNumber,
       settings,
       deferredHydration: dataset.deferredHydration,
+    });
+  }
+  if (
+    shouldFetchMainData &&
+    !cachedDailyStats &&
+    supportsDeferredMainHydration &&
+    shouldAutoScheduleDeferredMainHydration &&
+    mainDataFetchProfile !== 'full'
+  ) {
+    scheduleDeferredHydration({
+      runNumber,
+      settings,
+      workerProgressReporter,
+      primaryChunkReporter: null,
+      historicalChunkReporter: null,
     });
   }
   if ((shouldFetchMainData && shouldDeferHistoricalOnThisLoad) || shouldDeferAllMainDataOnThisLoad) {

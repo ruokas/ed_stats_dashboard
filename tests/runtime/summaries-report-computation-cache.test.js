@@ -35,6 +35,7 @@ vi.mock('../../src/data/stats.js', () => ({
 import {
   extractHistoricalRecords,
   getReportsComputation,
+  getReportsComputationAsync,
   getScopedReportsMeta,
 } from '../../src/app/runtime/runtimes/summaries/report-computation.js';
 
@@ -162,6 +163,66 @@ describe('report computation caching helpers', () => {
     expect(primary.ageDiagnosisHeatmap.rows).toEqual([]);
     expect(primary.referralDispositionYearly.rows).toEqual([]);
     expect(primary.referralMonthlyHeatmap.rows).toEqual([]);
+  });
+
+  it('getReportsComputationAsync can reuse worker-produced secondary reports on large scopes', async () => {
+    const historicalRecords = Array.from({ length: 600 }, (_unused, index) => ({
+      referral: 'su siuntimu',
+      pspc: `Vilniaus PSPC ${index % 3}`,
+      hospitalized: index % 2 === 0,
+      ageBand: '18-34',
+      arrival: new Date('2024-01-01T08:00:00'),
+    }));
+    const dashboardState = {
+      summariesReportsYear: 'all',
+      summariesReportsTopN: 15,
+      summariesReportsMinGroupSize: 100,
+      summariesReferralPspcSort: 'desc',
+      summariesReportsComputationCache: { recordsRef: null, key: '', value: null },
+    };
+    const settings = { calculations: { shiftStartHour: 7 } };
+    const scopeMeta = {
+      records: historicalRecords,
+      yearOptions: ['2024'],
+      yearFilter: 'all',
+      shiftStartHour: 7,
+      coverage: { total: 600, extended: 600 },
+    };
+    const workerReports = {
+      diagnosis: { rows: [], totalPatients: 600 },
+      z769Trend: { rows: [] },
+      referralTrend: { rows: [] },
+      ageDiagnosisHeatmap: {
+        rows: [{ ageBand: '18-34', diagnosisGroup: 'A', count: 1, ageTotal: 1, percent: 100 }],
+      },
+      referralDispositionYearly: { rows: [{ year: 2024, totals: {}, values: {} }] },
+      referralMonthlyHeatmap: {
+        rows: [{ year: 2024, month: 1, total: 1, referred: 1, share: 1 }],
+        years: [2024],
+        months: [1],
+      },
+      referralHospitalizedByPspcYearly: { rows: [], years: ['2024'] },
+      pspcCrossDetailed: { rows: [] },
+      pspcCorrelation: { rows: [] },
+      pspcDistribution: { rows: [] },
+    };
+    const runSummariesWorkerJobFn = vi.fn(async () => ({
+      reports: workerReports,
+      viewModels: { referralPercentRows: [] },
+    }));
+
+    const result = await getReportsComputationAsync(
+      dashboardState,
+      settings,
+      historicalRecords,
+      scopeMeta,
+      { stage: 'all' },
+      { useWorker: true, runSummariesWorkerJobFn }
+    );
+
+    expect(result).toBe(workerReports);
+    expect(runSummariesWorkerJobFn).toHaveBeenCalledTimes(1);
+    expect(result.ageDiagnosisHeatmap.rows).toHaveLength(1);
   });
 
   it('getScopedReportsMeta caches by year and invalidates on records reference change', () => {

@@ -10,6 +10,7 @@ importScripts(
   `./data-worker-transforms.js?v=${WORKER_HELPERS_VERSION}`,
   `./data-worker-ed-transform.js?v=${WORKER_HELPERS_VERSION}`,
   `./data-worker-kpi-filters.js?v=${WORKER_HELPERS_VERSION}`,
+  `./data-worker-main-summaries-transform.js?v=${WORKER_HELPERS_VERSION}`,
   `./data-worker-protocol.js?v=${WORKER_HELPERS_VERSION}`
 );
 

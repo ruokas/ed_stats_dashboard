@@ -105,6 +105,8 @@ export function normalizeCreateDataFlowArgs(env = {}) {
     renderYearlyTable: env.renderYearlyTable ?? dataHooks.renderYearlyTable ?? noop,
     supportsDeferredHistoricalHydration:
       env.supportsDeferredHistoricalHydration ?? dataHooks.supportsDeferredHistoricalHydration,
+    autoScheduleDeferredHistoricalHydration:
+      env.autoScheduleDeferredHistoricalHydration ?? dataHooks.autoScheduleDeferredHistoricalHydration,
     supportsPartialPrimaryRender: env.supportsPartialPrimaryRender ?? dataHooks.supportsPartialPrimaryRender,
     requiresFullRecordsForPrimary:
       env.requiresFullRecordsForPrimary ?? dataHooks.requiresFullRecordsForPrimary,

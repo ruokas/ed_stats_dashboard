@@ -20,6 +20,12 @@ export function createMainDataHandlers(context) {
   let dataWorkerCounter = 0;
   let deferredHydrationCounter = 0;
   let kpiWorkerDatasetHandle = null;
+  let derivedSeriesCache = {
+    dailyRef: null,
+    key: '',
+    monthlyStats: [],
+    yearlyStats: [],
+  };
   let kpiWorkerDatasetRefs = {
     records: null,
     dailyStats: null,
@@ -73,6 +79,22 @@ export function createMainDataHandlers(context) {
       pairs.push(`${key}:${String(normalized)}`);
     }
     return pairs.join('|');
+  }
+
+  function getDailySeriesCacheKey(dailyStats) {
+    const list = Array.isArray(dailyStats) ? dailyStats : [];
+    if (!list.length) {
+      return 'empty';
+    }
+    const first = list[0] || {};
+    const last = list[list.length - 1] || {};
+    return [
+      list.length,
+      String(first?.date || ''),
+      Number(first?.count || 0),
+      String(last?.date || ''),
+      Number(last?.count || 0),
+    ].join('|');
   }
 
   function normalizeFetchProfile(value) {
@@ -1271,9 +1293,25 @@ export function createMainDataHandlers(context) {
       hasBaseDaily && (!needsFullRecords || combinedRecords.length === baseRecords.length)
         ? baseDaily.slice()
         : computeDailyStats(combinedRecords, settings?.calculations, DEFAULT_SETTINGS);
-    const combinedYearlyStats = includeYearlyStats
-      ? computeYearlyStats(computeMonthlyStats(combinedDaily.slice()))
-      : [];
+    const dailySeriesKey = getDailySeriesCacheKey(combinedDaily);
+    let combinedMonthlyStats = [];
+    let combinedYearlyStats = [];
+    if (
+      derivedSeriesCache.dailyRef === combinedDaily ||
+      (derivedSeriesCache.key && derivedSeriesCache.key === dailySeriesKey)
+    ) {
+      combinedMonthlyStats = derivedSeriesCache.monthlyStats;
+      combinedYearlyStats = includeYearlyStats ? derivedSeriesCache.yearlyStats : [];
+    } else {
+      combinedMonthlyStats = computeMonthlyStats(combinedDaily.slice());
+      combinedYearlyStats = includeYearlyStats ? computeYearlyStats(combinedMonthlyStats.slice()) : [];
+      derivedSeriesCache = {
+        dailyRef: combinedDaily,
+        key: dailySeriesKey,
+        monthlyStats: combinedMonthlyStats,
+        yearlyStats: combinedYearlyStats,
+      };
+    }
 
     return {
       records: needsFullRecords ? combinedRecords : [],

@@ -52,6 +52,9 @@ export function createSummariesDataFlowConfig({
     },
     dataHooks: {
       fetchData,
+      fetchProfile: 'daily-lite',
+      supportsDeferredHistoricalHydration: true,
+      autoScheduleDeferredHistoricalHydration: false,
       perfMonitor,
       describeCacheMeta,
       describeError,

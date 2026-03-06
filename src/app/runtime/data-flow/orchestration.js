@@ -171,6 +171,21 @@ export async function applyHydratedMainDataset(
     const recentDailyStats = deps.filterDailyStatsByWindow(lastWindowDailyStats, effectiveRecentDays);
     deps.renderRecentTable(recentDailyStats);
   }
+  if (deps.activeConfig.monthly || deps.activeConfig.yearly) {
+    const monthlyStats = deps.computeMonthlyStats(dailyStats);
+    deps.dashboardState.monthly.all = monthlyStats;
+    const monthsLimit = 12;
+    const limitedMonthlyStats =
+      Number.isFinite(monthsLimit) && monthsLimit > 0 ? monthlyStats.slice(-monthsLimit) : monthlyStats;
+    if (deps.activeConfig.monthly) {
+      deps.renderMonthlyTable(limitedMonthlyStats);
+    }
+    deps.dashboardState.monthly.window = limitedMonthlyStats;
+    const yearlyStats = deps.computeYearlyStats(monthlyStats);
+    if (deps.activeConfig.yearly) {
+      deps.renderYearlyTable(yearlyStats);
+    }
+  }
   if (deps.activeConfig.ed && deps.dashboardState.ed) {
     await deps.renderEdDashboard(deps.dashboardState.ed);
   }

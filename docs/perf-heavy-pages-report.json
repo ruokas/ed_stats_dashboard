@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-05T18:30:43.708Z",
+  "generatedAt": "2026-03-05T19:09:36.108Z",
   "rubric": {
     "measuredMedianWeight": 30,
     "measuredP95Weight": 10,
@@ -10,6 +10,42 @@
   },
   "ranked": {
     "charts": [
+      {
+        "id": "charts-heatmap-cache-miss",
+        "title": "Heatmap filtered recomputation on cache miss (secondary charts)",
+        "stages": ["stage.heatmapFilterCache.cold", "stage.heatmapFilterCache.warm"],
+        "where": ["src/app/runtime/runtimes/charts-runtime-impl.js:193", "src/charts/index.js:198"],
+        "why": "Heatmap generation scans filtered records and builds 7x24 matrices; cache hits are cheap, but misses are expensive and user-visible when opening/changing secondary charts.",
+        "fixes": [
+          "Precompute per-year/per-filter buckets or incremental aggregates for heatmap metrics.",
+          "Warm likely heatmap variants after primary charts become visible using idle time.",
+          "Persist heatmap cache keys across equivalent filter toggles where only unrelated controls changed."
+        ],
+        "frequency": 4,
+        "visible": 4,
+        "sensitivity": 4,
+        "leverage": 3,
+        "impact": "Medium-High",
+        "confidence": "High",
+        "score": 86,
+        "representativeScenario": "large",
+        "evidenceRows": [
+          {
+            "stage": "stage.heatmapFilterCache.cold",
+            "scenario": "large",
+            "medianMs": 422.15,
+            "p95Ms": 501.81,
+            "runs": 6
+          },
+          {
+            "stage": "stage.heatmapFilterCache.warm",
+            "scenario": "large",
+            "medianMs": 0.01,
+            "p95Ms": 0.02,
+            "runs": 6
+          }
+        ]
+      },
       {
         "id": "charts-data-prep-recompute",
         "title": "Chart data preparation and cache invalidation recomputation",
@@ -32,71 +68,35 @@
         "leverage": 5,
         "impact": "High",
         "confidence": "High",
-        "score": 100,
+        "score": 70,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "stage.prepareChartData.cold",
             "scenario": "large",
-            "medianMs": 1.07,
-            "p95Ms": 2.04,
+            "medianMs": 1.3,
+            "p95Ms": 2.38,
             "runs": 6
           },
           {
             "stage": "stage.prepareChartData.filterChange",
             "scenario": "large",
-            "medianMs": 29.41,
-            "p95Ms": 31.2,
+            "medianMs": 41.28,
+            "p95Ms": 49.54,
             "runs": 6
           },
           {
             "stage": "stage.prepareChartData.reset",
             "scenario": "large",
-            "medianMs": 1.02,
-            "p95Ms": 1.6,
+            "medianMs": 1.35,
+            "p95Ms": 1.85,
             "runs": 6
           },
           {
             "stage": "data.computeDailyStats",
             "scenario": "large",
-            "medianMs": 71.5,
-            "p95Ms": 81.39,
-            "runs": 6
-          }
-        ]
-      },
-      {
-        "id": "charts-heatmap-cache-miss",
-        "title": "Heatmap filtered recomputation on cache miss (secondary charts)",
-        "stages": ["stage.heatmapFilterCache.cold", "stage.heatmapFilterCache.warm"],
-        "where": ["src/app/runtime/runtimes/charts-runtime-impl.js:193", "src/charts/index.js:198"],
-        "why": "Heatmap generation scans filtered records and builds 7x24 matrices; cache hits are cheap, but misses are expensive and user-visible when opening/changing secondary charts.",
-        "fixes": [
-          "Precompute per-year/per-filter buckets or incremental aggregates for heatmap metrics.",
-          "Warm likely heatmap variants after primary charts become visible using idle time.",
-          "Persist heatmap cache keys across equivalent filter toggles where only unrelated controls changed."
-        ],
-        "frequency": 4,
-        "visible": 4,
-        "sensitivity": 4,
-        "leverage": 3,
-        "impact": "Medium-High",
-        "confidence": "High",
-        "score": 55.7,
-        "representativeScenario": "large",
-        "evidenceRows": [
-          {
-            "stage": "stage.heatmapFilterCache.cold",
-            "scenario": "large",
-            "medianMs": 16.47,
-            "p95Ms": 22.37,
-            "runs": 6
-          },
-          {
-            "stage": "stage.heatmapFilterCache.warm",
-            "scenario": "large",
-            "medianMs": 0.02,
-            "p95Ms": 0.03,
+            "medianMs": 107.88,
+            "p95Ms": 118.71,
             "runs": 6
           }
         ]
@@ -122,21 +122,21 @@
         "leverage": 3,
         "impact": "Medium",
         "confidence": "High",
-        "score": 53.4,
+        "score": 41.9,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "stage.hospitalTable.computeStats",
             "scenario": "large",
-            "medianMs": 27.33,
-            "p95Ms": 32.25,
+            "medianMs": 41.61,
+            "p95Ms": 48.05,
             "runs": 6
           },
           {
             "stage": "stage.hospitalTable.departmentTrend",
             "scenario": "large",
-            "medianMs": 5.41,
-            "p95Ms": 6.25,
+            "medianMs": 40.58,
+            "p95Ms": 47.78,
             "runs": 6
           }
         ]
@@ -176,29 +176,29 @@
           {
             "stage": "reports.computeAll.cold",
             "scenario": "large",
-            "medianMs": 153.05,
-            "p95Ms": 162.46,
+            "medianMs": 148.63,
+            "p95Ms": 168.31,
             "runs": 5
           },
           {
             "stage": "reports.fn.computeAgeDiagnosisHeatmap",
             "scenario": "large",
-            "medianMs": 33.79,
-            "p95Ms": 42.69,
+            "medianMs": 40.26,
+            "p95Ms": 80.82,
             "runs": 5
           },
           {
             "stage": "reports.fn.computeReferralMonthlyHeatmap",
             "scenario": "large",
-            "medianMs": 37.65,
-            "p95Ms": 47.79,
+            "medianMs": 44.92,
+            "p95Ms": 57.5,
             "runs": 5
           },
           {
             "stage": "reports.fn.computeReferralDispositionYearlyTrend",
             "scenario": "large",
-            "medianMs": 44,
-            "p95Ms": 58.36,
+            "medianMs": 52.59,
+            "p95Ms": 60.01,
             "runs": 5
           }
         ]
@@ -229,28 +229,28 @@
         "leverage": 4,
         "impact": "Medium-High",
         "confidence": "Medium-High",
-        "score": 86,
+        "score": 88,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "reports.scopeMeta",
             "scenario": "large",
-            "medianMs": 45.06,
-            "p95Ms": 52.4,
+            "medianMs": 45.14,
+            "p95Ms": 48.28,
             "runs": 5
           },
           {
             "stage": "reports.viewModels.mainThread.cold",
             "scenario": "large",
-            "medianMs": 10.82,
-            "p95Ms": 11.98,
+            "medianMs": 9.49,
+            "p95Ms": 13.84,
             "runs": 5
           },
           {
             "stage": "reports.recompute.filterChange",
             "scenario": "large",
-            "medianMs": 142.81,
-            "p95Ms": 176.15,
+            "medianMs": 150.07,
+            "p95Ms": 177.19,
             "runs": 5
           }
         ]
@@ -276,28 +276,28 @@
         "leverage": 3,
         "impact": "High",
         "confidence": "High",
-        "score": 78.5,
+        "score": 79.9,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "yearly.renderTableDom",
             "scenario": "large",
-            "medianMs": 5.83,
-            "p95Ms": 6.96,
+            "medianMs": 6.31,
+            "p95Ms": 9.94,
             "runs": 5
           },
           {
             "stage": "yearly.renderTableDom.expandFirstYear",
             "scenario": "large",
-            "medianMs": 3.05,
-            "p95Ms": 16.51,
+            "medianMs": 3.25,
+            "p95Ms": 3.7,
             "runs": 5
           },
           {
             "stage": "yearly.computeDailyStats",
             "scenario": "large",
-            "medianMs": 99.45,
-            "p95Ms": 123.03,
+            "medianMs": 103.99,
+            "p95Ms": 126.85,
             "runs": 5
           }
         ]
@@ -331,22 +331,22 @@
           {
             "stage": "stage.totalPath.baseline",
             "scenario": "large",
-            "medianMs": 1902.68,
-            "p95Ms": 1966.43,
+            "medianMs": 2818.23,
+            "p95Ms": 3020.13,
             "runs": 6
           },
           {
             "stage": "stage.totalPath.sharedComputeContext",
             "scenario": "large",
-            "medianMs": 142.33,
-            "p95Ms": 169.68,
+            "medianMs": 128.78,
+            "p95Ms": 134.27,
             "runs": 6
           },
           {
             "stage": "stage.stats.leaderboard",
             "scenario": "large",
-            "medianMs": 289.01,
-            "p95Ms": 351.52,
+            "medianMs": 399.91,
+            "p95Ms": 489.36,
             "runs": 6
           }
         ]
@@ -379,35 +379,35 @@
         "leverage": 4,
         "impact": "High",
         "confidence": "High",
-        "score": 50.5,
+        "score": 50.4,
         "representativeScenario": "large",
         "evidenceRows": [
           {
             "stage": "stage.specialtyResolver.init",
             "scenario": "large",
-            "medianMs": 50.98,
-            "p95Ms": 66.53,
+            "medianMs": 73.06,
+            "p95Ms": 83.98,
             "runs": 6
           },
           {
             "stage": "stage.specialty.leaderboard",
             "scenario": "large",
-            "medianMs": 116.82,
-            "p95Ms": 122.38,
+            "medianMs": 166.58,
+            "p95Ms": 184.5,
             "runs": 6
           },
           {
             "stage": "stage.specialty.yearlySmallMultiples",
             "scenario": "large",
-            "medianMs": 57.96,
-            "p95Ms": 70.21,
+            "medianMs": 87.88,
+            "p95Ms": 104.02,
             "runs": 6
           },
           {
             "stage": "stage.specialty.yearlyComposition",
             "scenario": "large",
-            "medianMs": 0.05,
-            "p95Ms": 0.1,
+            "medianMs": 0.08,
+            "p95Ms": 0.17,
             "runs": 6
           }
         ]
@@ -435,8 +435,8 @@
           {
             "stage": "stage.stats.yearlySmallMultiples",
             "scenario": "large",
-            "medianMs": 65.66,
-            "p95Ms": 70.69,
+            "medianMs": 97.18,
+            "p95Ms": 116.96,
             "runs": 6
           }
         ]

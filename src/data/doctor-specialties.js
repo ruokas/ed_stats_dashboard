@@ -3,6 +3,8 @@ function toTrimmedString(value) {
 }
 
 const SPECIALTY_PLACEHOLDER_ID = '__SET_SPECIALTY_ID__';
+const compiledSettingsCache = new WeakMap();
+const validatedResolverCache = new WeakMap();
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -163,27 +165,99 @@ function validateAndCompileAssignments(assignmentsInput, groupsById) {
       }
     }
 
-    assignmentsByDoctor.set(doctorNorm, periods);
+    assignmentsByDoctor.set(doctorNorm, {
+      periods,
+      startKeys: periods.map((period) => period.from),
+    });
   });
 
   return { assignmentsByDoctor, errors };
 }
 
 function findSpecialtyForDate(periods, dateKey) {
-  if (!Array.isArray(periods) || !dateKey) {
+  const periodList = Array.isArray(periods)
+    ? periods
+    : Array.isArray(periods?.periods)
+      ? periods.periods
+      : null;
+  const startKeys = Array.isArray(periods?.startKeys) ? periods.startKeys : null;
+  if (!Array.isArray(periodList) || !dateKey) {
     return null;
   }
-  for (let index = 0; index < periods.length; index += 1) {
-    const period = periods[index];
-    if (compareDateKeys(dateKey, period.from) < 0) {
-      continue;
+  if (Array.isArray(startKeys) && startKeys.length === periodList.length) {
+    let low = 0;
+    let high = startKeys.length - 1;
+    let candidateIndex = -1;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      if (compareDateKeys(startKeys[mid], dateKey) <= 0) {
+        candidateIndex = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
     }
-    if (period.to != null && compareDateKeys(dateKey, period.to) > 0) {
-      continue;
+    if (candidateIndex >= 0) {
+      const period = periodList[candidateIndex];
+      if (period && (period.to == null || compareDateKeys(dateKey, period.to) <= 0)) {
+        return period;
+      }
     }
-    return period;
+    return null;
+  }
+  for (let index = 0; index < periodList.length; index += 1) {
+    const period = periodList[index];
+    if (compareDateKeys(dateKey, period.from) >= 0) {
+      if (period.to == null || compareDateKeys(dateKey, period.to) <= 0) {
+        return period;
+      }
+    }
   }
   return null;
+}
+
+function getCompiledSpecialtyConfig(settings) {
+  if (settings && typeof settings === 'object' && compiledSettingsCache.has(settings)) {
+    return compiledSettingsCache.get(settings);
+  }
+  const normalized = normalizeSpecialtyConfig(settings);
+  const validationErrors = [];
+  if (normalized.effectiveDateField !== 'arrival') {
+    validationErrors.push(
+      `Nepalaikomas doctors.specialties.effectiveDateField="${normalized.effectiveDateField}" (v1 palaiko tik "arrival").`
+    );
+  }
+  const { groups, groupsById, errors: groupErrors } = validateAndCompileGroups(normalized.groups);
+  validationErrors.push(...groupErrors);
+  const { assignmentsByDoctor, errors: assignmentErrors } = validateAndCompileAssignments(
+    normalized.assignments,
+    groupsById
+  );
+  validationErrors.push(...assignmentErrors);
+  const compiled = {
+    normalized,
+    groups,
+    groupsById,
+    assignmentsByDoctor,
+    validationErrors,
+    groupLabelById: new Map(groups.map((group) => [group.id, group.label])),
+  };
+  if (settings && typeof settings === 'object') {
+    compiledSettingsCache.set(settings, compiled);
+  }
+  return compiled;
+}
+
+function getValidatedResolverCacheBucket(settings) {
+  if (!settings || typeof settings !== 'object') {
+    return null;
+  }
+  let bucket = validatedResolverCache.get(settings);
+  if (!(bucket instanceof WeakMap)) {
+    bucket = new WeakMap();
+    validatedResolverCache.set(settings, bucket);
+  }
+  return bucket;
 }
 
 function validateCoverageAgainstRecords({
@@ -264,24 +338,16 @@ function validateCoverageAgainstRecords({
 }
 
 export function createDoctorSpecialtyResolver(settings, records = []) {
-  const normalized = normalizeSpecialtyConfig(settings);
+  const validatedBucket = getValidatedResolverCacheBucket(settings);
+  if (validatedBucket && Array.isArray(records) && validatedBucket.has(records)) {
+    return validatedBucket.get(records);
+  }
+  const compiled = getCompiledSpecialtyConfig(settings);
+  const normalized = compiled.normalized;
   const validationErrors = [];
   const validationWarnings = [];
-
-  if (normalized.effectiveDateField !== 'arrival') {
-    validationErrors.push(
-      `Nepalaikomas doctors.specialties.effectiveDateField="${normalized.effectiveDateField}" (v1 palaiko tik "arrival").`
-    );
-  }
-
-  const { groups, groupsById, errors: groupErrors } = validateAndCompileGroups(normalized.groups);
-  validationErrors.push(...groupErrors);
-
-  const { assignmentsByDoctor, errors: assignmentErrors } = validateAndCompileAssignments(
-    normalized.assignments,
-    groupsById
-  );
-  validationErrors.push(...assignmentErrors);
+  validationErrors.push(...compiled.validationErrors);
+  const { groups, groupsById, assignmentsByDoctor, groupLabelById } = compiled;
 
   const coverageValidation = validateCoverageAgainstRecords({
     records,
@@ -296,7 +362,6 @@ export function createDoctorSpecialtyResolver(settings, records = []) {
   validationWarnings.push(...coverageValidation.warnings);
 
   const valid = normalized.enabled && validationErrors.length === 0;
-  const groupLabelById = new Map(groups.map((group) => [group.id, group.label]));
 
   const resolver = {
     enabled: normalized.enabled,
@@ -308,8 +373,32 @@ export function createDoctorSpecialtyResolver(settings, records = []) {
     coverage: coverageValidation.coverage,
     errors: summarizeMessages(validationErrors),
     warnings: summarizeMessages(validationWarnings),
+    compiledAt: compiled,
     hasSpecialty(record) {
       return Boolean(this.resolveSpecialtyForRecord(record));
+    },
+    getSpecialtyOptionsForRecords(candidateRecords = []) {
+      if (!(this._optionsCache instanceof WeakMap)) {
+        this._optionsCache = new WeakMap();
+      }
+      if (Array.isArray(candidateRecords) && this._optionsCache.has(candidateRecords)) {
+        return this._optionsCache.get(candidateRecords);
+      }
+      const labelsById = new Map();
+      const list = Array.isArray(candidateRecords) ? candidateRecords : [];
+      for (let index = 0; index < list.length; index += 1) {
+        const specialty = this.resolveSpecialtyForRecord(list[index]);
+        if (specialty?.id && !labelsById.has(specialty.id)) {
+          labelsById.set(specialty.id, String(specialty.label || specialty.id));
+        }
+      }
+      const optionsList = Array.from(labelsById.entries())
+        .map(([id, label]) => ({ id, label }))
+        .sort((a, b) => String(a.label).localeCompare(String(b.label), 'lt'));
+      if (Array.isArray(candidateRecords)) {
+        this._optionsCache.set(candidateRecords, optionsList);
+      }
+      return optionsList;
     },
     resolveSpecialtyForRecord(record) {
       if (!valid) {
@@ -339,7 +428,7 @@ export function createDoctorSpecialtyResolver(settings, records = []) {
     },
   };
 
-  return {
+  const result = {
     resolver,
     validation: {
       enabled: normalized.enabled,
@@ -353,4 +442,8 @@ export function createDoctorSpecialtyResolver(settings, records = []) {
       coverage: coverageValidation.coverage,
     },
   };
+  if (validatedBucket && Array.isArray(records)) {
+    validatedBucket.set(records, result);
+  }
+  return result;
 }
