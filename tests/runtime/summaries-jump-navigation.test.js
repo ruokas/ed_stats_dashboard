@@ -33,6 +33,31 @@ describe('summaries jump navigation', () => {
     expect(links[0].classList.contains('is-active')).toBe(false);
   });
 
+  it('expands target through callback before scrolling', () => {
+    document.body.innerHTML = `
+      <nav id="jumpNav">
+        <a class="summaries-jump-nav__link" href="#sec2">Two</a>
+      </nav>
+      <section id="sec2"></section>
+    `;
+    const target = document.getElementById('sec2');
+    target.getBoundingClientRect = () => ({ top: 240 });
+    const links = Array.from(document.querySelectorAll('.summaries-jump-nav__link'));
+    const selectors = {
+      summariesJumpNav: document.getElementById('jumpNav'),
+      summariesJumpLinks: links,
+    };
+    const beforeScrollToTarget = vi.fn();
+    window.scrollTo = vi.fn();
+
+    initSummariesJumpNavigation(selectors, { beforeScrollToTarget });
+    links[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(beforeScrollToTarget).toHaveBeenCalledWith(target);
+    expect(window.scrollTo).toHaveBeenCalled();
+    expect(target.getAttribute('tabindex')).toBe('-1');
+  });
+
   it('applies sticky offset css variables', () => {
     document.body.innerHTML = `
       <header id="hero"></header>

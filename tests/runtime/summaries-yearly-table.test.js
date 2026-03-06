@@ -21,6 +21,7 @@ describe('summaries yearly table', () => {
     document.body.innerHTML = '<table><tbody id="yearlyTable"></tbody></table>';
     const selectors = { yearlyTable: document.getElementById('yearlyTable') };
     const dashboardState = {
+      yearlyExpandedYears: ['2025'],
       monthly: {
         all: [
           {
@@ -71,6 +72,7 @@ describe('summaries yearly table', () => {
     document.body.innerHTML = '<table><tbody id="yearlyTable"></tbody></table>';
     const selectors = { yearlyTable: document.getElementById('yearlyTable') };
     const dashboardState = {
+      yearlyExpandedYears: ['2025'],
       monthly: {
         all: [
           {

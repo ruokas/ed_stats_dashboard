@@ -53,7 +53,7 @@ import { createSummariesDataFlowConfig } from './summaries/data-flow-config.js';
 import { renderRecentTable } from './summaries/recent-table.js';
 import {
   extractHistoricalRecords,
-  getReportsComputation,
+  getReportsComputationAsync,
   getScopedReportsMeta,
   sortPspcRows,
 } from './summaries/report-computation.js';
@@ -62,6 +62,7 @@ import { createReportExportClickHandler } from './summaries/report-export.js';
 import { parsePositiveIntOrDefault } from './summaries/report-filters.js';
 import { getCachedSummariesReportViewModelsAsync } from './summaries/report-view-model-cache.js';
 import { wireSummariesInteractions } from './summaries/runtime-interactions.js';
+import { createSummariesSectionCollapseFeature } from './summaries/section-collapse.js';
 
 const { runtimeClient, setStatus, getAutoRefreshTimerId, setAutoRefreshTimerId } = createRuntimeLifecycle({
   clientConfigKey: CLIENT_CONFIG_KEY,
@@ -99,7 +100,6 @@ async function renderReports(
 ) {
   const {
     destroyReportCharts,
-    ensureCoverage,
     getReportCardTitle,
     renderAgeDiagnosisHeatmapChart,
     renderAgeDistributionStackedBySex,
@@ -214,7 +214,6 @@ async function renderReports(
       reports = null;
       viewModels = null;
     }
-    ensureCoverage(selectors, dashboardState, scopeMeta.coverage);
     syncReportsControls(selectors, dashboardState, scopeMeta.yearOptions);
     if (!scopeMeta.records.length) {
       dashboardState.summariesReportsHasDataRender = false;
@@ -236,9 +235,19 @@ async function renderReports(
     dashboardState.summariesReportsHasDataRender = true;
     reports =
       reports ||
-      getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, {
-        stage: shouldRenderSecondaryNow ? 'all' : 'primary',
-      });
+      (await getReportsComputationAsync(
+        dashboardState,
+        settings,
+        historicalRecords,
+        scopeMeta,
+        {
+          stage: shouldRenderSecondaryNow ? 'all' : 'primary',
+        },
+        {
+          useWorker: options?.useWorkerReports === true,
+          runSummariesWorkerJobFn: options?.runSummariesWorkerJob,
+        }
+      ));
     const chartLib = dashboardState.chartLib || (await loadChartJs());
     if (chartLib && !dashboardState.chartLib) {
       dashboardState.chartLib = chartLib;
@@ -380,11 +389,20 @@ async function renderReports(
     }
     reports =
       reports ||
-      getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, {
-        stage: 'all',
-      });
+      (await getReportsComputationAsync(
+        dashboardState,
+        settings,
+        historicalRecords,
+        scopeMeta,
+        { stage: 'all' },
+        {
+          useWorker: options?.useWorkerReports === true,
+          runSummariesWorkerJobFn: options?.runSummariesWorkerJob,
+        }
+      ));
     viewModels =
       viewModels ||
+      reports?.__workerViewModels ||
       (await getCachedSummariesReportViewModelsAsync(
         { dashboardState, settings, historicalRecords, scopeMeta, reports },
         {
@@ -823,14 +841,39 @@ export async function runSummariesRuntime(core) {
   let scheduledReportsRenderReason = 'controls';
   let reportsSecondaryScheduledForce = false;
   let reportsSecondaryFallbackTimerId = null;
+  let hydrationFallbackTimerId = null;
+  let hydrationBootstrapTimerId = null;
   let summariesPrimaryVisibleMeasured = false;
   let summariesSecondaryCompleteMeasured = false;
+  let requestSummariesHistoricalHydration = () => false;
+  const { applySummariesDisclosure, bindSummariesDisclosureButtons, expandSummariesForTarget } =
+    createSummariesSectionCollapseFeature({
+      selectors,
+      dashboardState,
+    });
+  const isSummariesHistoricalHydrationPending = () =>
+    dashboardState.mainData?.recordsHydrationState !== 'full' &&
+    dashboardState.mainData?.recordsHydrationState !== 'deferred';
   const clearReportsSecondaryFallback = () => {
     if (reportsSecondaryFallbackTimerId == null) {
       return;
     }
     window.clearTimeout(reportsSecondaryFallbackTimerId);
     reportsSecondaryFallbackTimerId = null;
+  };
+  const clearHydrationFallback = () => {
+    if (hydrationFallbackTimerId == null) {
+      return;
+    }
+    window.clearTimeout(hydrationFallbackTimerId);
+    hydrationFallbackTimerId = null;
+  };
+  const clearHydrationBootstrap = () => {
+    if (hydrationBootstrapTimerId == null) {
+      return;
+    }
+    window.clearTimeout(hydrationBootstrapTimerId);
+    hydrationBootstrapTimerId = null;
   };
   const scheduleReportsSecondaryFallback = (reason = 'data') => {
     clearReportsSecondaryFallback();
@@ -859,6 +902,93 @@ export async function runSummariesRuntime(core) {
     } catch (_error) {
       // ignore
     }
+  };
+  const requestHistoricalHydrationIfNeeded = (reason = 'visibility') => {
+    if (!isSummariesHistoricalHydrationPending()) {
+      clearHydrationFallback();
+      clearHydrationBootstrap();
+      return false;
+    }
+    markSummariesPerfPoint(`app-summaries-hydration-requested:${reason}`);
+    return requestSummariesHistoricalHydration() === true;
+  };
+  const scheduleHydrationBootstrap = (reason = 'yearly-render') => {
+    if (!isSummariesHistoricalHydrationPending()) {
+      clearHydrationBootstrap();
+      return;
+    }
+    if (hydrationBootstrapTimerId != null) {
+      return;
+    }
+    hydrationBootstrapTimerId = window.setTimeout(() => {
+      hydrationBootstrapTimerId = null;
+      requestHistoricalHydrationIfNeeded(`bootstrap:${reason}`);
+    }, 300);
+  };
+  const scheduleHydrationFallback = (reason = 'primary-visible') => {
+    if (!isSummariesHistoricalHydrationPending()) {
+      clearHydrationFallback();
+      return;
+    }
+    if (hydrationFallbackTimerId != null) {
+      return;
+    }
+    hydrationFallbackTimerId = window.setTimeout(() => {
+      hydrationFallbackTimerId = null;
+      requestHistoricalHydrationIfNeeded(`fallback:${reason}`);
+    }, 1200);
+  };
+  const ensureSummariesPrimaryVisibilityObserver = () => {
+    if (!isSummariesHistoricalHydrationPending()) {
+      return;
+    }
+    if (dashboardState.summariesReportsPrimaryVisibilityObserver) {
+      return;
+    }
+    const sentinelCandidates = [
+      selectors.diagnosisChart,
+      selectors.z769TrendChart,
+      selectors.referralTrendChart,
+    ];
+    const sentinels = Array.from(
+      new Set(
+        sentinelCandidates
+          .map((node) => {
+            if (!(node instanceof HTMLElement)) {
+              return null;
+            }
+            const card = node.closest('.report-card');
+            return card instanceof HTMLElement ? card : node;
+          })
+          .filter((node) => node instanceof HTMLElement)
+      )
+    );
+    if (!sentinels.length) {
+      requestHistoricalHydrationIfNeeded('primary-sentinel-missing');
+      return;
+    }
+    if (typeof window.IntersectionObserver !== 'function') {
+      requestHistoricalHydrationIfNeeded('primary-observer-unsupported');
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0);
+        if (!visible) {
+          return;
+        }
+        requestHistoricalHydrationIfNeeded('primary-visible');
+        if (dashboardState.summariesReportsPrimaryVisibilityObserver) {
+          dashboardState.summariesReportsPrimaryVisibilityObserver.disconnect();
+          dashboardState.summariesReportsPrimaryVisibilityObserver = null;
+        }
+      },
+      { root: null, rootMargin: '300px 0px', threshold: [0, 0.01] }
+    );
+    sentinels.forEach((node) => {
+      observer.observe(node);
+    });
+    dashboardState.summariesReportsPrimaryVisibilityObserver = observer;
   };
   const ensureSummariesSecondaryVisibilityObserver = () => {
     if (dashboardState.summariesReportsSecondaryVisible) {
@@ -904,6 +1034,7 @@ export async function runSummariesRuntime(core) {
           dashboardState.summariesReportsSecondaryVisibilityObserver.disconnect();
           dashboardState.summariesReportsSecondaryVisibilityObserver = null;
         }
+        requestHistoricalHydrationIfNeeded('secondary-visible');
         scheduleReportsSecondaryRender('visibility');
       },
       { root: null, rootMargin: '200px 0px', threshold: [0, 0.01] }
@@ -914,6 +1045,10 @@ export async function runSummariesRuntime(core) {
     dashboardState.summariesReportsSecondaryVisibilityObserver = observer;
   };
   const scheduleReportsSecondaryRender = (reason = 'controls', options = {}) => {
+    if (isSummariesHistoricalHydrationPending()) {
+      requestHistoricalHydrationIfNeeded(reason);
+      return;
+    }
     dashboardState.summariesReportsDeferredRenderToken =
       Number(dashboardState.summariesReportsDeferredRenderToken || 0) + 1;
     const token = dashboardState.summariesReportsDeferredRenderToken;
@@ -943,6 +1078,7 @@ export async function runSummariesRuntime(core) {
         await renderReports(selectors, dashboardState, settings, exportState, reason, {
           stage: 'secondary',
           forceSecondary,
+          useWorkerReports: enableSummariesWorkerReports,
           useWorkerViewModels: enableSummariesWorkerReports,
           runSummariesWorkerJob,
         });
@@ -984,19 +1120,30 @@ export async function runSummariesRuntime(core) {
     onThemeChange: () => scheduleReportsRender('theme'),
     afterSectionNavigation: () => {
       initSummariesJumpStickyOffset(selectors);
-      initSummariesJumpNavigation(selectors);
+      initSummariesJumpNavigation(selectors, {
+        beforeScrollToTarget: expandSummariesForTarget,
+      });
     },
   });
+  applySummariesDisclosure();
+  bindSummariesDisclosureButtons();
   rerenderReports = (reason = 'controls') =>
     (async () => {
       if (reason === 'controls') {
         dashboardState.summariesReportsSecondaryVisible = true;
       }
+      if (reason !== 'data' && isSummariesHistoricalHydrationPending()) {
+        requestHistoricalHydrationIfNeeded(reason);
+        return;
+      }
+      markSummariesPerfPoint(`app-summaries-reports-${reason}-start`);
       await renderReports(selectors, dashboardState, settings, exportState, reason, {
         stage: 'primary',
+        useWorkerReports: enableSummariesWorkerReports,
         useWorkerViewModels: enableSummariesWorkerReports,
         runSummariesWorkerJob,
       });
+      markSummariesPerfPoint(`app-summaries-reports-${reason}-end`);
       if (dashboardState.summariesReportsHasDataRender !== true) {
         clearReportsSecondaryFallback();
         return;
@@ -1007,6 +1154,8 @@ export async function runSummariesRuntime(core) {
         markSummariesPerfPoint('app-summaries-primary-visible');
         dispatchSummariesLifecycleEvent('app:summaries-primary-visible', { reason });
       }
+      ensureSummariesPrimaryVisibilityObserver();
+      scheduleHydrationFallback(reason);
       ensureSummariesSecondaryVisibilityObserver();
       scheduleReportsSecondaryRender(reason, { forceSecondary: reason === 'controls' });
       scheduleReportsSecondaryFallback(reason);
@@ -1056,6 +1205,16 @@ export async function runSummariesRuntime(core) {
       computeYearlyStats,
       renderYearlyTable: (yearlyStats) => {
         renderYearlyTable(selectors, dashboardState, yearlyStats, { yearlyEmptyText: TEXT.yearly.empty });
+        if (
+          dashboardState.mainData?.recordsHydrationState === 'full' &&
+          dashboardState.summariesHydrationMarkedFull !== true
+        ) {
+          dashboardState.summariesHydrationMarkedFull = true;
+          clearHydrationFallback();
+          clearHydrationBootstrap();
+          markSummariesPerfPoint('app-summaries-hydration-complete');
+        }
+        scheduleHydrationBootstrap('yearly-render');
         scheduleReportsRender('data');
       },
       numberFormatter,
@@ -1065,11 +1224,13 @@ export async function runSummariesRuntime(core) {
       setAutoRefreshTimerId,
     })
   );
+  requestSummariesHistoricalHydration = () => dataFlow.requestDeferredHydration();
   void loadChartJs();
   dashboardState.summariesReportsHasDataRender = false;
   updateSummariesFiltersSummary();
   if (Object.keys(parsedSummaries).length === 0) {
     persistSummariesQuery();
   }
+  dashboardState.summariesHydrationMarkedFull = false;
   dataFlow.scheduleInitialLoad();
 }

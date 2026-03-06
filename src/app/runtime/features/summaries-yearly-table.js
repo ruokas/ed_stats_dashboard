@@ -26,10 +26,6 @@ export function renderYearlyTable(selectors, dashboardState, yearlyStats, option
   }
   const entries = yearlyStats.slice();
   const fragment = document.createDocumentFragment();
-  const latestYear = entries.length ? String(entries[entries.length - 1].year || '').trim() : '';
-  if (!Array.isArray(dashboardState.yearlyExpandedYears) || !dashboardState.yearlyExpandedYears.length) {
-    dashboardState.yearlyExpandedYears = latestYear ? [latestYear] : [];
-  }
   const expandedYears = new Set(
     (Array.isArray(dashboardState.yearlyExpandedYears) ? dashboardState.yearlyExpandedYears : [])
       .map((value) => String(value || '').trim())

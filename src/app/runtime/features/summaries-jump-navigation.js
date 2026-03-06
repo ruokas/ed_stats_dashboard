@@ -1,6 +1,6 @@
 import { initJumpStickyOffset } from './jump-sticky-offset.js';
 
-export function initSummariesJumpNavigation(selectors) {
+export function initSummariesJumpNavigation(selectors, { beforeScrollToTarget = null } = {}) {
   const nav = selectors?.summariesJumpNav;
   const links = Array.isArray(selectors?.summariesJumpLinks) ? selectors.summariesJumpLinks : [];
   if (!(nav instanceof HTMLElement) || !links.length) {
@@ -73,6 +73,30 @@ export function initSummariesJumpNavigation(selectors) {
     }
   };
 
+  const prepareTargetForNavigation = (target) => {
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    if (typeof beforeScrollToTarget === 'function') {
+      beforeScrollToTarget(target);
+    }
+    if (!target.hasAttribute('tabindex')) {
+      target.setAttribute('tabindex', '-1');
+      target.dataset.jumpFocusManaged = 'true';
+      target.addEventListener(
+        'blur',
+        () => {
+          if (target.dataset.jumpFocusManaged === 'true') {
+            target.removeAttribute('tabindex');
+            delete target.dataset.jumpFocusManaged;
+          }
+        },
+        { once: true }
+      );
+    }
+    target.focus({ preventScroll: true });
+  };
+
   const settleScrollAfterLayout = (target) => {
     if (!(target instanceof HTMLElement)) {
       return;
@@ -95,6 +119,7 @@ export function initSummariesJumpNavigation(selectors) {
   applyActiveLink(hashMatchedLink?.link || items[0].link);
   if (hashMatchedLink?.target) {
     window.setTimeout(() => {
+      prepareTargetForNavigation(hashMatchedLink.target);
       scrollToSectionStart(hashMatchedLink.target, { smooth: false, updateHash: false });
     }, 0);
   }
@@ -103,6 +128,7 @@ export function initSummariesJumpNavigation(selectors) {
     link.addEventListener('click', (event) => {
       event.preventDefault();
       applyActiveLink(link);
+      prepareTargetForNavigation(target);
       scrollToSectionStart(target, { smooth: true, updateHash: true });
       settleScrollAfterLayout(target);
     });
@@ -115,6 +141,7 @@ export function initSummariesJumpNavigation(selectors) {
         applyActiveLink(hashLink.link);
       }
       if (hashLink?.target) {
+        prepareTargetForNavigation(hashLink.target);
         scrollToSectionStart(hashLink.target, { smooth: false, updateHash: false });
       }
     });
