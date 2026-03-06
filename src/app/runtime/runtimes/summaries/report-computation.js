@@ -1,8 +1,6 @@
 import {
   collapseSmallGroups,
   computeAgeDiagnosisHeatmap,
-  computeDiagnosisCodeYearlyShare,
-  computeDiagnosisFrequency,
   scopeExtendedHistoricalRecords,
 } from '../../../../data/stats.js';
 import { DEFAULT_SETTINGS } from '../../../default-settings.js';
@@ -35,13 +33,18 @@ export function extractHistoricalRecords(dashboardState) {
   return records;
 }
 
-function buildReportsComputationKey(dashboardState, settings, scopeMeta) {
+function normalizeReportsComputationStage(value) {
+  return String(value || '').toLowerCase() === 'primary' ? 'primary' : 'all';
+}
+
+function buildReportsComputationKey(dashboardState, settings, scopeMeta, stage = 'all') {
   return [
     String(dashboardState.summariesReportsYear ?? 'all'),
     Number.parseInt(String(dashboardState.summariesReportsTopN ?? 15), 10) || 15,
     Number.parseInt(String(dashboardState.summariesReportsMinGroupSize ?? 100), 10) || 100,
     Number.isFinite(scopeMeta?.records?.length) ? scopeMeta.records.length : 0,
     Number.isFinite(settings?.calculations?.shiftStartHour) ? settings.calculations.shiftStartHour : '',
+    normalizeReportsComputationStage(stage),
   ].join('|');
 }
 
@@ -98,6 +101,23 @@ function toSortedRows(map, total, topN) {
   return head;
 }
 
+function buildPrefixMatcher(prefixes) {
+  const list = (Array.isArray(prefixes) ? prefixes : [])
+    .map((value) =>
+      String(value || '')
+        .trim()
+        .toUpperCase()
+    )
+    .filter(Boolean);
+  if (!list.length) {
+    return () => false;
+  }
+  return (value) => {
+    const token = String(value || '').toUpperCase();
+    return list.some((prefix) => token.startsWith(prefix));
+  };
+}
+
 function computeSharedReferralAndPspcReports(scopeMeta, dashboardState) {
   const records = Array.isArray(scopeMeta?.records) ? scopeMeta.records : [];
   const shiftStartHour = Number.isFinite(Number(scopeMeta?.shiftStartHour))
@@ -113,11 +133,36 @@ function computeSharedReferralAndPspcReports(scopeMeta, dashboardState) {
   const monthlyReferral = new Map();
   const pspcCounts = new Map();
   const pspcCorrelationBuckets = new Map();
+  const diagnosisCounts = new Map();
+  const z769Yearly = new Map();
+  const shouldExcludeDiagnosis = buildPrefixMatcher(['W', 'Y', 'U', 'Z', 'X']);
 
   for (let index = 0; index < records.length; index += 1) {
     const record = records[index];
     if (!record) {
       continue;
+    }
+    const diagnosisCodes = Array.isArray(record?.diagnosisCodes)
+      ? record.diagnosisCodes
+          .map((value) =>
+            String(value || '')
+              .trim()
+              .toUpperCase()
+          )
+          .filter(Boolean)
+      : [];
+    if (!diagnosisCodes.length) {
+      diagnosisCounts.set('Nenurodyta', (diagnosisCounts.get('Nenurodyta') || 0) + 1);
+    } else {
+      const unique = new Set();
+      for (let diagnosisIndex = 0; diagnosisIndex < diagnosisCodes.length; diagnosisIndex += 1) {
+        const code = diagnosisCodes[diagnosisIndex];
+        if (!code || unique.has(code) || shouldExcludeDiagnosis(code)) {
+          continue;
+        }
+        unique.add(code);
+        diagnosisCounts.set(code, (diagnosisCounts.get(code) || 0) + 1);
+      }
     }
 
     const pspc = normalizeCategoryValue(record?.pspc);
@@ -148,6 +193,14 @@ function computeSharedReferralAndPspcReports(scopeMeta, dashboardState) {
     const year = Number.parseInt(yearText, 10);
     if (!Number.isFinite(year)) {
       continue;
+    }
+    if (!z769Yearly.has(year)) {
+      z769Yearly.set(year, { year, total: 0, matched: 0 });
+    }
+    const z769Bucket = z769Yearly.get(year);
+    z769Bucket.total += 1;
+    if (diagnosisCodes.some((code) => code === 'Z76.9' || code.startsWith('Z76.9.'))) {
+      z769Bucket.matched += 1;
     }
 
     if (!referralYearly.has(year)) {
@@ -255,7 +308,30 @@ function computeSharedReferralAndPspcReports(scopeMeta, dashboardState) {
     })
     .slice(0, topN);
 
+  const diagnosisRows = toSortedRows(diagnosisCounts, records.length, topN);
+  const z769TrendRows = Array.from(z769Yearly.values())
+    .sort((a, b) => a.year - b.year)
+    .map((entry) => ({
+      year: entry.year,
+      total: entry.total,
+      matched: entry.matched,
+      share: entry.total > 0 ? entry.matched / entry.total : 0,
+    }));
+
   return {
+    diagnosis: {
+      totalPatients: records.length,
+      totalDiagnoses: diagnosisRows.reduce((sum, row) => sum + Number(row?.count || 0), 0),
+      rows: diagnosisRows,
+      yearOptions: scopeMeta?.yearOptions || [],
+      coverage: scopeMeta?.coverage || { total: 0, extended: 0, percent: 0 },
+    },
+    z769Trend: {
+      code: 'Z76.9',
+      rows: z769TrendRows,
+      yearOptions: scopeMeta?.yearOptions || [],
+      coverage: scopeMeta?.coverage || { total: 0, extended: 0, percent: 0 },
+    },
     referralTrend: {
       categories: referralCategories,
       rows: referralTrendRows,
@@ -291,8 +367,9 @@ function computeSharedReferralAndPspcReports(scopeMeta, dashboardState) {
   };
 }
 
-export function getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta) {
-  const key = buildReportsComputationKey(dashboardState, settings, scopeMeta);
+export function getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, options = {}) {
+  const stage = normalizeReportsComputationStage(options?.stage);
+  const key = buildReportsComputationKey(dashboardState, settings, scopeMeta, stage);
   const cache = dashboardState.summariesReportsComputationCache || {};
   if (cache.recordsRef === historicalRecords && cache.key === key && cache.value) {
     return cache.value;
@@ -314,27 +391,35 @@ export function getReportsComputation(dashboardState, settings, historicalRecord
     scopedMeta,
   };
   const sharedReferralAndPspc = computeSharedReferralAndPspcReports(scopeMeta, dashboardState);
+  const includeSecondary = stage !== 'primary';
   const value = {
-    diagnosis: computeDiagnosisFrequency(historicalRecords, {
-      ...baseOptions,
-      excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
-    }),
-    ageDiagnosisHeatmap: computeAgeDiagnosisHeatmap(historicalRecords, {
-      ...baseOptions,
-      excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
-    }),
-    z769Trend: computeDiagnosisCodeYearlyShare(historicalRecords, 'Z76.9', baseOptions),
+    diagnosis: sharedReferralAndPspc.diagnosis,
+    z769Trend: sharedReferralAndPspc.z769Trend,
     referralTrend: sharedReferralAndPspc.referralTrend,
-    referralDispositionYearly: sharedReferralAndPspc.referralDispositionYearly,
-    referralMonthlyHeatmap: sharedReferralAndPspc.referralMonthlyHeatmap,
-    referralHospitalizedByPspcYearly: computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
-      minGroupSize: dashboardState.summariesReportsMinGroupSize,
-      yearOptions: scopeMeta.yearOptions,
-      shiftStartHour: scopeMeta.shiftStartHour,
-    }),
-    pspcCrossDetailed: computeReferralHospitalizedShareByPspcDetailed(scopeMeta.records),
-    pspcCorrelation: sharedReferralAndPspc.pspcCorrelation,
-    pspcDistribution: sharedReferralAndPspc.pspcDistribution,
+    ageDiagnosisHeatmap: includeSecondary
+      ? computeAgeDiagnosisHeatmap(historicalRecords, {
+          ...baseOptions,
+          excludePrefixes: ['W', 'Y', 'U', 'Z', 'X'],
+        })
+      : { total: 0, ageBands: [], diagnosisGroups: [], rows: [] },
+    referralDispositionYearly: includeSecondary
+      ? sharedReferralAndPspc.referralDispositionYearly
+      : { rows: [], referralCategories: ['su siuntimu', 'be siuntimo'], dispositionCategories: [] },
+    referralMonthlyHeatmap: includeSecondary
+      ? sharedReferralAndPspc.referralMonthlyHeatmap
+      : { rows: [], years: [], months: [] },
+    referralHospitalizedByPspcYearly: includeSecondary
+      ? computeReferralHospitalizedShareByPspcYearly(scopeMeta.records, {
+          minGroupSize: dashboardState.summariesReportsMinGroupSize,
+          yearOptions: scopeMeta.yearOptions,
+          shiftStartHour: scopeMeta.shiftStartHour,
+        })
+      : { years: [], rows: [] },
+    pspcCrossDetailed: includeSecondary
+      ? computeReferralHospitalizedShareByPspcDetailed(scopeMeta.records)
+      : { rows: [], totalReferred: 0 },
+    pspcCorrelation: includeSecondary ? sharedReferralAndPspc.pspcCorrelation : { total: 0, rows: [] },
+    pspcDistribution: includeSecondary ? sharedReferralAndPspc.pspcDistribution : { total: 0, rows: [] },
   };
   dashboardState.summariesReportsComputationCache = {
     recordsRef: historicalRecords,

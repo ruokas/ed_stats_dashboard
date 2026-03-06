@@ -29,6 +29,7 @@
     "benchmark:summaries-runtime": "node scripts/benchmark-summaries-runtime.mjs",
     "benchmark:kpi-render": "node scripts/benchmark-kpi-render.mjs",
     "perf:analyze-heavy-pages": "node scripts/analyze-heavy-page-bottlenecks.mjs",
+    "perf:guardrails": "node scripts/check-perf-guardrails.mjs",
     "architecture:report": "node scripts/check-architecture-budgets.mjs",
     "architecture:enforce": "node scripts/check-architecture-budgets.mjs --enforce",
     "prepare": "husky",

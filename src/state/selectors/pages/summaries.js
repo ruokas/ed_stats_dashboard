@@ -7,6 +7,10 @@ export function createSummariesPageSelectors() {
 
   return {
     ...createPageShellSelectors({ sectionNav }),
+    summariesSectionToggleButtons: byQueryAllIn(main, '[data-summaries-section-toggle]'),
+    summariesSectionPanels: byQueryAllIn(main, '[data-summaries-section-panel]'),
+    summariesReportGroupToggleButtons: byQueryAllIn(main, '[data-summaries-report-group-toggle]'),
+    summariesReportGroupPanels: byQueryAllIn(main, '[data-summaries-report-group-panel]'),
     recentHeading: byId('recentHeading'),
     recentSubtitle: byId('recentSubtitle'),
     recentCaption: byId('recentCaption'),

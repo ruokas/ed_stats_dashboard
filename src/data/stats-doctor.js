@@ -392,6 +392,51 @@ export function createDoctorStatsComputations(deps) {
     };
   }
 
+  function computeDoctorDashboardModels(records, options = {}) {
+    const aggregate = getDoctorAggregate(records, options);
+    const leaderboardRows = getDoctorLeaderboardRowsFromAggregate(aggregate, options);
+    const meta = aggregate.meta;
+    const leaderboard = {
+      rows: leaderboardRows,
+      totalCasesWithDoctor: meta.filtered.length,
+      coverage: meta.coverage,
+      yearOptions: meta.yearOptions,
+      diagnosisGroupOptions: meta.diagnosisGroupOptions,
+      specialtyOptions: meta.specialtyOptions,
+      kpis: {
+        activeDoctors: leaderboardRows.length,
+        medianLosHours: computeMedian(aggregate.pooledLos),
+        topDoctorShare: leaderboardRows.length > 0 ? leaderboardRows[0].share : 0,
+      },
+    };
+    const mix = {
+      rows: leaderboardRows.map((row) => ({
+        alias: row.alias,
+        dayShare: row.dayShare,
+        nightShare: row.nightShare,
+        count: row.count,
+      })),
+    };
+    const hospital = {
+      rows: leaderboardRows.map((row) => ({
+        alias: row.alias,
+        hospitalizedShare: row.hospitalizedShare,
+        count: row.count,
+      })),
+    };
+    const scatter = {
+      rows: leaderboardRows
+        .filter((row) => Number.isFinite(row.avgLosHours))
+        .map((row) => ({
+          alias: row.alias,
+          count: row.count,
+          avgLosHours: row.avgLosHours,
+          hospitalizedShare: row.hospitalizedShare,
+        })),
+    };
+    return { leaderboard, mix, hospital, scatter };
+  }
+
   const getDoctorMetricValue = (point, metric) => getDoctorMetricValueHelper(point, metric);
 
   function computeDoctorYearlySmallMultiples(records, options = {}) {
@@ -719,6 +764,7 @@ export function createDoctorStatsComputations(deps) {
     computeDoctorDayNightMix,
     computeDoctorHospitalizationShare,
     computeDoctorVolumeVsLosScatter,
+    computeDoctorDashboardModels,
     computeDoctorYearlySmallMultiples,
     computeDoctorMoMChanges,
     computeDoctorComparisonPanel,

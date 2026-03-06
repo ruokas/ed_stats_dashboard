@@ -233,6 +233,116 @@ export function createChartsHospitalTableFeature({
     }
   };
 
+  const getCachedChartsHospitalPreparedRows = (records, yearFilter, searchQuery) => {
+    const normalizedYear = yearFilter == null ? 'all' : String(yearFilter);
+    const normalizedSearch = String(searchQuery || '')
+      .trim()
+      .toLocaleLowerCase('lt');
+    const calcSignature = getChartsHospitalCalcSignature();
+    const cache = dashboardState.chartsHospitalPreparedRowsCache || {};
+    const key = `${normalizedYear}|${normalizedSearch}|${calcSignature}`;
+    if (cache.recordsRef === records && cache.key === key && cache.value) {
+      return cache.value;
+    }
+    const stats = buildChartsHospitalStats(records, normalizedYear);
+    const rows = (Array.isArray(stats?.rows) ? stats.rows : []).filter(
+      (row) =>
+        !normalizedSearch ||
+        String(row?.department || '')
+          .toLocaleLowerCase('lt')
+          .includes(normalizedSearch)
+    );
+    const value = { rows, totals: stats?.totals || {} };
+    dashboardState.chartsHospitalPreparedRowsCache = {
+      recordsRef: records,
+      key,
+      value,
+    };
+    return value;
+  };
+
+  const createHospitalTableRow = (entry) => {
+    const row = document.createElement('tr');
+    setDatasetValue(row, 'department', String(entry.department || ''));
+    if (
+      String(dashboardState.chartsHospitalTableDepartment || '').trim() ===
+      String(entry.department || '').trim()
+    ) {
+      row.classList.add('is-department-active');
+    }
+    row.innerHTML = `
+      <td>${entry.department || 'Nenurodyta'}</td>
+      <td>${numberFormatter.format(Number(entry.count_lt4 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_lt4 || 0))}%)</td>
+      <td>${numberFormatter.format(Number(entry.count_4_8 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_4_8 || 0))}%)</td>
+      <td>${numberFormatter.format(Number(entry.count_8_16 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_8_16 || 0))}%)</td>
+      <td>${numberFormatter.format(Number(entry.count_gt16 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_gt16 || 0))}%)</td>
+      <td>${numberFormatter.format(Number(entry.count_unclassified || 0))} (${oneDecimalFormatter.format(Number(entry.pct_unclassified || 0))}%)</td>
+      <td class="charts-hospital-total">${numberFormatter.format(Number(entry.total || 0))}</td>
+    `;
+    return row;
+  };
+
+  const createHospitalTableSummaryRow = (totals) => {
+    const tableText = TEXT?.charts?.hospitalTable || {};
+    const summaryRow = document.createElement('tr');
+    summaryRow.className = 'table-row--summary';
+    summaryRow.innerHTML = `
+      <td>${tableText.totalLabel || 'Bendroji suma'}</td>
+      <td>${numberFormatter.format(Number(totals.count_lt4 || 0))}</td>
+      <td>${numberFormatter.format(Number(totals.count_4_8 || 0))}</td>
+      <td>${numberFormatter.format(Number(totals.count_8_16 || 0))}</td>
+      <td>${numberFormatter.format(Number(totals.count_gt16 || 0))}</td>
+      <td>${numberFormatter.format(Number(totals.count_unclassified || 0))}</td>
+      <td class="charts-hospital-total">${numberFormatter.format(Number(totals.total || 0))}</td>
+    `;
+    return summaryRow;
+  };
+
+  const renderHospitalRowsChunked = (rows, totals) => {
+    if (!selectors.chartsHospitalTableBody) {
+      return;
+    }
+    const body = selectors.chartsHospitalTableBody;
+    const token = Number(dashboardState.chartsHospitalTableRenderToken || 0) + 1;
+    dashboardState.chartsHospitalTableRenderToken = token;
+    body.replaceChildren();
+    const summaryRow = createHospitalTableSummaryRow(totals || {});
+    const CHUNK_SIZE = 140;
+    if (rows.length <= CHUNK_SIZE) {
+      const fragment = document.createDocumentFragment();
+      rows.forEach((entry) => {
+        fragment.appendChild(createHospitalTableRow(entry));
+      });
+      body.appendChild(fragment);
+      body.appendChild(summaryRow);
+      return;
+    }
+
+    let index = 0;
+    const scheduleNext =
+      typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => window.setTimeout(callback, 0);
+    const renderChunk = () => {
+      if (dashboardState.chartsHospitalTableRenderToken !== token) {
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      const end = Math.min(index + CHUNK_SIZE, rows.length);
+      for (let rowIndex = index; rowIndex < end; rowIndex += 1) {
+        fragment.appendChild(createHospitalTableRow(rows[rowIndex]));
+      }
+      body.appendChild(fragment);
+      index = end;
+      if (index < rows.length) {
+        scheduleNext(renderChunk);
+        return;
+      }
+      body.appendChild(summaryRow);
+    };
+    scheduleNext(renderChunk);
+  };
+
   const getCachedChartsHospitalStats = (records, yearFilter) => {
     const workerAggStats = getChartsHospitalStatsFromWorkerAgg(yearFilter);
     if (workerAggStats) {
@@ -521,19 +631,10 @@ export function createChartsHospitalTableFeature({
     };
     const yearFilter =
       dashboardState.chartsHospitalTableYear == null ? 'all' : dashboardState.chartsHospitalTableYear;
-    const searchQuery = String(dashboardState.chartsHospitalTableSearch || '')
-      .trim()
-      .toLocaleLowerCase('lt');
-    const stats = buildChartsHospitalStats(records, yearFilter);
+    const searchQuery = String(dashboardState.chartsHospitalTableSearch || '');
+    const prepared = getCachedChartsHospitalPreparedRows(records, yearFilter, searchQuery);
     const tableText = TEXT?.charts?.hospitalTable || {};
-    const filteredRows = (Array.isArray(stats?.rows) ? stats.rows : []).filter(
-      (row) =>
-        !searchQuery ||
-        String(row?.department || '')
-          .toLocaleLowerCase('lt')
-          .includes(searchQuery)
-    );
-    const rows = sortChartsHospitalRows(filteredRows, dashboardState.chartsHospitalTableSort);
+    const rows = sortChartsHospitalRows(prepared?.rows, dashboardState.chartsHospitalTableSort);
 
     selectors.chartsHospitalTableBody.replaceChildren();
     if (!rows.length) {
@@ -544,48 +645,16 @@ export function createChartsHospitalTableFeature({
       row.appendChild(cell);
       selectors.chartsHospitalTableBody.appendChild(row);
       updateChartsHospitalTableHeaderSortIndicators();
-      void renderChartsHospitalDepartmentTrend(records);
+      if (options?.refreshTrend === true) {
+        void renderChartsHospitalDepartmentTrend(records);
+      }
       return;
     }
-
-    const tableRowsFragment = document.createDocumentFragment();
-    rows.forEach((entry) => {
-      const row = document.createElement('tr');
-      setDatasetValue(row, 'department', String(entry.department || ''));
-      if (
-        String(dashboardState.chartsHospitalTableDepartment || '').trim() ===
-        String(entry.department || '').trim()
-      ) {
-        row.classList.add('is-department-active');
-      }
-      row.innerHTML = `
-        <td>${entry.department || 'Nenurodyta'}</td>
-        <td>${numberFormatter.format(Number(entry.count_lt4 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_lt4 || 0))}%)</td>
-        <td>${numberFormatter.format(Number(entry.count_4_8 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_4_8 || 0))}%)</td>
-        <td>${numberFormatter.format(Number(entry.count_8_16 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_8_16 || 0))}%)</td>
-        <td>${numberFormatter.format(Number(entry.count_gt16 || 0))} (${oneDecimalFormatter.format(Number(entry.pct_gt16 || 0))}%)</td>
-        <td>${numberFormatter.format(Number(entry.count_unclassified || 0))} (${oneDecimalFormatter.format(Number(entry.pct_unclassified || 0))}%)</td>
-        <td class="charts-hospital-total">${numberFormatter.format(Number(entry.total || 0))}</td>
-      `;
-      tableRowsFragment.appendChild(row);
-    });
-
-    const totals = stats?.totals || {};
-    const summaryRow = document.createElement('tr');
-    summaryRow.className = 'table-row--summary';
-    summaryRow.innerHTML = `
-      <td>${tableText.totalLabel || 'Bendroji suma'}</td>
-      <td>${numberFormatter.format(Number(totals.count_lt4 || 0))}</td>
-      <td>${numberFormatter.format(Number(totals.count_4_8 || 0))}</td>
-      <td>${numberFormatter.format(Number(totals.count_8_16 || 0))}</td>
-      <td>${numberFormatter.format(Number(totals.count_gt16 || 0))}</td>
-      <td>${numberFormatter.format(Number(totals.count_unclassified || 0))}</td>
-      <td class="charts-hospital-total">${numberFormatter.format(Number(totals.total || 0))}</td>
-    `;
-    selectors.chartsHospitalTableBody.appendChild(tableRowsFragment);
-    selectors.chartsHospitalTableBody.appendChild(summaryRow);
+    renderHospitalRowsChunked(rows, prepared?.totals || {});
     updateChartsHospitalTableHeaderSortIndicators();
-    void renderChartsHospitalDepartmentTrend(records);
+    if (options?.refreshTrend === true) {
+      void renderChartsHospitalDepartmentTrend(records);
+    }
   };
 
   const handleChartsHospitalTableYearChange = (event) => {
@@ -596,7 +665,10 @@ export function createChartsHospitalTableFeature({
     const value = String(event?.target?.value || 'all');
     dashboardState.chartsHospitalTableYear = value === 'all' ? 'all' : Number.parseInt(value, 10);
     persistChartsQuery();
-    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
+    renderChartsHospitalTable(dashboardState.rawRecords, {
+      force: true,
+      refreshTrend: Boolean(dashboardState.chartsHospitalTableDepartment),
+    });
   };
 
   const handleChartsHospitalTableSearchInput = createDebouncedHandler((event) => {
@@ -654,7 +726,7 @@ export function createChartsHospitalTableFeature({
     const current = normalizeChartsHospitalTableDepartment(dashboardState.chartsHospitalTableDepartment);
     dashboardState.chartsHospitalTableDepartment = current === department ? '' : department;
     persistChartsQuery();
-    renderChartsHospitalTable(dashboardState.rawRecords, { force: true });
+    renderChartsHospitalTable(dashboardState.rawRecords, { force: true, refreshTrend: true });
   };
 
   return {

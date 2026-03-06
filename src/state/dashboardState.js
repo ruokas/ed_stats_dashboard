@@ -93,6 +93,16 @@ export function createDashboardState({
     summariesReferralPspcSort: 'desc',
     summariesReferralPspcMode: 'cross',
     summariesReferralPspcTrendPspc: '__top3__',
+    summariesSectionsExpanded: {
+      recent: true,
+      yearly: false,
+      reports: false,
+    },
+    summariesReportGroupsExpanded: {
+      clinical: true,
+      referral: true,
+      pspc: true,
+    },
     summariesReportsCoverage: { total: 0, extended: 0, percent: 0 },
     summariesHistoricalRecordsCache: {
       recordsRef: null,
