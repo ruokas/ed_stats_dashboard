@@ -429,6 +429,67 @@ export function getReportsComputation(dashboardState, settings, historicalRecord
   return value;
 }
 
+export async function getReportsComputationAsync(
+  dashboardState,
+  settings,
+  historicalRecords,
+  scopeMeta,
+  options = {},
+  deps = {}
+) {
+  const stage = normalizeReportsComputationStage(options?.stage);
+  if (
+    stage !== 'all' ||
+    deps?.useWorker !== true ||
+    typeof deps?.runSummariesWorkerJobFn !== 'function' ||
+    !Array.isArray(scopeMeta?.records) ||
+    scopeMeta.records.length < 500
+  ) {
+    return getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, options);
+  }
+  try {
+    const primaryReports = getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, {
+      ...options,
+      stage: 'primary',
+    });
+    const workerResult = await deps.runSummariesWorkerJobFn({
+      reports: primaryReports,
+      scopeRecords: scopeMeta.records,
+      historicalRecords,
+      reportStage: 'all',
+      controls: {
+        summariesReportsTopN: dashboardState?.summariesReportsTopN,
+        summariesReportsMinGroupSize: dashboardState?.summariesReportsMinGroupSize,
+        shiftStartHour: scopeMeta?.shiftStartHour,
+      },
+    });
+    const workerReports = workerResult?.reports;
+    if (workerReports && typeof workerReports === 'object' && workerReports.ageDiagnosisHeatmap) {
+      if (workerResult?.viewModels && typeof workerResult.viewModels === 'object') {
+        try {
+          Object.defineProperty(workerReports, '__workerViewModels', {
+            value: workerResult.viewModels,
+            enumerable: false,
+            configurable: true,
+          });
+        } catch (_error) {
+          // ignore if not extensible
+        }
+      }
+      const key = buildReportsComputationKey(dashboardState, settings, scopeMeta, stage);
+      dashboardState.summariesReportsComputationCache = {
+        recordsRef: historicalRecords,
+        key,
+        value: workerReports,
+      };
+      return workerReports;
+    }
+  } catch (error) {
+    console.warn('Summaries reports worker fallback to main thread:', error);
+  }
+  return getReportsComputation(dashboardState, settings, historicalRecords, scopeMeta, options);
+}
+
 function normalizeLithuanianText(value) {
   return String(value || '')
     .normalize('NFD')

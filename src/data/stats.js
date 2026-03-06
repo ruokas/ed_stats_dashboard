@@ -18,6 +18,7 @@ export function createStatsComputeContext() {
     doctorAggregateByRecords: new WeakMap(),
     doctorSpecialtyAggregateByRecords: new WeakMap(),
     doctorSpecialtyYearBucketsByRecords: new WeakMap(),
+    doctorYearBucketsByRecords: new WeakMap(),
   };
 }
 

@@ -75,6 +75,7 @@ export function createDataFlow(env = {}) {
     computeYearlyStats,
     renderYearlyTable,
     supportsDeferredHistoricalHydration,
+    autoScheduleDeferredHistoricalHydration,
     supportsPartialPrimaryRender,
     requiresFullRecordsForPrimary,
     fetchProfile,
@@ -153,6 +154,10 @@ export function createDataFlow(env = {}) {
     typeof supportsDeferredHistoricalHydration === 'boolean'
       ? supportsDeferredHistoricalHydration
       : Boolean(isKpiOnlyPage || isEdOnlyPage);
+  const shouldAutoScheduleDeferredMainHydration =
+    typeof autoScheduleDeferredHistoricalHydration === 'boolean'
+      ? autoScheduleDeferredHistoricalHydration
+      : true;
   const disableHistoricalForPage = Boolean(isEdOnlyPage);
   const canUseDailyStatsCache = Boolean(canUseDailyStatsCacheOnly);
   const mainDataFetchProfile =
@@ -299,6 +304,10 @@ export function createDataFlow(env = {}) {
         applyKpiFiltersAndRender,
         filterDailyStatsByWindow,
         renderRecentTable,
+        computeMonthlyStats,
+        renderMonthlyTable,
+        computeYearlyStats,
+        renderYearlyTable,
         renderEdDashboard,
         writeDailyStatsToSessionCache,
       },
@@ -512,6 +521,7 @@ export function createDataFlow(env = {}) {
         scheduleDeferredFullRecordsHydration,
         scheduleDeferredHydration,
         supportsDeferredMainHydration,
+        shouldAutoScheduleDeferredMainHydration,
         runNumber,
         settings,
         renderEdDashboard,
@@ -549,6 +559,10 @@ export function createDataFlow(env = {}) {
       if (isCurrentRun) {
         dashboardState.loading = false;
         dashboardState.hasLoadedOnce = true;
+        if (dashboardState.pendingDeferredHydrationRequest) {
+          dashboardState.pendingDeferredHydrationRequest = false;
+          requestDeferredHydration();
+        }
         restartAutoRefreshTimer();
       }
       if (isCurrentRun && dashboardState.queuedReload) {
@@ -589,5 +603,24 @@ export function createDataFlow(env = {}) {
     });
   }
 
-  return { loadDashboard, scheduleInitialLoad };
+  function requestDeferredHydration() {
+    if (!supportsDeferredMainHydration) {
+      return false;
+    }
+    if (dashboardState.loading || !dashboardState.hasLoadedOnce || dashboardState.loadCounter <= 0) {
+      dashboardState.pendingDeferredHydrationRequest = true;
+      return true;
+    }
+    const settings = getSettings();
+    scheduleDeferredHydration({
+      runNumber: dashboardState.loadCounter,
+      settings,
+      workerProgressReporter: null,
+      primaryChunkReporter: null,
+      historicalChunkReporter: null,
+    });
+    return true;
+  }
+
+  return { loadDashboard, scheduleInitialLoad, requestDeferredHydration };
 }

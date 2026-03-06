@@ -140,6 +140,10 @@ export function createDoctorStatsComputations(deps) {
   }
 
   function getDoctorSpecialtyOptions(records, options = {}) {
+    const resolver = options?.doctorSpecialtyResolver;
+    if (resolver && typeof resolver.getSpecialtyOptionsForRecords === 'function') {
+      return resolver.getSpecialtyOptionsForRecords(records);
+    }
     const list = Array.isArray(records) ? records : [];
     const labelsById = new Map();
     list.forEach((record) => {
@@ -458,60 +462,79 @@ export function createDoctorStatsComputations(deps) {
       .map((value) => String(value || '').trim())
       .filter(Boolean);
     const selectedDoctorSet = new Set(selectedDoctors.map((value) => value.toLowerCase()));
-    const meta = getDoctorScopedMeta(records, {
+    const doctorYearBucketCache = getComputeContextRecordCache(
+      options?.computeContext?.doctorYearBucketsByRecords,
+      records
+    );
+    const doctorYearBucketCacheKey = `${getDoctorScopedMetaCacheKey({
       ...options,
       yearFilter: 'all',
-    });
-    const yearSet = new Set();
-    const bucketByDoctorYear = new Map();
-    const totalsByDoctor = new Map();
+    })}|doctor-annual-buckets`;
+    let bucketed = doctorYearBucketCache?.get(doctorYearBucketCacheKey);
+    if (!bucketed) {
+      const meta = getDoctorScopedMeta(records, {
+        ...options,
+        yearFilter: 'all',
+      });
+      const yearSet = new Set();
+      const bucketByDoctorYear = new Map();
+      const totalsByDoctor = new Map();
 
-    meta.filtered.forEach((record) => {
-      const doctor = getDoctorKey(record);
-      const arrival =
-        record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
-      if (!doctor || !arrival) {
-        return;
-      }
-      const year = String(arrival.getFullYear());
-      if (!/^\d{4}$/.test(year)) {
-        return;
-      }
-      yearSet.add(year);
-      const doctorYearKey = `${doctor.key}|${year}`;
-      if (!bucketByDoctorYear.has(doctorYearKey)) {
-        bucketByDoctorYear.set(doctorYearKey, {
-          doctorKey: doctor.key,
-          alias: doctor.label,
-          year,
-          count: 0,
-          hosp: 0,
-          night: 0,
-          losSum: 0,
-          losCount: 0,
-        });
-      }
-      const bucket = bucketByDoctorYear.get(doctorYearKey);
-      bucket.count += 1;
-      if (record?.hospitalized === true) {
-        bucket.hosp += 1;
-      }
-      if (record?.night === true) {
-        bucket.night += 1;
-      }
-      const los = getLosHours(record);
-      if (Number.isFinite(los)) {
-        bucket.losSum += los;
-        bucket.losCount += 1;
-      }
-      if (!totalsByDoctor.has(doctor.key)) {
-        totalsByDoctor.set(doctor.key, { doctorKey: doctor.key, alias: doctor.label, total: 0 });
-      }
-      const totalEntry = totalsByDoctor.get(doctor.key);
-      totalEntry.total += 1;
-    });
+      meta.filtered.forEach((record) => {
+        const doctor = getDoctorKey(record);
+        const arrival =
+          record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime()) ? record.arrival : null;
+        if (!doctor || !arrival) {
+          return;
+        }
+        const year = String(arrival.getFullYear());
+        if (!/^\d{4}$/.test(year)) {
+          return;
+        }
+        yearSet.add(year);
+        const doctorYearKey = `${doctor.key}|${year}`;
+        if (!bucketByDoctorYear.has(doctorYearKey)) {
+          bucketByDoctorYear.set(doctorYearKey, {
+            doctorKey: doctor.key,
+            alias: doctor.label,
+            year,
+            count: 0,
+            hosp: 0,
+            night: 0,
+            losSum: 0,
+            losCount: 0,
+          });
+        }
+        const bucket = bucketByDoctorYear.get(doctorYearKey);
+        bucket.count += 1;
+        if (record?.hospitalized === true) {
+          bucket.hosp += 1;
+        }
+        if (record?.night === true) {
+          bucket.night += 1;
+        }
+        const los = getLosHours(record);
+        if (Number.isFinite(los)) {
+          bucket.losSum += los;
+          bucket.losCount += 1;
+        }
+        if (!totalsByDoctor.has(doctor.key)) {
+          totalsByDoctor.set(doctor.key, { doctorKey: doctor.key, alias: doctor.label, total: 0 });
+        }
+        totalsByDoctor.get(doctor.key).total += 1;
+      });
 
-    const years = Array.from(yearSet).sort((a, b) => a.localeCompare(b));
+      bucketed = {
+        meta,
+        years: Array.from(yearSet).sort((a, b) => a.localeCompare(b)),
+        bucketByDoctorYear,
+        totalsByDoctor,
+      };
+      if (doctorYearBucketCache) {
+        doctorYearBucketCache.set(doctorYearBucketCacheKey, bucketed);
+      }
+    }
+    const { meta, years, bucketByDoctorYear, totalsByDoctor } = bucketed;
     const availableDoctors = Array.from(totalsByDoctor.values())
       .filter((entry) => Number(entry?.total || 0) >= minCases)
       .sort((a, b) => Number(b.total || 0) - Number(a.total || 0))

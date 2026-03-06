@@ -36,6 +36,9 @@ describe('createSummariesDataFlowConfig', () => {
     expect(config.dataHooks.renderYearlyTable).toBe(renderYearlyTable);
     expect(config.dataHooks.computeMonthlyStats).toBeTypeOf('function');
     expect(config.dataHooks.computeYearlyStats).toBeTypeOf('function');
+    expect(config.dataHooks.fetchProfile).toBe('daily-lite');
+    expect(config.dataHooks.supportsDeferredHistoricalHydration).toBe(true);
+    expect(config.dataHooks.autoScheduleDeferredHistoricalHydration).toBe(false);
     expect(config.dataHooks.filterDailyStatsByWindow([{ x: 1 }])).toEqual([{ x: 1 }]);
     expect(config.dataHooks.filterDailyStatsByWindow(null)).toEqual([]);
   });

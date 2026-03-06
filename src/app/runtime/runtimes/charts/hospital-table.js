@@ -357,9 +357,22 @@ export function createChartsHospitalTableFeature({
     }
     const value = computeHospitalizedByDepartmentAndSpsStay(records, {
       yearFilter: normalizedYear,
+      hospitalByDeptStayAgg:
+        dashboardState.chartsHospitalLocalAggCache?.recordsRef === records
+          ? dashboardState.chartsHospitalLocalAggCache.value
+          : null,
       calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
       defaultSettings: DEFAULT_SETTINGS,
     });
+    if (
+      !dashboardState.chartsHospitalLocalAggCache ||
+      dashboardState.chartsHospitalLocalAggCache.recordsRef !== records
+    ) {
+      dashboardState.chartsHospitalLocalAggCache = {
+        recordsRef: records,
+        value: value?.aggregate || null,
+      };
+    }
     dashboardState.chartsHospitalStatsCache = {
       recordsRef: records,
       key,
@@ -385,6 +398,10 @@ export function createChartsHospitalTableFeature({
     }
     const trend = computeHospitalizedDepartmentYearlyStayTrend(records, {
       department: normalizedDepartment,
+      hospitalByDeptStayAgg:
+        dashboardState.chartsHospitalLocalAggCache?.recordsRef === records
+          ? dashboardState.chartsHospitalLocalAggCache.value
+          : null,
       calculations: settings?.calculations || DEFAULT_SETTINGS.calculations,
       defaultSettings: DEFAULT_SETTINGS,
     });
