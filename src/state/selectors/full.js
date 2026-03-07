@@ -143,6 +143,8 @@ function createRecentAndSummariesSelectors() {
     yearlyHeading: byId('yearlyHeading'),
     yearlySubtitle: byId('yearlySubtitle'),
     yearlyCaption: byId('yearlyCaption'),
+    yearlyHydrationNotice: byId('yearlyHydrationNotice'),
+    yearlyTableRoot: byId('yearlyTableRoot'),
     yearlyTable: byId('yearlyTable'),
     summariesReportsHeading: byId('summariesReportsHeading'),
     summariesReportsSubtitle: byId('summariesReportsSubtitle'),

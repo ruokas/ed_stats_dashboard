@@ -83,6 +83,48 @@ async function loadReportRuntimeHelpers() {
   return reportRuntimeHelpersPromise;
 }
 
+const YEARLY_HYDRATION_NOTICE_TEXT =
+  'Kalendoriniai metai (paskutiniai 5 metai) · rodoma laikina suvestinė, kraunama pilna istorija';
+
+export function syncSummariesYearlyHydrationState(selectors, dashboardState) {
+  const yearlySubtitle = selectors?.yearlySubtitle;
+  const yearlyNotice = selectors?.yearlyHydrationNotice;
+  const yearlyTableRoot = selectors?.yearlyTableRoot;
+  const copyButton = selectors?.yearlyTableCopyButton;
+  const downloadButton = selectors?.yearlyTableDownloadButton;
+  const recordsHydrationState = String(dashboardState?.mainData?.recordsHydrationState || '').trim();
+  const isHydrationPending = recordsHydrationState !== 'full';
+
+  if (yearlySubtitle instanceof HTMLElement) {
+    if (!yearlySubtitle.dataset.baseText) {
+      yearlySubtitle.dataset.baseText = yearlySubtitle.textContent || '';
+    }
+    yearlySubtitle.textContent = isHydrationPending
+      ? YEARLY_HYDRATION_NOTICE_TEXT
+      : yearlySubtitle.dataset.baseText || 'Kalendoriniai metai (paskutiniai 5 metai)';
+  }
+
+  if (yearlyNotice instanceof HTMLElement) {
+    yearlyNotice.hidden = !isHydrationPending;
+  }
+
+  if (yearlyTableRoot instanceof HTMLElement) {
+    if (isHydrationPending) {
+      yearlyTableRoot.setAttribute('aria-busy', 'true');
+    } else {
+      yearlyTableRoot.removeAttribute('aria-busy');
+    }
+  }
+
+  [copyButton, downloadButton].forEach((button) => {
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    button.disabled = isHydrationPending;
+    button.setAttribute('aria-disabled', isHydrationPending ? 'true' : 'false');
+  });
+}
+
 const handleTableDownloadClick = createTableDownloadHandler({
   getDatasetValue,
   setCopyButtonFeedback,
@@ -1126,6 +1168,7 @@ export async function runSummariesRuntime(core) {
     },
   });
   applySummariesDisclosure();
+  syncSummariesYearlyHydrationState(selectors, dashboardState);
   bindSummariesDisclosureButtons();
   rerenderReports = (reason = 'controls') =>
     (async () => {
@@ -1214,6 +1257,7 @@ export async function runSummariesRuntime(core) {
           clearHydrationBootstrap();
           markSummariesPerfPoint('app-summaries-hydration-complete');
         }
+        syncSummariesYearlyHydrationState(selectors, dashboardState);
         scheduleHydrationBootstrap('yearly-render');
         scheduleReportsRender('data');
       },
