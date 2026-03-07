@@ -1,48 +1,13 @@
-function formatLocalDateKey(date) {
-  if (!(date instanceof Date)) {
-    return '';
-  }
-  const time = date.getTime();
-  if (Number.isNaN(time)) {
-    return '';
-  }
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+import '../../shared/date-shift-shared.js';
+
+const sharedDateShift = globalThis.__edSharedDateShift;
+
+if (!sharedDateShift) {
+  throw new Error('Nepavyko inicializuoti bendrų datos ir pamainų helperių.');
 }
 
-function resolveShiftStartHour(calculationSettings, defaultSettings) {
-  const fallback = Number.isFinite(Number(defaultSettings?.calculations?.nightEndHour))
-    ? Number(defaultSettings.calculations.nightEndHour)
-    : 7;
-  if (Number.isFinite(Number(calculationSettings?.shiftStartHour))) {
-    return Number(calculationSettings.shiftStartHour);
-  }
-  if (Number.isFinite(Number(calculationSettings?.nightEndHour))) {
-    return Number(calculationSettings.nightEndHour);
-  }
-  return fallback;
-}
-
-function computeShiftDateKey(referenceDate, shiftStartHour) {
-  if (!(referenceDate instanceof Date) || Number.isNaN(referenceDate.getTime())) {
-    return '';
-  }
-  const dayMinutes = 24 * 60;
-  const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
-  const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
-  const arrivalMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
-  const shiftAnchor = new Date(
-    referenceDate.getFullYear(),
-    referenceDate.getMonth(),
-    referenceDate.getDate()
-  );
-  if (arrivalMinutes < startMinutes) {
-    shiftAnchor.setDate(shiftAnchor.getDate() - 1);
-  }
-  return formatLocalDateKey(shiftAnchor);
-}
+const resolveShiftStartHour = sharedDateShift.resolveShiftStartHour;
+const computeShiftDateKey = sharedDateShift.computeShiftDateKey;
 
 function getRecordShiftDateKey(record, shiftStartHour) {
   const referenceDate =

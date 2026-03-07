@@ -10,8 +10,23 @@ function readUtf8(filePath) {
   return fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
 }
 
-function readTemplate(relativePath) {
-  return readUtf8(path.join(templateRoot, relativePath)).trimEnd();
+function expandIncludes(content, relativePath, stack) {
+  return content.replace(/<!--\s*@include\s+(.+?)\s*-->/g, (_match, includePath) => {
+    const currentDir = path.dirname(relativePath);
+    const resolvedRelativePath = path.normalize(path.join(currentDir, includePath.trim()));
+    return readTemplate(resolvedRelativePath, stack);
+  });
+}
+
+function readTemplate(relativePath, parentStack = new Set()) {
+  const normalizedRelativePath = path.normalize(relativePath);
+  if (parentStack.has(normalizedRelativePath)) {
+    throw new Error(`Recursive template include detected: ${normalizedRelativePath}`);
+  }
+  const nextStack = new Set(parentStack);
+  nextStack.add(normalizedRelativePath);
+  const fileContent = readUtf8(path.join(templateRoot, normalizedRelativePath));
+  return expandIncludes(fileContent, normalizedRelativePath, nextStack).trimEnd();
 }
 
 function toBodyAttributes(attributes = {}) {

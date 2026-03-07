@@ -397,3 +397,5 @@ export async function runFeedbackRuntime(core) {
   dataFlow.scheduleInitialLoad();
   persistFeedbackQuery();
 }
+
+export const runFeedbackPage = runFeedbackRuntime;

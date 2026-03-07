@@ -13,5 +13,11 @@ describe('summaries template report-card loading placeholders', () => {
     expect(reportCardLoadingMatches.length).toBeGreaterThanOrEqual(10);
     expect(html).toContain('<canvas id="ageDiagnosisHeatmapChart" height="360"></canvas>');
     expect(html).toContain('<canvas id="referralMonthlyHeatmapChart" height="360"></canvas>');
+    expect(html).toContain('data-summaries-section-toggle="recent"');
+    expect(html).toContain('role="button"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toContain('data-summaries-section-panel="reports"');
+    expect(html).toContain('data-summaries-report-group-toggle="clinical"');
+    expect(html).toContain('data-summaries-report-group-panel="pspc"');
   });
 });

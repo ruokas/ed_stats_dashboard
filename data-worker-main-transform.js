@@ -2,6 +2,18 @@
  * Data transformation and aggregation helpers for the dashboard worker.
  */
 
+importScripts('./shared/date-shift-shared.js');
+
+const mainTransformSharedDateShift = self.__edSharedDateShift;
+
+if (!mainTransformSharedDateShift) {
+  throw new Error('Nepavyko inicializuoti bendrų datos ir pamainų helperių worker aplinkoje.');
+}
+
+const mainTransformToDateKeyFromDate = mainTransformSharedDateShift.toDateKeyFromDate;
+const mainTransformResolveShiftStartHour = mainTransformSharedDateShift.resolveShiftStartHour;
+const mainTransformComputeShiftDateKey = mainTransformSharedDateShift.computeShiftDateKey;
+
 function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   if (!text) {
     throw new Error('CSV turinys tuščias.');
@@ -76,7 +88,7 @@ function transformCsvWithStats(text, options = {}, progressOptions = {}) {
   }
   const dataRows = rows.slice(1).filter((row) => row.some((cell) => (cell ?? '').trim().length > 0));
   const totalRows = dataRows.length;
-  const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
+  const shiftStartHour = mainTransformResolveShiftStartHour(calculations, calculationDefaults);
   const hospitalByDeptStayAgg = includeHospitalByDeptStayAgg ? createHospitalizedDeptStayAgg() : null;
   const dailyMap = new Map();
   const records = includeRecords ? [] : null;
@@ -774,59 +786,6 @@ function mapRow(header, cols, delimiter, indices, csvRuntime, calculations, calc
   return entry;
 }
 
-function formatLocalDateKey(date) {
-  if (!(date instanceof Date)) {
-    return '';
-  }
-  const time = date.getTime();
-  if (Number.isNaN(time)) {
-    return '';
-  }
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function toDateKeyFromDate(date) {
-  return formatLocalDateKey(date);
-}
-
-function resolveShiftStartHour(calculations = {}, defaults = {}) {
-  if (Number.isFinite(Number(calculations.shiftStartHour))) {
-    return Number(calculations.shiftStartHour);
-  }
-  if (Number.isFinite(Number(calculations.nightEndHour))) {
-    return Number(calculations.nightEndHour);
-  }
-  if (Number.isFinite(Number(defaults.shiftStartHour))) {
-    return Number(defaults.shiftStartHour);
-  }
-  if (Number.isFinite(Number(defaults.nightEndHour))) {
-    return Number(defaults.nightEndHour);
-  }
-  return 7;
-}
-
-function computeShiftDateKey(referenceDate, shiftStartHour) {
-  if (!(referenceDate instanceof Date) || Number.isNaN(referenceDate.getTime())) {
-    return '';
-  }
-  const dayMinutes = 24 * 60;
-  const startMinutesRaw = Number.isFinite(Number(shiftStartHour)) ? Number(shiftStartHour) * 60 : 7 * 60;
-  const startMinutes = ((Math.round(startMinutesRaw) % dayMinutes) + dayMinutes) % dayMinutes;
-  const arrivalMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
-  const shiftAnchor = new Date(
-    referenceDate.getFullYear(),
-    referenceDate.getMonth(),
-    referenceDate.getDate()
-  );
-  if (arrivalMinutes < startMinutes) {
-    shiftAnchor.setDate(shiftAnchor.getDate() - 1);
-  }
-  return formatLocalDateKey(shiftAnchor);
-}
-
 function ensureDailyStatsBucket(dailyMap, dateKey) {
   if (!dailyMap.has(dateKey)) {
     dailyMap.set(dateKey, {
@@ -849,7 +808,7 @@ function accumulateDailyStatsMap(dailyMap, record, shiftStartHour) {
   const hasArrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
   const hasDischarge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
   const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
-  const dateKey = computeShiftDateKey(reference, shiftStartHour);
+  const dateKey = mainTransformComputeShiftDateKey(reference, shiftStartHour);
   if (!dateKey) {
     return;
   }
@@ -888,7 +847,7 @@ function finalizeDailyStatsMap(dailyMap) {
 }
 
 function _computeDailyStats(data, calculations, defaults) {
-  const shiftStartHour = resolveShiftStartHour(calculations, defaults);
+  const shiftStartHour = mainTransformResolveShiftStartHour(calculations, defaults);
   const dailyMap = new Map();
   data.forEach((record) => {
     accumulateDailyStatsMap(dailyMap, record, shiftStartHour);
@@ -940,7 +899,7 @@ function accumulateHospitalizedDeptStayAgg(agg, record, shiftStartHour) {
   const hasArrival = record.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
   const hasDischarge = record.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
   const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
-  const dateKey = computeShiftDateKey(reference, shiftStartHour);
+  const dateKey = mainTransformComputeShiftDateKey(reference, shiftStartHour);
   if (!dateKey) {
     return;
   }
@@ -970,7 +929,7 @@ function accumulateHospitalizedDeptStayAgg(agg, record, shiftStartHour) {
 }
 
 self.transformCsvWithStats = transformCsvWithStats;
-self.toDateKeyFromDate = toDateKeyFromDate;
+self.toDateKeyFromDate = mainTransformToDateKeyFromDate;
 // Backward-compatible helper aliases used by other worker modules (e.g. KPI filters).
 self._computeDailyStats = _computeDailyStats;
 self.computeDailyStats = _computeDailyStats;

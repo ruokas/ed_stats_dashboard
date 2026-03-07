@@ -1,26 +1,7 @@
 import { initializeLazyLoading, initializeServiceWorker, preloadChartJs } from './bootstrap.js';
 import { CLIENT_CONFIG_KEY } from './constants.js';
 import { createPageBootstrapContext } from './runtime/core-context.js';
-import { RUNTIME_MODULE_BY_PAGE, resolvePageId, shouldPreloadChartJs } from './runtime/page-config.js';
-
-function getRunnerExportName(pageId) {
-  switch (pageId) {
-    case 'charts':
-      return 'runChartsPage';
-    case 'recent':
-      return 'runRecentPage';
-    case 'summaries':
-      return 'runSummariesPage';
-    case 'gydytojai':
-      return 'runGydytojaiPage';
-    case 'feedback':
-      return 'runFeedbackPage';
-    case 'ed':
-      return 'runEdPage';
-    default:
-      return 'runKpiPage';
-  }
-}
+import { getPageRuntimeEntry, resolvePageId, shouldPreloadChartJs } from './runtime/page-config.js';
 
 function isProfilingEnabled() {
   try {
@@ -123,13 +104,12 @@ export async function startApp() {
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
   }
   const core = createPageBootstrapContext({ pageId });
-  const runtimeModulePath = RUNTIME_MODULE_BY_PAGE[pageId] || RUNTIME_MODULE_BY_PAGE.kpi;
-  const runtimeModule = await import(runtimeModulePath);
+  const runtimeEntry = getPageRuntimeEntry(pageId);
+  const runtimeModule = await import(runtimeEntry.modulePath);
   mark('app-runtime-module-imported');
-  const runnerExportName = getRunnerExportName(pageId);
-  const runPage = runtimeModule[runnerExportName];
+  const runPage = runtimeModule[runtimeEntry.exportName];
   if (typeof runPage !== 'function') {
-    throw new Error(`Nerastas puslapio runtime vykdytojas: ${runnerExportName}`);
+    throw new Error(`Nerastas puslapio runtime vykdytojas: ${runtimeEntry.exportName}`);
   }
   await runPage(core);
   mark('app-page-runner-complete');

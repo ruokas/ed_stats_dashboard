@@ -390,3 +390,5 @@ export async function runKpiRuntime(core) {
     });
   }
 }
+
+export const runKpiPage = runKpiRuntime;

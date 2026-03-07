@@ -131,29 +131,41 @@
       <a class="summaries-jump-nav__link" href="#summariesGroupPspcHeading">PSPC analizė</a>
     </nav>
 <section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
-      <div class="section__header">
-        <button
-          type="button"
-          id="recentHeading"
-          class="charts-section-toggle summaries-header-toggle"
-          data-summaries-section-toggle="recent"
-          aria-expanded="true"
-          aria-controls="recentSectionContent"
-        >
-          <span class="charts-section-toggle__title section__title">
-            <span class="section-title__text">Savaitės vaizdas</span>
-          </span>
-          <span id="recentSubtitle" class="charts-section-toggle__summary">Paskutinių 7 dienų kasdienė suvestinė pagal naujausius duomenis</span>
-        </button>
+      <div
+        class="section__header summaries-section-toggle is-expanded"
+        data-summaries-section-toggle="recent"
+        aria-expanded="true"
+        aria-controls="summariesRecentPanel"
+        role="button"
+        tabindex="0"
+      >
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="recentHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3.5" y="4" width="17" height="17" rx="2" />
+                  <path d="M8 2.5v3" />
+                  <path d="M16 2.5v3" />
+                  <path d="M3.5 9h17" />
+                  <path d="M12 13v4" />
+                  <path d="M12 13h3" />
+                </svg>
+              </span>
+              <span class="section-title__text">Savaitės vaizdas</span>
+            </h2>
+            <p id="recentSubtitle" class="section__subtitle">Paskutinių 7 dienų kasdienė suvestinė pagal naujausius duomenis</p>
+          </div>
+        </div>
+        <div class="section__actions"></div>
       </div>
       <div
-        id="recentSectionContent"
+        id="summariesRecentPanel"
         class="summaries-section-panel"
         data-summaries-section-panel="recent"
-        role="region"
-        aria-labelledby="recentHeading"
+        data-expanded="true"
       >
-      <div class="section__actions summaries-panel-actions">
+      <div class="section__actions summaries-panel-actions" aria-label="Savaitės vaizdo eksportas">
         <button
           type="button"
           class="chart-copy-btn"
@@ -234,29 +246,38 @@
       </div>
     </section>
 <section class="section section--compact" aria-labelledby="yearlyHeading" data-section="yearly">
-      <div class="section__header">
-        <button
-          type="button"
-          id="yearlyHeading"
-          class="charts-section-toggle summaries-header-toggle"
-          data-summaries-section-toggle="yearly"
-          aria-expanded="true"
-          aria-controls="yearlySectionContent"
-        >
-          <span class="charts-section-toggle__title section__title">
-            <span class="section-title__text">Metinė suvestinė</span>
-          </span>
-          <span id="yearlySubtitle" class="charts-section-toggle__summary">Kalendoriniai metai (paskutiniai 5 metai)</span>
-        </button>
+      <div
+        class="section__header summaries-section-toggle is-expanded"
+        data-summaries-section-toggle="yearly"
+        aria-expanded="true"
+        aria-controls="summariesYearlyPanel"
+        role="button"
+        tabindex="0"
+      >
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="yearlyHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 18h16" />
+                  <path d="M6 15L10 11L13 14L18 7" />
+                  <path d="M18 7h3v3" />
+                </svg>
+              </span>
+              <span class="section-title__text">Metinė suvestinė</span>
+            </h2>
+            <p id="yearlySubtitle" class="section__subtitle">Kalendoriniai metai (paskutiniai 5 metai)</p>
+          </div>
+        </div>
+        <div class="section__actions"></div>
       </div>
       <div
-        id="yearlySectionContent"
+        id="summariesYearlyPanel"
         class="summaries-section-panel"
         data-summaries-section-panel="yearly"
-        role="region"
-        aria-labelledby="yearlyHeading"
+        data-expanded="true"
       >
-      <div class="section__actions summaries-panel-actions">
+      <div class="section__actions summaries-panel-actions" aria-label="Metinės suvestinės eksportas">
         <button
           type="button"
           id="yearlyTableCopyButton"
@@ -291,6 +312,15 @@
           </svg>
         </button>
       </div>
+      <p
+        id="yearlyHydrationNotice"
+        class="summaries-loading-note"
+        role="status"
+        aria-live="polite"
+        hidden
+      >
+        Rodoma laikina suvestinė. Kraunama pilna istorinė metinė suvestinė.
+      </p>
       <div class="table-wrapper table-wrapper--full-height" role="region" aria-live="polite" aria-labelledby="yearlyHeading">
         <table id="yearlyTableRoot" aria-describedby="yearlySubtitle">
           <caption id="yearlyCaption" class="sr-only">Metinių pacientų suvestinė: sumos ir vidurkiai</caption>
@@ -347,27 +377,37 @@
       </div>
     </section>
     <section class="section section--compact" aria-labelledby="summariesReportsHeading" data-section="summaries-reports">
-      <div class="section__header">
-        <button
-          type="button"
-          id="summariesReportsHeading"
-          class="charts-section-toggle summaries-header-toggle summaries-header-toggle--full"
-          data-summaries-section-toggle="reports"
-          aria-expanded="true"
-          aria-controls="summariesReportsContent"
-        >
-          <span class="charts-section-toggle__title section__title">
-            <span class="section-title__text">Papildomų duomenų ataskaitos</span>
-          </span>
-          <span id="summariesReportsSubtitle" class="charts-section-toggle__summary"></span>
-        </button>
+      <div
+        class="section__header summaries-section-toggle is-expanded"
+        data-summaries-section-toggle="reports"
+        aria-expanded="true"
+        aria-controls="summariesReportsPanel"
+        role="button"
+        tabindex="0"
+      >
+        <div class="section__heading">
+          <div class="section__title-row">
+            <h2 id="summariesReportsHeading" class="section__title">
+              <span class="section-title__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 18h16" />
+                  <path d="M5 13h3" />
+                  <path d="M10 9h3" />
+                  <path d="M15 6h4" />
+                </svg>
+              </span>
+              <span class="section-title__text">Papildomų duomenų ataskaitos</span>
+            </h2>
+            <p id="summariesReportsSubtitle" class="section__subtitle"></p>
+          </div>
+        </div>
+        <div class="section__actions"></div>
       </div>
       <div
-        id="summariesReportsContent"
+        id="summariesReportsPanel"
         class="summaries-section-panel"
         data-summaries-section-panel="reports"
-        role="region"
-        aria-labelledby="summariesReportsHeading"
+        data-expanded="true"
       >
       <div class="summaries-reports-controls" role="group" aria-label="Papildomų ataskaitų filtrai">
         <label class="summaries-reports-controls__field" for="summariesReportsYear">
@@ -388,25 +428,27 @@
           <input id="summariesReportsMinGroupSize" type="number" min="1" max="999" step="1" value="100">
         </label>
       </div>
+      <p id="summariesReportsCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
       <div class="summaries-report-groups">
         <section class="summaries-report-group" aria-labelledby="summariesGroupClinicalHeading">
-          <button
-            type="button"
-            id="summariesGroupClinicalHeading"
-            class="charts-subsection-toggle summaries-group-toggle"
+          <header
+            class="summaries-report-group__heading summaries-report-group-toggle is-expanded"
             data-summaries-report-group-toggle="clinical"
             aria-expanded="true"
-            aria-controls="summariesClinicalContent"
+            aria-controls="summariesGroupClinicalPanel"
+            role="button"
+            tabindex="0"
           >
-            <span class="charts-subsection-toggle__title">Klinikinė apžvalga</span>
-            <span class="charts-subsection-toggle__summary">Diagnozių, amžiaus grupių ir išvykimo ypatumų apžvalga</span>
-          </button>
+            <div class="summaries-report-group__heading-copy">
+              <h3 id="summariesGroupClinicalHeading">Klinikinė apžvalga</h3>
+              <p>Diagnozių, amžiaus grupių ir išvykimo ypatumų apžvalga.</p>
+            </div>
+          </header>
           <div
-            id="summariesClinicalContent"
+            id="summariesGroupClinicalPanel"
             class="summaries-report-group__panel"
             data-summaries-report-group-panel="clinical"
-            role="region"
-            aria-labelledby="summariesGroupClinicalHeading"
+            data-expanded="true"
           >
           <div class="summaries-report-group__grid summaries-reports-grid">
             <article class="report-card" data-loading="true">
@@ -562,23 +604,24 @@
           </div>
         </section>
         <section class="summaries-report-group" aria-labelledby="summariesGroupReferralHeading">
-          <button
-            type="button"
-            id="summariesGroupReferralHeading"
-            class="charts-subsection-toggle summaries-group-toggle"
+          <header
+            class="summaries-report-group__heading summaries-report-group-toggle is-expanded"
             data-summaries-report-group-toggle="referral"
             aria-expanded="true"
-            aria-controls="summariesReferralContent"
+            aria-controls="summariesGroupReferralPanel"
+            role="button"
+            tabindex="0"
           >
-            <span class="charts-subsection-toggle__title">Siuntimai ir baigtys</span>
-            <span class="charts-subsection-toggle__summary">Siuntimų dinamika, mėnesinis pjūvis ir baigčių palyginimas</span>
-          </button>
+            <div class="summaries-report-group__heading-copy">
+              <h3 id="summariesGroupReferralHeading">Siuntimai ir baigtys</h3>
+              <p>Siuntimų dinamika, mėnesinis pjūvis ir baigčių palyginimas.</p>
+            </div>
+          </header>
           <div
-            id="summariesReferralContent"
+            id="summariesGroupReferralPanel"
             class="summaries-report-group__panel"
             data-summaries-report-group-panel="referral"
-            role="region"
-            aria-labelledby="summariesGroupReferralHeading"
+            data-expanded="true"
           >
           <div class="summaries-report-group__grid summaries-reports-grid">
             <article class="report-card" data-loading="true">
@@ -696,23 +739,24 @@
           </div>
         </section>
         <section class="summaries-report-group" aria-labelledby="summariesGroupPspcHeading">
-          <button
-            type="button"
-            id="summariesGroupPspcHeading"
-            class="charts-subsection-toggle summaries-group-toggle"
+          <header
+            class="summaries-report-group__heading summaries-report-group-toggle is-expanded"
             data-summaries-report-group-toggle="pspc"
             aria-expanded="true"
-            aria-controls="summariesPspcContent"
+            aria-controls="summariesGroupPspcPanel"
+            role="button"
+            tabindex="0"
           >
-            <span class="charts-subsection-toggle__title">PSPC analizė</span>
-            <span class="charts-subsection-toggle__summary">Ryšiai tarp siuntimų, hospitalizacijų ir PSPC pasiskirstymo</span>
-          </button>
+            <div class="summaries-report-group__heading-copy">
+              <h3 id="summariesGroupPspcHeading">PSPC analizė</h3>
+              <p>Ryšiai tarp siuntimų, hospitalizacijų ir PSPC pasiskirstymo.</p>
+            </div>
+          </header>
           <div
-            id="summariesPspcContent"
+            id="summariesGroupPspcPanel"
             class="summaries-report-group__panel"
             data-summaries-report-group-panel="pspc"
-            role="region"
-            aria-labelledby="summariesGroupPspcHeading"
+            data-expanded="true"
           >
           <div class="summaries-report-group__grid summaries-reports-grid">
             <article class="report-card report-card--full-width" data-loading="true">

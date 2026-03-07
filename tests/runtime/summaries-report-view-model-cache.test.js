@@ -4,7 +4,7 @@ import {
   computeSummariesReportViewModels,
   getCachedSummariesReportViewModels,
   getCachedSummariesReportViewModelsAsync,
-} from '../../src/app/runtime/runtimes/summaries-runtime-impl.js';
+} from '../../src/app/runtime/runtimes/summaries-runtime-main.js';
 
 function createReportsFixture() {
   return {

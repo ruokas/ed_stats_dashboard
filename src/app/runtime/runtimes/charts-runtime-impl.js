@@ -589,3 +589,5 @@ export async function runChartsRuntime(core) {
     persistChartsQuery();
   }
 }
+
+export const runChartsPage = runChartsRuntime;
