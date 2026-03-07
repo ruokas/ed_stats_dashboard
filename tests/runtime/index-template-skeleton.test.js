@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('index template first-paint skeletons', () => {
   it('renders KPI skeleton cards directly in #kpiGrid for first paint', () => {
-    const filePath = path.resolve('templates/page-shell/content/index.main.html');
+    const filePath = path.resolve('index.html');
     const html = fs.readFileSync(filePath, 'utf8');
 
     expect(html).toContain(

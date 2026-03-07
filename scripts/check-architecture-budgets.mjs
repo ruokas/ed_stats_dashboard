@@ -12,10 +12,10 @@ const runtimeImplFiles = [
   'src/app/runtime/runtimes/charts-runtime-impl.js',
   'src/app/runtime/runtimes/ed-runtime.js',
   'src/app/runtime/runtimes/feedback-runtime.js',
-  'src/app/runtime/runtimes/gydytojai-runtime-impl.js',
+  'src/app/runtime/runtimes/gydytojai-runtime-main.js',
   'src/app/runtime/runtimes/kpi-runtime.js',
   'src/app/runtime/runtimes/recent-runtime.js',
-  'src/app/runtime/runtimes/summaries-runtime-impl.js',
+  'src/app/runtime/runtimes/summaries-runtime-main.js',
 ];
 
 const orchestratorFiles = ['src/app/runtime/data-flow.js', 'src/app/runtime/kpi-flow.js'];

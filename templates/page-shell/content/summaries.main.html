@@ -8,7 +8,14 @@
       <a class="summaries-jump-nav__link" href="#summariesGroupPspcHeading">PSPC analizė</a>
     </nav>
 <section class="section section--compact" aria-labelledby="recentHeading" data-section="recent">
-      <div class="section__header">
+      <div
+        class="section__header summaries-section-toggle is-expanded"
+        data-summaries-section-toggle="recent"
+        aria-expanded="true"
+        aria-controls="summariesRecentPanel"
+        role="button"
+        tabindex="0"
+      >
         <div class="section__heading">
           <div class="section__title-row">
             <h2 id="recentHeading" class="section__title">
@@ -27,39 +34,46 @@
             <p id="recentSubtitle" class="section__subtitle">Paskutinių 7 dienų kasdienė suvestinė pagal naujausius duomenis</p>
           </div>
         </div>
-        <div class="section__actions">
-          <button
-            type="button"
-            class="chart-copy-btn"
-            data-table-download="copy"
-            data-table-target="#recentTableRoot"
-            data-table-title="Savaitės vaizdas"
-            aria-label="Nukopijuoti savaitės vaizdo lentelę PNG formatu"
-            title="Nukopijuoti PNG"
-            data-tooltip="Kopijuoti (PNG)"
-          >
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
-              <rect x="4" y="4" width="11" height="11" rx="2"></rect>
-            </svg>
-          </button>
-          <button
-            type="button"
-            class="chart-download-btn"
-            data-table-download="png"
-            data-table-target="#recentTableRoot"
-            data-table-title="Savaitės vaizdas"
-            aria-label="Parsisiųsti savaitės vaizdo lentelę PNG formatu"
-            title="Parsisiųsti PNG"
-            data-tooltip="Parsisiųsti PNG"
-          >
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3v12"></path>
-              <path d="M8 11l4 4 4-4"></path>
-              <path d="M4 21h16"></path>
-            </svg>
-          </button>
-        </div>
+        <div class="section__actions"></div>
+      </div>
+      <div
+        id="summariesRecentPanel"
+        class="summaries-section-panel"
+        data-summaries-section-panel="recent"
+        data-expanded="true"
+      >
+      <div class="section__actions summaries-panel-actions" aria-label="Savaitės vaizdo eksportas">
+        <button
+          type="button"
+          class="chart-copy-btn"
+          data-table-download="copy"
+          data-table-target="#recentTableRoot"
+          data-table-title="Savaitės vaizdas"
+          aria-label="Nukopijuoti savaitės vaizdo lentelę PNG formatu"
+          title="Nukopijuoti PNG"
+          data-tooltip="Kopijuoti (PNG)"
+        >
+          <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+            <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="chart-download-btn"
+          data-table-download="png"
+          data-table-target="#recentTableRoot"
+          data-table-title="Savaitės vaizdas"
+          aria-label="Parsisiųsti savaitės vaizdo lentelę PNG formatu"
+          title="Parsisiųsti PNG"
+          data-tooltip="Parsisiųsti PNG"
+        >
+          <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12"></path>
+            <path d="M8 11l4 4 4-4"></path>
+            <path d="M4 21h16"></path>
+          </svg>
+        </button>
       </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
         <table id="recentTableRoot" aria-describedby="recentSubtitle">
@@ -106,9 +120,17 @@
           </tbody>
         </table>
       </div>
+      </div>
     </section>
 <section class="section section--compact" aria-labelledby="yearlyHeading" data-section="yearly">
-      <div class="section__header">
+      <div
+        class="section__header summaries-section-toggle is-expanded"
+        data-summaries-section-toggle="yearly"
+        aria-expanded="true"
+        aria-controls="summariesYearlyPanel"
+        role="button"
+        tabindex="0"
+      >
         <div class="section__heading">
           <div class="section__title-row">
             <h2 id="yearlyHeading" class="section__title">
@@ -124,41 +146,48 @@
             <p id="yearlySubtitle" class="section__subtitle">Kalendoriniai metai (paskutiniai 5 metai)</p>
           </div>
         </div>
-        <div class="section__actions">
-          <button
-            type="button"
-            id="yearlyTableCopyButton"
-            class="chart-copy-btn"
-            data-table-download="copy"
-            data-table-target="#yearlyTableRoot"
-            data-table-title="Metinė suvestinė"
-            data-tooltip="Kopijuoti lentelę"
-            aria-label="Kopijuoti metinę suvestinę"
-            title="Kopijuoti metinę suvestinę"
-          >
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
-              <rect x="4" y="4" width="11" height="11" rx="2"></rect>
-            </svg>
-          </button>
-          <button
-            type="button"
-            id="yearlyTableDownloadButton"
-            class="chart-download-btn"
-            data-table-download="csv"
-            data-table-target="#yearlyTableRoot"
-            data-table-title="Metinė suvestinė"
-            data-tooltip="Parsisiųsti CSV"
-            aria-label="Parsisiųsti metinę suvestinę"
-            title="Parsisiųsti CSV"
-          >
-            <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3v12"></path>
-              <path d="M8 11l4 4 4-4"></path>
-              <path d="M4 21h16"></path>
-            </svg>
-          </button>
-        </div>
+        <div class="section__actions"></div>
+      </div>
+      <div
+        id="summariesYearlyPanel"
+        class="summaries-section-panel"
+        data-summaries-section-panel="yearly"
+        data-expanded="true"
+      >
+      <div class="section__actions summaries-panel-actions" aria-label="Metinės suvestinės eksportas">
+        <button
+          type="button"
+          id="yearlyTableCopyButton"
+          class="chart-copy-btn"
+          data-table-download="copy"
+          data-table-target="#yearlyTableRoot"
+          data-table-title="Metinė suvestinė"
+          data-tooltip="Kopijuoti lentelę"
+          aria-label="Kopijuoti metinę suvestinę"
+          title="Kopijuoti metinę suvestinę"
+        >
+          <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+            <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+          </svg>
+        </button>
+        <button
+          type="button"
+          id="yearlyTableDownloadButton"
+          class="chart-download-btn"
+          data-table-download="csv"
+          data-table-target="#yearlyTableRoot"
+          data-table-title="Metinė suvestinė"
+          data-tooltip="Parsisiųsti CSV"
+          aria-label="Parsisiųsti metinę suvestinę"
+          title="Parsisiųsti CSV"
+        >
+          <svg viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true" focusable="false" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12"></path>
+            <path d="M8 11l4 4 4-4"></path>
+            <path d="M4 21h16"></path>
+          </svg>
+        </button>
       </div>
       <div class="table-wrapper table-wrapper--full-height" role="region" aria-live="polite" aria-labelledby="yearlyHeading">
         <table id="yearlyTableRoot" aria-describedby="yearlySubtitle">
@@ -213,9 +242,17 @@
           </tbody>
         </table>
       </div>
+      </div>
     </section>
     <section class="section section--compact" aria-labelledby="summariesReportsHeading" data-section="summaries-reports">
-      <div class="section__header">
+      <div
+        class="section__header summaries-section-toggle is-expanded"
+        data-summaries-section-toggle="reports"
+        aria-expanded="true"
+        aria-controls="summariesReportsPanel"
+        role="button"
+        tabindex="0"
+      >
         <div class="section__heading">
           <div class="section__title-row">
             <h2 id="summariesReportsHeading" class="section__title">
@@ -232,7 +269,14 @@
             <p id="summariesReportsSubtitle" class="section__subtitle"></p>
           </div>
         </div>
+        <div class="section__actions"></div>
       </div>
+      <div
+        id="summariesReportsPanel"
+        class="summaries-section-panel"
+        data-summaries-section-panel="reports"
+        data-expanded="true"
+      >
       <div class="summaries-reports-controls" role="group" aria-label="Papildomų ataskaitų filtrai">
         <label class="summaries-reports-controls__field" for="summariesReportsYear">
           <span>Metai</span>
@@ -255,10 +299,25 @@
       <p id="summariesReportsCoverage" class="summaries-reports-coverage" aria-live="polite"></p>
       <div class="summaries-report-groups">
         <section class="summaries-report-group" aria-labelledby="summariesGroupClinicalHeading">
-          <header class="summaries-report-group__heading">
-            <h3 id="summariesGroupClinicalHeading">Klinikinė apžvalga</h3>
-            <p>Diagnozių, amžiaus grupių ir išvykimo ypatumų apžvalga.</p>
+          <header
+            class="summaries-report-group__heading summaries-report-group-toggle is-expanded"
+            data-summaries-report-group-toggle="clinical"
+            aria-expanded="true"
+            aria-controls="summariesGroupClinicalPanel"
+            role="button"
+            tabindex="0"
+          >
+            <div class="summaries-report-group__heading-copy">
+              <h3 id="summariesGroupClinicalHeading">Klinikinė apžvalga</h3>
+              <p>Diagnozių, amžiaus grupių ir išvykimo ypatumų apžvalga.</p>
+            </div>
           </header>
+          <div
+            id="summariesGroupClinicalPanel"
+            class="summaries-report-group__panel"
+            data-summaries-report-group-panel="clinical"
+            data-expanded="true"
+          >
           <div class="summaries-report-group__grid summaries-reports-grid">
             <article class="report-card" data-loading="true">
               <div class="report-card__head">
@@ -410,12 +469,28 @@
               <canvas id="z769TrendChart" height="220"></canvas>
             </article>
           </div>
+          </div>
         </section>
         <section class="summaries-report-group" aria-labelledby="summariesGroupReferralHeading">
-          <header class="summaries-report-group__heading">
-            <h3 id="summariesGroupReferralHeading">Siuntimai ir baigtys</h3>
-            <p>Siuntimų dinamika, mėnesinis pjūvis ir baigčių palyginimas.</p>
+          <header
+            class="summaries-report-group__heading summaries-report-group-toggle is-expanded"
+            data-summaries-report-group-toggle="referral"
+            aria-expanded="true"
+            aria-controls="summariesGroupReferralPanel"
+            role="button"
+            tabindex="0"
+          >
+            <div class="summaries-report-group__heading-copy">
+              <h3 id="summariesGroupReferralHeading">Siuntimai ir baigtys</h3>
+              <p>Siuntimų dinamika, mėnesinis pjūvis ir baigčių palyginimas.</p>
+            </div>
           </header>
+          <div
+            id="summariesGroupReferralPanel"
+            class="summaries-report-group__panel"
+            data-summaries-report-group-panel="referral"
+            data-expanded="true"
+          >
           <div class="summaries-report-group__grid summaries-reports-grid">
             <article class="report-card" data-loading="true">
               <div class="report-card__head">
@@ -529,12 +604,28 @@
               <canvas id="referralMonthlyHeatmapChart" height="360"></canvas>
             </article>
           </div>
+          </div>
         </section>
         <section class="summaries-report-group" aria-labelledby="summariesGroupPspcHeading">
-          <header class="summaries-report-group__heading">
-            <h3 id="summariesGroupPspcHeading">PSPC analizė</h3>
-            <p>Ryšiai tarp siuntimų, hospitalizacijų ir PSPC pasiskirstymo.</p>
+          <header
+            class="summaries-report-group__heading summaries-report-group-toggle is-expanded"
+            data-summaries-report-group-toggle="pspc"
+            aria-expanded="true"
+            aria-controls="summariesGroupPspcPanel"
+            role="button"
+            tabindex="0"
+          >
+            <div class="summaries-report-group__heading-copy">
+              <h3 id="summariesGroupPspcHeading">PSPC analizė</h3>
+              <p>Ryšiai tarp siuntimų, hospitalizacijų ir PSPC pasiskirstymo.</p>
+            </div>
           </header>
+          <div
+            id="summariesGroupPspcPanel"
+            class="summaries-report-group__panel"
+            data-summaries-report-group-panel="pspc"
+            data-expanded="true"
+          >
           <div class="summaries-report-group__grid summaries-reports-grid">
             <article class="report-card report-card--full-width" data-loading="true">
               <div class="report-card__head">
@@ -668,7 +759,9 @@
               <canvas id="pspcDistributionChart" height="220"></canvas>
             </article>
           </div>
+          </div>
         </section>
+      </div>
       </div>
     </section>
 </div>

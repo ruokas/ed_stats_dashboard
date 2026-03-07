@@ -3,6 +3,25 @@
  * Depends on shared CSV/date helpers loaded from data-worker-transforms.js.
  */
 
+importScripts('./shared/ed-utils-shared.js');
+importScripts('./shared/date-shift-shared.js');
+
+const edTransformSharedEdUtils = self.__edSharedEdUtils;
+const edTransformSharedDateShift = self.__edSharedDateShift;
+
+if (!edTransformSharedEdUtils) {
+  throw new Error('Nepavyko inicializuoti bendrų ED helperių worker aplinkoje.');
+}
+if (!edTransformSharedDateShift) {
+  throw new Error('Nepavyko inicializuoti bendrų datos ir pamainų helperių worker aplinkoje.');
+}
+
+const edTransformParseDurationMinutes = edTransformSharedEdUtils.parseDurationMinutes;
+const edTransformParseNumericCell = edTransformSharedEdUtils.parseNumericCell;
+const edTransformParseRatio = edTransformSharedEdUtils.normalizeRatioValue;
+const edTransformNormalizeDisposition = edTransformSharedEdUtils.normalizeDispositionValue;
+const edTransformToDateKeyFromDate = edTransformSharedDateShift.toDateKeyFromDate;
+
 function transformEdCsvWithSummary(text, options = {}) {
   void options;
   if (!text) {
@@ -121,12 +140,12 @@ function transformEdCsvWithSummary(text, options = {}) {
     const arrivalDate = arrivalValue ? parseDate(arrivalValue) : null;
     const departureDate = departureValue ? parseDate(departureValue) : null;
     const recordDate = dateValue ? parseDate(dateValue) : arrivalDate || departureDate || timestamp;
-    const dateKey = recordDate ? toDateKeyFromDate(recordDate) : '';
-    const dispositionInfo = normalizeEdDisposition(
+    const dateKey = recordDate ? edTransformToDateKeyFromDate(recordDate) : '';
+    const dispositionInfo = edTransformNormalizeDisposition(
       legacyIndices.disposition >= 0 ? normalizedRow[legacyIndices.disposition] : ''
     );
     let losMinutes =
-      legacyIndices.los >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.los]) : null;
+      legacyIndices.los >= 0 ? edTransformParseDurationMinutes(normalizedRow[legacyIndices.los]) : null;
     if (!Number.isFinite(losMinutes) && arrivalDate instanceof Date && departureDate instanceof Date) {
       const diffMinutes = (departureDate.getTime() - arrivalDate.getTime()) / 60000;
       losMinutes = Number.isFinite(diffMinutes) && diffMinutes >= 0 ? diffMinutes : null;
@@ -139,59 +158,59 @@ function transformEdCsvWithSummary(text, options = {}) {
       dispositionCategory: dispositionInfo.category,
       losMinutes: Number.isFinite(losMinutes) && losMinutes >= 0 ? losMinutes : null,
       doorToProviderMinutes:
-        legacyIndices.door >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.door]) : null,
+        legacyIndices.door >= 0 ? edTransformParseDurationMinutes(normalizedRow[legacyIndices.door]) : null,
       decisionToLeaveMinutes:
         legacyIndices.decision >= 0
-          ? parseDurationMinutesWorker(normalizedRow[legacyIndices.decision])
+          ? edTransformParseDurationMinutes(normalizedRow[legacyIndices.decision])
           : null,
       labMinutes:
-        legacyIndices.lab >= 0 ? parseDurationMinutesWorker(normalizedRow[legacyIndices.lab]) : null,
+        legacyIndices.lab >= 0 ? edTransformParseDurationMinutes(normalizedRow[legacyIndices.lab]) : null,
       snapshotLabMinutes:
-        snapshotIndices.lab >= 0 ? parseNumericCellWorker(normalizedRow[snapshotIndices.lab]) : null,
+        snapshotIndices.lab >= 0 ? edTransformParseNumericCell(normalizedRow[snapshotIndices.lab]) : null,
       currentPatients:
         snapshotIndices.currentPatients >= 0
-          ? parseNumericCellWorker(normalizedRow[snapshotIndices.currentPatients])
+          ? edTransformParseNumericCell(normalizedRow[snapshotIndices.currentPatients])
           : null,
       occupiedBeds:
         snapshotIndices.occupiedBeds >= 0
-          ? parseNumericCellWorker(normalizedRow[snapshotIndices.occupiedBeds])
+          ? edTransformParseNumericCell(normalizedRow[snapshotIndices.occupiedBeds])
           : null,
       nurseRatio:
         snapshotIndices.nurseRatio >= 0
-          ? parseRatioWorker(normalizedRow[snapshotIndices.nurseRatio]).ratio
+          ? edTransformParseRatio(normalizedRow[snapshotIndices.nurseRatio]).ratio
           : null,
       nurseRatioText:
         snapshotIndices.nurseRatio >= 0
-          ? parseRatioWorker(normalizedRow[snapshotIndices.nurseRatio]).text
+          ? edTransformParseRatio(normalizedRow[snapshotIndices.nurseRatio]).text
           : '',
       doctorRatio:
         snapshotIndices.doctorRatio >= 0
-          ? parseRatioWorker(normalizedRow[snapshotIndices.doctorRatio]).ratio
+          ? edTransformParseRatio(normalizedRow[snapshotIndices.doctorRatio]).ratio
           : null,
       doctorRatioText:
         snapshotIndices.doctorRatio >= 0
-          ? parseRatioWorker(normalizedRow[snapshotIndices.doctorRatio]).text
+          ? edTransformParseRatio(normalizedRow[snapshotIndices.doctorRatio]).text
           : '',
       categories: {
         1:
           snapshotIndices.category1 >= 0
-            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category1])
+            ? edTransformParseNumericCell(normalizedRow[snapshotIndices.category1])
             : null,
         2:
           snapshotIndices.category2 >= 0
-            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category2])
+            ? edTransformParseNumericCell(normalizedRow[snapshotIndices.category2])
             : null,
         3:
           snapshotIndices.category3 >= 0
-            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category3])
+            ? edTransformParseNumericCell(normalizedRow[snapshotIndices.category3])
             : null,
         4:
           snapshotIndices.category4 >= 0
-            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category4])
+            ? edTransformParseNumericCell(normalizedRow[snapshotIndices.category4])
             : null,
         5:
           snapshotIndices.category5 >= 0
-            ? parseNumericCellWorker(normalizedRow[snapshotIndices.category5])
+            ? edTransformParseNumericCell(normalizedRow[snapshotIndices.category5])
             : null,
       },
       arrivalHour:
@@ -402,77 +421,4 @@ function summarizeSnapshotWorker(records) {
     })),
   };
 }
-
-function parseDurationMinutesWorker(value) {
-  if (value == null) {
-    return null;
-  }
-  const normalized = String(value).trim().replace(',', '.').replace(/\s+/g, '');
-  if (!normalized) {
-    return null;
-  }
-  if (/^\d{1,2}:\d{2}$/.test(normalized)) {
-    const [hours, minutes] = normalized.split(':').map((part) => Number.parseInt(part, 10));
-    if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
-      return hours * 60 + minutes;
-    }
-  }
-  const valueFloat = Number.parseFloat(normalized);
-  return Number.isFinite(valueFloat) ? valueFloat : null;
-}
-
-function parseNumericCellWorker(value) {
-  if (value == null) {
-    return null;
-  }
-  const normalized = String(value).trim().replace(/\s+/g, '').replace(',', '.');
-  if (!normalized) {
-    return null;
-  }
-  const numeric = Number.parseFloat(normalized);
-  return Number.isFinite(numeric) ? numeric : null;
-}
-
-function parseRatioWorker(value) {
-  if (value == null) {
-    return { ratio: null, text: '' };
-  }
-  const text = String(value).trim();
-  if (!text) {
-    return { ratio: null, text: '' };
-  }
-  const normalized = text.replace(',', '.').replace(/\s+/g, '');
-  if (normalized.includes(':')) {
-    const [left, right] = normalized.split(':');
-    const numerator = Number.parseFloat(left);
-    const denominator = Number.parseFloat(right);
-    if (Number.isFinite(numerator) && Number.isFinite(denominator) && denominator > 0) {
-      return { ratio: numerator / denominator, text };
-    }
-  }
-  const numeric = Number.parseFloat(normalized);
-  return Number.isFinite(numeric) && numeric > 0 ? { ratio: numeric, text } : { ratio: null, text };
-}
-
-function normalizeEdDisposition(value) {
-  const raw = typeof value === 'string' ? value.trim() : '';
-  if (!raw) {
-    return { label: 'Nežinoma', category: 'unknown' };
-  }
-  const lower = raw.toLowerCase();
-  if (/(hospital|stacion|admit|ward|perkel|stacionar|stac\.|priimtuvas)/i.test(lower)) {
-    return { label: raw, category: 'hospitalized' };
-  }
-  if (/(discharg|nam|ambulator|released|outpatient|home|išle)/i.test(lower)) {
-    return { label: raw, category: 'discharged' };
-  }
-  if (/(transfer|perkeltas|perkelta|pervež|perkėlimo)/i.test(lower)) {
-    return { label: raw, category: 'transfer' };
-  }
-  if (/(left|atsisak|neatvyko|nedalyv|amoa|dnw|did not wait|lwbs|lwt|pabėg|walked)/i.test(lower)) {
-    return { label: raw, category: 'left' };
-  }
-  return { label: raw, category: 'other' };
-}
-
 self.transformEdCsvWithSummary = transformEdCsvWithSummary;

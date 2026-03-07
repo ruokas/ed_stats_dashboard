@@ -11,7 +11,7 @@ import {
 import {
   computeSummariesReportViewModels,
   getCachedSummariesReportViewModelsAsync,
-} from '../src/app/runtime/runtimes/summaries-runtime-impl.js';
+} from '../src/app/runtime/runtimes/summaries/report-view-model-cache.js';
 import {
   computeAgeDiagnosisHeatmap,
   computeDailyStats,
@@ -31,6 +31,7 @@ import {
   writeJsonArtifact,
 } from './lib/bench-utils.mjs';
 import { createFixtureFromProfile, listPerfProfileNames } from './lib/perf-fixtures.mjs';
+import { buildRuntimeBenchScenarios, runBenchScenarios } from './lib/runtime-benchmarks.mjs';
 
 function installDom() {
   const dom = new JSDOM('<!doctype html><html><body><table id="yearly"></table></body></html>');
@@ -56,21 +57,6 @@ function createSummariesDashboardState(records) {
     summariesReportsDerivedCache: null,
     summariesHistoricalRecordsCache: null,
   };
-}
-
-function buildScenarios(selectedNames = []) {
-  const all = [
-    { name: 'small', profile: 'small' },
-    { name: 'medium', profile: 'medium' },
-    { name: 'large', profile: 'large' },
-    { name: 'wide-cardinality', profile: 'wideCardinality' },
-    { name: 'historical-heavy', profile: 'historicalHeavy' },
-  ];
-  if (!selectedNames.length) return all;
-  const selected = new Set(selectedNames.map((value) => value.toLowerCase()));
-  return all.filter(
-    (scenario) => selected.has(scenario.name) || selected.has(scenario.profile.toLowerCase())
-  );
 }
 
 async function runScenarioBenchmark(scenario) {
@@ -261,7 +247,7 @@ async function main() {
   const scenarioFilter = parseListArg('scenario');
   const outFile =
     process.argv.find((arg) => arg.startsWith('--out='))?.slice(6) || 'summaries-bench-runs.json';
-  const scenarios = buildScenarios(scenarioFilter);
+  const scenarios = buildRuntimeBenchScenarios(scenarioFilter);
   if (!scenarios.length) {
     console.error(
       `No matching summaries benchmark scenarios. Available: ${listPerfProfileNames().concat(['wide-cardinality', 'historical-heavy']).join(', ')}`
@@ -269,15 +255,12 @@ async function main() {
     process.exit(1);
   }
 
-  const allRuns = [];
-  for (const scenario of scenarios) {
-    for (let index = 0; index < warmup; index += 1) {
-      await runScenarioBenchmark(scenario);
-    }
-    for (let index = 0; index < runs; index += 1) {
-      allRuns.push(...(await runScenarioBenchmark(scenario)));
-    }
-  }
+  const allRuns = await runBenchScenarios({
+    scenarios,
+    warmup,
+    runs,
+    runScenario: runScenarioBenchmark,
+  });
 
   const artifactPath = writeJsonArtifact(outFile, allRuns);
   console.log(

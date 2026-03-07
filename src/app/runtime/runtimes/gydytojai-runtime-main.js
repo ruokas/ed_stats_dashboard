@@ -757,3 +757,5 @@ export async function runGydytojaiRuntime(core) {
     setStatus(selectors, 'error', error?.message || TEXT.status.error);
   }
 }
+
+export const runGydytojaiPage = runGydytojaiRuntime;

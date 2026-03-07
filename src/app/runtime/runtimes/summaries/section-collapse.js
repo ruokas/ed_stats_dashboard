@@ -12,6 +12,8 @@ const DEFAULT_SUMMARIES_REPORT_GROUPS_EXPANDED = {
 
 const SUMMARIES_SECTION_KEYS = Object.keys(DEFAULT_SUMMARIES_SECTIONS_EXPANDED);
 const SUMMARIES_REPORT_GROUP_KEYS = Object.keys(DEFAULT_SUMMARIES_REPORT_GROUPS_EXPANDED);
+const INTERACTIVE_CHILD_SELECTOR =
+  'button, a[href], input, select, textarea, summary, [role="button"], [role="link"], [contenteditable="true"]';
 
 function ensureSummariesDisclosureState(dashboardState) {
   dashboardState.summariesSectionsExpanded = {
@@ -33,6 +35,26 @@ function ensureSummariesDisclosureState(dashboardState) {
 function updateToggle(button, expanded) {
   button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   button.classList.toggle('is-expanded', expanded);
+}
+
+function shouldSkipToggleEvent(event, toggle) {
+  if (!(toggle instanceof HTMLElement)) {
+    return true;
+  }
+
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  const interactiveChild = target.closest(INTERACTIVE_CHILD_SELECTOR);
+  return (
+    interactiveChild instanceof Element && interactiveChild !== toggle && toggle.contains(interactiveChild)
+  );
+}
+
+function isToggleKey(event) {
+  return event.key === 'Enter' || event.key === ' ';
 }
 
 export function createSummariesSectionCollapseFeature({ selectors, dashboardState }) {
@@ -131,6 +153,24 @@ export function createSummariesSectionCollapseFeature({ selectors, dashboardStat
         if (!(target instanceof HTMLElement)) {
           return;
         }
+        if (shouldSkipToggleEvent(event, target)) {
+          return;
+        }
+        const key = String(target.getAttribute('data-summaries-section-toggle') || '').trim();
+        if (!SUMMARIES_SECTION_KEYS.includes(key)) {
+          return;
+        }
+        const current = dashboardState.summariesSectionsExpanded?.[key] === true;
+        setSummariesSectionExpanded(key, !current);
+        applySummariesDisclosure();
+      });
+
+      button.addEventListener('keydown', (event) => {
+        const target = event.currentTarget;
+        if (!(target instanceof HTMLElement) || event.target !== target || !isToggleKey(event)) {
+          return;
+        }
+        event.preventDefault();
         const key = String(target.getAttribute('data-summaries-section-toggle') || '').trim();
         if (!SUMMARIES_SECTION_KEYS.includes(key)) {
           return;
@@ -147,6 +187,24 @@ export function createSummariesSectionCollapseFeature({ selectors, dashboardStat
         if (!(target instanceof HTMLElement)) {
           return;
         }
+        if (shouldSkipToggleEvent(event, target)) {
+          return;
+        }
+        const key = String(target.getAttribute('data-summaries-report-group-toggle') || '').trim();
+        if (!SUMMARIES_REPORT_GROUP_KEYS.includes(key)) {
+          return;
+        }
+        const current = dashboardState.summariesReportGroupsExpanded?.[key] === true;
+        setSummariesReportGroupExpanded(key, !current);
+        applySummariesDisclosure();
+      });
+
+      button.addEventListener('keydown', (event) => {
+        const target = event.currentTarget;
+        if (!(target instanceof HTMLElement) || event.target !== target || !isToggleKey(event)) {
+          return;
+        }
+        event.preventDefault();
         const key = String(target.getAttribute('data-summaries-report-group-toggle') || '').trim();
         if (!SUMMARIES_REPORT_GROUP_KEYS.includes(key)) {
           return;

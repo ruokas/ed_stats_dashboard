@@ -3,6 +3,18 @@
  * Depends on shared helpers exposed by data-worker-transforms.js.
  */
 
+importScripts('./shared/date-shift-shared.js');
+
+const kpiFiltersSharedDateShift = self.__edSharedDateShift;
+
+if (!kpiFiltersSharedDateShift) {
+  throw new Error('Nepavyko inicializuoti bendrų datos ir pamainų helperių worker aplinkoje.');
+}
+
+const kpiFiltersFormatLocalDateKey = kpiFiltersSharedDateShift.formatLocalDateKey;
+const kpiFiltersResolveShiftStartHour = kpiFiltersSharedDateShift.resolveShiftStartHour;
+const kpiFiltersComputeShiftDateKey = kpiFiltersSharedDateShift.computeShiftDateKey;
+
 const KPI_SHIFT_VALUES = ['all', 'day', 'night'];
 const KPI_ARRIVAL_VALUES = ['all', 'ems', 'self'];
 const KPI_DISPOSITION_VALUES = ['all', 'hospitalized', 'discharged'];
@@ -94,7 +106,7 @@ function filterRecordsByWindow(records, days, calculations = {}, calculationDefa
   if (!Number.isFinite(days) || days <= 0) {
     return records.slice();
   }
-  const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
+  const shiftStartHour = kpiFiltersResolveShiftStartHour(calculations, calculationDefaults);
   const eligibleEntries = [];
   const eligibleUtc = [];
   let endUtc = Number.NEGATIVE_INFINITY;
@@ -106,7 +118,7 @@ function filterRecordsByWindow(records, days, calculations = {}, calculationDefa
     if (!reference) {
       continue;
     }
-    const dateKey = computeShiftDateKey(reference, shiftStartHour);
+    const dateKey = kpiFiltersComputeShiftDateKey(reference, shiftStartHour);
     if (!dateKey) {
       continue;
     }
@@ -263,13 +275,15 @@ function resolveUnknownDischargeDateKey(record, shiftStartHour) {
     return '';
   }
   if (!isPlaceholderDischargeDate(discharge)) {
-    return formatLocalDateKey(new Date(discharge.getFullYear(), discharge.getMonth(), discharge.getDate()));
+    return kpiFiltersFormatLocalDateKey(
+      new Date(discharge.getFullYear(), discharge.getMonth(), discharge.getDate())
+    );
   }
   const arrival = isValidDate(record?.arrival) ? record.arrival : null;
   if (!arrival) {
     return '';
   }
-  return computeShiftDateKey(arrival, shiftStartHour);
+  return kpiFiltersComputeShiftDateKey(arrival, shiftStartHour);
 }
 
 function addUnknownTimeDistribution(series, type = '') {
@@ -302,7 +316,7 @@ function buildAvailableDateKeysFromRecords(records, shiftStartHour) {
     if (!reference) {
       continue;
     }
-    const dateKey = computeShiftDateKey(reference, shiftStartHour);
+    const dateKey = kpiFiltersComputeShiftDateKey(reference, shiftStartHour);
     if (dateKey) {
       keys.add(dateKey);
     }
@@ -325,7 +339,7 @@ function countRecordsForShiftDate(records, shiftStartHour, selectedDate) {
     if (!reference) {
       continue;
     }
-    if (computeShiftDateKey(reference, shiftStartHour) === normalizedDate) {
+    if (kpiFiltersComputeShiftDateKey(reference, shiftStartHour) === normalizedDate) {
       count += 1;
     }
   }
@@ -341,7 +355,7 @@ function buildKpiLastShiftHourlySeriesInWorker(
   selectedDate
 ) {
   const metric = normalizeLastShiftMetric(metricKey);
-  const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
+  const shiftStartHour = kpiFiltersResolveShiftStartHour(calculations, calculationDefaults);
   const availableDaily = Array.isArray(dailyStats) ? dailyStats : [];
   const normalizedSelectedDate = normalizeKpiDateValue(selectedDate);
   const targetDateKey =
@@ -417,7 +431,7 @@ function buildKpiLastShiftHourlySeriesInWorker(
     if (!reference) {
       continue;
     }
-    const dateKey = computeShiftDateKey(reference, shiftStartHour);
+    const dateKey = kpiFiltersComputeShiftDateKey(reference, shiftStartHour);
     if (dateKey !== targetDateKey) {
       continue;
     }
@@ -446,7 +460,7 @@ function buildKpiLastShiftHourlySeriesInWorker(
       const hasReliableDischargeHour =
         dischargeHasTime && dischargeDate && !isPlaceholderDischargeDate(dischargeDate);
       if (hasReliableDischargeHour) {
-        const dischargeDateKey = computeShiftDateKey(dischargeDate, shiftStartHour);
+        const dischargeDateKey = kpiFiltersComputeShiftDateKey(dischargeDate, shiftStartHour);
         if (dischargeDateKey === targetDateKey) {
           const dischargeHour = dischargeDate.getHours();
           if (Number.isFinite(dischargeHour) && dischargeHour >= 0 && dischargeHour <= 23) {
@@ -592,7 +606,7 @@ function applyKpiFiltersInWorker(data = {}) {
   const effectiveFilters = { ...requestedFilters, window: windowDays };
 
   if (resultMode === 'summary+hourly') {
-    const shiftStartHour = resolveShiftStartHour(calculations, calculationDefaults);
+    const shiftStartHour = kpiFiltersResolveShiftStartHour(calculations, calculationDefaults);
     const selectedDateDailyStats = selectedDate
       ? filterDailyStatsByDateKey(filteredDailyStats, selectedDate)
       : filteredDailyStats.map((entry) => ({ ...entry }));
@@ -695,7 +709,7 @@ self.applyKpiFiltersByHandleInWorker = function applyKpiFiltersByHandleInWorker(
 
 self.getKpiDateKeysByHandleInWorker = function getKpiDateKeysByHandleInWorker(data = {}) {
   const resolved = resolveKpiFilteredDataFromDataset(data);
-  const shiftStartHour = resolveShiftStartHour(resolved.calculations, resolved.calculationDefaults);
+  const shiftStartHour = kpiFiltersResolveShiftStartHour(resolved.calculations, resolved.calculationDefaults);
   const availableDateKeys = resolved.hasRawRecords
     ? buildAvailableDateKeysFromRecords(resolved.filteredRecords, shiftStartHour)
     : listAvailableDateKeysFromDailyStats(resolved.filteredDailyStats);
@@ -728,13 +742,13 @@ self.getKpiRecordsForDateByHandleInWorker = function getKpiRecordsForDateByHandl
       },
     };
   }
-  const shiftStartHour = resolveShiftStartHour(resolved.calculations, resolved.calculationDefaults);
+  const shiftStartHour = kpiFiltersResolveShiftStartHour(resolved.calculations, resolved.calculationDefaults);
   const records = selectedDate
     ? resolved.filteredRecords.filter((record) => {
         const hasArrival = record?.arrival instanceof Date && !Number.isNaN(record.arrival.getTime());
         const hasDischarge = record?.discharge instanceof Date && !Number.isNaN(record.discharge.getTime());
         const reference = hasArrival ? record.arrival : hasDischarge ? record.discharge : null;
-        return reference ? computeShiftDateKey(reference, shiftStartHour) === selectedDate : false;
+        return reference ? kpiFiltersComputeShiftDateKey(reference, shiftStartHour) === selectedDate : false;
       })
     : [];
   return {

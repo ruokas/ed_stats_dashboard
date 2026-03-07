@@ -1,3 +1,7 @@
+import '../../shared/date-shift-shared.js';
+
+const sharedDateShift = globalThis.__edSharedDateShift;
+
 function toTrimmedString(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -14,15 +18,7 @@ function isIsoDateKey(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
 }
 
-function formatLocalDateKey(date) {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-    return '';
-  }
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+const formatLocalDateKey = sharedDateShift.formatLocalDateKey;
 
 function compareDateKeys(a, b) {
   return String(a || '').localeCompare(String(b || ''));

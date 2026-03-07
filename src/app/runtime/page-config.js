@@ -1,22 +1,48 @@
-export const PAGE_CONFIG = {
-  kpi: { kpi: true },
-  charts: { charts: true, heatmap: true, hourly: true },
-  recent: { recent: true },
-  summaries: { recent: true, monthly: false, yearly: true },
-  gydytojai: { doctors: true },
-  feedback: { feedback: true },
-  ed: { ed: true, tv: false },
+export const PAGE_RUNTIME_REGISTRY = {
+  kpi: {
+    pageConfig: { kpi: true },
+    modulePath: './runtime/runtimes/kpi-runtime.js',
+    exportName: 'runKpiRuntime',
+  },
+  charts: {
+    pageConfig: { charts: true, heatmap: true, hourly: true },
+    modulePath: './runtime/runtimes/charts-runtime-impl.js',
+    exportName: 'runChartsRuntime',
+  },
+  recent: {
+    pageConfig: { recent: true },
+    modulePath: './runtime/runtimes/recent-runtime.js',
+    exportName: 'runRecentRuntime',
+  },
+  summaries: {
+    pageConfig: { recent: true, monthly: false, yearly: true },
+    modulePath: './runtime/runtimes/summaries-runtime-main.js',
+    exportName: 'runSummariesRuntime',
+  },
+  gydytojai: {
+    pageConfig: { doctors: true },
+    modulePath: './runtime/runtimes/gydytojai-runtime-main.js',
+    exportName: 'runGydytojaiRuntime',
+  },
+  feedback: {
+    pageConfig: { feedback: true },
+    modulePath: './runtime/runtimes/feedback-runtime.js',
+    exportName: 'runFeedbackRuntime',
+  },
+  ed: {
+    pageConfig: { ed: true, tv: false },
+    modulePath: './runtime/runtimes/ed-runtime.js',
+    exportName: 'runEdRuntime',
+  },
 };
 
-export const RUNTIME_MODULE_BY_PAGE = {
-  kpi: './runtime/pages/kpi-page.js',
-  charts: './runtime/pages/charts-page.js',
-  recent: './runtime/pages/recent-page.js',
-  summaries: './runtime/pages/summaries-page.js',
-  gydytojai: './runtime/pages/gydytojai-page.js',
-  feedback: './runtime/pages/feedback-page.js',
-  ed: './runtime/pages/ed-page.js',
-};
+export const PAGE_CONFIG = Object.fromEntries(
+  Object.entries(PAGE_RUNTIME_REGISTRY).map(([pageId, entry]) => [pageId, entry.pageConfig])
+);
+
+export const RUNTIME_MODULE_BY_PAGE = Object.fromEntries(
+  Object.entries(PAGE_RUNTIME_REGISTRY).map(([pageId, entry]) => [pageId, entry.modulePath])
+);
 
 const CHART_PRELOAD_PAGES = new Set(['kpi', 'charts', 'ed', 'summaries', 'feedback', 'gydytojai']);
 
@@ -27,5 +53,9 @@ export function shouldPreloadChartJs(pageId) {
 
 export function resolvePageId(rawPageId) {
   const normalized = typeof rawPageId === 'string' ? rawPageId.trim().toLowerCase() : '';
-  return Object.hasOwn(PAGE_CONFIG, normalized) ? normalized : 'kpi';
+  return Object.hasOwn(PAGE_RUNTIME_REGISTRY, normalized) ? normalized : 'kpi';
+}
+
+export function getPageRuntimeEntry(pageId) {
+  return PAGE_RUNTIME_REGISTRY[resolvePageId(pageId)];
 }

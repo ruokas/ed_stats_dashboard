@@ -364,3 +364,5 @@ export async function runEdRuntime(core) {
 
   dataFlow.scheduleInitialLoad();
 }
+
+export const runEdPage = runEdRuntime;

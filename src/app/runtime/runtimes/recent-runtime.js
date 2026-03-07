@@ -392,3 +392,5 @@ export async function runRecentRuntime(core) {
   compareFeature.setCompareMode(false);
   dataFlow.scheduleInitialLoad();
 }
+
+export const runRecentPage = runRecentRuntime;

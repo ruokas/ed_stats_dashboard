@@ -1234,3 +1234,5 @@ export async function runSummariesRuntime(core) {
   dashboardState.summariesHydrationMarkedFull = false;
   dataFlow.scheduleInitialLoad();
 }
+
+export const runSummariesPage = runSummariesRuntime;
