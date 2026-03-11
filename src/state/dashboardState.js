@@ -32,6 +32,8 @@ export function createDashboardState({
       all: [],
       window: [],
     },
+    recentDailyStats: [],
+    recentHighlightAbnormal: false,
     yearlyExpandedYears: [],
     summariesReportsYear: 'all',
     summariesReportsTopN: 15,

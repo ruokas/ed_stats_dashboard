@@ -48,4 +48,87 @@ describe('summaries recent table', () => {
     const weekendRows = selectors.recentTable.querySelectorAll('tr.table-row--weekend');
     expect(weekendRows.length).toBeGreaterThan(0);
   });
+
+  it('highlights abnormal cells when anomaly mode is enabled', () => {
+    document.body.innerHTML = '<table><tbody id="recentTable"></tbody></table>';
+    const selectors = { recentTable: document.getElementById('recentTable') };
+    const rows = [
+      {
+        date: '2026-03-01',
+        count: 10,
+        durations: 10,
+        totalTime: 20,
+        night: 2,
+        ems: 2,
+        hospitalized: 2,
+        discharged: 8,
+      },
+      {
+        date: '2026-03-02',
+        count: 10,
+        durations: 10,
+        totalTime: 20,
+        night: 2,
+        ems: 2,
+        hospitalized: 2,
+        discharged: 8,
+      },
+      {
+        date: '2026-03-03',
+        count: 10,
+        durations: 10,
+        totalTime: 20,
+        night: 2,
+        ems: 2,
+        hospitalized: 2,
+        discharged: 8,
+      },
+      {
+        date: '2026-03-04',
+        count: 10,
+        durations: 10,
+        totalTime: 20,
+        night: 2,
+        ems: 2,
+        hospitalized: 2,
+        discharged: 8,
+      },
+      {
+        date: '2026-03-05',
+        count: 10,
+        durations: 10,
+        totalTime: 20,
+        night: 2,
+        ems: 2,
+        hospitalized: 2,
+        discharged: 8,
+      },
+      {
+        date: '2026-03-06',
+        count: 10,
+        durations: 10,
+        totalTime: 20,
+        night: 2,
+        ems: 2,
+        hospitalized: 2,
+        discharged: 8,
+      },
+      {
+        date: '2026-03-07',
+        count: 20,
+        durations: 20,
+        totalTime: 80,
+        night: 8,
+        ems: 10,
+        hospitalized: 10,
+        discharged: 10,
+      },
+    ];
+
+    renderRecentTable(selectors, rows, 'Tuscia', { highlightAbnormal: true });
+
+    expect(selectors.recentTable.querySelectorAll('.recent-table__cell--anomaly').length).toBeGreaterThan(0);
+    expect(selectors.recentTable.querySelectorAll('.recent-table__anomaly-badge').length).toBeGreaterThan(0);
+    expect(selectors.recentTable.querySelectorAll('.recent-table__row--anomalous').length).toBeGreaterThan(0);
+  });
 });

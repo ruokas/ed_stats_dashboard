@@ -45,6 +45,16 @@
       <div class="section__actions summaries-panel-actions" aria-label="Savaitės vaizdo eksportas">
         <button
           type="button"
+          id="recentAnomalyToggle"
+          class="chip-button"
+          aria-pressed="false"
+          aria-label="Išryškinti nukrypimus nuo 7 dienų vidurkio"
+          title="Išryškinti nukrypimus"
+        >
+          Išryškinti nukrypimus
+        </button>
+        <button
+          type="button"
           class="chart-copy-btn"
           data-table-download="copy"
           data-table-target="#recentTableRoot"
@@ -74,6 +84,7 @@
             <path d="M4 21h16"></path>
           </svg>
         </button>
+        <p id="recentAnomalyLegend" class="recent-table__legend" hidden>Raudona: aukščiau normos. Mėlyna: žemiau normos.</p>
       </div>
       <div class="table-wrapper" role="region" aria-live="polite" aria-labelledby="recentHeading">
         <table id="recentTableRoot" aria-describedby="recentSubtitle">

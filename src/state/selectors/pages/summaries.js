@@ -15,6 +15,8 @@ export function createSummariesPageSelectors() {
     recentSubtitle: byId('recentSubtitle'),
     recentCaption: byId('recentCaption'),
     recentTable: byId('recentTable'),
+    recentAnomalyToggleButton: byId('recentAnomalyToggle'),
+    recentAnomalyLegend: byId('recentAnomalyLegend'),
     yearlyTable: byId('yearlyTable'),
     summariesReportsHeading: byId('summariesReportsHeading'),
     summariesReportsSubtitle: byId('summariesReportsSubtitle'),

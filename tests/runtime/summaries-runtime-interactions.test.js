@@ -17,6 +17,8 @@ function createSelect(value = '', options = [value || '']) {
 describe('wireSummariesInteractions', () => {
   it('wires controls and updates dashboard state on change', () => {
     const selectors = {
+      recentAnomalyToggleButton: document.createElement('button'),
+      recentAnomalyLegend: document.createElement('p'),
       yearlyTableCopyButton: document.createElement('button'),
       reportExportButtons: [document.createElement('button')],
       summariesReportsYear: createSelect('all', ['all', '2025']),
@@ -33,8 +35,10 @@ describe('wireSummariesInteractions', () => {
       summariesReferralPspcSort: 'desc',
       summariesReferralPspcMode: 'cross',
       summariesReferralPspcTrendPspc: '__top3__',
+      recentHighlightAbnormal: false,
     };
     const rerenderReports = vi.fn();
+    const rerenderRecentTable = vi.fn();
     const handleReportExportClick = vi.fn();
     const handleYearlyTableCopyClick = vi.fn();
     const handleTableDownloadClick = vi.fn();
@@ -51,6 +55,7 @@ describe('wireSummariesInteractions', () => {
       selectors,
       dashboardState,
       rerenderReports,
+      rerenderRecentTable,
       handleReportExportClick,
       handleYearlyTableCopyClick,
       handleTableDownloadClick,
@@ -63,6 +68,7 @@ describe('wireSummariesInteractions', () => {
 
     selectors.reportExportButtons[0].click();
     selectors.yearlyTableCopyButton.click();
+    selectors.recentAnomalyToggleButton.click();
     selectors.summariesReportsYear.value = '2025';
     selectors.summariesReportsYear.dispatchEvent(new Event('change'));
     selectors.summariesReportsTopN.value = '7';
@@ -81,6 +87,8 @@ describe('wireSummariesInteractions', () => {
     expect(storeCopyButtonBaseLabel).toHaveBeenCalledWith(selectors.yearlyTableCopyButton);
     expect(handleReportExportClick).toHaveBeenCalledTimes(1);
     expect(handleYearlyTableCopyClick).toHaveBeenCalledTimes(1);
+    expect(dashboardState.recentHighlightAbnormal).toBe(true);
+    expect(rerenderRecentTable).toHaveBeenCalledTimes(1);
     expect(dashboardState.summariesReportsYear).toBe('2025');
     expect(dashboardState.summariesReportsTopN).toBe(7);
     expect(dashboardState.summariesReportsMinGroupSize).toBe(42);
@@ -94,6 +102,8 @@ describe('wireSummariesInteractions', () => {
 
   it('falls back to defaults for empty values', () => {
     const selectors = {
+      recentAnomalyToggleButton: document.createElement('button'),
+      recentAnomalyLegend: document.createElement('p'),
       reportExportButtons: [],
       summariesReportsTopN: createSelect(''),
       summariesReportsMinGroupSize: createSelect(''),
@@ -108,6 +118,7 @@ describe('wireSummariesInteractions', () => {
       selectors,
       dashboardState,
       rerenderReports,
+      rerenderRecentTable: vi.fn(),
       handleReportExportClick: vi.fn(),
       handleYearlyTableCopyClick: vi.fn(),
       handleTableDownloadClick: vi.fn(),
