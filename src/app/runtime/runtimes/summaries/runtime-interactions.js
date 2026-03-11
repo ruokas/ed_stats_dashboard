@@ -2,6 +2,7 @@ export function wireSummariesInteractions({
   selectors,
   dashboardState,
   rerenderReports,
+  rerenderRecentTable = null,
   handleReportExportClick,
   handleYearlyTableCopyClick,
   handleTableDownloadClick,
@@ -30,6 +31,21 @@ export function wireSummariesInteractions({
   if (selectors.yearlyTableCopyButton) {
     storeCopyButtonBaseLabel(selectors.yearlyTableCopyButton);
     selectors.yearlyTableCopyButton.addEventListener('click', handleYearlyTableCopyClick);
+  }
+  if (selectors.recentAnomalyToggleButton instanceof HTMLButtonElement) {
+    selectors.recentAnomalyToggleButton.addEventListener('click', () => {
+      dashboardState.recentHighlightAbnormal = dashboardState.recentHighlightAbnormal !== true;
+      selectors.recentAnomalyToggleButton.setAttribute(
+        'aria-pressed',
+        dashboardState.recentHighlightAbnormal ? 'true' : 'false'
+      );
+      if (selectors.recentAnomalyLegend instanceof HTMLElement) {
+        selectors.recentAnomalyLegend.hidden = dashboardState.recentHighlightAbnormal !== true;
+      }
+      if (typeof rerenderRecentTable === 'function') {
+        rerenderRecentTable();
+      }
+    });
   }
   if (Array.isArray(selectors.reportExportButtons)) {
     selectors.reportExportButtons.forEach((button) => {

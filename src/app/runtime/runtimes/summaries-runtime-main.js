@@ -125,6 +125,18 @@ export function syncSummariesYearlyHydrationState(selectors, dashboardState) {
   });
 }
 
+function syncRecentAnomalyUi(selectors, dashboardState) {
+  if (selectors?.recentAnomalyToggleButton instanceof HTMLButtonElement) {
+    selectors.recentAnomalyToggleButton.setAttribute(
+      'aria-pressed',
+      dashboardState?.recentHighlightAbnormal === true ? 'true' : 'false'
+    );
+  }
+  if (selectors?.recentAnomalyLegend instanceof HTMLElement) {
+    selectors.recentAnomalyLegend.hidden = dashboardState?.recentHighlightAbnormal !== true;
+  }
+}
+
 const handleTableDownloadClick = createTableDownloadHandler({
   getDatasetValue,
   setCopyButtonFeedback,
@@ -1169,6 +1181,7 @@ export async function runSummariesRuntime(core) {
   });
   applySummariesDisclosure();
   syncSummariesYearlyHydrationState(selectors, dashboardState);
+  syncRecentAnomalyUi(selectors, dashboardState);
   bindSummariesDisclosureButtons();
   rerenderReports = (reason = 'controls') =>
     (async () => {
@@ -1207,6 +1220,12 @@ export async function runSummariesRuntime(core) {
     selectors,
     dashboardState,
     rerenderReports: () => scheduleReportsRender('controls'),
+    rerenderRecentTable: () => {
+      renderRecentTable(selectors, dashboardState.recentDailyStats, TEXT.recent.empty, {
+        highlightAbnormal: dashboardState.recentHighlightAbnormal === true,
+      });
+      syncRecentAnomalyUi(selectors, dashboardState);
+    },
     handleReportExportClick,
     handleYearlyTableCopyClick: async (event) => {
       const { handleYearlyTableCopyClick } = await loadReportRuntimeHelpers();
@@ -1242,7 +1261,11 @@ export async function runSummariesRuntime(core) {
       filterDailyStatsByWindow,
       getDefaultChartFilters: createDefaultChartFilters,
       renderRecentTable: (recentDailyStats) => {
-        renderRecentTable(selectors, recentDailyStats, TEXT.recent.empty);
+        dashboardState.recentDailyStats = Array.isArray(recentDailyStats) ? [...recentDailyStats] : [];
+        renderRecentTable(selectors, dashboardState.recentDailyStats, TEXT.recent.empty, {
+          highlightAbnormal: dashboardState.recentHighlightAbnormal === true,
+        });
+        syncRecentAnomalyUi(selectors, dashboardState);
       },
       computeMonthlyStats,
       computeYearlyStats,

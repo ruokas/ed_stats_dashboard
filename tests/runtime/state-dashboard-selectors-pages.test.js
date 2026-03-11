@@ -38,6 +38,8 @@ describe('createDashboardState', () => {
     expect(state.loading).toBe(false);
     expect(state.summariesReportsScopeCache.byYear).toBeInstanceOf(Map);
     expect(state.summariesReportsComputationCache.value).toBeNull();
+    expect(state.recentDailyStats).toEqual([]);
+    expect(state.recentHighlightAbnormal).toBe(false);
     expect(state.heatmapMetric).toBe('arrivals');
     expect(state.kpi.filters.window).toBe(30);
     expect(state.feedback.filters.respondent).toBe('all');
@@ -89,6 +91,12 @@ describe('page selector factories', () => {
 
   it('creates summaries page selectors', () => {
     renderShell(`
+      <h2 id="recentHeading"></h2>
+      <p id="recentSubtitle"></p>
+      <p id="recentCaption"></p>
+      <tbody id="recentTable"></tbody>
+      <button id="recentAnomalyToggle"></button>
+      <p id="recentAnomalyLegend"></p>
       <h2 id="monthlyHeading"></h2>
       <p id="monthlySubtitle"></p>
       <p id="monthlyCaption"></p>
@@ -128,6 +136,7 @@ describe('page selector factories', () => {
 
     const selectors = createSummariesPageSelectors();
     expect(selectors.summariesReportsHeading).not.toBeNull();
+    expect(selectors.recentAnomalyToggleButton).not.toBeNull();
     expect(selectors.summariesJumpLinks).toHaveLength(1);
     expect(selectors.reportExportButtons).toHaveLength(1);
     expect(selectors.tableDownloadButtons).toHaveLength(1);
