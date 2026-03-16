@@ -3216,6 +3216,17 @@ body[data-theme="dark"] .feedback-trend-card__button[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--color-accent) 30%, var(--filter-border));
 }
 
+.kpi-hourly-baseline-toggle {
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
+
+.kpi-hourly-baseline-toggle[aria-pressed="true"] {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 36%, var(--filter-border));
+  background: color-mix(in srgb, var(--color-accent-soft) 55%, transparent);
+}
+
 .chart-card--compact canvas {
   min-height: 180px;
   height: clamp(180px, 22vh, 260px);

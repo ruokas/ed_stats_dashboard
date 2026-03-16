@@ -32,6 +32,7 @@ export function createKpiPageSelectors() {
     lastShiftHourlyChart: byId('lastShiftHourlyChart'),
     lastShiftHourlyContext: byId('lastShiftHourlyContext'),
     lastShiftHourlyLegend: byId('lastShiftHourlyLegend'),
+    lastShiftHourlyBaselineToggle: byId('lastShiftHourlyBaselineToggle'),
     lastShiftHourlyMetricButtons: byQueryAllIn(kpiHourlyControls, '[data-last-shift-metric]'),
     tableDownloadButtons: byQueryAllIn(main, '[data-table-download]'),
   };

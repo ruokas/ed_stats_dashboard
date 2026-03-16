@@ -47,8 +47,10 @@ import {
   handleKpiDateStep as handleKpiDateStepUi,
   handleKpiFilterInput as handleKpiFilterInputUi,
   handleKpiSegmentedClick as handleKpiSegmentedClickUi,
+  handleLastShiftBaselineToggle as handleLastShiftBaselineToggleUi,
   handleLastShiftMetricClick as handleLastShiftMetricClickUi,
   resetKpiFilters as resetKpiFiltersUi,
+  syncLastShiftHourlyBaselineToggle as syncLastShiftHourlyBaselineToggleUi,
   syncLastShiftHourlyMetricButtons as syncLastShiftHourlyMetricButtonsUi,
 } from './kpi-flow/ui-handlers.js';
 import { recomputeLastShiftHourlyViaWorkerDetail as recomputeLastShiftHourlyViaWorkerDetailHelper } from './kpi-flow/worker-detail.js';
@@ -408,7 +410,13 @@ export function createKpiFlow(env) {
   const buildLastShiftHourlySeries = (records, dailyStats, metricKey = 'arrivals') =>
     buildLastShiftHourlySeriesHelper(
       { records, dailyStats, metricKey },
-      { buildLastShiftSummary, getSettings, defaultSettings: DEFAULT_SETTINGS, formatLocalDateKey }
+      {
+        buildLastShiftSummary,
+        getSettings,
+        defaultSettings: DEFAULT_SETTINGS,
+        formatLocalDateKey,
+        weekdayLongFormatter: env.weekdayLongFormatter,
+      }
     );
 
   function isDeferredRecordsHydrationActive() {
@@ -488,6 +496,7 @@ export function createKpiFlow(env) {
       ...args,
       filters: dashboardState.kpi?.filters || {},
       lastShiftMetric: dashboardState.kpi?.lastShiftHourlyMetric || 'arrivals',
+      lastShiftHourlyShowBaseline: dashboardState.kpi?.lastShiftHourlyShowBaseline === true,
     });
   const isSameKpiUiRenderSignature = (a, b) => isSameKpiUiRenderSignatureHelper(a, b);
 
@@ -646,7 +655,9 @@ export function createKpiFlow(env) {
     syncKpiFilterControls,
     syncKpiDateNavigation,
     syncLastShiftHourlyMetricButtons,
+    syncLastShiftHourlyBaselineToggle,
     applyKpiFiltersAndRender,
+    renderLastShiftHourlySeriesInfo,
   });
 
   const handleKpiFilterInput = (event) => handleKpiFilterInputUi(createUiHandlerDeps(), event);
@@ -676,7 +687,10 @@ export function createKpiFlow(env) {
       describeError,
     });
   const handleLastShiftMetricClick = (event) => handleLastShiftMetricClickUi(createUiHandlerDeps(), event);
+  const handleLastShiftBaselineToggle = (event) =>
+    handleLastShiftBaselineToggleUi(createUiHandlerDeps(), event);
   const syncLastShiftHourlyMetricButtons = () => syncLastShiftHourlyMetricButtonsUi(createUiHandlerDeps());
+  const syncLastShiftHourlyBaselineToggle = () => syncLastShiftHourlyBaselineToggleUi(createUiHandlerDeps());
   const resetKpiFilters = ({ fromKeyboard } = {}) =>
     resetKpiFiltersUi(createUiHandlerDeps(), { fromKeyboard });
 
@@ -689,7 +703,9 @@ export function createKpiFlow(env) {
     handleKpiDateStep,
     handleKpiSegmentedClick,
     handleLastShiftMetricClick,
+    handleLastShiftBaselineToggle,
     syncLastShiftHourlyMetricButtons,
+    syncLastShiftHourlyBaselineToggle,
     resetKpiFilters,
     applyKpiFiltersAndRender,
     updateKpiSummary,

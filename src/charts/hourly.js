@@ -394,6 +394,12 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
   }
 
   setChartCardMessage(canvas, null);
+  const showBaseline =
+    metric === 'arrivals' &&
+    dashboardState.kpi?.lastShiftHourlyShowBaseline === true &&
+    seriesInfo?.baselineAvailable === true &&
+    Array.isArray(seriesInfo?.baselineSeries) &&
+    seriesInfo.baselineSeries.length > 0;
   if (selectors.lastShiftHourlyContext) {
     const shiftStart = Number.isFinite(seriesInfo?.shiftStartHour)
       ? `${String(Math.floor(seriesInfo.shiftStartHour)).padStart(2, '0')}:00`
@@ -408,6 +414,15 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     }
     if (seriesInfo?.metricLabel) {
       contextParts.push(`Rodiklis: ${seriesInfo.metricLabel}`);
+    }
+    if (metric === 'arrivals' && dashboardState.kpi?.lastShiftHourlyShowBaseline === true) {
+      if (showBaseline) {
+        contextParts.push(
+          `Įprastinis srautas: ${numberFormatter.format(Number(seriesInfo?.baselineSampleCount || 0))} palyginamų pamainų`
+        );
+      } else {
+        contextParts.push('Įprastiniam srautui nepakanka šių metų tos savaitės dienos istorijos');
+      }
     }
     contextParts.push('Legenda: spustelėkite, kad paslėptumėte/rodytumėte kreives.');
     selectors.lastShiftHourlyContext.textContent = contextParts.join(' • ');
@@ -441,6 +456,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
     tr: rotateSeries(seriesInfo.series?.tr),
     ch: rotateSeries(seriesInfo.series?.ch),
   };
+  const baselineColor = 'rgba(148, 163, 184, 0.95)';
 
   const isBalance = metric === 'balance';
   const isCensus = metric === 'census';
@@ -448,6 +464,7 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
   const rotatedOutflow = rotateSeries(seriesInfo.series?.outflow);
   const rotatedNet = rotateSeries(seriesInfo.series?.net);
   const rotatedCensus = rotateSeries(seriesInfo.series?.census);
+  const rotatedBaseline = rotateSeries(seriesInfo?.baselineSeries);
   const peakIndices = {
     total: toPeakIndex(rotatedSeries.total),
     t: toPeakIndex(rotatedSeries.t),
@@ -584,6 +601,24 @@ export async function renderLastShiftHourlyChartWithTheme(env, seriesInfo) {
               pointBackgroundColor: palette.textColor,
               pointBorderColor: palette.textColor,
             },
+            ...(showBaseline
+              ? [
+                  {
+                    label: seriesInfo?.baselineLabel || 'Įprastinis srautas',
+                    data: rotatedBaseline || [],
+                    borderColor: baselineColor,
+                    backgroundColor: baselineColor,
+                    borderDash: [8, 6],
+                    borderWidth: 2,
+                    tension: 0.35,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    pointBackgroundColor: baselineColor,
+                    pointBorderColor: baselineColor,
+                  },
+                ]
+              : []),
             {
               label: 'T',
               data: rotatedSeries.t || [],

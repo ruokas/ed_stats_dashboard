@@ -258,6 +258,7 @@ export function createDashboardState({
       lastShiftHourly: null,
       lastShiftHourlyHasRenderedOnce: false,
       lastShiftHourlyMetric: 'arrivals',
+      lastShiftHourlyShowBaseline: false,
       selectedDate: null,
       workerDatasetHandle: null,
       workerSummaryModeAvailableDateKeys: [],

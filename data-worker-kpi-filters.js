@@ -99,6 +99,29 @@ function dateKeyToUtc(dateKey) {
   return Date.UTC(year, month - 1, day);
 }
 
+function dateKeyToLocalDate(dateKey) {
+  if (typeof dateKey !== 'string') {
+    return null;
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey.trim());
+  if (!match) {
+    return null;
+  }
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  const date = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
 function filterRecordsByWindow(records, days, calculations = {}, calculationDefaults = {}) {
   if (!Array.isArray(records)) {
     return [];
@@ -305,6 +328,76 @@ function addUnknownOutflowDistribution(series) {
   }
 }
 
+function buildTypicalArrivalsBaseline(records, targetDateKey, shiftStartHour) {
+  const targetDate = dateKeyToLocalDate(targetDateKey);
+  if (!(targetDate instanceof Date) || Number.isNaN(targetDate.getTime())) {
+    return {
+      baselineAvailable: false,
+      baselineSeries: null,
+      baselineLabel: 'Įprastinis srautas',
+      baselineSampleCount: 0,
+    };
+  }
+  const targetYear = targetDate.getFullYear();
+  const targetWeekday = targetDate.getDay();
+  const byDateKey = new Map();
+  const list = Array.isArray(records) ? records : [];
+  for (let index = 0; index < list.length; index += 1) {
+    const record = list[index];
+    const arrival = isValidDate(record?.arrival) ? record.arrival : null;
+    const arrivalHasTime =
+      record?.arrivalHasTime === true ||
+      (record?.arrivalHasTime == null &&
+        arrival instanceof Date &&
+        (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+    if (!arrival || !arrivalHasTime) {
+      continue;
+    }
+    const dateKey = kpiFiltersComputeShiftDateKey(arrival, shiftStartHour);
+    if (!dateKey || dateKey === targetDateKey) {
+      continue;
+    }
+    const shiftDate = dateKeyToLocalDate(dateKey);
+    if (!(shiftDate instanceof Date) || Number.isNaN(shiftDate.getTime())) {
+      continue;
+    }
+    if (shiftDate.getFullYear() !== targetYear || shiftDate.getDay() !== targetWeekday) {
+      continue;
+    }
+    const hour = arrival.getHours();
+    if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
+      continue;
+    }
+    const hourly = byDateKey.get(dateKey) || Array(HOURS_IN_DAY).fill(0);
+    hourly[hour] += 1;
+    byDateKey.set(dateKey, hourly);
+  }
+  const sampleCount = byDateKey.size;
+  if (!sampleCount) {
+    return {
+      baselineAvailable: false,
+      baselineSeries: null,
+      baselineLabel: 'Įprastinis srautas',
+      baselineSampleCount: 0,
+    };
+  }
+  const baselineSeries = Array(HOURS_IN_DAY).fill(0);
+  byDateKey.forEach((hourly) => {
+    for (let hour = 0; hour < HOURS_IN_DAY; hour += 1) {
+      baselineSeries[hour] += Number(hourly[hour] || 0);
+    }
+  });
+  for (let hour = 0; hour < HOURS_IN_DAY; hour += 1) {
+    baselineSeries[hour] /= sampleCount;
+  }
+  return {
+    baselineAvailable: true,
+    baselineSeries,
+    baselineLabel: 'Įprastinis srautas',
+    baselineSampleCount: sampleCount,
+  };
+}
+
 function buildAvailableDateKeysFromRecords(records, shiftStartHour) {
   const keys = new Set();
   const list = Array.isArray(records) ? records : [];
@@ -492,6 +585,15 @@ function buildKpiLastShiftHourlySeriesInWorker(
     }
   }
   const hasAnyFlow = series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0);
+  const baselineInfo =
+    metric === 'arrivals'
+      ? buildTypicalArrivalsBaseline(records, targetDateKey, shiftStartHour)
+      : {
+          baselineAvailable: false,
+          baselineSeries: null,
+          baselineLabel: 'Įprastinis srautas',
+          baselineSampleCount: 0,
+        };
   return {
     dateKey: targetDateKey,
     dateLabel: targetDateKey,
@@ -499,6 +601,10 @@ function buildKpiLastShiftHourlySeriesInWorker(
     metric,
     metricLabel: getLastShiftMetricLabel(metric),
     series,
+    baselineAvailable: baselineInfo.baselineAvailable === true,
+    baselineSeries: baselineInfo.baselineSeries,
+    baselineLabel: baselineInfo.baselineLabel,
+    baselineSampleCount: baselineInfo.baselineSampleCount,
     hasData:
       metric === 'arrivals' ||
       metric === 'referral_arrivals' ||
