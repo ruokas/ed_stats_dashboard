@@ -104,7 +104,11 @@ export function handleLastShiftMetricClick(deps, event) {
   }
   const metric = deps.normalizeLastShiftMetric(deps.getDatasetValue(button, 'lastShiftMetric'));
   deps.dashboardState.kpi.lastShiftHourlyMetric = metric;
+  if (metric !== 'arrivals') {
+    deps.dashboardState.kpi.lastShiftHourlyShowBaseline = false;
+  }
   deps.syncLastShiftHourlyMetricButtons();
+  deps.syncLastShiftHourlyBaselineToggle();
   const selectedDate = deps.normalizeKpiDateValue(deps.dashboardState.kpi?.selectedDate);
   const baseRecords = Array.isArray(deps.dashboardState.kpi?.records) ? deps.dashboardState.kpi.records : [];
   const baseDaily = Array.isArray(deps.dashboardState.kpi?.daily) ? deps.dashboardState.kpi.daily : [];
@@ -137,6 +141,27 @@ export function handleLastShiftMetricClick(deps, event) {
   void deps.renderLastShiftHourlyChart(baseRecords, baseDaily);
 }
 
+export function handleLastShiftBaselineToggle(deps, event) {
+  const button = event.currentTarget;
+  if (!(button instanceof HTMLElement)) {
+    return;
+  }
+  const metric = deps.normalizeLastShiftMetric(deps.dashboardState.kpi?.lastShiftHourlyMetric);
+  if (metric !== 'arrivals') {
+    deps.dashboardState.kpi.lastShiftHourlyShowBaseline = false;
+    deps.syncLastShiftHourlyBaselineToggle();
+    return;
+  }
+  deps.dashboardState.kpi.lastShiftHourlyShowBaseline = !deps.dashboardState.kpi.lastShiftHourlyShowBaseline;
+  deps.syncLastShiftHourlyBaselineToggle();
+  const existingSeriesInfo = deps.dashboardState.kpi?.lastShiftHourly;
+  if (existingSeriesInfo) {
+    void deps.renderLastShiftHourlySeriesInfo(existingSeriesInfo, { forceNonBlocking: true });
+    return;
+  }
+  void deps.applyKpiFiltersAndRender();
+}
+
 export function syncLastShiftHourlyMetricButtons(deps) {
   if (!Array.isArray(deps.selectors.lastShiftHourlyMetricButtons)) {
     return;
@@ -148,12 +173,28 @@ export function syncLastShiftHourlyMetricButtons(deps) {
   });
 }
 
+export function syncLastShiftHourlyBaselineToggle(deps) {
+  const button = deps.selectors.lastShiftHourlyBaselineToggle;
+  if (!(button instanceof HTMLElement)) {
+    return;
+  }
+  const metric = deps.normalizeLastShiftMetric(deps.dashboardState.kpi?.lastShiftHourlyMetric);
+  const isVisible = metric === 'arrivals';
+  button.hidden = !isVisible;
+  button.setAttribute(
+    'aria-pressed',
+    isVisible && deps.dashboardState.kpi?.lastShiftHourlyShowBaseline ? 'true' : 'false'
+  );
+}
+
 export function resetKpiFilters(deps, options = {}) {
   const { fromKeyboard } = options;
   deps.dashboardState.kpi.filters = deps.getDefaultKpiFilters();
+  deps.dashboardState.kpi.lastShiftHourlyShowBaseline = false;
   deps.notifyKpiStateChange();
   deps.refreshKpiWindowOptions();
   deps.syncKpiFilterControls();
+  deps.syncLastShiftHourlyBaselineToggle();
   void deps.applyKpiFiltersAndRender();
   if (fromKeyboard && deps.selectors.kpiFiltersReset) {
     deps.selectors.kpiFiltersReset.focus();

@@ -12,7 +12,9 @@ export function initKpiFilters(env) {
     handleKpiDateStep,
     handleKpiSegmentedClick,
     handleLastShiftMetricClick,
+    handleLastShiftBaselineToggle,
     syncLastShiftHourlyMetricButtons,
+    syncLastShiftHourlyBaselineToggle,
     syncKpiDateNavigation,
     resetKpiFilters,
     updateKpiSummary,
@@ -67,7 +69,11 @@ export function initKpiFilters(env) {
       button.addEventListener('click', handleLastShiftMetricClick);
     });
   }
+  if (selectors.lastShiftHourlyBaselineToggle) {
+    selectors.lastShiftHourlyBaselineToggle.addEventListener('click', handleLastShiftBaselineToggle);
+  }
   syncLastShiftHourlyMetricButtons();
+  syncLastShiftHourlyBaselineToggle();
   syncKpiDateNavigation();
   if (selectors.kpiControls) {
     setDatasetValue(selectors.kpiControls, 'expanded', 'true');

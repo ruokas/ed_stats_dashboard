@@ -26,6 +26,29 @@ function computeShiftDateKeyForArrival(date, shiftStartHour, formatLocalDateKey)
   return formatLocalDateKey(shiftAnchor);
 }
 
+function dateKeyToLocalDate(dateKey) {
+  if (typeof dateKey !== 'string') {
+    return null;
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey.trim());
+  if (!match) {
+    return null;
+  }
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  const date = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
 export function normalizeKpiDateValue(value) {
   if (typeof value !== 'string') {
     return null;
@@ -250,6 +273,74 @@ function addUnknownOutflowDistribution(series) {
   }
 }
 
+function buildTypicalArrivalsBaseline(records, targetDateKey, shiftStartHour, formatLocalDateKey) {
+  const targetDate = dateKeyToLocalDate(targetDateKey);
+  if (!(targetDate instanceof Date) || Number.isNaN(targetDate.getTime())) {
+    return {
+      baselineAvailable: false,
+      baselineSeries: null,
+      baselineLabel: 'Įprastinis srautas',
+      baselineSampleCount: 0,
+    };
+  }
+  const targetYear = targetDate.getFullYear();
+  const targetWeekday = targetDate.getDay();
+  const byDateKey = new Map();
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    const arrival = isValidDate(record?.arrival) ? record.arrival : null;
+    const arrivalHasTime =
+      record?.arrivalHasTime === true ||
+      (record?.arrivalHasTime == null &&
+        arrival instanceof Date &&
+        (arrival.getHours() || arrival.getMinutes() || arrival.getSeconds()));
+    if (!arrival || !arrivalHasTime) {
+      return;
+    }
+    const dateKey = computeShiftDateKeyForArrival(arrival, shiftStartHour, formatLocalDateKey);
+    if (!dateKey || dateKey === targetDateKey) {
+      return;
+    }
+    const shiftDate = dateKeyToLocalDate(dateKey);
+    if (!(shiftDate instanceof Date) || Number.isNaN(shiftDate.getTime())) {
+      return;
+    }
+    if (shiftDate.getFullYear() !== targetYear || shiftDate.getDay() !== targetWeekday) {
+      return;
+    }
+    const hour = arrival.getHours();
+    if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
+      return;
+    }
+    const hourly = byDateKey.get(dateKey) || Array(HOURS_IN_DAY).fill(0);
+    hourly[hour] += 1;
+    byDateKey.set(dateKey, hourly);
+  });
+  const sampleCount = byDateKey.size;
+  if (!sampleCount) {
+    return {
+      baselineAvailable: false,
+      baselineSeries: null,
+      baselineLabel: 'Įprastinis srautas',
+      baselineSampleCount: 0,
+    };
+  }
+  const baselineSeries = Array(HOURS_IN_DAY).fill(0);
+  byDateKey.forEach((hourly) => {
+    for (let hour = 0; hour < HOURS_IN_DAY; hour += 1) {
+      baselineSeries[hour] += Number(hourly[hour] || 0);
+    }
+  });
+  for (let hour = 0; hour < HOURS_IN_DAY; hour += 1) {
+    baselineSeries[hour] /= sampleCount;
+  }
+  return {
+    baselineAvailable: true,
+    baselineSeries,
+    baselineLabel: 'Įprastinis srautas',
+    baselineSampleCount: sampleCount,
+  };
+}
+
 export function buildLastShiftHourlySeries(input, dependencies) {
   const { records, dailyStats, metricKey = 'arrivals' } = input || {};
   const lastShiftSummary = dependencies.buildLastShiftSummary(dailyStats);
@@ -406,6 +497,15 @@ export function buildLastShiftHourlySeries(input, dependencies) {
     }
   }
   const hasData = series.total.some((value) => value > 0);
+  const baselineInfo =
+    metric === 'arrivals'
+      ? buildTypicalArrivalsBaseline(records, targetDateKey, shiftStartHour, dependencies.formatLocalDateKey)
+      : {
+          baselineAvailable: false,
+          baselineSeries: null,
+          baselineLabel: 'Įprastinis srautas',
+          baselineSampleCount: 0,
+        };
   return {
     dateKey: targetDateKey,
     dateLabel: lastShiftSummary.dateLabel || targetDateKey,
@@ -413,6 +513,10 @@ export function buildLastShiftHourlySeries(input, dependencies) {
     metric,
     metricLabel: getLastShiftMetricLabel(metric),
     series,
+    baselineAvailable: baselineInfo.baselineAvailable === true,
+    baselineSeries: baselineInfo.baselineSeries,
+    baselineLabel: baselineInfo.baselineLabel,
+    baselineSampleCount: baselineInfo.baselineSampleCount,
     hasData:
       metric === 'balance'
         ? series.total.some((value) => value > 0) || series.outflow.some((value) => value > 0)
@@ -474,6 +578,7 @@ export function fingerprintHourlySeriesInfo(seriesInfo) {
   const dateKey = String(seriesInfo.dateKey || '');
   const total = Array.isArray(seriesInfo.series?.total) ? seriesInfo.series.total : [];
   const outflow = Array.isArray(seriesInfo.series?.outflow) ? seriesInfo.series.outflow : [];
+  const baseline = Array.isArray(seriesInfo.baselineSeries) ? seriesInfo.baselineSeries : [];
   const sample = (list) =>
     [
       list.length,
@@ -482,7 +587,15 @@ export function fingerprintHourlySeriesInfo(seriesInfo) {
       Number(list[15] || 0),
       Number(list[23] || 0),
     ].join(':');
-  return [metric, dateKey, sample(total), sample(outflow)].join('|');
+  return [
+    metric,
+    dateKey,
+    sample(total),
+    sample(outflow),
+    seriesInfo.baselineAvailable === true ? 1 : 0,
+    Number(seriesInfo.baselineSampleCount || 0),
+    sample(baseline),
+  ].join('|');
 }
 
 export function buildKpiUiRenderSignature(input) {
@@ -496,6 +609,7 @@ export function buildKpiUiRenderSignature(input) {
     settings,
     filters,
     lastShiftMetric,
+    lastShiftHourlyShowBaseline,
     filteredRecordsKeyOverride = null,
     dateFilteredRecordsKeyOverride = null,
   } = input || {};
@@ -517,6 +631,7 @@ export function buildKpiUiRenderSignature(input) {
     selectedDate: selectedDate || '',
     windowDays: Number.isFinite(windowDays) ? Number(windowDays) : null,
     lastShiftMetric: String(lastShiftMetric || 'arrivals'),
+    lastShiftHourlyShowBaseline: lastShiftHourlyShowBaseline === true,
     shiftStartHour: Number.isFinite(shiftStartHour) ? shiftStartHour : null,
     filtersKey: [
       String(filters?.shift || ''),
@@ -540,6 +655,7 @@ export function isSameKpiUiRenderSignature(a, b) {
     a.selectedDate === b.selectedDate &&
     a.windowDays === b.windowDays &&
     a.lastShiftMetric === b.lastShiftMetric &&
+    a.lastShiftHourlyShowBaseline === b.lastShiftHourlyShowBaseline &&
     a.shiftStartHour === b.shiftStartHour &&
     a.filtersKey === b.filtersKey
   );
