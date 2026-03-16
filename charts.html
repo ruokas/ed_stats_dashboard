@@ -131,10 +131,10 @@
 <main class="container" role="main">
 <div class="section-band section-band--trends">
 <nav class="charts-jump-nav" aria-label="Grafikų sekcijos">
-  <a class="charts-jump-nav__link" href="#chartHeading">Srautų apžvalga</a>
-  <a class="charts-jump-nav__link" href="#chartsHourlyHeading">Valandinis profilis</a>
-  <a class="charts-jump-nav__link" href="#chartsHeatmapHeading">Intensyvumo žemėlapis</a>
-  <a class="charts-jump-nav__link" href="#chartsHospitalTableHeading">Hospitalizacijų analizė</a>
+  <a class="charts-jump-nav__link" href="#chartHeading"><span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5L8.5 12L12 15.5L18 7.5L21 10" /><path d="M4 19h16" /></svg></span><span class="inline-icon-label__text">Srautų apžvalga</span></span></a>
+  <a class="charts-jump-nav__link" href="#chartsHourlyHeading"><span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="8" /></svg></span><span class="inline-icon-label__text">Valandinis profilis</span></span></a>
+  <a class="charts-jump-nav__link" href="#chartsHeatmapHeading"><span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M9.5 4v16" /><path d="M14.5 4v16" /><path d="M4 9.5h16" /><path d="M4 14.5h16" /></svg></span><span class="inline-icon-label__text">Intensyvumo žemėlapis</span></span></a>
+  <a class="charts-jump-nav__link" href="#chartsHospitalTableHeading"><span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></svg></span><span class="inline-icon-label__text">Hospitalizacijų analizė</span></span></a>
 </nav>
 <section class="section" aria-labelledby="chartHeading" data-section="chart">
       <div class="section__header">
@@ -161,7 +161,7 @@
               <button type="button" class="chip-button" data-chart-period="30" aria-pressed="true">30 d.</button>
               <button type="button" class="chip-button" data-chart-period="90" aria-pressed="false">90 d.</button>
               <details class="chart-period__more">
-                <summary class="chip-button chart-period__more-toggle">Daugiau</summary>
+                <summary class="chip-button chart-period__more-toggle"><span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5" /><path d="m7 5 5 5 5-5" /></svg></span><span class="inline-icon-label__text">Daugiau</span></span></summary>
                 <div class="chart-period__more-menu" role="group" aria-label="Papildomi laikotarpiai">
                   <button type="button" class="chip-button" data-chart-period="180" aria-pressed="false">180 d.</button>
                   <button type="button" class="chip-button" data-chart-period="365" aria-pressed="false">365 d.</button>
@@ -179,7 +179,7 @@
             <p id="chartTimeScopeSummary" class="time-scope-control__summary" aria-live="polite"></p>
           </div>
           <div class="filter-panel__actions chart-controls__actions">
-            <button type="button" id="chartFiltersReset" class="btn btn-secondary btn-small chart-filters__reset">Atkurti filtrus</button>
+            <button type="button" id="chartFiltersReset" class="btn btn-secondary btn-small chart-filters__reset"><span class="inline-icon-label"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.708" /><path d="M3 4v5h5" /></svg></span><span class="inline-icon-label__text">Atkurti filtrus</span></span></button>
             <p id="chartFiltersSummary" class="chart-filters__summary" aria-live="polite" data-default="true"></p>
           </div>
           <form id="chartFiltersForm" class="chart-filters filter-panel__primary" aria-label="Filtruoti grafikus">
@@ -225,7 +225,7 @@
               </select>
             </label>
             <label class="chart-filter chart-filter--toggle" for="chartCompareGmp">
-              <span>Palyginti GMP</span>
+              <span class="inline-icon-label inline-icon-label--label"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="6" height="14" rx="1.5" /><rect x="14" y="5" width="6" height="14" rx="1.5" /><path d="M10 12h4" /></svg></span><span class="inline-icon-label__text">Palyginti GMP</span></span>
               <div class="segmented-control chart-filter__segmented chart-filter__segmented--toggle" role="group" aria-label="GMP palyginimas">
                 <button type="button" class="segmented-control__button" data-chart-compare-gmp="off" aria-pressed="true">Išjungta</button>
                 <button type="button" class="segmented-control__button" data-chart-compare-gmp="on" aria-pressed="false">GMP / be GMP</button>
@@ -451,12 +451,12 @@
                   <option value="gt16">&gt;16 val.</option>
                 </select>
               </label>
-              <button type="button" id="hourlyResetFilters" class="chip-button chip-button--ghost hourly-action" aria-label="Išvalyti šio grafiko filtrus">Išvalyti filtrus</button>
+              <button type="button" id="hourlyResetFilters" class="chip-button chip-button--ghost hourly-action" aria-label="Išvalyti šio grafiko filtrus"><span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.708" /><path d="M3 4v5h5" /></svg></span><span class="inline-icon-label__text">Išvalyti filtrus</span></span></button>
             </div>
             <div class="hourly-toolbar__row" role="group" aria-label="Metų palyginimas">
               <label class="hourly-compare-toggle" for="hourlyCompareToggle">
                 <input type="checkbox" id="hourlyCompareToggle" aria-controls="hourlyCompareYearA hourlyCompareYearB">
-                <span>Palyginti metus</span>
+                <span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="6" height="14" rx="1.5" /><rect x="14" y="5" width="6" height="14" rx="1.5" /><path d="M10 12h4" /></svg></span><span class="inline-icon-label__text">Palyginti metus</span></span>
               </label>
               <div class="hourly-compare-series" role="group" aria-label="Palyginimo srautas" hidden>
                 <div class="segmented-control">
@@ -668,8 +668,8 @@
           </select>
         </label>
         <label class="charts-hospital-table-controls__field" for="chartsHospitalTableSearch">
-          <span id="chartsHospitalTableSearchLabel">Skyriaus paieška</span>
-          <input id="chartsHospitalTableSearch" type="search" placeholder="Įveskite skyriaus pavadinimą" aria-label="Ieškoti skyriaus stacionarizacijų lentelėje">
+          <span class="inline-icon-label inline-icon-label--label" id="chartsHospitalTableSearchLabel"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg></span><span class="inline-icon-label__text">Skyriaus paieška</span></span>
+          <span class="search-field-wrap"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg></span><input id="chartsHospitalTableSearch" type="search" placeholder="Įveskite skyriaus pavadinimą" aria-label="Ieškoti skyriaus stacionarizacijų lentelėje"></span>
         </label>
       </div>
 

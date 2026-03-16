@@ -148,12 +148,12 @@
         <div id="feedbackFilters" class="feedback-filters" role="group" aria-labelledby="feedbackFiltersTitle">
           <h3 id="feedbackFiltersTitle" class="sr-only">Atsiliepimų filtrai</h3>
           <div class="feedback-filters__field">
-            <label id="feedbackRespondentLabel" for="feedbackRespondentFilter">Kas pildo anketą</label>
+            <label id="feedbackRespondentLabel" for="feedbackRespondentFilter"><span class="inline-icon-label inline-icon-label--label"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M5 19a7 7 0 0 1 14 0" /></svg></span><span class="inline-icon-label__text">Kas pildo anketą</span></span></label>
             <div id="feedbackRespondentChips" class="feedback-chip-group" role="group" aria-labelledby="feedbackRespondentLabel"></div>
             <select id="feedbackRespondentFilter" name="respondent" class="feedback-filter-select"></select>
           </div>
           <div class="feedback-filters__field">
-            <label id="feedbackLocationLabel" for="feedbackLocationFilter">Šaltinis</label>
+            <label id="feedbackLocationLabel" for="feedbackLocationFilter"><span class="inline-icon-label inline-icon-label--label"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s6-4.35 6-9a6 6 0 1 0-12 0c0 4.65 6 9 6 9Z" /><circle cx="12" cy="11" r="2" /></svg></span><span class="inline-icon-label__text">Šaltinis</span></span></label>
             <div id="feedbackLocationChips" class="feedback-chip-group" role="group" aria-labelledby="feedbackLocationLabel"></div>
             <select id="feedbackLocationFilter" name="location" class="feedback-filter-select"></select>
           </div>
@@ -208,7 +208,7 @@
           </div>
           <div class="feedback-trend-card__filters">
             <div class="feedback-trend-card__filter-field feedback-trend-card__filter-field--period">
-              <span id="feedbackTrendControlsLabel" class="feedback-trend-card__controls-label">Laikotarpis</span>
+              <span id="feedbackTrendControlsLabel" class="feedback-trend-card__controls-label"><span class="inline-icon-label inline-icon-label--label"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2" /><path d="M8 2.5v4" /><path d="M16 2.5v4" /><path d="M3.5 9.5h17" /></svg></span><span class="inline-icon-label__text">Laikotarpis</span></span></span>
               <div id="feedbackTrendControls" class="feedback-trend-card__buttons" role="group" aria-labelledby="feedbackTrendControlsLabel">
                 <button type="button" class="feedback-trend-card__button" data-trend-months="3" aria-pressed="false">3 mėn.</button>
                 <button type="button" class="feedback-trend-card__button" data-trend-months="6" aria-pressed="false">6 mėn.</button>
@@ -240,13 +240,13 @@
                   aria-controls="feedbackTrendMetrics"
                   aria-label="Palyginti rodiklius"
                 >
-                  <span class="feedback-trend-card__mode-label">Palyginti</span>
+                  <span class="feedback-trend-card__mode-label"><span class="inline-icon-label inline-icon-label--compact"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="6" height="14" rx="1.5" /><rect x="14" y="5" width="6" height="14" rx="1.5" /><path d="M10 12h4" /></svg></span><span class="inline-icon-label__text">Palyginti</span></span></span>
                 </button>
               </div>
               <p id="feedbackTrendMetricsHint" class="feedback-trend-card__hint" aria-live="polite">Rodomas vienas rodiklis</p>
             </div>
             <div class="feedback-trend-card__filter-field feedback-trend-card__filter-field--compare">
-              <span id="feedbackTrendCompareLabel" class="feedback-trend-card__controls-label">Palyginti grupes</span>
+              <span id="feedbackTrendCompareLabel" class="feedback-trend-card__controls-label"><span class="inline-icon-label inline-icon-label--label"><span class="inline-icon-label__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="6" height="14" rx="1.5" /><rect x="14" y="5" width="6" height="14" rx="1.5" /><path d="M10 12h4" /></svg></span><span class="inline-icon-label__text">Palyginti grupes</span></span></span>
               <div id="feedbackTrendCompareControls" class="feedback-trend-card__buttons" role="group" aria-labelledby="feedbackTrendCompareLabel">
                 <button type="button" class="feedback-trend-card__button" data-trend-compare="none" aria-pressed="true">Nelyginti</button>
                 <button type="button" class="feedback-trend-card__button" data-trend-compare="respondent" aria-pressed="false">Pacientas vs artimasis</button>

@@ -146,7 +146,18 @@
             <button id="kpiDatePrev" type="button" class="btn btn-secondary btn-small kpi-date-nav" aria-label="Ankstesnė data" title="Ankstesnė data">←</button>
             <input id="kpiDateInput" class="kpi-date-input" type="date" aria-label="Pasirinkti datą KPI rodikliams">
             <button id="kpiDateNext" type="button" class="btn btn-secondary btn-small kpi-date-nav" aria-label="Kita data" title="Kita data">→</button>
-            <button id="kpiDateClear" type="button" class="btn btn-secondary btn-small kpi-date-clear">Išvalyti datą</button>
+            <button id="kpiDateClear" type="button" class="btn btn-secondary btn-small kpi-date-clear">
+              <span class="inline-icon-label">
+                <span class="inline-icon-label__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8" />
+                    <path d="m9 9 6 6" />
+                    <path d="m15 9-6 6" />
+                  </svg>
+                </span>
+                <span class="inline-icon-label__text">Išvalyti datą</span>
+              </span>
+            </button>
           </div>
           <p id="kpiActiveFilters" class="kpi-controls__summary" aria-live="polite" data-default="true"></p>
         </div>
@@ -155,7 +166,17 @@
         <h3 id="kpiFiltersTitle" class="sr-only">KPI filtrai</h3>
         <form id="kpiFiltersForm" class="kpi-controls__form">
           <label class="kpi-filter" for="kpiArrival">
-            <span>Atvykimo tipas</span>
+            <span class="inline-icon-label inline-icon-label--label">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 8h10" />
+                  <path d="m13 5 3 3-3 3" />
+                  <path d="M18 16H8" />
+                  <path d="m11 13-3 3 3 3" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Atvykimo tipas</span>
+            </span>
             <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Atvykimo tipas">
               <button type="button" class="segmented-control__button" data-kpi-arrival="all" aria-pressed="true">Visi</button>
               <button type="button" class="segmented-control__button" data-kpi-arrival="ems" aria-pressed="false">Tik GMP</button>
@@ -168,7 +189,17 @@
             </select>
           </label>
           <label class="kpi-filter" for="kpiCardType">
-            <span>Kortelės tipas</span>
+            <span class="inline-icon-label inline-icon-label--label">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 4.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V6A1.5 1.5 0 0 1 7.5 4.5Z" />
+                  <path d="M14 4.5V9h4.5" />
+                  <path d="M9 13h6" />
+                  <path d="M9 16h4" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Kortelės tipas</span>
+            </span>
             <div class="segmented-control kpi-filter__segmented" role="group" aria-label="Kortelės tipas">
               <button type="button" class="segmented-control__button" data-kpi-card-type="all" aria-pressed="true">Visos</button>
               <button type="button" class="segmented-control__button" data-kpi-card-type="t" aria-pressed="false">T</button>
@@ -182,7 +213,17 @@
               <option value="ch">CH kortelės</option>
             </select>
           </label>
-          <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small kpi-controls__reset" title="Atkurti numatytuosius filtrus (Shift+R)">Atkurti filtrus</button>
+          <button type="button" id="kpiFiltersReset" class="btn btn-secondary btn-small kpi-controls__reset" title="Atkurti numatytuosius filtrus (Shift+R)">
+            <span class="inline-icon-label">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 12a9 9 0 1 0 3-6.708" />
+                  <path d="M3 4v5h5" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Atkurti filtrus</span>
+            </span>
+          </button>
         </form>
       </div>
       <div id="kpiGrid" class="kpi-grid" role="list" aria-busy="true" data-skeleton="true">
@@ -264,11 +305,70 @@
           <span class="skeleton skeleton--caption"></span>
         </div>
         <div class="kpi-hourly-controls" role="group" aria-label="Paskutinės pamainos rodiklis">
-          <button type="button" class="chip-button" data-last-shift-metric="arrivals" aria-pressed="true">Atvykimai</button>
-          <button type="button" class="chip-button" data-last-shift-metric="discharges" aria-pressed="false">Išleidimai</button>
-          <button type="button" class="chip-button" data-last-shift-metric="hospitalized" aria-pressed="false">Hospitalizacijos</button>
-          <button type="button" class="chip-button" data-last-shift-metric="balance" aria-pressed="false">Srautų balansas</button>
-          <button type="button" class="chip-button" data-last-shift-metric="census" aria-pressed="false">Pacientų kiekis</button>
+          <button type="button" class="chip-button" data-last-shift-metric="arrivals" aria-pressed="true">
+            <span class="inline-icon-label inline-icon-label--compact">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 18 18 6" />
+                  <path d="M12 6h6v6" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Atvykimai</span>
+            </span>
+          </button>
+          <button type="button" class="chip-button" data-last-shift-metric="discharges" aria-pressed="false">
+            <span class="inline-icon-label inline-icon-label--compact">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m4 11 8-6 8 6" />
+                  <path d="M6.5 10.5V19h11V10.5" />
+                  <path d="M10 19v-5h4v5" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Išleidimai</span>
+            </span>
+          </button>
+          <button type="button" class="chip-button" data-last-shift-metric="hospitalized" aria-pressed="false">
+            <span class="inline-icon-label inline-icon-label--compact">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 19V9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10" />
+                  <path d="M5 13h14" />
+                  <path d="M8 7V5" />
+                  <path d="M16 7V5" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Hospitalizacijos</span>
+            </span>
+          </button>
+          <button type="button" class="chip-button" data-last-shift-metric="balance" aria-pressed="false">
+            <span class="inline-icon-label inline-icon-label--compact">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14" />
+                  <path d="M7 8h10" />
+                  <path d="m7 8-3 5h6l-3-5Z" />
+                  <path d="m17 8-3 5h6l-3-5Z" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Srautų balansas</span>
+            </span>
+          </button>
+          <button type="button" class="chip-button" data-last-shift-metric="census" aria-pressed="false">
+            <span class="inline-icon-label inline-icon-label--compact">
+              <span class="inline-icon-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" role="img" focusable="false" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                  <path d="M8 10.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+                  <path d="M21 10.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
+                  <path d="M6 19a5 5 0 0 1 10 0" />
+                  <path d="M2.5 19a4 4 0 0 1 4-4" />
+                  <path d="M17.5 15a4 4 0 0 1 4 4" />
+                </svg>
+              </span>
+              <span class="inline-icon-label__text">Pacientų kiekis</span>
+            </span>
+          </button>
         </div>
         <div class="chart-card__canvas chart-card__canvas--kpi-hourly">
           <canvas id="lastShiftHourlyChart" aria-labelledby="lastShiftHourlyTitle"></canvas>
