@@ -23,7 +23,7 @@ export function createChartsDefaults({
     heatmapMetric: getDefaultHeatmapMetric(),
     heatmapArrival: 'all',
     heatmapDisposition: 'all',
-    heatmapCardType: 'all',
+    heatmapCardType: ['all'],
     heatmapYear: null,
     hourlyWeekday: hourlyWeekdayAll,
     hourlyStayBucket: hourlyStayBucketAll,

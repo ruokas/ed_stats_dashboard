@@ -42,6 +42,7 @@ export function initChartControls(env) {
     updateChartPeriod,
     updateChartYear,
     handleHeatmapMetricChange,
+    handleHeatmapCardTypeToggle,
     handleHeatmapFilterChange,
     handleHourlyMetricClick,
     handleHourlyDepartmentInput,
@@ -132,6 +133,11 @@ export function initChartControls(env) {
   }
   if (selectors.heatmapFilterCardType) {
     selectors.heatmapFilterCardType.addEventListener('change', handleHeatmapFilterChange);
+  }
+  if (Array.isArray(selectors.heatmapFilterCardTypeButtons)) {
+    selectors.heatmapFilterCardTypeButtons.forEach((button) => {
+      button.addEventListener('click', handleHeatmapCardTypeToggle);
+    });
   }
   if (selectors.heatmapYearSelect) {
     selectors.heatmapYearSelect.addEventListener('change', handleHeatmapFilterChange);

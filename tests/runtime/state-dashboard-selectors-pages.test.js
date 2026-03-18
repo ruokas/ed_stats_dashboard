@@ -191,7 +191,13 @@ describe('page selector factories', () => {
       <label id="heatmapMetricLabel"></label>
       <select id="heatmapArrival"></select>
       <select id="heatmapDisposition"></select>
-      <select id="heatmapCardType"></select>
+      <div>
+        <button data-heatmap-card-type="all"></button>
+        <button data-heatmap-card-type="t"></button>
+        <button data-heatmap-card-type="tr"></button>
+        <button data-heatmap-card-type="ch"></button>
+      </div>
+      <input id="heatmapCardType" type="hidden" />
       <select id="heatmapYear"></select>
       <span id="chartYearLabel"></span>
       <select id="chartYear"></select>
@@ -230,6 +236,7 @@ describe('page selector factories', () => {
     expect(selectors.chartsSubsectionPanels).toHaveLength(1);
     expect(selectors.chartFiltersForm).not.toBeNull();
     expect(selectors.chartsJumpLinks).toHaveLength(1);
+    expect(selectors.heatmapFilterCardTypeButtons).toHaveLength(4);
   });
 
   it('creates feedback page selectors', () => {

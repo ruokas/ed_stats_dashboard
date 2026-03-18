@@ -91,6 +91,7 @@ function createChartsSelectors() {
     heatmapFilterArrival: byId('heatmapArrival'),
     heatmapFilterDisposition: byId('heatmapDisposition'),
     heatmapFilterCardType: byId('heatmapCardType'),
+    heatmapFilterCardTypeButtons: byQueryAll('[data-heatmap-card-type]'),
     heatmapYearSelect: byId('heatmapYear'),
     chartYearLabel: byId('chartYearLabel'),
     chartYearSelect: byId('chartYear'),

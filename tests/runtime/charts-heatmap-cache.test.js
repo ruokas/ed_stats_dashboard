@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildHeatmapFilterCacheKey,
+  filterRecordsByHeatmapFilters,
   resolveCachedHeatmapFilterData,
 } from '../../src/app/runtime/runtimes/charts-runtime-impl.js';
 
@@ -11,17 +12,42 @@ describe('charts heatmap filter cache helper', () => {
       buildHeatmapFilterCacheKey(2024, {
         arrival: 'ems',
         disposition: 'hospitalized',
-        cardType: 't',
+        cardType: ['ch', 't'],
       })
-    ).toBe('2024|ems|hospitalized|t');
+    ).toBe('2024|ems|hospitalized|t,ch');
 
     expect(
       buildHeatmapFilterCacheKey(null, {
         arrival: 'bad',
         disposition: 'bad',
-        cardType: 'bad',
+        cardType: ['t', 'tr', 'ch'],
       })
     ).toBe('all|all|all|all');
+  });
+
+  it('filters combined card-type selections', () => {
+    const records = [
+      { cardType: 't', ems: false, hospitalized: false },
+      { cardType: 'tr', ems: false, hospitalized: false },
+      { cardType: 'ch', ems: false, hospitalized: false },
+      { cardType: 'other', ems: false, hospitalized: false },
+    ];
+
+    expect(
+      filterRecordsByHeatmapFilters(records, {
+        arrival: 'all',
+        disposition: 'all',
+        cardType: ['ch', 't'],
+      }).map((record) => record.cardType)
+    ).toEqual(['t', 'ch']);
+
+    expect(
+      filterRecordsByHeatmapFilters(records, {
+        arrival: 'all',
+        disposition: 'all',
+        cardType: ['all'],
+      }).map((record) => record.cardType)
+    ).toEqual(['t', 'tr', 'ch']);
   });
 
   it('reuses cached heatmap for same year and filters', () => {
@@ -104,5 +130,96 @@ describe('charts heatmap filter cache helper', () => {
     expect(third).not.toBe(second);
     expect(filterRecordsByYearFn).toHaveBeenCalledTimes(2);
     expect(computeArrivalHeatmapFn).toHaveBeenCalledTimes(0);
+  });
+
+  it('reuses aggregate cache for combined card-type selections', () => {
+    const mondayArrivalA = new Date('2024-01-01T08:00:00');
+    const mondayArrivalB = new Date('2024-01-01T08:30:00');
+    const chartData = {
+      baseRecords: [
+        {
+          cardType: 't',
+          ems: false,
+          hospitalized: false,
+          arrival: mondayArrivalA,
+          discharge: new Date('2024-01-01T09:00:00'),
+          arrivalHasTime: true,
+          dischargeHasTime: true,
+        },
+        {
+          cardType: 'ch',
+          ems: false,
+          hospitalized: false,
+          arrival: mondayArrivalB,
+          discharge: new Date('2024-01-01T10:00:00'),
+          arrivalHasTime: true,
+          dischargeHasTime: true,
+        },
+        {
+          cardType: 'other',
+          ems: false,
+          hospitalized: false,
+          arrival: new Date('2024-01-01T08:45:00'),
+          discharge: new Date('2024-01-01T09:15:00'),
+          arrivalHasTime: true,
+          dischargeHasTime: true,
+        },
+      ],
+      heatmapFilterCache: { recordsRef: null, byKey: new Map() },
+      heatmap: null,
+    };
+    const filterRecordsByYearFn = vi.fn((records) => records);
+    const filterRecordsByHeatmapFiltersFn = vi.fn((records) => records);
+    const computeArrivalHeatmapFn = vi.fn((records) => ({ size: records.length }));
+
+    const data = resolveCachedHeatmapFilterData({
+      chartData,
+      rawRecords: [],
+      heatmapYear: 2024,
+      heatmapFilters: { arrival: 'all', disposition: 'all', cardType: ['ch', 't'] },
+      filterRecordsByYearFn,
+      filterRecordsByHeatmapFiltersFn,
+      computeArrivalHeatmapFn,
+    });
+
+    expect(data.metrics.arrivals.matrix[0][8]).toBe(2);
+    expect(filterRecordsByHeatmapFiltersFn).toHaveBeenCalledTimes(0);
+    expect(computeArrivalHeatmapFn).toHaveBeenCalledTimes(0);
+  });
+
+  it('treats Visos as the union of visible card types in the aggregate cache', () => {
+    const chartData = {
+      baseRecords: [
+        {
+          cardType: 't',
+          ems: false,
+          hospitalized: false,
+          arrival: new Date('2024-01-01T08:00:00'),
+          discharge: new Date('2024-01-01T09:00:00'),
+          arrivalHasTime: true,
+          dischargeHasTime: true,
+        },
+        {
+          cardType: 'other',
+          ems: false,
+          hospitalized: false,
+          arrival: new Date('2024-01-01T08:30:00'),
+          discharge: new Date('2024-01-01T09:30:00'),
+          arrivalHasTime: true,
+          dischargeHasTime: true,
+        },
+      ],
+      heatmapFilterCache: { recordsRef: null, byKey: new Map() },
+      heatmap: null,
+    };
+
+    const data = resolveCachedHeatmapFilterData({
+      chartData,
+      rawRecords: [],
+      heatmapYear: 2024,
+      heatmapFilters: { arrival: 'all', disposition: 'all', cardType: ['all'] },
+    });
+
+    expect(data.metrics.arrivals.matrix[0][8]).toBe(1);
   });
 });

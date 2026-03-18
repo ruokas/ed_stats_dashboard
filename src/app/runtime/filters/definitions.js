@@ -40,7 +40,7 @@ const FILTER_SCHEMAS = {
         queryKey: 'hd',
         allowed: ['all', 'hospitalized', 'discharged'],
       },
-      heatmapCardType: { type: 'enum', queryKey: 'hc', allowed: ['all', 't', 'tr', 'ch'] },
+      heatmapCardType: { type: 'csv', queryKey: 'hc' },
       heatmapYear: { type: 'numberOrNull', queryKey: 'hy', min: 2000, max: 2100 },
       hourlyWeekday: { type: 'string', queryKey: 'hw' },
       hourlyStayBucket: { type: 'string', queryKey: 'hs' },

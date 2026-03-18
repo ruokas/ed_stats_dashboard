@@ -111,6 +111,11 @@ export function createChartsHeatmapFeature({
     return oneDecimalFormatter.format(value);
   };
 
+  const getSelectedHeatmapCardTypes = (filters) => {
+    const cardTypes = Array.isArray(filters?.cardType) ? filters.cardType : [];
+    return cardTypes.length ? cardTypes : ['all'];
+  };
+
   const computeHeatmapColor = (accentColor, intensity) => {
     const alpha = Math.min(0.85, Math.max(0.08, 0.08 + intensity * 0.75));
     const normalized = String(accentColor || '').trim();
@@ -158,6 +163,7 @@ export function createChartsHeatmapFeature({
   const syncHeatmapFilterControls = () => {
     const filters = sanitizeHeatmapFilters(dashboardState.heatmapFilters);
     dashboardState.heatmapFilters = { ...filters };
+    const selectedCardTypes = getSelectedHeatmapCardTypes(filters);
     if (selectors.heatmapFilterArrival) {
       selectors.heatmapFilterArrival.value = filters.arrival;
     }
@@ -165,7 +171,23 @@ export function createChartsHeatmapFeature({
       selectors.heatmapFilterDisposition.value = filters.disposition;
     }
     if (selectors.heatmapFilterCardType) {
-      selectors.heatmapFilterCardType.value = filters.cardType;
+      selectors.heatmapFilterCardType.value = selectedCardTypes.join(',');
+    }
+    if (
+      Array.isArray(selectors.heatmapFilterCardTypeButtons) &&
+      selectors.heatmapFilterCardTypeButtons.length
+    ) {
+      const isAllSelected = selectedCardTypes.length === 1 && selectedCardTypes[0] === 'all';
+      selectors.heatmapFilterCardTypeButtons.forEach((button) => {
+        const key = String(button?.dataset?.heatmapCardType || '')
+          .trim()
+          .toLowerCase();
+        if (!key) {
+          return;
+        }
+        const isActive = key === 'all' ? isAllSelected : !isAllSelected && selectedCardTypes.includes(key);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
     }
     if (selectors.heatmapYearSelect) {
       selectors.heatmapYearSelect.value = Number.isFinite(dashboardState.heatmapYear)
@@ -331,6 +353,32 @@ export function createChartsHeatmapFeature({
     );
   };
 
+  const handleHeatmapCardTypeToggle = (event) => {
+    const button = event?.currentTarget;
+    const key = String(button?.dataset?.heatmapCardType || '')
+      .trim()
+      .toLowerCase();
+    if (!key) {
+      return;
+    }
+    const currentFilters = sanitizeHeatmapFilters(dashboardState.heatmapFilters);
+    const currentSelection = getSelectedHeatmapCardTypes(currentFilters).filter((value) => value !== 'all');
+    let nextSelection = ['all'];
+    if (key !== 'all') {
+      const nextValues = currentSelection.includes(key)
+        ? currentSelection.filter((value) => value !== key)
+        : [...currentSelection, key];
+      nextSelection = nextValues.length ? nextValues : ['all'];
+    }
+    dashboardState.heatmapFilters = sanitizeHeatmapFilters({
+      ...currentFilters,
+      cardType: nextSelection,
+    });
+    syncHeatmapFilterControls();
+    persistChartsQuery();
+    applyHeatmapFiltersAndRender();
+  };
+
   const handleHeatmapFilterChange = (event) => {
     const target = event?.target;
     if (!target || !('name' in target)) {
@@ -342,7 +390,7 @@ export function createChartsHeatmapFeature({
       filters.arrival = value;
     } else if (name === 'heatmapDisposition' && value in KPI_FILTER_LABELS.disposition) {
       filters.disposition = value;
-    } else if (name === 'heatmapCardType' && value in KPI_FILTER_LABELS.cardType) {
+    } else if (name === 'heatmapCardType') {
       filters.cardType = value;
     } else if (name === 'heatmapYear') {
       dashboardState.heatmapYear = value === 'all' ? null : Number.parseInt(value, 10);
@@ -367,6 +415,7 @@ export function createChartsHeatmapFeature({
     computeHeatmapDataForFilters,
     applyHeatmapFiltersAndRender,
     handleHeatmapMetricChange,
+    handleHeatmapCardTypeToggle,
     handleHeatmapFilterChange,
     isValidHeatmapData,
     renderArrivalHeatmap,
