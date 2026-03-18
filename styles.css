@@ -3611,6 +3611,15 @@ body[data-theme="dark"] .hourly-suggestions {
   letter-spacing: 0.01em;
 }
 
+.heatmap-toolbar__field--segmented {
+  padding-right: 6px;
+}
+
+.heatmap-toolbar__segmented .segmented-control__button {
+  min-width: 44px;
+  padding-inline: 12px;
+}
+
 .heatmap-toolbar select {
   appearance: none;
   background: var(--color-input-bg);

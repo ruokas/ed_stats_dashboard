@@ -3,6 +3,16 @@ import { sanitizeChartFilters } from '../../filters.js';
 import { createDefaultChartFilters, KPI_FILTER_LABELS } from '../../state.js';
 
 export const HEATMAP_HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`);
+export const HEATMAP_CARD_TYPE_VALUES = ['t', 'tr', 'ch'];
+
+const HEATMAP_CARD_TYPE_FILTER_SETS = (() => {
+  const selections = [['all']];
+  const totalMasks = 1 << HEATMAP_CARD_TYPE_VALUES.length;
+  for (let mask = 1; mask < totalMasks; mask += 1) {
+    selections.push(HEATMAP_CARD_TYPE_VALUES.filter((_value, index) => (mask & (1 << index)) !== 0));
+  }
+  return selections;
+})();
 
 export const HEATMAP_WEEKDAY_FULL = [
   'Pirmadienis',
@@ -16,14 +26,83 @@ export const HEATMAP_WEEKDAY_FULL = [
 
 export const HEATMAP_WEEKDAY_SHORT = ['Pir', 'Antr', 'Trec', 'Ketv', 'Penkt', 'Sest', 'Sekm'];
 
+function normalizeHeatmapCardTypeFilters(value) {
+  const rawValues = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
+  const normalized = [];
+  rawValues.forEach((entry) => {
+    const token = String(entry || '')
+      .trim()
+      .toLowerCase();
+    if (!token) {
+      return;
+    }
+    if (token === 'all') {
+      normalized.length = 0;
+      normalized.push('all');
+      return;
+    }
+    if (
+      !HEATMAP_CARD_TYPE_VALUES.includes(token) ||
+      normalized.includes(token) ||
+      normalized.includes('all')
+    ) {
+      return;
+    }
+    normalized.push(token);
+  });
+  if (
+    !normalized.length ||
+    normalized.includes('all') ||
+    normalized.length === HEATMAP_CARD_TYPE_VALUES.length
+  ) {
+    return ['all'];
+  }
+  return HEATMAP_CARD_TYPE_VALUES.filter((token) => normalized.includes(token));
+}
+
+function buildHeatmapCardTypeKey(value) {
+  const normalized = normalizeHeatmapCardTypeFilters(value);
+  return normalized[0] === 'all' ? 'all' : normalized.join(',');
+}
+
+function isRecognizedHeatmapCardType(value) {
+  return HEATMAP_CARD_TYPE_VALUES.includes(
+    String(value || '')
+      .trim()
+      .toLowerCase()
+  );
+}
+
+function getCompatibleHeatmapCardTypeKeys(cardTypeValue) {
+  const normalized = String(cardTypeValue || '')
+    .trim()
+    .toLowerCase();
+  if (!isRecognizedHeatmapCardType(normalized)) {
+    return [];
+  }
+  return Array.from(
+    new Set(
+      HEATMAP_CARD_TYPE_FILTER_SETS.filter(
+        (selection) => selection[0] === 'all' || selection.includes(normalized)
+      ).map((selection) => buildHeatmapCardTypeKey(selection))
+    )
+  );
+}
+
 export function matchesSharedPatientFilters(record, filters = {}) {
   if (filters.arrival === 'ems' && !record.ems) return false;
   if (filters.arrival === 'self' && record.ems) return false;
   if (filters.disposition === 'hospitalized' && !record.hospitalized) return false;
   if (filters.disposition === 'discharged' && record.hospitalized) return false;
-  if (filters.cardType === 't' && record.cardType !== 't') return false;
-  if (filters.cardType === 'tr' && record.cardType !== 'tr') return false;
-  if (filters.cardType === 'ch' && record.cardType !== 'ch') return false;
+  const selectedCardTypes = normalizeHeatmapCardTypeFilters(filters.cardType);
+  if (!(selectedCardTypes.length === 1 && selectedCardTypes[0] === 'all')) {
+    const recordCardType = String(record?.cardType || '')
+      .trim()
+      .toLowerCase();
+    if (!selectedCardTypes.includes(recordCardType)) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -38,19 +117,24 @@ export function filterRecordsByChartFilters(records, filters) {
 }
 
 export function sanitizeHeatmapFilters(filters) {
-  const defaults = { arrival: 'all', disposition: 'all', cardType: 'all' };
+  const defaults = { arrival: 'all', disposition: 'all', cardType: ['all'] };
   const normalized = { ...defaults, ...(filters || {}) };
   if (!(normalized.arrival in KPI_FILTER_LABELS.arrival)) normalized.arrival = defaults.arrival;
   if (!(normalized.disposition in KPI_FILTER_LABELS.disposition))
     normalized.disposition = defaults.disposition;
-  if (!(normalized.cardType in KPI_FILTER_LABELS.cardType)) normalized.cardType = defaults.cardType;
+  normalized.cardType = normalizeHeatmapCardTypeFilters(normalized.cardType);
   return normalized;
 }
 
 export function buildHeatmapFilterCacheKey(year, filters = {}) {
   const normalized = sanitizeHeatmapFilters(filters);
   const yearKey = Number.isFinite(year) ? String(Math.trunc(year)) : 'all';
-  return [yearKey, normalized.arrival, normalized.disposition, normalized.cardType].join('|');
+  return [
+    yearKey,
+    normalized.arrival,
+    normalized.disposition,
+    buildHeatmapCardTypeKey(normalized.cardType),
+  ].join('|');
 }
 
 function createEmptyHeatmapAggregate() {
@@ -75,11 +159,7 @@ function createEmptyHeatmapAggregate() {
 function getHeatmapCompatibleFilterKeys(record) {
   const arrivalKeys = ['all', record?.ems ? 'ems' : 'self'];
   const dispositionKeys = ['all', record?.hospitalized ? 'hospitalized' : 'discharged'];
-  const cardTypeValue = String(record?.cardType || '').trim();
-  const cardTypeKeys = ['all'];
-  if (cardTypeValue === 't' || cardTypeValue === 'tr' || cardTypeValue === 'ch') {
-    cardTypeKeys.push(cardTypeValue);
-  }
+  const cardTypeKeys = getCompatibleHeatmapCardTypeKeys(record?.cardType);
   const keys = [];
   for (let arrivalIndex = 0; arrivalIndex < arrivalKeys.length; arrivalIndex += 1) {
     for (let dispositionIndex = 0; dispositionIndex < dispositionKeys.length; dispositionIndex += 1) {
@@ -277,9 +357,28 @@ export function resolveCachedHeatmapFilterData({
 
 export function filterRecordsByHeatmapFilters(records, filters) {
   const normalized = sanitizeHeatmapFilters(filters);
-  return (Array.isArray(records) ? records : []).filter((record) =>
-    matchesSharedPatientFilters(record, normalized)
-  );
+  const selectedCardTypes = normalizeHeatmapCardTypeFilters(normalized.cardType);
+  return (Array.isArray(records) ? records : []).filter((record) => {
+    if (normalized.arrival === 'ems' && !record?.ems) {
+      return false;
+    }
+    if (normalized.arrival === 'self' && record?.ems) {
+      return false;
+    }
+    if (normalized.disposition === 'hospitalized' && !record?.hospitalized) {
+      return false;
+    }
+    if (normalized.disposition === 'discharged' && record?.hospitalized) {
+      return false;
+    }
+    const recordCardType = String(record?.cardType || '')
+      .trim()
+      .toLowerCase();
+    if (selectedCardTypes.length === 1 && selectedCardTypes[0] === 'all') {
+      return isRecognizedHeatmapCardType(recordCardType);
+    }
+    return selectedCardTypes.includes(recordCardType);
+  });
 }
 
 export function computeFunnelStats(dailyStats, targetYear, fallbackDailyStats) {

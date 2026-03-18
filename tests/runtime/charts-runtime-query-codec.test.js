@@ -3,8 +3,9 @@ import { parseFromQuery, serializeToQuery } from '../../src/app/runtime/filters/
 
 describe('charts query codec accordion fields', () => {
   test('parses csv accordion fields', () => {
-    const parsed = parseFromQuery('charts', '?cp=30&cse=main,hospital&css=overview,hourly,heatmap');
+    const parsed = parseFromQuery('charts', '?cp=30&hc=t,ch&cse=main,hospital&css=overview,hourly,heatmap');
     expect(parsed.chartPeriod).toBe(30);
+    expect(parsed.heatmapCardType).toEqual(['t', 'ch']);
     expect(parsed.chartsSectionsExpanded).toEqual(['main', 'hospital']);
     expect(parsed.chartsSubsectionsExpanded).toEqual(['overview', 'hourly', 'heatmap']);
   });
@@ -20,7 +21,7 @@ describe('charts query codec accordion fields', () => {
       heatmapMetric: 'arrivals',
       heatmapArrival: 'all',
       heatmapDisposition: 'all',
-      heatmapCardType: 'all',
+      heatmapCardType: ['all'],
       heatmapYear: null,
       hourlyWeekday: 'all',
       hourlyStayBucket: 'all',
@@ -41,11 +42,13 @@ describe('charts query codec accordion fields', () => {
       'charts',
       {
         ...defaults,
+        heatmapCardType: ['t', 'ch'],
         chartsSectionsExpanded: ['main', 'hospital'],
         chartsSubsectionsExpanded: ['overview', 'hourly'],
       },
       defaults
     );
+    expect(query).toContain('hc=t%2Cch');
     expect(query).toContain('cse=main%2Chospital');
     expect(query).toContain('css=overview%2Chourly');
   });

@@ -51,6 +51,7 @@ export function createChartsPageSelectors() {
     heatmapFilterArrival: byId('heatmapArrival'),
     heatmapFilterDisposition: byId('heatmapDisposition'),
     heatmapFilterCardType: byId('heatmapCardType'),
+    heatmapFilterCardTypeButtons: byQueryAllIn(main, '[data-heatmap-card-type]'),
     heatmapYearSelect: byId('heatmapYear'),
     chartYearLabel: byId('chartYearLabel'),
     chartYearSelect: byId('chartYear'),

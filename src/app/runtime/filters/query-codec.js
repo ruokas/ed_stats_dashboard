@@ -58,7 +58,13 @@ function encodeValueByType(value, config) {
     return value ? '1' : '0';
   }
   if (type === 'csv') {
-    return Array.isArray(value) ? value.filter(Boolean).join(',') : '';
+    if (Array.isArray(value)) {
+      return value
+        .map((entry) => String(entry || '').trim())
+        .filter(Boolean)
+        .join(',');
+    }
+    return String(value ?? '').trim();
   }
   if (value == null) {
     return '';

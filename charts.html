@@ -553,15 +553,16 @@
                 <option value="discharged">Išleisti</option>
               </select>
             </label>
-            <label class="heatmap-toolbar__field" for="heatmapCardType">
-              <span class="heatmap-toolbar__label">Kortelė</span>
-              <select id="heatmapCardType" name="heatmapCardType">
-                <option value="all">Visos</option>
-                <option value="t">T</option>
-                <option value="tr">TR</option>
-                <option value="ch">CH</option>
-              </select>
-            </label>
+            <div class="heatmap-toolbar__field heatmap-toolbar__field--segmented">
+              <span id="heatmapCardTypeLabel" class="heatmap-toolbar__label">Kortelė</span>
+              <div class="segmented-control heatmap-toolbar__segmented" role="group" aria-labelledby="heatmapCardTypeLabel">
+                <button type="button" class="segmented-control__button" data-heatmap-card-type="all" aria-pressed="true">Visos</button>
+                <button type="button" class="segmented-control__button" data-heatmap-card-type="t" aria-pressed="false">T</button>
+                <button type="button" class="segmented-control__button" data-heatmap-card-type="tr" aria-pressed="false">TR</button>
+                <button type="button" class="segmented-control__button" data-heatmap-card-type="ch" aria-pressed="false">CH</button>
+              </div>
+              <input id="heatmapCardType" name="heatmapCardType" type="hidden" value="all">
+            </div>
             <label class="heatmap-toolbar__field" for="heatmapYear">
               <span class="heatmap-toolbar__label">Metai</span>
               <select id="heatmapYear" name="heatmapYear">
